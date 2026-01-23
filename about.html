@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>關於・絆 | 丼不哩</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入日系字體 -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'wabi-bg': '#fcfaf8',
+                        'wabi-text': '#4a4a4a',
+                        'wabi-accent': '#8e8070',
+                        'wabi-sub': '#dcdcdc',
+                        'wabi-dark': '#2c2c2c',
+                    },
+                    fontFamily: {
+                        serif: ['"Noto Serif TC"', 'serif'],
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                    },
+                    letterSpacing: {
+                        'widest-xl': '.25em',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #fcfaf8;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+        }
+
+        .vertical-rl {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            letter-spacing: 0.25em;
+        }
+
+        /* 圖片灰階過渡效果 */
+        .img-hover-effect {
+            filter: grayscale(100%);
+            transition: filter 0.8s ease;
+        }
+
+        .img-hover-effect:hover {
+            filter: grayscale(0%);
+        }
+    </style>
+</head>
+
+<body class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white">
+
+    <!-- 導航 -->
+    <nav class="fixed top-0 w-full p-8 flex justify-between items-center z-40 mix-blend-difference text-stone-500">
+        <a href="index.html"
+            class="text-xl font-bold tracking-widest-xl uppercase hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-8">
+            <a href="index.html"
+                class="text-xs tracking-widest hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <span class="text-xs tracking-widest text-wabi-dark border-b border-wabi-dark pb-1">關於・絆</span>
+        </div>
+    </nav>
+
+    <!-- 頁首視覺 (縮小版) -->
+    <header class="relative w-full h-[60vh] overflow-hidden flex items-center justify-center">
+        <div class="absolute inset-0">
+            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2000&auto=format&fit=crop"
+                alt="Sea Horizon" class="w-full h-full object-cover opacity-80 brightness-110 grayscale">
+        </div>
+        <!-- 裝飾性遮罩 -->
+        <div class="absolute inset-0 bg-gradient-to-t from-[#fcfaf8] via-[#fcfaf8]/30 to-transparent"></div>
+
+        <div class="relative z-10">
+            <h1
+                class="text-4xl md:text-5xl font-light tracking-[0.3em] text-wabi-dark vertical-rl h-48 md:h-64 ml-8 border-l border-wabi-dark/20 pl-6">
+                關於・絆
+            </h1>
+        </div>
+    </header>
+
+    <!-- 老闆介紹區塊 -->
+    <main class="max-w-6xl mx-auto py-12 px-8 relative z-20">
+
+        <!-- 卡片 1: 老闆個人風格 -->
+        <section class="grid md:grid-cols-2 gap-16 items-center mb-32">
+            <div class="order-2 md:order-1 relative">
+                <!-- 裝飾框線 -->
+                <div class="absolute -top-4 -left-4 w-full h-full border border-wabi-accent/30 z-0"></div>
+                <div class="relative z-10 overflow-hidden aspect-[3/4] shadow-lg">
+                    <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1000&auto=format&fit=crop"
+                        alt="Boss Portrait" class="w-full h-full object-cover img-hover-effect">
+                </div>
+                <div class="absolute -bottom-6 -right-6 bg-wabi-bg px-6 py-4 shadow-sm border border-stone-100 z-20">
+                    <span class="block text-xs text-wabi-accent tracking-widest uppercase mb-1">Founder</span>
+                    <span class="text-xl font-light tracking-widest text-wabi-dark">27樓的主人</span>
+                </div>
+            </div>
+
+            <div class="order-1 md:order-2 space-y-8">
+                <h2 class="text-3xl font-light text-wabi-dark leading-snug">
+                    看似高冷<br>
+                    <span class="text-wabi-accent">實則溫熱</span>的靈魂
+                </h2>
+                <div class="space-y-6 text-stone-600 text-sm md:text-base font-light text-justify leading-loose">
+                    <p>
+                        我是這個空間的起點，也是所有混亂與歡笑的終點。
+                    </p>
+                    <p>
+                        在 27 樓看過無數次的日落與日出，發現風景再美，都不如一群老友在沙發上講幹話來得真實。
+                        這裡不是飯店，沒有標準化的微笑，只有我這張看起來很兇、但如果你帶著酒來就會笑的臉。
+                    </p>
+                    <p>
+                        「丼不哩」是我的任性，而「絆」是我想留住的東西。
+                    </p>
+                </div>
+                <!-- 簽名檔/一句話 -->
+                <div class="pt-8 border-t border-stone-200">
+                    <p class="vertical-rl h-32 text-xs tracking-widest text-stone-400">
+                        不一定要很久不見<br>但一定要不醉不歸
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 卡片 2: 關於「絆」 -->
+        <section
+            class="grid md:grid-cols-12 gap-10 bg-white p-10 md:p-20 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.03)] item-center">
+            <div class="md:col-span-4 flex justify-center md:justify-start items-center">
+                <div class="text-center md:text-left">
+                    <span class="text-6xl md:text-8xl font-serif text-wabi-accent/20 block mb-4">絆</span>
+                    <h3 class="text-2xl font-light tracking-widest text-wabi-dark">KIZUNA</h3>
+                </div>
+            </div>
+
+            <div
+                class="md:col-span-8 space-y-6 text-stone-600 font-light border-l border-stone-100 pl-0 md:pl-10 mt-8 md:mt-0">
+                <p>
+                    日文中的「絆」（Kizuna），指的是人與人之間難以切斷的聯繫。
+                </p>
+                <p>
+                    在這個快節奏的時代，我們很容易在通訊軟體上交換訊息，卻很難好好坐下來，看著對方的眼睛說話。
+                    打造這個空間，就是希望能重拾那種最純粹的連結。
+                </p>
+                <p class="text-wabi-accent">
+                    就像這 27 樓的高度，讓我們暫時遠離地面的塵囂，在這裡，我們只有彼此。
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest border-t border-stone-100 mt-10">
+        <p>&copy; 2026 DONGBULI · 關於・絆</p>
+    </footer>
+
+</body>
+
+</html>
