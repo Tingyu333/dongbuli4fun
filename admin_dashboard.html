@@ -73,34 +73,82 @@
             </div>
         </div>
 
-        <!-- 列表容器 -->
-        <div class="bg-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.03)] overflow-hidden rounded-sm">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr
-                            class="bg-stone-50 border-b border-stone-100 text-[10px] font-sans tracking-[0.2em] text-stone-400 uppercase">
-                            <!-- <th class="p-6 font-normal">狀態</th> -->
-                            <th class="p-6 font-normal">姓名</th>
-                            <th class="p-6 font-normal">聯絡電話</th>
-                            <th class="p-6 font-normal">入住日期</th>
-                            <th class="p-6 font-normal">退房日期</th>
-                            <!-- <th class="p-6 font-normal text-right">操作</th> -->
-                        </tr>
-                    </thead>
-                    <tbody id="reservationTableBody" class="font-sans text-sm text-stone-600">
-                        <!-- 資料將由 JS 插入 -->
-                        <tr class="animate-pulse">
-                            <td colspan="6" class="p-8 text-center text-xs tracking-widest text-stone-300">讀取資料中...</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <!-- 區塊 1: 即將入住 (Active) -->
+        <div class="mb-16">
+            <h3 class="text-xl font-light text-wabi-dark mb-6 tracking-widest pl-4 border-l-2 border-wabi-accent">即將入住
+            </h3>
+            <div class="bg-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.03)] overflow-hidden rounded-sm">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr
+                                class="bg-stone-50 border-b border-stone-100 text-[10px] font-sans tracking-[0.2em] text-stone-400 uppercase">
+                                <th class="p-6 font-normal">姓名</th>
+                                <th class="p-6 font-normal">聯絡電話</th>
+                                <th class="p-6 font-normal">入住日期</th>
+                                <th class="p-6 font-normal">退房日期</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activeTableBody" class="font-sans text-sm text-stone-600">
+                            <!-- 資料將由 JS 插入 -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Pagination Active -->
+                <div class="p-4 border-t border-stone-100 flex justify-end gap-4 text-xs font-sans tracking-widest text-stone-400"
+                    id="activePagination">
+                    <button onclick="changePage('active', -1)" class="hover:text-wabi-dark disabled:opacity-30"
+                        id="btnPrevActive">PREV</button>
+                    <span id="pageInfoActive">1 / 1</span>
+                    <button onclick="changePage('active', 1)" class="hover:text-wabi-dark disabled:opacity-30"
+                        id="btnNextActive">NEXT</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 區塊 2: 歷史紀錄 (History) -->
+        <div>
+            <h3 class="text-xl font-light text-wabi-dark mb-6 tracking-widest pl-4 border-l-2 border-stone-300">歷史紀錄
+            </h3>
+            <div class="bg-stone-50/50 border border-stone-100 overflow-hidden rounded-sm">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr
+                                class="bg-stone-100 border-b border-stone-200 text-[10px] font-sans tracking-[0.2em] text-stone-500 uppercase">
+                                <th class="p-6 font-normal">姓名</th>
+                                <th class="p-6 font-normal">聯絡電話</th>
+                                <th class="p-6 font-normal">入住日期</th>
+                                <th class="p-6 font-normal">退房日期</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody" class="font-sans text-sm text-stone-400 grayscale">
+                            <!-- 資料將由 JS 插入 -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Pagination History -->
+                <div class="p-4 border-t border-stone-200 flex justify-end gap-4 text-xs font-sans tracking-widest text-stone-400"
+                    id="historyPagination">
+                    <button onclick="changePage('history', -1)" class="hover:text-wabi-dark disabled:opacity-30"
+                        id="btnPrevHistory">PREV</button>
+                    <span id="pageInfoHistory">1 / 1</span>
+                    <button onclick="changePage('history', 1)" class="hover:text-wabi-dark disabled:opacity-30"
+                        id="btnNextHistory">NEXT</button>
+                </div>
             </div>
         </div>
 
     </main>
 
     <script>
+        // State
+        const state = {
+            active: { data: [], page: 1 },
+            history: { data: [], page: 1 },
+            pageSize: 10
+        };
+
         // 檢查登入
         if (!localStorage.getItem('isAdmin')) {
             window.location.href = 'admin_login.html';
@@ -111,89 +159,89 @@
             window.location.href = 'admin_login.html';
         });
 
-        // 模擬資料 (因為無法直接從 Google Script 讀取隱私資料)
-        // 實際開發需要修改 Google Apps Script 回傳完整的 JSON
-        // 這裡展示 UI 效果
-        // const mockData = [
-        //     { id: 1, name: "陳小明", phone: "0912-345-678", checkIn: "2026-02-14", checkOut: "2026-02-15", status: "confirmed" },
-        //     { id: 2, name: "林怡君", phone: "0987-654-321", checkIn: "2026-02-20", checkOut: "2026-02-22", status: "pending" },
-        //     { id: 3, name: "張志豪", phone: "0911-222-333", checkIn: "2026-03-01", checkOut: "2026-03-02", status: "confirmed" },
-        //     { id: 4, name: "王淑芬", phone: "0955-666-777", checkIn: "2026-03-10", checkOut: "2026-03-12", status: "cancelled" },
-        // ];
-
-        // 這裡我們嘗試 fetch 原本的 api 看看是否有很多資料，如果沒有就用 mock
         const API_URL = "https://script.google.com/macros/s/AKfycbzdwh8fkSACZ_Ccd_Jpf-ZF-N0rNsr91mD0h9qB8M2KLdiBewpLGrr-Jz-Njd_NKcOS/exec";
 
         async function fetchData() {
             try {
-                // 嘗試抓取真實資料 (只有日期)
                 const res = await fetch(API_URL);
                 const realData = await res.json();
-
-                // 因為公開 API 可能只回傳日期，我們這裡做一個混合展示
-                // 如果 API 回傳的資料結構包含 name，就用 API 的，否則混入 Mock 資料展示 UI
-
-                let displayData = [];
-
-                if (realData.length > 0 && realData[0].guest_name) {
-                    displayData = realData;
-                } else {
-                    // 如果 API 沒有回傳詳細個資 (通常是為了隱私)，我們就用 Mock Data 加上真實的日期資訊來稍微豐富一下 UI
-                    // 這裡僅作為 Demo
-                    console.log("API 僅回傳公開日期，使用模擬詳細資料展示 UI");
-
-                    // 將真實的已預訂日期轉換為列表項目
-                    const realBookingsFromApi = realData.map((item, index) => ({
-                        id: 'api-' + index,
-                        name: "預約訪客 (API)", // 隱藏個資
-                        phone: "09xx-xxx-xxx",
-                        checkIn: item.check_in,
-                        checkOut: item.check_out,
-                        status: "confirmed"
-                    }));
-
-                    // 合併 Mock Data 讓畫面看起來豐富一點 (Demo 用)
-                    // displayData = [...mockData, ...realBookingsFromApi];
-                }
-
-                renderTable(displayData);
+                processData(realData);
 
             } catch (e) {
                 console.error("Fetch error", e);
-                // renderTable(mockData); // Fallback
             }
         }
 
-        function renderTable(data) {
-            const tbody = document.getElementById('reservationTableBody');
+        function processData(data) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            let processed = data.map(item => {
+                const checkInStr = (item.checkIn || item.check_in || '').split('T')[0];
+                const checkOutStr = (item.checkOut || item.check_out || '').split('T')[0];
+                const checkInDate = new Date(checkInStr);
+                const checkOutDate = new Date(checkOutStr);
+                const isPast = checkOutDate < today;
+                return { ...item, checkInStr, checkOutStr, checkInDate, isPast };
+            });
+
+            // 分類與排序
+            state.active.data = processed.filter(d => !d.isPast).sort((a, b) => a.checkInDate - b.checkInDate);
+            // 歷史紀錄：最近的在最上面 (Descending)
+            state.history.data = processed.filter(d => d.isPast).sort((a, b) => b.checkInDate - a.checkInDate);
+
             document.getElementById('totalCount').innerText = data.length;
 
-            tbody.innerHTML = data.map(item => `
-                <tr class="hover:bg-stone-50 transition-colors border-b border-stone-100 last:border-0 group">
-                    <td class="p-6 font-medium text-wabi-dark">${item.name || item.guest_name || '未知訪客'}</td>
-                    <td class="p-6 text-stone-500 font-mono text-xs">${item.phone || '09xx-xxx-xxx'}</td>
-                    <td class="p-6 text-stone-500 font-mono text-xs">${item.checkIn || item.check_in.split('T')[0]}</td>
-                    <td class="p-6 text-stone-500 font-mono text-xs">${item.checkOut || item.check_out.split('T')[0]}</td>
-                </tr>
-            `).join('');
+            renderSection('active');
+            renderSection('history');
         }
 
-        function getStatusBadge(status) {
-            const styles = {
-                'confirmed': 'bg-green-100 text-green-700',
-                'pending': 'bg-yellow-100 text-yellow-700',
-                'cancelled': 'bg-red-50 text-red-400 decoration-line-through',
-            };
-            const labels = {
-                'confirmed': '已確認',
-                'pending': '待確認',
-                'cancelled': '已取消',
-            };
+        function changePage(type, delta) {
+            const s = state[type];
+            const maxPage = Math.ceil(s.data.length / state.pageSize);
+            const newPage = s.page + delta;
 
-            const s = styles[status] || 'bg-stone-100 text-stone-500';
-            const l = labels[status] || '未知';
+            if (newPage >= 1 && newPage <= maxPage) {
+                s.page = newPage;
+                renderSection(type);
+            }
+        }
 
-            return `<span class="inline-block px-2 py-1 rounded-full text-[10px] tracking-wider ${s}">${l}</span>`;
+        function renderSection(type) {
+            const s = state[type];
+            const tbody = document.getElementById(type + 'TableBody');
+            const pageInfo = document.getElementById('pageInfo' + (type.charAt(0).toUpperCase() + type.slice(1)));
+            const btnPrev = document.getElementById('btnPrev' + (type.charAt(0).toUpperCase() + type.slice(1)));
+            const btnNext = document.getElementById('btnNext' + (type.charAt(0).toUpperCase() + type.slice(1)));
+
+            if (!s.data.length) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-xs tracking-widest text-stone-300">暫無資料</td></tr>`;
+                pageInfo.innerText = "0 / 0";
+                btnPrev.disabled = true;
+                btnNext.disabled = true;
+                return;
+            }
+
+            // Pagination Logic
+            const totalPages = Math.ceil(s.data.length / state.pageSize);
+            const start = (s.page - 1) * state.pageSize;
+            const end = start + state.pageSize;
+            const pageData = s.data.slice(start, end);
+
+            // Render Rows
+            tbody.innerHTML = pageData.map(item => `
+                <tr class="border-b ${type === 'active' ? 'border-stone-100 hover:bg-stone-50 text-wabi-text' : 'border-stone-50 text-stone-400'} transition-colors last:border-0">
+                    <td class="p-6 font-medium ${type === 'active' ? 'text-wabi-dark' : ''}">${item.name || item.guest_name || '未知訪客'}</td>
+                    <td class="p-6 font-mono text-xs text-stone-500">${item.phone || '09xx-xxx-xxx'}</td>
+                    <td class="p-6 font-mono text-xs text-stone-500">${item.checkInStr}</td>
+                    <td class="p-6 font-mono text-xs text-stone-500">${item.checkOutStr}</td>
+                </tr>
+            `).join('');
+
+            // Update Controls
+            pageInfo.innerText = `${s.page} / ${totalPages}`;
+            btnPrev.disabled = s.page === 1;
+            btnNext.disabled = s.page === totalPages;
         }
 
         fetchData();
