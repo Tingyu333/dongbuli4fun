@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>主人・確認 | 丼步喱</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'wabi-bg': '#fcfaf8',
+                        'wabi-text': '#4a4a4a',
+                        'wabi-accent': '#8e8070',
+                        'wabi-sub': '#dcdcdc',
+                        'wabi-dark': '#2c2c2c',
+                    },
+                    fontFamily: {
+                        serif: ['"Noto Serif TC"', 'serif'],
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                    },
+                    letterSpacing: {
+                        'widest-xl': '.25em',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #fcfaf8;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+        }
+
+        .vertical-rl {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            letter-spacing: 0.25em;
+        }
+    </style>
+</head>
+
+<body class="h-screen w-full flex items-center justify-center text-wabi-text font-serif">
+
+    <div
+        class="w-full max-w-md p-10 md:p-16 bg-white shadow-[0_20px_50px_-10px_rgba(0,0,0,0.05)] relative overflow-hidden">
+        <!-- 裝飾 -->
+        <div class="absolute top-0 left-0 w-full h-1 bg-wabi-accent"></div>
+        <div
+            class="absolute -right-6 -bottom-6 text-[8rem] text-stone-50 select-none pointer-events-none font-serif z-0">
+            主</div>
+
+        <div class="relative z-10">
+            <div class="text-center mb-12">
+                <span class="text-xs font-sans tracking-[0.3em] text-stone-400 uppercase block mb-3">Admin Access</span>
+                <h1 class="text-2xl font-light tracking-widest text-wabi-dark">歸人・確認</h1>
+            </div>
+
+            <form id="loginForm" class="space-y-8">
+                <div class="space-y-1">
+                    <label class="block text-[10px] font-sans tracking-widest text-stone-400">帳號</label>
+                    <input type="text" id="username"
+                        class="w-full bg-transparent border-b border-stone-200 py-2 text-wabi-dark focus:outline-none focus:border-wabi-accent transition-colors font-sans placeholder-stone-200"
+                        placeholder="Username">
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-[10px] font-sans tracking-widest text-stone-400">密碼</label>
+                    <input type="password" id="password"
+                        class="w-full bg-transparent border-b border-stone-200 py-2 text-wabi-dark focus:outline-none focus:border-wabi-accent transition-colors font-sans placeholder-stone-200"
+                        placeholder="Password">
+                </div>
+
+                <div class="pt-6">
+                    <button type="submit"
+                        class="w-full bg-wabi-dark text-white py-4 hover:bg-black transition-all duration-500 tracking-[0.3em] font-sans text-xs uppercase shadow-lg group">
+                        <span class="group-hover:mr-2 transition-all">進入</span> ➔
+                    </button>
+                    <p id="errorMsg"
+                        class="text-[10px] text-red-800 text-center mt-4 tracking-widest opacity-0 transition-opacity duration-300">
+                        帳號或密碼錯誤</p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            const msg = document.getElementById('errorMsg');
+
+            // 預設帳號密碼
+            if (u === 'admin' && p === '4469') {
+                localStorage.setItem('isAdmin', 'true');
+                window.location.href = 'admin_dashboard.html';
+            } else {
+                msg.classList.remove('opacity-0');
+                // 3秒後隱藏錯誤訊息
+                setTimeout(() => msg.classList.add('opacity-0'), 3000);
+            }
+        });
+    </script>
+</body>
+
+</html>

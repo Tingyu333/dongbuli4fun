@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>預約・一覽 | 丼步喱</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'wabi-bg': '#fcfaf8',
+                        'wabi-text': '#4a4a4a',
+                        'wabi-accent': '#8e8070',
+                        'wabi-sub': '#dcdcdc',
+                        'wabi-dark': '#2c2c2c',
+                    },
+                    fontFamily: {
+                        serif: ['"Noto Serif TC"', 'serif'],
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                    },
+                    letterSpacing: {
+                        'widest-xl': '.25em',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #fcfaf8;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+        }
+    </style>
+</head>
+
+<body
+    class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white min-h-screen">
+
+    <!-- 導航 -->
+    <nav
+        class="fixed top-0 w-full p-8 flex justify-between items-center z-40 bg-[#fcfaf8]/90 backdrop-blur-sm border-b border-stone-100">
+        <div class="flex items-center gap-4">
+            <h1 class="text-lg font-bold tracking-widest uppercase text-wabi-dark border-r border-stone-200 pr-4">
+                Dashboard</h1>
+            <span class="text-xs tracking-widest text-stone-500">預約管理</span>
+        </div>
+        <button id="logoutBtn"
+            class="text-xs tracking-widest hover:text-wabi-dark transition-colors duration-500 text-stone-400 uppercase">
+            登出・離
+        </button>
+    </nav>
+
+    <!-- 主要內容 -->
+    <main class="max-w-7xl mx-auto py-32 px-8">
+
+        <div class="mb-12 flex justify-between items-end">
+            <div>
+                <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2"> RESERVATIONS </span>
+                <h2 class="text-3xl font-light text-wabi-dark">27樓・名簿</h2>
+            </div>
+            <div class="hidden md:block">
+                <p class="text-[10px] text-stone-400 font-sans tracking-widest text-right">
+                    目前的預約總數 <br>
+                    <span class="text-2xl text-wabi-dark font-serif" id="totalCount">0</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- 列表容器 -->
+        <div class="bg-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.03)] overflow-hidden rounded-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr
+                            class="bg-stone-50 border-b border-stone-100 text-[10px] font-sans tracking-[0.2em] text-stone-400 uppercase">
+                            <!-- <th class="p-6 font-normal">狀態</th> -->
+                            <th class="p-6 font-normal">姓名</th>
+                            <th class="p-6 font-normal">聯絡電話</th>
+                            <th class="p-6 font-normal">入住日期</th>
+                            <th class="p-6 font-normal">退房日期</th>
+                            <!-- <th class="p-6 font-normal text-right">操作</th> -->
+                        </tr>
+                    </thead>
+                    <tbody id="reservationTableBody" class="font-sans text-sm text-stone-600">
+                        <!-- 資料將由 JS 插入 -->
+                        <tr class="animate-pulse">
+                            <td colspan="6" class="p-8 text-center text-xs tracking-widest text-stone-300">讀取資料中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // 檢查登入
+        if (!localStorage.getItem('isAdmin')) {
+            window.location.href = 'admin_login.html';
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('isAdmin');
+            window.location.href = 'admin_login.html';
+        });
+
+        // 模擬資料 (因為無法直接從 Google Script 讀取隱私資料)
+        // 實際開發需要修改 Google Apps Script 回傳完整的 JSON
+        // 這裡展示 UI 效果
+        // const mockData = [
+        //     { id: 1, name: "陳小明", phone: "0912-345-678", checkIn: "2026-02-14", checkOut: "2026-02-15", status: "confirmed" },
+        //     { id: 2, name: "林怡君", phone: "0987-654-321", checkIn: "2026-02-20", checkOut: "2026-02-22", status: "pending" },
+        //     { id: 3, name: "張志豪", phone: "0911-222-333", checkIn: "2026-03-01", checkOut: "2026-03-02", status: "confirmed" },
+        //     { id: 4, name: "王淑芬", phone: "0955-666-777", checkIn: "2026-03-10", checkOut: "2026-03-12", status: "cancelled" },
+        // ];
+
+        // 這裡我們嘗試 fetch 原本的 api 看看是否有很多資料，如果沒有就用 mock
+        const API_URL = "https://script.google.com/macros/s/AKfycbzdwh8fkSACZ_Ccd_Jpf-ZF-N0rNsr91mD0h9qB8M2KLdiBewpLGrr-Jz-Njd_NKcOS/exec";
+
+        async function fetchData() {
+            try {
+                // 嘗試抓取真實資料 (只有日期)
+                const res = await fetch(API_URL);
+                const realData = await res.json();
+
+                // 因為公開 API 可能只回傳日期，我們這裡做一個混合展示
+                // 如果 API 回傳的資料結構包含 name，就用 API 的，否則混入 Mock 資料展示 UI
+
+                let displayData = [];
+
+                if (realData.length > 0 && realData[0].guest_name) {
+                    displayData = realData;
+                } else {
+                    // 如果 API 沒有回傳詳細個資 (通常是為了隱私)，我們就用 Mock Data 加上真實的日期資訊來稍微豐富一下 UI
+                    // 這裡僅作為 Demo
+                    console.log("API 僅回傳公開日期，使用模擬詳細資料展示 UI");
+
+                    // 將真實的已預訂日期轉換為列表項目
+                    const realBookingsFromApi = realData.map((item, index) => ({
+                        id: 'api-' + index,
+                        name: "預約訪客 (API)", // 隱藏個資
+                        phone: "09xx-xxx-xxx",
+                        checkIn: item.check_in,
+                        checkOut: item.check_out,
+                        status: "confirmed"
+                    }));
+
+                    // 合併 Mock Data 讓畫面看起來豐富一點 (Demo 用)
+                    // displayData = [...mockData, ...realBookingsFromApi];
+                }
+
+                renderTable(displayData);
+
+            } catch (e) {
+                console.error("Fetch error", e);
+                // renderTable(mockData); // Fallback
+            }
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('reservationTableBody');
+            document.getElementById('totalCount').innerText = data.length;
+
+            tbody.innerHTML = data.map(item => `
+                <tr class="hover:bg-stone-50 transition-colors border-b border-stone-100 last:border-0 group">
+                    <td class="p-6 font-medium text-wabi-dark">${item.name || item.guest_name || '未知訪客'}</td>
+                    <td class="p-6 text-stone-500 font-mono text-xs">${item.phone || '09xx-xxx-xxx'}</td>
+                    <td class="p-6 text-stone-500 font-mono text-xs">${item.checkIn || item.check_in.split('T')[0]}</td>
+                    <td class="p-6 text-stone-500 font-mono text-xs">${item.checkOut || item.check_out.split('T')[0]}</td>
+                </tr>
+            `).join('');
+        }
+
+        function getStatusBadge(status) {
+            const styles = {
+                'confirmed': 'bg-green-100 text-green-700',
+                'pending': 'bg-yellow-100 text-yellow-700',
+                'cancelled': 'bg-red-50 text-red-400 decoration-line-through',
+            };
+            const labels = {
+                'confirmed': '已確認',
+                'pending': '待確認',
+                'cancelled': '已取消',
+            };
+
+            const s = styles[status] || 'bg-stone-100 text-stone-500';
+            const l = labels[status] || '未知';
+
+            return `<span class="inline-block px-2 py-1 rounded-full text-[10px] tracking-wider ${s}">${l}</span>`;
+        }
+
+        fetchData();
+
+    </script>
+</body>
+
+</html>
