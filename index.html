@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>暖心民宿 | 享受純粹的寧靜</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/zh-tw.js"></script>
+    <!-- 引入日系字體：Noto Serif TC (襯線) 與 Noto Sans TC (無襯線) -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'wabi-bg': '#fcfaf8', // 米白紙張色
+                        'wabi-text': '#4a4a4a', // 墨色
+                        'wabi-accent': '#8e8070', // 枯茶色
+                        'wabi-sub': '#dcdcdc', // 淺灰
+                        'wabi-dark': '#2c2c2c', // 深岩灰
+                    },
+                    fontFamily: {
+                        serif: ['"Noto Serif TC"', 'serif'],
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                    },
+                    letterSpacing: {
+                        'widest-xl': '.25em',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #fcfaf8;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+        }
+
+        .modal-fade {
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 垂直書寫標題 */
+        .vertical-rl {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            letter-spacing: 0.25em;
+        }
+
+        /* 自定義 Flatpickr 主題以符合極簡風 */
+        .flatpickr-calendar {
+            border: none !important;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08) !important;
+            font-family: 'Noto Sans TC', sans-serif !important;
+            border-radius: 4px !important;
+        }
+
+        .flatpickr-day.selected,
+        .flatpickr-day.startRange,
+        .flatpickr-day.endRange,
+        .flatpickr-day.selected.inRange,
+        .flatpickr-day.startRange.inRange,
+        .flatpickr-day.endRange.inRange,
+        .flatpickr-day.selected:focus,
+        .flatpickr-day.startRange:focus,
+        .flatpickr-day.endRange:focus,
+        .flatpickr-day.selected:hover,
+        .flatpickr-day.startRange:hover,
+        .flatpickr-day.endRange:hover,
+        .flatpickr-day.selected.prevMonthDay,
+        .flatpickr-day.startRange.prevMonthDay,
+        .flatpickr-day.endRange.prevMonthDay,
+        .flatpickr-day.selected.nextMonthDay,
+        .flatpickr-day.startRange.nextMonthDay,
+        .flatpickr-day.endRange.nextMonthDay {
+            background: #8e8070 !important;
+            border-color: #8e8070 !important;
+            color: #fff !important;
+        }
+
+        .flatpickr-day.flatpickr-disabled {
+            color: #dcdcdc !important;
+            background: transparent !important;
+            text-decoration: line-through;
+        }
+    </style>
+</head>
+
+<body class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white">
+
+    <!-- 導航 -->
+    <nav class="fixed top-0 w-full p-8 flex justify-between items-center z-40 mix-blend-difference text-stone-500">
+        <h1 class="text-xl font-bold tracking-widest-xl uppercase">DongBuLi</h1>
+        <a href="#" class="text-xs tracking-widest hover:text-wabi-dark transition-colors duration-500">關於・絆</a>
+    </nav>
+
+    <!-- 頁首視覺 -->
+    <header class="relative w-full h-[90vh] overflow-hidden flex items-center justify-center">
+        <div class="absolute inset-0">
+            <img src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=2000&auto=format&fit=crop"
+                alt="Zen Room" class="w-full h-full object-cover opacity-90 brightness-95">
+        </div>
+        <!-- 裝飾性遮罩 -->
+        <div class="absolute inset-0 bg-gradient-to-t from-[#fcfaf8] via-transparent to-transparent opacity-80"></div>
+
+        <div class="relative z-10 flex flex-col items-center">
+            <div
+                class="vertical-rl text-white text-5xl md:text-7xl font-light drop-shadow-lg tracking-[0.5em] whitespace-nowrap border-l border-white/30 pl-8 ml-8">
+                丼不哩<span class="text-2xl mt-4 opacity-80">・</span>絆
+            </div>
+            <p class="mt-12 text-white/80 text-sm tracking-[0.3em] uppercase font-sans">27 樓的雲端羈絆</p>
+        </div>
+    </header>
+
+    <!-- 主要內容 -->
+    <main class="max-w-5xl mx-auto py-24 px-8 relative z-20 -mt-20">
+        <!-- 介紹區塊 -->
+        <div class="bg-[#fcfaf8] p-10 md:p-20 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm">
+            <div class="grid md:grid-cols-12 gap-16">
+                <!-- 左側文案 -->
+                <div class="md:col-span-7 space-y-10">
+                    <div class="space-y-2">
+                        <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">設計理念</span>
+                        <h3 class="text-3xl md:text-4xl font-light text-wabi-dark leading-snug">在 27 樓的高空<br>續寫我們的羈絆
+                        </h3>
+                    </div>
+
+                    <div class="space-y-8 text-sm md:text-base text-stone-600 font-light text-justify">
+                        <p>
+                            夜深人靜，只有這裡最吵。 在離地 27 層的雲端，我們打造了唯一的私密空間——「絆」。
+                        </p>
+                        <p>
+                            「絆」代表著切不斷的孽緣。無論多久沒見，只要坐在這裡，看著窗外的萬家燈火，那些打鬧回憶總會瞬間湧上。這裡不只是一個房間，更是好友專屬的秘密基地。
+                        </p>
+                        <p>
+                            只有一間，只留給最重要的你們。 登高望遠，讓這份情誼「不哩」深刻。
+                        </p>
+                    </div>
+
+                    <!-- 標籤 -->
+                    <div class="flex flex-wrap gap-3 pt-4 font-sans">
+                        <span
+                            class="text-xs text-wabi-accent border border-stone-200 px-3 py-1 rounded-full bg-white/50">#27樓秘境</span>
+                        <span
+                            class="text-xs text-wabi-accent border border-stone-200 px-3 py-1 rounded-full bg-white/50">#限量預約</span>
+                        <span
+                            class="text-xs text-wabi-accent border border-stone-200 px-3 py-1 rounded-full bg-white/50">#友情小船
+                            隨時翻覆</span>
+                        <span
+                            class="text-xs text-wabi-accent border border-stone-200 px-3 py-1 rounded-full bg-white/50">#只有前夫的指紋進得去</span>
+                    </div>
+
+                    <div class="border-t border-stone-200 pt-8 mt-8">
+                        <ul class="grid grid-cols-2 gap-4 text-xs font-sans text-stone-500 tracking-wider">
+                            <li class="flex items-center gap-2"><span
+                                    class="block w-1 h-1 bg-wabi-accent rounded-full"></span>獨立衛浴設備</li>
+                            <li class="flex items-center gap-2"><span
+                                    class="block w-1 h-1 bg-wabi-accent rounded-full"></span>28樓無線網路</li>
+                            <li class="flex items-center gap-2"><span
+                                    class="block w-1 h-1 bg-wabi-accent rounded-full"></span>自備手工早餐</li>
+                            <li class="flex items-center gap-2"><span
+                                    class="block w-1 h-1 bg-wabi-accent rounded-full"></span>客房服務？問就是你</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 右側訂房卡片 -->
+                <div class="md:col-span-5 relative">
+                    <div class="sticky top-10">
+                        <div class="bg-white p-10 border border-stone-100 text-center relative overflow-hidden group">
+                            <!-- 裝飾線 -->
+                            <div
+                                class="absolute top-0 left-0 w-full h-1 bg-wabi-accent transform -translate-y-full group-hover:translate-y-0 transition-transform duration-500">
+                            </div>
+
+                            <p class="font-sans text-xs tracking-[0.2em] text-stone-400 mb-4 uppercase">每晚房價</p>
+                            <div class="flex justify-center items-baseline gap-2 mb-8 text-wabi-dark">
+                                <span class="text-lg">TWD</span>
+                                <span class="text-4xl font-light tracking-wide">8,888</span>
+                            </div>
+
+                            <button id="openModalBtn" onclick="openModal()"
+                                class="w-full bg-wabi-accent text-white font-sans py-4 px-6 hover:bg-stone-700 transition-all duration-500 ease-out tracking-widest text-xs uppercase disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-1 shadow-sm"
+                                disabled>
+                                載入房況中
+                            </button>
+
+                            <p class="mt-6 text-[10px] text-stone-300 font-sans tracking-widest">限量預約中</p>
+                        </div>
+
+                        <!-- 裝飾圖片 -->
+                        <div class="mt-8 aspect-[4/3] overflow-hidden opacity-80">
+                            <img src="https://images.unsplash.com/photo-1631679706909-1844bbd07221?q=80&w=1000&auto=format&fit=crop"
+                                class="w-full h-full object-cover hover:scale-105 transition-transform duration-1000 grayscale hover:grayscale-0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 預約 Modal -->
+    <div id="bookingModal"
+        class="modal-fade fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 invisible">
+        <div
+            class="bg-[#fcfaf8] w-full max-w-lg mx-6 p-12 shadow-2xl transform transition-transform scale-95 relative overflow-hidden">
+            <!-- 背景紋理 -->
+            <div
+                class="absolute top-0 right-0 p-8 opacity-10 font-serif text-9xl pointer-events-none select-none text-wabi-accent vertical-rl">
+                絆</div>
+
+            <div class="flex justify-between items-start mb-10 relative z-10">
+                <div>
+                    <span class="text-xs font-sans tracking-widest text-stone-400 uppercase">預約訂房</span>
+                    <h3 class="text-2xl font-serif text-wabi-dark mt-2">預約您的時光</h3>
+                </div>
+                <button onclick="closeModal()"
+                    class="text-stone-400 hover:text-wabi-dark transition-colors p-2">✕</button>
+            </div>
+
+            <form id="bookingForm" class="space-y-8 relative z-10">
+                <div class="grid grid-cols-2 gap-8">
+                    <div class="group">
+                        <label class="block text-xs font-sans mb-2 text-stone-500 tracking-widest">姓名</label>
+                        <input type="text" name="guest_name" required
+                            class="w-full bg-transparent border-b border-stone-300 py-2 text-wabi-dark focus:outline-none focus:border-wabi-accent transition-colors font-serif placeholder-stone-200"
+                            placeholder="請輸入姓名">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-sans mb-2 text-stone-500 tracking-widest">電話</label>
+                        <input type="tel" name="phone" required
+                            class="w-full bg-transparent border-b border-stone-300 py-2 text-wabi-dark focus:outline-none focus:border-wabi-accent transition-colors font-sans placeholder-stone-200"
+                            placeholder="09xx-xxx-xxx">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-8">
+                    <div>
+                        <label class="block text-xs font-sans mb-2 text-stone-500 tracking-widest">入住日期</label>
+                        <input type="text" id="check_in" name="check_in" required
+                            class="w-full bg-transparent border-b border-stone-300 py-2 text-wabi-dark focus:outline-none focus:border-wabi-accent transition-colors font-sans cursor-pointer placeholder-stone-200"
+                            placeholder="點擊選擇日期">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-sans mb-2 text-stone-500 tracking-widest">退房日期</label>
+                        <input type="text" id="check_out" name="check_out" required
+                            class="w-full bg-transparent border-b border-stone-300 py-2 text-wabi-dark focus:outline-none focus:border-wabi-accent transition-colors font-sans cursor-pointer placeholder-stone-200"
+                            placeholder="點擊選擇日期">
+                    </div>
+                </div>
+
+                <div class="pt-6">
+                    <button type="submit" id="submitBtn"
+                        class="w-full bg-wabi-dark text-white py-4 px-8 hover:bg-black transition-all duration-300 tracking-[0.2em] font-sans text-xs uppercase shadow-lg">
+                        確認預約
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest">
+        <p>&copy; 2026 DONGBULI · 純粹棲所</p>
+    </footer>
+
+    <script>
+        const modal = document.getElementById('bookingModal');
+        const API_URL = "https://script.google.com/macros/s/AKfycbzdwh8fkSACZ_Ccd_Jpf-ZF-N0rNsr91mD0h9qB8M2KLdiBewpLGrr-Jz-Njd_NKcOS/exec";
+
+        let bookedDates = [];
+        let checkInPicker, checkOutPicker;
+
+        // 1. 初始化
+        window.addEventListener('load', () => {
+            fetch(API_URL)
+                .then(res => res.json())
+                .then(data => {
+                    bookedDates = data.map(item => ({
+                        from: item.check_in,
+                        to: item.check_out
+                    }));
+                    initPickers();
+
+                    const btn = document.getElementById('openModalBtn');
+                    btn.disabled = false;
+                    btn.innerText = "立即預約訂房";
+                })
+                .catch(err => {
+                    console.error("無法載入房況:", err);
+                    initPickers();
+                    document.getElementById('openModalBtn').disabled = false;
+                    document.getElementById('openModalBtn').innerText = "立即預約";
+                });
+        });
+
+        function initPickers() {
+            const commonConfig = {
+                disable: bookedDates,
+                dateFormat: "Y-m-d",
+                disableMobile: "true", // 強制在手機上也使用 flatpickr 樣式
+                locale: "zh_tw",
+            };
+
+            checkInPicker = flatpickr("#check_in", {
+                ...commonConfig,
+                minDate: "today",
+                onChange: function (selectedDates, dateStr) {
+                    const nextDay = new Date(selectedDates[0]);
+                    nextDay.setDate(nextDay.getDate() + 1);
+                    checkOutPicker.set("minDate", nextDay);
+                    // 自動打開退房選單
+                    setTimeout(() => checkOutPicker.open(), 100);
+                }
+            });
+
+            checkOutPicker = flatpickr("#check_out", {
+                ...commonConfig,
+                minDate: "today",
+            });
+        }
+
+        function openModal() {
+            modal.classList.remove('invisible', 'opacity-0');
+            modal.querySelector('div').classList.remove('scale-95');
+        }
+
+        function closeModal() {
+            modal.classList.add('invisible', 'opacity-0');
+            modal.querySelector('div').classList.add('scale-95');
+        }
+
+        document.getElementById('bookingForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerText;
+            submitBtn.innerText = "傳送中...";
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-70');
+
+            const formData = new FormData(this);
+            const data = {
+                room_name: "丼不哩・絆",
+                guest_name: formData.get('guest_name'),
+                phone: formData.get('phone'),
+                check_in: formData.get('check_in'),
+                check_out: formData.get('check_out')
+            };
+
+            fetch(API_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(data)
+            })
+                .then(() => {
+                    alert('預約申請已送出，我們將盡快與您聯繫。');
+                    location.reload();
+                })
+                .catch(err => {
+                    alert('系統忙碌中，請稍後再試。');
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-70');
+                    submitBtn.innerText = originalText;
+                });
+        });
+
+        window.onclick = (event) => { if (event.target == modal) closeModal(); }
+    </script>
+</body>
+
+</html>
