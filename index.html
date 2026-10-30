@@ -411,6 +411,50 @@
             }
         }
 
+        /* Logo 彩蛋：丼飯雨 */
+        .don-drop {
+            position: fixed;
+            top: -60px;
+            z-index: 70;
+            pointer-events: none;
+            color: #8e8070;
+            font-family: 'Noto Serif TC', serif;
+            animation: don-fall linear forwards;
+        }
+
+        @keyframes don-fall {
+            to {
+                transform: translateY(calc(100vh + 120px)) rotate(var(--spin));
+            }
+        }
+
+        .toast {
+            position: fixed;
+            top: 6rem;
+            left: 50%;
+            z-index: 71;
+            padding: 0.5rem 1.25rem;
+            border-radius: 9999px;
+            background: #2c2c2c;
+            color: #fff;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.15em;
+            white-space: nowrap;
+            transform: translateX(-50%);
+            transition: opacity 0.5s;
+        }
+
+        .logo-pop {
+            animation: logo-pop 0.2s ease;
+        }
+
+        @keyframes logo-pop {
+            50% {
+                transform: scale(1.12);
+            }
+        }
+
         /* 捲動後的導覽列：加底色，避免文字壓在內容上 */
         .nav-solid {
             mix-blend-mode: normal !important;
@@ -534,7 +578,9 @@
                                 <button id="omikujiBtn" type="button" class="omikuji-box" aria-label="抽一支籤">
                                     <span class="vertical-rl text-xs">御神籤</span>
                                 </button>
-                                <span class="text-[10px] font-sans tracking-widest text-stone-400">點我抽籤</span>
+                                <span id="omikujiHint" class="text-[10px] font-sans tracking-widest text-stone-400">點我抽籤</span>
+                                <button id="shakeEnableBtn" type="button"
+                                    class="hidden text-[10px] font-sans tracking-widest text-wabi-accent border-b border-wabi-accent/40 pb-0.5">📳 開啟搖一搖</button>
                             </div>
                             <div id="omikujiSlip" aria-live="polite"
                                 class="omikuji-slip is-empty h-56 px-4 py-6 bg-white border border-stone-200 shadow-sm">
@@ -605,7 +651,7 @@
             <div class="flex justify-between items-start mb-10 relative z-10">
                 <div>
                     <span class="text-xs font-sans tracking-widest text-stone-400 uppercase">預約訂房</span>
-                    <h3 class="text-2xl font-serif text-wabi-dark mt-2">預約您的時光</h3>
+                    <h3 id="bookingTitle" class="text-2xl font-serif text-wabi-dark mt-2">預約您的時光</h3>
                 </div>
                 <button onclick="closeModal()"
                     class="text-stone-400 hover:text-wabi-dark transition-colors p-2">✕</button>
@@ -649,6 +695,21 @@
                     </button>
                 </div>
             </form>
+
+            <!-- 入住通知書：蓋完章後出現，可以分享到群組 -->
+            <div id="ticketPanel" class="hidden relative z-10 text-center">
+                <img id="ticketImg" alt="入住通知書" class="mx-auto max-h-[50vh] w-auto shadow-lg border border-stone-100">
+                <div class="mt-8 space-y-2">
+                    <button id="shareTicketBtn" type="button" onclick="shareTicket()"
+                        class="w-full bg-wabi-dark text-white py-4 px-8 hover:bg-black transition-all duration-300 tracking-[0.2em] font-sans text-xs shadow-lg">
+                        分享給朋友
+                    </button>
+                    <button type="button" onclick="location.reload()"
+                        class="w-full py-3 text-xs font-sans tracking-widest text-stone-400 hover:text-wabi-dark transition-colors">
+                        完成
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -851,11 +912,140 @@
         }
 
         // 4. 送出後蓋章（取代原本的 alert）
+        let bookingDone = false;
+
         function stampApproved() {
+            bookingDone = true;
             const box = modal.querySelector('div');
             document.getElementById('bookingForm').classList.add('opacity-20');
             document.getElementById('stampLayer').classList.add('is-stamped');
             setTimeout(() => box.classList.add('shake'), 300); // 印章落下的瞬間震一下
+        }
+
+        // 4b. 入住通知書：用 canvas 畫成圖片，手機可以直接分享到 LINE 群組
+        let ticketFile = null;
+
+        function formatDate(str) {
+            const d = new Date(str + 'T00:00');
+            if (isNaN(d)) return str;
+            return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日（${'日一二三四五六'[d.getDay()]}）`;
+        }
+
+        async function makeTicket(data) {
+            try { await document.fonts.load('600 44px "Noto Serif TC"'); } catch (e) { }
+
+            const W = 600, H = 800, SCALE = 2; // 畫兩倍大，手機上看才清楚
+            const canvas = document.createElement('canvas');
+            canvas.width = W * SCALE;
+            canvas.height = H * SCALE;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(SCALE, SCALE);
+            const SERIF = '"Noto Serif TC", serif';
+            const SANS = '"Noto Sans TC", sans-serif';
+
+            const text = (str, x, y, font, color, spacing) => {
+                ctx.font = font;
+                ctx.fillStyle = color;
+                ctx.letterSpacing = spacing || '0px';
+                ctx.fillText(str, x, y);
+            };
+
+            // 紙張與雙框
+            ctx.fillStyle = '#fcfaf8';
+            ctx.fillRect(0, 0, W, H);
+            ctx.strokeStyle = '#8e8070';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(24, 24, W - 48, H - 48);
+            ctx.lineWidth = 0.75;
+            ctx.strokeRect(32, 32, W - 64, H - 64);
+
+            // 標題
+            ctx.textAlign = 'center';
+            text('CHECK-IN PASS', W / 2, 100, `400 14px ${SANS}`, '#8e8070', '6px');
+            text('入住通知書', W / 2, 160, `600 44px ${SERIF}`, '#2c2c2c', '8px');
+            ctx.fillStyle = '#8e8070';
+            ctx.fillRect(W / 2 - 30, 192, 60, 1);
+            text('丼步喱・絆', W / 2, 240, `400 22px ${SERIF}`, '#4a4a4a', '6px');
+            text('27 樓的雲端羈絆・只有一間', W / 2, 272, `300 13px ${SANS}`, '#a8a29e', '3px');
+
+            // 旅人與日期，名字太長就縮小字級
+            ctx.textAlign = 'left';
+            const field = (label, value, y) => {
+                text(label, 80, y, `400 13px ${SANS}`, '#a8a29e', '4px');
+                let size = 30;
+                ctx.letterSpacing = '2px';
+                ctx.font = `400 ${size}px ${SERIF}`;
+                while (ctx.measureText(value).width > 440 && size > 14) {
+                    size -= 2;
+                    ctx.font = `400 ${size}px ${SERIF}`;
+                }
+                text(value, 80, y + 42, ctx.font, '#2c2c2c', '2px');
+            };
+            field('旅人', data.guest_name || '神秘旅人', 350);
+            field('入住', formatDate(data.check_in), 440);
+            field('退房', formatDate(data.check_out), 530);
+
+            // 撕線
+            ctx.setLineDash([6, 6]);
+            ctx.strokeStyle = '#dcdcdc';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(48, 620);
+            ctx.lineTo(W - 48, 620);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            text('房價 TWD 8,888（友情價：請吃一碗丼飯）', 80, 670, `300 13px ${SANS}`, '#8e8070', '1px');
+            text('© DONGBULI', 80, 720, `400 12px ${SANS}`, '#a8a29e', '4px');
+
+            // 印章
+            ctx.save();
+            ctx.translate(470, 645);
+            ctx.rotate(-8 * Math.PI / 180);
+            ctx.globalAlpha = 0.88;
+            ctx.strokeStyle = '#b33a2f';
+            const box = (size, radius) => {
+                ctx.beginPath();
+                if (ctx.roundRect) ctx.roundRect(-size / 2, -size / 2, size, size, radius);
+                else ctx.rect(-size / 2, -size / 2, size, size);
+                ctx.stroke();
+            };
+            ctx.lineWidth = 5;
+            box(100, 10);
+            ctx.lineWidth = 2;
+            box(116, 13);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            text('准', 0, 4, `700 64px ${SERIF}`, '#b33a2f');
+            ctx.restore();
+
+            return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(), 'image/png'));
+        }
+
+        function showTicket(blob) {
+            ticketFile = new File([blob], 'dongbuli-pass.png', { type: 'image/png' });
+            document.getElementById('ticketImg').src = URL.createObjectURL(blob);
+            document.getElementById('stampLayer').classList.remove('is-stamped');
+            document.getElementById('bookingForm').classList.add('hidden');
+            document.getElementById('bookingTitle').innerText = '入住通知書';
+            const canShare = navigator.canShare && navigator.canShare({ files: [ticketFile] });
+            document.getElementById('shareTicketBtn').innerText = canShare ? '分享給朋友' : '下載入住券';
+            document.getElementById('ticketPanel').classList.remove('hidden');
+        }
+
+        async function shareTicket() {
+            if (!ticketFile) return;
+            if (navigator.canShare && navigator.canShare({ files: [ticketFile] })) {
+                try {
+                    await navigator.share({ files: [ticketFile], title: '丼步喱・絆 入住通知書', text: '我訂好 27 樓了，誰要來？' });
+                } catch (e) { } // 使用者取消分享
+                return;
+            }
+            // 不支援分享檔案的瀏覽器（多半是電腦）就直接下載
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(ticketFile);
+            link.download = ticketFile.name;
+            link.click();
         }
 
         function openModal() {
@@ -864,6 +1054,8 @@
         }
 
         function closeModal() {
+            // 已經訂好了就重新整理，讓日曆擋掉剛訂的日期
+            if (bookingDone) return location.reload();
             modal.classList.add('invisible', 'opacity-0');
             modal.querySelector('div').classList.add('scale-95');
         }
@@ -892,7 +1084,10 @@
             })
                 .then(() => {
                     stampApproved();
-                    setTimeout(() => location.reload(), 2800);
+                    // 印章至少停留 1.8 秒，再換成入住通知書；畫圖失敗就照舊重新整理
+                    Promise.all([makeTicket(data), new Promise(r => setTimeout(r, 1800))])
+                        .then(([blob]) => showTicket(blob))
+                        .catch(() => setTimeout(() => location.reload(), 1000));
                 })
                 .catch(err => {
                     alert('系統忙碌中，請稍後再試。');
@@ -917,7 +1112,9 @@
         const omikujiSlip = document.getElementById('omikujiSlip');
         let lastFortune = -1;
 
-        omikujiBtn.addEventListener('click', () => {
+        omikujiBtn.addEventListener('click', drawOmikuji);
+
+        function drawOmikuji() {
             if (omikujiBtn.classList.contains('is-shaking')) return;
             omikujiSlip.classList.remove('is-open');
             omikujiBtn.classList.add('is-shaking');
@@ -938,7 +1135,55 @@
                 void omikujiSlip.offsetWidth; // 先顯示出來，展開動畫才會播
                 omikujiSlip.classList.add('is-open');
             }, 700);
-        });
+        }
+
+        // 5b. 搖手機抽籤：只在手機上啟用，iPhone 要先點一下授權才讀得到晃動
+        const omikujiHint = document.getElementById('omikujiHint');
+        const shakeEnableBtn = document.getElementById('shakeEnableBtn');
+        let omikujiInView = false;
+        let lastMotion = null;
+        let lastShakeAt = 0;
+
+        // 籤筒在畫面上才算數，免得滑手機時誤觸
+        new IntersectionObserver(([entry]) => { omikujiInView = entry.isIntersecting; }).observe(omikujiBtn);
+
+        function onMotion(e) {
+            const a = e.accelerationIncludingGravity;
+            if (!a || a.x === null) return;
+            if (lastMotion) {
+                const delta = Math.abs(a.x - lastMotion.x) + Math.abs(a.y - lastMotion.y) + Math.abs(a.z - lastMotion.z);
+                const now = Date.now();
+                if (delta > 30 && omikujiInView && now - lastShakeAt > 1500) {
+                    lastShakeAt = now;
+                    if (navigator.vibrate) navigator.vibrate(60);
+                    drawOmikuji();
+                }
+            }
+            lastMotion = { x: a.x, y: a.y, z: a.z };
+        }
+
+        function enableShake() {
+            omikujiHint.innerText = '點我或搖手機';
+            window.addEventListener('devicemotion', onMotion);
+        }
+
+        if ('DeviceMotionEvent' in window && window.matchMedia('(pointer: coarse)').matches) {
+            if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                shakeEnableBtn.classList.remove('hidden');
+                shakeEnableBtn.addEventListener('click', async () => {
+                    try {
+                        if (await DeviceMotionEvent.requestPermission() === 'granted') {
+                            shakeEnableBtn.remove();
+                            enableShake();
+                            return;
+                        }
+                    } catch (err) { }
+                    shakeEnableBtn.innerText = '沒拿到權限，用點的吧';
+                });
+            } else {
+                enableShake();
+            }
+        }
 
         // 6. 指紋解鎖（呼應 #只有前夫的指紋進得去）：長按掃描 → 比對失敗 → 還是放你進去
         const fpModal = document.getElementById('fingerprintModal');
@@ -1016,6 +1261,53 @@
         const updateNav = () => nav.classList.toggle('nav-solid', window.scrollY > 40);
         window.addEventListener('scroll', updateNav, { passive: true });
         updateNav();
+
+        // 7. Logo 彩蛋：連點 DONGBULI 七下，下起丼飯雨
+        const logo = nav.querySelector('a');
+        const TAPS_NEEDED = 7;
+        let logoTaps = 0;
+        let logoTimer = null;
+
+        logo.addEventListener('click', (e) => {
+            e.preventDefault(); // 本來就在首頁，不用重新載入
+            logoTaps++;
+            logo.classList.remove('logo-pop');
+            void logo.offsetWidth; // 重新觸發動畫
+            logo.classList.add('logo-pop');
+            clearTimeout(logoTimer);
+            logoTimer = setTimeout(() => { logoTaps = 0; }, 800); // 停太久就重算
+            if (logoTaps >= TAPS_NEEDED) {
+                logoTaps = 0;
+                donRain();
+            }
+        });
+
+        function donRain() {
+            const BOWLS = ['🍛', '🍚', '🍜', '丼'];
+            for (let i = 0; i < 40; i++) {
+                const drop = document.createElement('span');
+                drop.className = 'don-drop';
+                drop.textContent = BOWLS[Math.floor(Math.random() * BOWLS.length)];
+                drop.style.left = Math.random() * 95 + 'vw';
+                drop.style.fontSize = 20 + Math.random() * 24 + 'px';
+                drop.style.animationDuration = 2 + Math.random() * 2 + 's';
+                drop.style.animationDelay = Math.random() * 1.5 + 's';
+                drop.style.setProperty('--spin', Math.random() * 720 - 360 + 'deg');
+                drop.addEventListener('animationend', () => drop.remove());
+                document.body.appendChild(drop);
+            }
+            if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+            showToast('🎉 隱藏彩蛋：丼飯雨！');
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+            setTimeout(() => toast.remove(), 3000);
+        }
 
         window.onclick = (event) => {
             if (event.target == modal) closeModal();
