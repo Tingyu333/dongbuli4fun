@@ -259,9 +259,13 @@
             transition: opacity 0.5s;
         }
 
+        /* 導覽列放在獨立圖層，手機捲動、網址列收合時才不會被留在畫面中間 */
+        nav {
+            transform: translateZ(0);
+        }
+
         /* 捲動後的導覽列：加底色，避免文字壓在內容上 */
         .nav-solid {
-            mix-blend-mode: normal !important;
             background: rgba(252, 250, 248, 0.9);
             backdrop-filter: blur(4px);
             border-bottom: 1px solid #f5f5f4;
@@ -272,7 +276,7 @@
 <body class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white">
 
     <!-- 導航 -->
-    <nav class="fixed top-0 w-full px-5 py-5 md:p-8 flex justify-between items-center z-40 mix-blend-difference text-stone-500">
+    <nav class="fixed top-0 w-full px-5 py-5 md:p-8 flex justify-between items-center z-40 text-stone-500">
         <a href="index.html"
             class="text-base md:text-xl font-bold tracking-[0.15em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
         <div class="flex gap-4 md:gap-8">
@@ -555,7 +559,13 @@
         }
 
         window.addEventListener('scroll', drawThread, { passive: true });
-        window.addEventListener('resize', layoutThread);
+        // 手機捲動時網址列收合也會觸發 resize，只有寬度真的變了才重算，避免捲到一半重排
+        let threadLayoutWidth = window.innerWidth;
+        window.addEventListener('resize', () => {
+            if (window.innerWidth === threadLayoutWidth) return;
+            threadLayoutWidth = window.innerWidth;
+            layoutThread();
+        });
         window.addEventListener('load', layoutThread); // 圖片載入完版面高度才會定
         layoutThread();
 
