@@ -75,6 +75,190 @@
             }
         }
 
+        /* 紅線：從標題牽到「絆」，跟著捲動畫出來 */
+        .red-thread {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 30;
+            overflow: visible;
+            pointer-events: none;
+        }
+
+        .red-thread path {
+            fill: none;
+            stroke: #b33a2f;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0.75;
+        }
+
+        .kizuna-char {
+            transition: color 1s ease;
+        }
+
+        .kizuna-char.is-tied {
+            color: rgba(179, 58, 47, 0.35);
+        }
+
+        /* 微醺模式 */
+        body.tipsy .page>* {
+            filter: blur(0.7px);
+            animation: tipsy-sway 3s ease-in-out infinite;
+        }
+
+        @keyframes tipsy-sway {
+
+            0%,
+            100% {
+                transform: rotate(0) translateX(0);
+            }
+
+            25% {
+                transform: rotate(0.8deg) translateX(6px);
+            }
+
+            75% {
+                transform: rotate(-0.8deg) translateX(-6px);
+            }
+        }
+
+        /* 喝醉的臉紅 */
+        .tipsy-blush {
+            position: fixed;
+            inset: 0;
+            z-index: 35;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 25% 45%, rgba(232, 120, 120, 0.18), transparent 40%),
+                radial-gradient(circle at 75% 55%, rgba(232, 120, 120, 0.18), transparent 40%);
+            opacity: 0;
+            transition: opacity 1.5s;
+        }
+
+        body.tipsy .tipsy-blush {
+            opacity: 1;
+        }
+
+        .confession {
+            position: fixed;
+            z-index: 45;
+            max-width: 70vw;
+            padding: 0.6rem 1rem;
+            border: 1px solid #e7e5e4;
+            border-radius: 1rem 1rem 1rem 0.25rem;
+            background: #fff;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.15);
+            color: #4a4a4a;
+            font-size: 0.8rem;
+            letter-spacing: 0.1em;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(10px) scale(0.95);
+            transition: opacity 0.6s, transform 0.6s;
+        }
+
+        .confession.is-shown {
+            opacity: 1;
+            transform: none;
+        }
+
+        /* 點兩下乾杯；manipulation 關掉手機的雙擊放大。clip 讓微醺搖晃時不會出現水平捲動 */
+        body {
+            touch-action: manipulation;
+        }
+
+        /* 包住整頁內容：微醺搖晃時超出去的部分直接裁掉，不會出現水平捲動 */
+        .page {
+            position: relative;
+            overflow-x: clip;
+        }
+
+        .cheers {
+            position: fixed;
+            z-index: 60;
+            text-align: center;
+            pointer-events: none;
+            animation: cheers-pop 1s ease-out forwards;
+        }
+
+        .cheers span {
+            display: block;
+            font-size: 2.75rem;
+            line-height: 1;
+        }
+
+        .cheers small {
+            display: block;
+            margin-top: 0.25rem;
+            color: #8e8070;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.2em;
+        }
+
+        @keyframes cheers-pop {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.4);
+            }
+
+            20% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.15);
+            }
+
+            40% {
+                transform: translate(-50%, -55%) scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -130%) scale(1);
+            }
+        }
+
+        .cheers-counter {
+            position: fixed;
+            right: 1rem;
+            bottom: 1rem;
+            z-index: 45;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            background: rgba(44, 44, 44, 0.9);
+            color: #fff;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.15em;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.4s, transform 0.4s;
+        }
+
+        .cheers-counter.is-shown {
+            opacity: 1;
+            transform: none;
+        }
+
+        .toast {
+            position: fixed;
+            top: 6rem;
+            left: 50%;
+            z-index: 71;
+            padding: 0.5rem 1.25rem;
+            border-radius: 9999px;
+            background: #2c2c2c;
+            color: #fff;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.15em;
+            white-space: nowrap;
+            transform: translateX(-50%);
+            transition: opacity 0.5s;
+        }
+
         /* 捲動後的導覽列：加底色，避免文字壓在內容上 */
         .nav-solid {
             mix-blend-mode: normal !important;
@@ -100,6 +284,8 @@
 
         </div>
     </nav>
+
+    <div id="page" class="page">
 
     <!-- 頁首視覺 (縮小版) -->
     <header class="relative w-full h-[60vh] overflow-hidden flex items-center justify-center">
@@ -174,7 +360,7 @@
             class="grid md:grid-cols-12 gap-6 md:gap-10 bg-white px-6 py-10 md:p-20 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.03)] items-center">
             <div class="md:col-span-4 flex justify-center md:justify-start items-center">
                 <div class="text-center md:text-left">
-                    <span class="text-6xl md:text-8xl font-serif text-wabi-accent/20 block mb-4">絆</span>
+                    <span id="kizunaChar" class="kizuna-char text-6xl md:text-8xl font-serif text-wabi-accent/20 block mb-4">絆</span>
                     <h3 class="text-2xl font-light tracking-widest text-wabi-dark">KIZUNA</h3>
                 </div>
             </div>
@@ -224,10 +410,12 @@
                     </div>
                 </div>
 
-                <div class="relative group p-4 bg-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] text-center">
+                <div id="tipsyQuote"
+                    class="relative group p-4 bg-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] text-center cursor-pointer select-none">
                     <p class="font-serif text-sm text-stone-500 leading-loose">
                         「有些話，<br>喝了酒才說得出口。」
                     </p>
+                    <p class="mt-2 text-[10px] font-sans tracking-widest text-wabi-accent">🍶 點我喝一杯</p>
                 </div>
             </div>
 
@@ -290,7 +478,13 @@
 
     <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest border-t border-stone-100 mt-10">
         <p>&copy; 2026 DONGBULI · 關於・絆</p>
+        <p class="mt-3 text-[10px] text-stone-300">在任何地方點兩下，乾杯 🍻</p>
     </footer>
+
+    </div>
+
+    <div class="tipsy-blush"></div>
+    <div id="cheersCounter" class="cheers-counter"></div>
 
     <script>
         // 捲動後導覽列加上底色
@@ -304,6 +498,159 @@
             entries.forEach(entry => entry.target.classList.toggle('in-view', entry.isIntersecting));
         }, { threshold: 0.5 });
         document.querySelectorAll('.memory').forEach(el => memoryObserver.observe(el));
+
+        // 紅線：從標題一路牽到「絆」，跟著捲動畫出來，到了就打個結
+        const kizunaChar = document.getElementById('kizunaChar');
+        const SVG_NS = 'http://www.w3.org/2000/svg';
+        const thread = document.createElementNS(SVG_NS, 'svg');
+        const threadPath = document.createElementNS(SVG_NS, 'path');
+        thread.classList.add('red-thread');
+        thread.appendChild(threadPath);
+        document.getElementById('page').appendChild(thread); // .page 從頁面左上角開始，座標跟整頁一樣
+        let threadLen = 0;
+        let threadStartY = 0;
+        let threadEndY = 0;
+
+        function layoutThread() {
+            const title = document.querySelector('header h1').getBoundingClientRect();
+            const char = kizunaChar.getBoundingClientRect();
+            const sx = title.left + window.scrollX; // 從直書標題左邊那條線的底部出發
+            const sy = title.bottom + window.scrollY;
+            const cx = char.left + char.width / 2 + window.scrollX;
+            const cy = char.top + char.height / 2 + window.scrollY;
+            // 沿著內容左側的留白往下走，不壓到文字
+            const gutter = Math.max(12, document.querySelector('main').getBoundingClientRect().left + 12);
+
+            let d = `M ${sx} ${sy} C ${sx} ${sy + 80}, ${gutter} ${sy + 60}, ${gutter} ${sy + 160}`;
+            let y = sy + 160;
+            let side = 1;
+            const turnY = cy - 160;
+            while (y + 300 < turnY) {
+                d += ` S ${gutter + side * 10} ${y + 150}, ${gutter} ${y + 300}`; // 輕輕左右擺動
+                y += 300;
+                side = -side;
+            }
+            // 轉進「絆」，繞一圈打結
+            d += ` C ${gutter} ${turnY + 80}, ${cx - 60} ${cy + 10}, ${cx - 30} ${cy + 25}`;
+            d += ` C ${cx + 45} ${cy + 55}, ${cx + 50} ${cy - 45}, ${cx} ${cy - 40}`;
+            d += ` C ${cx - 45} ${cy - 35}, ${cx - 40} ${cy + 40}, ${cx + 15} ${cy + 40}`;
+            d += ` C ${cx + 35} ${cy + 40}, ${cx + 50} ${cy + 30}, ${cx + 65} ${cy + 20}`;
+
+            threadPath.setAttribute('d', d);
+            thread.setAttribute('width', document.documentElement.clientWidth);
+            thread.setAttribute('height', cy + 120);
+            threadLen = threadPath.getTotalLength();
+            threadPath.style.strokeDasharray = threadLen;
+            threadStartY = sy;
+            threadEndY = cy + 55;
+            drawThread();
+        }
+
+        function drawThread() {
+            // 線頭跟著畫面 70% 高度的位置走
+            const tipY = window.scrollY + window.innerHeight * 0.7;
+            const p = Math.min(Math.max((tipY - threadStartY) / (threadEndY - threadStartY), 0), 1);
+            threadPath.style.strokeDashoffset = threadLen * (1 - p);
+            kizunaChar.classList.toggle('is-tied', p >= 1);
+        }
+
+        window.addEventListener('scroll', drawThread, { passive: true });
+        window.addEventListener('resize', layoutThread);
+        window.addEventListener('load', layoutThread); // 圖片載入完版面高度才會定
+        layoutThread();
+
+        // 微醺模式：點「有些話，喝了酒才說得出口」，整頁晃一下、冒出酒後真心話
+        const CONFESSIONS = [
+            '其實那次是我吃掉的',
+            '冰箱那罐不是我喝的',
+            '前夫的指紋，其實是我的',
+            '27 樓的夜景，我看幾次都還是會哇',
+            '我沒醉，我還可以',
+            '下次換你出酒錢',
+            '其實我很想你們',
+            '你唱歌其實滿好聽的（騙你的）',
+        ];
+
+        function getTipsy() {
+            if (document.body.classList.contains('tipsy')) return;
+            document.body.classList.add('tipsy');
+            const lines = [...CONFESSIONS].sort(() => Math.random() - 0.5).slice(0, 4);
+            lines.forEach((line, i) => setTimeout(() => showConfession(line), 600 + i * 1700));
+            setTimeout(() => {
+                document.body.classList.remove('tipsy');
+                showToast('……酒醒了，剛剛什麼都沒說');
+            }, 8000);
+        }
+
+        function showConfession(text) {
+            const bubble = document.createElement('div');
+            bubble.className = 'confession';
+            bubble.textContent = text;
+            bubble.style.left = 6 + Math.random() * 18 + 'vw'; // 最寬 70vw，右邊不會超出畫面
+            bubble.style.top = 20 + Math.random() * 55 + 'vh';
+            document.body.appendChild(bubble);
+            void bubble.offsetWidth; // 先排版，淡入動畫才會播
+            bubble.classList.add('is-shown');
+            setTimeout(() => bubble.classList.remove('is-shown'), 2200);
+            setTimeout(() => bubble.remove(), 2900);
+        }
+
+        document.getElementById('tipsyQuote').addEventListener('click', getTipsy);
+
+        // 點兩下乾杯：手指的位置跳出 🍻，累計杯數，第 10 杯直接醉
+        const cheersCounter = document.getElementById('cheersCounter');
+        let lastTap = { time: 0, x: 0, y: 0 };
+        let cheersCount = 0;
+        try { cheersCount = parseInt(sessionStorage.getItem('cheersCount')) || 0; } catch (e) { }
+        if (cheersCount) updateCheersCounter();
+
+        document.addEventListener('pointerup', (e) => {
+            if (e.target.closest('a, button, #tipsyQuote')) return;
+            const now = Date.now();
+            const isDoubleTap = now - lastTap.time < 300 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 40;
+            if (isDoubleTap) {
+                lastTap.time = 0;
+                cheers(e.clientX, e.clientY);
+            } else {
+                lastTap = { time: now, x: e.clientX, y: e.clientY };
+            }
+        });
+
+        // 電腦上雙擊會選取文字，擋掉
+        document.addEventListener('mousedown', (e) => { if (e.detail > 1) e.preventDefault(); });
+
+        function cheers(x, y) {
+            const pop = document.createElement('div');
+            pop.className = 'cheers';
+            pop.style.left = x + 'px';
+            pop.style.top = y + 'px';
+            pop.innerHTML = '<span>🍻</span><small>乾杯！</small>';
+            pop.addEventListener('animationend', () => pop.remove());
+            document.body.appendChild(pop);
+            if (navigator.vibrate) navigator.vibrate(30);
+
+            cheersCount++;
+            try { sessionStorage.setItem('cheersCount', cheersCount); } catch (e) { }
+            updateCheersCounter();
+            if (cheersCount === 10) {
+                showToast('你醉了，今晚不准歸');
+                getTipsy();
+            }
+        }
+
+        function updateCheersCounter() {
+            cheersCounter.textContent = `🍻 今晚已乾 ${cheersCount} 杯`;
+            cheersCounter.classList.add('is-shown');
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+            setTimeout(() => toast.remove(), 3000);
+        }
     </script>
 
 </body>
