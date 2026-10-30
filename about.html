@@ -54,21 +54,29 @@
         .img-hover-effect:hover {
             filter: grayscale(0%);
         }
+
+        /* 捲動後的導覽列：加底色，避免文字壓在內容上 */
+        .nav-solid {
+            mix-blend-mode: normal !important;
+            background: rgba(252, 250, 248, 0.9);
+            backdrop-filter: blur(4px);
+            border-bottom: 1px solid #f5f5f4;
+        }
     </style>
 </head>
 
 <body class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white">
 
     <!-- 導航 -->
-    <nav class="fixed top-0 w-full p-8 flex justify-between items-center z-40 mix-blend-difference text-stone-500">
+    <nav class="fixed top-0 w-full px-5 py-5 md:p-8 flex justify-between items-center z-40 mix-blend-difference text-stone-500">
         <a href="index.html"
-            class="text-xl font-bold tracking-widest-xl uppercase hover:text-black transition-colors duration-300">DongBuLi</a>
-        <div class="flex gap-8">
+            class="text-base md:text-xl font-bold tracking-[0.15em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-4 md:gap-8">
             <a href="index.html"
-                class="text-xs tracking-widest hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+                class="text-xs tracking-wider md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
             <a href="reviews.html"
-                class="text-xs tracking-widest hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
-            <span class="text-xs tracking-widest text-wabi-dark border-b border-wabi-dark pb-1">關於・絆</span>
+                class="text-xs tracking-wider md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <span class="text-xs tracking-wider md:tracking-widest whitespace-nowrap text-wabi-dark border-b border-wabi-dark pb-1">關於・絆</span>
 
         </div>
     </nav>
@@ -263,6 +271,14 @@
     <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest border-t border-stone-100 mt-10">
         <p>&copy; 2026 DONGBULI · 關於・絆</p>
     </footer>
+
+    <script>
+        // 捲動後導覽列加上底色
+        const nav = document.querySelector('nav');
+        const updateNav = () => nav.classList.toggle('nav-solid', window.scrollY > 40);
+        window.addEventListener('scroll', updateNav, { passive: true });
+        updateNav();
+    </script>
 
 </body>
 

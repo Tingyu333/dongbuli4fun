@@ -265,6 +265,145 @@
         .is-stamped .stamp-msg {
             opacity: 1;
         }
+
+        /* 御神籤 */
+        .omikuji-box {
+            position: relative;
+            flex-shrink: 0;
+            width: 4rem;
+            height: 6rem;
+            border-radius: 6px 6px 4px 4px;
+            background: linear-gradient(90deg, #8a6f58, #a88a70 45%, #7d644f);
+            color: #fcfaf8;
+            box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.3);
+            transform-origin: 50% 90%;
+        }
+
+        /* 從籤筒口露出來的一支籤 */
+        .omikuji-box::before {
+            content: '';
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            width: 4px;
+            height: 18px;
+            border-radius: 1px;
+            background: #e9dcc6;
+            transform: translateX(-50%) rotate(8deg);
+        }
+
+        .omikuji-box.is-shaking {
+            animation: omikuji-shake 0.7s ease-in-out;
+        }
+
+        @keyframes omikuji-shake {
+
+            0%,
+            100% {
+                transform: rotate(0);
+            }
+
+            15% {
+                transform: rotate(-14deg);
+            }
+
+            30% {
+                transform: rotate(12deg);
+            }
+
+            45% {
+                transform: rotate(-10deg);
+            }
+
+            60% {
+                transform: rotate(8deg);
+            }
+
+            75% {
+                transform: rotate(-4deg);
+            }
+        }
+
+        .omikuji-slip {
+            transform-origin: top;
+            transform: scaleY(0);
+            opacity: 0;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+        }
+
+        .omikuji-slip.is-open {
+            transform: scaleY(1);
+            opacity: 1;
+        }
+
+        /* 指紋辨識 */
+        .fp-sensor {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 8rem;
+            height: 8rem;
+            border: 1px solid #dcdcdc;
+            border-radius: 9999px;
+            color: #8e8070;
+            cursor: pointer;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            transition: color 0.3s, border-color 0.3s;
+        }
+
+        .fp-sensor svg {
+            width: 4.5rem;
+            height: 4.5rem;
+        }
+
+        .fp-sensor.is-scanning {
+            color: #2c2c2c;
+            border-color: #8e8070;
+        }
+
+        .fp-sensor.is-failed {
+            color: #b33a2f;
+            border-color: #b33a2f;
+        }
+
+        .fp-scanline {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 15%;
+            height: 2px;
+            background: #8e8070;
+            box-shadow: 0 0 8px #8e8070;
+            opacity: 0;
+        }
+
+        .fp-sensor.is-scanning .fp-scanline {
+            opacity: 1;
+            animation: fp-scan 0.75s ease-in-out infinite alternate;
+        }
+
+        @keyframes fp-scan {
+            from {
+                top: 15%;
+            }
+
+            to {
+                top: 85%;
+            }
+        }
+
+        /* 捲動後的導覽列：加底色，避免文字壓在內容上 */
+        .nav-solid {
+            mix-blend-mode: normal !important;
+            background: rgba(252, 250, 248, 0.9);
+            backdrop-filter: blur(4px);
+            border-bottom: 1px solid #f5f5f4;
+        }
     </style>
 </head>
 
@@ -292,15 +431,15 @@
     </svg>
 
     <!-- 導航 -->
-    <nav class="fixed top-0 w-full p-8 flex justify-between items-center z-40 mix-blend-difference text-stone-500">
+    <nav class="fixed top-0 w-full px-5 py-5 md:p-8 flex justify-between items-center z-40 mix-blend-difference text-stone-500">
         <a href="index.html"
-            class="text-xl font-bold tracking-widest-xl uppercase hover:text-black transition-colors duration-300">DongBuLi</a>
-        <div class="flex gap-8">
-            <span class="text-xs tracking-widest text-wabi-dark border-b border-wabi-dark pb-1">首頁・歸</span>
+            class="text-base md:text-xl font-bold tracking-[0.15em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-4 md:gap-8">
+            <span class="text-xs tracking-wider md:tracking-widest whitespace-nowrap text-wabi-dark border-b border-wabi-dark pb-1">首頁・歸</span>
             <a href="reviews.html"
-                class="text-xs tracking-widest hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+                class="text-xs tracking-wider md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
             <a href="about.html"
-                class="text-xs tracking-widest hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+                class="text-xs tracking-wider md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
         </div>
     </nav>
 
@@ -356,8 +495,8 @@
                         <span
                             class="text-xs text-wabi-accent border border-stone-200 px-3 py-1 rounded-full bg-white/50">#友情小船
                             隨時翻覆</span>
-                        <span
-                            class="text-xs text-wabi-accent border border-stone-200 px-3 py-1 rounded-full bg-white/50">#只有前夫的指紋進得去</span>
+                        <button type="button" onclick="openFingerprint()"
+                            class="text-xs text-wabi-accent border border-stone-200 px-3 py-1 rounded-full bg-white/50 hover:border-wabi-accent hover:bg-white transition-colors">#只有前夫的指紋進得去</button>
                     </div>
 
                     <div class="border-t border-stone-200 pt-8 mt-8">
@@ -371,6 +510,25 @@
                             <li class="flex items-center gap-2"><span
                                     class="block w-1 h-1 bg-wabi-accent rounded-full"></span>客房服務？問就是你</li>
                         </ul>
+                    </div>
+
+                    <!-- 御神籤 -->
+                    <div class="border-t border-stone-200 pt-8 mt-8">
+                        <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-8">今日運勢</span>
+                        <div class="flex items-start gap-8">
+                            <div class="flex flex-col items-center gap-3">
+                                <button id="omikujiBtn" type="button" class="omikuji-box" aria-label="抽一支籤">
+                                    <span class="vertical-rl text-xs">御神籤</span>
+                                </button>
+                                <span class="text-[10px] font-sans tracking-widest text-stone-400">點我抽籤</span>
+                            </div>
+                            <div id="omikujiSlip" aria-live="polite"
+                                class="omikuji-slip h-56 px-5 py-6 flex flex-row-reverse gap-4 bg-white border border-stone-200 shadow-sm">
+                                <p id="omikujiRank" class="vertical-rl text-2xl font-semibold"></p>
+                                <p id="omikujiLine1" class="vertical-rl text-sm text-stone-600"></p>
+                                <p id="omikujiLine2" class="vertical-rl text-sm text-stone-600"></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -477,6 +635,34 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- 指紋辨識 Modal -->
+    <div id="fingerprintModal"
+        class="modal-fade fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 invisible">
+        <div id="fpCard" class="bg-[#fcfaf8] w-full max-w-sm mx-6 p-12 shadow-2xl text-center relative">
+            <button onclick="closeFingerprint()"
+                class="absolute top-6 right-6 text-stone-400 hover:text-wabi-dark transition-colors p-2">✕</button>
+            <span class="text-xs font-sans tracking-widest text-stone-400">前夫專用通道</span>
+            <h3 class="text-2xl font-serif text-wabi-dark mt-2 mb-10">指紋辨識</h3>
+
+            <div id="fpSensor" class="fp-sensor mx-auto" oncontextmenu="return false">
+                <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M18 14c4-4 9-6 14-6s10 2 14 6" />
+                    <path d="M14 28c2-10 9-16 18-16s16 6 18 16" />
+                    <path d="M22 50c-4-6-4-12-4-16 0-8 6-14 14-14s14 6 14 14c0 3 0 6-1 9" />
+                    <path d="M26 54c-3-6-4-12-4-20 0-6 4-10 10-10s10 4 10 10c0 6-1 10-2 14" />
+                    <path d="M30 56c-3-6-4-14-4-22 0-4 3-6 6-6s6 2 6 6c0 8-2 14-4 20" />
+                    <path d="M32 34c0 8-1 14-3 18" />
+                </svg>
+                <div class="fp-scanline"></div>
+            </div>
+
+            <div class="mt-8 h-[2px] bg-stone-200 overflow-hidden">
+                <div id="fpProgress" class="h-full bg-wabi-accent" style="width: 0"></div>
+            </div>
+            <p id="fpStatus" class="mt-6 text-xs font-sans tracking-widest text-stone-500">請長按感應區</p>
         </div>
     </div>
 
@@ -702,7 +888,123 @@
                 });
         });
 
-        window.onclick = (event) => { if (event.target == modal) closeModal(); }
+        // 5. 御神籤：搖一搖籤筒，抽今晚的運勢
+        const FORTUNES = [
+            { rank: '大吉', lines: ['今晚前夫不在', '宜直衝二十七樓'] },
+            { rank: '中吉', lines: ['友情小船平穩航行', '忌提起當年那件事'] },
+            { rank: '小吉', lines: ['明早有手工早餐', '前提是你自己做'] },
+            { rank: '吉', lines: ['網路可能會斷', '但羈絆不會'] },
+            { rank: '吉', lines: ['客房服務已就位', '服務人員是你'] },
+            { rank: '末吉', lines: ['房價毫無折扣', '宜先存八千八'] },
+            { rank: '凶', lines: ['宜叫外送', '忌自己下廚'] },
+            { rank: '大凶', lines: ['指紋比對失敗', '請找前夫開門'] },
+        ];
+        const omikujiBtn = document.getElementById('omikujiBtn');
+        const omikujiSlip = document.getElementById('omikujiSlip');
+        let lastFortune = -1;
+
+        omikujiBtn.addEventListener('click', () => {
+            if (omikujiBtn.classList.contains('is-shaking')) return;
+            omikujiSlip.classList.remove('is-open');
+            omikujiBtn.classList.add('is-shaking');
+
+            setTimeout(() => {
+                omikujiBtn.classList.remove('is-shaking');
+                let i;
+                do { i = Math.floor(Math.random() * FORTUNES.length); } while (i === lastFortune); // 不連續抽到同一支
+                lastFortune = i;
+
+                const fortune = FORTUNES[i];
+                const rankEl = document.getElementById('omikujiRank');
+                rankEl.innerText = fortune.rank;
+                rankEl.style.color = fortune.rank.includes('凶') ? '#2c2c2c' : '#b33a2f';
+                document.getElementById('omikujiLine1').innerText = fortune.lines[0];
+                document.getElementById('omikujiLine2').innerText = fortune.lines[1];
+                omikujiSlip.classList.add('is-open');
+            }, 700);
+        });
+
+        // 6. 指紋解鎖（呼應 #只有前夫的指紋進得去）：長按掃描 → 比對失敗 → 還是放你進去
+        const fpModal = document.getElementById('fingerprintModal');
+        const fpSensor = document.getElementById('fpSensor');
+        const fpStatus = document.getElementById('fpStatus');
+        const fpProgress = document.getElementById('fpProgress');
+        const SCAN_TIME = 1500;
+        let scanStart = null;
+        let scanDone = false;
+
+        function resetFingerprint(msg) {
+            scanStart = null;
+            fpSensor.classList.remove('is-scanning', 'is-failed');
+            fpProgress.style.width = '0';
+            fpStatus.innerText = msg;
+            fpStatus.style.color = '';
+        }
+
+        function openFingerprint() {
+            scanDone = false;
+            resetFingerprint('請長按感應區');
+            fpModal.classList.remove('invisible', 'opacity-0');
+        }
+
+        function closeFingerprint() {
+            scanStart = null;
+            fpModal.classList.add('invisible', 'opacity-0');
+        }
+
+        fpSensor.addEventListener('pointerdown', (e) => {
+            if (scanDone) return;
+            e.preventDefault();
+            try { fpSensor.setPointerCapture(e.pointerId); } catch (err) { } // 手指滑出感應區也繼續算
+            scanStart = performance.now();
+            fpSensor.classList.add('is-scanning');
+            fpStatus.innerText = '掃描中…';
+            requestAnimationFrame(scanTick);
+        });
+
+        ['pointerup', 'pointercancel'].forEach(type => fpSensor.addEventListener(type, () => {
+            if (scanStart !== null && !scanDone) resetFingerprint('請按住不要放開');
+        }));
+
+        function scanTick(now) {
+            if (scanStart === null) return;
+            const p = Math.min((now - scanStart) / SCAN_TIME, 1);
+            fpProgress.style.width = p * 100 + '%';
+            if (p < 1) return requestAnimationFrame(scanTick);
+
+            scanDone = true;
+            scanStart = null;
+            fpSensor.classList.replace('is-scanning', 'is-failed');
+            fpStatus.innerText = '比對失敗：您不是前夫';
+            fpStatus.style.color = '#b33a2f';
+            const card = document.getElementById('fpCard');
+            card.classList.remove('shake');
+            void card.offsetWidth; // 重新觸發動畫
+            card.classList.add('shake');
+
+            const stillOpen = () => !fpModal.classList.contains('invisible');
+            setTimeout(() => {
+                if (!stillOpen()) return;
+                fpStatus.innerText = '……算了，進來吧';
+                fpStatus.style.color = '#8e8070';
+            }, 1600);
+            setTimeout(() => {
+                if (!stillOpen()) return;
+                closeFingerprint();
+                openModal();
+            }, 2800);
+        }
+
+        // 捲動後導覽列加上底色
+        const nav = document.querySelector('nav');
+        const updateNav = () => nav.classList.toggle('nav-solid', window.scrollY > 40);
+        window.addEventListener('scroll', updateNav, { passive: true });
+        updateNav();
+
+        window.onclick = (event) => {
+            if (event.target == modal) closeModal();
+            if (event.target == fpModal) closeFingerprint();
+        }
     </script>
 </body>
 
