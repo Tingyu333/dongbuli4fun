@@ -55,6 +55,26 @@
             filter: grayscale(0%);
         }
 
+        /* 手機沒有 hover：照片捲進畫面時從黑白慢慢變彩色，旁邊的小字也跟著浮現 */
+        @media (hover: none) {
+            .memory img {
+                transition: filter 1.2s ease, opacity 1.2s ease, transform 0.7s;
+            }
+
+            .memory.in-view img {
+                filter: none !important;
+                opacity: 1 !important;
+            }
+
+            .memory-caption {
+                transition: opacity 1.2s ease 0.4s !important;
+            }
+
+            .memory.in-view .memory-caption {
+                opacity: 1 !important;
+            }
+        }
+
         /* 捲動後的導覽列：加底色，避免文字壓在內容上 */
         .nav-solid {
             mix-blend-mode: normal !important;
@@ -102,8 +122,8 @@
     <main class="max-w-6xl mx-auto py-12 px-8 relative z-20">
 
         <!-- 卡片 1: 老闆個人風格 -->
-        <section class="grid md:grid-cols-2 gap-16 items-center mb-32">
-            <div class="order-2 md:order-1 relative">
+        <section class="grid md:grid-cols-2 gap-12 md:gap-16 items-center mb-20 md:mb-32">
+            <div class="memory order-2 md:order-1 relative">
                 <!-- 裝飾框線 -->
                 <div class="absolute -top-4 -left-4 w-full h-full border border-wabi-accent/30 z-0"></div>
                 <div class="relative z-10 overflow-hidden aspect-[3/4] shadow-lg">
@@ -114,7 +134,7 @@
                     <!-- <img src="https://lh3.googleusercontent.com/d/1nCRIygAvRn9i8-Yj46-5dw4aB6B7q_yW=w1366?authuser=0"
                         alt="Boss Portrait" class="w-full h-full object-cover img-hover-effect"> -->
                 </div>
-                <div class="absolute -bottom-6 -right-6 bg-wabi-bg px-6 py-4 shadow-sm border border-stone-100 z-20">
+                <div class="absolute -bottom-6 -right-3 md:-right-6 bg-wabi-bg px-6 py-4 shadow-sm border border-stone-100 z-20">
                     <span class="block text-xs text-wabi-accent tracking-widest uppercase mb-1">Founder</span>
                     <span class="text-xl font-light tracking-widest text-wabi-dark">27樓的主人</span>
                 </div>
@@ -151,7 +171,7 @@
 
         <!-- 卡片 2: 關於「絆」 -->
         <section
-            class="grid md:grid-cols-12 gap-10 bg-white p-10 md:p-20 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.03)] item-center">
+            class="grid md:grid-cols-12 gap-6 md:gap-10 bg-white px-6 py-10 md:p-20 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.03)] items-center">
             <div class="md:col-span-4 flex justify-center md:justify-start items-center">
                 <div class="text-center md:text-left">
                     <span class="text-6xl md:text-8xl font-serif text-wabi-accent/20 block mb-4">絆</span>
@@ -160,7 +180,7 @@
             </div>
 
             <div
-                class="md:col-span-8 space-y-6 text-stone-600 font-light border-l border-stone-100 pl-0 md:pl-10 mt-8 md:mt-0">
+                class="md:col-span-8 space-y-6 text-sm md:text-base leading-loose text-justify text-stone-600 font-light md:border-l border-stone-100 md:pl-10 mt-2 md:mt-0">
                 <p>
                     日文中的「絆」（Kizuna），指的是人與人之間難以切斷的聯繫。
                 </p>
@@ -177,8 +197,8 @@
     </main>
 
     <!-- 照片畫廊區塊：日常・一瞥 -->
-    <section class="max-w-7xl mx-auto px-6 py-24 border-t border-stone-100">
-        <div class="text-center mb-20 relative">
+    <section class="max-w-7xl mx-auto px-6 py-16 md:py-24 border-t border-stone-100">
+        <div class="text-center mb-14 md:mb-20 relative">
             <span
                 class="vertical-rl text-xs tracking-widest text-stone-300 absolute left-1/2 -top-10 h-16 transform -translate-x-1/2">記憶</span>
             <h3 class="text-3xl md:text-4xl font-light text-wabi-dark tracking-widest font-serif">日常・一瞥</h3>
@@ -188,8 +208,8 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 items-start">
 
             <!-- Column 1 -->
-            <div class="space-y-12 mt-0 md:mt-20">
-                <div class="relative group">
+            <div class="space-y-8 md:space-y-12 mt-0 md:mt-20">
+                <div class="memory relative group">
                     <div class="overflow-hidden aspect-[3/4] shadow-md bg-stone-100">
                         <!-- <img src="https://images.unsplash.com/photo-1567653418876-5bb0e566e1c2?q=80&w=1000&auto=format&fit=crop"
                             alt="Memory 1"
@@ -199,7 +219,7 @@
                             class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100 grayscale group-hover:grayscale-0">
                     </div>
                     <div
-                        class="absolute -right-4 top-4 vertical-rl text-[10px] tracking-widest text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-white/80 p-1">
+                        class="memory-caption absolute -right-4 top-4 vertical-rl text-[10px] tracking-widest text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-white/80 p-1">
                         不被定義的，最是真實
                     </div>
                 </div>
@@ -212,8 +232,8 @@
             </div>
 
             <!-- Column 2 (Middle) -->
-            <div class="space-y-12">
-                <div class="relative group">
+            <div class="space-y-8 md:space-y-12">
+                <div class="memory relative group">
                     <div class="overflow-hidden aspect-square shadow-md bg-stone-100">
                         <!-- <img src="https://images.unsplash.com/photo-1542640244-7e672d6cef4e?q=80&w=1000&auto=format&fit=crop"
                             alt="Memory 2"
@@ -223,7 +243,7 @@
                             class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100 grayscale group-hover:grayscale-0">
                     </div>
                     <div
-                        class="absolute -left-4 bottom-4 vertical-rl text-[10px] tracking-widest text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-white/80 p-1">
+                        class="memory-caption absolute -left-4 bottom-4 vertical-rl text-[10px] tracking-widest text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-white/80 p-1">
                         某個寧靜的夜晚
                     </div>
                 </div>
@@ -235,7 +255,7 @@
                     </p>
                 </div>
 
-                <div class="relative group">
+                <div class="memory relative group">
                     <div class="overflow-hidden aspect-[3/4] shadow-md bg-stone-100">
                         <!-- <img src="https://images.unsplash.com/photo-1522770179533-24471fcdba45?q=80&w=1000&auto=format&fit=crop"
                             alt="Memory 3"
@@ -248,8 +268,8 @@
             </div>
 
             <!-- Column 3 -->
-            <div class="space-y-12 mt-0 md:mt-32">
-                <div class="relative group">
+            <div class="space-y-8 md:space-y-12 mt-0 md:mt-32">
+                <div class="memory relative group">
                     <div class="overflow-hidden aspect-[3/4] shadow-md bg-stone-100">
                         <!-- <img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?q=80&w=1000&auto=format&fit=crop"
                             alt="Memory 4"
@@ -259,7 +279,7 @@
                             class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100 grayscale group-hover:grayscale-0">
                     </div>
                     <div
-                        class="absolute -left-4 top-1/2 vertical-rl text-[10px] tracking-widest text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-white/80 p-1">
+                        class="memory-caption absolute -left-4 top-1/2 vertical-rl text-[10px] tracking-widest text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-white/80 p-1">
                         留白，是為了填滿家的溫度
                     </div>
                 </div>
@@ -278,6 +298,12 @@
         const updateNav = () => nav.classList.toggle('nav-solid', window.scrollY > 40);
         window.addEventListener('scroll', updateNav, { passive: true });
         updateNav();
+
+        // 照片捲進畫面一半以上就標記 in-view（手機用來代替 hover，樣式見 @media (hover: none)）
+        const memoryObserver = new IntersectionObserver(entries => {
+            entries.forEach(entry => entry.target.classList.toggle('in-view', entry.isIntersecting));
+        }, { threshold: 0.5 });
+        document.querySelectorAll('.memory').forEach(el => memoryObserver.observe(el));
     </script>
 
 </body>
