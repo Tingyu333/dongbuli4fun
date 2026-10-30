@@ -89,10 +89,207 @@
             background: transparent !important;
             text-decoration: line-through;
         }
+
+        /* 電梯開場：1F → 27F，叮一聲後開門 */
+        .elevator-intro {
+            position: fixed;
+            inset: 0;
+            z-index: 60;
+            cursor: pointer;
+        }
+
+        .elevator-door {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 50%;
+            background: linear-gradient(90deg, #e7e2da, #f3efe9 40%, #e2ddd5);
+            transition: transform 1.2s cubic-bezier(0.65, 0, 0.35, 1) 0.4s;
+        }
+
+        .elevator-door-left {
+            left: 0;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.15);
+        }
+
+        .elevator-door-right {
+            right: 0;
+            box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.15);
+        }
+
+        .elevator-intro.is-open .elevator-door-left {
+            transform: translateX(-100%);
+        }
+
+        .elevator-intro.is-open .elevator-door-right {
+            transform: translateX(100%);
+        }
+
+        .elevator-panel {
+            position: absolute;
+            top: 18%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            pointer-events: none;
+            transition: opacity 0.4s ease 0.3s;
+        }
+
+        .elevator-intro.is-open .elevator-panel {
+            opacity: 0;
+        }
+
+        .elevator-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            min-width: 7.5rem;
+            padding: 0.25rem 1.25rem;
+            border-radius: 4px;
+            background: #2c2c2c;
+            color: #f2b65a;
+            font-family: ui-monospace, Menlo, monospace;
+            font-size: 2.5rem;
+            letter-spacing: 0.1em;
+            text-shadow: 0 0 8px rgba(242, 182, 90, 0.7);
+        }
+
+        .elevator-arrow {
+            font-size: 1rem;
+            animation: blink 0.8s steps(2) infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0.2;
+            }
+        }
+
+        /* 通用：搖一下 */
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20% {
+                transform: translateX(-6px);
+            }
+
+            40% {
+                transform: translateX(5px);
+            }
+
+            60% {
+                transform: translateX(-4px);
+            }
+
+            80% {
+                transform: translateX(2px);
+            }
+        }
+
+        .shake {
+            animation: shake 0.4s ease;
+        }
+
+        /* 印章：送出預約後蓋下去 */
+        .stamp-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            pointer-events: none;
+            visibility: hidden;
+        }
+
+        .stamp-layer.is-stamped {
+            visibility: visible;
+        }
+
+        .hanko {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 9rem;
+            height: 9rem;
+            border: 5px solid #b33a2f;
+            outline: 2px solid #b33a2f;
+            outline-offset: 4px;
+            border-radius: 10px;
+            color: #b33a2f;
+            font-family: 'Noto Serif TC', serif;
+            font-weight: 700;
+            font-size: 5rem;
+            line-height: 1;
+            mix-blend-mode: multiply;
+            filter: url(#hanko-ink);
+            opacity: 0;
+        }
+
+        .is-stamped .hanko {
+            animation: stamp-in 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) forwards;
+        }
+
+        @keyframes stamp-in {
+            0% {
+                opacity: 0;
+                transform: scale(2.5) rotate(-20deg);
+            }
+
+            70% {
+                opacity: 0.95;
+                transform: scale(0.92) rotate(-8deg);
+            }
+
+            100% {
+                opacity: 0.9;
+                transform: scale(1) rotate(-8deg);
+            }
+        }
+
+        .stamp-msg {
+            opacity: 0;
+            transition: opacity 0.6s ease 0.6s;
+        }
+
+        .is-stamped .stamp-msg {
+            opacity: 1;
+        }
     </style>
 </head>
 
 <body class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white">
+
+    <!-- 電梯開場 -->
+    <div id="elevatorIntro" class="elevator-intro" aria-hidden="true">
+        <div class="elevator-door elevator-door-left"></div>
+        <div class="elevator-door elevator-door-right"></div>
+        <div class="elevator-panel">
+            <div class="elevator-display">
+                <span id="elevatorArrow" class="elevator-arrow">▲</span>
+                <span><span id="elevatorFloor">1</span>F</span>
+            </div>
+            <p id="elevatorHint" class="text-[10px] font-sans tracking-[0.3em] text-stone-400">點擊略過</p>
+        </div>
+    </div>
+
+    <!-- 印章的墨跡粗糙邊緣 -->
+    <svg width="0" height="0" class="absolute">
+        <filter id="hanko-ink">
+            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" />
+        </filter>
+    </svg>
 
     <!-- 導航 -->
     <nav class="fixed top-0 w-full p-8 flex justify-between items-center z-40 mix-blend-difference text-stone-500">
@@ -100,6 +297,8 @@
             class="text-xl font-bold tracking-widest-xl uppercase hover:text-black transition-colors duration-300">DongBuLi</a>
         <div class="flex gap-8">
             <span class="text-xs tracking-widest text-wabi-dark border-b border-wabi-dark pb-1">首頁・歸</span>
+            <a href="reviews.html"
+                class="text-xs tracking-widest hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
             <a href="about.html"
                 class="text-xs tracking-widest hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
         </div>
@@ -190,13 +389,13 @@
                                 <span class="text-4xl font-light tracking-wide">8,888</span>
                             </div>
 
-                            <button id="openModalBtn" onclick="openModal()"
+                            <button id="openModalBtn" onclick="handleBookClick()"
                                 class="w-full bg-wabi-accent text-white font-sans py-4 px-6 hover:bg-stone-700 transition-all duration-500 ease-out tracking-widest text-xs uppercase disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-1 shadow-sm"
                                 disabled>
                                 載入房況中
                             </button>
 
-                            <p class="mt-6 text-[10px] text-stone-300 font-sans tracking-widest">限量預約中</p>
+                            <p id="bookHint" class="mt-6 text-[10px] text-stone-300 font-sans tracking-widest">限量預約中</p>
                         </div>
 
                         <!-- 裝飾圖片 -->
@@ -223,6 +422,14 @@
                 class="absolute top-0 right-0 p-8 opacity-10 font-serif text-9xl pointer-events-none select-none text-wabi-accent vertical-rl">
                 絆</div>
 
+            <!-- 印章 -->
+            <div id="stampLayer" class="stamp-layer" aria-live="polite">
+                <div class="hanko">准</div>
+                <p class="stamp-msg text-sm text-wabi-dark tracking-widest text-center px-8">
+                    預約申請已送出<br>我們將盡快與您聯繫
+                </p>
+            </div>
+
             <div class="flex justify-between items-start mb-10 relative z-10">
                 <div>
                     <span class="text-xs font-sans tracking-widest text-stone-400 uppercase">預約訂房</span>
@@ -232,7 +439,7 @@
                     class="text-stone-400 hover:text-wabi-dark transition-colors p-2">✕</button>
             </div>
 
-            <form id="bookingForm" class="space-y-8 relative z-10">
+            <form id="bookingForm" class="space-y-8 relative z-10 transition-opacity duration-500">
                 <div class="grid grid-cols-2 gap-8">
                     <div class="group">
                         <label class="block text-xs font-sans mb-2 text-stone-500 tracking-widest">姓名</label>
@@ -333,6 +540,124 @@
             });
         }
 
+        // 2. 電梯開場（每個分頁只播一次，點擊可略過）
+        (function elevatorIntro() {
+            const intro = document.getElementById('elevatorIntro');
+            let seen = false;
+            try { seen = sessionStorage.getItem('elevatorSeen') === '1'; } catch (e) { }
+            if (seen || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                intro.remove();
+                return;
+            }
+            try { sessionStorage.setItem('elevatorSeen', '1'); } catch (e) { }
+
+            const floorEl = document.getElementById('elevatorFloor');
+            const TOP_FLOOR = 27;
+            const DURATION = 2200;
+            let startTime = null;
+            let arrived = false;
+
+            function tick(now) {
+                if (arrived) return;
+                if (!startTime) startTime = now;
+                const p = Math.min((now - startTime) / DURATION, 1);
+                // ease-in-out：起步和到站都慢一點，像真的電梯
+                const eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+                floorEl.innerText = Math.max(1, Math.round(1 + eased * (TOP_FLOOR - 1)));
+                if (p < 1) requestAnimationFrame(tick);
+                else arrive();
+            }
+
+            function arrive() {
+                if (arrived) return;
+                arrived = true;
+                floorEl.innerText = TOP_FLOOR;
+                document.getElementById('elevatorArrow').style.visibility = 'hidden';
+                document.getElementById('elevatorHint').innerText = '叮——27 樓到了';
+                ding();
+                intro.classList.add('is-open');
+                setTimeout(() => intro.remove(), 1800);
+            }
+
+            intro.addEventListener('click', arrive);
+            requestAnimationFrame(tick);
+        })();
+
+        // 電梯「叮咚」：瀏覽器沒有使用者互動時可能不給播，失敗就安靜略過
+        function ding() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                [1318.5, 1046.5].forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    const t0 = ctx.currentTime + i * 0.35;
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.0001, t0);
+                    gain.gain.exponentialRampToValueAtTime(0.2, t0 + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.2);
+                    osc.connect(gain).connect(ctx.destination);
+                    osc.start(t0);
+                    osc.stop(t0 + 1.2);
+                });
+            } catch (e) { }
+        }
+
+        // 3. 逃跑的預約按鈕（呼應 #不準預約）
+        const bookBtn = document.getElementById('openModalBtn');
+        const bookHint = document.getElementById('bookHint');
+        const DODGE_LINES = ['不準預約', '就說不準了', '還來？'];
+        let dodges = 0;
+        let lastPointer = 'mouse';
+
+        bookBtn.addEventListener('pointerdown', (e) => { lastPointer = e.pointerType; });
+
+        // 滑鼠：靠近就躲開，躲累了才乖乖回來
+        bookBtn.addEventListener('pointerenter', (e) => {
+            if (e.pointerType !== 'mouse' || bookBtn.disabled || dodges >= DODGE_LINES.length) return;
+            const rect = bookBtn.getBoundingClientRect();
+            const away = e.clientX < rect.left + rect.width / 2 ? 1 : -1; // 往遠離游標的方向躲
+            const x = away * (30 + Math.random() * 25);
+            const y = (Math.random() - 0.5) * 30;
+            const r = away * (3 + Math.random() * 4);
+            bookBtn.style.transitionDuration = '250ms';
+            bookBtn.style.transform = `translate(${x}px, ${y}px) rotate(${r}deg) scale(0.8)`;
+            bookHint.innerText = DODGE_LINES[dodges++];
+            if (dodges === DODGE_LINES.length) setTimeout(giveUp, 700);
+        });
+
+        function giveUp() {
+            bookBtn.style.transform = '';
+            bookHint.innerText = '好啦好啦給你訂';
+        }
+
+        function handleBookClick() {
+            if (dodges < DODGE_LINES.length) {
+                if (lastPointer !== 'mouse') {
+                    // 手機沒有游標可以躲，改成抖一下拒絕
+                    bookHint.innerText = DODGE_LINES[dodges++];
+                    bookBtn.classList.remove('shake');
+                    void bookBtn.offsetWidth; // 重新觸發動畫
+                    bookBtn.classList.add('shake');
+                    if (dodges === DODGE_LINES.length) setTimeout(giveUp, 700);
+                    return;
+                }
+                // 滑鼠在它放棄前就點到了
+                dodges = DODGE_LINES.length;
+                bookBtn.style.transform = '';
+                bookHint.innerText = '被你抓到了…';
+            }
+            openModal();
+        }
+
+        // 4. 送出後蓋章（取代原本的 alert）
+        function stampApproved() {
+            const box = modal.querySelector('div');
+            document.getElementById('bookingForm').classList.add('opacity-20');
+            document.getElementById('stampLayer').classList.add('is-stamped');
+            setTimeout(() => box.classList.add('shake'), 300); // 印章落下的瞬間震一下
+        }
+
         function openModal() {
             modal.classList.remove('invisible', 'opacity-0');
             modal.querySelector('div').classList.remove('scale-95');
@@ -366,8 +691,8 @@
                 body: JSON.stringify(data)
             })
                 .then(() => {
-                    alert('預約申請已送出，我們將盡快與您聯繫。');
-                    location.reload();
+                    stampApproved();
+                    setTimeout(() => location.reload(), 2800);
                 })
                 .catch(err => {
                     alert('系統忙碌中，請稍後再試。');
