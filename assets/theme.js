@@ -79,32 +79,3 @@ function showToast(message) {
     setTimeout(() => { toast.style.opacity = '0'; }, 2500);
     setTimeout(() => toast.remove(), 3000);
 }
-
-// 換頁・墨暈：記下手指點連結的位置，新的一頁從那裡暈開（樣式在 theme.css）
-(function () {
-    document.addEventListener('click', e => {
-        const link = e.target.closest('a[href]');
-        if (e.defaultPrevented || !link || link.origin !== location.origin || link.target === '_blank') return;
-        if (link.pathname === location.pathname) return; // 同一頁的錨點不算換頁
-        try { sessionStorage.setItem('inkFrom', `${e.clientX},${e.clientY}`); } catch (err) { }
-    });
-
-    // 新頁面第一次畫出來之前觸發：放一滴墨在點擊處，轉場結束就收掉。上一頁／下一頁沒點擊就從正中間
-    window.addEventListener('pagereveal', e => {
-        let from = null;
-        try {
-            from = sessionStorage.getItem('inkFrom');
-            sessionStorage.removeItem('inkFrom');
-        } catch (err) { }
-        if (!e.viewTransition) return;
-        if (from) {
-            const [x, y] = from.split(',');
-            document.documentElement.style.setProperty('--ink-x', `${x}px`);
-            document.documentElement.style.setProperty('--ink-y', `${y}px`);
-        }
-        const ink = document.createElement('div');
-        ink.className = 'ink-drop';
-        document.documentElement.appendChild(ink); // body 可能還沒解析完，先掛在 <html> 底下
-        e.viewTransition.finished.finally(() => ink.remove());
-    });
-})();
