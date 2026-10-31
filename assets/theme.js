@@ -79,3 +79,26 @@ function showToast(message) {
     setTimeout(() => { toast.style.opacity = '0'; }, 2500);
     setTimeout(() => toast.remove(), 3000);
 }
+
+// 換頁・墨暈：記下手指點連結的位置，新的一頁從那裡暈開（樣式在 theme.css）
+(function () {
+    document.addEventListener('click', e => {
+        const link = e.target.closest('a[href]');
+        if (e.defaultPrevented || !link || link.origin !== location.origin || link.target === '_blank') return;
+        if (link.pathname === location.pathname) return; // 同一頁的錨點不算換頁
+        try { sessionStorage.setItem('inkFrom', `${e.clientX},${e.clientY}`); } catch (err) { }
+    });
+
+    // 新頁面第一次畫出來之前觸發，把位置交給 CSS；上一頁／下一頁沒點擊就從正中間
+    window.addEventListener('pagereveal', () => {
+        let from = null;
+        try {
+            from = sessionStorage.getItem('inkFrom');
+            sessionStorage.removeItem('inkFrom');
+        } catch (err) { }
+        if (!from) return;
+        const [x, y] = from.split(',');
+        document.documentElement.style.setProperty('--ink-x', `${x}px`);
+        document.documentElement.style.setProperty('--ink-y', `${y}px`);
+    });
+})();
