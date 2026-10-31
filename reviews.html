@@ -11,34 +11,9 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'wabi-bg': '#fcfaf8', // 米白紙張色
-                        'wabi-text': '#4a4a4a', // 墨色
-                        'wabi-accent': '#8e8070', // 枯茶色
-                        'wabi-sub': '#dcdcdc', // 淺灰
-                        'wabi-dark': '#2c2c2c', // 深岩灰
-                    },
-                    fontFamily: {
-                        serif: ['"Noto Serif TC"', 'serif'],
-                        sans: ['"Noto Sans TC"', 'sans-serif'],
-                    },
-                    letterSpacing: {
-                        'widest-xl': '.25em',
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="assets/theme.css">
+    <script src="assets/theme.js"></script>
     <style>
-        body {
-            background-color: #fcfaf8;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-        }
-
         .vertical-rl {
             writing-mode: vertical-rl;
             text-orientation: upright;
@@ -52,14 +27,14 @@
 
         .rating-input label {
             cursor: pointer;
-            color: #dcdcdc;
+            color: rgb(var(--wabi-sub));
             transition: color 0.3s;
         }
 
         .rating-input input:checked~label,
         .rating-input label:hover,
         .rating-input label:hover~label {
-            color: #8e8070;
+            color: rgb(var(--wabi-accent));
         }
 
         .review-card {
@@ -106,7 +81,7 @@
 
     <!-- 導航 -->
     <nav
-        class="fixed top-0 w-full px-5 py-5 md:p-8 flex justify-between items-center z-40 bg-[#fcfaf8]/90 backdrop-blur-sm border-b border-stone-100">
+        class="fixed top-0 w-full px-5 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
         <a href="index.html"
             class="text-base md:text-xl font-bold tracking-[0.15em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
         <div class="flex gap-4 md:gap-8">
@@ -324,7 +299,7 @@
 
         // 評分有反應：一星翻船、五星放煙火
         const RATING_REACTIONS = {
-            1: '⛵ 友情小船翻了……',
+            1: '友情小船翻了……',
             2: '小船晃了一下',
             3: '普普通通，可以接受',
             4: '還不錯嘛，再一顆？',
@@ -336,7 +311,7 @@
                 const rating = parseInt(input.value);
                 const reaction = document.getElementById('ratingReaction');
                 reaction.innerText = RATING_REACTIONS[rating];
-                reaction.style.color = rating === 1 ? '#b33a2f' : '';
+                reaction.style.color = rating === 1 ? 'rgb(var(--wabi-shu))' : '';
 
                 const card = document.getElementById('reviewCard');
                 card.classList.remove('shake');
@@ -358,7 +333,7 @@
             const ctx = canvas.getContext('2d');
             ctx.scale(dpr, dpr);
 
-            const COLORS = ['#8e8070', '#b33a2f', '#f2b65a', '#c9b8a3', '#2c2c2c'];
+            const COLORS = [themeColor('--wabi-accent'), themeColor('--wabi-shu'), '#f2b65a', '#c9b8a3', themeColor('--wabi-dark')];
             const particles = [];
 
             function burst(x, y) {

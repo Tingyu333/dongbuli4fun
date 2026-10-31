@@ -14,34 +14,9 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'wabi-bg': '#fcfaf8', // 米白紙張色
-                        'wabi-text': '#4a4a4a', // 墨色
-                        'wabi-accent': '#8e8070', // 枯茶色
-                        'wabi-sub': '#dcdcdc', // 淺灰
-                        'wabi-dark': '#2c2c2c', // 深岩灰
-                    },
-                    fontFamily: {
-                        serif: ['"Noto Serif TC"', 'serif'],
-                        sans: ['"Noto Sans TC"', 'sans-serif'],
-                    },
-                    letterSpacing: {
-                        'widest-xl': '.25em',
-                    }
-                }
-            }
-        } 
-    </script>
+    <link rel="stylesheet" href="assets/theme.css">
+    <script src="assets/theme.js"></script>
     <style>
-        body {
-            background-color: #fcfaf8;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-        }
-
         .modal-fade {
             transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -79,13 +54,13 @@
         .flatpickr-day.selected.nextMonthDay,
         .flatpickr-day.startRange.nextMonthDay,
         .flatpickr-day.endRange.nextMonthDay {
-            background: #8e8070 !important;
-            border-color: #8e8070 !important;
+            background: rgb(var(--wabi-accent)) !important;
+            border-color: rgb(var(--wabi-accent)) !important;
             color: #fff !important;
         }
 
         .flatpickr-day.flatpickr-disabled {
-            color: #dcdcdc !important;
+            color: rgb(var(--wabi-sub)) !important;
             background: transparent !important;
             text-decoration: line-through;
         }
@@ -105,6 +80,15 @@
             width: 50%;
             background: linear-gradient(90deg, #e7e2da, #f3efe9 40%, #e2ddd5);
             transition: transform 1.2s cubic-bezier(0.65, 0, 0.35, 1) 0.4s;
+        }
+
+        html.night .elevator-door {
+            background: linear-gradient(90deg, #26231f, #34302a 40%, #24211d);
+        }
+
+        /* 夜裡紙是黑的，印章用 multiply 會被吃掉 */
+        html.night .hanko {
+            mix-blend-mode: normal;
         }
 
         .elevator-door-left {
@@ -222,11 +206,11 @@
             justify-content: center;
             width: 9rem;
             height: 9rem;
-            border: 5px solid #b33a2f;
-            outline: 2px solid #b33a2f;
+            border: 5px solid rgb(var(--wabi-shu));
+            outline: 2px solid rgb(var(--wabi-shu));
             outline-offset: 4px;
             border-radius: 10px;
-            color: #b33a2f;
+            color: rgb(var(--wabi-shu));
             font-family: 'Noto Serif TC', serif;
             font-weight: 700;
             font-size: 5rem;
@@ -358,9 +342,9 @@
             justify-content: center;
             width: 8rem;
             height: 8rem;
-            border: 1px solid #dcdcdc;
+            border: 1px solid rgb(var(--wabi-sub));
             border-radius: 9999px;
-            color: #8e8070;
+            color: rgb(var(--wabi-accent));
             cursor: pointer;
             overflow: hidden;
             touch-action: none;
@@ -376,13 +360,13 @@
         }
 
         .fp-sensor.is-scanning {
-            color: #2c2c2c;
-            border-color: #8e8070;
+            color: rgb(var(--wabi-dark));
+            border-color: rgb(var(--wabi-accent));
         }
 
         .fp-sensor.is-failed {
-            color: #b33a2f;
-            border-color: #b33a2f;
+            color: rgb(var(--wabi-shu));
+            border-color: rgb(var(--wabi-shu));
         }
 
         .fp-scanline {
@@ -391,8 +375,8 @@
             right: 0;
             top: 15%;
             height: 2px;
-            background: #8e8070;
-            box-shadow: 0 0 8px #8e8070;
+            background: rgb(var(--wabi-accent));
+            box-shadow: 0 0 8px rgb(var(--wabi-accent));
             opacity: 0;
         }
 
@@ -417,7 +401,7 @@
             top: -60px;
             z-index: 70;
             pointer-events: none;
-            color: #8e8070;
+            color: rgb(var(--wabi-accent));
             font-family: 'Noto Serif TC', serif;
             animation: don-fall linear forwards;
         }
@@ -428,22 +412,6 @@
             }
         }
 
-        .toast {
-            position: fixed;
-            top: 6rem;
-            left: 50%;
-            z-index: 71;
-            padding: 0.5rem 1.25rem;
-            border-radius: 9999px;
-            background: #2c2c2c;
-            color: #fff;
-            font-family: 'Noto Sans TC', sans-serif;
-            font-size: 0.75rem;
-            letter-spacing: 0.15em;
-            white-space: nowrap;
-            transform: translateX(-50%);
-            transition: opacity 0.5s;
-        }
 
         .logo-pop {
             animation: logo-pop 0.2s ease;
@@ -455,13 +423,6 @@
             }
         }
 
-        /* 捲動後的導覽列：加底色，避免文字壓在內容上 */
-        .nav-solid {
-            mix-blend-mode: normal !important;
-            background: rgba(252, 250, 248, 0.9);
-            backdrop-filter: blur(4px);
-            border-bottom: 1px solid #f5f5f4;
-        }
     </style>
 </head>
 
@@ -504,11 +465,13 @@
     <!-- 頁首視覺 -->
     <header class="relative w-full h-[90vh] overflow-hidden flex items-center justify-center">
         <div class="absolute inset-0">
+            <!-- 夜間模式換成 27 樓的夜景（theme.js 會換 src） -->
             <img src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=2000&auto=format&fit=crop"
+                data-night-src="https://lh3.googleusercontent.com/d/1Iw-z-1aSkRZxYlKaZ2WOcZWIe_v4T1jz=w1366?authuser=0"
                 alt="Zen Room" class="w-full h-full object-cover opacity-90 brightness-95">
         </div>
         <!-- 裝飾性遮罩 -->
-        <div class="absolute inset-0 bg-gradient-to-t from-[#fcfaf8] via-transparent to-transparent opacity-80"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-wabi-bg via-transparent to-transparent opacity-80"></div>
 
         <div class="relative z-10 flex flex-col items-center">
             <div
@@ -522,7 +485,7 @@
     <!-- 主要內容 -->
     <main class="max-w-5xl mx-auto py-24 px-8 relative z-20 -mt-20">
         <!-- 介紹區塊 -->
-        <div class="bg-[#fcfaf8] p-10 md:p-20 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm">
+        <div class="bg-wabi-bg p-10 md:p-20 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm">
             <div class="grid md:grid-cols-12 gap-16">
                 <!-- 左側文案 -->
                 <div class="md:col-span-7 space-y-10">
@@ -580,7 +543,7 @@
                                 </button>
                                 <span id="omikujiHint" class="text-[10px] font-sans tracking-widest text-stone-400">點我抽籤</span>
                                 <button id="shakeEnableBtn" type="button"
-                                    class="hidden text-[10px] font-sans tracking-widest text-wabi-accent border-b border-wabi-accent/40 pb-0.5">📳 開啟搖一搖</button>
+                                    class="hidden text-[10px] font-sans tracking-widest text-wabi-accent border-b border-wabi-accent/40 pb-0.5">開啟搖一搖</button>
                             </div>
                             <div id="omikujiSlip" aria-live="polite"
                                 class="omikuji-slip is-empty h-56 px-4 py-6 bg-white border border-stone-200 shadow-sm">
@@ -634,7 +597,7 @@
     <div id="bookingModal"
         class="modal-fade fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 invisible">
         <div
-            class="bg-[#fcfaf8] w-full max-w-lg mx-6 p-12 shadow-2xl transform transition-transform scale-95 relative overflow-hidden">
+            class="bg-wabi-bg w-full max-w-lg mx-6 p-12 shadow-2xl transform transition-transform scale-95 relative overflow-hidden">
             <!-- 背景紋理 -->
             <div
                 class="absolute top-0 right-0 p-8 opacity-10 font-serif text-9xl pointer-events-none select-none text-wabi-accent vertical-rl">
@@ -716,7 +679,7 @@
     <!-- 指紋辨識 Modal -->
     <div id="fingerprintModal"
         class="modal-fade fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 invisible">
-        <div id="fpCard" class="bg-[#fcfaf8] w-full max-w-sm mx-6 p-12 shadow-2xl text-center relative">
+        <div id="fpCard" class="bg-wabi-bg w-full max-w-sm mx-6 p-12 shadow-2xl text-center relative">
             <button onclick="closeFingerprint()"
                 class="absolute top-6 right-6 text-stone-400 hover:text-wabi-dark transition-colors p-2">✕</button>
             <span class="text-xs font-sans tracking-widest text-stone-400">前夫專用通道</span>
@@ -1128,7 +1091,7 @@
                 const fortune = FORTUNES[i];
                 const rankEl = document.getElementById('omikujiRank');
                 rankEl.innerText = fortune.rank;
-                rankEl.style.color = fortune.rank.includes('凶') ? '#2c2c2c' : '#b33a2f';
+                rankEl.style.color = fortune.rank.includes('凶') ? 'rgb(var(--wabi-dark))' : 'rgb(var(--wabi-shu))';
                 document.getElementById('omikujiLine1').innerText = fortune.lines[0];
                 document.getElementById('omikujiLine2').innerText = fortune.lines[1];
                 omikujiSlip.classList.remove('is-empty');
@@ -1237,7 +1200,7 @@
             scanStart = null;
             fpSensor.classList.replace('is-scanning', 'is-failed');
             fpStatus.innerText = '比對失敗：您不是前夫';
-            fpStatus.style.color = '#b33a2f';
+            fpStatus.style.color = 'rgb(var(--wabi-shu))';
             const card = document.getElementById('fpCard');
             card.classList.remove('shake');
             void card.offsetWidth; // 重新觸發動畫
@@ -1247,7 +1210,7 @@
             setTimeout(() => {
                 if (!stillOpen()) return;
                 fpStatus.innerText = '……算了，進來吧';
-                fpStatus.style.color = '#8e8070';
+                fpStatus.style.color = 'rgb(var(--wabi-accent))';
             }, 1600);
             setTimeout(() => {
                 if (!stillOpen()) return;
@@ -1283,11 +1246,14 @@
         });
 
         function donRain() {
-            const BOWLS = ['🍛', '🍚', '🍜', '丼'];
+            // 下的是字：朱、枯茶、墨三色輪流
+            const CHARS = ['丼', '喱', '飯', '米', '絆'];
+            const COLORS = ['rgb(var(--wabi-shu))', 'rgb(var(--wabi-accent))', 'rgb(var(--wabi-dark))'];
             for (let i = 0; i < 40; i++) {
                 const drop = document.createElement('span');
                 drop.className = 'don-drop';
-                drop.textContent = BOWLS[Math.floor(Math.random() * BOWLS.length)];
+                drop.textContent = CHARS[Math.floor(Math.random() * CHARS.length)];
+                drop.style.color = COLORS[i % COLORS.length];
                 drop.style.left = Math.random() * 95 + 'vw';
                 drop.style.fontSize = 20 + Math.random() * 24 + 'px';
                 drop.style.animationDuration = 2 + Math.random() * 2 + 's';
@@ -1297,17 +1263,9 @@
                 document.body.appendChild(drop);
             }
             if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
-            showToast('🎉 隱藏彩蛋：丼飯雨！');
+            showToast('隱藏彩蛋：丼飯雨！');
         }
 
-        function showToast(message) {
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(() => { toast.style.opacity = '0'; }, 2500);
-            setTimeout(() => toast.remove(), 3000);
-        }
 
         window.onclick = (event) => {
             if (event.target == modal) closeModal();

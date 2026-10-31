@@ -12,8 +12,12 @@
 
 ## 技術架構
 
-- **純靜態 HTML**：沒有建置工具、套件管理或測試框架。每個頁面是獨立的 `.html`，CSS 與 JS 都寫在檔案內。
-- **Tailwind CSS（Play CDN）**：透過 `https://cdn.tailwindcss.com` 載入，每頁都在 `<head>` 內各自宣告一份 `tailwind.config`。
+- **純靜態 HTML**：沒有建置工具、套件管理或測試框架。每個頁面是獨立的 `.html`，頁面專屬的 CSS 與 JS 寫在檔案內。
+- **共用主題 `assets/`**：前台三頁（`index`、`reviews`、`about`）在 `<head>` 載入 `assets/theme.css` 與 `assets/theme.js`（要放在 Tailwind CDN 之後、同步載入）：
+  - `theme.css`：色彩 CSS 變數、夜間模式覆寫、`body` 紙張背景、`.toast`、`.nav-solid`、晝夜切換鈕。
+  - `theme.js`：`tailwind.config`、夜間模式切換、`showToast()`、`themeColor()`（給 canvas 讀 CSS 變數）。
+  - `404.html` 與後台兩頁沒有接主題，仍在頁內各自宣告 `tailwind.config`（404 在 GitHub Pages 的子路徑下相對路徑會失效）。
+- **Tailwind CSS（Play CDN）**：透過 `https://cdn.tailwindcss.com` 載入。
 - **後端**：Google Apps Script Web App（`API_URL`，在 `index.html`、`reviews.html`、`admin_dashboard.html` 中各自寫死同一個網址）。資料存在對應的 Google Sheet。後端程式碼不在此 repo 內。
 - **部署**：GitHub repo `Tingyu333/dongbuli4fun`，有 `404.html`，推測透過 GitHub Pages 發布。
 
@@ -42,21 +46,24 @@
 
 修改或新增頁面時請保持一致的視覺風格：
 
-- 色彩（`tailwind.config` 中的自訂色）：
+- 色彩（Tailwind 的 `wabi-*`，實際值是 `assets/theme.css` 的 CSS 變數，夜間模式換一組）：
   - `wabi-bg` `#fcfaf8` 米白紙張色
   - `wabi-text` `#4a4a4a` 墨色
   - `wabi-accent` `#8e8070` 枯茶色
   - `wabi-sub` `#dcdcdc` 淺灰
   - `wabi-dark` `#2c2c2c` 深岩灰
-- 字體：Noto Serif TC（`font-serif`，內文預設）與 Noto Sans TC（`font-sans`，標籤、按鈕、數字）。
-- `body` 背景使用米白色 + SVG noise 紋理（data URI），各頁都有複製一份。
+  - `wabi-shu` `#b33a2f` **朱色**：只給「重要、被蓋章、被綁住」的東西（印章、紅線、御神籤吉、乾杯印）
+- 頁內 CSS / JS 不要寫死色碼，用 `rgb(var(--wabi-xxx))`（或 `rgb(var(--wabi-xxx) / 0.5)`），夜間模式才會跟著變；canvas 用 `themeColor('--wabi-xxx')`。入住券圖片是「紙本」，刻意固定用白天的色。
+- **夜間模式「夜之絆」**：晚上 10 點到早上 6 點、或系統深色模式時自動切換，左下角「夜／晝」鈕可手動切（存在 sessionStorage）。`<html>` 會加上 `night` class。頁面直接用的 `bg-white`、`text-stone-*`、`border-stone-*` 已在 `theme.css` 覆寫；新增用到其他 Tailwind 灰色時記得補。圖片加 `data-night-src` 就會在夜裡換圖（首頁大圖換成 27 樓夜景）。
+- 字體：Noto Serif TC（`font-serif`，內文預設）與 Noto Sans TC（`font-sans`，標籤、按鈕、數字）。使用者不要手寫字體／手寫吐槽註解，不要再加回來。
+- **不用 emoji**，跟侘寂風衝突。改用漢字或朱色印章樣式；提示訊息用 `showToast()`（紙條樣式）。
 - 常用元素：寬字距（`tracking-widest`、`tracking-[0.2em]`）、細字重（`font-light`）、底線式 input、`.vertical-rl` 直書標題、「XX・X」格式的標題（如「首頁・歸」「留言・絆」）。
 - 導覽列在 `index.html`、`reviews.html`、`about.html` 三頁各自重複，新增前台頁面時需同步更新每一頁的 nav，目前頁面用 `<span>` 加底線標示、其他用 `<a>`。
 
 ## 開發注意事項
 
-- 共用設定（`tailwind.config`、body 背景、nav、`API_URL`）是**每頁複製貼上**，改一處時請檢查其他頁面是否也要改。
-- 本機預覽：直接用瀏覽器開檔，或在專案根目錄跑 `python3 -m http.server` 後開 `http://localhost:8000`。
+- 主題相關的共用設定放 `assets/`；nav、`API_URL`、`.vertical-rl` 等仍是**每頁複製貼上**，改一處時請檢查其他頁面是否也要改。
+- 本機預覽：在專案根目錄跑 `python3 -m http.server` 後開 `http://localhost:8000`（要用伺服器開，`assets/` 才載得到）。
 - 後台登入是前端寫死帳密 + `localStorage.isAdmin`，僅做樣子用。
 - 動態內容（留言、後台列表）以 template string 塞入 `innerHTML`。
 - `.DS_Store` 未列入 `.gitignore`，不要提交它。
