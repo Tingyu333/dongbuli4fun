@@ -22,6 +22,8 @@ function doPost(e) {
 
     if (type === 'review') return json(addReview(input));
     if (type === 'updateStatus') return json(updateStatus(input));
+    if (type === 'lookup') return json(lookupBookings(input));
+    if (type === 'cancel') return json(cancelBooking(input));
     return json(addBooking(input));
 
   } catch (err) {
@@ -89,6 +91,49 @@ function updateStatus(input) {
   return { result: 'error', error: '找不到這筆預約' };
 }
 
+// 朋友用訂房時留的電話查自己的預約（只回日期和狀態，不含別人的資料）
+function lookupBookings(input) {
+  var phone = normalizePhone(input.phone);
+  if (phone.length < 8) return { result: 'error', error: '電話號碼不完整' };
+
+  var mine = readBookings(bookingsSheet())
+    .filter(function (b) { return normalizePhone(b.phone) === phone; })
+    .map(function (b) {
+      return { id: b.id, check_in: b.check_in, check_out: b.check_out, status: b.status };
+    });
+  return { result: 'success', bookings: mine };
+}
+
+// 朋友自己取消：電話要對得上，已經入住或住過的不能取消
+function cancelBooking(input) {
+  var sheet = bookingsSheet();
+  var b = readBookings(sheet).filter(function (x) { return x.id === input.id; })[0];
+  if (!b || normalizePhone(b.phone) !== normalizePhone(input.phone)) {
+    return { result: 'error', error: '找不到這筆預約' };
+  }
+  if (b.status === 'cancelled') return { result: 'success' };
+  if (b.check_in <= todayStr()) return { result: 'error', error: '已經入住或住過的預約不能取消' };
+
+  sheet.getRange(b.row, COL_STATUS).setValue('cancelled');
+  sendOwnerMail(
+    '【丼步喱】取消訂房：' + b.guest_name + '　' + b.check_in + '～' + b.check_out,
+    b.guest_name + ' 自己取消了預約。\n\n' +
+    '入住：' + b.check_in + '\n' +
+    '退房：' + b.check_out + '\n\n' +
+    '後台：' + ADMIN_URL
+  );
+  return { result: 'success' };
+}
+
+// 只比對數字的後 9 碼：舊資料的電話被 Sheet 吃掉開頭的 0，也能對上
+function normalizePhone(phone) {
+  return String(phone || '').replace(/\D/g, '').slice(-9);
+}
+
+function todayStr() {
+  return Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd');
+}
+
 // 退房當天可以讓下一組入住，所以用 < 和 > 判斷重疊（yyyy-MM-dd 字串可以直接比大小）
 function hasConflict(bookings, checkIn, checkOut, ignoreId) {
   return bookings.some(function (b) {
@@ -128,19 +173,23 @@ function bookingsSheet() {
   return SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Bookings');
 }
 
-// 新訂房寄信給自己（部署的 Google 帳號）。寄信失敗不影響訂房
+// 新訂房寄信給自己（部署的 Google 帳號）
 function notifyOwner(b) {
+  sendOwnerMail(
+    '【丼步喱】新訂房：' + b.guest_name + '　' + b.check_in + '～' + b.check_out,
+    '有人訂房了！\n\n' +
+    '姓名：' + b.guest_name + '\n' +
+    '電話：' + b.phone + '\n' +
+    '入住：' + b.check_in + '\n' +
+    '退房：' + b.check_out + '\n\n' +
+    '到後台確認：' + ADMIN_URL
+  );
+}
+
+// 寄信失敗不影響訂房或取消
+function sendOwnerMail(subject, body) {
   try {
-    MailApp.sendEmail(
-      Session.getEffectiveUser().getEmail(),
-      '【丼步喱】新訂房：' + b.guest_name + '　' + b.check_in + '～' + b.check_out,
-      '有人訂房了！\n\n' +
-      '姓名：' + b.guest_name + '\n' +
-      '電話：' + b.phone + '\n' +
-      '入住：' + b.check_in + '\n' +
-      '退房：' + b.check_out + '\n\n' +
-      '到後台確認：' + ADMIN_URL
-    );
+    MailApp.sendEmail(Session.getEffectiveUser().getEmail(), subject, body);
   } catch (err) {
     console.error('通知信寄送失敗', err);
   }

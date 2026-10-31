@@ -91,6 +91,45 @@
             mix-blend-mode: normal;
         }
 
+        /* 房況月曆 */
+        .cal-day {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 2.25rem;
+            aspect-ratio: 1;
+            margin: 0 auto;
+            border-radius: 9999px;
+            transition: background-color 0.2s;
+        }
+
+        button.cal-day:hover {
+            background: rgb(var(--wabi-accent) / 0.15);
+        }
+
+        .cal-day.is-past {
+            color: rgb(var(--wabi-sub));
+        }
+
+        .cal-day.is-booked,
+        .cal-legend {
+            background: rgb(var(--wabi-shu) / 0.12);
+            color: rgb(var(--wabi-shu));
+            text-decoration: line-through;
+        }
+
+        .cal-day.is-today {
+            box-shadow: inset 0 0 0 1px rgb(var(--wabi-accent));
+        }
+
+        .cal-legend {
+            display: inline-block;
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 9999px;
+        }
+
         .elevator-door-left {
             left: 0;
             box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.15);
@@ -485,7 +524,7 @@
     <!-- 主要內容 -->
     <main class="max-w-5xl mx-auto py-24 px-8 relative z-20 -mt-20">
         <!-- 介紹區塊 -->
-        <div class="bg-wabi-bg p-10 md:p-20 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm">
+        <div class="bg-wabi-bg p-6 md:p-20 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm">
             <div class="grid md:grid-cols-12 gap-16">
                 <!-- 左側文案 -->
                 <div class="md:col-span-7 space-y-10">
@@ -577,6 +616,29 @@
                             </button>
 
                             <p id="bookHint" class="mt-6 text-[10px] text-stone-300 font-sans tracking-widest">限量預約中</p>
+                            <button type="button" onclick="openMyBookings()"
+                                class="mt-3 text-[10px] font-sans tracking-widest text-stone-400 underline underline-offset-4 hover:text-wabi-dark transition-colors">
+                                查詢・取消我的預約
+                            </button>
+                        </div>
+
+                        <!-- 房況月曆：哪幾晚已經有人，點空的日期直接預約 -->
+                        <div class="mt-8 bg-white px-4 py-6 md:p-6 border border-stone-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <button type="button" id="calPrev" aria-label="上個月"
+                                    class="w-8 h-8 text-stone-400 hover:text-wabi-dark disabled:opacity-20 transition-colors">‹</button>
+                                <p id="calTitle" class="text-sm tracking-widest text-wabi-dark"></p>
+                                <button type="button" id="calNext" aria-label="下個月"
+                                    class="w-8 h-8 text-stone-400 hover:text-wabi-dark disabled:opacity-20 transition-colors">›</button>
+                            </div>
+                            <div class="grid grid-cols-7 text-center text-[10px] font-sans text-stone-400 mb-2">
+                                <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+                            </div>
+                            <div id="calDays" class="grid grid-cols-7 gap-y-1 text-center text-xs font-sans text-wabi-text"></div>
+                            <div class="mt-4 flex justify-center gap-4 text-[10px] font-sans tracking-widest text-stone-400">
+                                <span class="flex items-center gap-1.5"><span class="cal-legend"></span>已有人住</span>
+                                <span>點空的日期直接預約</span>
+                            </div>
                         </div>
 
                         <!-- 裝飾圖片 -->
@@ -705,6 +767,32 @@
         </div>
     </div>
 
+    <!-- 我的預約 Modal：用電話查詢、自己取消 -->
+    <div id="myBookingsModal"
+        class="modal-fade fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 invisible">
+        <div class="bg-wabi-bg w-full max-w-md mx-6 p-8 md:p-12 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+            <button onclick="closeMyBookings()"
+                class="absolute top-6 right-6 text-stone-400 hover:text-wabi-dark transition-colors p-2">✕</button>
+            <span class="text-xs font-sans tracking-widest text-stone-400">查詢・取消</span>
+            <h3 class="text-2xl font-serif text-wabi-dark mt-2 mb-8">我的預約</h3>
+
+            <form id="lookupForm" class="flex items-end gap-4">
+                <div class="flex-1">
+                    <label class="block text-xs font-sans mb-2 text-stone-500 tracking-widest">訂房時留的電話</label>
+                    <input type="tel" name="phone" required
+                        class="w-full bg-transparent border-b border-stone-300 py-2 text-wabi-dark focus:outline-none focus:border-wabi-accent transition-colors font-sans placeholder-stone-200"
+                        placeholder="09xx-xxx-xxx">
+                </div>
+                <button type="submit" id="lookupBtn"
+                    class="shrink-0 bg-wabi-dark text-white px-5 py-3 hover:bg-black transition-all duration-300 tracking-[0.2em] font-sans text-xs">
+                    查詢
+                </button>
+            </form>
+
+            <div id="myBookingsList" class="mt-8 space-y-3"></div>
+        </div>
+    </div>
+
     <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest">
         <p>&copy; 2026 DONGBULI · 純粹棲所</p>
     </footer>
@@ -713,18 +801,34 @@
         const modal = document.getElementById('bookingModal');
         const API_URL = "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
 
-        let bookedDates = [];
+        // 以「晚」為單位記錄哪幾天有人住：入住日到退房前一天。退房那天可以讓下一組入住
+        let bookedNights = new Set(); // 'yyyy-MM-dd'
         let checkInPicker, checkOutPicker;
+
+        const toKey = (date) => flatpickr.formatDate(date, 'Y-m-d');
+        const addDays = (key, n) => {
+            const d = new Date(key + 'T00:00');
+            d.setDate(d.getDate() + n);
+            return toKey(d);
+        };
 
         // 已取消的預約不佔日期
         function loadBookedDates() {
             return fetch(API_URL)
                 .then(res => res.json())
                 .then(data => {
-                    bookedDates = data
-                        .filter(item => item.status !== 'cancelled')
-                        .map(item => ({ from: item.check_in, to: item.check_out }));
+                    bookedNights = new Set();
+                    data.filter(item => item.status !== 'cancelled').forEach(item => {
+                        for (let night = item.check_in; night < item.check_out; night = addDays(night, 1)) {
+                            bookedNights.add(night);
+                        }
+                    });
                 });
+        }
+
+        // 選了入住日之後，最晚只能住到下一個「有人住的晚上」那天早上退房
+        function firstBookedNightAfter(key) {
+            return [...bookedNights].filter(night => night > key).sort()[0];
         }
 
         // 1. 初始化
@@ -732,6 +836,7 @@
             loadBookedDates()
                 .then(() => {
                     initPickers();
+                    renderCalendar();
 
                     const btn = document.getElementById('openModalBtn');
                     btn.disabled = false;
@@ -740,6 +845,7 @@
                 .catch(err => {
                     console.error("無法載入房況:", err);
                     initPickers();
+                    renderCalendar();
                     document.getElementById('openModalBtn').disabled = false;
                     document.getElementById('openModalBtn').innerText = "立即預約";
                 });
@@ -747,28 +853,67 @@
 
         function initPickers() {
             const commonConfig = {
-                disable: bookedDates,
                 dateFormat: "Y-m-d",
                 disableMobile: "true", // 強制在手機上也使用 flatpickr 樣式
                 locale: "zh_tw",
+                minDate: "today",
             };
 
             checkInPicker = flatpickr("#check_in", {
                 ...commonConfig,
-                minDate: "today",
-                onChange: function (selectedDates, dateStr) {
-                    const nextDay = new Date(selectedDates[0]);
-                    nextDay.setDate(nextDay.getDate() + 1);
-                    checkOutPicker.set("minDate", nextDay);
+                disable: [date => bookedNights.has(toKey(date))],
+                onChange: function (selectedDates) {
+                    if (!selectedDates[0]) return;
+                    const checkIn = toKey(selectedDates[0]);
+                    checkOutPicker.clear();
+                    checkOutPicker.set("minDate", addDays(checkIn, 1));
+                    checkOutPicker.set("maxDate", firstBookedNightAfter(checkIn));
                     // 自動打開退房選單
                     setTimeout(() => checkOutPicker.open(), 100);
                 }
             });
 
-            checkOutPicker = flatpickr("#check_out", {
-                ...commonConfig,
-                minDate: "today",
-            });
+            checkOutPicker = flatpickr("#check_out", commonConfig);
+        }
+
+        // 1b. 房況月曆：首頁直接看哪幾晚有人，點空的日期就開預約視窗
+        const MAX_MONTHS_AHEAD = 11;
+        const calStart = new Date();
+        calStart.setDate(1);
+        let calOffset = 0; // 0 = 這個月
+
+        document.getElementById('calPrev').addEventListener('click', () => { calOffset--; renderCalendar(); });
+        document.getElementById('calNext').addEventListener('click', () => { calOffset++; renderCalendar(); });
+
+        function renderCalendar() {
+            const month = new Date(calStart.getFullYear(), calStart.getMonth() + calOffset, 1);
+            const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+            const today = toKey(new Date());
+
+            document.getElementById('calTitle').innerText = `${month.getFullYear()} 年 ${month.getMonth() + 1} 月`;
+            document.getElementById('calPrev').disabled = calOffset <= 0;
+            document.getElementById('calNext').disabled = calOffset >= MAX_MONTHS_AHEAD;
+
+            let html = '<span></span>'.repeat(month.getDay()); // 1 號前面的空格
+            for (let day = 1; day <= daysInMonth; day++) {
+                const key = toKey(new Date(month.getFullYear(), month.getMonth(), day));
+                const classes = ['cal-day'];
+                if (key === today) classes.push('is-today');
+                if (key < today) {
+                    html += `<span class="${classes.join(' ')} is-past">${day}</span>`;
+                } else if (bookedNights.has(key)) {
+                    html += `<span class="${classes.join(' ')} is-booked" title="已有人住">${day}</span>`;
+                } else {
+                    html += `<button type="button" class="${classes.join(' ')}" onclick="openBookingAt('${key}')">${day}</button>`;
+                }
+            }
+            document.getElementById('calDays').innerHTML = html;
+        }
+
+        function openBookingAt(key) {
+            if (!checkInPicker) return;
+            openModal();
+            checkInPicker.setDate(key, true); // true：觸發 onChange，順便打開退房選單
         }
 
         // 2. 電梯開場（每個分頁只播一次，點擊可略過）
@@ -1083,10 +1228,10 @@
                 bookingError.classList.remove('hidden');
                 resetSubmit();
                 loadBookedDates().then(() => {
-                    checkInPicker.set('disable', bookedDates);
-                    checkOutPicker.set('disable', bookedDates);
                     checkInPicker.clear();
                     checkOutPicker.clear();
+                    checkInPicker.redraw();
+                    renderCalendar();
                 });
                 const box = modal.querySelector('div');
                 box.classList.remove('shake');
@@ -1302,9 +1447,105 @@
         }
 
 
+        // 8. 我的預約：用訂房時留的電話查自己的預約，還沒入住的可以自己取消
+        const myModal = document.getElementById('myBookingsModal');
+        const myList = document.getElementById('myBookingsList');
+        const STATUS_TEXT = { pending: '待確認', confirmed: '已確認', cancelled: '已取消' };
+        let myPhone = '';
+
+        function openMyBookings() {
+            myModal.classList.remove('invisible', 'opacity-0');
+        }
+
+        function closeMyBookings() {
+            myModal.classList.add('invisible', 'opacity-0');
+        }
+
+        async function postApi(payload) {
+            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+            return res.json();
+        }
+
+        function showMyMessage(text) {
+            myList.innerHTML = '<p class="text-xs text-center tracking-widest text-stone-400 py-4"></p>';
+            myList.firstChild.textContent = text;
+        }
+
+        document.getElementById('lookupForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            myPhone = new FormData(this).get('phone');
+            lookupMyBookings();
+        });
+
+        async function lookupMyBookings() {
+            const btn = document.getElementById('lookupBtn');
+            btn.disabled = true;
+            btn.textContent = '查詢中';
+            try {
+                const result = await postApi({ type: 'lookup', phone: myPhone });
+                if (result.result !== 'success') return showMyMessage(result.error || '查詢失敗，請稍後再試');
+                renderMyBookings(result.bookings);
+            } catch (err) {
+                console.error('查詢失敗:', err);
+                showMyMessage('查詢失敗，請稍後再試');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '查詢';
+            }
+        }
+
+        function renderMyBookings(bookings) {
+            if (!bookings.length) return showMyMessage('查不到這支電話的預約');
+            const today = toKey(new Date());
+            // 還沒住的排前面（由近到遠），住過的排後面
+            const sorted = [...bookings].sort((a, b) => {
+                const aPast = a.check_out <= today, bPast = b.check_out <= today;
+                if (aPast !== bPast) return aPast ? 1 : -1;
+                return aPast ? b.check_in.localeCompare(a.check_in) : a.check_in.localeCompare(b.check_in);
+            });
+            myList.innerHTML = sorted.map(b => {
+                const cancelled = b.status === 'cancelled';
+                const canCancel = !cancelled && b.check_in > today;
+                const label = b.check_out <= today && !cancelled ? '已住過' : STATUS_TEXT[b.status] || '';
+                return `
+                <div class="flex items-center justify-between gap-4 bg-white border border-stone-200 p-4 ${cancelled ? 'opacity-50' : ''}">
+                    <div class="min-w-0">
+                        <p class="text-sm text-wabi-dark ${cancelled ? 'line-through' : ''}">${formatDate(b.check_in)}</p>
+                        <p class="mt-1 text-[10px] font-sans tracking-widest text-stone-400">退房 ${formatDate(b.check_out)}・${label}</p>
+                    </div>
+                    ${canCancel ? `<button type="button" onclick="cancelMyBooking('${b.id}', this)"
+                        class="shrink-0 px-3 py-2 border border-wabi-shu/40 text-wabi-shu text-xs font-sans tracking-widest hover:bg-wabi-shu/10 transition-colors">取消</button>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        async function cancelMyBooking(id, btn) {
+            if (!confirm('確定要取消這筆預約嗎？')) return;
+            btn.disabled = true;
+            btn.textContent = '取消中';
+            try {
+                const result = await postApi({ type: 'cancel', id, phone: myPhone });
+                if (result.result !== 'success') {
+                    alert(result.error || '取消失敗，請稍後再試');
+                } else {
+                    showToast('已取消，下次見');
+                    // 空出來的日期馬上在月曆和日期選單上開放
+                    loadBookedDates().then(() => {
+                        if (checkInPicker) checkInPicker.redraw();
+                        renderCalendar();
+                    });
+                }
+            } catch (err) {
+                console.error('取消失敗:', err);
+                alert('取消失敗，請稍後再試');
+            }
+            lookupMyBookings();
+        }
+
         window.onclick = (event) => {
             if (event.target == modal) closeModal();
             if (event.target == fpModal) closeFingerprint();
+            if (event.target == myModal) closeMyBookings();
         }
     </script>
 </body>

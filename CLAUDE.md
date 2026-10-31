@@ -25,7 +25,7 @@
 
 | 檔案 | 用途 |
 | --- | --- |
-| `index.html` | 首頁 + 訂房 Modal。用 flatpickr（zh_tw 語系）選日期，已訂日期從 API 載入後設為不可選。 |
+| `index.html` | 首頁 + 訂房 Modal + 房況月曆 + 「我的預約」查詢取消。日期以「晚」為單位：入住日到退房前一天算有人住，退房那天可以讓下一組入住（flatpickr 入住選單擋有人住的晚上，退房選單用 maxDate 限制到下一個有人住的晚上）。 |
 | `reviews.html` | 留言板。`GET ?action=getReviews` 讀取、POST `type: 'review'` 新增。 |
 | `about.html` | 關於頁。 |
 | `404.html` | 找不到頁面。 |
@@ -41,6 +41,8 @@
 - `POST API_URL`，body 為 JSON 字串：
   - 訂房：`{ room_name, guest_name, phone, check_in, check_out }` → `{ result: 'success', id }`、`{ result: 'conflict' }`（撞期）或 `{ result: 'error', error }`。後端會檢查撞期（退房日可接下一組入住）並寄通知信給部署帳號。
   - 改狀態（後台）：`{ type: 'updateStatus', id, status }` → `success` / `conflict`（從已取消改回來時撞期）/ `error`。
+  - 查自己的預約（首頁「我的預約」）：`{ type: 'lookup', phone }` → `{ result: 'success', bookings: [{ id, check_in, check_out, status }] }`。電話只比對數字後 9 碼（舊資料開頭的 0 被 Sheet 吃掉也對得上）。
+  - 自己取消：`{ type: 'cancel', id, phone }` → `success` / `error`。電話要對得上，入住日當天或之後不能取消；取消會寄信通知部署帳號。
   - 留言：`{ type: 'review', name, rating, message }`
 - 首頁與後台的 POST **不用 `no-cors`**，直接 `fetch(API_URL, { method: 'POST', body: JSON.stringify(...) })`：字串 body 是 `text/plain`，不會觸發 CORS 預檢，GAS 轉址後的回應讀得到。留言頁仍是舊的 `no-cors` 寫法。
 - 若要改 API 欄位，記得 `apps-script/Code.gs` 也要同步修改並請使用者重新部署，且三個頁面的 `API_URL` 要一起更新。
