@@ -89,16 +89,22 @@ function showToast(message) {
         try { sessionStorage.setItem('inkFrom', `${e.clientX},${e.clientY}`); } catch (err) { }
     });
 
-    // 新頁面第一次畫出來之前觸發，把位置交給 CSS；上一頁／下一頁沒點擊就從正中間
-    window.addEventListener('pagereveal', () => {
+    // 新頁面第一次畫出來之前觸發：放一滴墨在點擊處，轉場結束就收掉。上一頁／下一頁沒點擊就從正中間
+    window.addEventListener('pagereveal', e => {
         let from = null;
         try {
             from = sessionStorage.getItem('inkFrom');
             sessionStorage.removeItem('inkFrom');
         } catch (err) { }
-        if (!from) return;
-        const [x, y] = from.split(',');
-        document.documentElement.style.setProperty('--ink-x', `${x}px`);
-        document.documentElement.style.setProperty('--ink-y', `${y}px`);
+        if (!e.viewTransition) return;
+        if (from) {
+            const [x, y] = from.split(',');
+            document.documentElement.style.setProperty('--ink-x', `${x}px`);
+            document.documentElement.style.setProperty('--ink-y', `${y}px`);
+        }
+        const ink = document.createElement('div');
+        ink.className = 'ink-drop';
+        document.documentElement.appendChild(ink); // body 可能還沒解析完，先掛在 <html> 底下
+        e.viewTransition.finished.finally(() => ink.remove());
     });
 })();

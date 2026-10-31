@@ -101,73 +101,71 @@ html.night .hover\:bg-black:hover { background-color: rgb(var(--wabi-accent)); }
 html.night .hover\:bg-stone-700:hover { background-color: rgb(var(--wabi-dark)); }
 html.night .hover\:text-black:hover { color: rgb(var(--wabi-dark)); }
 
-/* 換頁・墨暈：點連結換頁時，一滴墨從手指點的地方暈開蓋掉舊頁，新的一頁再從墨裡透出來
-   瀏覽器內建的跨頁轉場（View Transitions），三頁都載入這支 CSS 才會生效；
-   不支援的瀏覽器就照常換頁。點擊位置由 theme.js 存起來，沒有就從正中間暈開。
+/* 換頁・墨暈：點連結換頁時，一滴墨從手指點的地方暈開蓋掉舊頁，再淡掉露出新的一頁
+   瀏覽器內建的跨頁轉場（View Transitions），三頁都載入這支 CSS 才會生效；不支援的瀏覽器就照常換頁。
+   墨滴是 theme.js 在新頁面放的 .ink-drop，形狀只畫一次，動畫只動 transform、opacity（交給 GPU，手機才不會卡）。
    墨是 --wabi-dark：白天是墨色，夜裡變成暖黃的燈光暈開。 */
 @view-transition {
     navigation: auto;
 }
 
-/* 墨滴形狀：圓形加上亂流扭曲（邊緣不規則）再微微模糊（墨滲進紙的毛邊），兩滴用不同的亂數長得不一樣 */
-:root {
-    --ink-blot-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cfilter id='i' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.06' numOctaves='3' seed='27'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='14'/%3E%3CfeGaussianBlur stdDeviation='0.6'/%3E%3C/filter%3E%3Ccircle cx='50' cy='50' r='34' filter='url(%23i)'/%3E%3C/svg%3E");
-    --ink-blot-b: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cfilter id='i' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.06' numOctaves='3' seed='4'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='14'/%3E%3CfeGaussianBlur stdDeviation='0.6'/%3E%3C/filter%3E%3Ccircle cx='50' cy='50' r='34' filter='url(%23i)'/%3E%3C/svg%3E");
-}
-
-/* 墨本身：舊頁被挖掉的地方露出來的底色 */
-::view-transition-group(root) {
+/* 墨滴：80vmax 的正方形，中心對準點擊處；平常不顯示，只在轉場時被拍下來用 */
+.ink-drop {
+    display: none;
+    position: fixed;
+    left: calc(var(--ink-x, 50vw) - 40vmax);
+    top: calc(var(--ink-y, 50vh) - 40vmax);
+    width: 80vmax;
+    height: 80vmax;
+    pointer-events: none;
     background: rgb(var(--wabi-dark));
+    /* 圓形加亂流扭曲（邊緣不規則）再微微模糊（墨滲進紙的毛邊） */
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cfilter id='i' x='-10%25' y='-10%25' width='120%25' height='120%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.06' numOctaves='3' seed='27'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='10'/%3E%3CfeGaussianBlur stdDeviation='0.5'/%3E%3C/filter%3E%3Ccircle cx='50' cy='50' r='42' filter='url(%23i)'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cfilter id='i' x='-10%25' y='-10%25' width='120%25' height='120%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.06' numOctaves='3' seed='27'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='10'/%3E%3CfeGaussianBlur stdDeviation='0.5'/%3E%3C/filter%3E%3Ccircle cx='50' cy='50' r='42' filter='url(%23i)'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+    view-transition-name: ink-drop;
+}
+html:active-view-transition .ink-drop {
+    display: block;
 }
 
-/* 舊頁：中間挖一個越來越大的墨滴洞 */
+/* 舊頁停著被墨蓋住，蓋滿那一刻換成新頁（只切 opacity，不重畫） */
 ::view-transition-old(root) {
-    -webkit-mask-image: linear-gradient(#000 0 0), var(--ink-blot-a);
-    mask-image: linear-gradient(#000 0 0), var(--ink-blot-a);
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    animation: ink-spread 0.9s cubic-bezier(0.55, 0, 0.35, 1) both;
+    animation: ink-swap-out 1s linear both;
 }
-
-/* 新頁：慢半拍，從墨裡透出來 */
 ::view-transition-new(root) {
-    -webkit-mask-image: var(--ink-blot-b);
-    mask-image: var(--ink-blot-b);
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-    animation: ink-bleed 0.9s cubic-bezier(0.55, 0, 0.35, 1) 0.2s both;
+    animation: ink-swap-in 1s linear both;
 }
 
-/* 墨滴從點擊處長大到蓋滿整個畫面（420vmax：從角落點也蓋得到對角） */
+/* 墨滴：從一點暈開蓋滿畫面，再慢慢淡掉 */
+::view-transition-group(ink-drop) {
+    animation: none;
+}
+::view-transition-new(ink-drop) {
+    animation: ink-spread 1s both;
+}
+
+@keyframes ink-swap-out {
+    0%, 54% { opacity: 1; }
+    55%, 100% { opacity: 0; }
+}
+@keyframes ink-swap-in {
+    0%, 54% { opacity: 0; }
+    55%, 100% { opacity: 1; }
+}
+/* 墨滴半徑約 0.37 倍邊長，放大 3.4 倍才蓋得到手機的對角 */
 @keyframes ink-spread {
-    from {
-        -webkit-mask-size: 100% 100%, 0 0;
-        mask-size: 100% 100%, 0 0;
-        -webkit-mask-position: 0 0, var(--ink-x, 50vw) var(--ink-y, 50vh);
-        mask-position: 0 0, var(--ink-x, 50vw) var(--ink-y, 50vh);
+    0% {
+        transform: scale(0.03);
+        animation-timing-function: cubic-bezier(0.45, 0, 0.3, 1);
     }
-    to {
-        -webkit-mask-size: 100% 100%, 420vmax 420vmax;
-        mask-size: 100% 100%, 420vmax 420vmax;
-        -webkit-mask-position: 0 0, calc(var(--ink-x, 50vw) - 210vmax) calc(var(--ink-y, 50vh) - 210vmax);
-        mask-position: 0 0, calc(var(--ink-x, 50vw) - 210vmax) calc(var(--ink-y, 50vh) - 210vmax);
+    55% {
+        transform: scale(3.4);
+        opacity: 1;
+        animation-timing-function: ease-out;
     }
-}
-
-@keyframes ink-bleed {
-    from {
-        -webkit-mask-size: 0 0;
-        mask-size: 0 0;
-        -webkit-mask-position: var(--ink-x, 50vw) var(--ink-y, 50vh);
-        mask-position: var(--ink-x, 50vw) var(--ink-y, 50vh);
-    }
-    to {
-        -webkit-mask-size: 420vmax 420vmax;
-        mask-size: 420vmax 420vmax;
-        -webkit-mask-position: calc(var(--ink-x, 50vw) - 210vmax) calc(var(--ink-y, 50vh) - 210vmax);
-        mask-position: calc(var(--ink-x, 50vw) - 210vmax) calc(var(--ink-y, 50vh) - 210vmax);
+    100% {
+        transform: scale(4);
+        opacity: 0;
     }
 }
 
