@@ -656,6 +656,7 @@
                         class="w-full bg-wabi-dark text-white py-4 px-8 hover:bg-black transition-all duration-300 tracking-[0.2em] font-sans text-xs uppercase shadow-lg">
                         確認預約
                     </button>
+                    <p id="bookingError" class="hidden mt-4 text-xs text-center tracking-widest text-wabi-shu"></p>
                 </div>
             </form>
 
@@ -710,20 +711,26 @@
 
     <script>
         const modal = document.getElementById('bookingModal');
-        const API_URL = "https://script.google.com/macros/s/AKfycbzo_a1Sw_ScHPAOGKB6lo9PrtvE2dPWrFrCRAHTLhg64bD5v4Q9lR1bNHJuTNCaDxNe/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
 
         let bookedDates = [];
         let checkInPicker, checkOutPicker;
 
-        // 1. 初始化
-        window.addEventListener('load', () => {
-            fetch(API_URL)
+        // 已取消的預約不佔日期
+        function loadBookedDates() {
+            return fetch(API_URL)
                 .then(res => res.json())
                 .then(data => {
-                    bookedDates = data.map(item => ({
-                        from: item.check_in,
-                        to: item.check_out
-                    }));
+                    bookedDates = data
+                        .filter(item => item.status !== 'cancelled')
+                        .map(item => ({ from: item.check_in, to: item.check_out }));
+                });
+        }
+
+        // 1. 初始化
+        window.addEventListener('load', () => {
+            loadBookedDates()
+                .then(() => {
                     initPickers();
 
                     const btn = document.getElementById('openModalBtn');
@@ -1026,10 +1033,18 @@
         document.getElementById('bookingForm').addEventListener('submit', function (e) {
             e.preventDefault();
             const submitBtn = document.getElementById('submitBtn');
-            const originalText = submitBtn.innerText;
+            const originalText = submitBtn.textContent.trim(); // innerText 在視窗還沒完全顯示時可能讀到空字串
+            const bookingError = document.getElementById('bookingError');
             submitBtn.innerText = "傳送中...";
             submitBtn.disabled = true;
             submitBtn.classList.add('opacity-70');
+            bookingError.classList.add('hidden');
+
+            const resetSubmit = () => {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-70');
+                submitBtn.innerText = originalText;
+            };
 
             const formData = new FormData(this);
             const data = {
@@ -1040,12 +1055,16 @@
                 check_out: formData.get('check_out')
             };
 
+            // 不用 no-cors，才讀得到後端回的結果（字串 body 是 text/plain，不會觸發 CORS 預檢）
             fetch(API_URL, {
                 method: 'POST',
-                mode: 'no-cors',
                 body: JSON.stringify(data)
             })
-                .then(() => {
+                .then(res => res.json())
+                .then(result => {
+                    if (result.result === 'conflict') return handleConflict();
+                    if (result.result !== 'success') throw new Error(result.error);
+
                     stampApproved();
                     // 印章至少停留 1.8 秒，再換成入住通知書；畫圖失敗就照舊重新整理
                     Promise.all([makeTicket(data), new Promise(r => setTimeout(r, 1800))])
@@ -1053,11 +1072,27 @@
                         .catch(() => setTimeout(() => location.reload(), 1000));
                 })
                 .catch(err => {
+                    console.error('訂房失敗:', err);
                     alert('系統忙碌中，請稍後再試。');
-                    submitBtn.disabled = false;
-                    submitBtn.classList.remove('opacity-70');
-                    submitBtn.innerText = originalText;
+                    resetSubmit();
                 });
+
+            // 送出前被別人訂走了：更新日曆、清掉日期，請他重選
+            function handleConflict() {
+                bookingError.innerText = '這幾天剛被訂走了，換個日子吧';
+                bookingError.classList.remove('hidden');
+                resetSubmit();
+                loadBookedDates().then(() => {
+                    checkInPicker.set('disable', bookedDates);
+                    checkOutPicker.set('disable', bookedDates);
+                    checkInPicker.clear();
+                    checkOutPicker.clear();
+                });
+                const box = modal.querySelector('div');
+                box.classList.remove('shake');
+                void box.offsetWidth; // 重新觸發動畫
+                box.classList.add('shake');
+            }
         });
 
         // 5. 御神籤：搖一搖籤筒，抽今晚的運勢

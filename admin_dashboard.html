@@ -37,6 +37,28 @@
             background-color: #fcfaf8;
             background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
         }
+
+        /* 預約狀態下拉選單：待確認用朱色提醒、已確認墨色、已取消淡灰 */
+        .status-select {
+            padding: 0.35rem 1.75rem 0.35rem 0.75rem;
+            border: 1px solid currentColor;
+            border-radius: 9999px;
+            background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238e8070'/%3E%3C/svg%3E") no-repeat right 0.65rem center;
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        .status-select:disabled {
+            opacity: 0.5;
+            cursor: wait;
+        }
+
+        .status-pending { color: #b33a2f; }
+        .status-confirmed { color: #2c2c2c; }
+        .status-cancelled { color: #a8a29e; }
     </style>
 </head>
 
@@ -69,6 +91,7 @@
                 <p class="text-[10px] text-stone-400 font-sans tracking-widest text-right">
                     目前的預約總數 <br>
                     <span class="text-2xl text-wabi-dark font-serif" id="totalCount">0</span>
+                    <span class="block mt-1">待確認 <span id="pendingCount" class="text-[#b33a2f]">0</span> 筆</span>
                 </p>
             </div>
         </div>
@@ -87,6 +110,7 @@
                                 <th class="p-6 font-normal">聯絡電話</th>
                                 <th class="p-6 font-normal">入住日期</th>
                                 <th class="p-6 font-normal">退房日期</th>
+                                <th class="p-6 font-normal">狀態</th>
                             </tr>
                         </thead>
                         <tbody id="activeTableBody" class="font-sans text-sm text-stone-600">
@@ -120,6 +144,7 @@
                                 <th class="p-6 font-normal">聯絡電話</th>
                                 <th class="p-6 font-normal">入住日期</th>
                                 <th class="p-6 font-normal">退房日期</th>
+                                <th class="p-6 font-normal">狀態</th>
                             </tr>
                         </thead>
                         <tbody id="historyTableBody" class="font-sans text-sm text-stone-400 grayscale">
@@ -159,7 +184,7 @@
             window.location.href = 'admin_login.html';
         });
 
-        const API_URL = "https://script.google.com/macros/s/AKfycbzo_a1Sw_ScHPAOGKB6lo9PrtvE2dPWrFrCRAHTLhg64bD5v4Q9lR1bNHJuTNCaDxNe/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
 
         async function fetchData() {
             try {
@@ -182,7 +207,8 @@
                 const checkInDate = new Date(checkInStr);
                 const checkOutDate = new Date(checkOutStr);
                 const isPast = checkOutDate < today;
-                return { ...item, checkInStr, checkOutStr, checkInDate, isPast };
+                const status = item.status || 'confirmed';
+                return { ...item, status, checkInStr, checkOutStr, checkInDate, isPast };
             });
 
             // 分類與排序
@@ -191,7 +217,50 @@
             state.history.data = processed.filter(d => d.isPast).sort((a, b) => b.checkInDate - a.checkInDate);
 
             document.getElementById('totalCount').innerText = data.length;
+            updatePendingCount();
 
+            renderSection('active');
+            renderSection('history');
+        }
+
+        function updatePendingCount() {
+            const all = [...state.active.data, ...state.history.data];
+            document.getElementById('pendingCount').innerText = all.filter(d => d.status === 'pending').length;
+        }
+
+        const STATUS_LABELS = { pending: '待確認', confirmed: '已確認', cancelled: '已取消' };
+
+        // 有 id 才能改狀態（後端更新前的舊 API 不會給 id，就只顯示文字）
+        function statusCell(item) {
+            if (!item.id) return `<span class="status-${item.status} text-xs tracking-widest">${STATUS_LABELS[item.status]}</span>`;
+            const options = Object.entries(STATUS_LABELS)
+                .map(([value, label]) => `<option value="${value}" ${value === item.status ? 'selected' : ''}>${label}</option>`)
+                .join('');
+            return `<select class="status-select status-${item.status}" data-id="${item.id}" onchange="changeStatus(this)">${options}</select>`;
+        }
+
+        async function changeStatus(select) {
+            const item = [...state.active.data, ...state.history.data].find(d => d.id === select.dataset.id);
+            const status = select.value;
+            select.disabled = true;
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ type: 'updateStatus', id: item.id, status })
+                });
+                const result = await res.json();
+                if (result.result === 'conflict') {
+                    alert('這幾天已經有其他預約了，不能改回來。');
+                } else if (result.result !== 'success') {
+                    throw new Error(result.error);
+                } else {
+                    item.status = status;
+                }
+            } catch (e) {
+                console.error('Update error', e);
+                alert('更新失敗，請稍後再試。');
+            }
+            updatePendingCount();
             renderSection('active');
             renderSection('history');
         }
@@ -215,7 +284,7 @@
             const btnNext = document.getElementById('btnNext' + (type.charAt(0).toUpperCase() + type.slice(1)));
 
             if (!s.data.length) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-xs tracking-widest text-stone-300">暫無資料</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-xs tracking-widest text-stone-300">暫無資料</td></tr>`;
                 pageInfo.innerText = "0 / 0";
                 btnPrev.disabled = true;
                 btnNext.disabled = true;
@@ -229,14 +298,18 @@
             const pageData = s.data.slice(start, end);
 
             // Render Rows
-            tbody.innerHTML = pageData.map(item => `
+            tbody.innerHTML = pageData.map(item => {
+                const strike = item.status === 'cancelled' ? 'line-through opacity-50' : ''; // 已取消的劃掉
+                return `
                 <tr class="border-b ${type === 'active' ? 'border-stone-100 hover:bg-stone-50 text-wabi-text' : 'border-stone-50 text-stone-400'} transition-colors last:border-0">
-                    <td class="p-6 font-medium ${type === 'active' ? 'text-wabi-dark' : ''}">${item.name || item.guest_name || '未知訪客'}</td>
-                    <td class="p-6 font-mono text-xs text-stone-500">${item.phone || '09xx-xxx-xxx'}</td>
-                    <td class="p-6 font-mono text-xs text-stone-500">${item.checkInStr}</td>
-                    <td class="p-6 font-mono text-xs text-stone-500">${item.checkOutStr}</td>
+                    <td class="p-6 font-medium whitespace-nowrap ${type === 'active' ? 'text-wabi-dark' : ''} ${strike}">${item.name || item.guest_name || '未知訪客'}</td>
+                    <td class="p-6 font-mono text-xs text-stone-500 whitespace-nowrap ${strike}">${item.phone || '09xx-xxx-xxx'}</td>
+                    <td class="p-6 font-mono text-xs text-stone-500 whitespace-nowrap ${strike}">${item.checkInStr}</td>
+                    <td class="p-6 font-mono text-xs text-stone-500 whitespace-nowrap ${strike}">${item.checkOutStr}</td>
+                    <td class="p-6 whitespace-nowrap">${statusCell(item)}</td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
 
             // Update Controls
             pageInfo.innerText = `${s.page} / ${totalPages}`;

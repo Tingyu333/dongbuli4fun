@@ -18,7 +18,7 @@
   - `theme.js`：`tailwind.config`、夜間模式切換、`showToast()`、`themeColor()`（給 canvas 讀 CSS 變數）。
   - `404.html` 與後台兩頁沒有接主題，仍在頁內各自宣告 `tailwind.config`（404 在 GitHub Pages 的子路徑下相對路徑會失效）。
 - **Tailwind CSS（Play CDN）**：透過 `https://cdn.tailwindcss.com` 載入。
-- **後端**：Google Apps Script Web App（`API_URL`，在 `index.html`、`reviews.html`、`admin_dashboard.html` 中各自寫死同一個網址）。資料存在對應的 Google Sheet。後端程式碼不在此 repo 內。
+- **後端**：Google Apps Script Web App（`API_URL`，在 `index.html`、`reviews.html`、`admin_dashboard.html` 中各自寫死同一個網址）。資料存在對應的 Google Sheet。後端程式碼備份在 `apps-script/Code.gs`，改完要由使用者貼到 Apps Script 編輯器並「部署 → 管理部署作業 → 編輯 → 新版本」才會生效（Claude 無法代為部署）。
 - **部署**：GitHub repo `Tingyu333/dongbuli4fun`，有 `404.html`，推測透過 GitHub Pages 發布。
 
 ## 頁面
@@ -34,13 +34,16 @@
 
 ## API 約定（Google Apps Script）
 
-- `GET API_URL` → 回傳訂房陣列，欄位 `guest_name`、`phone`、`check_in`、`check_out`（後台也相容 `name`、`checkIn`、`checkOut` 及 ISO 時間字串）。
+- Sheet `Bookings` 欄位：A `timestamp`、B `room_name`、C `guest_name`、D `phone`、E `check_in`、F `check_out`、G `status`、H `id`。`Reviews`：A `timestamp`、B `name`、C `rating`、D `message`。
+- `status`：`pending`（待確認，新訂房預設）/ `confirmed`（已確認，舊資料沒填也當作這個）/ `cancelled`（已取消，不佔日期）。
+- `GET API_URL` → 回傳訂房陣列 `{ id, guest_name, phone, check_in, check_out, status }`，日期是台灣時間 `yyyy-MM-dd`（後台也相容 `name`、`checkIn`、`checkOut` 及 ISO 時間字串）。
 - `GET API_URL?action=getReviews` → 回傳留言陣列，欄位 `name`、`rating`、`message`、`timestamp`。
 - `POST API_URL`，body 為 JSON 字串：
-  - 訂房：`{ room_name, guest_name, phone, check_in, check_out }`
+  - 訂房：`{ room_name, guest_name, phone, check_in, check_out }` → `{ result: 'success', id }`、`{ result: 'conflict' }`（撞期）或 `{ result: 'error', error }`。後端會檢查撞期（退房日可接下一組入住）並寄通知信給部署帳號。
+  - 改狀態（後台）：`{ type: 'updateStatus', id, status }` → `success` / `conflict`（從已取消改回來時撞期）/ `error`。
   - 留言：`{ type: 'review', name, rating, message }`
-- POST 一律使用 `mode: 'no-cors'`（GAS 限制），因此**拿不到回應內容**，前端只能假設成功後 `alert` 並重新整理。
-- 若要改 API 欄位，記得後端（GAS）也要同步修改，且三個頁面的 `API_URL` 要一起更新。
+- 首頁與後台的 POST **不用 `no-cors`**，直接 `fetch(API_URL, { method: 'POST', body: JSON.stringify(...) })`：字串 body 是 `text/plain`，不會觸發 CORS 預檢，GAS 轉址後的回應讀得到。留言頁仍是舊的 `no-cors` 寫法。
+- 若要改 API 欄位，記得 `apps-script/Code.gs` 也要同步修改並請使用者重新部署，且三個頁面的 `API_URL` 要一起更新。
 
 ## 設計規範
 
