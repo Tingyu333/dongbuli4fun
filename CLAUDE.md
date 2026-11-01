@@ -13,7 +13,7 @@
 ## 技術架構
 
 - **純靜態 HTML**：沒有建置工具、套件管理或測試框架。每個頁面是獨立的 `.html`，頁面專屬的 CSS 與 JS 寫在檔案內。
-- **共用主題 `assets/`**：前台三頁（`index`、`reviews`、`about`）在 `<head>` 載入 `assets/theme.css` 與 `assets/theme.js`（要放在 Tailwind CDN 之後、同步載入）：
+- **共用主題 `assets/`**：前台四頁（`index`、`reviews`、`jiaobei`、`about`）在 `<head>` 載入 `assets/theme.css` 與 `assets/theme.js`（要放在 Tailwind CDN 之後、同步載入）：
   - `theme.css`：色彩 CSS 變數、夜間模式覆寫、`body` 紙張背景、`.toast`、`.nav-solid`、晝夜切換鈕。
   - `theme.js`：`tailwind.config`、夜間模式切換、`showToast()`、`themeColor()`（給 canvas 讀 CSS 變數）。
   - `404.html` 與後台兩頁沒有接主題，仍在頁內各自宣告 `tailwind.config`（404 在 GitHub Pages 的子路徑下相對路徑會失效）。
@@ -27,6 +27,7 @@
 | --- | --- |
 | `index.html` | 首頁 + 訂房 Modal + 房況月曆 + 「我的預約」查詢取消。日期以「晚」為單位：入住日到退房前一天算有人住，退房那天可以讓下一組入住（flatpickr 入住選單擋有人住的晚上，退房選單用 maxDate 限制到下一個有人住的晚上）。 |
 | `reviews.html` | 留言板。`GET ?action=getReviews` 讀取、POST `type: 'review'` 新增。 |
+| `jiaobei.html` | 擲杯（擲筊）。純前端、不接後端：輸入或點選問題 → 點「擲」或搖手機（iPhone 要先授權）→ 兩支筊杯拋起翻面落地。聖杯 1/2、笑杯 1/4、陰杯 1/4，另有 1/88 的「立杯」彩蛋；同一個問題連續三個聖杯蓋「定」，換問題就重算。動畫只動 transform／opacity（Web Animations API）。 |
 | `about.html` | 關於頁。 |
 | `404.html` | 找不到頁面。 |
 | `admin_login.html` | 後台登入（帳密寫死在前端，成功後設 `localStorage.isAdmin`）。 |
@@ -63,7 +64,7 @@
 - 字體：Noto Serif TC（`font-serif`，內文預設）與 Noto Sans TC（`font-sans`，標籤、按鈕、數字）。使用者不要手寫字體／手寫吐槽註解，不要再加回來。
 - **不用 emoji**，跟侘寂風衝突。改用漢字或朱色印章樣式；提示訊息用 `showToast()`（紙條樣式）。
 - 常用元素：寬字距（`tracking-widest`、`tracking-[0.2em]`）、細字重（`font-light`）、底線式 input、`.vertical-rl` 直書標題、「XX・X」格式的標題（如「首頁・歸」「留言・絆」）。
-- 導覽列在 `index.html`、`reviews.html`、`about.html` 三頁各自重複，新增前台頁面時需同步更新每一頁的 nav，目前頁面用 `<span>` 加底線標示、其他用 `<a>`。
+- 導覽列在 `index.html`、`reviews.html`、`jiaobei.html`、`about.html` 四頁各自重複，新增前台頁面時需同步更新每一頁的 nav，目前頁面用 `<span>` 加底線標示、其他用 `<a>`。四個連結在 375px 寬已經很擠（手機上 `px-4`、`gap-3`、連結 `tracking-normal`、Logo `tracking-[0.1em]`），要再加第五項得改版面（例如收進選單）。
 
 ## 開發注意事項
 

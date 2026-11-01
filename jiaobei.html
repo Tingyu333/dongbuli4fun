@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>擲杯・問 | 丼步喱</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入日系字體 -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/theme.css">
+    <script src="assets/theme.js"></script>
+    <style>
+        /* 擲杯台：筊杯飛出去不能被切掉，長按不能跳出系統選單 */
+        .altar {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .stage {
+            position: relative;
+            height: 15rem;
+        }
+
+        /* 筊杯：外層管拋物線（位移、旋轉），內層管翻面（rotateY），只動 transform 才順 */
+        .jiao {
+            position: absolute;
+            bottom: 1.5rem;
+            width: 3.5rem;
+            height: 7rem;
+            margin-left: -1.75rem;
+            will-change: transform;
+        }
+
+        .jiao-spin {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+
+        .jiao-face {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+
+        .jiao-face.is-back {
+            transform: rotateY(180deg);
+        }
+
+        /* 地上的影子：筊杯飛起來時變淡變小 */
+        .jiao-shadow {
+            position: absolute;
+            bottom: 1.1rem;
+            width: 3.5rem;
+            height: 0.6rem;
+            margin-left: -1.75rem;
+            border-radius: 50%;
+            background: rgb(var(--wabi-dark) / 0.12);
+            filter: blur(3px);
+            will-change: transform, opacity;
+        }
+
+        /* 三聖杯的格子與印章 */
+        .streak-slot {
+            width: 2.25rem;
+            height: 2.25rem;
+            border: 1px dashed rgb(var(--wabi-sub));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .seal {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgb(var(--wabi-shu));
+            color: rgb(var(--wabi-shu));
+            font-family: 'Noto Serif TC', serif;
+            font-weight: 700;
+            border-radius: 0.2rem;
+            box-shadow: inset 0 0 0 1px rgb(var(--wabi-shu) / 0.35);
+            transform: rotate(-8deg);
+        }
+
+        .streak-slot .seal {
+            width: 1.9rem;
+            height: 1.9rem;
+            font-size: 1.05rem;
+            animation: seal-in 0.35s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+        }
+
+        /* 三聖杯：蓋一個大大的「定」 */
+        .big-seal {
+            position: absolute;
+            left: 50%;
+            top: 42%;
+            width: 6rem;
+            height: 6rem;
+            margin: -3rem 0 0 -3rem;
+            font-size: 3.25rem;
+            border-width: 3px;
+            background: rgb(var(--wabi-card) / 0.85);
+            pointer-events: none;
+            animation: big-seal-in 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+        }
+
+        @keyframes seal-in {
+            from {
+                opacity: 0;
+                transform: scale(2.2) rotate(-8deg);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) rotate(-8deg);
+            }
+        }
+
+        @keyframes big-seal-in {
+            from {
+                opacity: 0;
+                transform: scale(2.6) rotate(-12deg);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) rotate(-12deg);
+            }
+        }
+
+        .result-pop {
+            animation: result-pop 0.4s ease-out both;
+        }
+
+        @keyframes result-pop {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        /* 擲的按鈕 */
+        .throw-btn {
+            width: 5rem;
+            height: 5rem;
+            border-radius: 9999px;
+            background: rgb(var(--wabi-dark));
+            color: rgb(var(--wabi-bg));
+            font-family: 'Noto Serif TC', serif;
+            font-size: 1.6rem;
+            letter-spacing: 0;
+            box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.45);
+            transition: transform 0.15s ease, opacity 0.3s;
+        }
+
+        .throw-btn:active {
+            transform: scale(0.94);
+        }
+
+        .throw-btn:disabled {
+            opacity: 0.4;
+        }
+
+        .chip {
+            border: 1px solid rgb(var(--wabi-sub));
+            border-radius: 9999px;
+            padding: 0.2rem 0.75rem;
+            font-size: 0.7rem;
+            letter-spacing: 0.08em;
+            color: rgb(var(--wabi-accent));
+            white-space: nowrap;
+            transition: border-color 0.3s, color 0.3s;
+        }
+
+        .chip:active,
+        .chip.is-picked {
+            border-color: rgb(var(--wabi-accent));
+            color: rgb(var(--wabi-dark));
+        }
+    </style>
+</head>
+
+<body
+    class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- 筊杯的形狀與漸層：兩支筊杯共用 -->
+    <svg width="0" height="0" class="absolute" aria-hidden="true">
+        <defs>
+            <!-- 「(」形的筊杯，外側是凸面、內側是平面 -->
+            <path id="jiaoShape"
+                d="M40 4 C14 14 4 38 4 60 C4 82 14 106 40 116 C46 118 52 114 50 108 C40 92 36 76 36 60 C36 44 40 28 50 12 C52 6 46 2 40 4 Z" />
+            <!-- 凸面（陰）：有立體感的木色 -->
+            <radialGradient id="jiaoYin" cx="35%" cy="40%" r="75%">
+                <stop offset="0" style="stop-color: rgb(var(--wabi-accent) / 0.75)" />
+                <stop offset="1" style="stop-color: rgb(var(--wabi-accent))" />
+            </radialGradient>
+        </defs>
+    </svg>
+
+    <!-- 導航 -->
+    <nav
+        class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <a href="index.html"
+            class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-3 md:gap-8">
+            <a href="index.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <a href="reviews.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <span class="text-xs tracking-normal md:tracking-widest whitespace-nowrap text-wabi-dark border-b border-wabi-dark pb-1">擲杯・問</span>
+            <a href="about.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+        </div>
+    </nav>
+
+    <!-- 主要內容 -->
+    <main class="flex-grow max-w-md mx-auto pt-32 pb-16 px-6 w-full">
+
+        <!-- 標題區塊 -->
+        <div class="text-center mb-12">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-4">DIVINATION</span>
+            <h1 class="text-4xl font-light text-wabi-dark mb-4 tracking-widest">擲杯・問</h1>
+            <div class="w-16 h-[1px] bg-wabi-accent mx-auto mt-8"></div>
+            <p class="mt-8 text-sm text-stone-500 font-sans tracking-widest leading-relaxed">
+                有事不決，問二十七樓的神明。<br>
+                連續三個聖杯，才算數。
+            </p>
+        </div>
+
+        <!-- 心中所問 -->
+        <div class="mb-10">
+            <label for="question" class="block text-xs font-sans mb-2 text-stone-500 tracking-widest">心中所問</label>
+            <input id="question" type="text" maxlength="30" autocomplete="off"
+                class="w-full bg-transparent border-b border-stone-300 py-2 text-wabi-dark focus:outline-none focus:border-wabi-accent transition-colors font-serif placeholder-stone-200"
+                placeholder="例如：今晚可以續攤嗎">
+            <div id="presetList" class="flex flex-wrap gap-2 mt-4"></div>
+        </div>
+
+        <!-- 擲杯台 -->
+        <div class="altar bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-6 pt-6 pb-8">
+            <!-- 三聖杯 -->
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-sans tracking-widest text-stone-400">三聖杯</span>
+                <div id="streak" class="flex gap-2">
+                    <span class="streak-slot"></span><span class="streak-slot"></span><span class="streak-slot"></span>
+                </div>
+            </div>
+
+            <div id="stage" class="stage" aria-hidden="true"></div>
+
+            <!-- 結果 -->
+            <div class="text-center min-h-[5.5rem]" aria-live="polite">
+                <p id="resultName" class="text-3xl font-semibold tracking-[0.3em] text-wabi-dark">&nbsp;</p>
+                <p id="resultLine" class="mt-2 text-sm text-stone-500 tracking-widest [text-wrap:balance]">心誠則靈，擲了才知道。</p>
+            </div>
+
+            <!-- 擲 -->
+            <div class="mt-6 flex flex-col items-center gap-3">
+                <button id="throwBtn" type="button" class="throw-btn" aria-label="擲杯">擲</button>
+                <span id="throwHint" class="text-[10px] font-sans tracking-widest text-stone-400">點一下擲杯</span>
+                <button id="shakeEnableBtn" type="button"
+                    class="hidden text-[10px] font-sans tracking-widest text-wabi-accent border-b border-wabi-accent">開啟搖手機擲杯</button>
+            </div>
+        </div>
+
+        <!-- 這一問的紀錄 -->
+        <div class="mt-8">
+            <div class="flex items-baseline justify-between">
+                <h3 class="text-sm font-light text-wabi-dark tracking-widest border-l-2 border-wabi-accent pl-3">這一問的紀錄</h3>
+                <span id="historyCount" class="text-[10px] font-sans tracking-widest text-stone-400"></span>
+            </div>
+            <p id="history" class="mt-3 text-sm tracking-[0.4em] text-stone-400 break-all">還沒擲過。</p>
+        </div>
+
+        <p class="mt-10 text-[11px] font-sans tracking-widest text-stone-400 leading-relaxed text-center">
+            平面朝上為陽，凸面朝上為陰。<br>
+            一陽一陰是聖杯，兩陽是笑杯，兩陰是陰杯。
+        </p>
+    </main>
+
+    <footer
+        class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
+        <p>&copy; 2026 DONGBULI · 純粹棲所</p>
+    </footer>
+
+    <script>
+        // 1. 問題：自己寫，或點一個常見的問題
+        const PRESETS = ['今晚可以續攤嗎', '可以睡到中午嗎', '老闆會打折嗎', '前夫今晚會出現嗎', '明天早餐有人做嗎'];
+        const questionInput = document.getElementById('question');
+        const presetList = document.getElementById('presetList');
+
+        PRESETS.forEach(text => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'chip';
+            chip.textContent = text;
+            chip.addEventListener('click', () => {
+                questionInput.value = text;
+                onQuestionChange();
+            });
+            presetList.appendChild(chip);
+        });
+
+        // 換了問題就重新算三聖杯
+        let currentQuestion = '';
+        questionInput.addEventListener('input', onQuestionChange);
+
+        function onQuestionChange() {
+            const q = questionInput.value.trim();
+            presetList.querySelectorAll('.chip').forEach(c => c.classList.toggle('is-picked', c.textContent === q));
+            if (q === currentQuestion) return;
+            currentQuestion = q;
+            resetQuestion();
+        }
+
+        // 2. 擺上兩支筊杯：左邊「(」右邊「)」，一陽一陰
+        const stage = document.getElementById('stage');
+        const REST = [{ x: -34, rot: -6 }, { x: 34, rot: 6 }]; // 相對於擲杯台中間
+
+        function makeFace(mirrored, back, yang) {
+            // 背面先被 rotateY(180deg) 翻過來，形狀要再鏡像一次，翻面後輪廓才會一樣
+            const flip = mirrored !== back ? 'matrix(-1 0 0 1 56 0)' : '';
+            const fill = yang ? 'rgb(var(--wabi-card))' : 'url(#jiaoYin)';
+            // 陽面：平的切面，畫兩條木紋；陰面：凸面，加一道反光
+            const detail = yang
+                ? '<path d="M38 22 C30 40 30 80 38 98" fill="none" stroke="rgb(var(--wabi-accent) / 0.35)" stroke-width="1.2"/>' +
+                  '<path d="M44 30 C38 46 38 74 44 90" fill="none" stroke="rgb(var(--wabi-accent) / 0.25)" stroke-width="1"/>'
+                : '<path d="M30 16 C16 30 12 48 12 60" fill="none" stroke="rgb(255 255 255 / 0.35)" stroke-width="3" stroke-linecap="round"/>';
+            return `<svg class="jiao-face${back ? ' is-back' : ''}" viewBox="0 0 56 120">
+                <g transform="${flip}">
+                    <use href="#jiaoShape" fill="${fill}" stroke="rgb(var(--wabi-accent))" stroke-width="2"/>
+                    ${detail}
+                </g></svg>`;
+        }
+
+        const blocks = REST.map((rest, i) => {
+            const shadow = document.createElement('div');
+            shadow.className = 'jiao-shadow';
+            const el = document.createElement('div');
+            el.className = 'jiao';
+            el.style.left = shadow.style.left = '50%';
+            const spin = document.createElement('div');
+            spin.className = 'jiao-spin';
+            const mirrored = i === 1;
+            // 正面（rotateY 0）是陽、背面（rotateY 180）是陰
+            spin.innerHTML = makeFace(mirrored, false, true) + makeFace(mirrored, true, false);
+            el.appendChild(spin);
+            stage.append(shadow, el);
+
+            const block = { el, spin, shadow, x: rest.x, rot: rest.rot, rotY: i === 0 ? 0 : 180, standing: false };
+            el.style.transform = `translate(${block.x}px, 0) rotate(${block.rot}deg)`;
+            spin.style.transform = `rotateY(${block.rotY}deg)`;
+            shadow.style.transform = `translate(${block.x}px, 0)`;
+            return block;
+        });
+
+        // 3. 擲杯
+        const RESULTS = {
+            聖杯: ['神明點頭了。', '准。記得帶伴手禮。', '可以，但不要跟前夫說。', '老闆說的不算，神明說的算。', '准了，神明也想一起去。'],
+            笑杯: ['神明笑而不語。', '問題太好笑，神明笑到沒辦法回答。', '神明在笑你，換個問法吧。', '你心裡早就有答案了吧。'],
+            陰杯: ['神明說：不要。', '這題神明不想回答。', '再問下去，神明要收香油錢了。', '神明搖頭，老闆也搖頭。'],
+        };
+        const throwBtn = document.getElementById('throwBtn');
+        const resultName = document.getElementById('resultName');
+        const resultLine = document.getElementById('resultLine');
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let throwing = false;
+        let streak = 0;
+        let history = [];
+        let lastLine = '';
+
+        throwBtn.addEventListener('click', throwJiao);
+
+        function throwJiao() {
+            if (throwing) return;
+            throwing = true;
+            throwBtn.disabled = true;
+            if (!questionInput.value.trim() && !history.length) showToast('沒說要問什麼，神明只好隨便答');
+            if (streak === 3) setStreak(0); // 上一輪三聖杯定案了，重新開始
+            stage.querySelector('.big-seal')?.remove();
+            resultName.innerHTML = '&nbsp;';
+            resultLine.textContent = '……';
+            unlockAudio();
+
+            // 一支筊杯平面朝上的機率一半：聖杯 1/2、笑杯 1/4、陰杯 1/4；另外 1/88 會立起來
+            const yang = [Math.random() < 0.5, Math.random() < 0.5];
+            const standIndex = Math.random() < 1 / 88 ? Math.floor(Math.random() * 2) : -1;
+            const duration = reduceMotion ? 300 : 1300;
+            const landAt = 0.72;
+
+            blocks.forEach((b, i) => {
+                const side = i === 0 ? -1 : 1;
+                const fromX = b.x, fromRot = b.rot, fromY = b.rotY;
+                const fromScale = b.standing ? 0.16 : 1;
+
+                // 落點：各自落在自己那半邊，角度亂一點
+                b.x = side * (40 + Math.random() * 30);
+                b.rot = side * (Math.random() * 40 - 5);
+                b.standing = i === standIndex;
+                const turns = 2 + Math.floor(Math.random() * 2); // 翻兩到三圈
+                b.rotY = Math.ceil((fromY + turns * 360) / 360) * 360 + (yang[i] ? 0 : 180);
+                const toScale = b.standing ? 0.16 : 1;
+                const peakX = (fromX + b.x) / 2 + side * 10;
+                const peakY = -(140 + Math.random() * 40);
+                const spinZ = side * (180 + Math.random() * 200);
+                const at = (x, y, r) => `translate(${x}px, ${y}px) rotate(${r}deg)`;
+
+                const endTransform = at(b.x, 0, b.rot);
+                const endSpin = `rotateY(${b.rotY}deg) scaleX(${toScale})`;
+                b.el.style.transform = endTransform;
+                b.spin.style.transform = endSpin;
+                b.shadow.style.transform = `translate(${b.x}px, 0)`;
+                b.shadow.style.opacity = 1;
+                if (reduceMotion) return;
+
+                const delay = i * 40; // 兩支不要完全同步
+                b.el.animate([
+                    { transform: at(fromX, 0, fromRot), easing: 'cubic-bezier(0.2, 0.6, 0.4, 1)' },
+                    { transform: at(peakX, peakY, fromRot + spinZ * 0.6), offset: 0.38, easing: 'cubic-bezier(0.55, 0, 0.85, 0.4)' },
+                    { transform: at(b.x, 0, b.rot), offset: landAt, easing: 'ease-out' },
+                    { transform: at(b.x - side * 6, -16, b.rot + side * 8), offset: 0.84, easing: 'ease-in' },
+                    { transform: endTransform },
+                ], { duration, delay, fill: 'backwards' });
+                b.spin.animate([
+                    { transform: `rotateY(${fromY}deg) scaleX(${fromScale})`, easing: 'cubic-bezier(0.25, 0.5, 0.45, 1)' },
+                    { transform: `rotateY(${b.rotY}deg) scaleX(1)`, offset: landAt },
+                    { transform: endSpin, offset: 0.9 },
+                    { transform: endSpin },
+                ], { duration, delay, fill: 'backwards' });
+                b.shadow.animate([
+                    { transform: `translate(${fromX}px, 0) scale(1)`, opacity: 1 },
+                    { transform: `translate(${peakX}px, 0) scale(0.45)`, opacity: 0.35, offset: 0.38 },
+                    { transform: `translate(${b.x}px, 0) scale(1)`, opacity: 1, offset: landAt },
+                    { transform: `translate(${b.x}px, 0) scale(1)`, opacity: 1 },
+                ], { duration, delay, fill: 'backwards' });
+            });
+
+            if (!reduceMotion) {
+                setTimeout(() => clack(0.9), duration * landAt);
+                setTimeout(() => clack(0.6), duration * landAt + 60);
+                setTimeout(() => clack(0.3), duration * 0.98);
+                setTimeout(() => { if (navigator.vibrate) navigator.vibrate(25); }, duration * landAt);
+            }
+            setTimeout(() => showResult(yang, standIndex), duration + 60);
+        }
+
+        function pick(lines) {
+            let line;
+            do { line = lines[Math.floor(Math.random() * lines.length)]; } while (line === lastLine && lines.length > 1);
+            lastLine = line;
+            return line;
+        }
+
+        function showResult(yang, standIndex) {
+            let name, line;
+            if (standIndex >= 0) {
+                name = '立杯';
+                line = '神明有話要當面說，請親自上二十七樓。';
+                showToast('八十八分之一的立杯');
+            } else if (yang[0] !== yang[1]) {
+                name = '聖杯';
+                setStreak(streak + 1);
+                line = streak === 3 ? '三聖杯。就這麼定了，不能反悔。' : pick(RESULTS.聖杯);
+            } else {
+                name = yang[0] ? '笑杯' : '陰杯';
+                line = pick(RESULTS[name]);
+            }
+            if (name !== '聖杯') setStreak(0);
+
+            resultName.textContent = name;
+            resultName.style.color = name === '聖杯' ? 'rgb(var(--wabi-shu))' : '';
+            resultLine.textContent = line;
+            [resultName, resultLine].forEach(el => {
+                el.classList.remove('result-pop');
+                void el.offsetWidth; // 重新觸發動畫
+                el.classList.add('result-pop');
+            });
+
+            if (streak === 3) {
+                const seal = document.createElement('div');
+                seal.className = 'seal big-seal';
+                seal.textContent = '定';
+                stage.appendChild(seal);
+                if (navigator.vibrate) navigator.vibrate([30, 60, 30]);
+                showToast('三聖杯・神明蓋章了');
+            }
+
+            history.push(name[0]);
+            renderHistory();
+            throwing = false;
+            throwBtn.disabled = false;
+        }
+
+        // 4. 三聖杯格子
+        const streakSlots = document.querySelectorAll('#streak .streak-slot');
+
+        function setStreak(n) {
+            streak = n;
+            streakSlots.forEach((slot, i) => {
+                const filled = i < n;
+                if (filled && !slot.firstChild) slot.innerHTML = '<span class="seal">聖</span>';
+                if (!filled) slot.innerHTML = '';
+            });
+        }
+
+        // 5. 這一問的紀錄
+        const historyEl = document.getElementById('history');
+        const historyCount = document.getElementById('historyCount');
+
+        function renderHistory() {
+            historyEl.innerHTML = history.length
+                ? history.map(h => `<span class="${h === '聖' ? 'text-wabi-shu' : ''}">${h}</span>`).join('')
+                : '還沒擲過。';
+            historyCount.textContent = history.length ? `擲了 ${history.length} 次` : '';
+        }
+
+        function resetQuestion() {
+            if (throwing) return;
+            setStreak(0);
+            history = [];
+            renderHistory();
+            stage.querySelector('.big-seal')?.remove();
+            resultName.innerHTML = '&nbsp;';
+            resultName.style.color = '';
+            resultLine.textContent = '心誠則靈，擲了才知道。';
+        }
+
+        // 6. 落地的「叩」：用雜訊做一聲短短的木頭聲，不用載音檔。沒有使用者互動時瀏覽器可能不給播，失敗就安靜略過
+        let audioCtx = null;
+
+        function unlockAudio() {
+            try {
+                audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+            } catch (e) { }
+        }
+
+        function clack(volume) {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            try {
+                const length = Math.floor(audioCtx.sampleRate * 0.05);
+                const buffer = audioCtx.createBuffer(1, length, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 6);
+                const source = audioCtx.createBufferSource();
+                source.buffer = buffer;
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.value = 1400 + Math.random() * 500;
+                filter.Q.value = 4;
+                const gain = audioCtx.createGain();
+                gain.gain.value = volume;
+                source.connect(filter).connect(gain).connect(audioCtx.destination);
+                source.start();
+            } catch (e) { }
+        }
+
+        // 7. 搖手機擲杯：只在手機上啟用，iPhone 要先點一下授權才讀得到晃動
+        const throwHint = document.getElementById('throwHint');
+        const shakeEnableBtn = document.getElementById('shakeEnableBtn');
+        let stageInView = false;
+        let lastMotion = null;
+        let lastShakeAt = 0;
+
+        // 擲杯台在畫面上才算數，免得滑手機時誤觸
+        new IntersectionObserver(([entry]) => { stageInView = entry.isIntersecting; }).observe(stage);
+
+        function onMotion(e) {
+            const a = e.accelerationIncludingGravity;
+            if (!a || a.x === null) return;
+            if (lastMotion) {
+                const delta = Math.abs(a.x - lastMotion.x) + Math.abs(a.y - lastMotion.y) + Math.abs(a.z - lastMotion.z);
+                const now = Date.now();
+                if (delta > 30 && stageInView && !throwing && now - lastShakeAt > 1500) {
+                    lastShakeAt = now;
+                    if (navigator.vibrate) navigator.vibrate(40);
+                    throwJiao();
+                }
+            }
+            lastMotion = { x: a.x, y: a.y, z: a.z };
+        }
+
+        function enableShake() {
+            throwHint.innerText = '點一下，或搖手機';
+            window.addEventListener('devicemotion', onMotion);
+        }
+
+        if ('DeviceMotionEvent' in window && window.matchMedia('(pointer: coarse)').matches) {
+            if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                shakeEnableBtn.classList.remove('hidden');
+                shakeEnableBtn.addEventListener('click', async () => {
+                    unlockAudio();
+                    try {
+                        if (await DeviceMotionEvent.requestPermission() === 'granted') {
+                            shakeEnableBtn.remove();
+                            enableShake();
+                            return;
+                        }
+                    } catch (err) { }
+                    shakeEnableBtn.innerText = '沒拿到權限，用點的吧';
+                });
+            } else {
+                enableShake();
+            }
+        }
+    </script>
+</body>
+
+</html>
