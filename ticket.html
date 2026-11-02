@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>入住券・領 | 丼步喱</title>
+    <meta property="og:title" content="丼步喱・絆 入住券">
+    <meta property="og:description" content="有人邀你上二十七樓，點進來領一張票。">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入日系字體 -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/theme.css">
+    <script src="assets/theme.js"></script>
+    <style>
+        .vertical-rl {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            letter-spacing: 0.25em;
+        }
+
+        /* 入住券：左邊是票面，右邊是票根，中間虛線兩端挖半圓缺口 */
+        .pass {
+            display: flex;
+            position: relative;
+            background: rgb(var(--wabi-card));
+            border: 1px solid rgb(var(--wabi-sub));
+            box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.25);
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .pass-main {
+            flex: 1;
+            min-width: 0;
+            padding: 1.5rem 1.25rem 1.5rem 1.5rem;
+        }
+
+        .pass-stub {
+            position: relative;
+            width: 5.5rem;
+            flex-shrink: 0;
+            border-left: 1px dashed rgb(var(--wabi-sub));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 0;
+        }
+
+        .pass-stub::before,
+        .pass-stub::after {
+            content: '';
+            position: absolute;
+            left: -0.6rem;
+            width: 1.2rem;
+            height: 1.2rem;
+            border-radius: 50%;
+            background: rgb(var(--wabi-bg));
+            border: 1px solid rgb(var(--wabi-sub));
+        }
+
+        .pass-stub::before {
+            top: -0.65rem;
+            clip-path: inset(50% 0 0 0);
+        }
+
+        .pass-stub::after {
+            bottom: -0.65rem;
+            clip-path: inset(0 0 50% 0);
+        }
+
+        /* 剪票：票根打一個洞 */
+        .punch-hole {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 1.4rem;
+            height: 1.4rem;
+            margin: -0.7rem 0 0 -0.7rem;
+            border-radius: 50%;
+            background: rgb(var(--wabi-bg));
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+            transform: scale(0);
+        }
+
+        .pass.is-punched .punch-hole {
+            animation: punch 0.3s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+        }
+
+        @keyframes punch {
+            to {
+                transform: scale(1);
+            }
+        }
+
+        .pass-in {
+            animation: pass-in 0.5s ease-out both;
+        }
+
+        @keyframes pass-in {
+            from {
+                opacity: 0;
+                transform: translateY(12px) rotate(-1deg);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        /* 印章：領（朱色）、作廢（墨色） */
+        .seal {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgb(var(--wabi-shu));
+            color: rgb(var(--wabi-shu));
+            font-family: 'Noto Serif TC', serif;
+            font-weight: 700;
+            line-height: 1;
+            border-radius: 0.2rem;
+            box-shadow: inset 0 0 0 1px rgb(var(--wabi-shu) / 0.35);
+            transform: rotate(-8deg);
+        }
+
+        .seal.is-void {
+            border-color: rgb(var(--wabi-dark));
+            color: rgb(var(--wabi-dark));
+            box-shadow: inset 0 0 0 1px rgb(var(--wabi-dark) / 0.35);
+        }
+
+        .seal-lg {
+            width: 3.25rem;
+            height: 3.25rem;
+            font-size: 1.6rem;
+        }
+
+        .seal-lg.is-void {
+            font-size: 0.95rem;
+            letter-spacing: 0.1em;
+        }
+
+        .seal-sm {
+            width: 1.6rem;
+            height: 1.6rem;
+            font-size: 0.85rem;
+        }
+
+        .seal-in {
+            animation: seal-in 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) 0.3s both;
+        }
+
+        @keyframes seal-in {
+            from {
+                opacity: 0;
+                transform: scale(2.4) rotate(-8deg);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) rotate(-8deg);
+            }
+        }
+    </style>
+</head>
+
+<body
+    class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white min-h-screen flex flex-col">
+
+    <!-- 導航 -->
+    <nav
+        class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <a href="index.html"
+            class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-3 md:gap-8">
+            <a href="index.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <a href="reviews.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <a href="jiaobei.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">擲杯・問</a>
+            <a href="about.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-md mx-auto pt-32 pb-16 px-6 w-full">
+
+        <!-- 標題 -->
+        <div class="text-center mb-10">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-4">CHECK-IN PASS</span>
+            <h1 class="text-4xl font-light text-wabi-dark mb-4 tracking-widest">入住券・領</h1>
+            <div class="w-16 h-[1px] bg-wabi-accent mx-auto mt-8"></div>
+            <p id="invite" class="mt-8 text-sm text-stone-500 font-sans tracking-widest leading-relaxed">正在找你的票……</p>
+            <p id="statusNote" class="hidden mt-3 text-xs font-sans tracking-widest text-wabi-accent"></p>
+        </div>
+
+        <!-- 找不到票 -->
+        <div id="errorBox" class="hidden text-center">
+            <p id="errorText" class="text-sm tracking-widest text-stone-500"></p>
+            <a href="index.html"
+                class="inline-block mt-8 text-xs font-sans tracking-widest text-wabi-accent border-b border-wabi-accent">回首頁</a>
+        </div>
+
+        <div id="content" class="hidden">
+            <!-- 你的票 -->
+            <section id="mySection" class="hidden mb-12">
+                <div id="myPass" class="pass">
+                    <div class="pass-main">
+                        <p class="text-[10px] font-sans tracking-[0.3em] text-wabi-accent">CHECK-IN PASS</p>
+                        <p class="mt-1 text-lg tracking-widest text-wabi-dark">丼步喱・絆</p>
+                        <dl class="mt-4 space-y-2 text-sm">
+                            <div class="flex items-baseline gap-3">
+                                <dt class="shrink-0 text-[10px] font-sans tracking-widest text-stone-400">旅人</dt>
+                                <dd id="passName" class="min-w-0 truncate text-base text-wabi-dark"></dd>
+                            </div>
+                            <div class="flex items-baseline gap-3">
+                                <dt class="shrink-0 text-[10px] font-sans tracking-widest text-stone-400">入住</dt>
+                                <dd id="passIn" class="text-wabi-dark"></dd>
+                            </div>
+                            <div class="flex items-baseline gap-3">
+                                <dt class="shrink-0 text-[10px] font-sans tracking-widest text-stone-400">退房</dt>
+                                <dd id="passOut" class="text-wabi-dark"></dd>
+                            </div>
+                        </dl>
+                    </div>
+                    <div class="pass-stub">
+                        <span id="passSeat" class="vertical-rl text-sm text-wabi-dark"></span>
+                        <span class="punch-hole"></span>
+                        <span id="passSeal" class="seal seal-lg">領</span>
+                    </div>
+                </div>
+                <div class="mt-5 flex items-center justify-between">
+                    <button id="punchBtn" type="button"
+                        class="hidden bg-wabi-dark text-white py-3 px-6 hover:bg-black transition-all duration-300 tracking-[0.2em] font-sans text-xs shadow-lg">剪票入場</button>
+                    <span id="punchedText" class="hidden text-xs font-sans tracking-widest text-wabi-accent">已入場・歡迎回來</span>
+                    <span></span>
+                    <button id="unclaimBtn" type="button"
+                        class="hidden text-[11px] font-sans tracking-widest text-stone-400 border-b border-stone-300">退票</button>
+                </div>
+            </section>
+
+            <!-- 領票 -->
+            <section id="claimSection" class="hidden mb-12">
+                <form id="claimForm" class="flex items-end gap-4">
+                    <div class="flex-1 min-w-0">
+                        <label for="claimName" class="block text-xs font-sans mb-2 text-stone-500 tracking-widest">你的名字</label>
+                        <input id="claimName" type="text" maxlength="12" required autocomplete="nickname"
+                            class="w-full bg-transparent border-b border-stone-300 py-2 text-wabi-dark focus:outline-none focus:border-wabi-accent transition-colors font-serif placeholder-stone-200"
+                            placeholder="同學會叫你的名字">
+                    </div>
+                    <button type="submit" id="claimBtn"
+                        class="shrink-0 bg-wabi-dark text-white px-5 py-3 hover:bg-black transition-all duration-300 tracking-[0.2em] font-sans text-xs shadow-lg">領一張</button>
+                </form>
+                <p class="mt-3 text-[10px] font-sans tracking-widest text-stone-400">換手機了？輸入同一個名字，就會拿回原本那張。</p>
+            </section>
+
+            <p id="closedNote" class="hidden mb-12 text-center text-sm tracking-widest text-stone-500"></p>
+
+            <!-- 票根：每張票誰領了 -->
+            <section>
+                <div class="flex items-baseline justify-between">
+                    <h3 class="text-sm font-light text-wabi-dark tracking-widest border-l-2 border-wabi-accent pl-3">票根</h3>
+                    <span id="claimedCount" class="text-[10px] font-sans tracking-widest text-stone-400"></span>
+                </div>
+                <ul id="roster" class="mt-3"></ul>
+            </section>
+
+            <div class="mt-12 text-center">
+                <button id="shareBtn" type="button"
+                    class="hidden text-xs font-sans tracking-widest text-wabi-accent border-b border-wabi-accent">把票夾發到群組</button>
+            </div>
+        </div>
+    </main>
+
+    <footer
+        class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
+        <p>&copy; 2026 DONGBULI · 純粹棲所</p>
+    </footer>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
+        const bookingId = new URLSearchParams(location.search).get('id');
+        const NUMERALS = '壹貳參肆伍陸柒捌';
+        const STORE_KEY = `dongbuli-ticket-${bookingId}`;   // 這台手機領的是哪一張：{ seat, name }
+        const PUNCH_KEY = `dongbuli-punched-${bookingId}`;  // 剪過票了沒
+
+        let view = null; // 後端回的 { booking, seats }
+
+        // 1. 小工具
+        const $ = id => document.getElementById(id);
+
+        function esc(str) {
+            return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        function todayKey() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        function formatDay(str) {
+            const d = new Date(str + 'T00:00');
+            if (isNaN(d)) return str;
+            return `${d.getMonth() + 1} 月 ${d.getDate()} 日（${'日一二三四五六'[d.getDay()]}）`;
+        }
+
+        function nights(a, b) {
+            return Math.round((new Date(b + 'T00:00') - new Date(a + 'T00:00')) / 86400000);
+        }
+
+        function readMine() {
+            try { return JSON.parse(localStorage.getItem(STORE_KEY)); } catch (e) { return null; }
+        }
+
+        function saveMine(mine) {
+            try {
+                if (mine) localStorage.setItem(STORE_KEY, JSON.stringify(mine));
+                else localStorage.removeItem(STORE_KEY);
+            } catch (e) { }
+        }
+
+        function isPunched() {
+            try { return localStorage.getItem(PUNCH_KEY) === '1'; } catch (e) { return false; }
+        }
+
+        // 2. 讀票夾
+        async function loadTicket() {
+            if (!bookingId) return showError('這不是一張票的連結。');
+            try {
+                const res = await fetch(`${API_URL}?action=getTicket&id=${encodeURIComponent(bookingId)}`);
+                const data = await res.json();
+                if (data.result !== 'success') return showError('找不到這張票，可能被風吹走了。');
+                render(data);
+            } catch (err) {
+                console.error('讀取入住券失敗:', err);
+                showError('暫時讀不到票夾，等一下再試試。');
+            }
+        }
+
+        function showError(text) {
+            $('invite').classList.add('hidden');
+            $('errorText').textContent = text;
+            $('errorBox').classList.remove('hidden');
+        }
+
+        // 3. 畫面：邀請、你的票、領票、票根
+        function render(data, justClaimed) {
+            view = data;
+            const b = data.booking;
+            const today = todayKey();
+            const cancelled = b.status === 'cancelled';
+            const ended = b.check_out < today;
+            const staying = !cancelled && b.check_in <= today && today <= b.check_out;
+            const claimed = data.seats.filter(s => s.name).length;
+            const host = String(b.host || '').trim() || '神秘旅人';
+
+            // 這台手機領的票，名字對不上（被退掉了）就忘掉
+            let mine = readMine();
+            if (mine && (data.seats[mine.seat - 1] || {}).name !== mine.name) {
+                mine = null;
+                saveMine(null);
+            }
+
+            $('invite').innerHTML = `<span class="text-wabi-dark">${esc(host)}</span> 邀你上二十七樓<br>
+                ${formatDay(b.check_in)} ～ ${formatDay(b.check_out)}・${nights(b.check_in, b.check_out)} 晚`;
+
+            const note = cancelled ? '' : b.status === 'pending' ? '老闆還沒確認，先領票卡位。' : staying ? '今日入住中' : '';
+            $('statusNote').textContent = note;
+            $('statusNote').classList.toggle('hidden', !note);
+
+            // 你的票
+            $('mySection').classList.toggle('hidden', !mine);
+            if (mine) {
+                $('passName').textContent = mine.name;
+                $('passIn').textContent = formatDay(b.check_in);
+                $('passOut').textContent = formatDay(b.check_out);
+                $('passSeat').textContent = `第${NUMERALS[mine.seat - 1]}位`;
+                const seal = $('passSeal');
+                seal.textContent = cancelled ? '作廢' : '領';
+                seal.classList.toggle('is-void', cancelled);
+                const pass = $('myPass');
+                pass.classList.toggle('is-punched', staying && isPunched());
+                if (justClaimed) {
+                    [pass, seal].forEach(el => el.classList.remove('pass-in', 'seal-in'));
+                    void pass.offsetWidth; // 重新觸發動畫
+                    pass.classList.add('pass-in');
+                    seal.classList.add('seal-in');
+                }
+                $('punchBtn').classList.toggle('hidden', !staying || isPunched());
+                $('punchedText').classList.toggle('hidden', !staying || !isPunched());
+                $('unclaimBtn').classList.toggle('hidden', mine.seat === 1 || cancelled || ended);
+            }
+
+            // 領票：沒取消、沒結束、這台手機還沒領、還有空票
+            const full = claimed >= data.seats.length;
+            const canClaim = !cancelled && !ended && !mine && !full;
+            $('claimSection').classList.toggle('hidden', !canClaim);
+            const closed = cancelled ? '這趟取消了，下次再約。'
+                : ended ? '這趟已經結束了，票根留作紀念。'
+                : !mine && full ? '票已經發完了，問問看有沒有人要退票。'
+                : '';
+            $('closedNote').textContent = closed;
+            $('closedNote').classList.toggle('hidden', !closed);
+
+            // 票根
+            $('claimedCount').textContent = `已領 ${claimed}／${data.seats.length}`;
+            $('roster').innerHTML = data.seats.map(s => {
+                const isMine = mine && mine.seat === s.seat;
+                const tags = [s.seat === 1 ? '訂房人' : '', isMine ? '你' : ''].filter(Boolean)
+                    .map(t => `<span class="text-[10px] font-sans tracking-widest text-wabi-accent">${t}</span>`).join('');
+                const right = s.name
+                    ? `<span class="seal seal-sm ${cancelled ? 'is-void' : ''}">${cancelled ? '廢' : '領'}</span>`
+                    : `<span class="text-[11px] font-sans tracking-widest text-stone-300">尚未領取</span>`;
+                return `
+                <li class="flex items-center justify-between gap-3 py-3 border-b border-stone-100">
+                    <span class="flex items-baseline gap-3 min-w-0">
+                        <span class="shrink-0 text-xs font-sans text-stone-400">第${NUMERALS[s.seat - 1]}張</span>
+                        <span class="truncate ${s.name ? 'text-wabi-dark' : 'text-stone-300'}">${s.name ? esc(s.name) : '・・・'}</span>
+                        ${tags}
+                    </span>
+                    ${right}
+                </li>`;
+            }).join('');
+
+            $('shareBtn').classList.toggle('hidden', cancelled || ended || full);
+            $('invite').classList.remove('hidden');
+            $('content').classList.remove('hidden');
+        }
+
+        // 4. 領票
+        $('claimForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const name = $('claimName').value.trim();
+            if (!name) return;
+            const btn = $('claimBtn');
+            btn.disabled = true;
+            btn.textContent = '領取中';
+            try {
+                const result = await postApi({ type: 'claim', id: bookingId, name });
+                if (result.result === 'full') {
+                    showToast('慢了一步，票剛好發完了');
+                    return loadTicket();
+                }
+                if (result.result !== 'success') return showToast(result.error || '領票失敗，等一下再試');
+                const seatName = result.seats[result.seat - 1].name;
+                saveMine({ seat: result.seat, name: seatName });
+                render(result, true);
+                if (navigator.vibrate) navigator.vibrate(30);
+                showToast(result.seat === 1 ? '歡迎回來，訂房人' : `領到第${NUMERALS[result.seat - 1]}張，二十七樓見`);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (err) {
+                console.error('領票失敗:', err);
+                showToast('領票失敗，等一下再試');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '領一張';
+            }
+        });
+
+        // 5. 退票
+        $('unclaimBtn').addEventListener('click', async () => {
+            const mine = readMine();
+            if (!mine || !confirm('確定要把這張票退回去嗎？')) return;
+            try {
+                const result = await postApi({ type: 'unclaim', id: bookingId, seat: mine.seat, name: mine.name });
+                if (result.result !== 'success') return showToast(result.error || '退票失敗，等一下再試');
+                saveMine(null);
+                showToast('票退回去了，有空再來');
+                if (result.seats) render(result); else loadTicket();
+            } catch (err) {
+                console.error('退票失敗:', err);
+                showToast('退票失敗，等一下再試');
+            }
+        });
+
+        // 6. 剪票：入住期間在票根打個洞（只記在這台手機）
+        $('punchBtn').addEventListener('click', () => {
+            try { localStorage.setItem(PUNCH_KEY, '1'); } catch (e) { }
+            $('myPass').classList.add('is-punched');
+            $('punchBtn').classList.add('hidden');
+            $('punchedText').classList.remove('hidden');
+            if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
+            showToast('喀擦。歡迎回到二十七樓');
+        });
+
+        // 7. 把票夾連結再發一次到群組
+        $('shareBtn').addEventListener('click', async () => {
+            const b = view.booking;
+            const left = view.seats.filter(s => !s.name).length;
+            const text = `${formatDay(b.check_in)} 上 27 樓，還有 ${left} 張入住券，點進來領一張`;
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: '丼步喱・絆 入住券', text, url: location.href });
+                    return;
+                } catch (e) {
+                    if (e.name === 'AbortError') return; // 使用者取消分享
+                }
+            }
+            try {
+                await navigator.clipboard.writeText(`${text}\n${location.href}`);
+                showToast('連結已複製，貼到群組吧');
+            } catch (e) {
+                showToast('請直接複製網址分享');
+            }
+        });
+
+        // 不用 no-cors，才讀得到後端回的結果（字串 body 是 text/plain，不會觸發 CORS 預檢）
+        async function postApi(payload) {
+            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+            return res.json();
+        }
+
+        loadTicket();
+    </script>
+</body>
+
+</html>

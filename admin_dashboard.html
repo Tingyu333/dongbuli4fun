@@ -107,6 +107,7 @@
                             <tr
                                 class="bg-stone-50 border-b border-stone-100 text-[10px] font-sans tracking-[0.2em] text-stone-400 uppercase">
                                 <th class="p-6 font-normal">姓名</th>
+                                <th class="p-6 font-normal">人數</th>
                                 <th class="p-6 font-normal">聯絡電話</th>
                                 <th class="p-6 font-normal">入住日期</th>
                                 <th class="p-6 font-normal">退房日期</th>
@@ -141,6 +142,7 @@
                             <tr
                                 class="bg-stone-100 border-b border-stone-200 text-[10px] font-sans tracking-[0.2em] text-stone-500 uppercase">
                                 <th class="p-6 font-normal">姓名</th>
+                                <th class="p-6 font-normal">人數</th>
                                 <th class="p-6 font-normal">聯絡電話</th>
                                 <th class="p-6 font-normal">入住日期</th>
                                 <th class="p-6 font-normal">退房日期</th>
@@ -276,6 +278,18 @@
             }
         }
 
+        // 人數與入住券：「5 人・已領 3」，滑過去看領票的人（舊資料沒有人數當 1 人）
+        function guestsCell(item) {
+            const guests = item.guests || 1;
+            const travelers = item.travelers || [];
+            if (guests === 1) return '<span class="text-stone-500">1 人</span>';
+            const names = travelers.join('、').replace(/[&<>"']/g, '');
+            const full = travelers.length >= guests;
+            return `<span class="text-stone-500">${guests} 人</span>
+                <a href="ticket.html?id=${encodeURIComponent(item.id)}" target="_blank" title="${names}"
+                    class="ml-2 ${full ? 'text-wabi-accent' : 'text-stone-400'} border-b border-current">已領 ${travelers.length}</a>`;
+        }
+
         function renderSection(type) {
             const s = state[type];
             const tbody = document.getElementById(type + 'TableBody');
@@ -284,7 +298,7 @@
             const btnNext = document.getElementById('btnNext' + (type.charAt(0).toUpperCase() + type.slice(1)));
 
             if (!s.data.length) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-xs tracking-widest text-stone-300">暫無資料</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-xs tracking-widest text-stone-300">暫無資料</td></tr>`;
                 pageInfo.innerText = "0 / 0";
                 btnPrev.disabled = true;
                 btnNext.disabled = true;
@@ -303,6 +317,7 @@
                 return `
                 <tr class="border-b ${type === 'active' ? 'border-stone-100 hover:bg-stone-50 text-wabi-text' : 'border-stone-50 text-stone-400'} transition-colors last:border-0">
                     <td class="p-6 font-medium whitespace-nowrap ${type === 'active' ? 'text-wabi-dark' : ''} ${strike}">${item.name || item.guest_name || '未知訪客'}</td>
+                    <td class="p-6 text-xs whitespace-nowrap ${strike}">${guestsCell(item)}</td>
                     <td class="p-6 font-mono text-xs text-stone-500 whitespace-nowrap ${strike}">${item.phone || '09xx-xxx-xxx'}</td>
                     <td class="p-6 font-mono text-xs text-stone-500 whitespace-nowrap ${strike}">${item.checkInStr}</td>
                     <td class="p-6 font-mono text-xs text-stone-500 whitespace-nowrap ${strike}">${item.checkOutStr}</td>

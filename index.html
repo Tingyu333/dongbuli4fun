@@ -462,6 +462,26 @@
             }
         }
 
+        /* 人數加減鈕 */
+        .guest-step {
+            width: 2rem;
+            height: 2rem;
+            border: 1px solid rgb(var(--wabi-sub));
+            border-radius: 9999px;
+            color: rgb(var(--wabi-accent));
+            font-family: 'Noto Sans TC', sans-serif;
+            line-height: 1;
+            transition: border-color 0.3s, opacity 0.3s;
+        }
+
+        .guest-step:active {
+            border-color: rgb(var(--wabi-accent));
+        }
+
+        .guest-step:disabled {
+            opacity: 0.3;
+        }
+
     </style>
 </head>
 
@@ -715,7 +735,18 @@
                     </div>
                 </div>
 
-                <div class="pt-6">
+                <div id="guestPicker">
+                    <label class="block text-xs font-sans mb-2 text-stone-500 tracking-widest">人數</label>
+                    <div class="flex items-center gap-4">
+                        <button type="button" id="guestMinus" class="guest-step" aria-label="少一人">−</button>
+                        <span id="guestCount" class="w-6 text-center text-2xl font-serif text-wabi-dark">2</span>
+                        <button type="button" id="guestPlus" class="guest-step" aria-label="多一人">＋</button>
+                        <span class="text-xs font-sans tracking-widest text-stone-400">人</span>
+                    </div>
+                    <p id="guestQuip" class="mt-2 h-4 text-[11px] font-sans tracking-widest text-stone-400"></p>
+                    <input type="hidden" name="guests" id="guestsInput" value="2">
+                </div>
+                <div class="pt-2">
                     <button type="submit" id="submitBtn"
                         class="w-full bg-wabi-dark text-white py-4 px-8 hover:bg-black transition-all duration-300 tracking-[0.2em] font-sans text-xs uppercase shadow-lg">
                         確認預約
@@ -728,6 +759,10 @@
             <div id="ticketPanel" class="hidden relative z-10 text-center">
                 <img id="ticketImg" alt="入住通知書" class="mx-auto max-h-[50vh] w-auto shadow-lg border border-stone-100">
                 <div class="mt-8 space-y-2">
+                    <button id="shareLinkBtn" type="button" onclick="shareBookedLink()"
+                        class="hidden w-full bg-wabi-dark text-white py-4 px-8 hover:bg-black transition-all duration-300 tracking-[0.2em] font-sans text-xs shadow-lg">
+                        發票給同學
+                    </button>
                     <button id="shareTicketBtn" type="button" onclick="shareTicket()"
                         class="w-full bg-wabi-dark text-white py-4 px-8 hover:bg-black transition-all duration-300 tracking-[0.2em] font-sans text-xs shadow-lg">
                         分享給朋友
@@ -1028,6 +1063,31 @@
             openModal();
         }
 
+        // 3b. 人數：最多八人，每個人數吐槽一句
+        const MAX_GUESTS = 8;
+        const GUEST_QUIPS = ['', '一個人的二十七樓，也很好', '兩個人，剛剛好', '三個人，沙發要排班了', '四個人，可以開一桌麻將',
+            '五個人，地板也算床位', '六個人，浴室要抽號碼牌', '七個人，老闆開始緊張了', '八人滿房，神明也不准再多'];
+        let guests = 2;
+
+        function setGuests(n) {
+            guests = Math.max(1, Math.min(MAX_GUESTS, n));
+            document.getElementById('guestCount').textContent = guests;
+            document.getElementById('guestsInput').value = guests;
+            document.getElementById('guestQuip').textContent = GUEST_QUIPS[guests];
+            document.getElementById('guestMinus').disabled = guests === 1;
+        }
+
+        document.getElementById('guestMinus').addEventListener('click', () => setGuests(guests - 1));
+        document.getElementById('guestPlus').addEventListener('click', () => {
+            if (guests < MAX_GUESTS) return setGuests(guests + 1);
+            showToast('最多八人，二十七樓的地板只有這麼大');
+            const picker = document.getElementById('guestPicker');
+            picker.classList.remove('shake');
+            void picker.offsetWidth; // 重新觸發動畫
+            picker.classList.add('shake');
+        });
+        setGuests(guests);
+
         // 4. 送出後蓋章（取代原本的 alert）
         let bookingDone = false;
 
@@ -1098,7 +1158,8 @@
                 }
                 text(value, 80, y + 42, ctx.font, '#2c2c2c', '2px');
             };
-            field('旅人', data.guest_name || '神秘旅人', 350);
+            const host = data.guest_name || '神秘旅人';
+            field('旅人', data.guests > 1 ? `${host} 等 ${data.guests} 人` : host, 350);
             field('入住', formatDate(data.check_in), 440);
             field('退房', formatDate(data.check_out), 530);
 
@@ -1139,14 +1200,25 @@
             return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(), 'image/png'));
         }
 
+        let bookedTicket = null; // 剛訂好的那筆：{ id, guests, check_in }
+
         function showTicket(blob) {
             ticketFile = new File([blob], 'dongbuli-pass.png', { type: 'image/png' });
+            if (bookedTicket && bookedTicket.guests > 1) {
+                const linkBtn = document.getElementById('shareLinkBtn');
+                linkBtn.innerText = `發票給同學（共 ${bookedTicket.guests} 張）`;
+                linkBtn.classList.remove('hidden');
+                // 通知書圖片退到第二順位
+                document.getElementById('shareTicketBtn').className =
+                    'w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs';
+            }
             document.getElementById('ticketImg').src = URL.createObjectURL(blob);
             document.getElementById('stampLayer').classList.remove('is-stamped');
             document.getElementById('bookingForm').classList.add('hidden');
             document.getElementById('bookingTitle').innerText = '入住通知書';
             const canShare = navigator.canShare && navigator.canShare({ files: [ticketFile] });
-            document.getElementById('shareTicketBtn').innerText = canShare ? '分享給朋友' : '下載入住券';
+            const multi = bookedTicket && bookedTicket.guests > 1;
+            document.getElementById('shareTicketBtn').innerText = canShare ? (multi ? '分享通知書圖片' : '分享給朋友') : '下載入住券';
             document.getElementById('ticketPanel').classList.remove('hidden');
         }
 
@@ -1163,6 +1235,35 @@
             link.href = URL.createObjectURL(ticketFile);
             link.download = ticketFile.name;
             link.click();
+        }
+
+        // 4c. 發票：把票夾連結丟到群組，朋友點進去輸入名字領一張（ticket.html）
+        function ticketUrl(id) {
+            return new URL(`ticket.html?id=${encodeURIComponent(id)}`, location.href).href;
+        }
+
+        async function shareTicketLink(id, count, checkIn) {
+            const url = ticketUrl(id);
+            const text = `${formatDate(checkIn)} 上 27 樓，一共 ${count} 張入住券，點進來領一張`;
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: '丼步喱・絆 入住券', text, url });
+                    return;
+                } catch (e) {
+                    if (e.name === 'AbortError') return; // 使用者取消分享
+                }
+            }
+            // 電腦或不能分享的瀏覽器：複製連結，不行就直接打開票夾
+            try {
+                await navigator.clipboard.writeText(`${text}\n${url}`);
+                showToast('連結已複製，貼到群組吧');
+            } catch (e) {
+                location.href = url;
+            }
+        }
+
+        function shareBookedLink() {
+            if (bookedTicket) shareTicketLink(bookedTicket.id, bookedTicket.guests, bookedTicket.check_in);
         }
 
         function openModal() {
@@ -1199,7 +1300,8 @@
                 guest_name: formData.get('guest_name'),
                 phone: formData.get('phone'),
                 check_in: formData.get('check_in'),
-                check_out: formData.get('check_out')
+                check_out: formData.get('check_out'),
+                guests: Number(formData.get('guests')) || 1
             };
 
             // 不用 no-cors，才讀得到後端回的結果（字串 body 是 text/plain，不會觸發 CORS 預檢）
@@ -1212,6 +1314,8 @@
                     if (result.result === 'conflict') return handleConflict();
                     if (result.result !== 'success') throw new Error(result.error);
 
+                    bookedTicket = { id: result.id, guests: result.guests || data.guests, check_in: data.check_in };
+                    data.guests = bookedTicket.guests;
                     stampApproved();
                     // 印章至少停留 1.8 秒，再換成入住通知書；畫圖失敗就照舊重新整理
                     Promise.all([makeTicket(data), new Promise(r => setTimeout(r, 1800))])
@@ -1509,14 +1613,22 @@
                 const cancelled = b.status === 'cancelled';
                 const canCancel = !cancelled && b.check_in > today;
                 const label = b.check_out <= today && !cancelled ? '已住過' : STATUS_TEXT[b.status] || '';
+                const count = b.guests || 1;
+                const people = count > 1 ? `<p class="mt-1 text-[10px] font-sans tracking-widest text-wabi-accent">${count} 人・已領 ${b.claimed || 0}／${count}</p>` : '';
+                const showTickets = !cancelled && count > 1 && b.check_out >= today;
                 return `
                 <div class="flex items-center justify-between gap-4 bg-white border border-stone-200 p-4 ${cancelled ? 'opacity-50' : ''}">
                     <div class="min-w-0">
                         <p class="text-sm text-wabi-dark ${cancelled ? 'line-through' : ''}">${formatDate(b.check_in)}</p>
                         <p class="mt-1 text-[10px] font-sans tracking-widest text-stone-400">退房 ${formatDate(b.check_out)}・${label}</p>
+                        ${people}
                     </div>
-                    ${canCancel ? `<button type="button" onclick="cancelMyBooking('${b.id}', this)"
-                        class="shrink-0 px-3 py-2 border border-wabi-shu/40 text-wabi-shu text-xs font-sans tracking-widest hover:bg-wabi-shu/10 transition-colors">取消</button>` : ''}
+                    <div class="shrink-0 flex flex-col gap-2">
+                        ${showTickets ? `<a href="${ticketUrl(b.id)}"
+                            class="px-3 py-2 border border-stone-300 text-wabi-dark text-xs font-sans tracking-widest text-center hover:border-wabi-dark transition-colors">票夾</a>` : ''}
+                        ${canCancel ? `<button type="button" onclick="cancelMyBooking('${b.id}', this)"
+                            class="px-3 py-2 border border-wabi-shu/40 text-wabi-shu text-xs font-sans tracking-widest hover:bg-wabi-shu/10 transition-colors">取消</button>` : ''}
+                    </div>
                 </div>`;
             }).join('');
         }
