@@ -262,7 +262,8 @@
                     throw new Error(result.error);
                 } else {
                     item.status = status;
-                    if (result.mailed) alert(`已寄確認信給 ${result.mailed} 人。`);
+                    if (result.mailError) alert(`確認信${result.mailed ? `只寄出 ${result.mailed} 封` : '沒寄出去'}：${result.mailError}`);
+                    else if (result.mailed) alert(`已寄確認信給 ${result.mailed} 人。`);
                 }
             } catch (e) {
                 console.error('Update error', e);

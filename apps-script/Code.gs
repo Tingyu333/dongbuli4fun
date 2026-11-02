@@ -177,12 +177,14 @@ function updateStatus(input) {
     }
     sheet.getRange(b.row, COL_STATUS).setValue(input.status);
 
-    var mailed = 0;
+    var view = { result: 'success', mailed: 0 };
     if (input.status === 'confirmed' && !b.confirm_mailed) {
-      mailed = sendConfirmMail(b);
-      if (mailed) sheet.getRange(b.row, COL_CONFIRM_MAILED).setValue(new Date());
+      var mail = sendConfirmMail(b);
+      view.mailed = mail.sent;
+      if (mail.sent) sheet.getRange(b.row, COL_CONFIRM_MAILED).setValue(new Date());
+      if (mail.sent < mail.total) view.mailError = lastMailError || '有信沒寄出去'; // 後台跳出來給老闆看
     }
-    return { result: 'success', mailed: mailed };
+    return view;
   }
   return { result: 'error', error: '找不到這筆預約' };
 }
@@ -323,6 +325,7 @@ function sendConfirmMail(b) {
   });
 
   var sent = 0;
+  lastMailError = '';
   recipients.forEach(function (r) {
     var body =
       mailName(r.name) + ' 你好：\n\n' +
@@ -335,7 +338,23 @@ function sendConfirmMail(b) {
       '——\n丼步喱・絆\n不想再收到這種信，跟老闆說一聲就好。';
     if (sendMail('guest', r.email, '【丼步喱・絆】老闆准了：' + formatDay(b.check_in) + ' 入住', body)) sent++;
   });
-  return sent;
+  return { sent: sent, total: recipients.length };
+}
+
+var lastMailError = ''; // 這次請求裡最後一次寄信失敗的原因
+
+// 編輯器上方選這個函式按「執行」：檢查寄信設定、寄一封測試信給自己。
+// 這裡故意不接住錯誤，有問題會直接顯示在下方「執行記錄」；第一次執行也會跳出授權視窗。
+function debugMail() {
+  var props = PropertiesService.getScriptProperties();
+  var to = props.getProperty('OWNER_EMAIL');
+  console.log('OWNER_EMAIL：' + (to || '（沒設定）'));
+  console.log('Gmail 今天還能寄給幾人：' + MailApp.getRemainingDailyQuota());
+  console.log('今天網站寄了幾封：寄給自己 ' + (props.getProperty('mailCount-owner') || '0') +
+    '、寄給旅人 ' + (props.getProperty('mailCount-guest') || '0') + '（格式：日期|封數）');
+  if (!to) throw new Error('請先到「專案設定 → 指令碼屬性」加上 OWNER_EMAIL');
+  MailApp.sendEmail({ to: to, subject: '【丼步喱】寄信測試', body: '收到這封信，代表網站寄信沒問題。', name: '丼步喱・絆' });
+  console.log('測試信已寄到 ' + to + '，沒看到記得找一下垃圾信匣');
 }
 
 // 所有寄信都走這裡：超過每日上限就不寄；寄信失敗不影響訂房或改狀態
@@ -346,6 +365,7 @@ function sendMail(kind, to, subject, body) {
   var record = String(props.getProperty(key) || '').split('|');
   var count = record[0] === today ? Number(record[1]) || 0 : 0;
   if (count >= MAIL_LIMITS[kind]) {
+    lastMailError = '今天的寄信上限到了';
     console.warn('今天的' + kind + '信件已達上限，不寄：' + subject);
     return false;
   }
@@ -354,6 +374,7 @@ function sendMail(kind, to, subject, body) {
     props.setProperty(key, today + '|' + (count + 1));
     return true;
   } catch (err) {
+    lastMailError = String(err.message || err);
     console.error('寄信失敗', err);
     return false;
   }
