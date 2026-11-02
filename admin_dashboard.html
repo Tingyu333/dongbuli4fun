@@ -191,15 +191,41 @@
 
         const API_URL = "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
 
+        // 讀取中、讀取失敗：兩張表都先放一行提示（後端是 Apps Script，常常要等幾秒）
+        function showTableMessage(html) {
+            ['active', 'history'].forEach(type => {
+                document.getElementById(type + 'TableBody').innerHTML =
+                    `<tr><td colspan="6" class="p-12 text-center">${html}</td></tr>`;
+            });
+        }
+
+        function showLoading() {
+            document.getElementById('totalCount').innerText = '—';
+            document.getElementById('pendingCount').innerText = '—';
+            showTableMessage(`
+                <div class="inline-block w-6 h-6 border-2 border-stone-200 border-t-wabi-accent rounded-full animate-spin"></div>
+                <p class="mt-4 text-xs tracking-widest text-stone-400">正在翻名簿……</p>`);
+        }
+
+        function showLoadError() {
+            showTableMessage(`
+                <p class="text-xs tracking-widest text-stone-400">名簿讀不到，可能是網路或後端忙碌。</p>
+                <button type="button" onclick="fetchData()"
+                    class="mt-4 px-4 py-2 border border-stone-300 text-xs tracking-widest text-wabi-dark hover:border-wabi-dark transition-colors">再試一次</button>`);
+        }
+
         async function fetchData() {
+            showLoading();
             try {
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'adminList', token: adminToken }) });
                 const result = await res.json();
                 if (result.result === 'unauthorized') return backToLogin();
+                if (result.result !== 'success') throw new Error(result.error);
                 processData(result.bookings || []);
 
             } catch (e) {
                 console.error("Fetch error", e);
+                showLoadError();
             }
         }
 
@@ -249,6 +275,7 @@
             const item = [...state.active.data, ...state.history.data].find(d => d.id === select.dataset.id);
             const status = select.value;
             select.disabled = true;
+            select.classList.add('opacity-40', 'animate-pulse'); // 儲存中（重畫表格時會換掉這個選單）
             try {
                 const res = await fetch(API_URL, {
                     method: 'POST',
