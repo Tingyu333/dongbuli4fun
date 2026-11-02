@@ -10,6 +10,7 @@
 //
 // 資安（會寄信給別人，所以這裡不能從簡）：
 // - 後台密碼放在「專案設定 → 指令碼屬性」的 ADMIN_PASSWORD，不寫在程式碼裡（這份檔案在公開的 GitHub 上）。
+//   通知信寄給自己的信箱也放在指令碼屬性 OWNER_EMAIL。
 // - 後台登入換一張 6 小時的通行證，改狀態、讀完整名單（含電話、Email）都要帶通行證。
 // - 公開的 API 不回電話和 Email；公開的動作（訂房、領票、取消）不寄信給別人，
 //   寄給旅人的信只有「老闆在後台按確認」這一種，陌生人沒辦法拿這裡當寄垃圾信的跳板。
@@ -286,9 +287,22 @@ function notifyOwner(b) {
   );
 }
 
-// 寄給自己（部署的 Google 帳號）
+// 寄給自己：收件信箱放在指令碼屬性 OWNER_EMAIL。
+// 沒設定就試著讀部署帳號的信箱（需要 userinfo.email 權限，沒有就跳過）。寄信出問題不影響訂房或取消。
 function sendOwnerMail(subject, body) {
-  sendMail('owner', Session.getEffectiveUser().getEmail(), subject, body);
+  var to = ownerEmail();
+  if (to) sendMail('owner', to, subject, body);
+}
+
+function ownerEmail() {
+  var email = PropertiesService.getScriptProperties().getProperty('OWNER_EMAIL');
+  if (email) return email;
+  try {
+    return Session.getEffectiveUser().getEmail();
+  } catch (err) {
+    console.error('拿不到部署帳號的信箱，請在指令碼屬性加上 OWNER_EMAIL', err);
+    return '';
+  }
 }
 
 // 老闆按確認：寄給訂房人和領票時有留 Email 的人（同一個信箱只寄一次）
