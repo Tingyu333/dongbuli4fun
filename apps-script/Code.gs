@@ -148,6 +148,8 @@ function addBooking(input) {
     email,
     ''
   ]);
+  // 人數那格強制用數字格式：欄位被設成日期時，4 會變成 1900/1/3
+  sheet.getRange(sheet.getLastRow(), COL_GUESTS).setNumberFormat('0');
   countHourlyBooking();
   // 第 1 張票是訂房的人自己的
   ticketsSheet().appendRow([new Date(), id, 1, cleanName(input.guest_name) || '訂房人', email]);
@@ -489,6 +491,8 @@ function findBooking(id) {
 }
 
 function clampGuests(value) {
+  // 欄位被設成日期格式時讀出來是 Date（4 會變成 1900/1/3），換算回試算表的日期序號
+  if (Object.prototype.toString.call(value) === '[object Date]') value = Math.round((value.getTime() - new Date(1899, 11, 30).getTime()) / 86400000);
   var n = parseInt(value, 10);
   if (!(n >= 1)) return 1;
   return Math.min(n, MAX_GUESTS);
