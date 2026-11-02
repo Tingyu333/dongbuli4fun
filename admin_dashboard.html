@@ -176,23 +176,27 @@
             pageSize: 10
         };
 
-        // 檢查登入
-        if (!localStorage.getItem('isAdmin')) {
+        // 檢查登入：通行證是後端發的，6 小時後失效，失效就回登入頁
+        const adminToken = localStorage.getItem('adminToken');
+        if (!adminToken) {
             window.location.href = 'admin_login.html';
         }
 
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.removeItem('isAdmin');
+        function backToLogin() {
+            localStorage.removeItem('adminToken');
             window.location.href = 'admin_login.html';
-        });
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', backToLogin);
 
         const API_URL = "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
 
         async function fetchData() {
             try {
-                const res = await fetch(API_URL);
-                const realData = await res.json();
-                processData(realData);
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'adminList', token: adminToken }) });
+                const result = await res.json();
+                if (result.result === 'unauthorized') return backToLogin();
+                processData(result.bookings || []);
 
             } catch (e) {
                 console.error("Fetch error", e);
@@ -248,15 +252,17 @@
             try {
                 const res = await fetch(API_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ type: 'updateStatus', id: item.id, status })
+                    body: JSON.stringify({ type: 'updateStatus', id: item.id, status, token: adminToken })
                 });
                 const result = await res.json();
+                if (result.result === 'unauthorized') return backToLogin();
                 if (result.result === 'conflict') {
                     alert('這幾天已經有其他預約了，不能改回來。');
                 } else if (result.result !== 'success') {
                     throw new Error(result.error);
                 } else {
                     item.status = status;
+                    if (result.mailed) alert(`已寄確認信給 ${result.mailed} 人。`);
                 }
             } catch (e) {
                 console.error('Update error', e);
@@ -318,7 +324,7 @@
                 <tr class="border-b ${type === 'active' ? 'border-stone-100 hover:bg-stone-50 text-wabi-text' : 'border-stone-50 text-stone-400'} transition-colors last:border-0">
                     <td class="p-6 font-medium whitespace-nowrap ${type === 'active' ? 'text-wabi-dark' : ''} ${strike}">${item.name || item.guest_name || '未知訪客'}</td>
                     <td class="p-6 text-xs whitespace-nowrap ${strike}">${guestsCell(item)}</td>
-                    <td class="p-6 font-mono text-xs text-stone-500 whitespace-nowrap ${strike}">${item.phone || '09xx-xxx-xxx'}</td>
+                    <td class="p-6 font-mono text-xs text-stone-500 whitespace-nowrap ${strike}">${item.phone || '09xx-xxx-xxx'}${item.email ? `<br><span class="text-[10px] text-stone-400">${item.email.replace(/[&<>"']/g, '')}</span>` : ''}</td>
                     <td class="p-6 font-mono text-xs text-stone-500 whitespace-nowrap ${strike}">${item.checkInStr}</td>
                     <td class="p-6 font-mono text-xs text-stone-500 whitespace-nowrap ${strike}">${item.checkOutStr}</td>
                     <td class="p-6 whitespace-nowrap">${statusCell(item)}</td>

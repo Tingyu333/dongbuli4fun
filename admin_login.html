@@ -63,49 +63,55 @@
             </div>
 
             <form id="loginForm" class="space-y-8">
-                <div class="space-y-1">
-                    <label class="block text-[10px] font-sans tracking-widest text-stone-400">帳號</label>
-                    <input type="text" id="username"
-                        class="w-full bg-transparent border-b border-stone-200 py-2 text-wabi-dark focus:outline-none focus:border-wabi-accent transition-colors font-sans placeholder-stone-200"
-                        placeholder="Username">
-                </div>
 
                 <div class="space-y-1">
                     <label class="block text-[10px] font-sans tracking-widest text-stone-400">密碼</label>
-                    <input type="password" id="password"
+                    <input type="password" id="password" required autocomplete="current-password"
                         class="w-full bg-transparent border-b border-stone-200 py-2 text-wabi-dark focus:outline-none focus:border-wabi-accent transition-colors font-sans placeholder-stone-200"
                         placeholder="Password">
                 </div>
 
                 <div class="pt-6">
-                    <button type="submit"
+                    <button type="submit" id="loginBtn"
                         class="w-full bg-wabi-dark text-white py-4 hover:bg-black transition-all duration-500 tracking-[0.3em] font-sans text-xs uppercase shadow-lg group">
                         <span class="group-hover:mr-2 transition-all">進入</span> ➔
                     </button>
                     <p id="errorMsg"
                         class="text-[10px] text-red-800 text-center mt-4 tracking-widest opacity-0 transition-opacity duration-300">
-                        帳號或密碼錯誤</p>
+                        密碼不對</p>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', function (e) {
-            e.preventDefault();
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            const msg = document.getElementById('errorMsg');
+        const API_URL = "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
 
-            // 預設帳號密碼
-            if (u === 'Julia27F' && p === '4469') {
-                localStorage.setItem('isAdmin', 'true');
-                window.location.href = 'admin_dashboard.html';
-            } else {
-                msg.classList.remove('opacity-0');
-                // 3秒後隱藏錯誤訊息
-                setTimeout(() => msg.classList.add('opacity-0'), 3000);
+        // 密碼送到後端比對（密碼存在 Apps Script 的指令碼屬性，不寫在這裡），對了會拿到 6 小時的通行證
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            const msg = document.getElementById('errorMsg');
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'adminLogin', password }) });
+                const result = await res.json();
+                if (result.result === 'success') {
+                    localStorage.setItem('adminToken', result.token);
+                    localStorage.removeItem('isAdmin'); // 舊版的登入記號
+                    window.location.href = 'admin_dashboard.html';
+                    return;
+                }
+                msg.textContent = result.error || '密碼不對';
+            } catch (err) {
+                console.error('登入失敗', err);
+                msg.textContent = '連不上後端，等一下再試';
             }
+            btn.disabled = false;
+            msg.classList.remove('opacity-0');
+            // 3秒後隱藏錯誤訊息
+            setTimeout(() => msg.classList.add('opacity-0'), 3000);
         });
     </script>
 </body>

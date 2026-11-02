@@ -248,15 +248,21 @@
 
             <!-- 領票 -->
             <section id="claimSection" class="hidden mb-12">
-                <form id="claimForm" class="flex items-end gap-4">
-                    <div class="flex-1 min-w-0">
+                <form id="claimForm" class="space-y-6">
+                    <div>
                         <label for="claimName" class="block text-xs font-sans mb-2 text-stone-500 tracking-widest">你的名字</label>
                         <input id="claimName" type="text" maxlength="12" required autocomplete="nickname"
                             class="w-full bg-transparent border-b border-stone-300 py-2 text-wabi-dark focus:outline-none focus:border-wabi-accent transition-colors font-serif placeholder-stone-200"
                             placeholder="同學會叫你的名字">
                     </div>
+                    <div>
+                        <label for="claimEmail" class="block text-xs font-sans mb-2 text-stone-500 tracking-widest">Email<span class="ml-2 text-stone-300">選填</span></label>
+                        <input id="claimEmail" type="email" maxlength="100" autocomplete="email"
+                            class="w-full bg-transparent border-b border-stone-300 py-2 text-wabi-dark focus:outline-none focus:border-wabi-accent transition-colors font-sans placeholder-stone-200"
+                            placeholder="老闆確認後寄信通知你">
+                    </div>
                     <button type="submit" id="claimBtn"
-                        class="shrink-0 bg-wabi-dark text-white px-5 py-3 hover:bg-black transition-all duration-300 tracking-[0.2em] font-sans text-xs shadow-lg">領一張</button>
+                        class="w-full bg-wabi-dark text-white py-4 hover:bg-black transition-all duration-300 tracking-[0.2em] font-sans text-xs shadow-lg">領一張</button>
                 </form>
                 <p class="mt-3 text-[10px] font-sans tracking-widest text-stone-400">換手機了？輸入同一個名字，就會拿回原本那張。</p>
             </section>
@@ -438,12 +444,13 @@
         $('claimForm').addEventListener('submit', async e => {
             e.preventDefault();
             const name = $('claimName').value.trim();
+            const email = $('claimEmail').value.trim();
             if (!name) return;
             const btn = $('claimBtn');
             btn.disabled = true;
             btn.textContent = '領取中';
             try {
-                const result = await postApi({ type: 'claim', id: bookingId, name });
+                const result = await postApi({ type: 'claim', id: bookingId, name, email });
                 if (result.result === 'full') {
                     showToast('慢了一步，票剛好發完了');
                     return loadTicket();

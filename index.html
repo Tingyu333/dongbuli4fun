@@ -681,7 +681,7 @@
     <div id="bookingModal"
         class="modal-fade fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 invisible">
         <div
-            class="bg-wabi-bg w-full max-w-lg mx-6 p-12 shadow-2xl transform transition-transform scale-95 relative overflow-hidden">
+            class="bg-wabi-bg w-full max-w-lg mx-6 p-8 md:p-12 shadow-2xl transform transition-transform scale-95 relative overflow-hidden max-h-[94vh] overflow-y-auto">
             <!-- 背景紋理 -->
             <div
                 class="absolute top-0 right-0 p-8 opacity-10 font-serif text-9xl pointer-events-none select-none text-wabi-accent vertical-rl">
@@ -695,7 +695,7 @@
                 </p>
             </div>
 
-            <div class="flex justify-between items-start mb-10 relative z-10">
+            <div class="flex justify-between items-start mb-6 md:mb-10 relative z-10">
                 <div>
                     <span class="text-xs font-sans tracking-widest text-stone-400 uppercase">預約訂房</span>
                     <h3 id="bookingTitle" class="text-2xl font-serif text-wabi-dark mt-2">預約您的時光</h3>
@@ -704,8 +704,8 @@
                     class="text-stone-400 hover:text-wabi-dark transition-colors p-2">✕</button>
             </div>
 
-            <form id="bookingForm" class="space-y-8 relative z-10 transition-opacity duration-500">
-                <div class="grid grid-cols-2 gap-8">
+            <form id="bookingForm" class="space-y-6 md:space-y-8 relative z-10 transition-opacity duration-500">
+                <div class="grid grid-cols-2 gap-6 md:gap-8">
                     <div class="group">
                         <label class="block text-xs font-sans mb-2 text-stone-500 tracking-widest">姓名</label>
                         <input type="text" name="guest_name" required
@@ -719,8 +719,14 @@
                             placeholder="09xx-xxx-xxx">
                     </div>
                 </div>
+                <div>
+                    <label class="block text-xs font-sans mb-2 text-stone-500 tracking-widest">Email<span class="ml-2 text-stone-300">選填</span></label>
+                    <input type="email" name="email" maxlength="100" autocomplete="email"
+                        class="w-full bg-transparent border-b border-stone-300 py-2 text-wabi-dark focus:outline-none focus:border-wabi-accent transition-colors font-sans placeholder-stone-200"
+                        placeholder="老闆確認後寄信通知你">
+                </div>
 
-                <div class="grid grid-cols-2 gap-8">
+                <div class="grid grid-cols-2 gap-6 md:gap-8">
                     <div>
                         <label class="block text-xs font-sans mb-2 text-stone-500 tracking-widest">入住日期</label>
                         <input type="text" id="check_in" name="check_in" required
@@ -1301,7 +1307,8 @@
                 phone: formData.get('phone'),
                 check_in: formData.get('check_in'),
                 check_out: formData.get('check_out'),
-                guests: Number(formData.get('guests')) || 1
+                guests: Number(formData.get('guests')) || 1,
+                email: (formData.get('email') || '').trim()
             };
 
             // 不用 no-cors，才讀得到後端回的結果（字串 body 是 text/plain，不會觸發 CORS 預檢）
@@ -1312,6 +1319,11 @@
                 .then(res => res.json())
                 .then(result => {
                     if (result.result === 'conflict') return handleConflict();
+                    if (result.result === 'error' && result.error) {
+                        bookingError.innerText = result.error; // Email 格式不對、太熱門之類的
+                        bookingError.classList.remove('hidden');
+                        return resetSubmit();
+                    }
                     if (result.result !== 'success') throw new Error(result.error);
 
                     bookedTicket = { id: result.id, guests: result.guests || data.guests, check_in: data.check_in };
