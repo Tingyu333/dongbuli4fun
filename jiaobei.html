@@ -225,7 +225,8 @@
                 class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
             <a href="reviews.html"
                 class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
-            <span class="text-xs tracking-normal md:tracking-widest whitespace-nowrap text-wabi-dark border-b border-wabi-dark pb-1">擲杯・問</span>
+            <span
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap text-wabi-dark border-b border-wabi-dark pb-1">擲杯・問</span>
             <a href="about.html"
                 class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
         </div>
@@ -255,7 +256,8 @@
         </div>
 
         <!-- 擲杯台 -->
-        <div class="altar bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-6 pt-6 pb-8">
+        <div
+            class="altar bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-6 pt-6 pb-8">
             <!-- 三聖杯 -->
             <div class="flex items-center justify-between">
                 <span class="text-xs font-sans tracking-widest text-stone-400">三聖杯</span>
@@ -269,7 +271,8 @@
             <!-- 結果 -->
             <div class="text-center min-h-[5.5rem]" aria-live="polite">
                 <p id="resultName" class="text-3xl font-semibold tracking-[0.3em] text-wabi-dark">&nbsp;</p>
-                <p id="resultLine" class="mt-2 text-sm text-stone-500 tracking-widest [text-wrap:balance]">心誠則靈，擲了才知道。</p>
+                <p id="resultLine" class="mt-2 text-sm text-stone-500 tracking-widest [text-wrap:balance]">心誠則靈，擲了才知道。
+                </p>
             </div>
 
             <!-- 擲 -->
@@ -284,7 +287,8 @@
         <!-- 這一問的紀錄 -->
         <div class="mt-8">
             <div class="flex items-baseline justify-between">
-                <h3 class="text-sm font-light text-wabi-dark tracking-widest border-l-2 border-wabi-accent pl-3">這一問的紀錄</h3>
+                <h3 class="text-sm font-light text-wabi-dark tracking-widest border-l-2 border-wabi-accent pl-3">這一問的紀錄
+                </h3>
                 <span id="historyCount" class="text-[10px] font-sans tracking-widest text-stone-400"></span>
             </div>
             <p id="history" class="mt-3 text-sm tracking-[0.4em] text-stone-400 break-all">還沒擲過。</p>
@@ -303,7 +307,7 @@
 
     <script>
         // 1. 問題：自己寫，或點一個常見的問題
-        const PRESETS = ['今晚可以續攤嗎', '可以睡到中午嗎', '老闆會打折嗎', '前夫今晚會出現嗎', '明天早餐有人做嗎'];
+        const PRESETS = ['要抽這個嗎', '可以睡到中午嗎', '這個號碼好嗎', '這張刮刮樂好嗎', '明天要早起嗎'];
         const questionInput = document.getElementById('question');
         const presetList = document.getElementById('presetList');
 
@@ -342,7 +346,7 @@
             // 陽面：平的切面，畫兩條木紋；陰面：凸面，加一道反光
             const detail = yang
                 ? '<path d="M38 22 C30 40 30 80 38 98" fill="none" stroke="rgb(var(--wabi-accent) / 0.35)" stroke-width="1.2"/>' +
-                  '<path d="M44 30 C38 46 38 74 44 90" fill="none" stroke="rgb(var(--wabi-accent) / 0.25)" stroke-width="1"/>'
+                '<path d="M44 30 C38 46 38 74 44 90" fill="none" stroke="rgb(var(--wabi-accent) / 0.25)" stroke-width="1"/>'
                 : '<path d="M30 16 C16 30 12 48 12 60" fill="none" stroke="rgb(255 255 255 / 0.35)" stroke-width="3" stroke-linecap="round"/>';
             return `<svg class="jiao-face${back ? ' is-back' : ''}" viewBox="0 0 56 120">
                 <g transform="${flip}">
@@ -374,7 +378,7 @@
 
         // 3. 擲杯
         const RESULTS = {
-            聖杯: ['神明點頭了。', '准。記得帶伴手禮。', '可以，但不要跟前夫說。', '老闆說的不算，神明說的算。', '准了，神明也想一起去。'],
+            聖杯: ['神明點頭了。', '准。這個不錯。', '老闆說的不算，神明說的算。', '准了，神明覺得ｏｋ。'],
             笑杯: ['神明笑而不語。', '問題太好笑，神明笑到沒辦法回答。', '神明在笑你，換個問法吧。', '你心裡早就有答案了吧。'],
             陰杯: ['神明說：不要。', '這題神明不想回答。', '再問下去，神明要收香油錢了。', '神明搖頭，老闆也搖頭。'],
         };
