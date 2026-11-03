@@ -39,7 +39,7 @@
 | `about.html` | 關於頁。 |
 | `404.html` | 找不到頁面。 |
 | `admin_login.html` | 後台登入：只有密碼，送到後端 `adminLogin` 比對，拿到 6 小時的通行證存在 `localStorage.adminToken`。 |
-| `admin_dashboard.html` | 後台預約列表（`adminList`，含電話、Email、人數、已領票的人），分「即將入住」與「歷史紀錄」，各自前端分頁（每頁 10 筆）。改成「已確認」時後端會寄確認信，畫面跳出寄給幾人。通行證失效（`unauthorized`）就回登入頁。 |
+| `admin_dashboard.html` | 後台預約列表（`adminList`，含電話、Email、人數、已領票的人），分「即將入住」與「歷史紀錄」，各自前端分頁（每頁 10 筆）。讀取中、讀取失敗（可重試）都有畫面。狀態下拉選單只列出還能改成的狀態，改之前先跳確認（改了不能回頭）；改完跳出寄了幾封確認信或取消通知。通行證失效（`unauthorized`）就回登入頁。 |
 
 ## API 約定（Google Apps Script）
 
@@ -52,8 +52,8 @@
   - 訂房：`{ room_name, guest_name, phone, check_in, check_out, guests, email }` → `{ result: 'success', id, guests }`、`{ result: 'conflict' }`（撞期）或 `{ result: 'error', error }`（日期、Email 格式不對、全站每小時超過 20 筆）。後端會檢查撞期（退房日可接下一組入住）並寄通知信給部署帳號。`type` 不認得會回 `error`，不會被當成訂房。
   - 後台登入：`{ type: 'adminLogin', password }` → `{ result: 'success', token }`（6 小時）或 `error`（密碼不對、十分鐘內失敗 10 次先鎖、還沒設定 `ADMIN_PASSWORD`）。
   - 以下要帶 `token`，沒帶或過期回 `{ result: 'unauthorized' }`：
-    - 後台名單：`{ type: 'adminList', token }` → `{ result: 'success', bookings: [{ id, guest_name, phone, email, check_in, check_out, status, guests, confirm_mailed, travelers }] }`（`travelers` 是已領票的名字）。
-    - 改狀態：`{ type: 'updateStatus', id, status, token }` → `{ result: 'success', mailed }` / `conflict`（從已取消改回來時撞期）/ `error`。第一次改成 `confirmed` 會寄確認信給訂房人和領票時留 Email 的人（同信箱寄一次），`mailed` 是寄出幾封。
+    - 後台名單：`{ type: 'adminList', token }` → `{ result: 'success', bookings: [{ id, guest_name, phone, email, check_in, check_out, status, guests, confirm_mailed, next, travelers }] }`（`travelers` 是已領票的名字；`next` 是還能改成的狀態，後台下拉選單照這個列）。
+    - 改狀態：`{ type: 'updateStatus', id, status, token }` → `{ result: 'success', mailed, mailKind, mailError?, next }` 或 `error`（不允許的改法）。**狀態只能往前走**（`nextStatuses()`）：`pending` → `confirmed`／`cancelled`；`confirmed` → `cancelled`；`cancelled` 是終點；入住日當天起整筆鎖住。按錯只能由老闆直接改 Sheet 的 G 欄。寄信：第一次改成 `confirmed` 寄確認信；`confirmed` → `cancelled` 寄取消通知；`pending` → `cancelled`（婉拒）**不寄**（沒確認過的信箱可能是陌生人亂填的）。收件人是訂房人和領票時留 Email 的人（同信箱寄一次），`mailed` 是寄出幾封。
   - 查自己的預約（首頁「我的預約」）：`{ type: 'lookup', phone }` → `{ result: 'success', bookings: [{ id, check_in, check_out, status, guests, claimed }] }`。電話只比對數字後 9 碼（舊資料開頭的 0 被 Sheet 吃掉也對得上）。
   - 自己取消：`{ type: 'cancel', id, phone }` → `success` / `error`。電話要對得上，入住日當天或之後不能取消；取消會寄信通知部署帳號。
   - 領票：`{ type: 'claim', id, name, email }` → 跟 getTicket 一樣的內容再加 `seat`（領到第幾張）、`{ result: 'full' }`（發完了）或 `error`（已取消、已結束、沒寫名字）。名字去頭尾空白、最多 12 字。同名拿回原本那張時，有帶 Email 就補上。

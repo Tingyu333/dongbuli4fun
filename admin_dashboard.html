@@ -263,10 +263,12 @@
         const STATUS_LABELS = { pending: '待確認', confirmed: '已確認', cancelled: '已取消' };
 
         // 有 id 才能改狀態（後端更新前的舊 API 不會給 id，就只顯示文字）
+        // 只列出還能改成的狀態（後端 nextStatuses 決定）：已取消、已入住或住過的就只顯示文字
         function statusCell(item) {
-            if (!item.id) return `<span class="status-${item.status} text-xs tracking-widest">${STATUS_LABELS[item.status]}</span>`;
-            const options = Object.entries(STATUS_LABELS)
-                .map(([value, label]) => `<option value="${value}" ${value === item.status ? 'selected' : ''}>${label}</option>`)
+            const next = item.next || [];
+            if (!item.id || !next.length) return `<span class="status-${item.status} text-xs tracking-widest">${STATUS_LABELS[item.status]}</span>`;
+            const options = [item.status, ...next]
+                .map(value => `<option value="${value}" ${value === item.status ? 'selected' : ''}>${STATUS_LABELS[value]}</option>`)
                 .join('');
             return `<select class="status-select status-${item.status}" data-id="${item.id}" onchange="changeStatus(this)">${options}</select>`;
         }
@@ -274,6 +276,14 @@
         async function changeStatus(select) {
             const item = [...state.active.data, ...state.history.data].find(d => d.id === select.dataset.id);
             const status = select.value;
+            // 改了就回不去，先問一次；取消的話選單跳回原本的狀態
+            const warning = status === 'cancelled'
+                ? `確定要取消 ${item.guest_name || '這筆'} 的預約嗎？取消後不能復原${item.status === 'confirmed' ? '，會寄取消通知給有留信箱的人' : ''}。`
+                : '確定要確認這筆預約嗎？確認後不能改回待確認，會寄確認信給有留信箱的人。';
+            if (!confirm(warning)) {
+                select.value = item.status;
+                return;
+            }
             select.disabled = true;
             select.classList.add('opacity-40', 'animate-pulse'); // 儲存中（重畫表格時會換掉這個選單）
             try {
@@ -283,14 +293,14 @@
                 });
                 const result = await res.json();
                 if (result.result === 'unauthorized') return backToLogin();
-                if (result.result === 'conflict') {
-                    alert('這幾天已經有其他預約了，不能改回來。');
-                } else if (result.result !== 'success') {
-                    throw new Error(result.error);
+                if (result.result !== 'success') {
+                    alert(result.error || '更新失敗，請稍後再試。');
                 } else {
                     item.status = status;
-                    if (result.mailError) alert(`確認信${result.mailed ? `只寄出 ${result.mailed} 封` : '沒寄出去'}：${result.mailError}`);
-                    else if (result.mailed) alert(`已寄確認信給 ${result.mailed} 人。`);
+                    item.next = result.next || [];
+                    const what = result.mailKind === 'cancelled' ? '取消通知' : '確認信';
+                    if (result.mailError) alert(`${what}${result.mailed ? `只寄出 ${result.mailed} 封` : '沒寄出去'}：${result.mailError}`);
+                    else if (result.mailed) alert(`已寄${what}給 ${result.mailed} 人。`);
                 }
             } catch (e) {
                 console.error('Update error', e);

@@ -106,6 +106,7 @@ function adminList() {
       id: b.id, guest_name: b.guest_name, phone: b.phone, email: b.email,
       check_in: b.check_in, check_out: b.check_out, status: b.status, guests: b.guests,
       confirm_mailed: !!b.confirm_mailed,
+      next: nextStatuses(b),
       travelers: seatsOf(b, tickets).map(function (s) { return s.name; }).filter(String)
     };
   });
@@ -160,33 +161,63 @@ function addBooking(input) {
   return { result: 'success', id: id, guests: guests };
 }
 
-// 後台改狀態；從「已取消」改回來時要再檢查一次有沒有撞期。第一次改成「已確認」時寄確認信
+// 後台改狀態，只能往前走、不能回頭：
+//   待確認 → 已確認（寄確認信）／已取消（婉拒，不寄信：陌生人亂填的信箱也會被婉拒，寄了就變成垃圾信）
+//   已確認 → 已取消（寄取消通知：確認過的訂房，信箱才算可信）
+//   已取消是終點；入住日當天起整筆鎖住。真的按錯，老闆直接改 Sheet 的 G 欄。
 function updateStatus(input) {
   if (STATUSES.indexOf(input.status) === -1) {
     return { result: 'error', error: '狀態不正確' };
   }
 
   var sheet = bookingsSheet();
-  var bookings = readBookings(sheet);
-  for (var i = 0; i < bookings.length; i++) {
-    var b = bookings[i];
-    if (b.id !== input.id) continue;
-
-    if (input.status !== 'cancelled' && hasConflict(bookings, b.check_in, b.check_out, b.id)) {
-      return { result: 'conflict' };
-    }
-    sheet.getRange(b.row, COL_STATUS).setValue(input.status);
-
-    var view = { result: 'success', mailed: 0 };
-    if (input.status === 'confirmed' && !b.confirm_mailed) {
-      var mail = sendConfirmMail(b);
-      view.mailed = mail.sent;
-      if (mail.sent) sheet.getRange(b.row, COL_CONFIRM_MAILED).setValue(new Date());
-      if (mail.sent < mail.total) view.mailError = lastMailError || '有信沒寄出去'; // 後台跳出來給老闆看
-    }
-    return view;
+  var b = readBookings(sheet).filter(function (x) { return x.id === input.id; })[0];
+  if (!b) return { result: 'error', error: '找不到這筆預約' };
+  if (input.status === b.status) return { result: 'success', mailed: 0, next: nextStatuses(b) };
+  if (nextStatuses(b).indexOf(input.status) === -1) {
+    return { result: 'error', error: b.check_in <= todayStr() ? '已經入住或住過的預約不能改' : '這個狀態不能改回去' };
   }
-  return { result: 'error', error: '找不到這筆預約' };
+
+  var from = b.status;
+  sheet.getRange(b.row, COL_STATUS).setValue(input.status);
+  b.status = input.status;
+
+  var view = { result: 'success', mailed: 0, next: nextStatuses(b) };
+  var mail = null;
+  if (input.status === 'confirmed' && !b.confirm_mailed) {
+    mail = sendGuestMail(b, '【丼步喱・絆】老闆准了：' + formatDay(b.check_in) + ' 入住', function (name) {
+      return mailName(name) + ' 你好：\n\n' +
+        '你在丼步喱・絆的預約，老闆蓋章了。\n\n' +
+        '入住：' + formatDay(b.check_in) + '\n' +
+        '退房：' + formatDay(b.check_out) + '\n' +
+        '人數：' + b.guests + ' 人\n\n' +
+        '票夾（誰領了票、你的入住券）：\n' + ticketLink(b) + '\n\n' +
+        '二十七樓見。' + MAIL_FOOTER;
+    });
+    if (mail.sent) sheet.getRange(b.row, COL_CONFIRM_MAILED).setValue(new Date());
+  }
+  if (input.status === 'cancelled' && from === 'confirmed') {
+    mail = sendGuestMail(b, '【丼步喱・絆】這趟取消了：' + formatDay(b.check_in) + ' 入住', function (name) {
+      return mailName(name) + ' 你好：\n\n' +
+        '很可惜，丼步喱・絆 ' + formatDay(b.check_in) + '～' + formatDay(b.check_out) + ' 這趟取消了。\n\n' +
+        '票夾已經蓋上「作廢」：\n' + ticketLink(b) + '\n\n' +
+        '下次再約。' + MAIL_FOOTER;
+    });
+  }
+  if (mail) {
+    view.mailed = mail.sent;
+    view.mailKind = input.status;
+    if (mail.sent < mail.total) view.mailError = lastMailError || '有信沒寄出去'; // 後台跳出來給老闆看
+  }
+  return view;
+}
+
+// 這筆預約還能改成哪些狀態（後台的下拉選單也照這個列）
+function nextStatuses(b) {
+  if (b.check_in <= todayStr()) return [];
+  if (b.status === 'pending') return ['confirmed', 'cancelled'];
+  if (b.status === 'confirmed') return ['cancelled'];
+  return [];
 }
 
 // 朋友用訂房時留的電話查自己的預約（只回日期和狀態，不含別人的資料）
@@ -309,8 +340,14 @@ function ownerEmail() {
   }
 }
 
-// 老闆按確認：寄給訂房人和領票時有留 Email 的人（同一個信箱只寄一次）
-function sendConfirmMail(b) {
+var MAIL_FOOTER = '\n\n——\n丼步喱・絆\n不想再收到這種信，跟老闆說一聲就好。';
+
+function ticketLink(b) {
+  return SITE_URL + 'ticket.html?id=' + encodeURIComponent(b.id);
+}
+
+// 寄給訂房人和領票時有留 Email 的人（同一個信箱只寄一次）。只能由後台的動作呼叫
+function sendGuestMail(b, subject, bodyFor) {
   var seen = {};
   var recipients = [];
   var add = function (email, name) {
@@ -327,16 +364,7 @@ function sendConfirmMail(b) {
   var sent = 0;
   lastMailError = '';
   recipients.forEach(function (r) {
-    var body =
-      mailName(r.name) + ' 你好：\n\n' +
-      '你在丼步喱・絆的預約，老闆蓋章了。\n\n' +
-      '入住：' + formatDay(b.check_in) + '\n' +
-      '退房：' + formatDay(b.check_out) + '\n' +
-      '人數：' + b.guests + ' 人\n\n' +
-      '票夾（誰領了票、你的入住券）：\n' + SITE_URL + 'ticket.html?id=' + encodeURIComponent(b.id) + '\n\n' +
-      '二十七樓見。\n\n' +
-      '——\n丼步喱・絆\n不想再收到這種信，跟老闆說一聲就好。';
-    if (sendMail('guest', r.email, '【丼步喱・絆】老闆准了：' + formatDay(b.check_in) + ' 入住', body)) sent++;
+    if (sendMail('guest', r.email, subject, bodyFor(r.name))) sent++;
   });
   return { sent: sent, total: recipients.length };
 }
