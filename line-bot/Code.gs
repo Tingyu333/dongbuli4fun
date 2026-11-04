@@ -21,6 +21,7 @@ var COMMANDS = [
   { words: ['空房', '房況'], run: replyAvailability },
   { words: ['擲杯', '擲筊', '跋杯'], run: replyJiaobei },
   { words: ['抽籤', '御神籤'], run: replyOmikuji },
+  { words: ['天氣', '氣象'], run: replyWeather },
   { words: ['訂房'], run: replyBooking },
   { words: ['說明', '指令'], run: replyHelp }
 ];
@@ -204,7 +205,7 @@ function availabilityText(today, booked) {
 
 // --- 月曆卡片（顏色跟網站白天一樣：米白紙、枯茶、墨色。Flex 不會跟著晝夜切換） ---
 
-var COLOR = { bg: '#fcfaf8', ink: '#2c2c2c', text: '#4a4a4a', accent: '#8e8070', sub: '#dcdcdc', faded: '#c9c3ba', white: '#ffffff' };
+var COLOR = { bg: '#fcfaf8', ink: '#2c2c2c', text: '#4a4a4a', accent: '#8e8070', sub: '#dcdcdc', faded: '#c9c3ba', white: '#ffffff', shu: '#b33a2f' };
 
 function calendarBubble(today, gridStart, weeks, booked) {
   var tonight = booked[today];
@@ -367,9 +368,164 @@ var FORTUNES = [
   { rank: '大凶', lines: ['指紋比對失敗', '請找前夫開門'] }
 ];
 
-function replyOmikuji() {
-  var f = FORTUNES[Math.floor(Math.random() * FORTUNES.length)];
-  return '今晚的籤\n\n【' + f.rank + '】\n' + f.lines[0] + '\n' + f.lines[1];
+// 回一張籤紙卡片：吉用朱色大字（被神明蓋章的東西才用朱色），凶用墨色。同一個聊天室不連續抽到同一支
+function replyOmikuji(args, source) {
+  var cache = CacheService.getScriptCache();
+  var key = 'omikuji:' + (source.groupId || source.roomId || source.userId || 'anon');
+  var last = Number(cache.get(key));
+  var i;
+  do { i = Math.floor(Math.random() * FORTUNES.length); } while (i === last);
+  cache.put(key, String(i), 6 * 60 * 60);
+  var f = FORTUNES[i];
+  var unlucky = f.rank.indexOf('凶') !== -1;
+
+  return {
+    type: 'flex',
+    altText: '今晚的籤：' + f.rank + '｜' + f.lines[0] + '，' + f.lines[1],
+    contents: {
+      type: 'bubble',
+      size: 'kilo',
+      styles: { body: { backgroundColor: COLOR.bg }, footer: { backgroundColor: COLOR.bg } },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        paddingAll: '24px',
+        contents: [
+          { type: 'text', text: 'OMIKUJI', size: 'xxs', color: COLOR.accent, align: 'center' },
+          { type: 'text', text: '今晚的籤', size: 'sm', color: COLOR.text, align: 'center', margin: 'sm' },
+          { type: 'text', text: f.rank, size: '5xl', weight: 'bold', align: 'center', margin: 'xl', color: unlucky ? COLOR.ink : COLOR.shu },
+          { type: 'separator', margin: 'xl', color: COLOR.sub },
+          { type: 'text', text: f.lines[0], size: 'md', color: COLOR.ink, align: 'center', margin: 'xl', wrap: true },
+          { type: 'text', text: f.lines[1], size: 'md', color: COLOR.ink, align: 'center', margin: 'sm', wrap: true },
+          { type: 'text', text: '二十七樓・御神籤', size: 'xxs', color: COLOR.faded, align: 'center', margin: 'xxl' }
+        ]
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        paddingTop: '0px',
+        contents: [{ type: 'button', style: 'link', color: COLOR.accent, height: 'sm', action: { type: 'message', label: '再抽一支', text: '抽籤' } }]
+      }
+    }
+  };
+}
+
+// --- 天氣（Open-Meteo：免費、不用申請金鑰，非商業用途一天約一萬次） ---
+// 地點放指令碼屬性 WEATHER_PLACE、WEATHER_LAT、WEATHER_LON，沒設定就用台北
+
+var WEATHER_CODES = [
+  [0, '晴'], [1, '大致晴朗'], [2, '晴時多雲'], [3, '陰'], [45, '有霧'], [48, '有霧'],
+  [51, '毛毛雨'], [53, '毛毛雨'], [55, '毛毛雨'], [56, '凍雨'], [57, '凍雨'],
+  [61, '小雨'], [63, '下雨'], [65, '大雨'], [66, '凍雨'], [67, '凍雨'],
+  [71, '小雪'], [73, '下雪'], [75, '大雪'], [77, '飄雪'],
+  [80, '陣雨'], [81, '陣雨'], [82, '大陣雨'], [85, '陣雪'], [86, '陣雪'],
+  [95, '雷雨'], [96, '雷雨'], [99, '雷雨']
+];
+
+function weatherName(code) {
+  for (var i = 0; i < WEATHER_CODES.length; i++) if (WEATHER_CODES[i][0] === code) return WEATHER_CODES[i][1];
+  return '天氣很難說';
+}
+
+function replyWeather() {
+  var w = fetchWeather();
+  if (!w) return '天氣讀不到，看一下窗外比較快。';
+  var place = prop('WEATHER_PLACE') || '台北';
+  var now = Math.round(w.current.temperature_2m);
+  var feels = Math.round(w.current.apparent_temperature);
+  var sky = weatherName(w.current.weather_code);
+  var day = function (i) {
+    return {
+      hi: Math.round(w.daily.temperature_2m_max[i]),
+      lo: Math.round(w.daily.temperature_2m_min[i]),
+      rain: w.daily.precipitation_probability_max[i] || 0,
+      sky: weatherName(w.daily.weather_code[i])
+    };
+  };
+  var today = day(0), tomorrow = day(1);
+  var tip = weatherTip(today, w.current.weather_code);
+
+  var dayRow = function (label, d) {
+    return {
+      type: 'box', layout: 'horizontal', margin: 'md', contents: [
+        { type: 'text', text: label, size: 'sm', color: COLOR.accent, flex: 2 },
+        { type: 'text', text: d.sky, size: 'sm', color: COLOR.ink, flex: 3 },
+        { type: 'text', text: d.lo + '～' + d.hi + '°', size: 'sm', color: COLOR.ink, flex: 3, align: 'end' },
+        { type: 'text', text: '雨 ' + d.rain + '%', size: 'sm', color: COLOR.text, flex: 3, align: 'end' }
+      ]
+    };
+  };
+
+  return {
+    type: 'flex',
+    altText: place + ' ' + now + '°，' + sky + '。今天 ' + today.lo + '～' + today.hi + '°，降雨 ' + today.rain + '%',
+    contents: {
+      type: 'bubble',
+      styles: { body: { backgroundColor: COLOR.bg } },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        paddingAll: '20px',
+        contents: [
+          { type: 'text', text: 'WEATHER', size: 'xxs', color: COLOR.accent },
+          { type: 'text', text: '二十七樓・天氣', size: 'lg', color: COLOR.ink, margin: 'sm' },
+          { type: 'text', text: place, size: 'xs', color: COLOR.text, margin: 'xs' },
+          {
+            type: 'box', layout: 'horizontal', margin: 'lg', alignItems: 'flex-end', contents: [
+              { type: 'text', text: now + '°', size: '4xl', color: COLOR.ink, flex: 0 },
+              {
+                type: 'box', layout: 'vertical', margin: 'lg', paddingBottom: '6px', contents: [
+                  { type: 'text', text: sky, size: 'md', color: COLOR.ink },
+                  { type: 'text', text: '體感 ' + feels + '°', size: 'xs', color: COLOR.text }
+                ]
+              }
+            ]
+          },
+          { type: 'separator', margin: 'lg', color: COLOR.sub },
+          dayRow('今天', today),
+          dayRow('明天', tomorrow),
+          { type: 'text', text: tip, size: 'sm', color: COLOR.accent, margin: 'xl', wrap: true }
+        ]
+      }
+    }
+  };
+}
+
+// 一句廢話式的建議
+function weatherTip(today, code) {
+  if (code >= 95) return '會打雷。打雷的時候，會有雷聲。';
+  if (today.rain >= 60) return '帶傘。下雨的時候，地會濕。';
+  if (today.rain >= 30) return '可能會下雨，也可能不會。';
+  if (today.hi >= 32) return '很熱，因為溫度很高。宜待在二十七樓吹冷氣。';
+  if (today.lo <= 15) return '有點冷，冷的時候要穿外套。';
+  return '天氣很好，好在它是天氣。';
+}
+
+// 拿 Open-Meteo 的天氣，存 30 分鐘；失敗回 null
+function fetchWeather() {
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get('weather');
+  if (cached) return JSON.parse(cached);
+  var lat = prop('WEATHER_LAT') || '25.0330';
+  var lon = prop('WEATHER_LON') || '121.5654';
+  var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + encodeURIComponent(lat) + '&longitude=' + encodeURIComponent(lon) +
+    '&current=temperature_2m,apparent_temperature,weather_code' +
+    '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
+    '&timezone=Asia%2FTaipei&forecast_days=2';
+  try {
+    var res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200) {
+      console.error('天氣讀取失敗', res.getResponseCode(), res.getContentText());
+      return null;
+    }
+    var data = JSON.parse(res.getContentText());
+    if (!data.current || !data.daily) return null;
+    cache.put('weather', JSON.stringify({ current: data.current, daily: data.daily }), 30 * 60);
+    return data;
+  } catch (err) {
+    console.error('天氣讀取失敗', err);
+    return null;
+  }
 }
 
 // --- 其他 ---
@@ -383,6 +539,7 @@ function replyHelp() {
     '空房　接下來 30 天哪幾晚有人\n' +
     '擲杯　後面可以接問題，例如「擲杯 今晚續攤嗎」\n' +
     '抽籤　抽一支今晚的運勢\n' +
+    '天氣　今天、明天的天氣\n' +
     '訂房　網站連結\n\n' +
     '其他的話，我也會回，只是回得沒什麼用。群組裡要 @我 才回。';
 }
