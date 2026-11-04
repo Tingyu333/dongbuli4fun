@@ -66,7 +66,8 @@
 
 ## LINE bot
 
-- 指令（訊息開頭符合才回，群組聊天不插話）：`空房`／`房況`、`擲杯`／`擲筊`／`跋杯`（可接問題）、`抽籤`／`御神籤`、`訂房`、`說明`／`指令`。加好友（`follow`）、被拉進群組（`join`）會打招呼。
+- 指令（訊息開頭符合才算）：`空房`／`房況`、`擲杯`／`擲筊`／`跋杯`（可接問題）、`抽籤`／`御神籤`、`訂房`、`說明`／`指令`。加好友（`follow`）、被拉進群組（`join`）會打招呼。
+- 不是指令：一對一回一句廢話文學（`NONSENSE_LINES`，貼圖回 `STICKER_LINES`）；群組裡**只有被 @（`mention.mentionees[].isSelf`）才回**，平常聊天不插話。被 @ 時先把 @bot 那段字拿掉再判斷指令。同一個聊天室不連續回同一句（`CacheService` 的 `last:` key）。
 - 規則：只讀（程式裡不能有寫入 Sheet 的呼叫，要寫入的事回網站連結）、只用 Reply API（不推播）、不回名字電話 Email。
 - 指令碼屬性：`LINE_CHANNEL_ACCESS_TOKEN`、`SHEET_ID`、`WEBHOOK_KEY`（webhook 網址要帶 `?key=`，對不上或沒設定就不處理）。
 - 擲杯的三聖杯存在 `CacheService`，key 是 `streak:` + groupId／roomId／userId，6 小時。

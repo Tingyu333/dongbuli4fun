@@ -16,7 +16,7 @@
 var SITE_URL = 'https://tingyu333.github.io/dongbuli4fun/';
 var DAYS_AHEAD = 30;
 
-// 關鍵字：在群組裡只認開頭，朋友平常聊天不會被 bot 插話
+// 關鍵字：只認訊息開頭。群組裡被 @ 時，會先把 @bot 那段拿掉再判斷（「@丼步喱 空房」也算）
 var COMMANDS = [
   { words: ['空房', '房況'], run: replyAvailability },
   { words: ['擲杯', '擲筊', '跋杯'], run: replyJiaobei },
@@ -43,7 +43,7 @@ function doPost(e) {
     try {
       var text = null;
       if (ev.type === 'follow' || ev.type === 'join') text = welcomeText(ev.type);
-      if (ev.type === 'message' && ev.message && ev.message.type === 'text') text = handleText(ev.message.text, ev.source || {});
+      if (ev.type === 'message' && ev.message) text = handleMessage(ev.message, ev.source || {});
       if (text) reply(ev.replyToken, text);
     } catch (err) {
       console.error('處理訊息失敗', err);
@@ -57,15 +57,97 @@ function doGet() {
   return ContentService.createTextOutput('丼步喱・絆 LINE bot 醒著。');
 }
 
-function handleText(raw, source) {
-  var text = String(raw || '').trim();
+// 一對一：不是指令就回一句廢話。群組：只有被 @ 才回廢話，平常聊天不插話
+function handleMessage(message, source) {
+  var oneOnOne = source.type === 'user';
+  if (message.type === 'sticker') return oneOnOne ? nonsense(source, STICKER_LINES) : null;
+  if (message.type !== 'text') return null;
+
+  var mentioned = false;
+  var text = String(message.text || '');
+  var mentionees = (message.mention && message.mention.mentionees) || [];
+  // 從後面往前切，前面的位置才不會跑掉
+  mentionees.slice().sort(function (a, b) { return b.index - a.index; }).forEach(function (m) {
+    if (!m.isSelf) return;
+    mentioned = true;
+    text = text.slice(0, m.index) + text.slice(m.index + m.length);
+  });
+  text = text.trim();
+
   for (var i = 0; i < COMMANDS.length; i++) {
     for (var j = 0; j < COMMANDS[i].words.length; j++) {
       var word = COMMANDS[i].words[j];
       if (text.indexOf(word) === 0) return COMMANDS[i].run(text.slice(word.length).trim(), source);
     }
   }
-  return null; // 不是指令：不回，免得在群組裡吵
+  return oneOnOne || mentioned ? nonsense(source, NONSENSE_LINES) : null;
+}
+
+// --- 廢話（聽君一席話，如聽一席話） ---
+
+var NONSENSE_LINES = [
+  '聽君一席話，如聽一席話。',
+  '你說的很有道理，因為你說了。',
+  '這件事，你不說我也不知道。',
+  '如果你不知道，那你就是不知道。',
+  '二十七樓的風景很好，因為它在二十七樓。',
+  '二十七樓比二十六樓高一樓。',
+  '電梯往上的時候，就是在上樓。',
+  '吃丼飯的時候，就是在吃丼飯。',
+  '人生就像一碗丼飯，吃完就沒了。',
+  '一個人住叫獨居，兩個人住叫兩個人住。',
+  '明天的事明天再說，因為今天還是今天。',
+  '退房的那一天，就是退房日。',
+  '每一個晚上，都是晚上。',
+  '十二點一過，就是半夜了。',
+  '一天有二十四小時，晚上也算在裡面。',
+  '想睡就去睡，睡著了就睡著了。',
+  '早起的人，起得比較早。',
+  '喝醉的人，通常都喝了酒。',
+  '只要不下雨，就不會下雨。',
+  '你的問題很好，好在它是一個問題。',
+  '這個問題問得好，問完了。',
+  '我聽懂了，你在說話。',
+  '你傳的這句話我收到了，它是一句話。',
+  '我想了很久，終於想完了。',
+  '等一下，就是等一下。',
+  '有空的時候，就是有空。',
+  '時間會證明一切，因為時間一直在過。',
+  '房間很安靜，因為沒有聲音。',
+  '門關著的時候，是關著的。',
+  '冰箱是空的，因為裡面沒有東西。',
+  '錢包裡的錢，花掉就沒有了。',
+  '老闆說房價八千八，因為它是八千八。',
+  '老闆今天不在，因為他不在這裡。',
+  '前夫的指紋，只有前夫有。',
+  '羈絆之所以是羈絆，是因為它是羈絆。',
+  '認真的人，都很認真。',
+  '你說的我都同意，除了我不同意的那些。',
+  '每次我閉上眼睛，就什麼都看不到了。',
+  '走著走著，就走了。',
+  '沒有人住的房間，就是空房。',
+  '神明說，你可以擲個杯，因為你可以擲個杯。',
+  '這句話很重要，所以我說了一次。',
+  '凡事都有第一次，第二次是在第一次之後。',
+  '你現在在看這句話，因為你在看這句話。'
+];
+
+var STICKER_LINES = [
+  '這張貼圖，我看到了，它是一張貼圖。',
+  '你傳了一張貼圖，所以我收到了一張貼圖。',
+  '貼圖很可愛，因為它長得很可愛。',
+  '收到。這是一張你傳來的貼圖。'
+];
+
+// 同一個聊天室不連續回同一句；偶爾提醒一下正事怎麼做
+function nonsense(source, lines) {
+  var cache = CacheService.getScriptCache();
+  var key = 'last:' + (source.groupId || source.roomId || source.userId || 'anon');
+  var last = Number(cache.get(key));
+  var i;
+  do { i = Math.floor(Math.random() * lines.length); } while (lines.length > 1 && i === last);
+  cache.put(key, String(i), 6 * 60 * 60);
+  return lines[i] + (Math.random() < 0.25 ? '\n\n（想做正事，打「說明」）' : '');
 }
 
 // --- 空房 ---
@@ -185,7 +267,8 @@ function replyHelp() {
     '空房　接下來 30 天哪幾晚有人\n' +
     '擲杯　後面可以接問題，例如「擲杯 今晚續攤嗎」\n' +
     '抽籤　抽一支今晚的運勢\n' +
-    '訂房　網站連結';
+    '訂房　網站連結\n\n' +
+    '其他的話，我也會回，只是回得沒什麼用。群組裡要 @我 才回。';
 }
 
 function welcomeText(type) {
