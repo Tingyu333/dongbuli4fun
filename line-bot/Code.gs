@@ -139,7 +139,7 @@ var STICKER_LINES = [
   '收到。這是一張你傳來的貼圖。'
 ];
 
-// 同一個聊天室不連續回同一句；偶爾提醒一下正事怎麼做
+// 同一個聊天室不連續回同一句
 function nonsense(source, lines) {
   var cache = CacheService.getScriptCache();
   var key = 'last:' + (source.groupId || source.roomId || source.userId || 'anon');
@@ -147,7 +147,7 @@ function nonsense(source, lines) {
   var i;
   do { i = Math.floor(Math.random() * lines.length); } while (lines.length > 1 && i === last);
   cache.put(key, String(i), 6 * 60 * 60);
-  return lines[i] + (Math.random() < 0.25 ? '\n\n（想做正事，打「說明」）' : '');
+  return lines[i];
 }
 
 // --- 空房 ---
