@@ -13,7 +13,7 @@
 - 公開的動作（訂房、領票、取消、留言）**不寄信給別人**，只能寄給部署者自己。寄給旅人的信只能由後台（帶通行證）或之後的排程觸發。
 - 公開 API 不回電話、Email；要完整資料走後台的 `adminList`。
 - 寄信一律走 `sendMail()`（有每日上限）；信件內容用固定模板，使用者填的名字經過 `mailName()`（像網址的就換成「旅人」），不放使用者給的連結。
-- 不要再加 LINE bot webhook 直接打到 Apps Script：`doPost` 讀不到 HTTP 標頭，沒辦法驗 `X-Line-Signature`。
+- LINE bot（`line-bot/`）是**另一個** Apps Script 專案，只讀、只回覆（見下面「LINE bot」）。不要把 LINE webhook 接到網站後端，也不要讓 bot 寫入或推播：Apps Script 的 `doPost` 讀不到 HTTP 標頭，沒辦法驗 `X-Line-Signature`。
 
 **大多數使用者用手機瀏覽。** 新功能以手機（約 375px 寬、觸控操作）為主設計與測試：hover 才會觸發的互動要有觸控替代方案（例如逃跑按鈕在手機上改成抖動拒絕），長按要擋掉系統選單與文字選取，不能出現水平捲動。
 
@@ -27,6 +27,7 @@
 - **Tailwind CSS（Play CDN）**：透過 `https://cdn.tailwindcss.com` 載入。
 - **後端**：Google Apps Script Web App（`API_URL`，在 `index.html`、`reviews.html`、`ticket.html`、`admin_login.html`、`admin_dashboard.html` 中各自寫死同一個網址）。資料存在對應的 Google Sheet。後端程式碼備份在 `apps-script/Code.gs`，改完要由使用者貼到 Apps Script 編輯器並「部署 → 管理部署作業 → 編輯 → 新版本」才會生效（Claude 無法代為部署）。
 - **部署**：GitHub repo `Tingyu333/dongbuli4fun`，有 `404.html`，推測透過 GitHub Pages 發布。
+- **LINE bot**：`line-bot/Code.gs`，獨立的 Apps Script 專案（設定步驟在 `line-bot/README.md`），用 `SpreadsheetApp.openById(SHEET_ID)` 讀同一份 Sheet 的 Bookings E～G 欄。
 
 ## 頁面
 
@@ -62,6 +63,15 @@
 - 首頁與後台的 POST **不用 `no-cors`**，直接 `fetch(API_URL, { method: 'POST', body: JSON.stringify(...) })`：字串 body 是 `text/plain`，不會觸發 CORS 預檢，GAS 轉址後的回應讀得到。留言頁仍是舊的 `no-cors` 寫法。
 - 寄信上限（每天，存在指令碼屬性 `mailCount-*`）：寄給部署者 50 封、寄給旅人 40 封（Gmail 個人帳號一天只能寄給 100 人）。超過就不寄、不影響訂房或改狀態。
 - 若要改 API 欄位，記得 `apps-script/Code.gs` 也要同步修改並請使用者重新部署，且五個頁面（`index`、`reviews`、`ticket`、`admin_login`、`admin_dashboard`）的 `API_URL` 要一起更新。
+
+## LINE bot
+
+- 指令（訊息開頭符合才回，群組聊天不插話）：`空房`／`房況`、`擲杯`／`擲筊`／`跋杯`（可接問題）、`抽籤`／`御神籤`、`訂房`、`說明`／`指令`。加好友（`follow`）、被拉進群組（`join`）會打招呼。
+- 規則：只讀（程式裡不能有寫入 Sheet 的呼叫，要寫入的事回網站連結）、只用 Reply API（不推播）、不回名字電話 Email。
+- 指令碼屬性：`LINE_CHANNEL_ACCESS_TOKEN`、`SHEET_ID`、`WEBHOOK_KEY`（webhook 網址要帶 `?key=`，對不上或沒設定就不處理）。
+- 擲杯的三聖杯存在 `CacheService`，key 是 `streak:` + groupId／roomId／userId，6 小時。
+- **台詞跟網站同步**：擲杯台詞（`jiaobei.html` 的 `RESULTS`）、御神籤（`index.html` 的 `FORTUNES`）改了，`line-bot/Code.gs` 的 `JIAOBEI_LINES`、`FORTUNES` 也要改，並請使用者重新部署 bot 專案。
+- 圖文選單的圖是 `line-bot/richmenu.png`（2500×1686，大型 2×2：空房・查、擲杯・問、抽籤・運、訂房・歸）。
 
 ## 設計規範
 
