@@ -76,7 +76,7 @@
 - 指令碼屬性：`LINE_CHANNEL_ACCESS_TOKEN`、`SHEET_ID`、`WEBHOOK_KEY`（webhook 網址要帶 `?key=`，對不上或沒設定就不處理）。
 - 擲杯的三聖杯存在 `CacheService`，key 是 `streak:` + groupId／roomId／userId，6 小時。
 - **台詞跟網站同步**：擲杯台詞（`jiaobei.html` 的 `RESULTS`）、御神籤（`index.html` 的 `FORTUNES`）改了，`line-bot/Code.gs` 的 `JIAOBEI_LINES`、`FORTUNES` 也要改，並請使用者重新部署 bot 專案。
-- 圖文選單的圖是 `line-bot/richmenu.png`（2500×1686，大型 2×2：空房・查、擲杯・問、抽籤・運、訂房・歸）。
+- 圖文選單的圖是 `line-bot/richmenu.png`（2500×1686，大型 3×2 六格：上排空房・查、訂房・歸、天氣・觀，下排擲杯・問、抽籤・運、說明・閱）。版型和每格動作在 `line-bot/README.md`，改圖的格子順序時要一起改。
 
 ## 設計規範
 
