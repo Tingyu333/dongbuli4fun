@@ -239,10 +239,11 @@ function calendarBubble(today, gridStart, weeks, booked) {
         { type: 'box', layout: 'horizontal', margin: 'lg', contents: headerCells },
         { type: 'box', layout: 'vertical', margin: 'sm', spacing: 'xs', contents: rows },
         {
-          type: 'box', layout: 'horizontal', margin: 'lg', spacing: 'sm', contents: [
-            { type: 'box', layout: 'vertical', width: '12px', height: '12px', cornerRadius: '6px', backgroundColor: COLOR.accent, contents: [], offsetTop: '3px' },
+          // 圖例：整列垂直置中（不要用 offsetTop 推圓點，會超出邊界被 LINE 裁掉）
+          type: 'box', layout: 'horizontal', margin: 'lg', spacing: 'sm', alignItems: 'center', contents: [
+            { type: 'box', layout: 'vertical', width: '12px', height: '12px', cornerRadius: '6px', backgroundColor: COLOR.accent, contents: [] },
             { type: 'text', text: '有人住', size: 'xxs', color: COLOR.text, flex: 0 },
-            { type: 'box', layout: 'vertical', width: '12px', height: '12px', cornerRadius: '6px', borderWidth: '1px', borderColor: COLOR.ink, contents: [], margin: 'md', offsetTop: '3px' },
+            { type: 'box', layout: 'vertical', width: '12px', height: '12px', cornerRadius: '6px', borderWidth: '1px', borderColor: COLOR.ink, contents: [], margin: 'md' },
             { type: 'text', text: '今天', size: 'xxs', color: COLOR.text, flex: 0 }
           ]
         }
@@ -271,10 +272,11 @@ function dayCell(day, today, booked) {
     : String(d.getUTCDate());
   var past = day < today;
   var isBooked = !past && booked[day];
-  var cell = {
+  // 外層撐滿一格、裡面放固定 30×30 的正圓：格子變寬時圈才不會被拉成橢圓
+  var dot = {
     type: 'box',
     layout: 'vertical',
-    flex: 1,
+    width: '30px',
     height: '30px',
     justifyContent: 'center',
     alignItems: 'center',
@@ -287,12 +289,12 @@ function dayCell(day, today, booked) {
       color: past ? COLOR.faded : isBooked ? COLOR.white : COLOR.ink
     }]
   };
-  if (isBooked) cell.backgroundColor = COLOR.accent;
+  if (isBooked) dot.backgroundColor = COLOR.accent;
   if (day === today) {
-    cell.borderWidth = '2px';
-    cell.borderColor = COLOR.ink;
+    dot.borderWidth = '2px';
+    dot.borderColor = COLOR.ink;
   }
-  return cell;
+  return { type: 'box', layout: 'vertical', flex: 1, alignItems: 'center', contents: [dot] };
 }
 
 // 編輯器上方選這個函式按「執行」：用真的訂房資料印出卡片 JSON，
