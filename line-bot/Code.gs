@@ -152,17 +152,35 @@ function nonsense(source, lines) {
 
 // --- 空房 ---
 
-// 接下來 30 天哪幾晚有人（入住日到退房前一晚算有人，跟網站一樣）
+// 空房回一張月曆卡片（Flex Message）；通知和聊天列表顯示的預覽文字是文字版房況
 function replyAvailability() {
   var today = todayStr();
-  var end = addDays(today, DAYS_AHEAD);
+  var weekday = new Date(today + 'T00:00:00Z').getUTCDay();
+  var gridStart = addDays(today, -weekday);                      // 這週日
+  var weeks = Math.ceil((weekday + DAYS_AHEAD) / 7);             // 5～6 週，蓋得到接下來 30 天
+  var gridEnd = addDays(gridStart, weeks * 7);
+  var booked = bookedNights(today, gridEnd);
+  return {
+    type: 'flex',
+    altText: availabilityText(today, booked).slice(0, 400),
+    contents: calendarBubble(today, gridStart, weeks, booked)
+  };
+}
+
+// 從 from 到 to（不含）哪幾晚有人：入住日到退房前一晚算有人，跟網站一樣
+function bookedNights(from, to) {
   var booked = {};
   readBookedRanges().forEach(function (r) {
     for (var night = r.check_in; night < r.check_out; night = addDays(night, 1)) {
-      if (night >= today && night < end) booked[night] = true;
+      if (night >= from && night < to) booked[night] = true;
     }
   });
+  return booked;
+}
 
+// 文字版（卡片的預覽文字，也是看不到卡片的舊版 LINE 會顯示的內容）
+function availabilityText(today, booked) {
+  var end = addDays(today, DAYS_AHEAD);
   var stretches = [];
   for (var d = today; d < end; d = addDays(d, 1)) {
     if (!booked[d]) continue;
@@ -171,20 +189,116 @@ function replyAvailability() {
     else stretches.push({ from: d, to: d });
   }
 
-  var lines = ['二十七樓・房況', shortDay(today) + ' 起 ' + DAYS_AHEAD + ' 天', ''];
-  lines.push('今晚：' + (booked[today] ? '有人了' : '空著'));
+  var lines = ['二十七樓・房況', '今晚：' + (booked[today] ? '有人了' : '空著')];
   if (!stretches.length) {
-    lines.push('', '接下來每一晚都空著，揪團吧。');
+    lines.push('接下來 ' + DAYS_AHEAD + ' 天每一晚都空著，揪團吧。');
   } else {
-    lines.push('', '有人的晚上：');
+    lines.push('有人的晚上：');
     stretches.forEach(function (s) {
       var n = nightsBetween(s.from, s.to) + 1;
       lines.push('・' + shortDay(s.from) + (n > 1 ? '～' + shortDay(s.to) + '（' + n + ' 晚）' : ''));
     });
-    lines.push('', '其他晚上都空著。');
   }
-  lines.push('', '訂房：' + SITE_URL);
   return lines.join('\n');
+}
+
+// --- 月曆卡片（顏色跟網站白天一樣：米白紙、枯茶、墨色。Flex 不會跟著晝夜切換） ---
+
+var COLOR = { bg: '#fcfaf8', ink: '#2c2c2c', text: '#4a4a4a', accent: '#8e8070', sub: '#dcdcdc', faded: '#c9c3ba', white: '#ffffff' };
+
+function calendarBubble(today, gridStart, weeks, booked) {
+  var tonight = booked[today];
+  var rows = [];
+  for (var w = 0; w < weeks; w++) {
+    var cells = [];
+    for (var i = 0; i < 7; i++) cells.push(dayCell(addDays(gridStart, w * 7 + i), today, booked));
+    rows.push({ type: 'box', layout: 'horizontal', spacing: 'xs', contents: cells });
+  }
+
+  var headerCells = '日一二三四五六'.split('').map(function (c) {
+    return { type: 'text', text: c, size: 'xxs', color: COLOR.accent, align: 'center', flex: 1 };
+  });
+
+  return {
+    type: 'bubble',
+    styles: { body: { backgroundColor: COLOR.bg }, footer: { backgroundColor: COLOR.bg } },
+    body: {
+      type: 'box',
+      layout: 'vertical',
+      paddingAll: '20px',
+      contents: [
+        { type: 'text', text: 'ROOM STATUS', size: 'xxs', color: COLOR.accent },
+        { type: 'text', text: '二十七樓・房況', size: 'lg', color: COLOR.ink, margin: 'sm' },
+        {
+          type: 'box', layout: 'horizontal', margin: 'md', contents: [
+            { type: 'text', text: '今晚', size: 'sm', color: COLOR.accent, flex: 0 },
+            { type: 'text', text: tonight ? '有人了' : '空著，來吧', size: 'sm', color: COLOR.ink, margin: 'md' }
+          ]
+        },
+        { type: 'separator', margin: 'lg', color: COLOR.sub },
+        { type: 'box', layout: 'horizontal', margin: 'lg', contents: headerCells },
+        { type: 'box', layout: 'vertical', margin: 'sm', spacing: 'xs', contents: rows },
+        {
+          type: 'box', layout: 'horizontal', margin: 'lg', spacing: 'sm', contents: [
+            { type: 'box', layout: 'vertical', width: '12px', height: '12px', cornerRadius: '6px', backgroundColor: COLOR.accent, contents: [], offsetTop: '3px' },
+            { type: 'text', text: '有人住', size: 'xxs', color: COLOR.text, flex: 0 },
+            { type: 'box', layout: 'vertical', width: '12px', height: '12px', cornerRadius: '6px', borderWidth: '1px', borderColor: COLOR.ink, contents: [], margin: 'md', offsetTop: '3px' },
+            { type: 'text', text: '今天', size: 'xxs', color: COLOR.text, flex: 0 }
+          ]
+        }
+      ]
+    },
+    footer: {
+      type: 'box',
+      layout: 'vertical',
+      paddingTop: '0px',
+      contents: [{
+        type: 'button',
+        style: 'primary',
+        color: COLOR.ink,
+        height: 'sm',
+        action: { type: 'uri', label: '去訂房', uri: SITE_URL }
+      }]
+    }
+  };
+}
+
+// 一格：有人住填枯茶色、今天加圈、過去的日子變淡；每個月 1 號（和第一格）標月份
+function dayCell(day, today, booked) {
+  var d = new Date(day + 'T00:00:00Z');
+  var label = d.getUTCDate() === 1 || day === addDays(today, -new Date(today + 'T00:00:00Z').getUTCDay())
+    ? (d.getUTCMonth() + 1) + '/' + d.getUTCDate()
+    : String(d.getUTCDate());
+  var past = day < today;
+  var isBooked = !past && booked[day];
+  var cell = {
+    type: 'box',
+    layout: 'vertical',
+    flex: 1,
+    height: '30px',
+    justifyContent: 'center',
+    alignItems: 'center',
+    cornerRadius: '15px',
+    contents: [{
+      type: 'text',
+      text: label,
+      size: label.length > 2 ? 'xxs' : 'xs',
+      align: 'center',
+      color: past ? COLOR.faded : isBooked ? COLOR.white : COLOR.ink
+    }]
+  };
+  if (isBooked) cell.backgroundColor = COLOR.accent;
+  if (day === today) {
+    cell.borderWidth = '2px';
+    cell.borderColor = COLOR.ink;
+  }
+  return cell;
+}
+
+// 編輯器上方選這個函式按「執行」：用真的訂房資料印出卡片 JSON，
+// 貼到 LINE 的 Flex Message Simulator（https://developers.line.biz/flex-simulator/）就能預覽
+function printAvailabilityFlex() {
+  console.log(JSON.stringify(replyAvailability().contents, null, 2));
 }
 
 // 只讀日期和狀態兩欄以外什麼都不碰：E=check_in, F=check_out, G=status
@@ -277,14 +391,16 @@ function welcomeText(type) {
 
 // --- LINE ---
 
-function reply(replyToken, text) {
+// message 可以是文字，或是組好的訊息物件（例如空房的月曆卡片）
+function reply(replyToken, message) {
+  if (typeof message === 'string') message = { type: 'text', text: message.slice(0, 5000) };
   var token = prop('LINE_CHANNEL_ACCESS_TOKEN');
   if (!token) return console.error('沒設定 LINE_CHANNEL_ACCESS_TOKEN');
   var res = UrlFetchApp.fetch('https://api.line.me/v2/bot/message/reply', {
     method: 'post',
     contentType: 'application/json',
     headers: { Authorization: 'Bearer ' + token },
-    payload: JSON.stringify({ replyToken: replyToken, messages: [{ type: 'text', text: text.slice(0, 5000) }] }),
+    payload: JSON.stringify({ replyToken: replyToken, messages: [message] }),
     muteHttpExceptions: true
   });
   if (res.getResponseCode() !== 200) console.error('LINE 回覆失敗', res.getResponseCode(), res.getContentText());

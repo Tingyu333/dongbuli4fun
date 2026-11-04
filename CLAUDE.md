@@ -69,6 +69,7 @@
 
 - 指令（訊息開頭符合才算）：`空房`／`房況`、`擲杯`／`擲筊`／`跋杯`（可接問題）、`抽籤`／`御神籤`、`訂房`、`說明`／`指令`。加好友（`follow`）、被拉進群組（`join`）會打招呼。
 - 不是指令：一對一回一句廢話文學（`NONSENSE_LINES`，貼圖回 `STICKER_LINES`）；群組裡**只有被 @（`mention.mentionees[].isSelf`）才回**，平常聊天不插話。被 @ 時先把 @bot 那段字拿掉再判斷指令。同一個聊天室不連續回同一句（`CacheService` 的 `last:` key）。
+- `空房` 回 Flex Message 月曆卡片（`calendarBubble()`，從這週日起 5～6 週、有人住填枯茶色、今天加圈），`altText` 是文字版房況（最多 400 字）。卡片顏色寫死白天那套，Flex 不跟晝夜切換。`printAvailabilityFlex()` 可以印出 JSON 貼到 Flex Message Simulator 預覽。`reply()` 收文字或組好的訊息物件。
 - 規則：只讀（程式裡不能有寫入 Sheet 的呼叫，要寫入的事回網站連結）、只用 Reply API（不推播）、不回名字電話 Email。
 - 指令碼屬性：`LINE_CHANNEL_ACCESS_TOKEN`、`SHEET_ID`、`WEBHOOK_KEY`（webhook 網址要帶 `?key=`，對不上或沒設定就不處理）。
 - 擲杯的三聖杯存在 `CacheService`，key 是 `streak:` + groupId／roomId／userId，6 小時。
