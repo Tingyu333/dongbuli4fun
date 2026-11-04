@@ -49,6 +49,12 @@ body {
     transition: opacity 0.5s;
 }
 
+/* 導覽列放在獨立圖層：iPhone（尤其 LINE 內建瀏覽器）捲動、網址列收合時，
+   固定在上方的導覽列才不會被留在畫面中間。導覽列也不要用 mix-blend-mode，同樣會觸發這個問題 */
+nav {
+    transform: translateZ(0);
+}
+
 /* 捲動後的導覽列：加底色，避免文字壓在內容上 */
 .nav-solid {
     mix-blend-mode: normal !important;
