@@ -21,18 +21,20 @@
     </style>
 </head>
 
-<body class="h-screen w-full flex items-center justify-center text-wabi-text font-serif">
+<body class="min-h-screen min-h-[100dvh] w-full flex items-center justify-center text-wabi-text font-serif">
 
+    <!-- 手機上不放卡片（滿版的白卡會把畫面切成上中下三條），內容直接寫在紙上；電腦版才是一張卡 -->
     <div
-        class="w-full max-w-md p-10 md:p-16 bg-white shadow-[0_20px_50px_-10px_rgba(0,0,0,0.05)] relative overflow-hidden">
-        <!-- 裝飾 -->
-        <div class="absolute top-0 left-0 w-full h-1 bg-wabi-accent"></div>
+        class="w-full max-w-md px-10 py-10 md:p-16 md:bg-white md:shadow-[0_20px_50px_-10px_rgba(0,0,0,0.05)] relative md:overflow-hidden">
+        <!-- 裝飾：電腦版卡片頂端一條枯茶色；手機上「主」字放在畫面右下角 -->
+        <div class="hidden md:block absolute top-0 left-0 w-full h-1 bg-wabi-accent"></div>
         <div
-            class="absolute -right-6 -bottom-6 text-[8rem] text-stone-50 select-none pointer-events-none font-serif z-0">
+            class="fixed md:absolute -right-6 -bottom-6 text-[8rem] text-stone-100 md:text-stone-50 select-none pointer-events-none font-serif z-0">
             主</div>
 
         <div class="relative z-10">
             <div class="text-center mb-12">
+                <div class="md:hidden mx-auto mb-8 w-8 h-px bg-wabi-accent"></div>
                 <span class="text-xs font-sans tracking-[0.3em] text-stone-400 uppercase block mb-3">Admin Access</span>
                 <h1 class="text-2xl font-light tracking-widest text-wabi-dark">歸人・確認</h1>
             </div>
