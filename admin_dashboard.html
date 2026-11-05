@@ -36,9 +36,10 @@
         body {
             background-color: #fcfaf8;
             background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* 預約狀態下拉選單：待確認用朱色提醒、已確認墨色、已取消淡灰 */
+        /* 預約狀態下拉選單（電腦版表格）：待確認用朱色提醒、已確認墨色、已取消淡灰 */
         .status-select {
             padding: 0.35rem 1.75rem 0.35rem 0.75rem;
             border: 1px solid currentColor;
@@ -56,9 +57,28 @@
             cursor: wait;
         }
 
+        /* 卡片右上角的狀態章 */
+        .status-chip {
+            display: inline-block;
+            padding: 0.1rem 0.6rem;
+            border: 1px solid currentColor;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            letter-spacing: 0.1em;
+            white-space: nowrap;
+        }
+
         .status-pending { color: #b33a2f; }
         .status-confirmed { color: #2c2c2c; }
         .status-cancelled { color: #a8a29e; }
+
+        .act-btn:disabled { opacity: 0.4; cursor: wait; }
+
+        /* 手機上歷史紀錄預設收起來，點標題展開；電腦版一直攤開 */
+        @media (max-width: 767px) {
+            #historyBody:not(.open) { display: none; }
+        }
+        #historyToggle[aria-expanded="true"] .toggle-mark { transform: rotate(180deg); }
     </style>
 </head>
 
@@ -67,25 +87,25 @@
 
     <!-- 導航 -->
     <nav
-        class="fixed top-0 w-full p-8 flex justify-between items-center z-40 bg-[#fcfaf8]/90 backdrop-blur-sm border-b border-stone-100">
-        <div class="flex items-center gap-4">
-            <h1 class="text-lg font-bold tracking-widest uppercase text-wabi-dark border-r border-stone-200 pr-4">
+        class="fixed top-0 w-full px-4 py-4 md:p-8 flex justify-between items-center z-40 bg-[#fcfaf8]/90 backdrop-blur-sm border-b border-stone-100">
+        <div class="flex items-center gap-3 md:gap-4">
+            <h1 class="text-base md:text-lg font-bold tracking-widest uppercase text-wabi-dark border-r border-stone-200 pr-3 md:pr-4">
                 Dashboard</h1>
             <span class="text-xs tracking-widest text-stone-500">預約管理</span>
         </div>
         <button id="logoutBtn"
-            class="text-xs tracking-widest hover:text-wabi-dark transition-colors duration-500 text-stone-400 uppercase">
+            class="py-2 text-xs tracking-widest hover:text-wabi-dark transition-colors duration-500 text-stone-400 uppercase">
             登出・離
         </button>
     </nav>
 
     <!-- 主要內容 -->
-    <main class="max-w-7xl mx-auto py-32 px-8">
+    <main class="max-w-7xl mx-auto pt-24 pb-16 px-4 md:py-32 md:px-8">
 
-        <div class="mb-12 flex justify-between items-end">
+        <div class="mb-8 md:mb-12 flex justify-between items-end">
             <div>
                 <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2"> RESERVATIONS </span>
-                <h2 class="text-3xl font-light text-wabi-dark">27樓・名簿</h2>
+                <h2 class="text-2xl md:text-3xl font-light text-wabi-dark">27樓・名簿</h2>
             </div>
             <div class="hidden md:block">
                 <p class="text-[10px] text-stone-400 font-sans tracking-widest text-right">
@@ -96,83 +116,117 @@
             </div>
         </div>
 
-        <!-- 區塊 1: 即將入住 (Active) -->
-        <div class="mb-16">
-            <h3 class="text-xl font-light text-wabi-dark mb-6 tracking-widest pl-4 border-l-2 border-wabi-accent">即將入住
-            </h3>
-            <div class="bg-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.03)] overflow-hidden rounded-sm">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr
-                                class="bg-stone-50 border-b border-stone-100 text-[10px] font-sans tracking-[0.2em] text-stone-400 uppercase">
-                                <th class="p-6 font-normal">姓名</th>
-                                <th class="p-6 font-normal">人數</th>
-                                <th class="p-6 font-normal">聯絡電話</th>
-                                <th class="p-6 font-normal">入住日期</th>
-                                <th class="p-6 font-normal">退房日期</th>
-                                <th class="p-6 font-normal">狀態</th>
-                            </tr>
-                        </thead>
-                        <tbody id="activeTableBody" class="font-sans text-sm text-stone-600">
-                            <!-- 資料將由 JS 插入 -->
-                        </tbody>
-                    </table>
-                </div>
-                <!-- Pagination Active -->
-                <div class="p-4 border-t border-stone-100 flex justify-end gap-4 text-xs font-sans tracking-widest text-stone-400"
-                    id="activePagination">
-                    <button onclick="changePage('active', -1)" class="hover:text-wabi-dark disabled:opacity-30"
-                        id="btnPrevActive">PREV</button>
-                    <span id="pageInfoActive">1 / 1</span>
-                    <button onclick="changePage('active', 1)" class="hover:text-wabi-dark disabled:opacity-30"
-                        id="btnNextActive">NEXT</button>
-                </div>
-            </div>
+        <!-- 一眼看完：今晚誰在、還有幾筆要處理、接下來一個月 -->
+        <div id="summary"
+            class="mb-10 md:mb-14 flex flex-wrap gap-x-5 gap-y-1 font-sans text-xs tracking-widest text-stone-400 border-y border-stone-100 py-3">
+            <span>今晚・<span class="text-stone-300">—</span></span>
         </div>
 
-        <!-- 區塊 2: 歷史紀錄 (History) -->
-        <div>
-            <h3 class="text-xl font-light text-wabi-dark mb-6 tracking-widest pl-4 border-l-2 border-stone-300">歷史紀錄
-            </h3>
-            <div class="bg-stone-50/50 border border-stone-100 overflow-hidden rounded-sm">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr
-                                class="bg-stone-100 border-b border-stone-200 text-[10px] font-sans tracking-[0.2em] text-stone-500 uppercase">
-                                <th class="p-6 font-normal">姓名</th>
-                                <th class="p-6 font-normal">人數</th>
-                                <th class="p-6 font-normal">聯絡電話</th>
-                                <th class="p-6 font-normal">入住日期</th>
-                                <th class="p-6 font-normal">退房日期</th>
-                                <th class="p-6 font-normal">狀態</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyTableBody" class="font-sans text-sm text-stone-400 grayscale">
-                            <!-- 資料將由 JS 插入 -->
-                        </tbody>
-                    </table>
+        <!-- 讀取中、讀取失敗 -->
+        <div id="loadState" class="py-16 text-center"></div>
+
+        <div id="lists" class="hidden">
+
+            <!-- 區塊 0: 待處理（待確認、還能改的） -->
+            <section class="mb-12 md:mb-16">
+                <h3 class="text-lg md:text-xl font-light text-wabi-dark mb-4 md:mb-6 tracking-widest pl-4 border-l-2 border-[#b33a2f]">
+                    待處理 <span id="pendingBadge" class="font-sans text-sm text-[#b33a2f]"></span></h3>
+                <div id="pendingList" class="grid gap-3 md:grid-cols-2 xl:grid-cols-3"></div>
+            </section>
+
+            <!-- 區塊 1: 即將入住 (Active) -->
+            <section class="mb-12 md:mb-16">
+                <h3 class="text-lg md:text-xl font-light text-wabi-dark mb-4 md:mb-6 tracking-widest pl-4 border-l-2 border-wabi-accent">即將入住
+                </h3>
+                <div id="activeCards" class="md:hidden space-y-3"></div>
+                <div class="hidden md:block bg-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.03)] overflow-hidden rounded-sm">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr
+                                    class="bg-stone-50 border-b border-stone-100 text-[10px] font-sans tracking-[0.2em] text-stone-400 uppercase">
+                                    <th class="p-6 font-normal">姓名</th>
+                                    <th class="p-6 font-normal">人數</th>
+                                    <th class="p-6 font-normal">聯絡電話</th>
+                                    <th class="p-6 font-normal">入住日期</th>
+                                    <th class="p-6 font-normal">退房日期</th>
+                                    <th class="p-6 font-normal">狀態</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activeTableBody" class="font-sans text-sm text-stone-600">
+                                <!-- 資料將由 JS 插入 -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <!-- Pagination History -->
-                <div class="p-4 border-t border-stone-200 flex justify-end gap-4 text-xs font-sans tracking-widest text-stone-400"
-                    id="historyPagination">
-                    <button onclick="changePage('history', -1)" class="hover:text-wabi-dark disabled:opacity-30"
-                        id="btnPrevHistory">PREV</button>
-                    <span id="pageInfoHistory">1 / 1</span>
-                    <button onclick="changePage('history', 1)" class="hover:text-wabi-dark disabled:opacity-30"
-                        id="btnNextHistory">NEXT</button>
+                <!-- Pagination Active -->
+                <div class="pt-3 md:p-4 flex justify-end items-center gap-4 text-xs font-sans tracking-widest text-stone-400"
+                    id="activePagination">
+                    <button onclick="changePage('active', -1)" class="p-2 hover:text-wabi-dark disabled:opacity-30"
+                        id="btnPrevActive">PREV</button>
+                    <span id="pageInfoActive">1 / 1</span>
+                    <button onclick="changePage('active', 1)" class="p-2 hover:text-wabi-dark disabled:opacity-30"
+                        id="btnNextActive">NEXT</button>
                 </div>
-            </div>
+            </section>
+
+            <!-- 區塊 2: 歷史紀錄 (History) -->
+            <section>
+                <h3 class="mb-4 md:mb-6">
+                    <button id="historyToggle" type="button" aria-expanded="false" aria-controls="historyBody"
+                        class="w-full md:w-auto md:cursor-default flex items-center justify-between gap-3 py-2 md:py-0 text-lg md:text-xl font-light text-wabi-dark tracking-widest pl-4 border-l-2 border-stone-300 text-left">
+                        <span>歷史紀錄 <span id="historyCount" class="font-sans text-sm text-stone-400"></span></span>
+                        <span class="md:hidden flex items-center gap-2 font-sans text-xs text-stone-400">
+                            <span class="toggle-text">展開</span>
+                            <svg class="toggle-mark transition-transform duration-300" width="10" height="6" viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="#a8a29e"/></svg>
+                        </span>
+                    </button>
+                </h3>
+                <div id="historyBody">
+                    <div id="historyCards" class="md:hidden space-y-3"></div>
+                    <div class="hidden md:block bg-stone-50/50 border border-stone-100 overflow-hidden rounded-sm">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr
+                                        class="bg-stone-100 border-b border-stone-200 text-[10px] font-sans tracking-[0.2em] text-stone-500 uppercase">
+                                        <th class="p-6 font-normal">姓名</th>
+                                        <th class="p-6 font-normal">人數</th>
+                                        <th class="p-6 font-normal">聯絡電話</th>
+                                        <th class="p-6 font-normal">入住日期</th>
+                                        <th class="p-6 font-normal">退房日期</th>
+                                        <th class="p-6 font-normal">狀態</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyTableBody" class="font-sans text-sm text-stone-400 grayscale">
+                                    <!-- 資料將由 JS 插入 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Pagination History -->
+                    <div class="pt-3 md:p-4 flex justify-end items-center gap-4 text-xs font-sans tracking-widest text-stone-400"
+                        id="historyPagination">
+                        <button onclick="changePage('history', -1)" class="p-2 hover:text-wabi-dark disabled:opacity-30"
+                            id="btnPrevHistory">PREV</button>
+                        <span id="pageInfoHistory">1 / 1</span>
+                        <button onclick="changePage('history', 1)" class="p-2 hover:text-wabi-dark disabled:opacity-30"
+                            id="btnNextHistory">NEXT</button>
+                    </div>
+                </div>
+            </section>
         </div>
 
     </main>
 
     <script>
         // State
+        // pending：待確認而且還能改的（放最上面「待處理」）；active：其他還沒結束的；history：住過的
         const state = {
+            pending: [],
             active: { data: [], page: 1 },
             history: { data: [], page: 1 },
+            all: [],
             pageSize: 10
         };
 
@@ -191,27 +245,37 @@
 
         const API_URL = "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
 
-        // 讀取中、讀取失敗：兩張表都先放一行提示（後端是 Apps Script，常常要等幾秒）
-        function showTableMessage(html) {
-            ['active', 'history'].forEach(type => {
-                document.getElementById(type + 'TableBody').innerHTML =
-                    `<tr><td colspan="6" class="p-12 text-center">${html}</td></tr>`;
-            });
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+        // 歷史紀錄收合（只有手機上有作用，CSS 在電腦版會一直攤開）
+        document.getElementById('historyToggle').addEventListener('click', function () {
+            const body = document.getElementById('historyBody');
+            const open = body.classList.toggle('open');
+            this.setAttribute('aria-expanded', open);
+            this.querySelector('.toggle-text').innerText = open ? '收起' : '展開';
+        });
+
+        // 讀取中、讀取失敗：整個名單先藏起來，只放一塊提示（後端是 Apps Script，常常要等幾秒）
+        function showLoadState(html) {
+            const box = document.getElementById('loadState');
+            box.innerHTML = html;
+            box.classList.toggle('hidden', !html);
+            document.getElementById('lists').classList.toggle('hidden', !!html);
         }
 
         function showLoading() {
             document.getElementById('totalCount').innerText = '—';
             document.getElementById('pendingCount').innerText = '—';
-            showTableMessage(`
+            showLoadState(`
                 <div class="inline-block w-6 h-6 border-2 border-stone-200 border-t-wabi-accent rounded-full animate-spin"></div>
                 <p class="mt-4 text-xs tracking-widest text-stone-400">正在翻名簿……</p>`);
         }
 
         function showLoadError() {
-            showTableMessage(`
+            showLoadState(`
                 <p class="text-xs tracking-widest text-stone-400">名簿讀不到，可能是網路或後端忙碌。</p>
                 <button type="button" onclick="fetchData()"
-                    class="mt-4 px-4 py-2 border border-stone-300 text-xs tracking-widest text-wabi-dark hover:border-wabi-dark transition-colors">再試一次</button>`);
+                    class="mt-4 px-5 py-3 border border-stone-300 text-xs tracking-widest text-wabi-dark hover:border-wabi-dark transition-colors">再試一次</button>`);
         }
 
         async function fetchData() {
@@ -222,6 +286,7 @@
                 if (result.result === 'unauthorized') return backToLogin();
                 if (result.result !== 'success') throw new Error(result.error);
                 processData(result.bookings || []);
+                showLoadState('');
 
             } catch (e) {
                 console.error("Fetch error", e);
@@ -229,35 +294,77 @@
             }
         }
 
-        function processData(data) {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+        // 'yyyy-MM-dd' → 當地的午夜（不經過 UTC，算天數才不會差一天）
+        function localDate(str) {
+            const [y, m, d] = str.split('-').map(Number);
+            return new Date(y, (m || 1) - 1, d || 1);
+        }
 
-            let processed = data.map(item => {
+        const DAY = 86400000;
+        const WEEKDAYS = '日一二三四五六';
+        const daysBetween = (a, b) => Math.round((b - a) / DAY);
+
+        function todayDate() {
+            const t = new Date();
+            t.setHours(0, 0, 0, 0);
+            return t;
+        }
+
+        function processData(data) {
+            state.all = data.map(item => {
                 const checkInStr = (item.checkIn || item.check_in || '').split('T')[0];
                 const checkOutStr = (item.checkOut || item.check_out || '').split('T')[0];
-                const checkInDate = new Date(checkInStr);
-                const checkOutDate = new Date(checkOutStr);
-                const isPast = checkOutDate < today;
+                const checkInDate = localDate(checkInStr);
+                const checkOutDate = localDate(checkOutStr);
+                const isPast = checkOutDate < todayDate();
                 const status = item.status || 'confirmed';
-                return { ...item, status, checkInStr, checkOutStr, checkInDate, isPast };
+                return { ...item, status, checkInStr, checkOutStr, checkInDate, checkOutDate, isPast };
             });
-
-            // 分類與排序
-            state.active.data = processed.filter(d => !d.isPast).sort((a, b) => a.checkInDate - b.checkInDate);
-            // 歷史紀錄：最近的在最上面 (Descending)
-            state.history.data = processed.filter(d => d.isPast).sort((a, b) => b.checkInDate - a.checkInDate);
-
             document.getElementById('totalCount').innerText = data.length;
-            updatePendingCount();
+            renderAll();
+        }
 
+        const isActionable = d => d.status === 'pending' && d.id && (d.next || []).length > 0;
+
+        // 分類、排序、重畫全部（改完狀態也走這裡，待處理的會自己搬到即將入住）
+        function renderAll() {
+            const upcoming = state.all.filter(d => !d.isPast).sort((a, b) => a.checkInDate - b.checkInDate);
+            state.pending = upcoming.filter(isActionable);
+            state.active.data = upcoming.filter(d => !isActionable(d));
+            // 歷史紀錄：最近的在最上面 (Descending)
+            state.history.data = state.all.filter(d => d.isPast).sort((a, b) => b.checkInDate - a.checkInDate);
+
+            document.getElementById('pendingCount').innerText = state.all.filter(d => d.status === 'pending').length;
+            renderSummary();
+            renderPending();
             renderSection('active');
             renderSection('history');
         }
 
-        function updatePendingCount() {
-            const all = [...state.active.data, ...state.history.data];
-            document.getElementById('pendingCount').innerText = all.filter(d => d.status === 'pending').length;
+        // 「今晚・小明 5 人｜待處理・1 筆｜三十天內入住・4 筆」
+        function renderSummary() {
+            const today = todayDate();
+            const live = state.all.filter(d => d.status !== 'cancelled');
+            const tonight = live.find(d => d.checkInDate <= today && today < d.checkOutDate);
+            const soon = live.filter(d => {
+                const n = daysBetween(today, d.checkInDate);
+                return n >= 0 && n <= 30;
+            }).length;
+            const strong = 'text-wabi-dark';
+            document.getElementById('summary').innerHTML = `
+                <span>今晚・${tonight
+                    ? `<span class="${strong}">${esc(tonight.guest_name || '某位旅人')} ${tonight.guests || 1} 人</span>`
+                    : '<span class="text-stone-500">空房，好好休息</span>'}</span>
+                <span>待處理・<span class="${state.pending.length ? 'text-[#b33a2f]' : strong}">${state.pending.length}</span> 筆</span>
+                <span>三十天內入住・<span class="${strong}">${soon}</span> 筆</span>`;
+        }
+
+        function renderPending() {
+            const list = document.getElementById('pendingList');
+            document.getElementById('pendingBadge').innerText = state.pending.length ? state.pending.length : '';
+            list.innerHTML = state.pending.length
+                ? state.pending.map(item => bookingCard(item, 'pending')).join('')
+                : `<p class="md:col-span-2 xl:col-span-3 py-6 text-center text-xs tracking-widest text-stone-400 border border-dashed border-stone-200">沒有要處理的，喝杯茶吧。</p>`;
         }
 
         const STATUS_LABELS = { pending: '待確認', confirmed: '已確認', cancelled: '已取消' };
@@ -273,19 +380,31 @@
             return `<select class="status-select status-${item.status}" data-id="${item.id}" onchange="changeStatus(this)">${options}</select>`;
         }
 
+        // 電腦版下拉選單
         async function changeStatus(select) {
-            const item = [...state.active.data, ...state.history.data].find(d => d.id === select.dataset.id);
-            const status = select.value;
-            // 改了就回不去，先問一次；取消的話選單跳回原本的狀態
+            const ok = await updateStatus(select.dataset.id, select.value, [select]);
+            if (!ok) select.value = findItem(select.dataset.id).status;
+        }
+
+        // 手機卡片的大按鈕
+        function tapStatus(btn) {
+            const card = btn.closest('article');
+            updateStatus(btn.dataset.id, btn.dataset.status, [...card.querySelectorAll('.act-btn')]);
+        }
+
+        const findItem = id => state.all.find(d => d.id === id);
+
+        // 改了就回不去，先問一次；按「取消」回傳 false
+        async function updateStatus(id, status, controls) {
+            const item = findItem(id);
             const warning = status === 'cancelled'
-                ? `確定要取消 ${item.guest_name || '這筆'} 的預約嗎？取消後不能復原${item.status === 'confirmed' ? '，會寄取消通知給有留信箱的人' : ''}。`
+                ? `確定要${item.status === 'pending' ? '婉拒' : '取消'} ${item.guest_name || '這筆'} 的預約嗎？${item.status === 'pending' ? '婉拒' : '取消'}後不能復原${item.status === 'confirmed' ? '，會寄取消通知給有留信箱的人' : ''}。`
                 : '確定要確認這筆預約嗎？確認後不能改回待確認，會寄確認信給有留信箱的人。';
-            if (!confirm(warning)) {
-                select.value = item.status;
-                return;
-            }
-            select.disabled = true;
-            select.classList.add('opacity-40', 'animate-pulse'); // 儲存中（重畫表格時會換掉這個選單）
+            if (!confirm(warning)) return false;
+            controls.forEach(c => {
+                c.disabled = true;
+                c.classList.add('opacity-40', 'animate-pulse'); // 儲存中（重畫時會換掉）
+            });
             try {
                 const res = await fetch(API_URL, {
                     method: 'POST',
@@ -306,9 +425,8 @@
                 console.error('Update error', e);
                 alert('更新失敗，請稍後再試。');
             }
-            updatePendingCount();
-            renderSection('active');
-            renderSection('history');
+            renderAll();
+            return true;
         }
 
         function changePage(type, delta) {
@@ -327,42 +445,127 @@
             const guests = item.guests || 1;
             const travelers = item.travelers || [];
             if (guests === 1) return '<span class="text-stone-500">1 人</span>';
-            const names = travelers.join('、').replace(/[&<>"']/g, '');
+            const names = esc(travelers.join('、'));
             const full = travelers.length >= guests;
             return `<span class="text-stone-500">${guests} 人</span>
                 <a href="ticket.html?id=${encodeURIComponent(item.id)}" target="_blank" title="${names}"
                     class="ml-2 ${full ? 'text-wabi-accent' : 'text-stone-400'} border-b border-current">已領 ${travelers.length}</a>`;
         }
 
+        // 'yyyy-MM-dd' → 11/8（日）
+        function shortDate(date) {
+            return `${date.getMonth() + 1}/${date.getDate()}（${WEEKDAYS[date.getDay()]}）`;
+        }
+
+        // 離入住還有幾天：今晚入住、住宿中、明天、後天、N 天後
+        function whenTag(item) {
+            if (item.isPast) return '';
+            const today = todayDate();
+            const n = daysBetween(today, item.checkInDate);
+            if (n < 0) return '住宿中';
+            if (n === 0) return '今晚入住';
+            if (n === 1) return '明天入住';
+            if (n === 2) return '後天入住';
+            return `${n} 天後`;
+        }
+
+        // 電話：舊資料開頭的 0 被 Sheet 吃掉的補回來；顯示成 0912-345-678
+        function phoneParts(raw) {
+            let digits = String(raw || '').replace(/[^\d+]/g, '');
+            if (/^9\d{8}$/.test(digits)) digits = '0' + digits;
+            const shown = /^09\d{8}$/.test(digits) ? digits.replace(/^(\d{4})(\d{3})(\d{3})$/, '$1-$2-$3') : (raw || '');
+            return { digits, shown };
+        }
+
+        // 手機版（和「待處理」）用的卡片
+        function bookingCard(item, type) {
+            const cancelled = item.status === 'cancelled';
+            const strike = cancelled ? 'line-through opacity-60' : '';
+            const nights = daysBetween(item.checkInDate, item.checkOutDate);
+            const tag = whenTag(item);
+            const phone = phoneParts(item.phone);
+            const guests = item.guests || 1;
+            const travelers = item.travelers || [];
+            const next = item.id ? (item.next || []) : [];
+            const base = type === 'history'
+                ? 'bg-stone-50/60 border-stone-100 text-stone-400'
+                : type === 'pending' ? 'bg-white border-[#b33a2f]/25' : 'bg-white border-stone-100';
+
+            // 待確認：兩顆大按鈕「確認」「婉拒」；已確認：一顆淡淡的「取消預約」
+            let actions = '';
+            if (next.length && item.status === 'pending') {
+                actions = `
+                <div class="mt-4 grid grid-cols-2 gap-2">
+                    ${next.includes('confirmed') ? `<button type="button" class="act-btn min-h-[44px] bg-wabi-dark text-white text-sm tracking-widest active:opacity-80" data-id="${esc(item.id)}" data-status="confirmed" onclick="tapStatus(this)">確認入住</button>` : ''}
+                    ${next.includes('cancelled') ? `<button type="button" class="act-btn min-h-[44px] border border-stone-300 text-stone-500 text-sm tracking-widest active:bg-stone-50" data-id="${esc(item.id)}" data-status="cancelled" onclick="tapStatus(this)">婉拒</button>` : ''}
+                </div>`;
+            } else if (next.includes('cancelled')) {
+                actions = `
+                <div class="mt-3 flex justify-end">
+                    <button type="button" class="act-btn min-h-[44px] px-3 -mr-3 text-xs tracking-widest text-stone-400 underline underline-offset-4 decoration-stone-300" data-id="${esc(item.id)}" data-status="cancelled" onclick="tapStatus(this)">取消預約</button>
+                </div>`;
+            } else if (item.status === 'pending' && !item.isPast) {
+                actions = `<p class="mt-3 text-[11px] tracking-widest text-stone-400">入住日已到，狀態鎖住了（要改請直接改 Sheet）。</p>`;
+            }
+
+            return `
+            <article class="border ${base} rounded-sm p-4 font-sans">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <p class="font-serif text-base ${type === 'history' ? '' : 'text-wabi-dark'} break-all ${strike}">${esc(item.guest_name || '未知訪客')}</p>
+                        <p class="text-xs text-stone-400 tracking-wider">${guests} 人${guests > 1
+                            ? `・<a href="ticket.html?id=${encodeURIComponent(item.id)}" target="_blank" class="${travelers.length >= guests ? 'text-wabi-accent' : ''} border-b border-current">已領 ${travelers.length}</a>`
+                            : ''}</p>
+                    </div>
+                    <span class="status-chip status-${item.status} shrink-0 ${type === 'history' ? 'opacity-60' : ''}">${STATUS_LABELS[item.status]}</span>
+                </div>
+                <p class="mt-3 text-sm ${type === 'history' ? '' : 'text-wabi-text'} tracking-wide ${strike}">
+                    ${shortDate(item.checkInDate)}～${shortDate(item.checkOutDate)}<span class="text-stone-400">・${nights} 晚</span>
+                    ${tag && !cancelled ? `<span class="ml-1 text-xs text-wabi-accent whitespace-nowrap">${tag}</span>` : ''}
+                </p>
+                <div class="mt-2 flex flex-wrap gap-x-4 text-xs text-stone-500">
+                    ${phone.digits ? `<a href="tel:${phone.digits}" class="py-2 font-mono tracking-wider border-b border-transparent active:border-current">${esc(phone.shown)}</a>` : ''}
+                    ${item.email ? `<a href="mailto:${encodeURIComponent(item.email)}" class="py-2 break-all min-w-0">${esc(item.email)}</a>` : ''}
+                </div>
+                ${actions}
+            </article>`;
+        }
+
         function renderSection(type) {
             const s = state[type];
+            const Type = type.charAt(0).toUpperCase() + type.slice(1);
             const tbody = document.getElementById(type + 'TableBody');
-            const pageInfo = document.getElementById('pageInfo' + (type.charAt(0).toUpperCase() + type.slice(1)));
-            const btnPrev = document.getElementById('btnPrev' + (type.charAt(0).toUpperCase() + type.slice(1)));
-            const btnNext = document.getElementById('btnNext' + (type.charAt(0).toUpperCase() + type.slice(1)));
+            const cards = document.getElementById(type + 'Cards');
+            const pager = document.getElementById(type + 'Pagination');
+            const pageInfo = document.getElementById('pageInfo' + Type);
+            const btnPrev = document.getElementById('btnPrev' + Type);
+            const btnNext = document.getElementById('btnNext' + Type);
+
+            if (type === 'history') document.getElementById('historyCount').innerText = s.data.length ? `${s.data.length} 筆` : '';
 
             if (!s.data.length) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-xs tracking-widest text-stone-300">暫無資料</td></tr>`;
-                pageInfo.innerText = "0 / 0";
-                btnPrev.disabled = true;
-                btnNext.disabled = true;
+                const empty = type === 'active' ? '近期沒有人要來' : '暫無資料';
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-xs tracking-widest text-stone-300">${empty}</td></tr>`;
+                cards.innerHTML = `<p class="py-6 text-center text-xs tracking-widest text-stone-300">${empty}</p>`;
+                pager.classList.add('hidden');
                 return;
             }
 
-            // Pagination Logic
+            // Pagination Logic（待處理的搬走之後頁數可能變少）
             const totalPages = Math.ceil(s.data.length / state.pageSize);
+            s.page = Math.min(s.page, totalPages);
             const start = (s.page - 1) * state.pageSize;
             const end = start + state.pageSize;
             const pageData = s.data.slice(start, end);
 
-            // Render Rows
+            // Render Rows（電腦版表格）
             tbody.innerHTML = pageData.map(item => {
                 const strike = item.status === 'cancelled' ? 'line-through opacity-50' : ''; // 已取消的劃掉
                 return `
                 <tr class="border-b ${type === 'active' ? 'border-stone-100 hover:bg-stone-50 text-wabi-text' : 'border-stone-50 text-stone-400'} transition-colors last:border-0">
-                    <td class="p-6 font-medium whitespace-nowrap ${type === 'active' ? 'text-wabi-dark' : ''} ${strike}">${item.name || item.guest_name || '未知訪客'}</td>
+                    <td class="p-6 font-medium whitespace-nowrap ${type === 'active' ? 'text-wabi-dark' : ''} ${strike}">${esc(item.name || item.guest_name || '未知訪客')}</td>
                     <td class="p-6 text-xs whitespace-nowrap ${strike}">${guestsCell(item)}</td>
-                    <td class="p-6 font-mono text-xs text-stone-500 whitespace-nowrap ${strike}">${item.phone || '09xx-xxx-xxx'}${item.email ? `<br><span class="text-[10px] text-stone-400">${item.email.replace(/[&<>"']/g, '')}</span>` : ''}</td>
+                    <td class="p-6 font-mono text-xs text-stone-500 whitespace-nowrap ${strike}">${esc(item.phone || '09xx-xxx-xxx')}${item.email ? `<br><span class="text-[10px] text-stone-400">${esc(item.email)}</span>` : ''}</td>
                     <td class="p-6 font-mono text-xs text-stone-500 whitespace-nowrap ${strike}">${item.checkInStr}</td>
                     <td class="p-6 font-mono text-xs text-stone-500 whitespace-nowrap ${strike}">${item.checkOutStr}</td>
                     <td class="p-6 whitespace-nowrap">${statusCell(item)}</td>
@@ -370,7 +573,11 @@
             `;
             }).join('');
 
-            // Update Controls
+            // 手機版卡片
+            cards.innerHTML = pageData.map(item => bookingCard(item, type)).join('');
+
+            // Update Controls（只有一頁就不顯示）
+            pager.classList.toggle('hidden', totalPages <= 1);
             pageInfo.innerText = `${s.page} / ${totalPages}`;
             btnPrev.disabled = s.page === 1;
             btnNext.disabled = s.page === totalPages;
@@ -380,5 +587,4 @@
 
     </script>
 </body>
-
 </html>
