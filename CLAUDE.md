@@ -36,7 +36,7 @@
 | 檔案 | 用途 |
 | --- | --- |
 | `index.html` | 首頁 + 訂房 Modal（含 1～8 人的人數選擇、選填 Email）+ 房況月曆 + 「我的預約」查詢取消（多人訂房顯示已領幾張、連到票夾）。訂好後除了入住通知書圖片，多人時還有「發票給同學」：分享 `ticket.html?id=訂房 id` 的連結。日期以「晚」為單位：入住日到退房前一天算有人住，退房那天可以讓下一組入住（flatpickr 入住選單擋有人住的晚上，退房選單用 maxDate 限制到下一個有人住的晚上）。 |
-| `reviews.html` | 留言板。`GET ?action=getReviews` 讀取、POST `type: 'review'` 新增。 |
+| `reviews.html` | 留言板。`GET ?action=getReviews` 讀取、POST `type: 'review'` 新增（等後端回覆，成功就把那則直接放到最上面、朱色標一下，失敗用 `showToast()` 說原因）。新的在前面（前端自己依時間排序）、一次 10 則「往前翻」、標題旁有「共 N 則・平均 X 顆星」、時間顯示「剛剛／3 小時前／昨天」。名字和留言用 `esc()` 跳脫、換行照原樣顯示；留言最多 300 字（有字數）；名字記在 `localStorage`（`dongbuli-review-name`）。手機上表單放在列表前面。 |
 | `jiaobei.html` | 擲杯（擲筊）。純前端、不接後端：輸入或點選問題 → 點「擲」或搖手機（iPhone 要先授權）→ 兩支筊杯拋起翻面落地。聖杯 1/2、笑杯 1/4、陰杯 1/4，另有 1/88 的「立杯」彩蛋；同一個問題連續三個聖杯蓋「定」，換問題就重算。動畫只動 transform／opacity（Web Animations API）。 |
 | `ticket.html` | 入住券票夾（不在導覽列，從分享連結進來）。朋友輸入名字（和選填的 Email）領下一張空票；同一個名字再領一次就拿回原本那張（當作換手機，沒有帳號）。這台手機領的票存在 `localStorage`（`dongbuli-ticket-<id>`）。可以退票（第 1 張是訂房人，不能退）；入住期間可以「剪票」（只記在本機）；取消的訂房蓋「作廢」。 |
 | `about.html` | 關於頁。 |
@@ -61,8 +61,8 @@
   - 自己取消：`{ type: 'cancel', id, phone }` → `success` / `error`。電話要對得上，入住日當天或之後不能取消；取消會寄信通知部署帳號。
   - 領票：`{ type: 'claim', id, name, email }` → 跟 getTicket 一樣的內容再加 `seat`（領到第幾張）、`{ result: 'full' }`（發完了）或 `error`（已取消、已結束、沒寫名字）。名字去頭尾空白、最多 12 字。同名拿回原本那張時，有帶 Email 就補上。
   - 退票：`{ type: 'unclaim', id, seat, name }` → 跟 getTicket 一樣的內容，或 `error`（名字對不上、第 1 張）。
-  - 留言：`{ type: 'review', name, rating, message }`
-- 首頁與後台的 POST **不用 `no-cors`**，直接 `fetch(API_URL, { method: 'POST', body: JSON.stringify(...) })`：字串 body 是 `text/plain`，不會觸發 CORS 預檢，GAS 轉址後的回應讀得到。留言頁仍是舊的 `no-cors` 寫法。
+  - 留言：`{ type: 'review', name, rating, message }` → `{ result: 'success', review: { name, rating, message, timestamp } }` 或 `error`（沒名字、沒內容、超過 300 字、評分不是 1～5、同一句十分鐘內重送、全站每小時超過 30 則）。名字照 `cleanName()`（12 字）；開頭是 `= + - @` 的存進 Sheet 前加 `'`，不會變成公式。不寄信。`getReviews` 回傳新的在前面、`timestamp` 是 ISO 字串、空白列跳過。
+- 所有頁面的 POST **都不用 `no-cors`**，直接 `fetch(API_URL, { method: 'POST', body: JSON.stringify(...) })`：字串 body 是 `text/plain`，不會觸發 CORS 預檢，GAS 轉址後的回應讀得到。不要加 `Content-Type: application/json`（會觸發預檢而失敗）。
 - 寄信上限（每天，存在指令碼屬性 `mailCount-*`）：寄給部署者 50 封、寄給旅人 40 封（Gmail 個人帳號一天只能寄給 100 人）。超過就不寄、不影響訂房或改狀態。
 - 若要改 API 欄位，記得 `apps-script/Code.gs` 也要同步修改並請使用者重新部署，且五個頁面（`index`、`reviews`、`ticket`、`admin_login`、`admin_dashboard`）的 `API_URL` 要一起更新。
 
@@ -102,6 +102,6 @@
 - 主題相關的共用設定放 `assets/`；nav、`API_URL`、`.vertical-rl` 等仍是**每頁複製貼上**，改一處時請檢查其他頁面是否也要改。
 - 本機預覽：在專案根目錄跑 `python3 -m http.server` 後開 `http://localhost:8000`（要用伺服器開，`assets/` 才載得到）。
 - 後台登入走後端通行證（見上面的 API），密碼在指令碼屬性 `ADMIN_PASSWORD`，不要寫回前端。
-- 動態內容（留言、後台列表）以 template string 塞入 `innerHTML`。
+- 動態內容（留言、後台列表）以 template string 塞入 `innerHTML`；別人輸入的字（名字、留言、Email）先過頁內的 `esc()`。
 - `.DS_Store` 未列入 `.gitignore`，不要提交它。
 - commit message 目前多為簡短英文（如 `update admin page`、`add 404 page`）。

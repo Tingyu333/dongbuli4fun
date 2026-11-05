@@ -27,6 +27,8 @@ var COL_CONFIRM_MAILED = 11; // K
 var MAX_GUESTS = 8; // 27 樓的地板只有這麼大
 var MAIL_LIMITS = { owner: 50, guest: 40 }; // 每天最多寄幾封（Gmail 個人帳號一天只能寄給 100 人）
 var BOOKINGS_PER_HOUR = 20;  // 全站每小時最多幾筆新訂房，擋洗版
+var REVIEWS_PER_HOUR = 30;   // 全站每小時最多幾則新留言
+var REVIEW_MAX_LENGTH = 300; // 一則留言最多幾個字
 var LOGIN_FAILS_LIMIT = 10;  // 十分鐘內登入失敗幾次就先鎖起來
 var ADMIN_TOKEN_SECONDS = 6 * 60 * 60;
 
@@ -560,16 +562,37 @@ function cleanName(name) {
 // --- 留言 ---
 
 function addReview(input) {
+  var name = cleanName(input.name);
+  var message = String(input.message || '').trim();
+  var rating = Math.round(Number(input.rating));
+  if (!name) return { result: 'error', error: '要寫名字' };
+  if (!message) return { result: 'error', error: '留言是空的' };
+  if (message.length > REVIEW_MAX_LENGTH) return { result: 'error', error: '留言最多 ' + REVIEW_MAX_LENGTH + ' 字' };
+  if (!(rating >= 1 && rating <= 5)) return { result: 'error', error: '評分要 1～5 顆星' };
+
+  var cache = CacheService.getScriptCache();
+  var hourKey = 'reviews:' + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var count = Number(cache.get(hourKey) || 0);
+  if (count >= REVIEWS_PER_HOUR) return { result: 'error', error: '這小時留言太多了，晚點再來' };
+  // 同一句話剛剛才留過（手滑按兩次、網路慢重送）就不再寫一次
+  var sameKey = 'review-last:' + name + ':' + message;
+  if (cache.get(sameKey)) return { result: 'error', error: '這句剛剛留過了' };
+
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Reviews');
-  sheet.appendRow([
-    new Date(),
-    input.name,
-    input.rating,
-    input.message
-  ]);
-  return { result: 'success', type: 'review' };
+  if (!sheet) sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet('Reviews');
+  var now = new Date();
+  // 開頭是 = + - @ 的話 Sheet 會當成公式，前面加 ' 當純文字存
+  sheet.appendRow([now, asText(name), rating, asText(message)]);
+  cache.put(hourKey, String(count + 1), 3600);
+  cache.put(sameKey, '1', 10 * 60);
+  return { result: 'success', type: 'review', review: { name: name, rating: rating, message: message, timestamp: now.toISOString() } };
 }
 
+function asText(value) {
+  return /^[=+\-@]/.test(value) ? "'" + value : value;
+}
+
+// 新的在前面；空白列跳過；Sheet 裡被加了 ' 的不會讀到 '（Sheet 自己吃掉）
 function readReviews() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Reviews');
   if (!sheet) return [];
@@ -578,14 +601,16 @@ function readReviews() {
   var data = [];
   for (var i = 1; i < rows.length; i++) {
     var row = rows[i];
+    if (!row[1] && !row[3]) continue;
+    var time = row[0];
     data.push({
-      timestamp: row[0],
-      name: row[1],
-      rating: row[2],
-      message: row[3]
+      timestamp: Object.prototype.toString.call(time) === '[object Date]' ? time.toISOString() : time,
+      name: String(row[1] || ''),
+      rating: Number(row[2]) || 5,
+      message: String(row[3] || '')
     });
   }
-  return data;
+  return data.reverse();
 }
 
 // --- 工具 ---

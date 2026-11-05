@@ -42,9 +42,7 @@
             transition: color 0.3s;
         }
 
-        .rating-input input:checked~label,
-        .rating-input label:hover,
-        .rating-input label:hover~label {
+        .rating-input input:checked~label {
             color: rgb(var(--wabi-accent));
         }
 
@@ -52,8 +50,36 @@
             transition: transform 0.3s ease;
         }
 
-        .review-card:hover {
-            transform: translateY(-5px);
+        /* 只有滑鼠才有 hover；手機點完星星不會卡在 hover 的顏色 */
+        @media (hover: hover) {
+            .rating-input label:hover,
+            .rating-input label:hover~label {
+                color: rgb(var(--wabi-accent));
+            }
+
+            .review-card:hover {
+                transform: translateY(-5px);
+            }
+        }
+
+        /* 剛留的那則：淡入，左邊朱色一下再退回 */
+        @keyframes review-in {
+            from { opacity: 0; transform: translateY(-12px); }
+            to { opacity: 1; transform: none; }
+        }
+
+        @keyframes review-mark {
+            0%, 60% { box-shadow: inset 3px 0 0 rgb(var(--wabi-shu)); }
+            100% { box-shadow: inset 3px 0 0 transparent; }
+        }
+
+        .review-new {
+            animation: review-in 0.6s ease both, review-mark 2.5s ease 0.6s both;
+        }
+
+        .review-message {
+            white-space: pre-line; /* 留言裡的換行照原樣顯示 */
+            overflow-wrap: anywhere; /* 很長的網址或一串英文也不會撐破畫面 */
         }
 
         /* 一星時表單搖一下 */
@@ -107,10 +133,10 @@
     </nav>
 
     <!-- 主要內容 -->
-    <main class="flex-grow max-w-5xl mx-auto py-32 px-8 w-full">
+    <main class="flex-grow max-w-5xl mx-auto pt-28 pb-16 px-4 md:py-32 md:px-8 w-full">
 
         <!-- 標題區塊 -->
-        <div class="text-center mb-16 relative">
+        <div class="text-center mb-12 md:mb-16 relative">
             <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-4">GUESTBOOK</span>
             <h1 class="text-4xl md:text-5xl font-light text-wabi-dark mb-4 tracking-widest">旅人・回響</h1>
             <div class="w-16 h-[1px] bg-wabi-accent mx-auto mt-8"></div>
@@ -120,13 +146,14 @@
             </p>
         </div>
 
-        <div class="grid md:grid-cols-12 gap-12">
+        <div class="grid md:grid-cols-12 gap-12 md:gap-12">
 
             <!-- 左側：留言列表 -->
             <div class="md:col-span-7 space-y-8">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-lg font-light text-wabi-dark tracking-widest border-l-2 border-wabi-accent pl-4">
+                <div class="flex justify-between items-baseline gap-4 mb-6">
+                    <h3 class="text-lg font-light text-wabi-dark tracking-widest border-l-2 border-wabi-accent pl-4 whitespace-nowrap">
                         最新留言</h3>
+                    <p id="reviewStats" class="text-xs font-sans tracking-widest text-stone-400 text-right"></p>
                 </div>
 
                 <!-- 留言載入中 -->
@@ -138,46 +165,53 @@
                 </div>
 
                 <!-- 留言列表容器 -->
-                <div id="reviewsContainer" class="space-y-6">
+                <div id="reviewsContainer" class="space-y-6 scroll-mt-24">
                     <!-- JS 會將留言插入此處 -->
+                </div>
+                <div class="text-center">
+                    <button type="button" id="moreBtn" onclick="showMore()"
+                        class="hidden px-6 py-3 text-xs font-sans tracking-widest text-stone-500 border-b border-stone-300 hover:text-wabi-dark transition-colors">往前翻</button>
                 </div>
             </div>
 
             <!-- 右側：新增留言表單 -->
-            <div class="md:col-span-5">
-                <div class="sticky top-32">
+            <div class="md:col-span-5 order-first md:order-none">
+                <div class="md:sticky md:top-32">
                     <div id="reviewCard"
-                        class="bg-white p-8 md:p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm border border-stone-50">
-                        <h3 class="text-xl font-light text-wabi-dark mb-8 tracking-widest">寫下心情</h3>
+                        class="bg-white p-6 md:p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm border border-stone-50">
+                        <h3 class="text-xl font-light text-wabi-dark mb-6 md:mb-8 tracking-widest">寫下心情</h3>
 
                         <form id="reviewForm" class="space-y-6">
                             <div>
                                 <label class="block text-xs font-sans mb-2 text-stone-500 tracking-widest">姓名</label>
-                                <input type="text" name="name" required
+                                <input type="text" name="name" required maxlength="12" autocomplete="nickname"
                                     class="w-full bg-transparent border-b border-stone-300 py-2 text-wabi-dark focus:outline-none focus:border-wabi-accent transition-colors font-serif placeholder-stone-200"
                                     placeholder="您的稱呼">
                             </div>
 
                             <div>
                                 <label class="block text-xs font-sans mb-2 text-stone-500 tracking-widest">評分</label>
-                                <div class="rating-input flex flex-row-reverse justify-end gap-1 text-xl">
+                                <div class="rating-input flex flex-row-reverse justify-end text-2xl -ml-1.5">
                                     <input type="radio" id="star5" name="rating" value="5" /><label
-                                        for="star5">★</label>
+                                        class="px-1.5 py-1" for="star5">★</label>
                                     <input type="radio" id="star4" name="rating" value="4" /><label
-                                        for="star4">★</label>
+                                        class="px-1.5 py-1" for="star4">★</label>
                                     <input type="radio" id="star3" name="rating" value="3" checked /><label
-                                        for="star3">★</label>
+                                        class="px-1.5 py-1" for="star3">★</label>
                                     <input type="radio" id="star2" name="rating" value="2" /><label
-                                        for="star2">★</label>
+                                        class="px-1.5 py-1" for="star2">★</label>
                                     <input type="radio" id="star1" name="rating" value="1" /><label
-                                        for="star1">★</label>
+                                        class="px-1.5 py-1" for="star1">★</label>
                                 </div>
                                 <p id="ratingReaction" class="h-4 mt-1 text-xs font-sans tracking-widest text-stone-400"></p>
                             </div>
 
                             <div>
-                                <label class="block text-xs font-sans mb-2 text-stone-500 tracking-widest">留言後</label>
-                                <textarea name="message" required rows="4"
+                                <div class="flex justify-between items-baseline mb-2">
+                                    <label class="block text-xs font-sans text-stone-500 tracking-widest">留言</label>
+                                    <span id="charCount" class="text-[11px] font-sans tracking-widest text-stone-400">0 / 300</span>
+                                </div>
+                                <textarea name="message" required rows="4" maxlength="300"
                                     class="w-full bg-transparent border border-stone-200 p-3 text-wabi-dark focus:outline-none focus:border-wabi-accent transition-colors font-serif placeholder-stone-200 resize-none rounded-sm"
                                     placeholder="分享您的體驗..."></textarea>
                             </div>
@@ -202,112 +236,168 @@
         // Google Apps Script API URL
         const API_URL = "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
 
+        const PAGE_SIZE = 10;
+        const NAME_KEY = 'dongbuli-review-name'; // 記住上次留言的名字（只存在這台手機）
+        let allReviews = [];
+        let shown = PAGE_SIZE;
+
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
         // 載入留言
         async function fetchReviews() {
+            const loading = document.getElementById('loadingReviews');
+            loading.style.display = '';
+            loading.innerHTML = `
+                <div class="inline-block w-8 h-8 border-2 border-stone-200 border-t-wabi-accent rounded-full animate-spin"></div>
+                <p class="mt-4 text-xs tracking-widest text-stone-400">正在喚醒記憶...</p>`;
             try {
-                // 這裡我們假設 API 已經更新支援 '?action=getReviews'
-                // 如果 API 還沒更新，這個 fetch 可能會失敗或返回舊格式數據
-                // 我們加上 action=getReviews 參數是為了讓後端區分請求
                 const res = await fetch(`${API_URL}?action=getReviews`);
                 const data = await res.json();
-
-                // 過濾掉沒有 approved 的 (如果未來要做審核機制)
-                // 目前先顯示所有留言，並反轉順序讓新的在上面
-                const reviews = Array.isArray(data) ? data.reverse() : [];
-
-                renderReviews(reviews);
+                if (!Array.isArray(data)) throw new Error('格式不對');
+                // 新的在前面（不管後端給的順序）
+                allReviews = data.slice().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                renderReviews();
             } catch (error) {
                 console.error("無法載入留言:", error);
-                document.getElementById('loadingReviews').innerHTML = `
-                    <p class="text-xs tracking-widest text-red-300">暫時無法讀取記憶之書。</p>
-                `;
+                loading.innerHTML = `
+                    <p class="text-xs tracking-widest text-stone-400">暫時無法讀取記憶之書。</p>
+                    <button type="button" onclick="fetchReviews()"
+                        class="mt-4 px-5 py-3 border border-stone-300 text-xs font-sans tracking-widest text-wabi-dark hover:border-wabi-dark transition-colors">再翻一次</button>`;
             }
         }
 
-        function renderReviews(reviews) {
+        // 剛剛、5 分鐘前、3 小時前、昨天、4 天前，再久就寫日期
+        function when(ts) {
+            const t = new Date(ts);
+            if (isNaN(t)) return '';
+            const min = (Date.now() - t) / 60000;
+            if (min < 1) return '剛剛';
+            if (min < 60) return `${Math.floor(min)} 分鐘前`;
+            if (min < 1440) return `${Math.floor(min / 60)} 小時前`;
+            const days = Math.floor(min / 1440);
+            if (days < 7) return days === 1 ? '昨天' : `${days} 天前`;
+            return `${t.getFullYear()}.${t.getMonth() + 1}.${t.getDate()}`;
+        }
+
+        function reviewCard(review, isNew) {
+            const rating = Math.min(5, Math.max(1, parseInt(review.rating) || 5));
+            const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+            return `
+                <div class="review-card ${isNew ? 'review-new' : ''} bg-white p-5 md:p-8 shadow-sm border border-stone-100 rounded-sm relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-5 text-6xl font-serif text-wabi-accent select-none group-hover:scale-110 transition-transform duration-700">"</div>
+
+                    <div class="flex justify-between items-baseline gap-3 mb-4 relative z-10">
+                        <h4 class="text-lg font-serif text-wabi-dark break-all">${esc(review.name) || '匿名訪客'}</h4>
+                        <span class="text-wabi-accent text-sm whitespace-nowrap" aria-label="${rating} 顆星">${stars}</span>
+                    </div>
+
+                    <p class="review-message text-stone-600 font-light leading-relaxed text-sm md:text-base border-l border-stone-200 pl-4 mb-4 relative z-10">${esc(review.message || review.content)}</p>
+
+                    <div class="text-right">
+                        <span class="text-[11px] text-stone-400 font-sans tracking-widest">${when(review.timestamp || review.date)}</span>
+                    </div>
+                </div>`;
+        }
+
+        function renderReviews(newOne) {
             const container = document.getElementById('reviewsContainer');
             document.getElementById('loadingReviews').style.display = 'none';
 
-            if (reviews.length === 0) {
+            // 「共 12 則・平均 4.6 顆星」
+            const stats = document.getElementById('reviewStats');
+            if (allReviews.length) {
+                const avg = allReviews.reduce((sum, r) => sum + (Math.min(5, Math.max(1, parseInt(r.rating) || 5))), 0) / allReviews.length;
+                stats.innerText = `共 ${allReviews.length} 則・平均 ${avg.toFixed(1)} 顆星`;
+            } else {
+                stats.innerText = '';
+            }
+
+            const more = document.getElementById('moreBtn');
+            if (!allReviews.length) {
+                more.classList.add('hidden');
                 container.innerHTML = `
                     <div class="text-center py-12 border border-dashed border-stone-200 rounded-sm">
                         <p class="text-stone-400 font-sans text-sm tracking-widest">這裡還是一片空白的寧靜。</p>
-                        <p class="text-stone-300 text-xs mt-2">成為第一位留下故事的人吧。</p>
-                    </div>
-                `;
+                        <p class="text-stone-400 text-xs mt-2">成為第一位留下故事的人吧。</p>
+                    </div>`;
                 return;
             }
 
-            container.innerHTML = reviews.map(review => {
-                const date = new Date(review.timestamp || review.date).toLocaleDateString('zh-TW');
-                const rating = parseInt(review.rating) || 5;
-                const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
-
-                return `
-                <div class="review-card bg-white p-6 md:p-8 shadow-sm border border-stone-100 rounded-sm relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 p-4 opacity-5 text-6xl font-serif text-wabi-accent select-none group-hover:scale-110 transition-transform duration-700">"</div>
-                    
-                    <div class="flex justify-between items-baseline mb-4 relative z-10">
-                        <h4 class="text-lg font-serif text-wabi-dark">${review.name || '匿名訪客'}</h4>
-                        <span class="text-wabi-accent text-sm tracking-ui">${stars}</span>
-                    </div>
-                    
-                    <p class="text-stone-600 font-light leading-relaxed text-sm md:text-base border-l border-stone-200 pl-4 mb-4 relative z-10">
-                        ${review.message || review.content || ''}
-                    </p>
-                    
-                    <div class="text-right">
-                        <span class="text-[10px] text-stone-300 font-sans tracking-widest">${date}</span>
-                    </div>
-                </div>
-                `;
-            }).join('');
+            container.innerHTML = allReviews.slice(0, shown).map(r => reviewCard(r, r === newOne)).join('');
+            const left = allReviews.length - shown;
+            more.classList.toggle('hidden', left <= 0);
+            more.innerText = `往前翻・還有 ${left} 則`;
         }
 
-        // 送出留言
-        document.getElementById('reviewForm').addEventListener('submit', function (e) {
+        function showMore() {
+            shown += PAGE_SIZE;
+            renderReviews();
+        }
+
+        // 字數
+        const messageBox = document.querySelector('#reviewForm textarea[name="message"]');
+        const charCount = document.getElementById('charCount');
+        function updateCount() {
+            const n = messageBox.value.length;
+            charCount.innerText = `${n} / 300`;
+            charCount.style.color = n >= 280 ? 'rgb(var(--wabi-shu))' : '';
+        }
+        messageBox.addEventListener('input', updateCount);
+
+        // 上次留言用的名字
+        try {
+            const saved = localStorage.getItem(NAME_KEY);
+            if (saved) document.querySelector('#reviewForm input[name="name"]').value = saved;
+        } catch (e) { }
+
+        // 送出留言：等後端回覆，成功就把這則直接放到最上面，不用重新整理
+        document.getElementById('reviewForm').addEventListener('submit', async function (e) {
             e.preventDefault();
+            const form = this;
             const btn = document.getElementById('submitBtn');
-            const originalText = btn.querySelector('span').innerText;
-            btn.querySelector('span').innerText = "刻錄中...";
+            const label = btn.querySelector('span');
+            const originalText = label.innerText;
+            label.innerText = "刻錄中...";
             btn.disabled = true;
             btn.classList.add('opacity-70');
 
-            const formData = new FormData(this);
-            // 構建要發送的資料
-            // 注意：我們需要告訴後端這是一則 'review'
+            const formData = new FormData(form);
             const data = {
-                type: 'review', // 關鍵欄位，用來區分訂房或留言
-                name: formData.get('name'),
-                rating: formData.get('rating'),
-                message: formData.get('message')
+                type: 'review',
+                name: formData.get('name').trim(),
+                rating: Number(formData.get('rating')),
+                message: formData.get('message').trim()
             };
 
-            // 使用 no-cors 模式發送 POST (Google Apps Script 限制)
-            fetch(API_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            })
-                .then(() => {
-                    // 因為 no-cors 不會返回內容，我們假設成功
-                    alert('感謝您的分享。您的聲音已被聽見。');
-                    this.reset();
-                    // 重新載入留言 (注意：因為 GAS 更新可能有延遲，立即重整可能看不到)
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1000);
-                })
-                .catch(err => {
-                    console.error("提交失敗:", err);
-                    alert('系統似乎在打盹，請稍後再試。');
-                    btn.disabled = false;
-                    btn.classList.remove('opacity-70');
-                    btn.querySelector('span').innerText = originalText;
-                });
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(data) });
+                const result = await res.json();
+                if (result.result !== 'success') {
+                    showToast(result.error || '系統似乎在打盹，請稍後再試。');
+                } else {
+                    const review = result.review || { ...data, timestamp: new Date().toISOString() };
+                    allReviews.unshift(review);
+                    shown = Math.max(shown, PAGE_SIZE);
+                    renderReviews(review);
+                    try { localStorage.setItem(NAME_KEY, data.name); } catch (e) { }
+                    // 名字留著，下次不用再打
+                    messageBox.value = '';
+                    updateCount();
+                    document.getElementById('star3').checked = true;
+                    document.getElementById('ratingReaction').innerText = '';
+                    showToast('感謝您的分享。您的聲音已被聽見。');
+                    // 手機上表單在上面，捲到剛留的那則
+                    if (window.matchMedia('(max-width: 767px)').matches) {
+                        document.getElementById('reviewsContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            } catch (err) {
+                console.error("提交失敗:", err);
+                showToast('系統似乎在打盹，請稍後再試。');
+            }
+            btn.disabled = false;
+            btn.classList.remove('opacity-70');
+            label.innerText = originalText;
         });
 
         // 評分有反應：一星翻船、五星放煙火
