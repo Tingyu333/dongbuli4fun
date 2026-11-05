@@ -1,4 +1,4 @@
-/* 全站共用樣式（首頁、留言、關於）
+/* 全站共用樣式（前台頁面和後台；404 沒接）
    顏色都定義成 CSS 變數（RGB 三個數字），Tailwind 的 wabi-* 顏色也是讀這些變數，
    所以夜間模式只要在 html.night 換一組變數就好。 */
 
@@ -89,6 +89,7 @@ html.night .bg-white\/80 { background-color: rgb(var(--wabi-card) / 0.8); }
 html.night .bg-stone-50 { background-color: rgb(var(--wabi-card)); }
 html.night .bg-stone-50\/50 { background-color: rgb(var(--wabi-card) / 0.5); }
 html.night .bg-stone-100 { background-color: #2c2a26; }
+html.night .text-stone-50,
 html.night .text-stone-100 { color: #2c2a26; }
 html.night .text-stone-300 { color: #6e685f; }
 html.night .text-stone-400 { color: #8f887c; }
@@ -99,6 +100,9 @@ html.night .border-stone-100 { border-color: #2e2b27; }
 html.night .border-stone-200 { border-color: #3a3631; }
 html.night .border-stone-300 { border-color: #4a453e; }
 html.night .placeholder-stone-200::placeholder { color: #4a453e; }
+html.night .decoration-stone-300 { text-decoration-color: #4a453e; }
+html.night .hover\:bg-stone-50:hover,
+html.night .active\:bg-stone-50:active { background-color: #2c2a26; }
 
 /* 深色按鈕在夜裡變成燈光色，字改用底色才看得到 */
 html.night .bg-wabi-dark,
