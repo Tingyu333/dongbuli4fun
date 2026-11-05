@@ -23,7 +23,14 @@ var COMMANDS = [
   { words: ['抽籤', '御神籤'], run: replyOmikuji },
   { words: ['天氣', '氣象'], run: replyWeather },
   { words: ['訂房'], run: replyBooking },
-  { words: ['說明', '指令'], run: replyHelp }
+  { words: ['說明', '指令'], run: replyHelp },
+  // 隱藏指令：不寫進「說明」，被問到才講（README 有列）
+  { words: ['空氣', '紫外線', 'UV', 'uv'], run: replyAir },
+  { words: ['月亮', '月相', '農曆'], run: replyMoon },
+  { words: ['節氣'], run: replySolarTerm },
+  { words: ['日出', '日落', '夕陽'], run: replySun },
+  { words: ['放假', '連假', '假日'], run: replyHoliday },
+  { words: ['隱藏指令', '彩蛋'], run: replySecrets }
 ];
 
 // --- 收訊息 ---
@@ -444,6 +451,7 @@ function replyWeather() {
   };
   var today = day(0), tomorrow = day(1);
   var tip = weatherTip(today, w.current.weather_code);
+  var air = fetchAir(); // 讀不到就不放這行
 
   var dayRow = function (label, d) {
     return {
@@ -483,9 +491,15 @@ function replyWeather() {
           },
           { type: 'separator', margin: 'lg', color: COLOR.sub },
           dayRow('今天', today),
-          dayRow('明天', tomorrow),
+          dayRow('明天', tomorrow)
+        ].concat(air ? [{
+          type: 'box', layout: 'horizontal', margin: 'md', contents: [
+            { type: 'text', text: '空氣', size: 'sm', color: COLOR.accent, flex: 2 },
+            { type: 'text', text: aqiLevel(air.aqi) + '・紫外線最高 ' + air.uvMax + '（' + uvLevel(air.uvMax) + '）', size: 'sm', color: COLOR.ink, flex: 9, wrap: true }
+          ]
+        }] : []).concat([
           { type: 'text', text: tip, size: 'sm', color: COLOR.accent, margin: 'xl', wrap: true }
-        ]
+        ])
       }
     }
   };
@@ -528,6 +542,518 @@ function fetchWeather() {
   }
 }
 
+// =====================================================================
+// --- 隱藏指令 ---
+// 空氣、月相、節氣、日出日落、放假。只有空氣和放假要上網抓，其他都是自己算的（不用網路、不會壞）
+// =====================================================================
+
+// 卡片的共用外框：英文小標、「二十七樓・XX」、內容
+function hiddenCard(altText, label, title, contents) {
+  return {
+    type: 'flex',
+    altText: altText.slice(0, 400),
+    contents: {
+      type: 'bubble',
+      size: 'kilo',
+      styles: { body: { backgroundColor: COLOR.bg } },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        paddingAll: '20px',
+        contents: [
+          { type: 'text', text: label, size: 'xxs', color: COLOR.accent },
+          { type: 'text', text: '二十七樓・' + title, size: 'md', color: COLOR.ink, margin: 'sm' }
+        ].concat(contents)
+      }
+    }
+  };
+}
+
+function cardRow(label, value) {
+  return {
+    type: 'box', layout: 'horizontal', margin: 'md', contents: [
+      { type: 'text', text: label, size: 'sm', color: COLOR.accent, flex: 4 },
+      { type: 'text', text: value, size: 'sm', color: COLOR.ink, flex: 6, align: 'end', wrap: true }
+    ]
+  };
+}
+
+function cardBig(text, color) {
+  return { type: 'text', text: text, size: '3xl', color: color || COLOR.ink, margin: 'xl', align: 'center', wrap: true };
+}
+
+function cardSub(text) {
+  return { type: 'text', text: text, size: 'xs', color: COLOR.text, margin: 'sm', align: 'center', wrap: true };
+}
+
+function cardTip(text) {
+  return { type: 'text', text: text, size: 'sm', color: COLOR.accent, margin: 'xl', wrap: true };
+}
+
+function cardLine() {
+  return { type: 'separator', margin: 'xl', color: COLOR.sub };
+}
+
+// --- 空氣和紫外線（Open-Meteo 的空氣品質 API，跟天氣同一家，也不用金鑰） ---
+
+var AQI_LEVELS = [[50, '良好'], [100, '普通'], [150, '對敏感族群不健康'], [200, '對所有族群不健康'], [300, '非常不健康'], [Infinity, '危害']];
+var UV_LEVELS = [[2, '低量'], [5, '中量'], [7, '高量'], [10, '過量'], [Infinity, '危險']];
+
+function levelOf(levels, value) {
+  for (var i = 0; i < levels.length; i++) if (value <= levels[i][0]) return levels[i][1];
+}
+function aqiLevel(aqi) { return levelOf(AQI_LEVELS, aqi); }
+function uvLevel(uv) { return levelOf(UV_LEVELS, uv); }
+
+function replyAir() {
+  var air = fetchAir();
+  if (!air) return '空氣讀不到。深呼吸一次，你就知道了。';
+  var place = prop('WEATHER_PLACE') || '台北';
+  var tip = air.aqi > 100 ? '空氣不太好，宜關窗，待在二十七樓。'
+    : air.uvMax >= 8 ? '太陽很大，因為它是太陽。出門記得防曬。'
+      : air.uvMax >= 6 ? '紫外線偏高，撐傘不只是為了下雨。'
+        : '空氣還可以，可以放心呼吸，一次一口就好。';
+  return hiddenCard(
+    place + ' 空氣' + aqiLevel(air.aqi) + '（AQI ' + air.aqi + '），紫外線最高 ' + air.uvMax + '（' + uvLevel(air.uvMax) + '）',
+    'AIR', '空氣', [
+      { type: 'text', text: place, size: 'xs', color: COLOR.text, margin: 'xs' },
+      cardBig(aqiLevel(air.aqi), air.aqi > 100 ? COLOR.shu : COLOR.ink),
+      cardSub('空氣品質指標 AQI ' + air.aqi),
+      cardLine(),
+      cardRow('PM2.5', air.pm25 + ' μg/m³'),
+      cardRow('紫外線', '現在 ' + air.uvNow + '（' + uvLevel(air.uvNow) + '）'),
+      cardRow('', '今天最高 ' + air.uvMax + '（' + uvLevel(air.uvMax) + '）'),
+      cardTip(tip)
+    ]);
+}
+
+// 存 30 分鐘；失敗回 null。回傳整理過的 { aqi, pm25, uvNow, uvMax }
+function fetchAir() {
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get('air');
+  if (cached) return JSON.parse(cached);
+  var lat = prop('WEATHER_LAT') || '25.0330';
+  var lon = prop('WEATHER_LON') || '121.5654';
+  var url = 'https://air-quality-api.open-meteo.com/v1/air-quality?latitude=' + encodeURIComponent(lat) + '&longitude=' + encodeURIComponent(lon) +
+    '&current=us_aqi,pm2_5,uv_index&hourly=uv_index&timezone=Asia%2FTaipei&forecast_days=1';
+  try {
+    var res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200) {
+      console.error('空氣讀取失敗', res.getResponseCode(), res.getContentText());
+      return null;
+    }
+    var data = JSON.parse(res.getContentText());
+    var c = data.current || {};
+    if (c.us_aqi == null) return null;
+    var uvs = ((data.hourly || {}).uv_index || []).filter(function (v) { return v != null; });
+    var air = {
+      aqi: Math.round(c.us_aqi),
+      pm25: Math.round(c.pm2_5 || 0),
+      uvNow: Math.round(c.uv_index || 0),
+      uvMax: Math.round(Math.max.apply(null, uvs.concat([c.uv_index || 0])))
+    };
+    cache.put('air', JSON.stringify(air), 30 * 60);
+    return air;
+  } catch (err) {
+    console.error('空氣讀取失敗', err);
+    return null;
+  }
+}
+
+// --- 天文：太陽、月亮的位置（Meeus《Astronomical Algorithms》的簡化公式） ---
+// 太陽黃經誤差約 0.01 度（節氣時間差十幾分鐘）、月亮約 0.05 度，判斷「哪一天」夠用了。
+// 台灣沒有日光節約，台灣時間一律用 UTC+8 算。
+
+var RAD = Math.PI / 180;
+var TAIPEI = 8 * 3600000;
+
+function norm360(x) {
+  x %= 360;
+  return x < 0 ? x + 360 : x;
+}
+
+function sinD(x) { return Math.sin(x * RAD); }
+function cosD(x) { return Math.cos(x * RAD); }
+
+// 從 J2000 起算的儒略世紀（加 69 秒把世界時換成力學時）
+function centuries(ms) {
+  return (ms / 86400000 + 2440587.5 - 2451545 + 69 / 86400) / 36525;
+}
+
+function sunLongitude(ms) {
+  var T = centuries(ms);
+  var L0 = 280.46646 + 36000.76983 * T;
+  var M = 357.52911 + 35999.05029 * T;
+  var C = (1.914602 - 0.004817 * T) * sinD(M) + (0.019993 - 0.000101 * T) * sinD(2 * M) + 0.000289 * sinD(3 * M);
+  return norm360(L0 + C - 0.00569 - 0.00478 * sinD(125.04 - 1934.136 * T));
+}
+
+// 月亮黃經：主要的 24 項（單位百萬分之一度）。[D, M, M', F, 係數]
+var MOON_TERMS = [
+  [0, 0, 1, 0, 6288774], [2, 0, -1, 0, 1274027], [2, 0, 0, 0, 658314], [0, 0, 2, 0, 213618],
+  [0, 1, 0, 0, -185116], [0, 0, 0, 2, -114332], [2, 0, -2, 0, 58793], [2, -1, -1, 0, 57066],
+  [2, 0, 1, 0, 53322], [2, -1, 0, 0, 45758], [0, 1, -1, 0, -40923], [1, 0, 0, 0, -34720],
+  [0, 1, 1, 0, -30383], [2, 0, 0, -2, 15327], [0, 0, 1, 2, -12528], [0, 0, 1, -2, 10980],
+  [4, 0, -1, 0, 10675], [0, 0, 3, 0, 10034], [4, 0, -2, 0, 8548], [2, 1, -1, 0, -7888],
+  [2, 1, 0, 0, -6766], [1, 0, -1, 0, -5163], [1, 1, 0, 0, 4987], [2, -1, 1, 0, 4036]
+];
+
+function moonLongitude(ms) {
+  var T = centuries(ms);
+  var L = 218.3164477 + 481267.88123421 * T;
+  var D = 297.8501921 + 445267.1114034 * T;
+  var M = 357.5291092 + 35999.0502909 * T;
+  var Mp = 134.9633964 + 477198.8675055 * T;
+  var F = 93.2720950 + 483202.0175233 * T;
+  var sum = 0;
+  for (var i = 0; i < MOON_TERMS.length; i++) {
+    var t = MOON_TERMS[i];
+    sum += t[4] * sinD(t[0] * D + t[1] * M + t[2] * Mp + t[3] * F);
+  }
+  return norm360(L + sum / 1e6 - 0.00478 * sinD(125.04 - 1934.136 * T));
+}
+
+// 月亮領先太陽幾度：0 新月、90 上弦、180 滿月、270 下弦
+function moonElongation(ms) {
+  return norm360(moonLongitude(ms) - sunLongitude(ms));
+}
+
+// 台灣時間 yyyy-MM-dd 那天的 00:00 是哪個時刻
+function taipeiMidnight(str) {
+  var p = str.split('-');
+  return Date.UTC(+p[0], +p[1] - 1, +p[2]) - TAIPEI;
+}
+
+// 這一天（台灣時間）裡，角度 fn 有沒有走過 step 的整數倍；有的話回傳是第幾個（0 起算），沒有回 -1
+function crossingOn(str, fn, step) {
+  var start = taipeiMidnight(str);
+  var a = fn(start), b = fn(start + 86400000);
+  var target = norm360(Math.ceil(a / step - 1e-9) * step);
+  return norm360(target - a) < norm360(b - a) ? Math.round(target / step) % Math.round(360 / step) : -1;
+}
+
+function formatTime(ms) {
+  var d = new Date(ms + TAIPEI);
+  return ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2);
+}
+
+// --- 月相 ---
+
+var PHASE_EVENTS = ['新月', '上弦月', '滿月', '下弦月'];
+var LUNAR_DAYS = ['初一', '初二', '初三', '初四', '初五', '初六', '初七', '初八', '初九', '初十',
+  '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十',
+  '廿一', '廿二', '廿三', '廿四', '廿五', '廿六', '廿七', '廿八', '廿九', '三十'];
+
+var MOON_TIPS = {
+  '新月': '看不到月亮，但它一直都在。',
+  '眉月': '月亮細細的，像沒睡飽的眼睛。',
+  '上弦月': '月亮剩一半，另一半還在路上。',
+  '盈凸月': '月亮快圓了，再等幾天。',
+  '滿月': '月亮很圓，因為今天是滿月。宜上陽台。',
+  '虧凸月': '月亮開始變瘦，比你先開始。',
+  '下弦月': '月亮剩一半，另一半先回家了。',
+  '殘月': '月亮快沒了，下個月還會再來。'
+};
+
+// 今天的月相：這天裡剛好經過新月、上弦、滿月、下弦，就叫那個名字；其他照角度分
+function moonPhaseOn(str) {
+  var event = crossingOn(str, moonElongation, 90);
+  if (event !== -1) return PHASE_EVENTS[event];
+  var e = moonElongation(taipeiMidnight(str) + 12 * 3600000);
+  return e < 90 ? '眉月' : e < 180 ? '盈凸月' : e < 270 ? '虧凸月' : '殘月';
+}
+
+// 往前或往後找月相事件（0 新月、2 滿月），回傳 yyyy-MM-dd
+function findMoonEvent(from, which, dir) {
+  for (var i = 0; i <= 31; i++) {
+    var day = addDays(from, i * dir);
+    if (crossingOn(day, moonElongation, 90) === which) return day;
+  }
+  return null;
+}
+
+// 農曆初幾：新月那天是初一（農曆用的就是台灣時間）
+function lunarDay(str) {
+  var newMoon = findMoonEvent(str, 0, -1);
+  return newMoon ? LUNAR_DAYS[nightsBetween(newMoon, str)] : null;
+}
+
+function replyMoon() {
+  var today = todayStr();
+  var phase = moonPhaseOn(today);
+  var lit = Math.round((1 - cosD(moonElongation(Date.now()))) / 2 * 100);
+  var lunar = lunarDay(today);
+  var full = findMoonEvent(addDays(today, 1), 2, 1);
+  var next = findMoonEvent(addDays(today, 1), 0, 1);
+  return hiddenCard(
+    '今晚' + phase + '，農曆' + lunar + '，亮了 ' + lit + '%。下次滿月 ' + shortDay(full) + '。',
+    'MOON', '月相', [
+      cardBig(phase),
+      cardSub('農曆' + lunar + '・亮了 ' + lit + '%'),
+      cardLine(),
+      cardRow('下次滿月', shortDay(full) + '・' + nightsBetween(today, full) + ' 天'),
+      cardRow('下次新月', shortDay(next) + '・' + nightsBetween(today, next) + ' 天'),
+      cardTip(MOON_TIPS[phase])
+    ]);
+}
+
+// --- 節氣（太陽黃經每 15 度一個，春分是 0 度） ---
+
+var SOLAR_TERMS = ['春分', '清明', '穀雨', '立夏', '小滿', '芒種', '夏至', '小暑', '大暑', '立秋', '處暑', '白露',
+  '秋分', '寒露', '霜降', '立冬', '小雪', '大雪', '冬至', '小寒', '大寒', '立春', '雨水', '驚蟄'];
+
+var SOLAR_TERM_LINES = {
+  '立春': '春天開始了，冬天可能還不知道。',
+  '雨水': '開始下雨了，雨是水做的。',
+  '驚蟄': '蟲醒了，你也該醒了。',
+  '春分': '白天和晚上一樣長，跟昨天差不多。',
+  '清明': '天氣清明，心情盡量。',
+  '穀雨': '雨是下給穀子的，你不用接。',
+  '立夏': '夏天開始了，冷氣要開始努力了。',
+  '小滿': '小小的滿足，也是滿足。',
+  '芒種': '該播種了，至少播個訂房。',
+  '夏至': '一年白天最長的一天，宜曬棉被，忌加班。',
+  '小暑': '有點熱，大熱還在後面。',
+  '大暑': '很熱，熱到熱本身都覺得熱。',
+  '立秋': '秋天開始了，天氣還沒收到通知。',
+  '處暑': '暑氣到這裡為止，理論上。',
+  '白露': '早上有露水，露水很白。',
+  '秋分': '晝夜又一樣長了，宜早點睡。',
+  '寒露': '露水變冷了，你也多穿一件。',
+  '霜降': '開始下霜了，台北通常沒有。',
+  '立冬': '冬天開始了，宜吃補，忌減肥。',
+  '小雪': '小雪。台灣不太會下。',
+  '大雪': '大雪。台灣還是不太會下。',
+  '冬至': '一年夜晚最長的一天，宜吃湯圓，宜留宿二十七樓。',
+  '小寒': '冷，但還不是最冷。',
+  '大寒': '最冷的時候。熬過去，就是春天。'
+};
+
+function solarTermOn(str) {
+  var i = crossingOn(str, sunLongitude, 15);
+  return i === -1 ? null : SOLAR_TERMS[i];
+}
+
+// 往前或往後找下一個節氣，回傳 { name, date }
+function findSolarTerm(from, dir) {
+  for (var i = 0; i <= 20; i++) {
+    var day = addDays(from, i * dir);
+    var name = solarTermOn(day);
+    if (name) return { name: name, date: day };
+  }
+  return null;
+}
+
+function replySolarTerm() {
+  var today = todayStr();
+  var now = findSolarTerm(today, -1);
+  var next = findSolarTerm(addDays(today, 1), 1);
+  var nth = nightsBetween(now.date, today) + 1;
+  return hiddenCard(
+    '現在是' + now.name + '，' + shortDay(now.date) + '起。下一個是' + next.name + '，' + shortDay(next.date) + '。',
+    'SOLAR TERM', '節氣', [
+      cardBig(now.name),
+      cardSub(nth === 1 ? '今天交節' : shortDay(now.date) + ' 起・第 ' + nth + ' 天'),
+      cardTip(SOLAR_TERM_LINES[now.name]),
+      cardLine(),
+      cardRow('下一個', next.name + '・' + shortDay(next.date)),
+      cardRow('', '還有 ' + nightsBetween(today, next.date) + ' 天')
+    ]);
+}
+
+// --- 日出日落（太陽高度角公式，跟中央氣象署的時間差一兩分鐘） ---
+
+// 某天太陽到某個天頂角的時刻（ms）：zenith 90.833 是日出日落，96 是民用曙暮光（天還亮著的最後一刻）
+function sunEvent(str, zenith, rising) {
+  var lat = Number(prop('WEATHER_LAT') || '25.0330');
+  var lon = Number(prop('WEATHER_LON') || '121.5654');
+  var p = str.split('-');
+  var t = Date.UTC(+p[0], +p[1] - 1, +p[2], 12) - lon / 15 * 3600000; // 先猜當地正午
+  for (var i = 0; i < 3; i++) { // 用猜的時刻算太陽位置，再修正兩次
+    var T = centuries(t);
+    var lambda = sunLongitude(t);
+    var eps = 23.4393 - 0.013 * T;
+    var dec = Math.asin(sinD(eps) * sinD(lambda)) / RAD;
+    var ra = norm360(Math.atan2(cosD(eps) * sinD(lambda), cosD(lambda)) / RAD);
+    var L0 = norm360(280.46646 + 36000.76983 * T);
+    var eot = ((L0 - 0.0057183 - ra + 540) % 360) - 180; // 均時差（度）
+    var noon = Date.UTC(+p[0], +p[1] - 1, +p[2]) + (720 - 4 * lon - 4 * eot) * 60000;
+    var cosH = (cosD(zenith) - sinD(lat) * sinD(dec)) / (cosD(lat) * cosD(dec));
+    if (cosH > 1 || cosH < -1) return null; // 極圈才會發生
+    var H = Math.acos(cosH) / RAD;
+    t = noon + (rising ? -1 : 1) * 4 * H * 60000;
+  }
+  return t;
+}
+
+function replySun() {
+  var today = todayStr();
+  var now = Date.now();
+  var rise = sunEvent(today, 90.833, true);
+  var set = sunEvent(today, 90.833, false);
+  var dusk = sunEvent(today, 96, false);
+  var tomorrowRise = sunEvent(addDays(today, 1), 90.833, true);
+  var length = Math.round((set - rise) / 60000);
+
+  var big, sub, tip;
+  if (now < rise) {
+    big = '日出 ' + formatTime(rise); sub = '還有 ' + Math.ceil((rise - now) / 60000) + ' 分鐘';
+    tip = '太陽還在睡，你呢？';
+  } else if (now < set) {
+    var left = Math.ceil((set - now) / 60000);
+    big = '日落 ' + formatTime(set); sub = left >= 60 ? '還有 ' + Math.floor(left / 60) + ' 小時 ' + left % 60 + ' 分' : '還有 ' + left + ' 分鐘';
+    tip = left <= 90 ? '快日落了，二十七樓陽台幫你留了位置。' : '太陽還在上班，你也是。';
+  } else {
+    big = '明天日出 ' + formatTime(tomorrowRise); sub = '今天已經日落了';
+    tip = '太陽下班了，明天 ' + formatTime(tomorrowRise) + ' 再上班。';
+  }
+
+  return hiddenCard(
+    '今天日出 ' + formatTime(rise) + '、日落 ' + formatTime(set) + '，天黑前的魔幻時刻到 ' + formatTime(dusk) + '。',
+    'SUN', '日出日落', [
+      { type: 'text', text: prop('WEATHER_PLACE') || '台北', size: 'xs', color: COLOR.text, margin: 'xs' },
+      cardBig(big),
+      cardSub(sub),
+      cardLine(),
+      cardRow('日出', formatTime(rise)),
+      cardRow('日落', formatTime(set)),
+      cardRow('魔幻時刻', formatTime(set) + '～' + formatTime(dusk)),
+      cardRow('白天', Math.floor(length / 60) + ' 小時 ' + length % 60 + ' 分'),
+      cardTip(tip)
+    ]);
+}
+
+// --- 放假和連假（行政院辦公日曆，ruyut/TaiwanCalendar 整理成 JSON，透過 jsDelivr 抓） ---
+
+var HOLIDAY_URL = 'https://cdn.jsdelivr.net/gh/ruyut/TaiwanCalendar/data/';
+
+// 抓今年和明年，整理成 { off: { yyyy-MM-dd: 名稱或 '' }, makeup: [補班的週末], last: 資料最後一天 }，存 6 小時
+function fetchHolidays() {
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get('holidays');
+  if (cached) return JSON.parse(cached);
+  var year = Number(todayStr().slice(0, 4));
+  var cal = { off: {}, makeup: [], last: null };
+  [year, year + 1].forEach(function (y) {
+    try {
+      var res = UrlFetchApp.fetch(HOLIDAY_URL + y + '.json', { muteHttpExceptions: true });
+      if (res.getResponseCode() !== 200) return; // 明年的還沒公布
+      JSON.parse(res.getContentText()).forEach(function (d) {
+        var date = d.date.slice(0, 4) + '-' + d.date.slice(4, 6) + '-' + d.date.slice(6, 8);
+        if (d.isHoliday) cal.off[date] = d.description || '';
+        else if (d.week === '六' || d.week === '日') cal.makeup.push(date);
+        if (!cal.last || date > cal.last) cal.last = date;
+      });
+    } catch (err) {
+      console.error('行事曆讀取失敗', y, err);
+    }
+  });
+  if (!cal.last) return null;
+  cache.put('holidays', JSON.stringify(cal), 6 * 60 * 60);
+  return cal;
+}
+
+// 一段連續放假的日子叫什麼：有春節就叫春節，不然用第一個有名字、不是補假的
+function blockName(cal, from, to) {
+  var names = [];
+  for (var d = from; d <= to; d = addDays(d, 1)) {
+    var n = cal.off[d];
+    if (n && n !== '補假' && n !== '小年夜' && n !== '農曆除夕') names.push(n.split('/')[0]);
+  }
+  if (names.indexOf('春節') !== -1) return '春節';
+  return names[0] || '連假';
+}
+
+// 從 from 開始往後找放假的區段，回傳 [{ from, to, days, name }]，最多 limit 段
+function holidayBlocks(cal, from, minDays, limit) {
+  var blocks = [];
+  var d = from;
+  while (d <= cal.last && blocks.length < limit) {
+    if (cal.off[d] === undefined) { d = addDays(d, 1); continue; }
+    var start = d;
+    while (cal.off[addDays(d, 1)] !== undefined) d = addDays(d, 1);
+    var days = nightsBetween(start, d) + 1;
+    if (days >= minDays) blocks.push({ from: start, to: d, days: days, name: blockName(cal, start, d) });
+    d = addDays(d, 1);
+  }
+  return blocks;
+}
+
+function replyHoliday() {
+  var cal = fetchHolidays();
+  if (!cal) return '行事曆讀不到。保險起見，今天先當作要上班。';
+  var today = todayStr();
+
+  // 今天
+  var status;
+  if (cal.off[today] !== undefined) status = '今天放假' + (cal.off[today] ? '（' + cal.off[today] + '）' : '') + '。';
+  else if (cal.makeup.indexOf(today) !== -1) status = '今天補班。辛苦了。';
+  else status = '今天要上班。';
+
+  // 連假：如果今天就在連假裡，從這段的第一天算起
+  var start = today;
+  while (cal.off[addDays(start, -1)] !== undefined && cal.off[start] !== undefined) start = addDays(start, -1);
+  var blocks = holidayBlocks(cal, start, 3, 3);
+  var next = blocks[0];
+
+  // 下一個有名字的假日（不管有沒有連假）
+  var named = null;
+  for (var d = addDays(today, 1); d <= cal.last; d = addDays(d, 1)) {
+    var n = cal.off[d];
+    if (n && n !== '補假' && n !== '小年夜') { named = { date: d, name: n.split('/')[0] }; break; }
+  }
+
+  var makeup = cal.makeup.filter(function (m) { return m > today && nightsBetween(today, m) <= 60; })[0];
+
+  var contents = [{ type: 'text', text: status, size: 'xs', color: COLOR.text, margin: 'xs' }];
+  var alt = status;
+  if (next) {
+    var inside = next.from <= today;
+    contents.push(
+      { type: 'text', text: '下一個連假', size: 'xs', color: COLOR.accent, margin: 'xl', align: 'center' },
+      { type: 'text', text: next.name, size: next.name.length > 4 ? 'xxl' : '3xl', color: COLOR.ink, margin: 'sm', align: 'center', wrap: true },
+      cardSub(shortDay(next.from) + '～' + shortDay(next.to) + '・放 ' + next.days + ' 天'),
+      cardSub(inside ? '就是現在，還剩 ' + (nightsBetween(today, next.to) + 1) + ' 天' : '還有 ' + nightsBetween(today, next.from) + ' 天')
+    );
+    alt += '下一個連假：' + next.name + '，' + shortDay(next.from) + '～' + shortDay(next.to) + '，放 ' + next.days + ' 天。';
+  } else {
+    contents.push(cardBig('明年的行事曆還沒公布'));
+  }
+  contents.push(cardLine());
+  if (named && (!next || named.date < next.from)) contents.push(cardRow('下一個假日', named.name + '・' + shortDay(named.date)));
+  if (blocks.length > 1) contents.push({ type: 'text', text: '之後的連假', size: 'xs', color: COLOR.accent, margin: 'lg' });
+  blocks.slice(1).forEach(function (b) {
+    contents.push(cardRow(shortDay(b.from), b.name + '・' + b.days + ' 天'));
+  });
+  if (makeup) contents.push(cardRow('補班', shortDay(makeup) + '，記得設鬧鐘'));
+  contents.push(cardTip(next && next.from > today
+    ? '距離下一次光明正大不上班，還有 ' + nightsBetween(today, next.from) + ' 天。宜先訂房。'
+    : '放假的時候，就是在放假。'));
+
+  return hiddenCard(alt, 'HOLIDAY', '放假', contents);
+}
+
+// 在編輯器選這個函式按「執行」，確認空氣和行事曆兩個來源抓得到（看「執行記錄」）
+function testHiddenSources() {
+  CacheService.getScriptCache().removeAll(['air', 'holidays']);
+  console.log('空氣', JSON.stringify(fetchAir()));
+  var cal = fetchHolidays();
+  console.log('行事曆', cal ? '抓到了，資料到 ' + cal.last + '，放假 ' + Object.keys(cal.off).length + ' 天' : '抓不到');
+  console.log('月相', moonPhaseOn(todayStr()), '農曆' + lunarDay(todayStr()), '節氣', JSON.stringify(findSolarTerm(todayStr(), -1)));
+  console.log('日出日落', formatTime(sunEvent(todayStr(), 90.833, true)), formatTime(sunEvent(todayStr(), 90.833, false)));
+}
+
+// 被人找到了
+function replySecrets() {
+  return '被你發現了。還有這些：\n\n' +
+    '空氣　空氣品質和紫外線\n' +
+    '月亮　今晚的月相、農曆初幾\n' +
+    '節氣　現在是什麼節氣\n' +
+    '夕陽　日出、日落、魔幻時刻\n' +
+    '放假　下一個連假還有幾天\n\n' +
+    '不要跟別人說。';
+}
+
 // --- 其他 ---
 
 function replyBooking() {
@@ -541,7 +1067,7 @@ function replyHelp() {
     '抽籤　抽一支今晚的運勢\n' +
     '天氣　今天、明天的天氣\n' +
     '訂房　網站連結\n\n' +
-    '其他的話，我也會回，只是回得沒什麼用。群組裡要 @我 才回。';
+    '其他的話，我也會回，只是回得沒什麼用。群組裡要 @我 才回。\n\n（還有一些藏起來的指令。）';
 }
 
 function welcomeText(type) {
