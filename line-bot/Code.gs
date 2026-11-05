@@ -569,7 +569,9 @@ function hiddenCard(altText, label, title, contents) {
   };
 }
 
+// LINE 不接受空字串的文字（整則回覆會被退回，bot 就像沒反應），沒有標籤的那行只放右邊的值
 function cardRow(label, value) {
+  if (!label) return { type: 'text', text: value, size: 'sm', color: COLOR.ink, margin: 'sm', align: 'end', wrap: true };
   return {
     type: 'box', layout: 'horizontal', margin: 'md', contents: [
       { type: 'text', text: label, size: 'sm', color: COLOR.accent, flex: 4 },
