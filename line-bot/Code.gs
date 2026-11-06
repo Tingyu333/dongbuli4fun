@@ -14,6 +14,7 @@
 //   WEBHOOK_KEY                自己取的一串暗號，webhook 網址後面加 ?key=暗號，對不上的請求直接丟掉
 
 var SITE_URL = 'https://tingyu333.github.io/dongbuli4fun/';
+var SPLIT_URL = 'https://liff.line.me/2012419790-HYQOWzgM'; // 老闆做的分帳 LIFF
 var DAYS_AHEAD = 30;
 
 // 關鍵字：只認訊息開頭。群組裡被 @ 時，會先把 @bot 那段拿掉再判斷（「@丼步喱 空房」也算）
@@ -24,7 +25,7 @@ var COMMANDS = [
   { words: ['天氣', '氣象'], run: replyWeather },
   { words: ['訂房'], run: replyBooking },
   { words: ['說明', '指令'], run: replyHelp },
-  // 隱藏指令：不寫進「說明」，被問到才講（README 有列）
+  { words: ['分帳', '拆帳', '算帳', '記帳', '誰欠誰', 'AA'], run: replySplit },
   { words: ['空氣', '紫外線', 'UV', 'uv'], run: replyAir },
   { words: ['月亮', '月相', '農曆'], run: replyMoon },
   { words: ['節氣'], run: replySolarTerm },
@@ -1045,15 +1046,33 @@ function testHiddenSources() {
   console.log('日出日落', formatTime(sunEvent(todayStr(), 90.833, true)), formatTime(sunEvent(todayStr(), 90.833, false)));
 }
 
-// 被人找到了
+// 以前藏起來的指令現在都寫進「說明」了，有人來找彩蛋就給他說明
 function replySecrets() {
-  return '被你發現了。還有這些：\n\n' +
-    '空氣　空氣品質和紫外線\n' +
-    '月亮　今晚的月相、農曆初幾\n' +
-    '節氣　現在是什麼節氣\n' +
-    '夕陽　日出、日落、魔幻時刻\n' +
-    '放假　下一個連假還有幾天\n\n' +
-    '不要跟別人說。';
+  return '已經沒有藏了，全部都在這裡。\n\n' + replyHelp();
+}
+
+// --- 分帳（老闆自己做的 LIFF，bot 只給連結） ---
+
+function replySplit() {
+  var card = hiddenCard('分帳在這裡：' + SPLIT_URL, 'SPLIT', '分帳', [
+    cardBig('分帳・算'),
+    cardSub('一起出去玩，錢的事交給它'),
+    cardTip('朋友之間不談錢。要談的話，用這個談。')
+  ]);
+  card.contents.styles.footer = { backgroundColor: COLOR.bg };
+  card.contents.footer = {
+    type: 'box',
+    layout: 'vertical',
+    paddingTop: '0px',
+    contents: [{
+      type: 'button',
+      style: 'primary',
+      color: COLOR.ink,
+      height: 'sm',
+      action: { type: 'uri', label: '打開分帳', uri: SPLIT_URL }
+    }]
+  };
+  return card;
 }
 
 // --- 其他 ---
@@ -1064,12 +1083,22 @@ function replyBooking() {
 
 function replyHelp() {
   return '丼步喱・絆 聽得懂這些：\n\n' +
+    '【二十七樓】\n' +
     '空房　接下來 30 天哪幾晚有人\n' +
-    '擲杯　後面可以接問題，例如「擲杯 今晚續攤嗎」\n' +
-    '抽籤　抽一支今晚的運勢\n' +
-    '天氣　今天、明天的天氣\n' +
     '訂房　網站連結\n\n' +
-    '其他的話，我也會回，只是回得沒什麼用。群組裡要 @我 才回。\n\n（還有一些藏起來的指令。）';
+    '【問神明】\n' +
+    '擲杯　後面可以接問題，例如「擲杯 今晚續攤嗎」\n' +
+    '抽籤　抽一支今晚的運勢\n\n' +
+    '【看天】\n' +
+    '天氣　今天、明天的天氣\n' +
+    '空氣　空氣品質和紫外線\n' +
+    '夕陽　日出、日落、魔幻時刻\n' +
+    '月亮　今晚的月相、農曆初幾\n' +
+    '節氣　現在是什麼節氣\n\n' +
+    '【過日子】\n' +
+    '放假　下一個連假還有幾天\n' +
+    '分帳　出去玩誰欠誰，打開就算\n\n' +
+    '其他的話，我也會回，只是回得沒什麼用。群組裡要 @我 才回。';
 }
 
 function welcomeText(type) {

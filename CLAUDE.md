@@ -68,11 +68,11 @@
 
 ## LINE bot
 
-- 指令（訊息開頭符合才算）：`空房`／`房況`、`擲杯`／`擲筊`／`跋杯`（可接問題）、`抽籤`／`御神籤`、`天氣`／`氣象`、`訂房`、`說明`／`指令`。加好友（`follow`）、被拉進群組（`join`）會打招呼。
+- 指令（訊息開頭符合才算）：`空房`／`房況`、`擲杯`／`擲筊`／`跋杯`（可接問題）、`抽籤`／`御神籤`、`天氣`／`氣象`、`訂房`、`分帳`／`拆帳`／`算帳`／`記帳`／`誰欠誰`／`AA`（回卡片＋按鈕打開使用者自己做的分帳 LIFF，網址是 `SPLIT_URL`）、`說明`／`指令`，加上下面那組看天、過日子的指令。**`說明`要列出全部指令**（`replyHelp()` 分四組：二十七樓、問神明、看天、過日子），新增指令記得一起加。加好友（`follow`）、被拉進群組（`join`）會打招呼。
 - 不是指令：一對一回一句廢話文學（`NONSENSE_LINES`，貼圖回 `STICKER_LINES`）；群組裡**只有被 @（`mention.mentionees[].isSelf`）才回**，平常聊天不插話。被 @ 時先把 @bot 那段字拿掉再判斷指令。同一個聊天室不連續回同一句（`CacheService` 的 `last:` key）。
 - `空房` 回 Flex Message 月曆卡片（`calendarBubble()`，從這週日起 5～6 週、有人住填枯茶色、今天加圈），`altText` 是文字版房況（最多 400 字）。卡片顏色寫死白天那套，Flex 不跟晝夜切換。`printAvailabilityFlex()` 可以印出 JSON 貼到 Flex Message Simulator 預覽。`reply()` 收文字或組好的訊息物件。
 - `抽籤` 回籤紙卡片（吉朱色、凶墨色，「再抽一支」是 message action，會再送一次「抽籤」）。`天氣` 回天氣卡片，資料來自 Open-Meteo（不用金鑰、非商業免費），`CacheService` 存 30 分鐘，讀不到就回一句文字；地點用指令碼屬性 `WEATHER_PLACE`／`WEATHER_LAT`／`WEATHER_LON`，預設台北。
-- **隱藏指令**（不寫進 `說明`，傳 `隱藏指令`／`彩蛋` 才列出）：`空氣`／`紫外線`／`UV`（Open-Meteo 空氣品質 API，存 30 分鐘；天氣卡片也多一行空氣，抓不到就不放）、`月亮`／`月相`／`農曆`、`節氣`、`夕陽`／`日出`／`日落`（這三個是程式自己算的天文公式，不用網路）、`放假`／`連假`／`假日`（`ruyut/TaiwanCalendar` 的 JSON 走 jsDelivr，抓今年和明年，存 6 小時）。卡片共用 `hiddenCard()`。`testHiddenSources()` 給使用者在編輯器裡確認來源抓得到。
+- **看天、過日子**（以前是隱藏指令，現在都在 `說明` 裡；`隱藏指令`／`彩蛋` 回「已經沒有藏了」加說明）：`空氣`／`紫外線`／`UV`（Open-Meteo 空氣品質 API，存 30 分鐘；天氣卡片也多一行空氣，抓不到就不放）、`月亮`／`月相`／`農曆`、`節氣`、`夕陽`／`日出`／`日落`（這三個是程式自己算的天文公式，不用網路）、`放假`／`連假`／`假日`（`ruyut/TaiwanCalendar` 的 JSON 走 jsDelivr，抓今年和明年，存 6 小時）。卡片共用 `hiddenCard()`。`testHiddenSources()` 給使用者在編輯器裡確認來源抓得到。
 - 規則：只讀（程式裡不能有寫入 Sheet 的呼叫，要寫入的事回網站連結）、只用 Reply API（不推播）、不回名字電話 Email。
 - 指令碼屬性：`LINE_CHANNEL_ACCESS_TOKEN`、`SHEET_ID`、`WEBHOOK_KEY`（webhook 網址要帶 `?key=`，對不上或沒設定就不處理）。
 - 擲杯的三聖杯存在 `CacheService`，key 是 `streak:` + groupId／roomId／userId，6 小時。
