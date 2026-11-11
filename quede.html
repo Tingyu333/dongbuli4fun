@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>缺德・榜 | 丼步喱</title>
+    <!-- 分享到 LINE、FB 時的預覽（標題、介紹、圖片）。圖片要用完整網址 -->
+    <meta name="description" content="二十七樓的每一道刮痕，都有人負責。">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="丼步喱・絆">
+    <meta property="og:title" content="丼步喱・絆 缺德榜">
+    <meta property="og:description" content="二十七樓的每一道刮痕，都有人負責。">
+    <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/quede.html">
+    <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
+    <meta name="twitter:card" content="summary">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入日系字體 -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700;900&family=Noto+Sans+TC:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/theme.css">
+    <script src="assets/theme.js"></script>
+    <style>
+        /* 罪牌是「實物」（黑漆、生鏽的鐵字、泛黃封條），跟入住券一樣固定用這組顏色，不跟晝夜切換 */
+        :root {
+            --qd-iron: 176 182 186;
+            --qd-iron-deep: 92 96 100;
+            --qd-iron-pale: 236 238 240;
+            --qd-rust: 150 84 48;
+            --qd-lacquer: 38 34 34;
+            --qd-lacquer-deep: 12 11 11;
+            --qd-wood: 58 48 42;
+            --qd-wood-dark: 22 18 16;
+            --qd-paper: 238 228 204;
+            --qd-shu: 179 58 47;
+            --qd-led: 255 44 24;
+        }
+
+        /* 大匾的封條故意比匾寬，裁在 main 裡面，手機才不會左右滑 */
+        main {
+            overflow-x: hidden;
+            overflow-x: clip;
+        }
+
+        .vertical-rl {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+        }
+
+        /* 長按不跳系統選單、不選字 */
+        .tap {
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+            cursor: pointer;
+        }
+
+        /* --- 鐵字：冷冷的金屬漸層，一道白光掃過去（帶一點鏽） --- */
+        .iron {
+            background-image:
+                linear-gradient(110deg, transparent 38%, rgb(255 255 255 / 0.9) 50%, transparent 62%),
+                linear-gradient(180deg, rgb(var(--qd-iron-pale)) 0%, rgb(var(--qd-iron)) 40%, rgb(var(--qd-iron-deep)) 56%, rgb(var(--qd-iron)) 82%, rgb(var(--qd-rust)) 100%);
+            background-size: 260% 100%, 100% 100%;
+            background-position: 160% 0, 0 0;
+            background-repeat: no-repeat;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            filter: drop-shadow(0 1px 0 rgb(0 0 0 / 0.6));
+        }
+
+        .iron-shine {
+            animation: iron-sweep 3.6s ease-in-out infinite;
+        }
+
+        @keyframes iron-sweep {
+            0% { background-position: 160% 0, 0 0; }
+            55%, 100% { background-position: -60% 0, 0 0; }
+        }
+
+        /* 裂痕：一張 SVG 疊在漆面右上角 */
+        .cracked {
+            background-image:
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M100 0 L88 16 L94 24 L80 44 L86 52 L74 70 M88 16 L76 20 M80 44 L70 42' stroke='rgba(190,196,200,0.28)' stroke-width='0.9' fill='none'/%3E%3C/svg%3E"),
+                radial-gradient(ellipse at 50% 35%, rgb(var(--qd-lacquer)), rgb(var(--qd-lacquer-deep)));
+            background-size: 45% 70%, 100% 100%;
+            background-position: top right, 0 0;
+            background-repeat: no-repeat;
+        }
+
+        /* --- 大匾（橫的） --- */
+        .bian {
+            position: relative;
+            padding: 9px;
+            border-radius: 4px;
+            background: linear-gradient(135deg, rgb(var(--qd-wood-dark)), rgb(var(--qd-wood)) 45%, rgb(var(--qd-wood-dark)));
+            box-shadow: 0 14px 30px -14px rgb(0 0 0 / 0.6), inset 0 0 0 1px rgb(var(--qd-iron) / 0.25);
+        }
+
+        .bian-inner {
+            position: relative;
+            overflow: hidden;
+            min-height: 118px;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border: 2px solid rgb(var(--qd-iron) / 0.55);
+            outline: 1px solid rgb(var(--qd-iron) / 0.25);
+            outline-offset: -7px;
+        }
+
+        /* --- 小牌位（直的，上面圓頂） --- */
+        .pai {
+            position: relative;
+            padding: 7px;
+            height: 236px;
+            border-radius: 48% 48% 5px 5px / 16% 16% 5px 5px;
+            background: linear-gradient(135deg, rgb(var(--qd-wood-dark)), rgb(var(--qd-wood)) 50%, rgb(var(--qd-wood-dark)));
+            box-shadow: 0 14px 24px -14px rgb(0 0 0 / 0.65), inset 0 0 0 1px rgb(var(--qd-iron) / 0.22);
+        }
+
+        .pai-inner {
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+            padding: 20px 6px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-radius: 46% 46% 3px 3px / 14% 14% 3px 3px;
+            border: 1px solid rgb(var(--qd-iron) / 0.45);
+        }
+
+        .pai::after {
+            /* 底座 */
+            content: '';
+            position: absolute;
+            left: -6px;
+            right: -6px;
+            bottom: -10px;
+            height: 12px;
+            border-radius: 2px;
+            background: linear-gradient(180deg, rgb(var(--qd-wood)), rgb(var(--qd-wood-dark)));
+        }
+
+        .pai-name {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 0.12em;
+            font-weight: 700;
+            line-height: 1.15;
+        }
+
+        /* 尚無前科 */
+        .empty .bian-inner,
+        .empty .pai-inner {
+            border-style: dashed;
+            filter: brightness(0.75);
+        }
+
+        /* --- 封條：泛黃的紙，蓋一個朱色「罪」 --- */
+        .seal {
+            position: absolute;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            color: rgb(var(--qd-wood-dark));
+            background: rgb(var(--qd-paper));
+            box-shadow: 0 2px 6px rgb(0 0 0 / 0.4);
+            font-weight: 700;
+            letter-spacing: 0.2em;
+        }
+
+        .bian .seal {
+            left: -8%;
+            right: -8%;
+            top: 50%;
+            height: 38px;
+            margin-top: -19px;
+            transform: rotate(-5deg);
+            font-size: 14px;
+            border-top: 2px dashed rgb(var(--qd-wood-dark) / 0.5);
+            border-bottom: 2px dashed rgb(var(--qd-wood-dark) / 0.5);
+        }
+
+        .pai .seal {
+            top: 31%;
+            bottom: 8%;
+            left: 50%;
+            width: 40px;
+            margin-left: -20px;
+            flex-direction: column;
+            writing-mode: vertical-rl;
+            font-size: 13px;
+            border-left: 1px dashed rgb(var(--qd-wood-dark) / 0.5);
+            border-right: 1px dashed rgb(var(--qd-wood-dark) / 0.5);
+        }
+
+        .seal-mark {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 3px;
+            color: rgb(var(--qd-paper));
+            background: rgb(var(--qd-shu));
+            font-size: 13px;
+            letter-spacing: 0;
+            writing-mode: horizontal-tb;
+            transform: rotate(-8deg);
+        }
+
+        /* 擲到聖杯：蓋一個「赦」 */
+        .pardon-mark {
+            position: absolute;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: rgb(var(--qd-shu));
+            border: 2px solid rgb(var(--qd-shu));
+            background: rgb(var(--qd-paper) / 0.92);
+            font-weight: 900;
+            transform: rotate(-12deg);
+            box-shadow: 0 2px 6px rgb(0 0 0 / 0.35);
+        }
+
+        .plaque .pardon-mark { width: 34px; height: 34px; font-size: 17px; top: -6px; left: -6px; }
+
+        @media (hover: hover) {
+            .plaque:hover { transform: translateY(-3px); }
+        }
+
+        .plaque { transition: transform 0.3s ease; }
+
+        /* --- 公堂（開審的全螢幕） --- */
+        #altar {
+            position: fixed;
+            inset: 0;
+            z-index: 60;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #altar.open { display: flex; }
+
+        .altar-bg {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 45%, rgb(34 36 44), rgb(4 5 7) 72%);
+        }
+
+        /* 不祥的紅光 */
+        .halo {
+            position: absolute;
+            left: 50%;
+            top: 45%;
+            width: 120vmin;
+            height: 120vmin;
+            margin: -60vmin 0 0 -60vmin;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgb(150 24 16 / 0.45), transparent 62%);
+            opacity: 0;
+        }
+
+        /* 烏雲：兩團從左右飄進來 */
+        .cloud {
+            position: absolute;
+            top: -8vh;
+            width: 90vw;
+            height: 34vh;
+            border-radius: 50%;
+            background: radial-gradient(ellipse at 50% 60%, rgb(70 74 84 / 0.95), rgb(30 32 38 / 0.6) 55%, transparent 72%);
+            filter: blur(8px);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .cloud.left { left: -30vw; }
+        .cloud.right { right: -30vw; }
+
+        /* 閃電：整個畫面白一下，加一道折線 */
+        .flash {
+            position: absolute;
+            inset: 0;
+            background: rgb(235 240 255);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #bolt {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 48%;
+            opacity: 0;
+            pointer-events: none;
+            filter: drop-shadow(0 0 6px rgb(200 215 255)) drop-shadow(0 0 16px rgb(140 170 255));
+        }
+
+        #dust {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .altar-stage {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 16px;
+        }
+
+        .altar-caption {
+            margin-top: 26px;
+            text-align: center;
+            color: rgb(var(--qd-paper));
+            opacity: 0;
+        }
+
+        /* 「缺德無量」朱印 */
+        .stamp {
+            position: absolute;
+            z-index: 5;
+            width: 78px;
+            height: 78px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+            justify-items: center;
+            padding: 6px;
+            border-radius: 6px;
+            background: rgb(var(--qd-shu));
+            color: rgb(var(--qd-paper));
+            font-weight: 900;
+            font-size: 22px;
+            line-height: 1;
+            box-shadow: 0 0 0 2px rgb(var(--qd-paper) / 0.85) inset, 0 6px 18px rgb(0 0 0 / 0.5);
+            opacity: 0;
+            transform: rotate(-9deg);
+        }
+
+        /* 光明燈（一盞一盞熄掉） */
+        .lanterns {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-around;
+            padding: 0 4%;
+            pointer-events: none;
+        }
+
+        .lantern {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .lantern::before {
+            content: '';
+            width: 1px;
+            height: var(--rope, 30px);
+            background: rgb(var(--qd-iron) / 0.45);
+        }
+
+        .lantern-body {
+            position: relative;
+            width: 32px;
+            height: 42px;
+            border-radius: 40%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: rgb(20 8 6 / 0.8);
+            background: rgb(64 26 20);
+            border-top: 3px solid rgb(var(--qd-iron-deep));
+            border-bottom: 3px solid rgb(var(--qd-iron-deep));
+        }
+
+        .lantern-glow {
+            position: absolute;
+            inset: -3px 0;
+            border-radius: 40%;
+            background: radial-gradient(circle at 50% 45%, rgb(255 236 170), rgb(255 160 60) 45%, rgb(214 66 30));
+            box-shadow: 0 0 22px 6px rgb(255 170 70 / 0.7);
+            opacity: 0;
+        }
+
+        .lantern-body span { position: relative; }
+
+        /* 廟口的紅色 LED 跑馬燈 */
+        .led {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 52px;
+            overflow: hidden;
+            background: rgb(10 3 2);
+            border-top: 2px solid rgb(var(--qd-iron-deep));
+            opacity: 0;
+        }
+
+        .led::after {
+            /* 點陣：在字上面蓋一層有洞的網 */
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle, transparent 1.2px, rgb(10 3 2 / 0.92) 1.7px);
+            background-size: 3.5px 3.5px;
+            pointer-events: none;
+        }
+
+        .led-track {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            font-family: "Noto Sans TC", sans-serif;
+            font-weight: 500;
+            font-size: 30px;
+            letter-spacing: 0.12em;
+            color: rgb(var(--qd-led));
+            text-shadow: 0 0 3px rgb(var(--qd-led) / 0.9);
+            animation: led-scroll var(--led-time, 14s) linear infinite;
+        }
+
+        @keyframes led-scroll {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
+        /* --- 擲杯求原諒 --- */
+        .pardon {
+            display: none;
+            margin-top: 18px;
+            text-align: center;
+            color: rgb(var(--qd-paper));
+        }
+
+        .bei-pair {
+            display: flex;
+            justify-content: center;
+            gap: 22px;
+            height: 44px;
+            align-items: flex-end;
+            perspective: 600px;
+        }
+
+        .bei {
+            position: relative;
+            width: 62px;
+            height: 28px;
+            transform-style: preserve-3d;
+        }
+
+        .bei-face {
+            position: absolute;
+            inset: 0;
+            border-radius: 62px 62px 6px 6px / 28px 28px 6px 6px;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+
+        /* 平面（陽）：顏色亮、有一條直線；凸面（陰）：暗、有反光 */
+        .bei-face.flat {
+            background: linear-gradient(180deg, rgb(214 92 70), rgb(var(--qd-shu)));
+            box-shadow: inset 0 -3px 0 rgb(120 30 20 / 0.6);
+        }
+
+        .bei-face.round {
+            transform: rotateX(180deg);
+            background: radial-gradient(ellipse at 40% 30%, rgb(200 80 60), rgb(110 26 18) 70%);
+        }
+
+        .bei.mirror { scale: -1 1; }
+
+        .altar-actions {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: calc(env(safe-area-inset-bottom) + 20px);
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 0 12px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .altar-actions.show { pointer-events: auto; }
+
+        #altar.has-led .altar-actions { bottom: calc(env(safe-area-inset-bottom) + 70px); }
+
+        .altar-btn {
+            min-height: 44px;
+            padding: 0 16px;
+            font-family: "Noto Sans TC", sans-serif;
+            font-size: 13px;
+            letter-spacing: 0.16em;
+            color: rgb(var(--qd-paper));
+            border: 1px solid rgb(var(--qd-iron) / 0.5);
+            background: rgb(0 0 0 / 0.35);
+        }
+
+        .altar-btn.primary {
+            color: rgb(var(--qd-lacquer-deep));
+            background: linear-gradient(180deg, rgb(var(--qd-iron-pale)), rgb(var(--qd-iron)));
+            border-color: transparent;
+        }
+
+        .altar-btn.shu {
+            color: rgb(var(--qd-paper));
+            background: rgb(var(--qd-shu));
+            border-color: transparent;
+        }
+
+        .altar-btn:disabled { opacity: 0.5; }
+
+        /* 手機設定「減少動態效果」：不閃、跑馬燈停在開頭 */
+        @media (prefers-reduced-motion: reduce) {
+            .iron-shine, .led-track { animation: none; }
+        }
+
+        .skip-hint {
+            position: absolute;
+            top: calc(env(safe-area-inset-top) + 14px);
+            right: 16px;
+            font-family: "Noto Sans TC", sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            color: rgb(var(--qd-paper) / 0.45);
+        }
+    </style>
+</head>
+
+<body
+    class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white min-h-screen flex flex-col">
+
+    <!-- 導航（缺德榜不在導覽列，四個都是連結） -->
+    <nav
+        class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <a href="index.html"
+            class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-3 md:gap-8">
+            <a href="index.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <a href="reviews.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <a href="jiaobei.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">擲杯・問</a>
+            <a href="about.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-4xl mx-auto pt-28 pb-16 px-4 md:pt-36 md:px-8 w-full">
+
+        <!-- 標題 -->
+        <div class="text-center mb-10 md:mb-14">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-4">HALL OF SHAME</span>
+            <h1 class="text-4xl font-light text-wabi-dark mb-4 tracking-widest">缺德・榜</h1>
+            <p class="text-sm text-stone-500 tracking-widest leading-relaxed">二十七樓的每一道刮痕，<br class="md:hidden">都有人負責。</p>
+            <div class="w-16 h-[1px] bg-wabi-accent mx-auto mt-8"></div>
+        </div>
+
+        <div class="flex justify-between items-center mb-5 font-sans text-xs tracking-widest text-stone-400">
+            <span id="progress">已審 0 / 0</span>
+            <button type="button" id="soundBtn" class="tap py-2 px-1 hover:text-wabi-dark transition-colors">聲・開</button>
+        </div>
+
+        <!-- 三面大匾：大案 -->
+        <section aria-label="重大刑案" class="grid gap-5 md:grid-cols-3 mb-12" id="bigRow"></section>
+
+        <!-- 十塊罪牌 -->
+        <section aria-label="一般案件" class="grid grid-cols-2 md:grid-cols-5 gap-x-4 gap-y-8 px-1" id="smallRow"></section>
+
+        <div class="mt-16 text-center text-xs font-sans tracking-widest text-stone-400 leading-loose">
+            <p>點牌子開審。罪狀依犯案先後排列，如有冤枉，請擲杯申訴。</p>
+            <button type="button" id="resealBtn"
+                class="tap mt-4 py-2 border-b border-stone-300 hover:text-wabi-dark transition-colors">重新貼上封條</button>
+        </div>
+    </main>
+
+    <footer
+        class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
+        <p>&copy; 2026 DONGBULI · 純粹棲所</p>
+    </footer>
+
+    <!-- 公堂：開審的全螢幕 -->
+    <div id="altar" role="dialog" aria-modal="true" aria-label="開審">
+        <div class="altar-bg"></div>
+        <div class="halo"></div>
+        <div class="cloud left"></div>
+        <div class="cloud right"></div>
+        <div class="lanterns" id="lanterns"></div>
+        <svg id="bolt" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline id="boltLine" fill="none" stroke="rgb(245 248 255)" stroke-width="0.9" stroke-linejoin="bevel" points="" /></svg>
+        <div class="flash" id="flash"></div>
+        <canvas id="dust"></canvas>
+        <div class="altar-stage" id="stage"></div>
+        <div class="led" id="led"><div class="led-track" id="ledTrack"></div></div>
+        <span class="skip-hint" id="skipHint">點一下跳過</span>
+        <div class="altar-actions" id="altarActions">
+            <button type="button" class="altar-btn shu tap" id="pardonBtn">擲杯求原諒</button>
+            <button type="button" class="altar-btn tap" id="againBtn">再審一次</button>
+            <button type="button" class="altar-btn primary tap" id="closeBtn">退堂</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 罪人名單 ---
+        // 第一版先用假資料看效果；之後改成後台編輯、從後端讀
+        // tier：big 大匾（3 面，重大刑案）、small 罪牌（10 塊）；name 空白就是尚無前科
+        // crime：罪狀（牌子上和跑馬燈用）；verdict：神明的判詞
+        const CASES = [
+            { id: 'bed', tier: 'big', item: '床', name: '王小明', crime: '睡到塌了一角', verdict: '判：下次睡地板。' },
+            { id: 'sofa', tier: 'big', item: '沙發', name: '林阿華', crime: '坐出一個屁股形狀的凹洞', verdict: '判：凹洞從此命名為「阿華」。' },
+            { id: 'aircon', tier: 'big', item: '冷氣', name: '大熊同學', crime: '開 16 度整晚不關，電費不付', verdict: '判：電費連本帶利，下次一起算。' },
+            { id: 'fridge', tier: 'small', item: '冰箱', name: '陳小美', crime: '偷吃別人寫了名字的布丁', verdict: '判：布丁上寫的名字不是妳。' },
+            { id: 'tv', tier: 'small', item: '電視', name: '張三', crime: '把遙控器藏進沙發縫三個月', verdict: '判：遙控器原諒你了，我們沒有。' },
+            { id: 'table', tier: 'small', item: '餐桌', name: '李四', crime: '打麻將拍桌拍出裂痕', verdict: '判：自摸也不用拍成這樣。' },
+            { id: 'washer', tier: 'small', item: '洗衣機', name: '', crime: '', verdict: '' },
+            { id: 'ricecooker', tier: 'small', item: '電鍋', name: '阿嬤', crime: '外鍋沒加水，煮出焦味', verdict: '判：阿嬤說是鍋子的錯，本庭採信。' },
+            { id: 'dryer', tier: 'small', item: '吹風機', name: '小王', crime: '頭髮塞住出風口', verdict: '判：現在吹出來的都是你的頭髮。' },
+            { id: 'lamp', tier: 'small', item: '檯燈', name: '', crime: '', verdict: '' },
+            { id: 'curtain', tier: 'small', item: '窗簾', name: '阿貓', crime: '拿去當披風在客廳跑', verdict: '判：你不是超人，窗簾也不是。' },
+            { id: 'rug', tier: 'small', item: '地毯', name: '阿狗', crime: '打翻可樂說是別人', verdict: '判：監視器都拍到了。（沒有監視器）' },
+            { id: 'toilet', tier: 'small', item: '馬桶', name: '不具名的某人', crime: '堵過，而且沒說', verdict: '判：神明都知道，水電師傅也知道。' }
+        ];
+
+        const SEEN_KEY = 'dongbuli-quede-seen';
+        const PARDON_KEY = 'dongbuli-quede-pardon';
+        const SOUND_KEY = 'dongbuli-quede-sound';
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+        function load(key, fallback) {
+            try { const v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); } catch (e) { return fallback; }
+        }
+        function save(key, value) {
+            try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { }
+        }
+
+        let seen = load(SEEN_KEY, []);
+        let pardoned = load(PARDON_KEY, []);
+        let soundOn = load(SOUND_KEY, true);
+
+        // --- 牌子的樣子 ---
+        // where：board（榜上）或 altar（公堂上放大）；sealed：要不要貼封條
+        function nameSize(m, where) {
+            const n = [...m.name].length || 4;
+            if (m.tier === 'big') {
+                const width = where === 'altar' ? Math.min(innerWidth * 0.92, 560) - 70 : 260;
+                return Math.min(where === 'altar' ? 52 : 30, Math.floor(width / (n * 1.15)));
+            }
+            const height = where === 'altar' ? Math.min(innerHeight * 0.5, 330) - 40 : 120;
+            return Math.min(where === 'altar' ? 50 : 26, Math.floor(height / (n * 1.18)));
+        }
+
+        // 公堂上的名字：每個字自己一層鐵字（父層的 background-clip:text 遇到在動的子元素會整個不見）
+        function nameChars(m, cls) {
+            return [...m.name].map((ch, i) => `<span class="iron ch inline-block ${cls}" style="animation-delay:${i * 0.12}s">${esc(ch)}</span>`).join('');
+        }
+
+        function plaqueHTML(m, where, sealed) {
+            const empty = !m.name;
+            const big = m.tier === 'big';
+            const size = nameSize(m, where);
+            const name = empty
+                ? `<span class="iron opacity-70 tracking-[0.3em]" style="font-size:${big ? 18 : 16}px">尚無前科</span>`
+                : sealed
+                    ? `<span class="opacity-0">${esc(m.name)}</span>`
+                    : where === 'altar'
+                        ? `<span style="font-size:${size}px">${nameChars(m, 'iron-shine')}</span>`
+                        : `<span class="iron iron-shine" style="font-size:${size}px">${esc(m.name)}</span>`;
+            const seal = sealed && !empty
+                ? (big
+                    ? `<div class="seal"><span class="seal-mark">罪</span>罪人・待審<span class="seal-mark">罪</span></div>`
+                    : `<div class="seal"><span class="seal-mark">罪</span>罪人待審</div>`)
+                : '';
+            const mark = !sealed && pardoned.includes(m.id) && where === 'board' ? '<span class="pardon-mark">赦</span>' : '';
+            if (big) {
+                return `
+                <div class="bian ${empty ? 'empty' : ''}" ${where === 'altar' ? `style="width:${Math.min(innerWidth * 0.92, 560)}px"` : ''}>
+                    <div class="bian-inner cracked" ${where === 'altar' ? 'style="min-height:190px"' : ''}>
+                        <span class="iron font-sans text-[11px] tracking-[0.35em] mb-1">犯案・${esc(m.item)}</span>
+                        <div class="font-bold tracking-[0.12em] leading-tight py-1" style="min-height:${Math.max(size, 30) * 1.2}px">${name}</div>
+                        ${m.crime && !sealed ? `<span class="iron font-sans text-[11px] tracking-[0.2em] mt-1 opacity-90">${esc(m.crime)}</span>` : '<span class="text-[11px] mt-1">&nbsp;</span>'}
+                    </div>
+                    ${seal}${mark}
+                </div>`;
+            }
+            const h = where === 'altar' ? Math.min(innerHeight * 0.5, 330) + 90 : null;
+            return `
+            <div class="pai ${empty ? 'empty' : ''}" ${h ? `style="height:${h}px;width:${Math.round(h * 0.5)}px"` : ''}>
+                <div class="pai-inner cracked">
+                    <span class="iron font-sans text-[11px] tracking-[0.2em]">犯案</span>
+                    <span class="iron font-bold text-base tracking-[0.15em] mt-0.5">${esc(m.item)}</span>
+                    <div class="pai-name vertical-rl">${name}</div>
+                    <span class="iron font-sans text-[10px] tracking-[0.2em] opacity-80">罪人</span>
+                </div>
+                ${seal}${mark}
+            </div>`;
+        }
+
+        // --- 榜 ---
+        function renderBoard() {
+            const tile = m => `
+                <button type="button" class="plaque tap block w-full text-left relative" data-id="${m.id}"
+                    aria-label="${esc(m.item)}：${!m.name ? '尚無前科' : seen.includes(m.id) ? esc(m.name) + '，' + esc(m.crime) : '尚未開審'}">
+                    ${plaqueHTML(m, 'board', m.name && !seen.includes(m.id))}
+                </button>`;
+            document.getElementById('bigRow').innerHTML = CASES.filter(m => m.tier === 'big').map(tile).join('');
+            document.getElementById('smallRow').innerHTML = CASES.filter(m => m.tier === 'small').map(tile).join('');
+            const guilty = CASES.filter(m => m.name);
+            const forgiven = guilty.filter(m => pardoned.includes(m.id)).length;
+            document.getElementById('progress').innerText = `已審 ${guilty.filter(m => seen.includes(m.id)).length} / ${guilty.length}` + (forgiven ? `・已赦 ${forgiven}` : '');
+        }
+
+        document.addEventListener('click', e => {
+            const btn = e.target.closest('.plaque');
+            if (!btn) return;
+            const m = CASES.find(x => x.id === btn.dataset.id);
+            if (!m.name) {
+                btn.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(-3px)' }, { transform: 'translateX(0)' }], { duration: 360 });
+                showToast(`${m.item}目前清白。名額開放中，歡迎犯案。`);
+                return;
+            }
+            if (seen.includes(m.id)) showAltar(m, false);
+            else {
+                btn.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-2deg)' }, { transform: 'rotate(2deg)' }, { transform: 'rotate(-1deg)' }, { transform: 'rotate(0)' }], { duration: 380 })
+                    .finished.then(() => showAltar(m, true));
+            }
+        });
+
+        document.getElementById('soundBtn').addEventListener('click', function () {
+            soundOn = !soundOn;
+            save(SOUND_KEY, soundOn);
+            this.innerText = soundOn ? '聲・開' : '聲・關';
+            if (soundOn) tok();
+        });
+        document.getElementById('soundBtn').innerText = soundOn ? '聲・開' : '聲・關';
+
+        document.getElementById('resealBtn').addEventListener('click', () => {
+            seen = [];
+            pardoned = [];
+            save(SEEN_KEY, seen);
+            save(PARDON_KEY, pardoned);
+            renderBoard();
+            showToast('封條重新貼好了，赦免也收回了，可以再審一輪。');
+        });
+
+        // --- 聲音（Web Audio 合成，不用音檔）：木魚「叩」、打雷、蓋印的「咚」 ---
+        let audioCtx = null;
+        function audio() {
+            if (!soundOn) return null;
+            try {
+                audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                return audioCtx;
+            } catch (e) { return null; }
+        }
+
+        function tok(pitch = 1) {
+            const a = audio();
+            if (!a) return;
+            const t = a.currentTime;
+            [[640, 0.55, 0.13], [1290, 0.12, 0.05]].forEach(([f, gain, decay]) => {
+                const o = a.createOscillator();
+                const g = a.createGain();
+                o.type = 'sine';
+                o.frequency.setValueAtTime(f * pitch, t);
+                o.frequency.exponentialRampToValueAtTime(f * pitch * 0.86, t + decay);
+                g.gain.setValueAtTime(gain, t);
+                g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+                o.connect(g).connect(a.destination);
+                o.start(t);
+                o.stop(t + decay + 0.05);
+            });
+        }
+
+        function thunder(big) {
+            const a = audio();
+            if (!a) return;
+            const t = a.currentTime;
+            const len = big ? 3.2 : 2.4;
+            const buf = a.createBuffer(1, Math.floor(a.sampleRate * len), a.sampleRate);
+            const data = buf.getChannelData(0);
+            let last = 0;
+            for (let i = 0; i < data.length; i++) {
+                // 棕色雜訊，低沉的轟隆聲
+                last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02;
+                data[i] = last * 3.5 * (1 + 0.6 * Math.sin(i / a.sampleRate * 9));
+            }
+            const src = a.createBufferSource();
+            src.buffer = buf;
+            const lp = a.createBiquadFilter();
+            lp.type = 'lowpass';
+            lp.frequency.setValueAtTime(1400, t);
+            lp.frequency.exponentialRampToValueAtTime(110, t + len);
+            const g = a.createGain();
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.exponentialRampToValueAtTime(1.1, t + 0.03);
+            g.gain.exponentialRampToValueAtTime(0.45, t + 0.5);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+            src.connect(lp).connect(g).connect(a.destination);
+            src.start(t);
+            src.stop(t + len);
+        }
+
+        function thump() {
+            const a = audio();
+            if (!a) return;
+            const t = a.currentTime;
+            const o = a.createOscillator();
+            const g = a.createGain();
+            o.frequency.setValueAtTime(120, t);
+            o.frequency.exponentialRampToValueAtTime(42, t + 0.25);
+            g.gain.setValueAtTime(0.7, t);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+            o.connect(g).connect(a.destination);
+            o.start(t);
+            o.stop(t + 0.45);
+        }
+
+        // --- 雨、家具碎片、布丁蓋 ---
+        const canvas = document.getElementById('dust');
+        const c2d = canvas.getContext('2d');
+        let particles = [];
+        let raining = false;
+        let raf = null;
+
+        function sizeCanvas() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.width = innerWidth * dpr;
+            canvas.height = innerHeight * dpr;
+            c2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function spawn(kind, fromCenter) {
+            const p = {
+                kind,
+                x: fromCenter ? innerWidth / 2 + (Math.random() - 0.5) * 80 : Math.random() * (innerWidth + 120) - 20,
+                y: fromCenter ? innerHeight * 0.45 : -20 - Math.random() * 60,
+                vx: fromCenter ? (Math.random() - 0.5) * 10 : kind === 'rain' ? -2.2 : (Math.random() - 0.5) * 1.2,
+                vy: fromCenter ? -Math.random() * 8 - 2 : kind === 'rain' ? 13 + Math.random() * 6 : Math.random() * 2 + 1,
+                size: kind === 'rain' ? 10 + Math.random() * 12 : kind === 'pudding' ? 9 + Math.random() * 3 : 4 + Math.random() * 7,
+                rot: Math.random() * Math.PI,
+                spin: (Math.random() - 0.5) * 0.25,
+                shade: Math.random(),
+                life: 0
+            };
+            particles.push(p);
+        }
+
+        function debris(count, fromCenter) {
+            if (reduceMotion) return;
+            for (let i = 0; i < count; i++) spawn(Math.random() < 0.18 ? 'pudding' : 'chip', fromCenter);
+            if (!raf) raf = requestAnimationFrame(tick);
+        }
+
+        function startRain() {
+            if (reduceMotion || (current && pardoned.includes(current.id))) return; // 赦免過的不下雨
+            raining = true;
+            if (!raf) raf = requestAnimationFrame(tick);
+        }
+
+        function tick() {
+            c2d.clearRect(0, 0, innerWidth, innerHeight);
+            if (raining) for (let i = 0; i < 4; i++) spawn('rain', false);
+            particles = particles.filter(p => p.y < innerHeight + 40 && p.life < 900);
+            for (const p of particles) {
+                p.life++;
+                if (p.kind === 'rain') {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    c2d.strokeStyle = `rgb(170 182 205 / ${0.25 + p.shade * 0.3})`;
+                    c2d.lineWidth = 1;
+                    c2d.beginPath();
+                    c2d.moveTo(p.x, p.y);
+                    c2d.lineTo(p.x + p.vx * p.size / p.vy, p.y - p.size);
+                    c2d.stroke();
+                    continue;
+                }
+                p.vy = Math.min(p.vy + 0.18, 6);
+                p.vx *= 0.98;
+                p.x += p.vx;
+                p.y += p.vy;
+                p.rot += p.spin;
+                c2d.save();
+                c2d.translate(p.x, p.y);
+                c2d.rotate(p.rot);
+                if (p.kind === 'pudding') {
+                    // 布丁蓋：黃色圓片，上面一圈焦糖
+                    c2d.fillStyle = 'rgb(242 196 84)';
+                    c2d.beginPath();
+                    c2d.ellipse(0, 0, p.size, p.size * 0.55, 0, 0, Math.PI * 2);
+                    c2d.fill();
+                    c2d.fillStyle = 'rgb(120 62 26)';
+                    c2d.beginPath();
+                    c2d.ellipse(0, -p.size * 0.12, p.size * 0.6, p.size * 0.28, 0, 0, Math.PI * 2);
+                    c2d.fill();
+                } else {
+                    // 家具碎片：木頭色的不規則三角形
+                    const w = 90 + p.shade * 60;
+                    c2d.fillStyle = `rgb(${w} ${w * 0.66} ${w * 0.45})`;
+                    c2d.beginPath();
+                    c2d.moveTo(-p.size, -p.size * 0.4);
+                    c2d.lineTo(p.size * 0.8, -p.size * 0.6);
+                    c2d.lineTo(p.size * 0.3, p.size * 0.7);
+                    c2d.closePath();
+                    c2d.fill();
+                }
+                c2d.restore();
+            }
+            raf = particles.length || raining ? requestAnimationFrame(tick) : null;
+        }
+
+        // --- 公堂 ---
+        const altar = document.getElementById('altar');
+        const stage = document.getElementById('stage');
+        const actions = document.getElementById('altarActions');
+        let current = null;
+        let skipping = false;
+        let running = false;
+
+        // 動畫小工具：跳過時直接到最後一格
+        const wait = ms => skipping || reduceMotion ? Promise.resolve() : new Promise(r => setTimeout(r, ms));
+        function anim(el, frames, opts) {
+            if (!el) return Promise.resolve();
+            const a = el.animate(frames, { fill: 'forwards', ...opts });
+            if (skipping || reduceMotion) a.finish();
+            return a.finished.catch(() => { });
+        }
+
+        function ledText(m) {
+            const line = `公告　${m.name}　${m.crime}　缺德無量　請速賠償　神明都看到了　`;
+            return line + line; // 兩份接起來，捲到一半剛好接回開頭
+        }
+
+        function buildLanterns(show) {
+            const box = document.getElementById('lanterns');
+            if (!show) return (box.innerHTML = '');
+            const n = innerWidth < 500 ? 6 : 9;
+            box.innerHTML = Array.from({ length: n }, (_, i) =>
+                `<div class="lantern" style="--rope:${18 + (i % 2) * 18 + Math.abs(i - (n - 1) / 2) * 4}px"><div class="lantern-body"><div class="lantern-glow"></div><span>${'光明'[i % 2]}</span></div></div>`).join('');
+        }
+
+        // 閃電：每次劈的路線都不一樣，從畫面上方劈到牌子
+        async function lightning(big) {
+            const pts = [];
+            let x = 35 + Math.random() * 30;
+            for (let y = 0; y <= 100; y += 9 + Math.random() * 7) {
+                pts.push(`${x.toFixed(1)},${Math.min(y, 100).toFixed(1)}`);
+                x += (Math.random() - 0.5) * 16;
+            }
+            pts.push(`50,100`);
+            document.getElementById('boltLine').setAttribute('points', pts.join(' '));
+            const flash = document.getElementById('flash');
+            const bolt = document.getElementById('bolt');
+            anim(flash, [{ opacity: 0 }, { opacity: 0.85, offset: 0.08 }, { opacity: 0.1, offset: 0.25 }, { opacity: 0.6, offset: 0.35 }, { opacity: 0 }], { duration: big ? 700 : 550, fill: 'none' });
+            await anim(bolt, [{ opacity: 0 }, { opacity: 1, offset: 0.08 }, { opacity: 0.2, offset: 0.25 }, { opacity: 1, offset: 0.35 }, { opacity: 0 }], { duration: big ? 700 : 550, fill: 'none' });
+        }
+
+        async function showAltar(m, ceremony) {
+            if (running) return;
+            running = true;
+            skipping = false;
+            current = m;
+            const big = m.tier === 'big';
+            sizeCanvas();
+            document.querySelectorAll('.toast').forEach(t => t.remove()); // 紙條別蓋在公堂上
+            altar.classList.add('open');
+            altar.classList.toggle('has-led', big);
+            document.body.style.overflow = 'hidden';
+            document.getElementById('skipHint').style.display = ceremony && !reduceMotion ? '' : 'none';
+            actions.classList.remove('show');
+            actions.style.opacity = 0;
+            updatePardonBtn();
+
+            stage.innerHTML = `
+                <div class="relative" id="altarPlaque">
+                    ${plaqueHTML(m, 'altar', ceremony)}
+                    <div class="stamp" id="stamp" style="right:${big ? 8 : -22}px;bottom:${big ? -34 : 6}px"><span>缺</span><span>德</span><span>無</span><span>量</span></div>
+                    <span class="pardon-mark" id="pardonMark" style="opacity:${pardoned.includes(m.id) && !ceremony ? 1 : 0};width:70px;height:70px;font-size:36px;left:${big ? 10 : -24}px;top:${big ? -26 : -10}px">赦</span>
+                </div>
+                <div class="altar-caption" id="caption">
+                    <p class="font-sans text-xs tracking-[0.3em] opacity-70 mb-2">罪狀　${esc(m.crime)}</p>
+                    <p class="text-base tracking-widest leading-relaxed max-w-xs">${esc(m.verdict)}</p>
+                </div>
+                <div class="pardon" id="pardon">
+                    <div class="bei-pair">
+                        <div class="bei" id="bei0"><div class="bei-face flat"></div><div class="bei-face round"></div></div>
+                        <div class="bei mirror" id="bei1"><div class="bei-face flat"></div><div class="bei-face round"></div></div>
+                    </div>
+                    <p class="mt-4 text-base tracking-widest min-h-[1.75rem]" id="pardonText"></p>
+                </div>`;
+            buildLanterns(big);
+            document.getElementById('ledTrack').innerText = ledText(m);
+            document.getElementById('ledTrack').style.setProperty('--led-time', `${[...ledText(m)].length * 0.16}s`);
+
+            const plaque = document.getElementById('altarPlaque');
+            const halo = altar.querySelector('.halo');
+            const clouds = [...altar.querySelectorAll('.cloud')];
+            const led = document.getElementById('led');
+            const caption = document.getElementById('caption');
+            const stamp = document.getElementById('stamp');
+            [halo, led, caption, actions, ...clouds].forEach(el => el.getAnimations().forEach(a => a.cancel()));
+
+            await anim(altar, [{ opacity: 0 }, { opacity: 1 }], { duration: 300 });
+
+            if (!ceremony) {
+                // 審過的：直接亮出來，可以再審一次
+                anim(halo, [{ opacity: 0 }, { opacity: 0.7 }], { duration: 500 });
+                clouds.forEach(c => anim(c, [{ opacity: 0 }, { opacity: 0.8 }], { duration: 500 }));
+                anim(plaque, [{ transform: 'scale(0.9)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: 400, easing: 'ease-out' });
+                stamp.style.opacity = 1;
+                caption.style.opacity = 1;
+                if (big) anim(led, [{ opacity: 0 }, { opacity: 1 }], { duration: 400 });
+                startRain();
+                finishAltar();
+                return;
+            }
+
+            // 1. 牌子從黑暗裡飄出來；大案：光明燈先亮著
+            if (big) document.querySelectorAll('.lantern-glow').forEach(g => (g.style.opacity = 1));
+            clouds.forEach((c, i) => anim(c, [{ opacity: 0, transform: `translateX(${i ? 40 : -40}%)` }, { opacity: 0.9, transform: 'none' }], { duration: 1600, easing: 'ease-out' }));
+            await anim(plaque, [{ transform: 'translateY(40px) scale(0.6)', opacity: 0 }, { transform: 'translateY(0) scale(1)', opacity: 1 }], { duration: 700, easing: 'cubic-bezier(.2,.8,.2,1)' });
+
+            // 2. 木魚三聲，一聲一震
+            for (let i = 0; i < 3; i++) {
+                tok(1 - i * 0.04);
+                anim(plaque, [{ transform: 'scale(1)' }, { transform: 'scale(1.03)' }, { transform: 'scale(1)' }], { duration: 160, fill: 'none' });
+                await wait(330);
+            }
+            // 大案：光明燈一盞一盞熄掉
+            if (big) await snuffLanterns();
+
+            // 3. 雷劈下來，封條炸開
+            thunder(big);
+            lightning(big);
+            if (navigator.vibrate) navigator.vibrate(big ? [80, 40, 80] : 60);
+            anim(altar.querySelector('.altar-bg'), [{ filter: 'brightness(1)' }, { filter: 'brightness(2.2)', offset: 0.1 }, { filter: 'brightness(1)' }], { duration: 600, fill: 'none' });
+            await tearSeal();
+            anim(halo, [{ opacity: 0, transform: 'scale(0.3)' }, { opacity: 1, transform: 'scale(1.1)' }, { opacity: 0.7, transform: 'scale(1)' }], { duration: 900, easing: 'ease-out' });
+            debris(big ? 40 : 24, true);
+
+            // 4. 名字一個字一個字烙上去（字是撕完封條才換上去的，這時候才抓）
+            const chars = [...stage.querySelectorAll('.ch')];
+            for (const ch of chars) {
+                anim(ch, [
+                    { opacity: 0, transform: 'scale(2.4) translateY(-8px)', filter: 'drop-shadow(0 0 12px rgb(255 70 30)) brightness(2.4)' },
+                    { opacity: 1, transform: 'scale(0.94)', filter: 'drop-shadow(0 0 6px rgb(255 70 30)) brightness(1.4)', offset: 0.65 },
+                    { opacity: 1, transform: 'scale(1)', filter: 'drop-shadow(0 1px 0 rgb(0 0 0 / 0.6)) brightness(1)' }
+                ], { duration: 460, easing: 'cubic-bezier(.3,1.4,.6,1)' });
+                await wait(big ? 260 : 220);
+            }
+            await wait(380);
+            chars.forEach(ch => ch.classList.add('iron-shine'));
+
+            // 5. 下雨，碎片和布丁蓋掉下來
+            startRain();
+            debris(big ? 50 : 30, false);
+            anim(caption, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 600 });
+            await wait(500);
+
+            // 6. 「缺德無量」朱印砸下來
+            await anim(stamp, [{ opacity: 0, transform: 'rotate(-9deg) scale(3.2)' }, { opacity: 1, transform: 'rotate(-9deg) scale(0.92)', offset: 0.8 }, { opacity: 1, transform: 'rotate(-9deg) scale(1)' }], { duration: 300, easing: 'ease-in' });
+            thump();
+            anim(stage, [{ transform: 'translate(0,0)' }, { transform: 'translate(-6px,4px)' }, { transform: 'translate(5px,-3px)' }, { transform: 'translate(-2px,2px)' }, { transform: 'translate(0,0)' }], { duration: 320, fill: 'none' });
+
+            // 大案：跑馬燈公告，再補一道雷
+            if (big) {
+                await wait(300);
+                lightning(true);
+                thunder(false);
+                anim(led, [{ opacity: 0, transform: 'translateY(100%)' }, { opacity: 1, transform: 'none' }], { duration: 500, easing: 'ease-out' });
+            }
+
+            if (!seen.includes(m.id)) {
+                seen.push(m.id);
+                save(SEEN_KEY, seen);
+            }
+            finishAltar();
+        }
+
+        async function snuffLanterns() {
+            const glows = [...document.querySelectorAll('.lantern-glow')];
+            const order = glows.map((g, i) => [g, Math.abs(i - (glows.length - 1) / 2)]).sort((a, b) => a[1] - b[1]); // 從中間往兩邊熄
+            for (const [g] of order) {
+                anim(g, [{ opacity: 1 }, { opacity: 0.3, offset: 0.3 }, { opacity: 0.8, offset: 0.45 }, { opacity: 0 }], { duration: 420 });
+                await wait(130);
+            }
+            await wait(250);
+        }
+
+        async function tearSeal() {
+            const seal = stage.querySelector('.seal');
+            if (!seal) return;
+            const big = current.tier === 'big';
+            // 複製成左右兩半，各自炸飛
+            const halves = ['inset(0 50% 0 0)', 'inset(0 0 0 50%)'].map(clip => {
+                const half = seal.cloneNode(true);
+                half.style.clipPath = clip;
+                seal.after(half);
+                return half;
+            });
+            seal.remove();
+            const base = big ? 'rotate(-5deg)' : 'none';
+            await Promise.all(halves.map((h, i) => anim(h, [
+                { transform: base, opacity: 1 },
+                { transform: `${base} translate(${i ? 1 : -1}${big ? '45vw' : '100px'}, ${big ? -40 : -60}px) rotate(${i ? 40 : -40}deg)`, opacity: 0 }
+            ], { duration: 520, easing: 'cubic-bezier(.1,.7,.3,1)' })));
+            halves.forEach(h => h.remove());
+            // 名字的位置換成一個字一個字的鐵字
+            const holder = stage.querySelector('.opacity-0');
+            if (holder) holder.outerHTML = `<span style="font-size:${nameSize(current, 'altar')}px">${nameChars(current, 'opacity-0')}</span>`;
+            if (big) {
+                const crime = stage.querySelector('.bian-inner > span:last-child');
+                if (crime && current.crime) crime.outerHTML = `<span class="iron font-sans text-[11px] tracking-[0.2em] mt-1 opacity-90">${esc(current.crime)}</span>`;
+            }
+        }
+
+        function finishAltar() {
+            running = false;
+            if (current && pardoned.includes(current.id)) document.getElementById('pardonMark').style.opacity = 1;
+            document.getElementById('skipHint').style.display = 'none';
+            actions.classList.add('show');
+            anim(actions, [{ opacity: 0 }, { opacity: 1 }], { duration: 400 });
+        }
+
+        // --- 擲杯求原諒（跟擲杯頁一樣：聖杯 1/2、笑杯 1/4、陰杯 1/4） ---
+        function updatePardonBtn() {
+            const btn = document.getElementById('pardonBtn');
+            btn.style.display = current && pardoned.includes(current.id) ? 'none' : '';
+            btn.innerText = '擲杯求原諒';
+            btn.disabled = false;
+        }
+
+        let throwing = false;
+        document.getElementById('pardonBtn').addEventListener('click', async function () {
+            if (throwing || running) return;
+            throwing = true;
+            this.disabled = true;
+            const caption = document.getElementById('caption');
+            const box = document.getElementById('pardon');
+            const text = document.getElementById('pardonText');
+            caption.getAnimations().forEach(a => a.cancel());
+            caption.style.display = 'none';
+            box.style.display = 'block';
+            text.innerText = '';
+
+            const r = Math.random();
+            const kind = r < 0.5 ? 'holy' : r < 0.75 ? 'laugh' : 'no';
+            // 0 = 平面朝上、1 = 凸面朝上
+            const faces = kind === 'holy' ? (Math.random() < 0.5 ? [0, 1] : [1, 0]) : kind === 'laugh' ? [0, 0] : [1, 1];
+            const beis = [document.getElementById('bei0'), document.getElementById('bei1')];
+            await Promise.all(beis.map((b, i) => {
+                const turns = 3 + i;
+                return anim(b, [
+                    { transform: 'translateY(0) rotateX(0deg) rotateZ(0deg)' },
+                    { transform: `translateY(-170px) rotateX(${turns * 180}deg) rotateZ(${i ? 25 : -25}deg)`, offset: 0.45 },
+                    { transform: `translateY(0) rotateX(${turns * 360 + faces[i] * 180}deg) rotateZ(${i ? 8 : -8}deg)` }
+                ], { duration: 950 + i * 120, easing: 'cubic-bezier(.3,.6,.5,1)' }).then(() => tok(1.3 + i * 0.1));
+            }));
+
+            const lines = {
+                holy: '聖杯。神明原諒你了。',
+                laugh: '笑杯。神明在笑你，再擲一次。',
+                no: '陰杯。不原諒，再缺德一年。'
+            };
+            text.innerText = lines[kind];
+            anim(text, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 300 });
+            if (kind === 'holy') {
+                const mark = document.getElementById('pardonMark');
+                await anim(mark, [{ opacity: 0, transform: 'rotate(-12deg) scale(3)' }, { opacity: 1, transform: 'rotate(-12deg) scale(0.9)', offset: 0.8 }, { opacity: 1, transform: 'rotate(-12deg) scale(1)' }], { duration: 300, easing: 'ease-in' });
+                thump();
+                if (navigator.vibrate) navigator.vibrate(40);
+                raining = false; // 雨停了
+                if (!pardoned.includes(current.id)) {
+                    pardoned.push(current.id);
+                    save(PARDON_KEY, pardoned);
+                }
+                this.style.display = 'none';
+            } else {
+                this.innerText = '再擲一次';
+                this.disabled = false;
+            }
+            throwing = false;
+        });
+
+        // 開審中點一下＝跳到最後
+        altar.addEventListener('click', e => {
+            if (running && !e.target.closest('.altar-actions')) {
+                skipping = true;
+                altar.getAnimations({ subtree: true }).forEach(a => { try { if (a.effect.getComputedTiming().iterations !== Infinity) a.finish(); } catch (err) { } });
+            }
+        });
+
+        document.getElementById('againBtn').addEventListener('click', () => {
+            if (throwing) return;
+            const m = current;
+            closeAltar(true).then(() => showAltar(m, true));
+        });
+        document.getElementById('closeBtn').addEventListener('click', () => { if (!throwing) closeAltar(); });
+
+        async function closeAltar(quick) {
+            actions.classList.remove('show');
+            await anim(altar, [{ opacity: 1 }, { opacity: 0 }], { duration: quick ? 150 : 350 });
+            altar.classList.remove('open');
+            altar.getAnimations().forEach(a => a.cancel());
+            raining = false;
+            particles = [];
+            c2d.clearRect(0, 0, innerWidth, innerHeight);
+            document.body.style.overflow = '';
+            renderBoard();
+        }
+
+        // Escape 退堂
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && altar.classList.contains('open') && !running && !throwing) closeAltar();
+        });
+
+        renderBoard();
+    </script>
+</body>
+
+</html>
