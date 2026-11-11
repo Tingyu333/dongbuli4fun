@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功德・榜 | 丼步喱</title>
+    <!-- 分享到 LINE、FB 時的預覽（標題、介紹、圖片）。圖片要用完整網址 -->
+    <meta name="description" content="二十七樓的一磚一瓦，都有大德罩著。">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="丼步喱・絆">
+    <meta property="og:title" content="丼步喱・絆 功德榜">
+    <meta property="og:description" content="二十七樓的一磚一瓦，都有大德罩著。">
+    <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/gongde.html">
+    <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
+    <meta name="twitter:card" content="summary">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入日系字體 -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700;900&family=Noto+Sans+TC:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/theme.css">
+    <script src="assets/theme.js"></script>
+    <style>
+        /* 匾額和牌位是「實物」（木頭、朱漆、金箔），跟入住券一樣固定用這組顏色，不跟晝夜切換 */
+        :root {
+            --gd-gold: 232 196 106;
+            --gd-gold-deep: 166 120 44;
+            --gd-gold-pale: 255 240 196;
+            --gd-lacquer: 150 32 22;
+            --gd-lacquer-deep: 104 18 10;
+            --gd-wood: 92 58 32;
+            --gd-wood-dark: 44 24 12;
+            --gd-ink: 26 11 6;
+            --gd-paper: 244 234 212;
+            --gd-led: 255 44 24;
+        }
+
+        /* 大匾的封條故意比匾寬，裁在 main 裡面，手機才不會左右滑 */
+        main {
+            overflow-x: hidden;
+            overflow-x: clip;
+        }
+
+        .vertical-rl {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+        }
+
+        /* 長按不跳系統選單、不選字 */
+        .tap {
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+            cursor: pointer;
+        }
+
+        /* --- 金箔字：底色是金色漸層，上面一道白光掃過去 --- */
+        .gold {
+            background-image:
+                linear-gradient(110deg, transparent 38%, rgb(255 255 255 / 0.95) 50%, transparent 62%),
+                linear-gradient(180deg, rgb(var(--gd-gold-pale)) 0%, rgb(var(--gd-gold)) 42%, rgb(var(--gd-gold-deep)) 58%, rgb(var(--gd-gold)) 100%);
+            background-size: 260% 100%, 100% 100%;
+            background-position: 160% 0, 0 0;
+            background-repeat: no-repeat;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            filter: drop-shadow(0 1px 0 rgb(0 0 0 / 0.45));
+        }
+
+        .gold-shine {
+            animation: gold-sweep 3.2s ease-in-out infinite;
+        }
+
+        @keyframes gold-sweep {
+            0% { background-position: 160% 0, 0 0; }
+            55%, 100% { background-position: -60% 0, 0 0; }
+        }
+
+        /* --- 大匾（橫的） --- */
+        .bian {
+            position: relative;
+            padding: 9px;
+            border-radius: 4px;
+            background: linear-gradient(135deg, rgb(var(--gd-wood-dark)), rgb(var(--gd-wood)) 45%, rgb(var(--gd-wood-dark)));
+            box-shadow: 0 14px 30px -14px rgb(0 0 0 / 0.55), inset 0 0 0 1px rgb(var(--gd-gold) / 0.35);
+        }
+
+        .bian-inner {
+            position: relative;
+            overflow: hidden;
+            min-height: 118px;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: radial-gradient(ellipse at 50% 35%, rgb(var(--gd-lacquer)), rgb(var(--gd-lacquer-deep)));
+            border: 2px solid rgb(var(--gd-gold) / 0.75);
+            outline: 1px solid rgb(var(--gd-gold) / 0.35);
+            outline-offset: -7px;
+        }
+
+        /* --- 小牌位（直的，上面圓頂） --- */
+        .pai {
+            position: relative;
+            padding: 7px;
+            height: 236px;
+            border-radius: 48% 48% 5px 5px / 16% 16% 5px 5px;
+            background: linear-gradient(135deg, rgb(var(--gd-wood-dark)), rgb(var(--gd-wood)) 50%, rgb(var(--gd-wood-dark)));
+            box-shadow: 0 14px 24px -14px rgb(0 0 0 / 0.6), inset 0 0 0 1px rgb(var(--gd-gold) / 0.3);
+        }
+
+        .pai-inner {
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+            padding: 20px 6px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-radius: 46% 46% 3px 3px / 14% 14% 3px 3px;
+            background: linear-gradient(180deg, rgb(var(--gd-ink)), rgb(var(--gd-lacquer-deep) / 0.85));
+            border: 1px solid rgb(var(--gd-gold) / 0.6);
+        }
+
+        .pai::after {
+            /* 底座 */
+            content: '';
+            position: absolute;
+            left: -6px;
+            right: -6px;
+            bottom: -10px;
+            height: 12px;
+            border-radius: 2px;
+            background: linear-gradient(180deg, rgb(var(--gd-wood)), rgb(var(--gd-wood-dark)));
+        }
+
+        .pai-name {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 0.12em;
+            font-weight: 700;
+            line-height: 1.15;
+        }
+
+        /* 虛位以待 */
+        .empty .bian-inner,
+        .empty .pai-inner {
+            border-style: dashed;
+            filter: saturate(0.45) brightness(0.8);
+        }
+
+        /* --- 封條 --- */
+        .seal {
+            position: absolute;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            color: rgb(var(--gd-lacquer));
+            background: rgb(var(--gd-paper));
+            box-shadow: 0 2px 6px rgb(0 0 0 / 0.35);
+            font-weight: 700;
+            letter-spacing: 0.2em;
+        }
+
+        /* 大匾的封條：斜斜一條橫過去 */
+        .bian .seal {
+            left: -8%;
+            right: -8%;
+            top: 50%;
+            height: 38px;
+            margin-top: -19px;
+            transform: rotate(-5deg);
+            font-size: 14px;
+            border-top: 2px solid rgb(var(--gd-lacquer) / 0.8);
+            border-bottom: 2px solid rgb(var(--gd-lacquer) / 0.8);
+        }
+
+        /* 牌位的封條：直的紅紙 */
+        .pai .seal {
+            top: 31%;
+            bottom: 8%;
+            left: 50%;
+            width: 40px;
+            margin-left: -20px;
+            flex-direction: column;
+            writing-mode: vertical-rl;
+            color: rgb(var(--gd-paper));
+            background: rgb(var(--gd-lacquer));
+            border-left: 1px solid rgb(var(--gd-gold) / 0.7);
+            border-right: 1px solid rgb(var(--gd-gold) / 0.7);
+            font-size: 13px;
+        }
+
+        .seal-mark {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 1.5px solid currentColor;
+            font-size: 12px;
+            letter-spacing: 0;
+            writing-mode: horizontal-tb;
+        }
+
+        @media (hover: hover) {
+            .plaque:hover { transform: translateY(-3px); }
+        }
+
+        .plaque { transition: transform 0.3s ease; }
+
+        /* --- 神壇（揭曉的全螢幕） --- */
+        #altar {
+            position: fixed;
+            inset: 0;
+            z-index: 60;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #altar.open { display: flex; }
+
+        .altar-bg {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 45%, rgb(64 15 9), rgb(8 3 2) 70%);
+        }
+
+        /* 後面轉的金光 */
+        .rays {
+            position: absolute;
+            left: 50%;
+            top: 45%;
+            width: 220vmax;
+            height: 220vmax;
+            margin: -110vmax 0 0 -110vmax;
+            background: repeating-conic-gradient(from 0deg, rgb(var(--gd-gold) / 0.28) 0deg 5deg, transparent 5deg 15deg);
+            -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 32%);
+            mask-image: radial-gradient(circle, #000 0%, transparent 32%);
+            opacity: 0;
+            animation: rays-spin 24s linear infinite;
+        }
+
+        @keyframes rays-spin { to { rotate: 360deg; } }
+
+        .halo {
+            position: absolute;
+            left: 50%;
+            top: 45%;
+            width: 120vmin;
+            height: 120vmin;
+            margin: -60vmin 0 0 -60vmin;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgb(var(--gd-gold) / 0.45), transparent 60%);
+            opacity: 0;
+        }
+
+        #dust {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .altar-stage {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 16px;
+        }
+
+        .altar-caption {
+            margin-top: 26px;
+            text-align: center;
+            color: rgb(var(--gd-paper));
+            opacity: 0;
+        }
+
+        /* 「功德無量」朱印 */
+        .stamp {
+            position: absolute;
+            z-index: 5;
+            width: 78px;
+            height: 78px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+            justify-items: center;
+            padding: 6px;
+            border-radius: 6px;
+            background: rgb(var(--gd-lacquer));
+            color: rgb(var(--gd-paper));
+            font-weight: 900;
+            font-size: 22px;
+            line-height: 1;
+            box-shadow: 0 0 0 2px rgb(var(--gd-paper) / 0.85) inset, 0 6px 18px rgb(0 0 0 / 0.5);
+            opacity: 0;
+            transform: rotate(-9deg);
+        }
+
+        /* 光明燈 */
+        .lanterns {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-around;
+            padding: 0 4%;
+            pointer-events: none;
+        }
+
+        .lantern {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .lantern::before {
+            content: '';
+            width: 1px;
+            height: var(--rope, 30px);
+            background: rgb(var(--gd-gold) / 0.5);
+        }
+
+        .lantern-body {
+            position: relative;
+            width: 32px;
+            height: 42px;
+            border-radius: 40%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: rgb(var(--gd-ink) / 0.8);
+            background: rgb(90 26 16);
+            border-top: 3px solid rgb(var(--gd-gold-deep));
+            border-bottom: 3px solid rgb(var(--gd-gold-deep));
+        }
+
+        .lantern-glow {
+            position: absolute;
+            inset: -3px 0;
+            border-radius: 40%;
+            background: radial-gradient(circle at 50% 45%, rgb(255 236 170), rgb(255 160 60) 45%, rgb(214 66 30));
+            box-shadow: 0 0 22px 6px rgb(255 170 70 / 0.7);
+            opacity: 0;
+        }
+
+        .lantern-body span { position: relative; }
+
+        /* 廟口的紅色 LED 跑馬燈 */
+        .led {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 52px;
+            overflow: hidden;
+            background: rgb(10 3 2);
+            border-top: 2px solid rgb(var(--gd-gold-deep));
+            opacity: 0;
+        }
+
+        .led::after {
+            /* 點陣：在字上面蓋一層有洞的網 */
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle, transparent 1.2px, rgb(10 3 2 / 0.92) 1.7px);
+            background-size: 3.5px 3.5px;
+            pointer-events: none;
+        }
+
+        .led-track {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            font-family: "Noto Sans TC", sans-serif;
+            font-weight: 500;
+            font-size: 30px;
+            letter-spacing: 0.12em;
+            color: rgb(var(--gd-led));
+            text-shadow: 0 0 3px rgb(var(--gd-led) / 0.9);
+            animation: led-scroll var(--led-time, 14s) linear infinite;
+        }
+
+        @keyframes led-scroll {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
+        .altar-actions {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: calc(env(safe-area-inset-bottom) + 20px);
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .altar-actions.show { pointer-events: auto; }
+
+        #altar.has-led .altar-actions { bottom: calc(env(safe-area-inset-bottom) + 70px); }
+
+        .altar-btn {
+            min-height: 44px;
+            padding: 0 22px;
+            font-family: "Noto Sans TC", sans-serif;
+            font-size: 13px;
+            letter-spacing: 0.2em;
+            color: rgb(var(--gd-paper));
+            border: 1px solid rgb(var(--gd-gold) / 0.6);
+            background: rgb(0 0 0 / 0.35);
+        }
+
+        .altar-btn.primary {
+            color: rgb(var(--gd-ink));
+            background: linear-gradient(180deg, rgb(var(--gd-gold-pale)), rgb(var(--gd-gold)));
+            border-color: transparent;
+        }
+
+        /* 手機設定「減少動態效果」：不轉、不閃、跑馬燈停在開頭 */
+        @media (prefers-reduced-motion: reduce) {
+            .rays, .gold-shine, .led-track { animation: none; }
+        }
+
+        .skip-hint {
+            position: absolute;
+            top: calc(env(safe-area-inset-top) + 14px);
+            right: 16px;
+            font-family: "Noto Sans TC", sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            color: rgb(var(--gd-paper) / 0.45);
+        }
+    </style>
+</head>
+
+<body
+    class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white min-h-screen flex flex-col">
+
+    <!-- 導航（功德榜不在導覽列，四個都是連結） -->
+    <nav
+        class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <a href="index.html"
+            class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-3 md:gap-8">
+            <a href="index.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <a href="reviews.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <a href="jiaobei.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">擲杯・問</a>
+            <a href="about.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-4xl mx-auto pt-28 pb-16 px-4 md:pt-36 md:px-8 w-full">
+
+        <!-- 標題 -->
+        <div class="text-center mb-10 md:mb-14">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-4">MERIT BOARD</span>
+            <h1 class="text-4xl font-light text-wabi-dark mb-4 tracking-widest">功德・榜</h1>
+            <p class="text-sm text-stone-500 tracking-widest leading-relaxed">二十七樓的一磚一瓦，<br class="md:hidden">都有大德罩著。</p>
+            <div class="w-16 h-[1px] bg-wabi-accent mx-auto mt-8"></div>
+        </div>
+
+        <div class="flex justify-between items-center mb-5 font-sans text-xs tracking-widest text-stone-400">
+            <span id="progress">已揭曉 0 / 0</span>
+            <button type="button" id="soundBtn" class="tap py-2 px-1 hover:text-wabi-dark transition-colors">聲・開</button>
+        </div>
+
+        <!-- 三面大匾 -->
+        <section aria-label="大功德主" class="grid gap-5 md:grid-cols-3 mb-12" id="bigRow"></section>
+
+        <!-- 十塊牌位 -->
+        <section aria-label="功德主" class="grid grid-cols-2 md:grid-cols-5 gap-x-4 gap-y-8 px-1" id="smallRow"></section>
+
+        <div class="mt-16 text-center text-xs font-sans tracking-widest text-stone-400 leading-loose">
+            <p>點牌位揭曉功德主。芳名依認捐先後排列，如有遺漏，請洽老闆。</p>
+            <button type="button" id="resealBtn"
+                class="tap mt-4 py-2 border-b border-stone-300 hover:text-wabi-dark transition-colors">重新貼上封條</button>
+        </div>
+    </main>
+
+    <footer
+        class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
+        <p>&copy; 2026 DONGBULI · 純粹棲所</p>
+    </footer>
+
+    <!-- 神壇：揭曉的全螢幕 -->
+    <div id="altar" role="dialog" aria-modal="true" aria-label="功德主揭曉">
+        <div class="altar-bg"></div>
+        <div class="halo"></div>
+        <div class="rays"></div>
+        <div class="lanterns" id="lanterns"></div>
+        <canvas id="dust"></canvas>
+        <div class="altar-stage" id="stage"></div>
+        <div class="led" id="led"><div class="led-track" id="ledTrack"></div></div>
+        <span class="skip-hint" id="skipHint">點一下跳過</span>
+        <div class="altar-actions" id="altarActions">
+            <button type="button" class="altar-btn tap" id="againBtn">再拜一次</button>
+            <button type="button" class="altar-btn primary tap" id="closeBtn">合十・收</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 功德主名單 ---
+        // 第一版先用假資料看效果；之後改成後台編輯、從後端 getMerits 讀
+        // tier：big 大匾（3 面）、small 牌位（10 塊）；name 空白就是虛位以待
+        const MERITS = [
+            { id: 'bed', tier: 'big', item: '床', name: '王小明', gift: '雙人床一張', blessing: '願入住者一覺到天亮，鬧鐘永遠找不到你。' },
+            { id: 'sofa', tier: 'big', item: '沙發', name: '林阿華', gift: '三人座沙發一組', blessing: '坐下去就起不來，這是功德，不是缺點。' },
+            { id: 'aircon', tier: 'big', item: '冷氣', name: '大熊同學', gift: '變頻冷氣一台', blessing: '夏天不流汗，電費不關你的事。' },
+            { id: 'fridge', tier: 'small', item: '冰箱', name: '陳小美', gift: '冰箱一台', blessing: '內容物不保證，冰是一定冰。' },
+            { id: 'tv', tier: 'small', item: '電視', name: '張三', gift: '五十吋電視一台', blessing: '遙控器常在沙發縫裡。' },
+            { id: 'table', tier: 'small', item: '餐桌', name: '李四', gift: '餐桌一張', blessing: '吃飯有地方放，麻將也是。' },
+            { id: 'washer', tier: 'small', item: '洗衣機', name: '', gift: '', blessing: '' },
+            { id: 'ricecooker', tier: 'small', item: '電鍋', name: '阿嬤', gift: '大同電鍋一只', blessing: '外鍋一杯水，什麼都會熟。' },
+            { id: 'dryer', tier: 'small', item: '吹風機', name: '小王', gift: '吹風機一支', blessing: '頭髮乾了，心也乾了。' },
+            { id: 'lamp', tier: 'small', item: '檯燈', name: '匿名善心人士', gift: '檯燈一盞', blessing: '照亮二十七樓的夜。' },
+            { id: 'curtain', tier: 'small', item: '窗簾', name: '', gift: '', blessing: '' },
+            { id: 'rug', tier: 'small', item: '地毯', name: '阿貓', gift: '地毯一塊', blessing: '光腳走過去，很軟。' },
+            { id: 'toilet', tier: 'small', item: '馬桶', name: '不具名的大德', gift: '免治馬桶一座', blessing: '一屁股的功德，坐下就知道。' }
+        ];
+
+        const SEEN_KEY = 'dongbuli-gongde-seen';
+        const SOUND_KEY = 'dongbuli-gongde-sound';
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+        function load(key, fallback) {
+            try { const v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); } catch (e) { return fallback; }
+        }
+        function save(key, value) {
+            try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { }
+        }
+
+        let seen = load(SEEN_KEY, []);
+        let soundOn = load(SOUND_KEY, true);
+
+        // --- 匾額、牌位的樣子 ---
+        // where：board（榜上）或 altar（神壇上放大）；sealed：要不要貼封條
+        function nameSize(m, where) {
+            const n = [...m.name].length || 4;
+            if (m.tier === 'big') {
+                const width = where === 'altar' ? Math.min(innerWidth * 0.92, 560) - 70 : 260;
+                return Math.min(where === 'altar' ? 52 : 30, Math.floor(width / (n * 1.15)));
+            }
+            const height = where === 'altar' ? Math.min(innerHeight * 0.5, 330) - 40 : 120;
+            return Math.min(where === 'altar' ? 50 : 26, Math.floor(height / (n * 1.18)));
+        }
+
+        // 神壇上的名字：每個字自己一層金箔（父層的 background-clip:text 遇到在動的子元素會整個不見）
+        function nameChars(m, cls) {
+            return [...m.name].map((ch, i) => `<span class="gold ch inline-block ${cls}" style="animation-delay:${i * 0.12}s">${esc(ch)}</span>`).join('');
+        }
+
+        function plaqueHTML(m, where, sealed) {
+            const empty = !m.name;
+            const big = m.tier === 'big';
+            const size = nameSize(m, where);
+            const name = empty
+                ? `<span class="gold opacity-60 tracking-[0.3em]" style="font-size:${big ? 18 : 16}px">虛位以待</span>`
+                : sealed
+                    ? `<span class="opacity-0">${esc(m.name)}</span>`
+                    : where === 'altar'
+                        ? `<span style="font-size:${size}px">${nameChars(m, 'gold-shine')}</span>`
+                        : `<span class="gold gold-shine" style="font-size:${size}px">${esc(m.name)}</span>`;
+            const seal = sealed && !empty
+                ? (big
+                    ? `<div class="seal"><span class="seal-mark">封</span>功德主・待揭<span class="seal-mark">封</span></div>`
+                    : `<div class="seal"><span class="seal-mark">封</span>功德主待揭</div>`)
+                : '';
+            if (big) {
+                return `
+                <div class="bian ${empty ? 'empty' : ''}" ${where === 'altar' ? `style="width:${Math.min(innerWidth * 0.92, 560)}px"` : ''}>
+                    <div class="bian-inner" ${where === 'altar' ? 'style="min-height:190px"' : ''}>
+                        <span class="gold font-sans text-[11px] tracking-[0.35em] mb-1">捐贈・${esc(m.item)}</span>
+                        <div class="font-bold tracking-[0.12em] leading-tight py-1" style="min-height:${Math.max(size, 30) * 1.2}px">${name}</div>
+                        ${m.gift && !sealed ? `<span class="gold font-sans text-[11px] tracking-[0.25em] mt-1 opacity-90">${esc(m.gift)}</span>` : '<span class="text-[11px] mt-1">&nbsp;</span>'}
+                    </div>
+                    ${seal}
+                </div>`;
+            }
+            const h = where === 'altar' ? Math.min(innerHeight * 0.5, 330) + 90 : null;
+            return `
+            <div class="pai ${empty ? 'empty' : ''}" ${h ? `style="height:${h}px;width:${Math.round(h * 0.5)}px"` : ''}>
+                <div class="pai-inner">
+                    <span class="gold font-sans text-[11px] tracking-[0.2em]">捐贈</span>
+                    <span class="gold font-bold text-base tracking-[0.15em] mt-0.5">${esc(m.item)}</span>
+                    <div class="pai-name vertical-rl">${name}</div>
+                    <span class="gold font-sans text-[10px] tracking-[0.2em] opacity-80">功德主</span>
+                </div>
+                ${seal}
+            </div>`;
+        }
+
+        // --- 榜 ---
+        function renderBoard() {
+            const tile = m => `
+                <button type="button" class="plaque tap block w-full text-left" data-id="${m.id}"
+                    aria-label="${esc(m.item)}：${!m.name ? '虛位以待' : seen.includes(m.id) ? esc(m.name) : '尚未揭曉'}">
+                    ${plaqueHTML(m, 'board', m.name && !seen.includes(m.id))}
+                </button>`;
+            document.getElementById('bigRow').innerHTML = MERITS.filter(m => m.tier === 'big').map(tile).join('');
+            document.getElementById('smallRow').innerHTML = MERITS.filter(m => m.tier === 'small').map(tile).join('');
+            const claimed = MERITS.filter(m => m.name);
+            document.getElementById('progress').innerText = `已揭曉 ${claimed.filter(m => seen.includes(m.id)).length} / ${claimed.length}`;
+        }
+
+        document.addEventListener('click', e => {
+            const btn = e.target.closest('.plaque');
+            if (!btn) return;
+            const m = MERITS.find(x => x.id === btn.dataset.id);
+            if (!m.name) {
+                btn.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(-3px)' }, { transform: 'translateX(0)' }], { duration: 360 });
+                showToast(`${m.item}的位置還空著。歡迎認捐，請洽老闆。`);
+                return;
+            }
+            if (seen.includes(m.id)) showAltar(m, false);
+            else {
+                // 先在榜上震一下，再上神壇
+                btn.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-2deg)' }, { transform: 'rotate(2deg)' }, { transform: 'rotate(-1deg)' }, { transform: 'rotate(0)' }], { duration: 380 })
+                    .finished.then(() => showAltar(m, true));
+            }
+        });
+
+        document.getElementById('soundBtn').addEventListener('click', function () {
+            soundOn = !soundOn;
+            save(SOUND_KEY, soundOn);
+            this.innerText = soundOn ? '聲・開' : '聲・關';
+            if (soundOn) bell(440, 0.6);
+        });
+        document.getElementById('soundBtn').innerText = soundOn ? '聲・開' : '聲・關';
+
+        document.getElementById('resealBtn').addEventListener('click', () => {
+            seen = [];
+            save(SEEN_KEY, seen);
+            renderBoard();
+            showToast('封條重新貼好了，可以再拜一輪。');
+        });
+
+        // --- 聲音（Web Audio 合成，不用音檔）：磬「噹」、蓋印的「咚」 ---
+        let audioCtx = null;
+        function audio() {
+            if (!soundOn) return null;
+            try {
+                audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                return audioCtx;
+            } catch (e) { return null; }
+        }
+
+        function bell(base = 392, volume = 1) {
+            const a = audio();
+            if (!a) return;
+            const t = a.currentTime;
+            const master = a.createGain();
+            master.gain.value = 0.22 * volume;
+            master.connect(a.destination);
+            // 磬的泛音不是整數倍，聽起來才像金屬
+            [[1, 1, 4], [2.76, 0.55, 2.6], [5.4, 0.28, 1.4], [8.93, 0.14, 0.7]].forEach(([ratio, gain, decay]) => {
+                const o = a.createOscillator();
+                const g = a.createGain();
+                o.frequency.value = base * ratio;
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(gain, t + 0.006);
+                g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+                o.connect(g).connect(master);
+                o.start(t);
+                o.stop(t + decay + 0.1);
+            });
+        }
+
+        function thump() {
+            const a = audio();
+            if (!a) return;
+            const t = a.currentTime;
+            const o = a.createOscillator();
+            const g = a.createGain();
+            o.frequency.setValueAtTime(120, t);
+            o.frequency.exponentialRampToValueAtTime(42, t + 0.25);
+            g.gain.setValueAtTime(0.7, t);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+            o.connect(g).connect(a.destination);
+            o.start(t);
+            o.stop(t + 0.45);
+        }
+
+        // --- 金粉、紙錢 ---
+        const canvas = document.getElementById('dust');
+        const c2d = canvas.getContext('2d');
+        let particles = [];
+        let raf = null;
+
+        function sizeCanvas() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.width = innerWidth * dpr;
+            canvas.height = innerHeight * dpr;
+            c2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function burst(count, fromCenter) {
+            if (reduceMotion) return;
+            for (let i = 0; i < count; i++) {
+                const paper = Math.random() < 0.35;
+                const p = {
+                    paper,
+                    x: fromCenter ? innerWidth / 2 + (Math.random() - 0.5) * 60 : Math.random() * innerWidth,
+                    y: fromCenter ? innerHeight * 0.45 : -20 - Math.random() * innerHeight * 0.5,
+                    vx: fromCenter ? (Math.random() - 0.5) * 9 : (Math.random() - 0.5) * 0.8,
+                    vy: fromCenter ? -Math.random() * 9 - 2 : Math.random() * 1.5 + 0.8,
+                    size: paper ? 9 + Math.random() * 6 : 1 + Math.random() * 2.4,
+                    rot: Math.random() * Math.PI,
+                    spin: (Math.random() - 0.5) * 0.2,
+                    flip: Math.random() * Math.PI,
+                    life: 0
+                };
+                particles.push(p);
+            }
+            if (!raf) raf = requestAnimationFrame(tick);
+        }
+
+        function tick() {
+            c2d.clearRect(0, 0, innerWidth, innerHeight);
+            particles = particles.filter(p => p.y < innerHeight + 30 && p.life < 600);
+            for (const p of particles) {
+                p.life++;
+                p.vy = Math.min(p.vy + (p.paper ? 0.06 : 0.04), p.paper ? 2.2 : 1.6);
+                p.vx *= 0.97;
+                p.x += p.vx + Math.sin((p.life + p.flip * 30) / 22) * (p.paper ? 0.9 : 0.4);
+                p.y += p.vy;
+                p.rot += p.spin;
+                p.flip += 0.08;
+                c2d.save();
+                c2d.translate(p.x, p.y);
+                if (p.paper) {
+                    // 紙錢：金色長方形，中間一個深色方框，翻面時寬度變窄
+                    c2d.rotate(p.rot);
+                    c2d.scale(Math.cos(p.flip), 1);
+                    c2d.fillStyle = 'rgb(222 178 84)';
+                    c2d.fillRect(-p.size / 2, -p.size * 0.35, p.size, p.size * 0.7);
+                    c2d.strokeStyle = 'rgb(150 32 22)';
+                    c2d.lineWidth = 1;
+                    c2d.strokeRect(-p.size * 0.22, -p.size * 0.18, p.size * 0.44, p.size * 0.36);
+                } else {
+                    // 金粉：一閃一閃
+                    c2d.globalAlpha = 0.55 + 0.45 * Math.sin(p.life / 5 + p.flip);
+                    c2d.fillStyle = 'rgb(255 222 140)';
+                    c2d.shadowColor = 'rgb(255 200 90)';
+                    c2d.shadowBlur = 6;
+                    c2d.beginPath();
+                    c2d.arc(0, 0, p.size, 0, Math.PI * 2);
+                    c2d.fill();
+                }
+                c2d.restore();
+            }
+            raf = particles.length ? requestAnimationFrame(tick) : null;
+        }
+
+        // --- 神壇 ---
+        const altar = document.getElementById('altar');
+        const stage = document.getElementById('stage');
+        const actions = document.getElementById('altarActions');
+        let current = null;
+        let skipping = false;
+        let running = false;
+
+        // 動畫小工具：跳過時直接到最後一格
+        const wait = ms => skipping || reduceMotion ? Promise.resolve() : new Promise(r => setTimeout(r, ms));
+        function anim(el, frames, opts) {
+            if (!el) return Promise.resolve();
+            const a = el.animate(frames, { fill: 'forwards', ...opts });
+            if (skipping || reduceMotion) a.finish();
+            return a.finished.catch(() => { });
+        }
+
+        function ledText(m) {
+            const line = `感謝　${m.name}　大德　捐贈　${m.gift || m.item}　功德無量　闔家平安　財源廣進　`;
+            return line + line; // 兩份接起來，捲到一半剛好接回開頭
+        }
+
+        function buildLanterns(show) {
+            const box = document.getElementById('lanterns');
+            if (!show) return (box.innerHTML = '');
+            const n = innerWidth < 500 ? 6 : 9;
+            box.innerHTML = Array.from({ length: n }, (_, i) =>
+                `<div class="lantern" style="--rope:${18 + (i % 2) * 18 + Math.abs(i - (n - 1) / 2) * 4}px"><div class="lantern-body"><div class="lantern-glow"></div><span>${'光明'[i % 2]}</span></div></div>`).join('');
+        }
+
+        async function showAltar(m, ceremony) {
+            if (running) return;
+            running = true;
+            skipping = false;
+            current = m;
+            const big = m.tier === 'big';
+            sizeCanvas();
+            document.querySelectorAll('.toast').forEach(t => t.remove()); // 紙條別蓋在神壇上
+            altar.classList.add('open');
+            altar.classList.toggle('has-led', big);
+            document.body.style.overflow = 'hidden';
+            document.getElementById('skipHint').style.display = ceremony && !reduceMotion ? '' : 'none';
+            actions.classList.remove('show');
+            actions.style.opacity = 0;
+
+            stage.innerHTML = `
+                <div class="relative" id="altarPlaque">
+                    ${plaqueHTML(m, 'altar', ceremony)}
+                    <div class="stamp" id="stamp" style="right:${big ? 8 : -22}px;bottom:${big ? -34 : 6}px"><span>功</span><span>德</span><span>無</span><span>量</span></div>
+                </div>
+                <div class="altar-caption" id="caption">
+                    <p class="font-sans text-xs tracking-[0.3em] opacity-70 mb-2">捐贈　${esc(m.gift || m.item)}</p>
+                    <p class="text-base tracking-widest leading-relaxed max-w-xs">${esc(m.blessing)}</p>
+                </div>`;
+            buildLanterns(big);
+            document.getElementById('ledTrack').innerText = ledText(m);
+            document.getElementById('ledTrack').style.setProperty('--led-time', `${[...ledText(m)].length * 0.16}s`);
+
+            const plaque = document.getElementById('altarPlaque');
+            const rays = altar.querySelector('.rays');
+            const halo = altar.querySelector('.halo');
+            const led = document.getElementById('led');
+            const caption = document.getElementById('caption');
+            const stamp = document.getElementById('stamp');
+            [rays, halo, led, caption, actions].forEach(el => el.getAnimations().forEach(a => a.cancel()));
+
+            await anim(altar, [{ opacity: 0 }, { opacity: 1 }], { duration: 300 });
+
+            if (!ceremony) {
+                // 看過的：直接亮出來，留「再拜一次」
+                anim(rays, [{ opacity: 0 }, { opacity: 0.7 }], { duration: 500 });
+                anim(halo, [{ opacity: 0 }, { opacity: 0.6 }], { duration: 500 });
+                anim(plaque, [{ transform: 'scale(0.9)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: 400, easing: 'ease-out' });
+                stamp.style.opacity = 1;
+                caption.style.opacity = 1;
+                if (big) { anim(led, [{ opacity: 0 }, { opacity: 1 }], { duration: 400 }); lightLanterns(true); }
+                finishAltar();
+                return;
+            }
+
+            // 1. 牌位從遠方飄過來
+            await anim(plaque, [{ transform: 'translateY(40px) scale(0.6)', opacity: 0 }, { transform: 'translateY(0) scale(1)', opacity: 1 }], { duration: 700, easing: 'cubic-bezier(.2,.8,.2,1)' });
+            // 大匾：光明燈一盞一盞亮
+            if (big) await lightLanterns(false);
+            await wait(200);
+
+            // 2. 撕封條：從中間裂成兩半往兩邊飛
+            await tearSeal();
+            bell(big ? 330 : 392);
+            anim(halo, [{ opacity: 0, transform: 'scale(0.3)' }, { opacity: 1, transform: 'scale(1.1)' }, { opacity: 0.6, transform: 'scale(1)' }], { duration: 900, easing: 'ease-out' });
+            anim(rays, [{ opacity: 0, scale: 0.4 }, { opacity: 0.85, scale: 1 }], { duration: 1200, easing: 'ease-out' });
+            burst(big ? 90 : 50, true);
+
+            // 3. 名字一個字一個字蓋下來（字是撕完封條才換上去的，這時候才抓）
+            const chars = [...stage.querySelectorAll('.ch')];
+            for (const ch of chars) {
+                anim(ch, [
+                    { opacity: 0, transform: 'scale(2.6) translateY(-10px)', filter: 'blur(4px) brightness(3)' },
+                    { opacity: 1, transform: 'scale(0.92)', filter: 'blur(0) brightness(1.6)', offset: 0.7 },
+                    { opacity: 1, transform: 'scale(1)', filter: 'blur(0) brightness(1)' }
+                ], { duration: 420, easing: 'cubic-bezier(.3,1.4,.6,1)' });
+                await wait(big ? 260 : 220);
+            }
+            await wait(380);
+            chars.forEach(ch => ch.classList.add('gold-shine'));
+
+            // 4. 金粉紙錢從天而降
+            burst(big ? 160 : 90, false);
+            anim(caption, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 600 });
+            await wait(500);
+
+            // 5. 「功德無量」朱印砸下來
+            await anim(stamp, [{ opacity: 0, transform: 'rotate(-9deg) scale(3.2)' }, { opacity: 1, transform: 'rotate(-9deg) scale(0.92)', offset: 0.8 }, { opacity: 1, transform: 'rotate(-9deg) scale(1)' }], { duration: 300, easing: 'ease-in' });
+            thump();
+            if (navigator.vibrate) navigator.vibrate(big ? [60, 40, 120] : 60);
+            anim(stage, [{ transform: 'translate(0,0)' }, { transform: 'translate(-6px,4px)' }, { transform: 'translate(5px,-3px)' }, { transform: 'translate(-2px,2px)' }, { transform: 'translate(0,0)' }], { duration: 320, fill: 'none' });
+
+            // 大匾：跑馬燈 + 再一聲
+            if (big) {
+                await wait(250);
+                bell(262, 0.8);
+                anim(led, [{ opacity: 0, transform: 'translateY(100%)' }, { opacity: 1, transform: 'none' }], { duration: 500, easing: 'ease-out' });
+                burst(120, false);
+            }
+
+            if (!seen.includes(m.id)) {
+                seen.push(m.id);
+                save(SEEN_KEY, seen);
+            }
+            finishAltar();
+        }
+
+        async function lightLanterns(instant) {
+            const glows = [...document.querySelectorAll('.lantern-glow')];
+            const order = glows.map((g, i) => [g, Math.abs(i - (glows.length - 1) / 2)]).sort((a, b) => b[1] - a[1]); // 從兩邊往中間亮
+            for (const [g] of order) {
+                if (instant) { g.style.opacity = 1; continue; }
+                anim(g, [{ opacity: 0 }, { opacity: 1, offset: 0.3 }, { opacity: 0.6, offset: 0.5 }, { opacity: 1 }], { duration: 500 });
+                await wait(110);
+            }
+        }
+
+        async function tearSeal() {
+            const seal = stage.querySelector('.seal');
+            if (!seal) return;
+            const big = current.tier === 'big';
+            // 複製成左右兩半，各自飛走
+            const halves = ['inset(0 50% 0 0)', 'inset(0 0 0 50%)'].map((clip, i) => {
+                const half = seal.cloneNode(true);
+                half.style.clipPath = clip;
+                seal.after(half);
+                return half;
+            });
+            seal.remove();
+            await anim(halves[0].parentElement, [{ transform: 'rotate(0)' }, { transform: 'rotate(-1.5deg)' }, { transform: 'rotate(1.5deg)' }, { transform: 'rotate(0)' }], { duration: 260, fill: 'none' });
+            const base = big ? 'rotate(-5deg)' : 'none';
+            await Promise.all(halves.map((h, i) => anim(h, [
+                { transform: base, opacity: 1 },
+                { transform: `${base} translate(${i ? 1 : -1}${big ? '40vw' : '90px'}, ${big ? 30 : 120}px) rotate(${i ? 28 : -28}deg)`, opacity: 0 }
+            ], { duration: 650, easing: 'cubic-bezier(.4,0,.8,.6)' })));
+            halves.forEach(h => h.remove());
+            // 名字的位置換成一個字一個字的金字
+            const holder = stage.querySelector('.opacity-0');
+            if (holder) {
+                const m = current;
+                holder.outerHTML = `<span style="font-size:${nameSize(m, 'altar')}px">${nameChars(m, 'opacity-0')}</span>`;
+            }
+            if (big) {
+                const gift = stage.querySelector('.bian-inner > span:last-child');
+                if (gift && current.gift) {
+                    gift.outerHTML = `<span class="gold font-sans text-[11px] tracking-[0.25em] mt-1 opacity-90">${esc(current.gift)}</span>`;
+                }
+            }
+        }
+
+        function finishAltar() {
+            running = false;
+            document.getElementById('skipHint').style.display = 'none';
+            actions.classList.add('show');
+            anim(actions, [{ opacity: 0 }, { opacity: 1 }], { duration: 400 });
+        }
+
+        // 儀式進行中點一下＝跳到最後
+        altar.addEventListener('click', e => {
+            if (running && !e.target.closest('.altar-actions')) {
+                skipping = true;
+                altar.getAnimations({ subtree: true }).forEach(a => { try { if (a.effect.getComputedTiming().iterations !== Infinity) a.finish(); } catch (err) { } });
+            }
+        });
+
+        document.getElementById('againBtn').addEventListener('click', () => {
+            const m = current;
+            closeAltar(true).then(() => showAltar(m, true));
+        });
+        document.getElementById('closeBtn').addEventListener('click', () => closeAltar());
+
+        async function closeAltar(quick) {
+            actions.classList.remove('show');
+            await anim(altar, [{ opacity: 1 }, { opacity: 0 }], { duration: quick ? 150 : 350 });
+            altar.classList.remove('open');
+            altar.getAnimations().forEach(a => a.cancel());
+            particles = [];
+            c2d.clearRect(0, 0, innerWidth, innerHeight);
+            document.body.style.overflow = '';
+            renderBoard();
+        }
+
+        // Escape 關閉
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && altar.classList.contains('open') && !running) closeAltar();
+        });
+
+        renderBoard();
+    </script>
+</body>
+
+</html>
