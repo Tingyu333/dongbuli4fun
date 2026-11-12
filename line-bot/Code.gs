@@ -1844,6 +1844,12 @@ function fetchTpvlPlayers(cat) {
 }
 
 // 照某個欄位排，0 和沒有的拿掉
+// 官網實際的欄位：每局得分叫 points_per_set（開源專案寫的是 per_set），兩個都認
+function perSet(p) {
+  var v = p.stats.points_per_set !== undefined && p.stats.points_per_set !== null ? p.stats.points_per_set : p.stats.per_set;
+  return v === undefined ? null : v;
+}
+
 function volleyRank(list, field) {
   return list.filter(function (p) { return p.stats[field]; })
     .sort(function (a, b) { return b.stats[field] - a.stats[field]; });
@@ -1892,16 +1898,16 @@ function replyVolleyLeaders(cat, quiet) {
   if (!list) return quiet ? null : '排球球員數據讀不到，官網可能在休息（或改版了）。';
   var top = volleyRank(list, cat.field).slice(0, 5);
   if (!top.length) return quiet ? null : cat.title + '排行還沒有資料，可能賽季還沒開始。';
-  var perSet = cat.key === 'points';
+  var showPerSet = cat.key === 'points';
   var rows = top.map(function (p, i) {
-    return playerRowBox(i, p, statShow(cat, p.stats[cat.field]), perSet && p.stats.per_set !== null && p.stats.per_set !== undefined ? statFmt(p.stats.per_set) : ''); // 標題列已經寫了「每局」
+    return playerRowBox(i, p, statShow(cat, p.stats[cat.field]), showPerSet && perSet(p) !== null ? statFmt(perSet(p)) : ''); // 標題列已經寫了「每局」
   });
   var header = {
     type: 'box', layout: 'horizontal', margin: 'xl', contents: [
       { type: 'text', text: '#', size: 'xxs', color: COLOR.accent, flex: 1 },
       { type: 'text', text: '球員', size: 'xxs', color: COLOR.accent, flex: 7 },
       { type: 'text', text: cat.label, size: 'xxs', color: COLOR.accent, flex: 3, align: 'end' },
-      { type: 'text', text: perSet ? '每局' : ' ', size: 'xxs', color: COLOR.accent, flex: 3, align: 'end' }
+      { type: 'text', text: showPerSet ? '每局' : ' ', size: 'xxs', color: COLOR.accent, flex: 3, align: 'end' }
     ]
   };
   var king = top[0];
@@ -1926,11 +1932,16 @@ function replyVolleyPlayer(name, quiet) {
   var p = hits[0];
   var rank = volleyRank(list, 'points').indexOf(p) + 1;
   var rowsDef = [
-    ['出賽', 'matches_played', '場'], ['總得分', 'points', ''], ['每局得分', 'per_set', ''],
+    ['出賽', 'matches_played', '場'], ['總得分', 'points', ''], ['每局得分', 'points_per_set', ''], ['每局得分', 'per_set', ''], ['單場最高', 'high_points', '分'],
     ['攻擊得分', 'attack_points', ''], ['攔網得分', 'block_points', ''], ['發球得分', 'serve_points', ''],
     ['接發到位', 'reception_excellent', ''], ['防守到位', 'dig_excellent', ''], ['成功率', 'success_rate', '']
   ];
-  var rows = rowsDef.filter(function (r) { return p.stats[r[1]] !== null && p.stats[r[1]] !== undefined; }).map(function (r) {
+  var usedLabels = {};
+  var rows = rowsDef.filter(function (r) {
+    if (p.stats[r[1]] === null || p.stats[r[1]] === undefined || usedLabels[r[0]]) return false;
+    usedLabels[r[0]] = true; // 每局得分兩種名字只放一次
+    return true;
+  }).map(function (r) {
     var v = p.stats[r[1]];
     var shown = r[1] === 'success_rate' && v <= 1 ? Math.round(v * 1000) / 10 + '%' : statFmt(v) + (r[2] ? ' ' + r[2] : '');
     return cardRow(r[0], shown);
@@ -1954,13 +1965,34 @@ function replyVolleyTeamPlayers(team, quiet) {
   var mine = volleyRank(list.filter(function (p) { return p.team === team; }), 'points').slice(0, 5);
   if (!mine.length) return quiet ? null : tpvlShort(team) + '還沒有球員數據，可能賽季還沒開始。';
   var rows = mine.map(function (p, i) {
-    return playerRowBox(i, p, statFmt(p.stats.points), p.stats.per_set !== null && p.stats.per_set !== undefined ? '每局 ' + statFmt(p.stats.per_set) : '');
+    return playerRowBox(i, p, statFmt(p.stats.points), perSet(p) !== null ? '每局 ' + statFmt(perSet(p)) : '');
   });
   return playersFooter(hiddenCard(
     team + '得分前' + mine.length + '名：' + mine.map(function (p) { return p.name + ' ' + statFmt(p.stats.points); }).join('、'),
     'VOLLEYBALL', '排球・' + tpvlShort(team) + '球員', [
       { type: 'text', text: team + '・得分', size: 'xs', color: COLOR.accent, margin: 'lg' }
     ].concat(rows).concat([cardTip(mine[0].name + '是隊上的得分擔當。其他人也很努力，只是比較低調。')])));
+}
+
+// 除錯用：印出球員數據頁實際有哪些欄位，給 Claude 看（官網的欄位名稱跟開源專案寫的不一樣時用）
+// 在編輯器選這個函式按「執行」，把執行記錄整段貼回來
+function debugTpvlPlayers() {
+  ['points', 'block_points', 'setting', 'reception'].forEach(function (m) {
+    try {
+      var payload = tpvlPayload('/stats/players?m=' + m + '&sort=' + m + '&order=desc');
+      var counts = {};
+      var re = /"data-field":"([^"]+)"/g, x;
+      while ((x = re.exec(payload))) counts[x[1]] = (counts[x[1]] || 0) + 1;
+      var tax = {};
+      var re2 = /"data-taxonomy":"([^"]+)"/g;
+      while ((x = re2.exec(payload))) tax[x[1]] = (tax[x[1]] || 0) + 1;
+      var first = payload.indexOf('"data-field":"player"');
+      console.log('m=' + m + '｜payload ' + payload.length + ' 字｜data-field：' + JSON.stringify(counts) + '｜data-taxonomy：' + JSON.stringify(tax));
+      console.log('m=' + m + '｜第一位球員附近：' + payload.slice(Math.max(0, first - 300), first + 2200));
+    } catch (err) {
+      console.log('m=' + m + ' 讀取失敗：' + err);
+    }
+  });
 }
 
 // 在編輯器選這個函式按「執行」，確認外面的來源都抓得到（看「執行記錄」）
