@@ -1625,6 +1625,12 @@ function replyVolley(arg, source) {
   var query = String(arg || '').trim();
   var quiet = source && source.type !== 'user';
   if (/^(戰績|排名|積分|排行)/.test(query)) return replyVolleyStandings(quiet);
+  var cat = volleyCategory(query);
+  if (cat) return replyVolleyLeaders(cat, quiet);
+  var who = query.match(/^球員\s*(.*)$/);
+  if (who) return replyVolleyPlayer(who[1].trim(), quiet);
+  var squad = query.match(/^(.+?)\s*球員$/);
+  if (squad && tpvlResolveTeam(squad[1])) return replyVolleyTeamPlayers(tpvlResolveTeam(squad[1]), quiet);
   if (query) {
     var team = tpvlResolveTeam(query);
     if (!team) return quiet ? null : '認不得「' + query + '」。可以打雲豹、連莊、天鷹、伊斯特、可利，或「排球 戰績」。';
@@ -1771,9 +1777,200 @@ function replyVolleyStandings(quiet) {
   return card;
 }
 
+// --- 排球：球員數據（/stats/players，一樣是 RSC payload） ---
+// 每種排行抓一頁 ?m=<類別>&sort=<類別>&order=desc，再照那個欄位自己排一次；每頁存 1 小時
+// 每位球員的欄位全部留著（不同類別的頁面欄位不太一樣，舉球是 setting_team_share）
+
+var VOLLEY_CATEGORIES = [
+  { key: 'points', label: '得分', title: '得分王', field: 'points', words: ['得分王', '得分', '總得分'] },
+  { key: 'attack_points', label: '攻擊得分', title: '攻擊', field: 'attack_points', words: ['攻擊得分', '攻擊'] },
+  { key: 'block_points', label: '攔網得分', title: '攔網', field: 'block_points', words: ['攔網得分', '攔網'] },
+  { key: 'serve_points', label: '發球得分', title: '發球', field: 'serve_points', words: ['發球得分', '發球'] },
+  { key: 'reception', label: '接發到位', title: '接發', field: 'reception_excellent', words: ['接發球', '接發'] },
+  { key: 'dig', label: '防守到位', title: '防守', field: 'dig_excellent', words: ['防守'] },
+  { key: 'setting', label: '舉球', title: '舉球', field: 'setting_team_share', words: ['舉球', '二傳'] }
+];
+
+function volleyCategory(query) {
+  for (var i = 0; i < VOLLEY_CATEGORIES.length; i++) {
+    var c = VOLLEY_CATEGORIES[i];
+    if (c.words.some(function (w) { return query === w || query.indexOf(w) === 0 && /^(王|榜|排行)?$/.test(query.slice(w.length)); })) return c;
+  }
+  return null;
+}
+
+function tpvlNum(v) {
+  if (v === undefined || v === null || v === '') return null;
+  var n = Number(String(v).replace(/[,%\s]/g, ''));
+  return isNaN(n) ? null : n;
+}
+
+function tpvlPlayers(payload) {
+  var defs = tpvlDefs(payload);
+  var marker = '"data-field":"player","data-value":"';
+  var seen = {};
+  var out = [];
+  tpvlRows(payload, marker, 4000).forEach(function (raw) {
+    var seg = tpvlResolve(raw, defs);
+    var f = tpvlFields(seg);
+    var slug = f.player;
+    if (!slug || seen[slug]) return;
+    seen[slug] = true;
+    var esc = slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    var name = (seg.match(new RegExp('href":"/players/' + esc + '","children":"([^"]+)"')) || [])[1] || slug;
+    var pos = (seg.match(/"data-taxonomy":"position","data-term":"[a-z_]+","[^}]*"children":"([^"]+)"/) || [])[1] || '';
+    var stats = {};
+    Object.keys(f).forEach(function (k) { if (k !== 'player' && k !== 'team') stats[k] = tpvlNum(f[k]); });
+    out.push({ slug: slug, name: name, team: tpvlTeam(f.team || '', seg), position: pos, stats: stats });
+  });
+  return out;
+}
+
+function fetchTpvlPlayers(cat) {
+  var key = 'tpvl:players:' + cat.key;
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get(key);
+  if (cached) return JSON.parse(cached);
+  try {
+    var list = tpvlPlayers(tpvlPayload('/stats/players?m=' + cat.key + '&sort=' + cat.key + '&order=desc'));
+    if (!list.length) throw new Error('TPVL /stats/players 解析不到球員（官網可能改版了）');
+    var text = JSON.stringify(list);
+    if (text.length < 95000) cache.put(key, text, 60 * 60); // CacheService 一格最多 100KB
+    return list;
+  } catch (err) {
+    console.error('排球球員讀取失敗', cat.key, err);
+    return null;
+  }
+}
+
+// 照某個欄位排，0 和沒有的拿掉
+function volleyRank(list, field) {
+  return list.filter(function (p) { return p.stats[field]; })
+    .sort(function (a, b) { return b.stats[field] - a.stats[field]; });
+}
+
+function statFmt(v) {
+  if (v === null || v === undefined) return '—';
+  return Number.isInteger(v) ? String(v) : String(Math.round(v * 100) / 100);
+}
+
+// 舉球是「佔全隊比例」：0.38 → 38%
+function statShow(cat, v) {
+  if (cat.field === 'setting_team_share' && v !== null && v <= 1) return Math.round(v * 1000) / 10 + '%';
+  return statFmt(v);
+}
+
+function playerRowBox(i, p, value, extra) {
+  return {
+    type: 'box', layout: 'horizontal', margin: 'md', contents: [
+      { type: 'text', text: String(i + 1), size: 'sm', color: i === 0 ? COLOR.shu : COLOR.text, flex: 1 },
+      {
+        type: 'box', layout: 'vertical', flex: 7, contents: [
+          { type: 'text', text: p.name, size: 'sm', color: COLOR.ink, wrap: true },
+          { type: 'text', text: tpvlShort(p.team) + (p.position ? '・' + p.position : ''), size: 'xxs', color: COLOR.text }
+        ]
+      },
+      { type: 'text', text: value, size: 'md', color: i === 0 ? COLOR.shu : COLOR.ink, flex: 3, align: 'end', gravity: 'center' },
+      { type: 'text', text: extra || ' ', size: 'xxs', color: COLOR.text, flex: 3, align: 'end', gravity: 'center' }
+    ]
+  };
+}
+
+function playersFooter(card, path) {
+  card.contents.styles.footer = { backgroundColor: COLOR.bg };
+  card.contents.footer = {
+    type: 'box', layout: 'vertical', paddingTop: '0px', contents: [{
+      type: 'button', style: 'link', height: 'sm', color: COLOR.accent,
+      action: { type: 'uri', label: '看完整數據', uri: TPVL_URL + (path || '/stats/players') }
+    }]
+  };
+  return card;
+}
+
+function replyVolleyLeaders(cat, quiet) {
+  var list = fetchTpvlPlayers(cat);
+  if (!list) return quiet ? null : '排球球員數據讀不到，官網可能在休息（或改版了）。';
+  var top = volleyRank(list, cat.field).slice(0, 5);
+  if (!top.length) return quiet ? null : cat.title + '排行還沒有資料，可能賽季還沒開始。';
+  var perSet = cat.key === 'points';
+  var rows = top.map(function (p, i) {
+    return playerRowBox(i, p, statShow(cat, p.stats[cat.field]), perSet && p.stats.per_set !== null && p.stats.per_set !== undefined ? statFmt(p.stats.per_set) : ''); // 標題列已經寫了「每局」
+  });
+  var header = {
+    type: 'box', layout: 'horizontal', margin: 'xl', contents: [
+      { type: 'text', text: '#', size: 'xxs', color: COLOR.accent, flex: 1 },
+      { type: 'text', text: '球員', size: 'xxs', color: COLOR.accent, flex: 7 },
+      { type: 'text', text: cat.label, size: 'xxs', color: COLOR.accent, flex: 3, align: 'end' },
+      { type: 'text', text: perSet ? '每局' : ' ', size: 'xxs', color: COLOR.accent, flex: 3, align: 'end' }
+    ]
+  };
+  var king = top[0];
+  var card = hiddenCard(
+    '排球' + cat.title + '：' + top.map(function (p, i) { return (i + 1) + '. ' + p.name + '（' + tpvlShort(p.team) + '）' + statShow(cat, p.stats[cat.field]); }).join('、'),
+    'VOLLEYBALL', '排球・' + cat.title, [header].concat(rows).concat([cardTip(king.name + '目前第一。' + pick(['請收下二十七樓的掌聲。', '這不是普通的手，是神的手。', '二十七樓決定頒發一顆滷蛋。']))]));
+  return playersFooter(card, '/stats/players?m=' + cat.key + '&sort=' + cat.key + '&order=desc');
+}
+
+function replyVolleyPlayer(name, quiet) {
+  if (!name) return quiet ? null : '要查哪位？例如「排球 球員 某某」，名字打一部分也可以。';
+  var points = VOLLEY_CATEGORIES[0];
+  var list = fetchTpvlPlayers(points);
+  if (!list) return quiet ? null : '排球球員數據讀不到，官網可能在休息（或改版了）。';
+  var exact = list.filter(function (p) { return p.name === name; });
+  var hits = exact.length ? exact : list.filter(function (p) { return p.name.indexOf(name) !== -1 || p.slug.toLowerCase().indexOf(name.toLowerCase()) !== -1; });
+  if (!hits.length) return quiet ? null : '找不到「' + name + '」。名字打一部分也可以，例如「排球 球員 ' + name.slice(0, 1) + '」。';
+  if (hits.length > 1) {
+    return '有好幾位：' + hits.slice(0, 8).map(function (p) { return p.name + '（' + tpvlShort(p.team) + '）'; }).join('、') +
+      (hits.length > 8 ? '…' : '') + '。打完整一點的名字再查一次。';
+  }
+  var p = hits[0];
+  var rank = volleyRank(list, 'points').indexOf(p) + 1;
+  var rowsDef = [
+    ['出賽', 'matches_played', '場'], ['總得分', 'points', ''], ['每局得分', 'per_set', ''],
+    ['攻擊得分', 'attack_points', ''], ['攔網得分', 'block_points', ''], ['發球得分', 'serve_points', ''],
+    ['接發到位', 'reception_excellent', ''], ['防守到位', 'dig_excellent', ''], ['成功率', 'success_rate', '']
+  ];
+  var rows = rowsDef.filter(function (r) { return p.stats[r[1]] !== null && p.stats[r[1]] !== undefined; }).map(function (r) {
+    var v = p.stats[r[1]];
+    var shown = r[1] === 'success_rate' && v <= 1 ? Math.round(v * 1000) / 10 + '%' : statFmt(v) + (r[2] ? ' ' + r[2] : '');
+    return cardRow(r[0], shown);
+  });
+  var tip = rank === 1 ? '目前得分王。二十七樓幫你留了一張沙發。'
+    : rank > 0 && rank <= 5 ? '得分前五。很強，強到可以不用洗碗。'
+      : '每一分都算數，包括你看比賽的那一分。';
+  return playersFooter(hiddenCard(
+    p.name + '（' + p.team + (p.position ? '・' + p.position : '') + '）總得分 ' + statFmt(p.stats.points) + (rank ? '，得分第 ' + rank + ' 名' : ''),
+    'VOLLEYBALL', '排球・球員', [
+      { type: 'text', text: p.name, size: 'xl', color: COLOR.ink, margin: 'lg', wrap: true },
+      { type: 'text', text: p.team + (p.position ? '・' + p.position : '') + (rank ? '・得分第 ' + rank + ' 名' : ''), size: 'xs', color: COLOR.text, margin: 'xs', wrap: true },
+      cardLine()
+    ].concat(rows.length ? rows : [{ type: 'text', text: '還沒有數據', size: 'sm', color: COLOR.text, margin: 'md' }]).concat([cardTip(tip)])), '/players/' + p.slug);
+}
+
+function replyVolleyTeamPlayers(team, quiet) {
+  var points = VOLLEY_CATEGORIES[0];
+  var list = fetchTpvlPlayers(points);
+  if (!list) return quiet ? null : '排球球員數據讀不到，官網可能在休息（或改版了）。';
+  var mine = volleyRank(list.filter(function (p) { return p.team === team; }), 'points').slice(0, 5);
+  if (!mine.length) return quiet ? null : tpvlShort(team) + '還沒有球員數據，可能賽季還沒開始。';
+  var rows = mine.map(function (p, i) {
+    return playerRowBox(i, p, statFmt(p.stats.points), p.stats.per_set !== null && p.stats.per_set !== undefined ? '每局 ' + statFmt(p.stats.per_set) : '');
+  });
+  return playersFooter(hiddenCard(
+    team + '得分前' + mine.length + '名：' + mine.map(function (p) { return p.name + ' ' + statFmt(p.stats.points); }).join('、'),
+    'VOLLEYBALL', '排球・' + tpvlShort(team) + '球員', [
+      { type: 'text', text: team + '・得分', size: 'xs', color: COLOR.accent, margin: 'lg' }
+    ].concat(rows).concat([cardTip(mine[0].name + '是隊上的得分擔當。其他人也很努力，只是比較低調。')])));
+}
+
 // 在編輯器選這個函式按「執行」，確認外面的來源都抓得到（看「執行記錄」）
 function testHiddenSources() {
-  CacheService.getScriptCache().removeAll(['air', 'holidays', 'oil', 'stock:2330', 'stock:6488', 'tpvl:matches', 'tpvl:standings']);
+  CacheService.getScriptCache().removeAll(['air', 'holidays', 'oil', 'stock:2330', 'stock:6488', 'tpvl:matches', 'tpvl:standings',
+    'tpvl:players:points', 'tpvl:players:setting']);
+  var ps = fetchTpvlPlayers(VOLLEY_CATEGORIES[0]);
+  console.log('排球球員（得分）', ps ? ps.length + ' 位，第一位 ' + JSON.stringify(ps[0]) : '抓不到');
+  var st = fetchTpvlPlayers(VOLLEY_CATEGORIES[6]);
+  console.log('排球球員（舉球）', st ? st.length + ' 位，第一位 ' + JSON.stringify(st[0]) : '抓不到');
   var vb = fetchTpvlMatches();
   console.log('排球賽程', vb ? vb.length + ' 場，前三場 ' + JSON.stringify(vb.slice(0, 3)) : '抓不到');
   console.log('排球戰績', JSON.stringify(fetchTpvlStandings()));
@@ -1843,7 +2040,8 @@ function replyHelp() {
     '分帳　出去玩誰欠誰，打開就算（打記帳、拆帳、AA 也可以）\n' +
     '油價　這週的油價，下週漲還是跌\n' +
     '股　　收盤價，例如「股 2330」「股 台積電」\n' +
-    '排球　TPVL 下一場和最近比分；「排球 雲豹」看單隊、「排球 戰績」看排名\n\n' +
+    '排球　TPVL 下一場和最近比分；「排球 雲豹」看單隊、「排球 戰績」看排名\n' +
+    '　　　「排球 得分王」看排行（攔網、發球、接發、防守、舉球也可以）、「排球 球員 名字」、「排球 雲豹 球員」\n\n' +
     '【沒有用】\n' +
     '狗、貓　隨機一張，只打一個字才會出現\n\n' +
     '其他的話，我也會回，只是回得沒什麼用。群組裡要 @我 才回。';
