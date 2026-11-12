@@ -93,7 +93,7 @@ Official Account Manager →「主頁 → 圖文選單 → 建立」：
 | `排球`（`TPVL` 也可以） | TPVL 台灣職業排球聯盟：下一場（日期、時間、對戰、場館）、再來兩場、最近一場比分，底下「看完整賽程」連到官網 |
 | `排球 雲豹`（隊名打簡稱：連莊、天鷹、伊斯特、可利、台中、新竹…） | 那一隊接下來三場（主場／客場）和最近三場勝敗 |
 | `排球 戰績`（或 `排名`、`積分`） | 五隊排名、勝敗、積分 |
-| `排球 得分王`（`得分`、`得分榜`） | 得分前五名，附球隊、位置、每局平均。換成 `攔網`、`發球`、`攻擊`、`接發`、`防守`、`舉球`（`二傳`）就是其他排行（舉球是佔全隊的比例） |
+| `排球 得分王`（`得分`、`得分榜`） | 得分前五名，附球隊、位置、每局平均。換成 `攔網`、`發球`、`攻擊`、`接發`、`防守`、`舉球`（`二傳`）就是其他排行，附每局或成功率／到位率 |
 | `排球 球員 名字` | 一位球員的數據卡（出賽、總得分、每局、攻擊、攔網、發球、接發、防守、成功率，有資料的才列）和得分排名。名字打一部分也可以，同時符合好幾位會列出來讓你挑 |
 | `排球 雲豹 球員`（`排球 台鋼球員` 不用空格也行） | 那一隊的得分前五名 |
 | `狗`、`汪`、`狗狗`、`貓`、`喵`、`貓咪` | 一張隨機的狗或貓照片，加一句廢話（狗會說品種）。**要整句只有這個字**才算（「狗屎運」「貓咪好可愛」不會跳圖）。狗用 [dog.ceo](https://dog.ceo/dog-api/)，貓用 [The Cat API](https://thecatapi.com/)，抓不到再換 [cataas](https://cataas.com/)，都不用金鑰 |
@@ -113,9 +113,9 @@ Official Account Manager →「主頁 → 圖文選單 → 建立」：
 | `放假`、`連假`、`假日` | 今天上不上班、下一個連假（三天以上）和倒數、之後兩段連假、六十天內的補班 | 行政院辦公日曆，用 [ruyut/TaiwanCalendar](https://github.com/ruyut/TaiwanCalendar) 整理好的 JSON（透過 jsDelivr），抓今年和明年，存 6 小時 |
 
 - 月相、節氣、日出日落用 Meeus《Astronomical Algorithms》的簡化公式。2026、2027 兩年跟政府行事曆的農曆日期（730 天）和節氣（48 個）全部對得上，日出日落跟氣象署差一兩分鐘。
-- 部署後可以在編輯器選 `testHiddenSources` 按「執行」，執行記錄會印出排球賽程、戰績、球員（得分、舉球）、股價（台積電、環球晶）、狗、貓、油價、空氣、行事曆有沒有抓到。Apps Script 是從 Google 在國外的機房連線，某個來源抓不到的話，那個指令會回一句文字，其他照常。
+- 部署後可以在編輯器選 `testHiddenSources` 按「執行」，執行記錄會印出排球賽程、戰績、球員（得分、攔網、舉球）、股價（台積電、環球晶）、狗、貓、油價、空氣、行事曆有沒有抓到。Apps Script 是從 Google 在國外的機房連線，某個來源抓不到的話，那個指令會回一句文字，其他照常。
 - 明年的行事曆通常年中才公布，還沒公布前「放假」只看得到今年的。
-- **排球沒有公開 API**：資料是從 [tpvl.tw/matches](https://tpvl.tw/matches)、[/standings](https://tpvl.tw/standings) 網頁裡的 Next.js 資料（`self.__next_f.push`）挖出來的，解析方式參考 [ichendong/tpvl-skill](https://github.com/ichendong/tpvl-skill)（MIT）。**官網改版就可能壞**，壞了會回「讀不到」，執行記錄會寫「解析不到」，這時候要改 `Code.gs` 的排球那段。賽程、戰績各存 30 分鐘，球員數據（[/stats/players](https://tpvl.tw/stats/players)，每種排行一頁）存 1 小時。
+- **排球沒有公開 API**：資料是從 [tpvl.tw/matches](https://tpvl.tw/matches)、[/standings](https://tpvl.tw/standings) 網頁裡的 Next.js 資料（`self.__next_f.push`）挖出來的，解析方式參考 [ichendong/tpvl-skill](https://github.com/ichendong/tpvl-skill)（MIT）。**官網改版就可能壞**，壞了會回「讀不到」，執行記錄會寫「解析不到」。這時候先在編輯器跑 `debugTpvlPlayers` 和 `debugTpvlLinks`，把執行記錄交給改程式的人（它們會印出頁面實際的欄位和連結）。賽程、戰績各存 30 分鐘，球員數據（[/stats/players](https://tpvl.tw/stats/players)，每種排行一頁）存 1 小時。
 
 - 只認訊息**開頭**的關鍵字。
 - **一對一**：不是指令也會回廢話，傳貼圖也回。
