@@ -32,7 +32,8 @@ var COMMANDS = [
   { words: ['日出', '日落', '夕陽'], run: replySun },
   { words: ['放假', '連假', '假日'], run: replyHoliday },
   { words: ['油價', '汽油', '柴油'], run: replyOil },
-  { words: ['股價', '股票', '股'], run: replyStock }, // 長的放前面，「股票 2330」才不會被切成「票 2330」
+  { words: ['股價', '股票', '股'], run: replyStock },
+  { words: ['排球', 'TPVL', 'tpvl'], run: replyVolley }, // 長的放前面，「股票 2330」才不會被切成「票 2330」
   // 狗、貓只認整句（「狗屎運」「貓咪好可愛」不會在群組裡突然冒出一張圖）
   { words: ['狗', '汪', '狗狗', '汪汪'], exact: true, run: replyDog },
   { words: ['貓', '喵', '貓貓', '貓咪', '喵喵'], exact: true, run: replyCat },
@@ -1369,9 +1370,413 @@ function replyStock(arg, source) {
     ]);
 }
 
+// --- 排球（TPVL 台灣職業排球聯盟） ---
+// 官網沒有公開 API（/api/* 要認證），資料是從網頁裡挖出來的：
+// 官網是 Next.js App Router，資料藏在 HTML 的 self.__next_f.push([...])（RSC flight payload），
+// 每場比賽、每隊戰績都標了 "data-field":"xxx","data-value":"yyy"。解析方式參考 github.com/ichendong/tpvl-skill（MIT）。
+// 官網改版就可能壞；壞了只會回一句讀不到。賽程、戰績各存 30 分鐘。
+
+var TPVL_URL = 'https://tpvl.tw';
+var TPVL_TEAMS = {
+  'taichung-winstreak': '臺中連莊',
+  'tsg-skyhawks': '台鋼天鷹',
+  'taipei-east-power': '臺北伊斯特',
+  'taoyuan-leopards': '桃園雲豹飛將',
+  'hsinchu-collie-engineers': '新竹可利工程師'
+};
+var TPVL_ALIASES = [
+  [['台中', '臺中', '連莊', 'winstreak'], '臺中連莊'],
+  [['台鋼', '天鷹', 'tsg', 'skyhawks', '高雄'], '台鋼天鷹'],
+  [['台北', '臺北', '伊斯特', 'east', 'power'], '臺北伊斯特'],
+  [['桃園', '雲豹', '飛將', 'leopards'], '桃園雲豹飛將'],
+  [['新竹', '可利', '工程師', 'collie'], '新竹可利工程師']
+];
+var TPVL_STATUS = { final: 'COMPLETED', completed: 'COMPLETED', scheduled: 'SCHEDULED', postponed: 'POSTPONED', live: 'LIVE', in_progress: 'LIVE' };
+
+// 把 self.__next_f.push([1,"..."]) 一段一段接起來
+function tpvlPayload(path) {
+  var res = UrlFetchApp.fetch(TPVL_URL + path, {
+    muteHttpExceptions: true,
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DongBuLi-LINE-bot)', 'Accept-Language': 'zh-TW,zh;q=0.9' }
+  });
+  if (res.getResponseCode() !== 200) throw new Error('TPVL ' + path + ' ' + res.getResponseCode());
+  var html = res.getContentText();
+  var parts = [];
+  var re = /self\.__next_f\.push\((\[[\s\S]*?\])\)<\/script>/g;
+  var m;
+  while ((m = re.exec(html))) {
+    try {
+      var arr = JSON.parse(m[1]);
+      if (Array.isArray(arr) && typeof arr[1] === 'string') parts.push(arr[1]);
+    } catch (err) { /* 不是 JSON 的段落跳過 */ }
+  }
+  if (!parts.length) throw new Error('TPVL ' + path + ' 沒有 flight payload（官網可能改版了）');
+  return parts.join('');
+}
+
+// RSC 用「行首 id:」定義區塊，元件用 "$L<id>" 參照
+function tpvlDefs(payload) {
+  var marks = [];
+  var re = /(?:^|\n)([0-9a-f]+):/g;
+  var m;
+  while ((m = re.exec(payload))) marks.push([m.index, m[1]]);
+  var defs = {};
+  for (var i = 0; i < marks.length; i++) {
+    var end = i + 1 < marks.length ? marks[i + 1][0] : payload.length;
+    var text = payload.slice(marks[i][0], end).replace(/^\n/, '');
+    defs[marks[i][1]] = text.slice(text.indexOf(':') + 1);
+  }
+  return defs;
+}
+
+function tpvlResolve(text, defs) {
+  for (var i = 0; i < 2; i++) {
+    var next = text.replace(/"\$L([0-9a-f]+)"/g, function (all, id) { return defs[id] !== undefined ? defs[id] : all; });
+    if (next === text) break;
+    text = next;
+  }
+  return text;
+}
+
+// 每個欄位取第一次出現的值（後面的可能是別列的）
+function tpvlFields(segment) {
+  var out = {};
+  var re = /"data-field":"([a-z_0-9]+)","data-value":"([^"]*)"/g;
+  var m;
+  while ((m = re.exec(segment))) if (!(m[1] in out)) out[m[1]] = m[2];
+  return out;
+}
+
+// 依標記切段；中間會插 lazy 定義，所以每段有長度上限
+function tpvlRows(payload, marker, maxLen) {
+  var idx = [];
+  var pos = payload.indexOf(marker);
+  while (pos !== -1) {
+    idx.push(pos);
+    pos = payload.indexOf(marker, pos + marker.length);
+  }
+  return idx.map(function (start, i) {
+    var end = i + 1 < idx.length ? idx[i + 1] : payload.length;
+    return payload.slice(start, Math.min(end, start + maxLen));
+  });
+}
+
+function tpvlTeam(slug, segment) {
+  if (TPVL_TEAMS[slug]) return TPVL_TEAMS[slug];
+  var m = segment && segment.match(new RegExp('href":"/teams/' + slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '","children":"([^"]+)"'));
+  return m ? m[1] : slug;
+}
+
+function tpvlInt(v) {
+  var n = parseInt(v, 10);
+  return isNaN(n) ? null : n;
+}
+
+// 時間：有帶時區（Z、+00:00）就換成台灣時間；沒帶就當台灣時間
+function tpvlWhen(start) {
+  start = String(start || '');
+  if (!start) return { date: '', time: '' };
+  if (/(Z|[+-]\d\d:?\d\d)$/.test(start) && !/\+08:?00$/.test(start)) {
+    var d = new Date(start);
+    if (!isNaN(d)) {
+      var tw = new Date(d.getTime() + 8 * 3600000).toISOString();
+      return { date: tw.slice(0, 10), time: tw.slice(11, 16) };
+    }
+  }
+  return { date: start.slice(0, 10), time: start.length > 11 ? start.slice(11, 16) : '' };
+}
+
+function tpvlMatch(segment) {
+  var f = tpvlFields(segment);
+  var status = TPVL_STATUS[f.status] || String(f.status || '').toUpperCase() || 'UNKNOWN';
+  var when = tpvlWhen(f.start_time);
+  var venue = (segment.match(/"data-field":"venue"[\s\S]*?"children":"([^"]+)"/) || [])[1] || f.venue || '';
+  var done = status === 'COMPLETED';
+  return {
+    no: f.match_no || '',
+    status: status,
+    date: when.date,
+    time: when.time,
+    venue: venue,
+    home: tpvlTeam(f.home_team || '', segment),
+    away: tpvlTeam(f.away_team || '', segment),
+    homeSets: done ? tpvlInt(f.home_sets) : null, // 沒打完的列有時會撿到別場的比分，清掉
+    awaySets: done ? tpvlInt(f.away_sets) : null
+  };
+}
+
+function fetchTpvlMatches() {
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get('tpvl:matches');
+  if (cached) return JSON.parse(cached);
+  try {
+    var payload = tpvlPayload('/matches');
+    var defs = tpvlDefs(payload);
+    var seen = {};
+    var list = tpvlRows(payload, 'className":"tp-mrow"', 8000)
+      .map(function (seg) { return tpvlMatch(tpvlResolve(seg, defs)); })
+      .filter(function (m) {
+        var key = m.no + '|' + m.date;
+        if (!m.date || !m.home || seen[key]) return false;
+        seen[key] = true;
+        return true;
+      })
+      .sort(function (a, b) { return (a.date + a.time) < (b.date + b.time) ? -1 : 1; });
+    if (!list.length) throw new Error('TPVL /matches 解析不到比賽（官網可能改版了）');
+    cache.put('tpvl:matches', JSON.stringify(list), 30 * 60);
+    return list;
+  } catch (err) {
+    console.error('排球賽程讀取失敗', err);
+    return null;
+  }
+}
+
+function fetchTpvlStandings() {
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get('tpvl:standings');
+  if (cached) return JSON.parse(cached);
+  try {
+    var payload = tpvlPayload('/standings');
+    var defs = tpvlDefs(payload);
+    var list = [];
+    tpvlRows(payload, 'className":"tp-sx-row"', 3500).forEach(function (seg) {
+      var full = tpvlResolve(seg, defs);
+      var f = tpvlFields(full);
+      if (!f.team || tpvlInt(f.matches_played) === null) return;
+      if (list.some(function (t) { return t.slug === f.team; })) return;
+      list.push({
+        slug: f.team,
+        team: tpvlTeam(f.team, full),
+        played: tpvlInt(f.matches_played),
+        wins: tpvlInt(f.wins),
+        losses: tpvlInt(f.losses),
+        points: tpvlInt(f.points)
+      });
+    });
+    if (!list.length) throw new Error('TPVL /standings 解析不到戰績（官網可能改版了）');
+    cache.put('tpvl:standings', JSON.stringify(list), 30 * 60); // 官網已經照規程排好了
+    return list;
+  } catch (err) {
+    console.error('排球戰績讀取失敗', err);
+    return null;
+  }
+}
+
+function tpvlResolveTeam(query) {
+  var q = String(query || '').trim().toLowerCase();
+  if (!q) return null;
+  var names = Object.keys(TPVL_TEAMS).map(function (k) { return TPVL_TEAMS[k]; });
+  for (var i = 0; i < names.length; i++) if (names[i] === query.trim() || names[i].indexOf(query.trim()) !== -1) return names[i];
+  for (var j = 0; j < TPVL_ALIASES.length; j++) {
+    if (TPVL_ALIASES[j][0].some(function (a) { return q.indexOf(a) !== -1; })) return TPVL_ALIASES[j][1];
+  }
+  return null;
+}
+
+// 隊名太長，卡片上用短的
+function tpvlShort(name) {
+  return { '桃園雲豹飛將': '桃園雲豹', '新竹可利工程師': '新竹可利' }[name] || name;
+}
+
+function tpvlNowKey() {
+  return Utilities.formatDate(new Date(), 'Asia/Taipei', "yyyy-MM-dd'T'HH:mm");
+}
+
+function tpvlKey(m) { return m.date + 'T' + (m.time || '00:00'); }
+
+// 一場比賽：上面小字日期時間，下面對戰（橫排的話隊名會被切成兩行）
+function matchMini(m, text) {
+  return {
+    type: 'box', layout: 'vertical', margin: 'md', contents: [
+      { type: 'text', text: matchLine(m) + (m.venue ? '・' + m.venue : ''), size: 'xxs', color: COLOR.accent, wrap: true },
+      { type: 'text', text: text, size: 'sm', color: COLOR.ink, wrap: true }
+    ]
+  };
+}
+
+function matchLine(m) {
+  return shortDay(m.date) + (m.time ? ' ' + m.time : '');
+}
+
+var VOLLEY_TIPS = [
+  '球是圓的，網是平的，人生是斜的。',
+  '殺球的時候，記得把煩惱一起殺掉。',
+  '看排球的好處：至少有人在幫你接球。',
+  '三局拿下的叫實力，五局拿下的叫心臟。',
+  '二十七樓沒有排球場，但有沙發可以看轉播。'
+];
+
+function volleyFooter() {
+  return {
+    type: 'box', layout: 'vertical', paddingTop: '0px', contents: [{
+      type: 'button', style: 'link', height: 'sm', color: COLOR.accent,
+      action: { type: 'uri', label: '看完整賽程', uri: TPVL_URL + '/matches' }
+    }]
+  };
+}
+
+function withFooter(card) {
+  card.contents.styles.footer = { backgroundColor: COLOR.bg };
+  card.contents.footer = volleyFooter();
+  return card;
+}
+
+function replyVolley(arg, source) {
+  var query = String(arg || '').trim();
+  var quiet = source && source.type !== 'user';
+  if (/^(戰績|排名|積分|排行)/.test(query)) return replyVolleyStandings(quiet);
+  if (query) {
+    var team = tpvlResolveTeam(query);
+    if (!team) return quiet ? null : '認不得「' + query + '」。可以打雲豹、連莊、天鷹、伊斯特、可利，或「排球 戰績」。';
+    return replyVolleyTeam(team, quiet);
+  }
+
+  var list = fetchTpvlMatches();
+  if (!list) return quiet ? null : '排球賽程讀不到，官網可能在休息（或改版了）。';
+  var now = tpvlNowKey();
+  var live = list.filter(function (m) { return m.status === 'LIVE'; });
+  var upcoming = list.filter(function (m) { return m.status !== 'COMPLETED' && m.status !== 'LIVE' && tpvlKey(m) >= now.slice(0, 10) + 'T00:00'; });
+  var done = list.filter(function (m) { return m.status === 'COMPLETED'; });
+  var next = upcoming[0];
+  var last = done[done.length - 1];
+  var contents = [];
+  var alt = [];
+
+  if (live.length) {
+    contents.push({ type: 'text', text: '進行中', size: 'xs', color: COLOR.shu, margin: 'xl' });
+    live.forEach(function (m) {
+      contents.push({ type: 'text', text: tpvlShort(m.home) + ' vs ' + tpvlShort(m.away), size: 'md', color: COLOR.ink, margin: 'sm', wrap: true });
+    });
+    alt.push('進行中：' + live.map(function (m) { return m.home + ' vs ' + m.away; }).join('、'));
+  }
+  if (next) {
+    contents.push(
+      { type: 'text', text: '下一場' + (next.no ? '・Game ' + next.no : ''), size: 'xs', color: COLOR.accent, margin: 'xl' },
+      { type: 'text', text: matchLine(next), size: 'xl', color: COLOR.ink, margin: 'sm' },
+      { type: 'text', text: tpvlShort(next.home) + '  vs  ' + tpvlShort(next.away), size: 'md', color: COLOR.ink, margin: 'sm', wrap: true },
+      { type: 'text', text: next.venue || ' ', size: 'xs', color: COLOR.text, margin: 'xs', wrap: true }
+    );
+    alt.push('下一場 ' + matchLine(next) + ' ' + next.home + ' vs ' + next.away + (next.venue ? '（' + next.venue + '）' : ''));
+    var after = upcoming.slice(1, 3);
+    if (after.length) {
+      contents.push({ type: 'text', text: '再來', size: 'xs', color: COLOR.accent, margin: 'lg' });
+      after.forEach(function (m) { contents.push(matchMini(m, tpvlShort(m.home) + ' vs ' + tpvlShort(m.away))); });
+    }
+  } else {
+    contents.push({ type: 'text', text: '接下來沒有排定的比賽，球員也要休息。', size: 'sm', color: COLOR.text, margin: 'xl', wrap: true });
+  }
+  if (last) {
+    var homeWin = last.homeSets > last.awaySets;
+    contents.push(cardLine(),
+      { type: 'text', text: '最近一場・' + matchLine(last), size: 'xs', color: COLOR.accent, margin: 'lg' },
+      {
+        type: 'box', layout: 'horizontal', margin: 'md', contents: [
+          { type: 'text', text: tpvlShort(last.home), size: 'sm', color: homeWin ? COLOR.ink : COLOR.text, weight: homeWin ? 'bold' : 'regular', flex: 4, wrap: true },
+          { type: 'text', text: last.homeSets + ' : ' + last.awaySets, size: 'lg', color: COLOR.shu, flex: 3, align: 'center' },
+          { type: 'text', text: tpvlShort(last.away), size: 'sm', color: homeWin ? COLOR.text : COLOR.ink, weight: homeWin ? 'regular' : 'bold', flex: 4, align: 'end', wrap: true }
+        ]
+      });
+    alt.push('最近一場 ' + last.home + ' ' + last.homeSets + ':' + last.awaySets + ' ' + last.away);
+  }
+  contents.push(cardTip(pick(VOLLEY_TIPS)));
+  return withFooter(hiddenCard(alt.join('。'), 'VOLLEYBALL', '排球', contents));
+}
+
+function replyVolleyTeam(team, quiet) {
+  var list = fetchTpvlMatches();
+  if (!list) return quiet ? null : '排球賽程讀不到，官網可能在休息（或改版了）。';
+  var mine = list.filter(function (m) { return m.home === team || m.away === team; });
+  var today = tpvlNowKey().slice(0, 10) + 'T00:00';
+  var upcoming = mine.filter(function (m) { return m.status !== 'COMPLETED' && tpvlKey(m) >= today; }).slice(0, 3);
+  var done = mine.filter(function (m) { return m.status === 'COMPLETED'; }).slice(-3).reverse();
+  var contents = [{ type: 'text', text: team, size: 'xl', color: COLOR.ink, margin: 'lg' }];
+  var alt = [team];
+
+  contents.push({ type: 'text', text: '接下來', size: 'xs', color: COLOR.accent, margin: 'lg' });
+  if (upcoming.length) {
+    upcoming.forEach(function (m) {
+      var home = m.home === team;
+      contents.push(matchMini(m, (home ? '主場 vs ' : '客場 @ ') + tpvlShort(home ? m.away : m.home)));
+    });
+    alt.push('下一場 ' + matchLine(upcoming[0]) + ' vs ' + (upcoming[0].home === team ? upcoming[0].away : upcoming[0].home));
+  } else {
+    contents.push({ type: 'text', text: '目前沒有排定的比賽', size: 'sm', color: COLOR.text, margin: 'sm' });
+  }
+
+  contents.push({ type: 'text', text: '最近', size: 'xs', color: COLOR.accent, margin: 'lg' });
+  var wins = 0;
+  if (done.length) {
+    done.forEach(function (m) {
+      var home = m.home === team;
+      var mySets = home ? m.homeSets : m.awaySets;
+      var theirSets = home ? m.awaySets : m.homeSets;
+      var won = mySets > theirSets;
+      if (won) wins++;
+      contents.push({
+        type: 'box', layout: 'horizontal', margin: 'md', contents: [
+          { type: 'text', text: shortDay(m.date), size: 'sm', color: COLOR.accent, flex: 4 },
+          { type: 'text', text: 'vs ' + tpvlShort(home ? m.away : m.home), size: 'sm', color: COLOR.ink, flex: 4 },
+          { type: 'text', text: (won ? '勝 ' : '敗 ') + mySets + ':' + theirSets, size: 'sm', color: won ? COLOR.shu : COLOR.text, flex: 3, align: 'end' }
+        ]
+      });
+    });
+    alt.push('最近 ' + done.map(function (m) {
+      var home = m.home === team;
+      var my = home ? m.homeSets : m.awaySets, their = home ? m.awaySets : m.homeSets;
+      return (my > their ? '勝' : '敗') + my + ':' + their;
+    }).join('、'));
+  } else {
+    contents.push({ type: 'text', text: '這季還沒打過', size: 'sm', color: COLOR.text, margin: 'sm' });
+  }
+  var tip = !done.length ? '還沒開打，什麼都有可能。'
+    : wins === done.length ? '最近全勝。今晚可以大聲一點。'
+      : wins === 0 ? '最近都輸。沒關係，二十七樓永遠支持你。'
+        : '有輸有贏，這就是運動，也是人生。';
+  contents.push(cardTip(tip));
+  return withFooter(hiddenCard(alt.join('。'), 'VOLLEYBALL', '排球・' + tpvlShort(team), contents));
+}
+
+function replyVolleyStandings(quiet) {
+  var list = fetchTpvlStandings();
+  if (!list) return quiet ? null : '排球戰績讀不到，官網可能在休息（或改版了）。';
+  var header = {
+    type: 'box', layout: 'horizontal', margin: 'xl', contents: [
+      { type: 'text', text: '#', size: 'xxs', color: COLOR.accent, flex: 1 },
+      { type: 'text', text: '球隊', size: 'xxs', color: COLOR.accent, flex: 5 },
+      { type: 'text', text: '勝－敗', size: 'xxs', color: COLOR.accent, flex: 3, align: 'center' },
+      { type: 'text', text: '積分', size: 'xxs', color: COLOR.accent, flex: 2, align: 'end' }
+    ]
+  };
+  var rows = list.map(function (t, i) {
+    return {
+      type: 'box', layout: 'horizontal', margin: 'md', contents: [
+        { type: 'text', text: String(i + 1), size: 'sm', color: i === 0 ? COLOR.shu : COLOR.text, flex: 1 },
+        { type: 'text', text: tpvlShort(t.team), size: 'sm', color: COLOR.ink, flex: 5 },
+        { type: 'text', text: (t.wins === null ? '—' : t.wins) + '－' + (t.losses === null ? '—' : t.losses), size: 'sm', color: COLOR.ink, flex: 3, align: 'center' },
+        { type: 'text', text: t.points === null ? '—' : String(t.points), size: 'sm', color: i === 0 ? COLOR.shu : COLOR.ink, flex: 2, align: 'end' }
+      ]
+    };
+  });
+  var top = list[0];
+  var card = hiddenCard(
+    '排球戰績：' + list.map(function (t, i) { return (i + 1) + '. ' + t.team + ' ' + t.wins + '勝' + t.losses + '敗 ' + t.points + '分'; }).join('、'),
+    'VOLLEYBALL', '排球・戰績', [header].concat(rows).concat([cardTip(tpvlShort(top.team) + '暫時第一。暫時兩個字很重要。')]));
+  card.contents.styles.footer = { backgroundColor: COLOR.bg };
+  card.contents.footer = {
+    type: 'box', layout: 'vertical', paddingTop: '0px', contents: [{
+      type: 'button', style: 'link', height: 'sm', color: COLOR.accent,
+      action: { type: 'uri', label: '看完整戰績', uri: TPVL_URL + '/standings' }
+    }]
+  };
+  return card;
+}
+
 // 在編輯器選這個函式按「執行」，確認外面的來源都抓得到（看「執行記錄」）
 function testHiddenSources() {
-  CacheService.getScriptCache().removeAll(['air', 'holidays', 'oil', 'stock:2330', 'stock:6488']);
+  CacheService.getScriptCache().removeAll(['air', 'holidays', 'oil', 'stock:2330', 'stock:6488', 'tpvl:matches', 'tpvl:standings']);
+  var vb = fetchTpvlMatches();
+  console.log('排球賽程', vb ? vb.length + ' 場，前三場 ' + JSON.stringify(vb.slice(0, 3)) : '抓不到');
+  console.log('排球戰績', JSON.stringify(fetchTpvlStandings()));
   console.log('股價（上市）', JSON.stringify(lookupStock('2330')));
   console.log('股價（上櫃）', JSON.stringify(lookupStock('6488')));
   console.log('狗', JSON.stringify(replyDog()));
@@ -1437,7 +1842,8 @@ function replyHelp() {
     '放假　下一個連假還有幾天\n' +
     '分帳　出去玩誰欠誰，打開就算（打記帳、拆帳、AA 也可以）\n' +
     '油價　這週的油價，下週漲還是跌\n' +
-    '股　　收盤價，例如「股 2330」「股 台積電」\n\n' +
+    '股　　收盤價，例如「股 2330」「股 台積電」\n' +
+    '排球　TPVL 下一場和最近比分；「排球 雲豹」看單隊、「排球 戰績」看排名\n\n' +
     '【沒有用】\n' +
     '狗、貓　隨機一張，只打一個字才會出現\n\n' +
     '其他的話，我也會回，只是回得沒什麼用。群組裡要 @我 才回。';
