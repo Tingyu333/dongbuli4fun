@@ -1908,7 +1908,8 @@ function replyVolleyLeaders(cat, quiet) {
   var list = fetchTpvlPlayers(cat);
   if (!list) return quiet ? null : '排球球員數據讀不到，官網可能在休息（或改版了）。';
   var field = leaderField(list, cat);
-  if (!field) return quiet ? null : cat.title + '排行還沒有資料，可能賽季還沒開始（或官網改版了）。';
+  // 官網的技能排行是打開網頁後才用 JavaScript 載入的，抓網頁拿不到數字（2026-11 實測）
+  if (!field) return quiet ? null : '官網的' + cat.title + '排行要打開網頁才會載入，bot 讀不到數字。先看「排球 得分王」，或點這裡：' + TPVL_URL + '/stats/players?' + cat.query;
   var top = volleyRank(list, field).slice(0, 5);
   var extraKey = cat.extra[0];
   var extraOf = function (p) {
