@@ -31,6 +31,10 @@ var COMMANDS = [
   { words: ['節氣'], run: replySolarTerm },
   { words: ['日出', '日落', '夕陽'], run: replySun },
   { words: ['放假', '連假', '假日'], run: replyHoliday },
+  { words: ['油價', '汽油', '柴油'], run: replyOil },
+  // 狗、貓只認整句（「狗屎運」「貓咪好可愛」不會在群組裡突然冒出一張圖）
+  { words: ['狗', '汪', '狗狗', '汪汪'], exact: true, run: replyDog },
+  { words: ['貓', '喵', '貓貓', '貓咪', '喵喵'], exact: true, run: replyCat },
   { words: ['隱藏指令', '彩蛋'], run: replySecrets }
 ];
 
@@ -86,7 +90,8 @@ function handleMessage(message, source) {
   for (var i = 0; i < COMMANDS.length; i++) {
     for (var j = 0; j < COMMANDS[i].words.length; j++) {
       var word = COMMANDS[i].words[j];
-      if (text.indexOf(word) === 0) return COMMANDS[i].run(text.slice(word.length).trim(), source);
+      var hit = COMMANDS[i].exact ? text.replace(/[!！~～。.?？]+$/, '') === word : text.indexOf(word) === 0;
+      if (hit) return COMMANDS[i].run(text.slice(word.length).trim(), source);
     }
   }
   return oneOnOne || mentioned ? nonsense(source, NONSENSE_LINES) : null;
@@ -1036,9 +1041,223 @@ function replyHoliday() {
   return hiddenCard(alt, 'HOLIDAY', '放假', contents);
 }
 
-// 在編輯器選這個函式按「執行」，確認空氣和行事曆兩個來源抓得到（看「執行記錄」）
+// --- 狗、貓（免費的隨機圖片 API：bot 只回圖片網址，LINE 的伺服器自己去抓圖） ---
+// LINE 圖片訊息的規定：HTTPS、JPEG 或 PNG、原圖 10MB 以內、縮圖 1MB 以內
+
+var DOG_BREEDS = {
+  shiba: '柴犬', husky: '哈士奇', corgi: '柯基', 'corgi-cardigan': '柯基', pembroke: '柯基', pug: '巴哥',
+  'retriever-golden': '黃金獵犬', labrador: '拉不拉多', 'retriever-labrador': '拉不拉多',
+  'poodle-toy': '貴賓', 'poodle-miniature': '貴賓', 'poodle-standard': '標準貴賓', poodle: '貴賓',
+  chihuahua: '吉娃娃', beagle: '米格魯', 'bulldog-french': '法鬥', 'bulldog-english': '英國鬥牛犬', bulldog: '鬥牛犬',
+  dachshund: '臘腸狗', samoyed: '薩摩耶', malamute: '阿拉斯加', germanshepherd: '德國牧羊犬',
+  'collie-border': '邊境牧羊犬', collie: '牧羊犬', pomeranian: '博美', maltese: '瑪爾濟斯', shihtzu: '西施',
+  akita: '秋田犬', 'schnauzer-miniature': '雪納瑞', schnauzer: '雪納瑞', dalmatian: '大麥町', doberman: '杜賓',
+  rottweiler: '羅威納', chow: '鬆獅犬', 'terrier-yorkshire': '約克夏', 'frise-bichon': '比熊', papillon: '蝴蝶犬',
+  greyhound: '靈緹', 'greyhound-italian': '義大利靈緹', mix: '米克斯', 'spaniel-cocker': '可卡',
+  'sheepdog-shetland': '喜樂蒂', 'mountain-bernese': '伯恩山', stbernard: '聖伯納', newfoundland: '紐芬蘭',
+  'terrier-jack-russell': '傑克羅素', 'terrier-westhighland': '西高地白㹴', 'terrier-boston': '波士頓㹴', boxer: '拳師犬'
+};
+
+var DOG_LINES = [
+  '牠今天也沒有上班。',
+  '比你還會撒嬌。',
+  '看了三秒，心情好了一點點。',
+  '牠不知道你在看牠，這樣比較好。',
+  '汪。（翻譯：給我零食）',
+  '二十七樓不能養狗，所以只能看圖。'
+];
+
+var CAT_LINES = [
+  '牠不在乎你，這就是貓。',
+  '喵。（翻譯：你可以走了）',
+  '今天的貓已送達，請簽收。',
+  '牠睡了十六個小時，比你努力。',
+  '你看牠，牠不看你。',
+  '二十七樓不能養貓，所以只能看圖。'
+];
+
+function imageMessage(url) {
+  return { type: 'image', originalContentUrl: url, previewImageUrl: url };
+}
+
+function isLineImage(url) {
+  return /^https:\/\/\S+\.(jpe?g|png)(\?\S*)?$/i.test(String(url || '')) && url.length <= 2000;
+}
+
+function fetchJson(url) {
+  try {
+    var res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200) {
+      console.error('讀取失敗', url, res.getResponseCode());
+      return null;
+    }
+    return JSON.parse(res.getContentText());
+  } catch (err) {
+    console.error('讀取失敗', url, err);
+    return null;
+  }
+}
+
+// dog.ceo：{ message: 'https://images.dog.ceo/breeds/shiba/xxx.jpg', status: 'success' }，網址裡有品種
+function replyDog() {
+  for (var i = 0; i < 2; i++) { // 偶爾抽到 LINE 不收的格式，再抽一次
+    var data = fetchJson('https://dog.ceo/api/breeds/image/random');
+    var url = data && data.status === 'success' ? data.message : null;
+    if (!isLineImage(url)) continue;
+    var m = url.match(/\/breeds\/([^/]+)\//);
+    var breed = m ? (DOG_BREEDS[m[1]] || DOG_BREEDS[m[1].split('-')[0]] || '某種狗') : '某種狗';
+    return [imageMessage(url), '今日之犬：' + breed + '。' + pick(DOG_LINES)];
+  }
+  return '狗跑掉了，等一下再叫一次。';
+}
+
+// The Cat API：[{ id, url, width, height }]；抓不到再換 cataas（先要編號，網址才會每次不一樣，LINE 才不會一直給同一隻）
+function replyCat() {
+  for (var i = 0; i < 2; i++) {
+    var list = fetchJson('https://api.thecatapi.com/v1/images/search');
+    var url = list && list[0] && list[0].url;
+    if (isLineImage(url)) return [imageMessage(url), pick(CAT_LINES)];
+  }
+  var cat = fetchJson('https://cataas.com/cat?json=true');
+  var id = cat && (cat.id || cat._id);
+  if (id) return [imageMessage('https://cataas.com/cat/' + encodeURIComponent(id)), pick(CAT_LINES)];
+  return '貓不想理你。（讀不到，等一下再叫一次）';
+}
+
+// --- 油價（中油官方的牌價服務，不用金鑰） ---
+// 每個產品的歷史牌價（含已公告、還沒生效的下週價格），存 3 小時
+
+var OIL_URL = 'https://vipmbr.cpc.com.tw/cpcstn/listpricewebservice.asmx/';
+var OIL_PRODUCTS = [
+  { id: 1, name: '92 無鉛' },
+  { id: 2, name: '95 無鉛' },
+  { id: 3, name: '98 無鉛' },
+  { id: 4, name: '超級柴油' }
+];
+
+// 中油回的是 .NET DataSet 的 XML：裡面一筆一筆有「產品名」「參考牌價」「牌價生效時間」「計價單位」
+// 欄位名稱各版本不太一樣，所以用「名字裡有什麼字」來認，不寫死
+function oilRecords(text) {
+  var root = XmlService.parse(text).getRootElement();
+  // 用 GET 呼叫時，結果可能被包在 <string> 裡面當文字
+  if (root.getChildren().length === 0 && /^\s*</.test(root.getText())) return oilRecords(root.getText());
+  var out = [];
+  (function walk(el) {
+    var kids = el.getChildren();
+    if (kids.length && kids.every(function (k) { return k.getChildren().length === 0; })) {
+      var rec = {};
+      kids.forEach(function (k) { rec[k.getName()] = k.getText(); });
+      var keys = Object.keys(rec);
+      var priceKey = keys.filter(function (k) { return k.indexOf('牌價') !== -1 && k.indexOf('時間') === -1; })[0];
+      var timeKey = keys.filter(function (k) { return k.indexOf('生效') !== -1 || k.indexOf('時間') !== -1; })[0];
+      if (priceKey) {
+        out.push({
+          name: rec[keys.filter(function (k) { return k.indexOf('產品') !== -1; })[0]] || '',
+          price: Number(rec[priceKey]),
+          time: timeKey ? new Date(rec[timeKey]).getTime() : NaN,
+          unit: rec[keys.filter(function (k) { return k.indexOf('單位') !== -1; })[0]] || '元/公升'
+        });
+        return;
+      }
+    }
+    kids.forEach(walk);
+  })(root);
+  return out.filter(function (r) { return !isNaN(r.price); });
+}
+
+// 回傳 [{ name, now, prev, next, since, nextAt }]：now 現在的價、prev 上一次、next 已公告還沒生效的
+function fetchOil() {
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get('oil');
+  if (cached) return JSON.parse(cached);
+  var now = Date.now();
+  var result = [];
+  OIL_PRODUCTS.forEach(function (p) {
+    try {
+      var res = UrlFetchApp.fetch(OIL_URL + 'getCPCMainProdListPrice_Historical?prodid=' + p.id, { muteHttpExceptions: true });
+      if (res.getResponseCode() !== 200) return console.error('油價讀取失敗', p.id, res.getResponseCode());
+      var recs = oilRecords(res.getContentText())
+        .filter(function (r) { return !isNaN(r.time); })
+        .sort(function (a, b) { return a.time - b.time; });
+      var past = recs.filter(function (r) { return r.time <= now; });
+      var future = recs.filter(function (r) { return r.time > now; });
+      if (!past.length) return;
+      var cur = past[past.length - 1];
+      var before = past.length > 1 ? past[past.length - 2] : null;
+      result.push({
+        name: p.name,
+        now: cur.price,
+        prev: before ? before.price : null,
+        next: future.length ? future[0].price : null,
+        since: cur.time,
+        nextAt: future.length ? future[0].time : null
+      });
+    } catch (err) {
+      console.error('油價讀取失敗', p.id, err);
+    }
+  });
+  if (!result.length) return null;
+  cache.put('oil', JSON.stringify(result), 3 * 60 * 60);
+  return result;
+}
+
+function oilDiff(d) {
+  if (d === null || d === undefined || isNaN(d)) return '';
+  d = Math.round(d * 10) / 10;
+  return d > 0 ? '漲 ' + d.toFixed(1) : d < 0 ? '降 ' + (-d).toFixed(1) : '不變';
+}
+
+function shortDayMs(ms) {
+  return shortDay(Utilities.formatDate(new Date(ms), 'Asia/Taipei', 'yyyy-MM-dd'));
+}
+
+function replyOil() {
+  var oil = fetchOil();
+  if (!oil) return '油價讀不到。保險起見，先騎腳踏車。';
+  var gas = oil.filter(function (o) { return o.name.indexOf('無鉛') !== -1; })[0] || oil[0];
+  var diesel = oil.filter(function (o) { return o.name.indexOf('柴油') !== -1; })[0];
+  var upcoming = oil.some(function (o) { return o.next !== null; });
+
+  // 頭條：有公告下週價格就講下週，沒有就講這週比上週
+  function change(o) { return o ? (upcoming ? (o.next === null ? 0 : o.next - o.now) : (o.prev === null ? null : o.now - o.prev)) : null; }
+  var g = change(gas), dz = change(diesel);
+  var when = upcoming ? shortDayMs(gas.nextAt || diesel.nextAt) + '起' : '這週';
+  var gasLine = '汽油' + (oilDiff(g) || '—');
+  var dieselLine = diesel ? '柴油' + (oilDiff(dz) || '—') : '';
+  var headline = when + gasLine + (dieselLine ? '、' + dieselLine : '');
+  var tip = g > 0 ? '漲了。宜騎腳踏車，宜在二十七樓待著不出門。'
+    : g < 0 ? '降了。宜加滿，宜出去兜風再回二十七樓。'
+      : '油價沒什麼變，跟你一樣。';
+
+  var rows = oil.map(function (o) {
+    var d = upcoming ? (o.next === null ? null : o.next - o.now) : (o.prev === null ? null : o.now - o.prev);
+    var label = upcoming && o.next !== null ? o.now.toFixed(1) + ' → ' + o.next.toFixed(1) : o.now.toFixed(1);
+    return {
+      type: 'box', layout: 'horizontal', margin: 'md', contents: [
+        { type: 'text', text: o.name, size: 'sm', color: COLOR.accent, flex: 4 },
+        { type: 'text', text: label, size: 'sm', color: COLOR.ink, flex: 5, align: 'end' },
+        { type: 'text', text: oilDiff(d) || '—', size: 'xs', color: d > 0 ? COLOR.shu : COLOR.text, flex: 3, align: 'end', gravity: 'center' }
+      ]
+    };
+  });
+
+  return hiddenCard(
+    headline + '。' + oil.map(function (o) { return o.name + ' ' + o.now.toFixed(1); }).join('、') + '（元/公升）',
+    'OIL', '油價', [
+      { type: 'text', text: when, size: 'xs', color: COLOR.accent, margin: 'xl', align: 'center' },
+      { type: 'text', text: gasLine, size: 'xxl', color: g > 0 ? COLOR.shu : COLOR.ink, margin: 'sm', align: 'center' },
+      cardSub(dieselLine || '中油的汽油價'),
+      cardLine(),
+      { type: 'text', text: '中油牌價・元/公升・現價 ' + shortDayMs(gas.since) + '生效', size: 'xxs', color: COLOR.text, margin: 'md', wrap: true }
+    ].concat(rows).concat([cardTip(tip)]));
+}
+
+// 在編輯器選這個函式按「執行」，確認外面的來源都抓得到（看「執行記錄」）
 function testHiddenSources() {
-  CacheService.getScriptCache().removeAll(['air', 'holidays']);
+  CacheService.getScriptCache().removeAll(['air', 'holidays', 'oil']);
+  console.log('狗', JSON.stringify(replyDog()));
+  console.log('貓', JSON.stringify(replyCat()));
+  console.log('油價', JSON.stringify(fetchOil()));
   console.log('空氣', JSON.stringify(fetchAir()));
   var cal = fetchHolidays();
   console.log('行事曆', cal ? '抓到了，資料到 ' + cal.last + '，放假 ' + Object.keys(cal.off).length + ' 天' : '抓不到');
@@ -1097,7 +1316,10 @@ function replyHelp() {
     '節氣　現在是什麼節氣\n\n' +
     '【過日子】\n' +
     '放假　下一個連假還有幾天\n' +
-    '分帳　出去玩誰欠誰，打開就算（打記帳、拆帳、AA 也可以）\n\n' +
+    '分帳　出去玩誰欠誰，打開就算（打記帳、拆帳、AA 也可以）\n' +
+    '油價　這週的油價，下週漲還是跌\n\n' +
+    '【沒有用】\n' +
+    '狗、貓　隨機一張，只打一個字才會出現\n\n' +
     '其他的話，我也會回，只是回得沒什麼用。群組裡要 @我 才回。';
 }
 
@@ -1108,15 +1330,18 @@ function welcomeText(type) {
 // --- LINE ---
 
 // message 可以是文字，或是組好的訊息物件（例如空房的月曆卡片）
+// message 可以是文字、一則訊息物件，或一次好幾則（陣列，最多 5 則）
 function reply(replyToken, message) {
-  if (typeof message === 'string') message = { type: 'text', text: message.slice(0, 5000) };
+  var messages = (Array.isArray(message) ? message : [message]).slice(0, 5).map(function (m) {
+    return typeof m === 'string' ? { type: 'text', text: m.slice(0, 5000) } : m;
+  });
   var token = prop('LINE_CHANNEL_ACCESS_TOKEN');
   if (!token) return console.error('沒設定 LINE_CHANNEL_ACCESS_TOKEN');
   var res = UrlFetchApp.fetch('https://api.line.me/v2/bot/message/reply', {
     method: 'post',
     contentType: 'application/json',
     headers: { Authorization: 'Bearer ' + token },
-    payload: JSON.stringify({ replyToken: replyToken, messages: [message] }),
+    payload: JSON.stringify({ replyToken: replyToken, messages: messages }),
     muteHttpExceptions: true
   });
   if (res.getResponseCode() !== 200) console.error('LINE 回覆失敗', res.getResponseCode(), res.getContentText());
