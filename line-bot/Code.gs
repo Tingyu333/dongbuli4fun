@@ -32,6 +32,7 @@ var COMMANDS = [
   { words: ['日出', '日落', '夕陽'], run: replySun },
   { words: ['放假', '連假', '假日'], run: replyHoliday },
   { words: ['油價', '汽油', '柴油'], run: replyOil },
+  { words: ['股價', '股票', '股'], run: replyStock }, // 長的放前面，「股票 2330」才不會被切成「票 2330」
   // 狗、貓只認整句（「狗屎運」「貓咪好可愛」不會在群組裡突然冒出一張圖）
   { words: ['狗', '汪', '狗狗', '汪汪'], exact: true, run: replyDog },
   { words: ['貓', '喵', '貓貓', '貓咪', '喵喵'], exact: true, run: replyCat },
@@ -1252,9 +1253,127 @@ function replyOil() {
     ].concat(rows).concat([cardTip(tip)]));
 }
 
+// --- 股價（證交所、櫃買中心的 OpenAPI，不用金鑰；都是最近一個交易日的收盤資料，不是即時） ---
+// 證交所 STOCK_DAY_ALL 約 1,400 檔；櫃買中心的表很大（含權證、債券，上萬筆），所以先查上市，找不到才查上櫃
+// 查到的那一檔存 20 分鐘
+
+var TWSE_URL = 'https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL';
+var TPEX_URL = 'https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes';
+var STOCK_DOWN = '#4f7a5c'; // 台股跌是綠色（漲是朱色）
+
+function stockNum(v) {
+  var n = parseFloat(String(v === undefined || v === null ? '' : v).replace(/[,\s+]/g, ''));
+  return isNaN(n) ? null : n;
+}
+
+// 民國日期 1151111 → 2026-11-11
+function rocDate(v) {
+  var m = String(v || '').trim().match(/^(\d{2,3})(\d{2})(\d{2})$/);
+  return m ? (Number(m[1]) + 1911) + '-' + m[2] + '-' + m[3] : null;
+}
+
+// 兩邊的欄位名稱不一樣，整理成同一種
+function normalizeStock(row, market) {
+  var code = String(row.Code || row.SecuritiesCompanyCode || '').trim();
+  var name = String(row.Name || row.CompanyName || row.CompanyAbbreviation || '').trim();
+  return {
+    market: market,
+    code: code,
+    name: name,
+    date: rocDate(row.Date),
+    close: stockNum(row.ClosingPrice !== undefined ? row.ClosingPrice : row.Close),
+    change: stockNum(row.Change),
+    open: stockNum(row.OpeningPrice !== undefined ? row.OpeningPrice : row.Open),
+    high: stockNum(row.HighestPrice !== undefined ? row.HighestPrice : row.High),
+    low: stockNum(row.LowestPrice !== undefined ? row.LowestPrice : row.Low),
+    volume: stockNum(row.TradeVolume !== undefined ? row.TradeVolume : row.TradingShares) // 股
+  };
+}
+
+// 代號完全一樣 > 名稱完全一樣 > 名稱包含（取最短的，「台積」→ 台積電）
+function findStock(rows, market, query) {
+  var list = rows.map(function (r) { return normalizeStock(r, market); }).filter(function (r) { return r.code; });
+  var q = query.toUpperCase();
+  var hit = list.filter(function (r) { return r.code.toUpperCase() === q; })[0] ||
+    list.filter(function (r) { return r.name === query; })[0];
+  if (hit) return hit;
+  if (/^\d+[A-Z]?$/.test(q)) return null; // 打代號就只認代號
+  return list.filter(function (r) { return r.name.indexOf(query) !== -1; })
+    .sort(function (a, b) { return a.name.length - b.name.length; })[0] || null;
+}
+
+function lookupStock(query) {
+  var cache = CacheService.getScriptCache();
+  var key = 'stock:' + query;
+  var cached = cache.get(key);
+  if (cached) return JSON.parse(cached);
+  var sources = [[TWSE_URL, '上市'], [TPEX_URL, '上櫃']];
+  var anyLoaded = false;
+  for (var i = 0; i < sources.length; i++) {
+    var rows = fetchJson(sources[i][0]);
+    if (!Array.isArray(rows)) continue;
+    anyLoaded = true;
+    var hit = findStock(rows, sources[i][1], query);
+    if (hit && hit.close !== null) {
+      cache.put(key, JSON.stringify(hit), 20 * 60);
+      return hit;
+    }
+  }
+  return anyLoaded ? { notFound: true } : null;
+}
+
+function stockFmt(n, digits) {
+  if (n === null || n === undefined) return '—';
+  var d = digits === undefined ? 2 : digits; // ETF 一檔 0.05，所以都留兩位，再把多的 0 拿掉
+  var parts = n.toFixed(d).split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return parts.join('.').replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+}
+
+function replyStock(arg, source) {
+  var query = String(arg || '').replace(/^[:：\s]+/, '').trim();
+  var quiet = source && source.type !== 'user'; // 群組裡「股市今天好慘」這種不是在查股價，查不到就安靜
+  if (!query) return quiet ? null : '要查哪一支？例如「股 2330」或「股 台積電」。';
+  if (query.length > 12) return quiet ? null : '名字太長了，打代號比較快，例如「股 2330」。';
+  var s = lookupStock(query);
+  if (!s) return quiet ? null : '證交所讀不到。股市不會因為你沒看就不動，但我也沒辦法。';
+  if (s.notFound) return quiet ? null : '找不到「' + query + '」。打代號最準，例如「股 2330」。';
+
+  var prevClose = s.change !== null ? s.close - s.change : null;
+  var pct = prevClose ? s.change / prevClose * 100 : null;
+  var up = s.change > 0, down = s.change < 0;
+  var color = up ? COLOR.shu : down ? STOCK_DOWN : COLOR.ink;
+  var changeText = s.change === null ? '—' : s.change === 0 ? '平盤'
+    : (up ? '▲ ' : down ? '▼ ' : '') + stockFmt(Math.abs(s.change)) + (pct === null ? '' : '（' + (up ? '+' : down ? '−' : '') + Math.abs(pct).toFixed(2) + '%）');
+  var tip = pct === null ? '股價是收盤價，不是神明的旨意。'
+    : pct >= 3 ? '漲很多。今晚二十七樓你請。'
+      : pct > 0 ? '小漲。可以多加一顆滷蛋。'
+        : pct === 0 ? '不動如山。跟你的存款一樣。'
+          : pct > -3 ? '小跌。沒關係，二十七樓的房價不會跌（因為不賣）。'
+            : '跌很多。宜擲杯問神明要不要攤平。';
+  var day = s.date ? shortDay(s.date) + '收盤' : '最近一個交易日收盤';
+
+  return hiddenCard(
+    s.name + '（' + s.code + '）' + day + ' ' + stockFmt(s.close) + '，' + changeText,
+    'STOCK', '股價', [
+      { type: 'text', text: s.name + '　' + s.code + '・' + s.market, size: 'sm', color: COLOR.text, margin: 'lg', align: 'center' },
+      { type: 'text', text: stockFmt(s.close), size: '3xl', color: color, margin: 'sm', align: 'center' },
+      { type: 'text', text: changeText, size: 'sm', color: color, margin: 'xs', align: 'center' },
+      cardLine(),
+      cardRow('開盤', stockFmt(s.open)),
+      cardRow('最高', stockFmt(s.high)),
+      cardRow('最低', stockFmt(s.low)),
+      cardRow('成交量', s.volume === null ? '—' : stockFmt(Math.round(s.volume / 1000), 0) + ' 張'),
+      { type: 'text', text: day + '・非即時，非投資建議', size: 'xxs', color: COLOR.text, margin: 'lg', wrap: true },
+      cardTip(tip)
+    ]);
+}
+
 // 在編輯器選這個函式按「執行」，確認外面的來源都抓得到（看「執行記錄」）
 function testHiddenSources() {
-  CacheService.getScriptCache().removeAll(['air', 'holidays', 'oil']);
+  CacheService.getScriptCache().removeAll(['air', 'holidays', 'oil', 'stock:2330', 'stock:6488']);
+  console.log('股價（上市）', JSON.stringify(lookupStock('2330')));
+  console.log('股價（上櫃）', JSON.stringify(lookupStock('6488')));
   console.log('狗', JSON.stringify(replyDog()));
   console.log('貓', JSON.stringify(replyCat()));
   console.log('油價', JSON.stringify(fetchOil()));
@@ -1317,7 +1436,8 @@ function replyHelp() {
     '【過日子】\n' +
     '放假　下一個連假還有幾天\n' +
     '分帳　出去玩誰欠誰，打開就算（打記帳、拆帳、AA 也可以）\n' +
-    '油價　這週的油價，下週漲還是跌\n\n' +
+    '油價　這週的油價，下週漲還是跌\n' +
+    '股　　收盤價，例如「股 2330」「股 台積電」\n\n' +
     '【沒有用】\n' +
     '狗、貓　隨機一張，只打一個字才會出現\n\n' +
     '其他的話，我也會回，只是回得沒什麼用。群組裡要 @我 才回。';
