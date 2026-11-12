@@ -1818,7 +1818,7 @@ function tpvlPlayers(payload) {
     seen[slug] = true;
     var esc = slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     var name = (seg.match(new RegExp('href":"/players/' + esc + '","children":"([^"]+)"')) || [])[1] || slug;
-    var pos = (seg.match(/"data-taxonomy":"position","data-term":"[a-z_]+","[^}]*"children":"([^"]+)"/) || [])[1] || '';
+    var pos = (seg.match(/"data-taxonomy":"position"[^}]*?"children":"([^"]+)"/) || [])[1] || '';
     var stats = {};
     Object.keys(f).forEach(function (k) { if (k !== 'player' && k !== 'team') stats[k] = tpvlNum(f[k]); });
     out.push({ slug: slug, name: name, team: tpvlTeam(f.team || '', seg), position: pos, stats: stats });
@@ -1897,6 +1897,10 @@ function replyVolleyLeaders(cat, quiet) {
   var list = fetchTpvlPlayers(cat);
   if (!list) return quiet ? null : '排球球員數據讀不到，官網可能在休息（或改版了）。';
   var top = volleyRank(list, cat.field).slice(0, 5);
+  if (!top.length && cat.key !== 'points' && !list.some(function (p) { return cat.field in p.stats; })) {
+    // 官網的排行頁只給得分欄位（m= 參數沒作用），這個類別的數字還讀不到
+    return quiet ? null : '官網的' + cat.title + '排行還讀不到數字，正在想辦法。先看「排球 得分王」。';
+  }
   if (!top.length) return quiet ? null : cat.title + '排行還沒有資料，可能賽季還沒開始。';
   var showPerSet = cat.key === 'points';
   var rows = top.map(function (p, i) {
@@ -1993,6 +1997,37 @@ function debugTpvlPlayers() {
       console.log('m=' + m + ' 讀取失敗：' + err);
     }
   });
+}
+
+// 除錯用（第二輪）：找出攔網、舉球這些數字到底在哪個網址
+// 印出排行頁裡所有 /stats/players?... 連結、欄位的 class（tp-c-xxx）、再抓第一位球員的個人頁看有哪些欄位
+function debugTpvlLinks() {
+  try {
+    var payload = tpvlPayload('/stats/players');
+    var links = {}, cols = {}, x;
+    var re = /"href":"(\/stats\/[^"]*)"/g;
+    while ((x = re.exec(payload))) links[x[1]] = (links[x[1]] || 0) + 1;
+    var re2 = /tp-c-([a-z_0-9]+)/g;
+    while ((x = re2.exec(payload))) cols[x[1]] = (cols[x[1]] || 0) + 1;
+    console.log('排行頁連結：' + JSON.stringify(Object.keys(links)));
+    console.log('欄位 class：' + JSON.stringify(cols));
+    var tabs = payload.match(/"children":"(攔網|發球|接發|防守|舉球|攻擊)[^"]*"/g);
+    console.log('分頁文字：' + JSON.stringify(tabs));
+    var at = payload.search(/攔網/);
+    if (at !== -1) console.log('「攔網」附近：' + payload.slice(Math.max(0, at - 600), at + 400));
+    var slug = (payload.match(/"data-field":"player","data-value":"([^"]+)"/) || [])[1];
+    if (slug) {
+      var pp = tpvlPayload('/players/' + slug);
+      var counts = {};
+      var re3 = /"data-field":"([^"]+)"/g;
+      while ((x = re3.exec(pp))) counts[x[1]] = (counts[x[1]] || 0) + 1;
+      console.log('球員頁 /players/' + slug + '｜' + pp.length + ' 字｜data-field：' + JSON.stringify(counts));
+      var b = pp.search(/攔網|block/);
+      if (b !== -1) console.log('球員頁「攔網」附近：' + pp.slice(Math.max(0, b - 400), b + 1200));
+    }
+  } catch (err) {
+    console.log('讀取失敗：' + err);
+  }
 }
 
 // 在編輯器選這個函式按「執行」，確認外面的來源都抓得到（看「執行記錄」）
