@@ -1781,16 +1781,16 @@ function replyVolleyStandings(quiet) {
 // 每種排行抓一頁 ?m=<類別>&sort=<類別>&order=desc，再照那個欄位自己排一次；每頁存 1 小時
 // 每位球員的欄位全部留著（得分頁是 points，技能頁是 success／success_rate／per_set）
 
-// 網址是官網排行頁上真的連結（debugTpvlLinks 印出來的）。得分頁的數字欄位是 points；
+// 網址是官網上真的網址：得分在 /stats/players，其他技能排行在 /stats/players/skills（頁面上的連結少了 /skills，是瀏覽器端轉過去的）。得分頁的數字欄位是 points；
 // 其他「技能」頁（skill=…）一列一位球員，數字欄位是 success（次數）、success_rate（成功率）、per_set（每局）
 var VOLLEY_CATEGORIES = [
-  { key: 'points', label: '得分', title: '得分王', query: 'm=points&sort=points&order=desc', fields: ['points'], extra: ['points_per_set', '每局'], words: ['得分王', '得分', '總得分'] },
-  { key: 'attack', label: '攻擊得分', title: '攻擊', query: 'm=attack_points&skill=attack&ssort=success&sorder=desc', fields: ['success', 'attack_points'], extra: ['success_rate', '成功率'], words: ['攻擊得分', '攻擊'] },
-  { key: 'block', label: '攔網得分', title: '攔網', query: 'm=block_points&skill=block&ssort=success&sorder=desc', fields: ['success', 'block_points'], extra: ['per_set', '每局'], words: ['攔網得分', '攔網'] },
-  { key: 'serve', label: '發球得分', title: '發球', query: 'm=serve_points&skill=serve&ssort=success&sorder=desc', fields: ['success', 'serve_points'], extra: ['per_set', '每局'], words: ['發球得分', '發球'] },
-  { key: 'reception', label: '接發到位', title: '接發', query: 'm=reception_success&skill=reception&ssort=success&sorder=desc', fields: ['success', 'reception_excellent'], extra: ['success_rate', '到位率'], words: ['接發球', '接發'] },
-  { key: 'dig', label: '防守到位', title: '防守', query: 'm=dig_success&skill=dig&ssort=success&sorder=desc', fields: ['success', 'dig_excellent'], extra: ['success_rate', '到位率'], words: ['防守'] },
-  { key: 'setting', label: '舉球成功', title: '舉球', query: 'm=setting_success&skill=setting&ssort=success&sorder=desc', fields: ['success', 'setting_excellent'], extra: ['per_set', '每局'], words: ['舉球', '二傳'] }
+  { key: 'points', label: '得分', title: '得分王', path: '/stats/players', query: 'm=points&sort=points&order=desc', fields: ['points'], extra: ['points_per_set', '每局'], words: ['得分王', '得分', '總得分'] },
+  { key: 'attack', path: '/stats/players/skills', label: '攻擊得分', title: '攻擊', query: 'm=attack_points&skill=attack&ssort=success&sorder=desc', fields: ['success', 'attack_points'], extra: ['success_rate', '成功率'], words: ['攻擊得分', '攻擊'] },
+  { key: 'block', path: '/stats/players/skills', label: '攔網得分', title: '攔網', query: 'm=block_points&skill=block&ssort=success&sorder=desc', fields: ['success', 'block_points'], extra: ['per_set', '每局'], words: ['攔網得分', '攔網'] },
+  { key: 'serve', path: '/stats/players/skills', label: '發球得分', title: '發球', query: 'm=serve_points&skill=serve&ssort=success&sorder=desc', fields: ['success', 'serve_points'], extra: ['per_set', '每局'], words: ['發球得分', '發球'] },
+  { key: 'reception', path: '/stats/players/skills', label: '接發到位', title: '接發', query: 'm=reception_success&skill=reception&ssort=success&sorder=desc', fields: ['success', 'reception_excellent'], extra: ['success_rate', '到位率'], words: ['接發球', '接發'] },
+  { key: 'dig', path: '/stats/players/skills', label: '防守到位', title: '防守', query: 'm=dig_success&skill=dig&ssort=success&sorder=desc', fields: ['success', 'dig_excellent'], extra: ['success_rate', '到位率'], words: ['防守'] },
+  { key: 'setting', path: '/stats/players/skills', label: '舉球成功', title: '舉球', query: 'm=setting_success&skill=setting&ssort=success&sorder=desc', fields: ['success', 'setting_excellent'], extra: ['per_set', '每局'], words: ['舉球', '二傳'] }
 ];
 
 function volleyCategory(query) {
@@ -1834,7 +1834,7 @@ function fetchTpvlPlayers(cat) {
   var cached = cache.get(key);
   if (cached) return JSON.parse(cached);
   try {
-    var list = tpvlPlayers(tpvlPayload('/stats/players?' + cat.query));
+    var list = tpvlPlayers(tpvlPayload(cat.path + '?' + cat.query));
     if (!list.length) throw new Error('TPVL /stats/players 解析不到球員（官網可能改版了）');
     var text = JSON.stringify(list);
     if (text.length < 95000) cache.put(key, text, 60 * 60); // CacheService 一格最多 100KB
@@ -1908,8 +1908,8 @@ function replyVolleyLeaders(cat, quiet) {
   var list = fetchTpvlPlayers(cat);
   if (!list) return quiet ? null : '排球球員數據讀不到，官網可能在休息（或改版了）。';
   var field = leaderField(list, cat);
-  // 官網的技能排行是打開網頁後才用 JavaScript 載入的，抓網頁拿不到數字（2026-11 實測）
-  if (!field) return quiet ? null : '官網的' + cat.title + '排行要打開網頁才會載入，bot 讀不到數字。先看「排球 得分王」，或點這裡：' + TPVL_URL + '/stats/players?' + cat.query;
+  // 找不到數字欄位（官網改版之類）：老實說，附連結
+  if (!field) return quiet ? null : '官網的' + cat.title + '排行讀不到數字，可能改版了。先看「排球 得分王」，或點這裡：' + TPVL_URL + cat.path + '?' + cat.query;
   var top = volleyRank(list, field).slice(0, 5);
   var extraKey = cat.extra[0];
   var extraOf = function (p) {
@@ -1931,7 +1931,7 @@ function replyVolleyLeaders(cat, quiet) {
   var card = hiddenCard(
     '排球' + cat.title + '：' + top.map(function (p, i) { return (i + 1) + '. ' + p.name + '（' + tpvlShort(p.team) + '）' + statFmt(p.stats[field]); }).join('、'),
     'VOLLEYBALL', '排球・' + cat.title, [header].concat(rows).concat([cardTip(king.name + '目前第一。' + pick(['請收下二十七樓的掌聲。', '這不是普通的手，是神的手。', '二十七樓決定頒發一顆滷蛋。']))]));
-  return playersFooter(card, '/stats/players?' + cat.query);
+  return playersFooter(card, cat.path + '?' + cat.query);
 }
 
 function replyVolleyPlayer(name, quiet) {
@@ -2052,7 +2052,9 @@ function testHiddenSources() {
   [2, 6].forEach(function (i) { // 攔網、舉球
     var c = VOLLEY_CATEGORIES[i];
     var st = fetchTpvlPlayers(c);
-    console.log('排球球員（' + c.title + '）', st ? st.length + ' 位，用欄位 ' + leaderField(st, c) + '，前兩位 ' + JSON.stringify(st.slice(0, 2)) : '抓不到');
+    var keys = {};
+    (st || []).forEach(function (p) { Object.keys(p.stats).forEach(function (k) { keys[k] = (keys[k] || 0) + 1; }); });
+    console.log('排球球員（' + c.title + '）', st ? st.length + ' 位，用欄位 ' + leaderField(st, c) + '，欄位 ' + JSON.stringify(keys) + '，前兩位 ' + JSON.stringify(st.slice(0, 2)) : '抓不到');
   });
   var vb = fetchTpvlMatches();
   console.log('排球賽程', vb ? vb.length + ' 場，前三場 ' + JSON.stringify(vb.slice(0, 3)) : '抓不到');
