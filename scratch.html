@@ -23,6 +23,7 @@
 
     <link rel="stylesheet" href="assets/theme.css">
     <script src="assets/theme.js"></script>
+    <script src="assets/wallet.js"></script>
     <style>
         /* 這頁走彩券行的熱鬧風格，不跟網站的侘寂風；彩券是紙本，顏色固定 */
         .shop {
@@ -626,14 +627,18 @@
             <p id="stats" class="text-right text-[10px] leading-relaxed text-stone-400 tracking-wide"></p>
         </section>
 
+        <p class="-mt-2 mb-4 text-right text-[11px] text-stone-500">
+            錢不夠？<a href="xitou.html" class="font-bold text-wabi-dark underline underline-offset-4">去坐洗部洗頭賺錢</a>
+        </p>
+
         <!-- 架上 -->
         <section id="shelf">
             <div id="pending" class="hidden mb-3"></div>
             <div id="covers" class="grid grid-cols-2 gap-2.5"></div>
             <div id="broke" class="hidden mt-6 rounded-xl border-2 border-dashed border-stone-300 p-5 text-center">
                 <p class="font-black text-wabi-dark">錢包空了</p>
-                <p class="mt-1 text-xs text-stone-500">隔壁就有提款機。</p>
-                <button id="atmBtn" type="button" class="act is-main mt-4">去提款 $2,000</button>
+                <p class="mt-1 text-xs text-stone-500">彩券行不賒帳。去坐洗部洗頭打工，洗一顆頭大約賺 $500～$1,500。</p>
+                <a href="xitou.html" class="act is-main mt-4 inline-flex items-center justify-center">去坐洗部打工</a>
             </div>
             <div id="bigs" class="mt-8"></div>
         </section>
@@ -1221,8 +1226,10 @@
 
         // ===== 2. 存檔 =====
         const KEY = 'dongbuli-scratch-tw';
-        let S = { money: 5000, atm: 0, count: 0, spent: 0, won: 0, best: 0, bigs: [], serial: 270000, queue: [], current: null };
+        let S = { money: 0, count: 0, spent: 0, won: 0, best: 0, bigs: [], serial: 270000, queue: [], current: null };
         try { Object.assign(S, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) { }
+        // 錢在共用錢包（assets/wallet.js）：洗頭賺的也在裡面。S.money 只是這頁拿來顯示的副本
+        S.money = Wallet.money;
         function save() {
             try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { }
         }
@@ -1438,7 +1445,9 @@
         // ===== 5. 錢包、架上 =====
         let shown = S.money;
         function setMoney(to, delta) {
-            S.money = to;
+            if (delta > 0) Wallet.earn(delta, 'scratch');
+            else if (delta < 0) Wallet.spend(-delta);
+            S.money = to = Wallet.money;
             save();
             if (delta) {
                 const el = $('delta');
@@ -1461,7 +1470,7 @@
 
         function renderStats() {
             const rate = S.spent ? Math.round(S.won / S.spent * 100) + '%' : '—';
-            $('stats').innerHTML = `刮了 ${S.count} 張・回收率 ${rate}<br>花 ${fmt(S.spent)}・中 ${fmt(S.won)}<br>最大一筆 ${S.best ? fmt(S.best) : '—'}${S.atm ? `・提款 ${S.atm} 次` : ''}`;
+            $('stats').innerHTML = `刮了 ${S.count} 張・回收率 ${rate}<br>花 ${fmt(S.spent)}・中 ${fmt(S.won)}<br>最大一筆 ${S.best ? fmt(S.best) : '—'}`;
         }
 
         function renderShelf() {
@@ -1499,14 +1508,19 @@
             next();
         });
 
-        $('atmBtn').addEventListener('click', () => {
-            unlockAudio();
-            S.atm++;
-            setMoney(S.money + 2000, 2000);
-            sfx.cash();
-            showToast(pick(['提款成功。', '這是這個月最後一次了吧。', '提款機說：你又來了。']));
-            renderShelf();
-        });
+        // 從別頁回來（例如剛洗完頭領了工資）：錢包重新讀一次
+        function syncMoney() {
+            const now = Wallet.money;
+            if (now === S.money) return;
+            const diff = now - S.money;
+            S.money = now;
+            save();
+            setMoney(now, 0);
+            if (diff > 0) showToast(`錢包多了 ${fmt(diff)}`);
+            if (!$('shelf').classList.contains('hidden')) renderShelf();
+        }
+        window.addEventListener('pageshow', syncMoney);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) syncMoney(); });
 
         // ===== 6. 買、刮、對獎、兌獎 =====
         let foils = [];

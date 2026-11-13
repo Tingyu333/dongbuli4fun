@@ -24,6 +24,7 @@
 
     <link rel="stylesheet" href="assets/theme.css">
     <script src="assets/theme.js"></script>
+    <script src="assets/wallet.js"></script>
     <style>
         /* 洗頭台：手指在上面搓、拉，不能捲動頁面，長按也不能跳出系統選單 */
         .salon {
@@ -235,7 +236,7 @@
                     <li class="step">捏</li>
                     <li class="step">拍</li>
                 </ol>
-                <span id="best" class="text-[10px] font-sans tracking-widest text-stone-400"></span>
+                <span id="best" class="text-right text-[10px] leading-relaxed font-sans tracking-widest text-stone-400"></span>
             </div>
 
             <p id="who" class="mt-3 text-[11px] font-sans tracking-widest text-stone-400"></p>
@@ -272,6 +273,12 @@
             <p class="mt-2 text-wabi-dark"><span id="score" class="text-5xl font-light">0</span><span
                     class="ml-2 text-xs font-sans tracking-widest text-stone-400">爽度</span></p>
             <p id="gradeLine" class="mt-1 text-sm text-stone-500 tracking-widest"></p>
+            <!-- 工資：存進共用錢包，可以拿去彩券行 -->
+            <div class="mt-5 mx-auto max-w-[17rem] border-y border-stone-100 py-3 font-sans text-xs tracking-widest text-stone-500">
+                <p class="flex justify-between"><span>工資</span><span id="payWage" class="text-wabi-dark"></span></p>
+                <p class="flex justify-between mt-1"><span>小費</span><span id="payTip" class="text-wabi-dark"></span></p>
+                <p class="flex justify-between mt-2 pt-2 border-t border-stone-100"><span>錢包</span><span id="payWallet" class="text-wabi-shu text-sm"></span></p>
+            </div>
             <img id="certImg" alt="洗頭證明"
                 class="mt-6 w-full border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]">
             <div class="mt-6 flex flex-col gap-3">
@@ -279,12 +286,15 @@
                     class="w-full bg-wabi-dark text-wabi-bg py-4 px-8 tracking-[0.2em] font-sans text-xs shadow-lg">分享洗頭證明</button>
                 <button id="againBtn" type="button"
                     class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">再洗一顆</button>
+                <a href="scratch.html"
+                    class="block w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">拿工資去彩券行</a>
             </div>
         </section>
 
         <p class="mt-10 text-[11px] font-sans tracking-widest text-stone-400 leading-relaxed text-center">
             台式坐洗：坐著把泡泡堆滿整顆頭，<br>
-            抓完、捏完再去沖。不用預約。
+            抓完、捏完再去沖。不用預約。<br>
+            洗一顆頭發一次工資，可以拿去<a href="scratch.html" class="underline underline-offset-4">二十七樓彩券行</a>。
         </p>
     </main>
 
@@ -1640,6 +1650,15 @@
                 try { localStorage.setItem(BEST_KEY, String(total)); } catch (e) { }
                 if (best) showToast('新紀錄・最高爽度');
             }
+            // 發工資：爽度 × 10（最少 100），洗得好客人另外給小費。存進共用錢包
+            const wage = Math.max(100, total * 10);
+            const tip = total >= 90 ? 500 : total >= 75 ? 200 : 0;
+            G.pay = { wage, tip };
+            Wallet.earn(wage + tip, 'xitou');
+            $('payWage').textContent = Wallet.fmt(wage);
+            $('payTip').textContent = tip ? Wallet.fmt(tip) : '客人沒給';
+            $('payWallet').textContent = Wallet.fmt(Wallet.money);
+
             renderBest();
             hint('');
             actions([{ label: '再洗一顆', onClick: restart }]);
@@ -1664,6 +1683,7 @@
                 ['抓癢', `${G.hits} / 14`],
                 ['造型', G.shape.name],
                 ['拍背', G.patMarks.length ? G.patMarks.join('・') : '都沒拍到'],
+                ['工資', Wallet.fmt(G.pay.wage) + (G.pay.tip ? `＋小費 ${Wallet.fmt(G.pay.tip)}` : '')],
             ];
             const allText = rows.flat().join('') + '洗頭證明爽度二十七樓坐洗部' + grade.mark + grade.line + '0123456789（）';
             try {
@@ -1704,7 +1724,7 @@
             rows.forEach(([k, v]) => {
                 text(k, 210, y, `400 30px ${SANS}`, '#8e8070', 'left');
                 text(v, 360, y, `400 38px ${SERIF}`, '#4a4a4a', 'left');
-                y += 66;
+                y += 57;
             });
 
             // 爽度、朱印
@@ -1747,7 +1767,7 @@
         function renderBest() {
             let best = 0;
             try { best = Number(localStorage.getItem(BEST_KEY)) || 0; } catch (e) { }
-            $('best').textContent = best ? `最高爽度 ${best}` : '';
+            $('best').innerHTML = (best ? `最高爽度 ${best}<br>` : '') + `錢包 ${Wallet.fmt(Wallet.money)}`;
         }
 
         // ===== 8. 開始、重來 =====
