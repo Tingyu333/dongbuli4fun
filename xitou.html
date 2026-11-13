@@ -24,6 +24,7 @@
 
     <link rel="stylesheet" href="assets/theme.css">
     <script src="assets/theme.js"></script>
+    <script src="assets/line.js"></script>
     <script src="assets/wallet.js"></script>
     <style>
         /* 洗頭台：手指在上面搓、拉，不能捲動頁面，長按也不能跳出系統選單 */
@@ -278,6 +279,7 @@
                 <p class="flex justify-between"><span>工資</span><span id="payWage" class="text-wabi-dark"></span></p>
                 <p class="flex justify-between mt-1"><span>小費</span><span id="payTip" class="text-wabi-dark"></span></p>
                 <p class="flex justify-between mt-2 pt-2 border-t border-stone-100"><span>錢包</span><span id="payWallet" class="text-wabi-shu text-sm"></span></p>
+                <p id="payAcct" class="mt-2 text-[10px] leading-relaxed text-stone-400"></p>
             </div>
             <img id="certImg" alt="洗頭證明"
                 class="mt-6 w-full border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]">
@@ -1658,6 +1660,7 @@
             $('payWage').textContent = Wallet.fmt(wage);
             $('payTip').textContent = tip ? Wallet.fmt(tip) : '客人沒給';
             $('payWallet').textContent = Wallet.fmt(Wallet.money);
+            renderAcct();
 
             renderBest();
             hint('');
@@ -1763,6 +1766,21 @@
             link.download = certFile.name;
             link.click();
         }
+
+        // LINE 登入：工資存進帳號，換手機也在
+        const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+        function renderAcct() {
+            const box = $('payAcct');
+            if (Line.loggedIn) box.innerHTML = `存在 ${escHtml((Line.profile || {}).name || 'LINE')} 的 LINE 帳號`;
+            else box.innerHTML = `錢只存在這支手機。<button type="button" data-login class="min-h-[32px] underline underline-offset-4 text-wabi-dark">用 LINE 登入</button>，換手機也在`;
+            if (G && G.pay) $('payWallet').textContent = Wallet.fmt(Wallet.money);
+        }
+        $('payAcct').addEventListener('click', e => { if (e.target.closest('[data-login]')) Line.login(); });
+        Wallet.on(type => {
+            renderBest();
+            renderAcct();
+            if (type === 'login') showToast('登入了，工資存進 LINE 帳號');
+        });
 
         function renderBest() {
             let best = 0;

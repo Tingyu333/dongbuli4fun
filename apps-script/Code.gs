@@ -7,6 +7,8 @@
 // Reviews  欄位: A=timestamp, B=name, C=rating, D=message
 // Bonuses  欄位: A=timestamp, B=code, C=amount, D=note, E=max, F=status（主人從後台發的紅包：小遊戲的錢，不是真的錢）
 // BonusClaims 欄位: A=timestamp, B=code, C=device（哪支手機領了哪一包；device 是手機自己產生的亂數，不是個資）
+// Players  欄位: A=created, B=line_id, C=name, D=picture, E=money, F=spent, G=earned（JSON）, H=updated
+//               （用 LINE 登入的玩家和小遊戲錢包。line_id 是 LINE 給的使用者代號，只存在這裡、不回給任何人）
 //
 // status: pending（待確認）/ confirmed（已確認）/ cancelled（已取消）。舊資料沒填的當作 confirmed。
 //
@@ -17,6 +19,8 @@
 // - 公開的 API 不回電話和 Email；公開的動作（訂房、領票、取消）不寄信給別人，
 //   寄給旅人的信只有「老闆在後台按確認」這一種，陌生人沒辦法拿這裡當寄垃圾信的跳板。
 // - 寄信、訂房、登入失敗都有上限。
+// - LINE 登入：網頁送來的 ID token 一定要拿去問 LINE（verifyLineToken），不能相信網頁自己說的使用者代號。
+//   第一次加上這段要在編輯器執行 authorizeLine() 授權「連到外部服務」。
 
 var SITE_URL = 'https://tingyu333.github.io/dongbuli4fun/';
 var ADMIN_URL = SITE_URL + 'admin_dashboard.html';
@@ -36,6 +40,11 @@ var ADMIN_TOKEN_SECONDS = 6 * 60 * 60;
 var BONUS_MAX_AMOUNT = 20000000; // 一包紅包每人最多發多少（小遊戲的錢，不是真的錢）
 var BONUS_MAX_CLAIMS = 100;      // 一包最多幾個人領
 var BONUS_TRIES_PER_HOUR = 120;  // 全站每小時最多試幾次紅包碼，擋亂猜
+var LINE_LOGIN_CHANNEL_ID = '2012419790'; // LINE Login channel ID（公開的，不是密碼；channel secret 用不到，不要放進來）
+var LINE_LOGINS_PER_HOUR = 300;  // 全站每小時最多驗證幾次 LINE 登入（每次都要打 LINE 的 API）
+var WALLET_SYNCS_PER_HOUR = 1200; // 一個玩家每小時最多同步幾次錢包
+var WALLET_MAX = 1000000000000;  // 錢包上限一兆（小遊戲的錢，不是真的錢）
+var WALLET_START = 1000;         // 第一次來的錢
 
 // doPost 用於接收資料：訂房、留言、後台改狀態
 function doPost(e) {
@@ -54,6 +63,9 @@ function doPost(e) {
     if (type === 'unclaim') return json(unclaimTicket(input));
     if (type === 'adminLogin') return json(adminLogin(input));
     if (type === 'bonusClaim') return json(bonusClaim(input));
+    if (type === 'lineLogin') return json(lineLogin(input));
+    if (type === 'lineLogout') return json(lineLogout(input));
+    if (type === 'walletSync') return json(walletSync(input));
 
     // 以下只有後台能用，要帶登入拿到的通行證
     if (type === 'updateStatus' || type === 'adminList' || type === 'bonusCreate' || type === 'bonusList' || type === 'bonusClose') {
@@ -745,6 +757,169 @@ function bonusClaim(input) {
 
   bonusClaimsSheet().appendRow([new Date(), code, device]);
   return { result: 'success', amount: b.amount, note: b.note, left: b.max - claims.length - 1 };
+}
+
+// --- LINE 登入、小遊戲錢包 ---
+// 網頁用 LIFF 拿到 LINE 的 ID token，送來這裡；這裡拿去問 LINE 是不是真的、是誰，
+// 驗過了才發一張網站自己的通行證（session）。不能相信網頁自己說的使用者代號。
+
+function playersSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Players');
+  if (!sheet) {
+    sheet = ss.insertSheet('Players');
+    sheet.appendRow(['created', 'line_id', 'name', 'picture', 'money', 'spent', 'earned', 'updated']);
+  }
+  return sheet;
+}
+
+function findPlayer(lineId) {
+  var rows = playersSheet().getDataRange().getValues();
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][1]) !== lineId) continue;
+    var earned = {};
+    try { earned = JSON.parse(rows[i][6] || '{}') || {}; } catch (e) { }
+    return {
+      row: i + 1, lineId: lineId, name: String(rows[i][2] || ''), picture: String(rows[i][3] || ''),
+      money: Number(rows[i][4]) || 0, spent: Number(rows[i][5]) || 0, earned: cleanEarned(earned) || {}
+    };
+  }
+  return null;
+}
+
+// 問 LINE 這張 ID token 是不是真的、是誰的。不是真的回 null
+function verifyLineToken(idToken) {
+  if (!idToken || idToken.length > 4000) return null;
+  var res = UrlFetchApp.fetch('https://api.line.me/oauth2/v2.1/verify', {
+    method: 'post',
+    payload: { id_token: idToken, client_id: LINE_LOGIN_CHANNEL_ID },
+    muteHttpExceptions: true
+  });
+  if (res.getResponseCode() !== 200) return null;
+  var p = JSON.parse(res.getContentText());
+  if (String(p.aud) !== LINE_LOGIN_CHANNEL_ID || !p.sub) return null;
+  return { sub: String(p.sub), name: String(p.name || '旅人').slice(0, 20), picture: /^https:\/\//.test(p.picture || '') ? String(p.picture) : '' };
+}
+
+// 第一次貼上後，在編輯器選這個函式按「執行」：授權「連到外部服務」（跟 LINE 驗證要用）
+function authorizeLine() {
+  var res = UrlFetchApp.fetch('https://api.line.me/oauth2/v2.1/verify', {
+    method: 'post', payload: { id_token: 'test', client_id: LINE_LOGIN_CHANNEL_ID }, muteHttpExceptions: true
+  });
+  Logger.log('連得到 LINE（這次用假的 token，回 400 是正常的）：' + res.getResponseCode());
+}
+
+function sessionUser(session) {
+  session = String(session || '');
+  if (!/^[0-9a-f-]{20,60}$/i.test(session)) return null;
+  return PropertiesService.getScriptProperties().getProperty('sess:' + session);
+}
+
+// 網頁送來的錢包數字：都要是合理範圍的整數，不對就整包不收
+function cleanMoney(v, min, max) {
+  var n = Number(v);
+  if (!isFinite(n) || Math.round(n) !== n || n < min || n > max) return null;
+  return n;
+}
+
+function cleanEarned(earned) {
+  if (!earned || typeof earned !== 'object' || Array.isArray(earned)) return null;
+  var out = {}, keys = Object.keys(earned);
+  if (keys.length > 20) return null;
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i], e = earned[k];
+    if (!/^[a-z]{1,16}$/.test(k) || !e || typeof e !== 'object') return null;
+    var times = cleanMoney(e.times, 0, 1000000), total = cleanMoney(e.total, 0, WALLET_MAX), best = cleanMoney(e.best, 0, WALLET_MAX);
+    if (times === null || total === null || best === null) return null;
+    out[k] = { times: times, total: total, best: best };
+  }
+  return out;
+}
+
+function addEarned(base, more) {
+  Object.keys(more).forEach(function (k) {
+    var b = base[k] || (base[k] = { times: 0, total: 0, best: 0 });
+    b.times += more[k].times;
+    b.total = Math.min(WALLET_MAX, b.total + more[k].total);
+    b.best = Math.max(b.best, more[k].best);
+  });
+  return base;
+}
+
+function walletView(p) {
+  return { money: p.money, spent: p.spent, earned: p.earned };
+}
+
+function writeWallet(p) {
+  var sheet = playersSheet();
+  sheet.getRange(p.row, 5).setValue(p.money);
+  sheet.getRange(p.row, 6).setValue(p.spent);
+  sheet.getRange(p.row, 7).setValue(JSON.stringify(p.earned));
+  sheet.getRange(p.row, 8).setValue(new Date());
+}
+
+// 公開：LINE 登入。第一次登入的人，用這支手機原本的錢包開帳號
+function lineLogin(input) {
+  var cache = CacheService.getScriptCache();
+  var hourKey = 'lineLogins:' + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var count = Number(cache.get(hourKey) || 0);
+  if (count >= LINE_LOGINS_PER_HOUR) return { result: 'error', error: '這小時登入的人太多了，晚點再來' };
+  cache.put(hourKey, String(count + 1), 3600);
+
+  var who = verifyLineToken(String(input.idToken || ''));
+  if (!who) return { result: 'error', error: 'LINE 登入驗證不過，再試一次' };
+
+  var p = findPlayer(who.sub), isNew = !p;
+  if (isNew) {
+    var w = input.wallet || {};
+    var money = cleanMoney(w.money, 0, WALLET_MAX), spent = cleanMoney(w.spent, 0, WALLET_MAX), earned = cleanEarned(w.earned);
+    playersSheet().appendRow([new Date(), who.sub, asText(who.name), who.picture,
+      money === null ? WALLET_START : money, spent === null ? 0 : spent, JSON.stringify(earned || {}), new Date()]);
+    p = findPlayer(who.sub);
+  } else {
+    playersSheet().getRange(p.row, 3).setValue(asText(who.name));
+    playersSheet().getRange(p.row, 4).setValue(who.picture);
+  }
+
+  var session = Utilities.getUuid();
+  PropertiesService.getScriptProperties().setProperty('sess:' + session, who.sub);
+  var player = walletView(p);
+  player.name = who.name;
+  player.picture = who.picture;
+  player.isNew = isNew;
+  return { result: 'success', session: session, player: player };
+}
+
+function lineLogout(input) {
+  if (sessionUser(input.session)) PropertiesService.getScriptProperties().deleteProperty('sess:' + input.session);
+  return { result: 'success' };
+}
+
+// 要登入：把這支手機剛剛賺的、花的（delta）加進帳號，回傳帳號現在的錢包。delta 全是 0 就是單純讀一次
+// 送的是「變了多少」不是「現在多少」，兩支手機同時玩才不會互相蓋掉
+function walletSync(input) {
+  var lineId = sessionUser(input.session);
+  if (!lineId) return { result: 'unauthorized' };
+
+  var cache = CacheService.getScriptCache();
+  var hourKey = 'walletSync:' + lineId + ':' + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var count = Number(cache.get(hourKey) || 0);
+  if (count >= WALLET_SYNCS_PER_HOUR) return { result: 'error', error: '同步太多次了，晚點再來' };
+  cache.put(hourKey, String(count + 1), 3600);
+
+  var d = input.delta || {};
+  var money = cleanMoney(d.money || 0, -WALLET_MAX, WALLET_MAX), spent = cleanMoney(d.spent || 0, 0, WALLET_MAX), earned = cleanEarned(d.earned || {});
+  if (money === null || spent === null || earned === null) return { result: 'error', error: '錢包的數字不對' };
+
+  var p = findPlayer(lineId);
+  if (!p) return { result: 'unauthorized' };
+  if (money || spent || Object.keys(earned).length) {
+    p.money = Math.max(0, Math.min(WALLET_MAX, p.money + money));
+    p.spent = Math.min(WALLET_MAX, p.spent + spent);
+    p.earned = addEarned(p.earned, earned);
+    writeWallet(p);
+  }
+  return { result: 'success', wallet: walletView(p) };
 }
 
 // --- 工具 ---

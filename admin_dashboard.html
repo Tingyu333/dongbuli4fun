@@ -611,7 +611,8 @@
             return result;
         }
 
-        const bonusLink = b => `${SCRATCH_URL}?hb=${b.code}`;
+        // 走 LIFF：在 LINE 裡點開會自動用 LINE 登入，紅包直接進帳號（不在 LINE 裡也能開，就是一般網頁）
+        const bonusLink = b => `https://liff.line.me/2012419790-otENqBBj/scratch.html?hb=${b.code}`;
         const bonusText = b => `二十七樓主人發紅包：每人 ${money(b.amount)}，共 ${b.max} 份${b.note ? `（${b.note}）` : ''}，先搶先贏\n${bonusLink(b)}`;
 
         function bonusCard(b) {

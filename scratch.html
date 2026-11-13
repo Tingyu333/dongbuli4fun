@@ -23,6 +23,7 @@
 
     <link rel="stylesheet" href="assets/theme.css">
     <script src="assets/theme.js"></script>
+    <script src="assets/line.js"></script>
     <script src="assets/wallet.js"></script>
     <style>
         /* 這頁走彩券行的熱鬧風格，不跟網站的侘寂風；彩券是紙本，顏色固定 */
@@ -31,6 +32,17 @@
             -webkit-user-select: none;
             user-select: none;
             font-family: 'Noto Sans TC', sans-serif;
+        }
+
+        .line-btn {
+            min-height: 36px;
+            padding: 0 0.9rem;
+            border-radius: 8px;
+            background: #06c755;
+            color: #fff;
+            font-weight: 900;
+            font-size: 0.8rem;
+            touch-action: manipulation;
         }
 
         .money {
@@ -627,7 +639,9 @@
             <p id="stats" class="text-right text-[10px] leading-relaxed text-stone-400 tracking-wide"></p>
         </section>
 
-        <div class="-mt-2 mb-4 flex items-center justify-between gap-2 text-[11px] text-stone-500">
+        <!-- LINE 登入：錢跟著帳號走 -->
+        <div id="acct" class="-mt-2 mb-2 min-h-[36px] flex items-center justify-between gap-2 text-[11px] text-stone-500"></div>
+        <div class="mb-4 flex items-center justify-between gap-2 text-[11px] text-stone-500">
             <button id="hbToggle" type="button" class="min-h-[32px] font-bold text-wabi-dark underline underline-offset-4">有紅包碼？</button>
             <span>錢不夠？<a href="xitou.html" class="font-bold text-wabi-dark underline underline-offset-4">去坐洗部洗頭賺錢</a></span>
         </div>
@@ -1528,6 +1542,42 @@
             if (!$('shelf').classList.contains('hidden')) renderShelf();
         }
         window.addEventListener('pageshow', syncMoney);
+
+        // ===== LINE 登入 =====
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+        function renderAcct() {
+            const box = $('acct');
+            if (Line.loggedIn) {
+                const p = Line.profile || {};
+                box.innerHTML = `<span class="flex items-center gap-2 min-w-0">${p.picture ? `<img src="${esc(p.picture)}" alt="" class="w-6 h-6 rounded-full shrink-0" referrerpolicy="no-referrer">` : ''}<span class="truncate">錢存在 <b class="text-wabi-dark">${esc(p.name || 'LINE 帳號')}</b> 的帳號</span></span><button type="button" data-logout class="shrink-0 min-h-[32px] px-1 underline underline-offset-4">登出</button>`;
+            } else {
+                box.innerHTML = `<span>錢只存在這支手機，換手機就沒了</span><button type="button" data-login class="line-btn shrink-0">LINE 登入</button>`;
+            }
+        }
+        function refreshMoney() {
+            S.money = Wallet.money;
+            save();
+            setMoney(S.money, 0);
+            if (!$('shelf').classList.contains('hidden')) renderShelf();
+        }
+        $('acct').addEventListener('click', e => {
+            if (e.target.closest('[data-login]')) { unlockAudio(); Line.login(); }
+            if (e.target.closest('[data-logout]') && confirm('登出以後，這支手機會換回登入前的錢包。帳號裡的錢不會不見，下次登入就回來。')) Line.logout();
+        });
+        Wallet.on((type, d) => {
+            if (type === 'server') syncMoney();
+            if (type === 'login') {
+                renderAcct();
+                refreshMoney();
+                showToast(d.isNew ? `登入了，這支手機的 ${fmt(d.left)} 存進帳號了` : `登入了，換成 ${d.name} 帳號的錢包`);
+            }
+            if (type === 'logout') {
+                renderAcct();
+                refreshMoney();
+                showToast(d && d.expired ? '登入過期了，再登入一次' : '登出了，換回這支手機原本的錢包');
+            }
+        });
+        renderAcct();
         document.addEventListener('visibilitychange', () => { if (!document.hidden) syncMoney(); });
 
         // ===== 6. 買、刮、對獎、兌獎 =====
