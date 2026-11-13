@@ -993,6 +993,12 @@ function washRow(r, now, lineId, device) {
   ];
 }
 
+// 在編輯器選這個按「執行」：先把 Washes 分頁建出來，順便確認編輯器裡是新的程式
+function setupWashes() {
+  var sheet = washesSheet();
+  Logger.log('Washes 分頁好了，目前有 ' + (sheet.getLastRow() - 1) + ' 顆頭。網頁要能存，還要「部署 → 管理部署作業 → 編輯 → 版本選新版本 → 部署」。');
+}
+
 function washLog(input) {
   var device = String(input.device || '').replace(/[^A-Za-z0-9-]/g, '').slice(0, 40);
   if (device.length < 8) return { result: 'error', error: '沒有裝置代號' };

@@ -366,6 +366,7 @@
                 <p id="payOrderRow" class="hidden flex justify-between mt-1"><span>點單</span><span id="payOrder" class="text-wabi-dark"></span></p>
                 <p class="flex justify-between mt-2 pt-2 border-t border-stone-100"><span>錢包</span><span id="payWallet" class="text-wabi-shu text-sm"></span></p>
                 <p id="payAcct" class="mt-2 text-[10px] leading-relaxed text-stone-400"></p>
+                <p id="syncNote" class="mt-1 text-[10px] leading-relaxed text-stone-400"></p>
             </div>
             <img id="certImg" alt="洗頭證明"
                 class="mt-6 w-full border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]">
@@ -758,26 +759,38 @@
             }
             return id;
         }
-        let uploading = false;
-        async function uploadWashes() {
-            if (uploading) return;
+        // 回傳 { ok, saved, error }，結果區會寫「紀錄存好了」或為什麼沒存上去
+        // 不用 keepalive：Apps Script 會轉址，有的瀏覽器（iPhone）keepalive 遇到轉址會直接失敗
+        let uploading = null;
+        function uploadWashes() {
+            if (!uploading) uploading = doUpload().finally(() => { uploading = null; });
+            return uploading;
+        }
+        async function doUpload() {
             const st = loadStats();
             const todo = st.recent.filter(r => !st.synced || r.at > st.synced).reverse().slice(0, 20);  // 舊的先送
-            if (!todo.length) return;
-            uploading = true;
+            if (!todo.length) return { ok: true, saved: 0 };
             try {
                 let session = '';
                 try { session = localStorage.getItem('dongbuli-session') || ''; } catch (e) { }
-                const res = await fetch(API_URL, { method: 'POST', keepalive: true, body: JSON.stringify({ type: 'washLog', device: deviceId(), session, recs: todo }) });
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'washLog', device: deviceId(), session, recs: todo }) });
                 const r = await res.json();
-                if (r.result === 'success') {
-                    const now = loadStats();
-                    now.synced = todo[todo.length - 1].at;
-                    try { localStorage.setItem(STATS_KEY, JSON.stringify(now)); } catch (e) { }
-                    if (todo.length === 20) setTimeout(uploadWashes, 1500);  // 還有沒送完的
-                }
-            } catch (e) { /* 沒網路、後端還沒部署：下次再送 */ }
-            uploading = false;
+                if (r.result !== 'success') return { ok: false, error: r.error || r.result || '後端沒回成功' };
+                const now = loadStats();
+                now.synced = todo[todo.length - 1].at;
+                try { localStorage.setItem(STATS_KEY, JSON.stringify(now)); } catch (e) { }
+                if (todo.length === 20) setTimeout(uploadWashes, 1500);  // 還有沒送完的
+                return { ok: true, saved: r.saved };
+            } catch (e) {
+                return { ok: false, error: '連不到後端' };  // 沒網路：下次再送
+            }
+        }
+        function showSyncNote(r) {
+            const el = $('syncNote');
+            if (!el) return;
+            if (r.ok) el.textContent = '這顆頭的紀錄存到雲端了';
+            else if (/不認得的請求/.test(r.error)) el.textContent = '紀錄還沒存上去：後端還是舊版（要重新部署「新版本」）';
+            else el.textContent = `紀錄還沒存上去（${r.error}），下次洗完會補存`;
         }
         // 倒過來的擠壓瓶（按鈕上的圖）
         const BOTTLE_SVG = '<svg viewBox="0 0 24 34" width="24" height="34" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="1.5" width="16" height="19" rx="4.5"/><path d="M4 9h16M4 14h16"/><path d="M8 20.5l1.5 5h5l1.5-5"/><path d="M12 25.5v3.5"/><path d="M12 31.5v1" stroke-linecap="round"/></svg>';
@@ -1999,7 +2012,8 @@
                 pay: { ...G.pay },
                 login: !!(window.Line && Line.loggedIn),
             });
-            uploadWashes();
+            $('syncNote').textContent = '紀錄存檔中……';
+            uploadWashes().then(showSyncNote);
             $('payWallet').textContent = Wallet.fmt(Wallet.money);
             renderAcct();
 
