@@ -115,6 +115,9 @@
 
         /* 按住擠、點一下啪 */
         .act-round {
+            display: flex;
+            align-items: center;
+            justify-content: center;
             width: 4.75rem;
             height: 4.75rem;
             border-radius: 9999px;
@@ -141,6 +144,10 @@
             font-size: 0.75rem;
             letter-spacing: 0.2em;
             touch-action: manipulation;
+        }
+
+        .act-text:disabled {
+            opacity: 0.3;
         }
 
         .act-text:active {
@@ -291,11 +298,8 @@
         // 畫布用固定的 360×380 座標畫，CSS 再縮放到螢幕寬度
         const W = 360, H = 380, TAU = Math.PI * 2;
         const HEAD = { x: 180, y: 200, rx: 68, ry: 82 };
-        const HAIR = { x: 180, y: 200, rx: 74, ry: 90, cut: 180 };  // 頭髮：頭頂那一片，瀏海切在 y=180
-        const FOAMABLE = { x: 180, y: 200, rx: 86, ry: 102, cut: 190 }; // 搓得出泡泡的範圍（比頭髮大一圈）
         const EARS = [{ x: 112, y: 214 }, { x: 248, y: 214 }];
-        const SKIN = '#ecd3b8', SKIN_SHADE = '#dcb998', INK = '#3b3431';
-        const HAIRS = ['#2f2a26', '#3a2c22', '#24211f', '#4a3a2c'];
+        const INK = '#3b3431';
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         const cv = document.getElementById('cv');
@@ -311,7 +315,7 @@
         const fctx = foamCv.getContext('2d', { willReadFrequently: true });
         fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-        // 顏色：鏡子跟晝夜走，客人本身（皮膚、頭髮、圍布）是實物，顏色固定
+        // 顏色：鏡子跟晝夜走，客人本身（皮膚、頭髮、圍布、瓶子）是實物，顏色固定
         const DAY = { sub: 'rgb(220 220 220)', accent: 'rgb(142 128 112)', dark: 'rgb(44 44 44)', shu: 'rgb(179 58 47)' };
         let pal = DAY;
         function readPalette() {
@@ -325,26 +329,185 @@
         const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
         const pick = list => list[Math.floor(Math.random() * list.length)];
         const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-
-        // 頭髮切成小格子，算泡泡蓋了幾成
-        const CELLS = [];
-        for (let y = 106; y < HAIR.cut; y += 8) {
-            for (let x = 102; x < 258; x += 8) {
-                const c = { x: x + 4, y: y + 4 };
-                if (inRegion(c, HAIR)) CELLS.push(c);
-            }
+        const rand = (lo, hi) => lo + Math.random() * (hi - lo);
+        function inTri(p, [a, b, c]) {
+            const s = (p1, p2, p3) => (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
+            const d1 = s(p, a, b), d2 = s(p, b, c), d3 = s(p, c, a);
+            return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0));
         }
 
-        // ===== 1. 客人 =====
-        const CUSTOMERS = [
-            { who: '熬夜打電動的旅人', hello: '眼睛先閉一下，你洗你的。' },
+        // ===== 1. 客人：髮型、膚色、配件、個性都是隨機的 =====
+        const cap = (cut, rx = 74, ry = 90) => ({ x: 180, y: 200, rx, ry, cut });
+
+        // 頭頂那一片頭髮：橢圓切掉下面，瀏海有波浪、平的、或旁分的弧
+        function capPath(c, e, kind) {
+            const t = Math.asin((e.cut - e.y) / e.ry);
+            c.beginPath();
+            c.ellipse(e.x, e.y, e.rx, e.ry, 0, Math.PI - t, TAU + t);
+            const xr = e.x + e.rx * Math.cos(t), xl = e.x - e.rx * Math.cos(t);
+            if (kind === 'wave') {
+                const n = 6, step = (xr - xl) / n;
+                for (let i = 0; i < n; i++) {
+                    const x1 = xr - step * i, x2 = x1 - step;
+                    c.quadraticCurveTo((x1 + x2) / 2, e.cut + (i % 2 ? 4 : 9), x2, e.cut - (i === n - 1 ? 0 : 3));
+                }
+            } else if (kind === 'part') {
+                c.quadraticCurveTo(e.x + 20, e.cut - 16, e.x - 6, e.cut - 2);
+                c.quadraticCurveTo(e.x - 40, e.cut + 6, xl, e.cut);
+            } else {
+                c.lineTo(xl, e.cut);
+            }
+            c.closePath();
+        }
+
+        const CAT_EARS = [
+            [{ x: 126, y: 162 }, { x: 134, y: 92 }, { x: 172, y: 128 }],
+            [{ x: 234, y: 162 }, { x: 226, y: 92 }, { x: 188, y: 128 }],
+        ];
+        const longSide = p => !inEllipse(p, HEAD) && p.y > 176 && p.y < 318 &&
+            ((p.x > 94 && p.x < 140) || (p.x > 220 && p.x < 266));
+
+        // pumps：這種頭擠幾下剛好；top：頭頂（洗髮精落下來的地方）的 y
+        const STYLES = {
+            short: {
+                name: '短髮', pumps: [2, 3], top: 110, line: '短髮，不用擠太多。',
+                inHair: p => inRegion(p, cap(180)),
+                front(c, col) { c.fillStyle = col; capPath(c, cap(180), 'wave'); c.fill(); },
+            },
+            long: {
+                name: '長髮', pumps: [5, 6], top: 110, hideEars: true, line: '頭髮很長，要多擠一點。',
+                inHair: p => inRegion(p, cap(186)) || longSide(p),
+                back(c, col) {
+                    c.fillStyle = col;
+                    [[1, 106, 96, 142, 132], [-1, 254, 264, 218, 228]].forEach(([s, x0, x1, x2, x3]) => {
+                        c.beginPath();
+                        c.moveTo(x0, 170);
+                        c.lineTo(x1, 322);
+                        c.quadraticCurveTo((x1 + x2) / 2, 334, x2, 324);
+                        c.lineTo(x3, 200);
+                        c.closePath();
+                        c.fill();
+                    });
+                },
+                front(c, col) { c.fillStyle = col; capPath(c, cap(186), 'flat'); c.fill(); },
+            },
+            bun: {
+                name: '包包頭', pumps: [3, 4], top: 76, line: '包包頭要拆嗎？不用？好。',
+                inHair: p => inRegion(p, cap(176)) || dist(p, { x: 180, y: 98 }) < 24,
+                front(c, col) {
+                    c.fillStyle = col;
+                    c.beginPath(); c.arc(180, 98, 23, 0, TAU); c.fill();
+                    capPath(c, cap(176), 'part'); c.fill();
+                    c.fillStyle = DAY.shu;  // 綁住的東西是朱色
+                    roundRect(c, 168, 110, 24, 6, 3); c.fill();
+                },
+            },
+            curly: {
+                name: '捲髮', pumps: [4, 5], top: 84, line: '泡泡可能會在裡面迷路。',
+                inHair: p => inRegion(p, { x: 180, y: 192, rx: 100, ry: 108, cut: 186 }),
+                front(c, col) {
+                    c.fillStyle = col;
+                    c.beginPath(); capPath(c, { x: 180, y: 196, rx: 86, ry: 96, cut: 184 }, 'flat'); c.fill();
+                    for (let a = Math.PI * 1.02; a <= Math.PI * 1.98; a += 0.16) {
+                        c.beginPath(); c.arc(180 + 84 * Math.cos(a), 196 + 94 * Math.sin(a), 18, 0, TAU); c.fill();
+                    }
+                    for (let x = 110; x <= 250; x += 17) { c.beginPath(); c.arc(x, 182, 10, 0, TAU); c.fill(); }
+                    c.strokeStyle = 'rgba(255,255,255,0.16)';
+                    c.lineWidth = 1.6;
+                    G.curls.forEach(q => { c.beginPath(); c.arc(q.x, q.y, 5, q.a, q.a + 4); c.stroke(); });
+                },
+            },
+            buzz: {
+                name: '平頭', pumps: [1, 2], top: 114, line: '我其實五分鐘前才洗過。',
+                inHair: p => inRegion(p, cap(168, 70, 86)),
+                front(c, col) {
+                    c.save();
+                    c.globalAlpha = 0.55;
+                    c.fillStyle = col;
+                    capPath(c, cap(168, 70, 86), 'flat'); c.fill();
+                    c.globalAlpha = 0.7;
+                    G.dots.forEach(q => { c.beginPath(); c.arc(q.x, q.y, 0.9, 0, TAU); c.fill(); });
+                    c.restore();
+                },
+            },
+            bald: {
+                name: '地中海', pumps: [1, 1], top: 118, line: '上面的部分，輕輕帶過就好。',
+                inHair: p => inRegion(p, cap(172, 68, 82)),
+                front(c, col) {
+                    // 兩側貼著頭的一圈
+                    c.strokeStyle = col;
+                    c.lineWidth = 9;
+                    c.lineCap = 'round';
+                    c.beginPath(); c.ellipse(180, 200, 64, 78, 0, Math.PI - 0.25, Math.PI + 0.5); c.stroke();
+                    c.beginPath(); c.ellipse(180, 200, 64, 78, 0, -0.5, 0.25); c.stroke();
+                    c.lineWidth = 1.4;
+                    [0, 6, 12].forEach(d => { c.beginPath(); c.moveTo(132, 160 - d); c.quadraticCurveTo(180, 118 - d, 226, 150 - d); c.stroke(); });
+                    c.fillStyle = 'rgba(255,255,255,0.45)';
+                    c.beginPath(); c.ellipse(160, 134, 16, 6, -0.5, 0, TAU); c.fill();
+                },
+            },
+            cat: {
+                name: '貓', pumps: [1, 2], top: 118, hideEars: true, line: '喵。',
+                inHair: p => inRegion(p, cap(176, 68, 82)) || CAT_EARS.some(t => inTri(p, t)),
+                front(c) {
+                    CAT_EARS.forEach(([a, b, d]) => {
+                        c.fillStyle = G.c.skin[0];
+                        c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.lineTo(d.x, d.y); c.closePath(); c.fill();
+                        c.fillStyle = '#f2b8a8';
+                        const m = { x: (a.x + b.x + d.x) / 3, y: (a.y + b.y + d.y) / 3 + 6 };
+                        c.beginPath(); c.moveTo((a.x + m.x) / 2, (a.y + m.y) / 2); c.lineTo((b.x * 3 + m.x) / 4, (b.y * 3 + m.y) / 4); c.lineTo((d.x + m.x) / 2, (d.y + m.y) / 2); c.closePath(); c.fill();
+                    });
+                    c.strokeStyle = '#c47f3c';
+                    c.lineWidth = 4;
+                    c.lineCap = 'round';
+                    [[168, 136, 171, 156], [180, 130, 180, 154], [192, 136, 189, 156]].forEach(([a, b, d, e]) => { c.beginPath(); c.moveTo(a, b); c.lineTo(d, e); c.stroke(); });
+                },
+            },
+        };
+
+        const SKINS = [['#f2dcc6', '#e0c0a0'], ['#ecd3b8', '#dcb998'], ['#d6ad86', '#c0946c'], ['#b48760', '#9a7050']];
+        const HAIR_COLORS = ['#2f2a26', '#2f2a26', '#3a2c22', '#24211f', '#4a3a2c', '#7a5a3c', '#c2a06c', '#8c8f99'];
+        const GREY = '#b8b1a6';
+
+        const PERSONAS = [
+            { who: '熬夜打電動的旅人', hello: '眼睛先閉一下，你洗你的。', bags: true },
             { who: '剛在陽台吹完風的旅人', hello: '頭髮裡應該有一點風。' },
             { who: '說只是來修瀏海的旅人', hello: '我洗一下就好，真的。' },
             { who: '住了三晚還不想退房的旅人', hello: '洗完可以再住一晚嗎。' },
             { who: '群組裡已讀不回的旅人', hello: '……' },
             { who: '昨天喝太多的旅人', hello: '小力一點，頭還在痛。' },
             { who: '第一次來二十七樓的旅人', hello: '電梯好久，我差點睡著。' },
+            { who: '剛分帳完臉色不太好的旅人', hello: '洗頭這筆不要算進去喔。' },
+            { who: '一直在看手機的旅人', hello: '你洗你的，我回個訊息。' },
+            { who: '等等有會的旅人', hello: '十分鐘後開會，洗快一點。' },
+            { who: '擲到笑杯的旅人', hello: '神明笑我，你不要笑。' },
+            { who: '吃掉最後一個布丁的旅人', hello: '不是我吃的。' },
+            { who: '上缺德榜的旅人', hello: '洗乾淨就可以重新做人嗎。' },
         ];
+        const HUMAN_STYLES = ['short', 'short', 'long', 'long', 'bun', 'curly', 'buzz', 'bald'];
+        const MEOWS = ['喵。', '喵～', '喵？', '……喵。', '呼嚕嚕。', '喵嗚。'];
+
+        function makeCustomer() {
+            const r = Math.random();
+            const c = { glasses: null, mustache: false, freckles: false, bags: false, cat: false };
+            if (r < 0.05) {
+                // 稀有：不知道怎麼進來的貓
+                Object.assign(c, { who: '不知道怎麼進來的貓', hello: '喵。', style: 'cat', cat: true, skin: ['#e3a35e', '#c98a46'], hair: '#e3a35e' });
+            } else if (r < 0.13) {
+                // 稀有：每週都來的阿伯
+                Object.assign(c, { who: '每週都來的阿伯', hello: '老樣子。', style: 'bald', skin: pick(SKINS), hair: GREY, glasses: 'round', mustache: Math.random() < 0.5 });
+            } else {
+                const p = pick(PERSONAS);
+                Object.assign(c, { who: p.who, hello: p.hello, bags: !!p.bags, style: pick(HUMAN_STYLES), skin: pick(SKINS), hair: pick(HAIR_COLORS) });
+                if (r < 0.19) Object.assign(c, { who: '戴墨鏡的神秘旅人', hello: '不要問我是誰。', glasses: 'sun', bags: false });
+                else if (Math.random() < 0.25) c.glasses = 'round';
+                c.mustache = c.style !== 'long' && Math.random() < 0.15;
+                c.freckles = Math.random() < 0.18;
+                if (c.style === 'bald' && Math.random() < 0.5) c.hair = GREY;
+            }
+            c.st = STYLES[c.style];
+            return c;
+        }
 
         // 抓到一半問「這樣力道可以嗎」，客人的回答
         const ANSWERS = [
@@ -382,8 +545,11 @@
         const $ = id => document.getElementById(id);
         const stepEls = [...document.querySelectorAll('#steps .step')];
         const BEST_KEY = 'dongbuli-xitou-best';
+        // 倒過來的擠壓瓶（按鈕上的圖）
+        const BOTTLE_SVG = '<svg viewBox="0 0 24 34" width="24" height="34" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="1.5" width="16" height="19" rx="4.5"/><path d="M4 9h16M4 14h16"/><path d="M8 20.5l1.5 5h5l1.5-5"/><path d="M12 25.5v3.5"/><path d="M12 31.5v1" stroke-linecap="round"/></svg>';
 
         function say(text, who = '客人') {
+            if (who === '客人' && G && G.c.cat) text = pick(MEOWS);
             $('saysWho').textContent = who;
             $('says').textContent = text;
         }
@@ -410,15 +576,18 @@
             $('meterLabel').textContent = label;
         }
 
-        // 下面的按鈕：round 是圓的大按鈕（擠、啪），其他是長的
+        // 下面的按鈕：round 是圓的大按鈕（瓶子、啪），其他是長的。回傳建好的按鈕
         function actions(list) {
             const box = $('actions');
             box.innerHTML = '';
-            list.forEach(item => {
+            return list.map(item => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = item.round ? 'act-round' : 'act-text';
-                btn.textContent = item.label;
+                if (item.html) btn.innerHTML = item.html;
+                else btn.textContent = item.label;
+                if (item.aria) btn.setAttribute('aria-label', item.aria);
+                if (item.disabled) btn.disabled = true;
                 if (item.onDown) {
                     btn.addEventListener('pointerdown', e => {
                         e.preventDefault();
@@ -435,6 +604,7 @@
                 }
                 if (item.onClick) btn.addEventListener('click', () => { unlockAudio(); item.onClick(); });
                 box.appendChild(btn);
+                return btn;
             });
         }
 
@@ -486,7 +656,8 @@
         }
 
         const sfx = {
-            squish: () => { noise(0.08, 'bandpass', 420 + Math.random() * 200, 3, 0.35); tone(170, 0.08, 0.06, 110); },
+            squeeze: () => { noise(0.07, 'bandpass', 900 + Math.random() * 300, 2, 0.25); tone(320, 0.07, 0.05, 520); },
+            splat: () => { noise(0.06, 'lowpass', 600, 0.7, 0.35); tone(180, 0.06, 0.08, 90); },
             scrub: () => noise(0.07, 'highpass', 2600, 0.7, 0.07),
             pop: () => tone(900 + Math.random() * 700, 0.05, 0.04, 1800),
             scratch: () => { noise(0.04, 'bandpass', 3200, 2, 0.25); setTimeout(() => noise(0.04, 'bandpass', 2900, 2, 0.2), 55); },
@@ -506,22 +677,37 @@
         let saidAt = 0;        // 客人碎念不要太頻繁
 
         function newGame() {
+            const c = makeCustomer();
             G = {
-                customer: pick(CUSTOMERS), hair: pick(HAIRS),
-                amount: 0, drip: false, foamMul: 1, squeezeScore: 0, squeezeLabel: '',
+                c,
+                pumps: 0, landed: 0, dollops: [], bottle: null, drip: false, foamMul: 1, squeezeScore: 0, squeezeLabel: '',
                 coverage: 0, rubScore: 0,
                 hits: 0, spawned: 0, hp: 1, scratchScore: 0,
                 strokes: [], budget: 0, budgetMax: 0, shape: null, styleScore: 0, snapshot: null,
                 patScore: 0, patMarks: [],
                 foamAlpha: 1, wet: false,
+                cells: [], curls: [], dots: [],
             };
-            CELLS.forEach(c => { c.on = false; });
+            // 頭髮切成小格子，算泡泡蓋了幾成、癢的地方冒在哪
+            for (let y = 56; y < 330; y += 8) {
+                for (let x = 80; x < 282; x += 8) {
+                    const cell = { x: x + 4, y: y + 4, on: false };
+                    if (c.st.inHair(cell)) G.cells.push(cell);
+                }
+            }
+            if (c.style === 'curly') for (let i = 0; i < 26; i++) { const q = pick(G.cells); G.curls.push({ x: q.x + rand(-4, 4), y: q.y + rand(-4, 4), a: rand(0, TAU) }); }
+            if (c.style === 'buzz') for (let i = 0; i < 160; i++) { const q = pick(G.cells); G.dots.push({ x: q.x + rand(-4, 4), y: q.y + rand(-4, 4) }); }
             fctx.clearRect(0, 0, W, H);
             spots = []; floats = []; bubbles = []; drops = [];
             baseFace = 'neutral';
             face = { kind: 'neutral', until: 0 };
-            $('who').textContent = `今天的客人：${G.customer.who}`;
+            $('who').textContent = `今天的客人：${c.who}`;
             $('shapeStamp').classList.add('hidden');
+        }
+
+        // 搓得出泡泡的地方：頭髮附近一圈
+        function foamable(p) {
+            return G.cells.some(c => Math.abs(c.x - p.x) <= 14 && Math.abs(c.y - p.y) <= 14);
         }
 
         function setFace(kind, ms) {
@@ -529,7 +715,7 @@
             else { baseFace = kind; face = { kind, until: 0 }; }
         }
 
-        // 客人碎念：同一類的話 1.4 秒內不重複
+        // 客人碎念：1.4 秒內不重複
         function mutter(text, kind = 'doubt', ms = 700) {
             const now = performance.now();
             setFace(kind, ms);
@@ -542,10 +728,10 @@
             floats.push({ x, y, text, color, born: performance.now() });
         }
 
-        function burst(x, y, n = 6) {
+        function burst(x, y, n = 6, color) {
             for (let i = 0; i < n; i++) {
                 const a = Math.random() * TAU, s = 0.04 + Math.random() * 0.06;
-                bubbles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 0.03, r: 2 + Math.random() * 4, born: performance.now() });
+                bubbles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 0.03, r: 2 + Math.random() * 4, born: performance.now(), color });
             }
         }
 
@@ -580,20 +766,84 @@
             }
             if (!count) return;
             let on = 0;
-            CELLS.forEach(c => {
+            G.cells.forEach(c => {
                 if (!c.on && dist(c, { x, y }) < r * 0.95) c.on = true;
                 if (c.on) on++;
             });
-            G.coverage = on / CELLS.length;
+            G.coverage = on / G.cells.length;
         }
 
+        // 手指附近有沒有泡泡（手指很粗，差一點也算）
         function onFoam(p) {
-            const d = fctx.getImageData(Math.round(p.x * dpr), Math.round(p.y * dpr), 1, 1).data;
-            return d[3] > 100;
+            return [[0, 0], [8, 0], [-8, 0], [0, 8], [0, -8]].some(([dx, dy]) => {
+                const d = fctx.getImageData(Math.round((p.x + dx) * dpr), Math.round((p.y + dy) * dpr), 1, 1).data;
+                return d[3] > 100;
+            });
         }
 
         // ===== 5. 畫畫 =====
+        // 洗髮精瓶：倒過來掛在客人頭上，第一次按的時候掉下來，按一下捏一下
+        const BOTTLE_X = 186;
+
+        function bottlePose(now) {
+            const b = G.bottle;
+            if (!b) return null;
+            let oy = 0;
+            const tin = (now - b.in) / 320;
+            if (tin < 1) oy = -120 * Math.pow(1 - tin, 3);
+            if (b.out) {
+                const t = (now - b.out) / 340;
+                if (t >= 1) return null;
+                oy = -140 * t * t;
+            }
+            return { oy, sway: reduceMotion ? 0 : Math.sin(now / 520) * 0.05 };
+        }
+
+        function bottleTip(now) {
+            const s = bottlePose(now) || { oy: 0, sway: 0 };
+            return { x: BOTTLE_X - 68 * Math.sin(s.sway), y: s.oy + 68 * Math.cos(s.sway) };
+        }
+
+        function drawBottle(c, now) {
+            const s = bottlePose(now);
+            if (!s) return;
+            const k = now - G.bottle.press < 170 ? Math.sin(Math.PI * (now - G.bottle.press) / 170) : 0;
+            c.save();
+            c.translate(BOTTLE_X, s.oy);
+            c.rotate(s.sway);
+            c.save();
+            c.translate(0, 26);
+            c.scale(1 - 0.22 * k, 1 + 0.04 * k);
+            roundRect(c, -19, -24, 38, 48, 11);
+            c.fillStyle = '#f6f1e8';
+            c.fill();
+            c.strokeStyle = '#cdbfae';
+            c.lineWidth = 1.5;
+            c.stroke();
+            c.fillStyle = '#8e8070';
+            c.fillRect(-19, -7, 38, 17);
+            c.fillStyle = '#fcfaf8';
+            c.font = '600 12px "Noto Serif TC", serif';
+            c.textAlign = 'center';
+            c.textBaseline = 'middle';
+            c.fillText('洗', 0, 2);
+            c.fillStyle = 'rgba(255,255,255,0.7)';
+            c.fillRect(-13, -19, 4, 10);
+            c.restore();
+            c.fillStyle = '#8e8070';
+            c.beginPath(); c.moveTo(-12, 50); c.lineTo(12, 50); c.lineTo(7, 60); c.lineTo(-7, 60); c.closePath(); c.fill();
+            c.fillStyle = '#6f6458';
+            c.fillRect(-2.5, 60, 5, 8);
+            c.restore();
+        }
+
+        // 洗髮精在頭頂的那一坨
+        function blobSize() {
+            return { rx: 7 + G.landed * 4.2, ry: 4 + G.landed * 1.6 };
+        }
+
         function drawScene(c, colors, now, live) {
+            const C = G.c, st = C.st;
             c.clearRect(0, 0, W, H);
 
             // 鏡子：拱形，跟著晝夜換色
@@ -620,6 +870,9 @@
             c.stroke();
             c.restore();
 
+            // 長髮的後面那片
+            if (st.back) st.back(c, C.hair);
+
             // 圍布
             c.fillStyle = '#3e434a';
             c.beginPath();
@@ -638,7 +891,7 @@
             }
 
             // 脖子、毛巾
-            c.fillStyle = SKIN_SHADE;
+            c.fillStyle = C.skin[1];
             c.fillRect(160, 262, 40, 50);
             c.fillStyle = '#f3efe8';
             roundRect(c, 116, 298, 128, 24, 12);
@@ -648,38 +901,30 @@
             c.stroke();
 
             // 耳朵、頭
-            EARS.forEach(e => {
-                c.fillStyle = SKIN;
-                c.beginPath();
-                c.ellipse(e.x, e.y, 10, 15, 0, 0, TAU);
-                c.fill();
-                c.strokeStyle = SKIN_SHADE;
-                c.lineWidth = 1.5;
-                c.beginPath();
-                c.ellipse(e.x, e.y, 5, 9, 0, 0, TAU);
-                c.stroke();
-            });
-            c.fillStyle = SKIN;
+            if (!st.hideEars) {
+                EARS.forEach(e => {
+                    c.fillStyle = C.skin[0];
+                    c.beginPath();
+                    c.ellipse(e.x, e.y, 10, 15, 0, 0, TAU);
+                    c.fill();
+                    c.strokeStyle = C.skin[1];
+                    c.lineWidth = 1.5;
+                    c.beginPath();
+                    c.ellipse(e.x, e.y, 5, 9, 0, 0, TAU);
+                    c.stroke();
+                });
+            }
+            c.fillStyle = C.skin[0];
             c.beginPath();
             c.ellipse(HEAD.x, HEAD.y, HEAD.rx, HEAD.ry, 0, 0, TAU);
             c.fill();
 
-            drawFace(c, now < face.until ? face.kind : baseFace, colors);
+            drawFace(c, now < face.until ? face.kind : baseFace);
+            drawExtras(c);
 
-            // 頭髮：頭頂那一片，瀏海有一點波浪
-            const t = Math.asin((HAIR.cut - HAIR.y) / HAIR.ry);
-            c.fillStyle = G.hair;
-            c.beginPath();
-            c.ellipse(HAIR.x, HAIR.y, HAIR.rx, HAIR.ry, 0, Math.PI - t, TAU + t);
-            const xr = HAIR.x + HAIR.rx * Math.cos(t), xl = HAIR.x - HAIR.rx * Math.cos(t);
-            const n = 6, step = (xr - xl) / n;
-            for (let i = 0; i < n; i++) {
-                const x1 = xr - step * i, x2 = x1 - step;
-                c.quadraticCurveTo((x1 + x2) / 2, HAIR.cut + (i % 2 ? 4 : 9), x2, HAIR.cut - (i === n - 1 ? 0 : 3));
-            }
-            c.closePath();
-            c.fill();
-            if (G.wet) {
+            // 頭髮
+            st.front(c, C.hair);
+            if (G.wet && C.style !== 'bald' && !C.cat) {
                 c.strokeStyle = 'rgba(255,255,255,0.28)';
                 c.lineWidth = 2;
                 c.beginPath();
@@ -690,26 +935,28 @@
             }
 
             // 洗髮精：擠在頭頂的一坨，擠太多會流下來
-            if (G.amount > 0 && stage <= 1) {
+            if (G.landed > 0 && stage <= 1) {
+                const { rx, ry } = blobSize();
+                const by = st.top + 3 - ry * 0.6;
                 c.fillStyle = 'rgba(226, 182, 98, 0.88)';
                 if (G.drip) {
                     c.strokeStyle = 'rgba(226, 182, 98, 0.88)';
                     c.lineWidth = 5;
                     c.lineCap = 'round';
                     c.beginPath();
-                    c.moveTo(170, 116);
-                    c.quadraticCurveTo(150, 170, 160, 206);
+                    c.moveTo(168, by + 4);
+                    c.quadraticCurveTo(148, 170, 160, 206);
                     c.stroke();
                     c.beginPath();
                     c.arc(160, 208, 4.5, 0, TAU);
                     c.fill();
                 }
                 c.beginPath();
-                c.ellipse(180, 110, 6 + G.amount * 0.24, 4 + G.amount * 0.12, 0, 0, TAU);
+                c.ellipse(183, by, rx, ry, 0, 0, TAU);
                 c.fill();
                 c.fillStyle = 'rgba(255,255,255,0.6)';
                 c.beginPath();
-                c.ellipse(174, 106, 3 + G.amount * 0.04, 1.5 + G.amount * 0.02, -0.3, 0, TAU);
+                c.ellipse(183 - rx * 0.35, by - ry * 0.35, 2 + rx * 0.18, 1.2 + ry * 0.15, -0.3, 0, TAU);
                 c.fill();
             }
 
@@ -723,18 +970,32 @@
 
             if (!live) return;
 
+            // 瓶子和正在掉的洗髮精
+            if (G.bottle) drawBottle(c, now);
+            G.dollops.forEach(d => {
+                if (d.y === null) return;
+                c.fillStyle = 'rgba(226, 182, 98, 0.95)';
+                c.beginPath();
+                c.ellipse(d.x, d.y, 4.5, 6.5, 0, 0, TAU);
+                c.fill();
+                c.fillStyle = 'rgba(255,255,255,0.7)';
+                c.beginPath();
+                c.arc(d.x - 1.5, d.y - 2.5, 1.4, 0, TAU);
+                c.fill();
+            });
+
             // 癢的地方：朱色圈圈，外圈是剩下的時間
             spots.forEach(s => {
                 const age = clamp((now - s.born) / s.life, 0, 1);
                 const pulse = 1 + 0.1 * Math.sin(now / 80);
+                const fade = age > 0.85 ? (1 - age) / 0.15 : 1;
                 c.save();
-                c.globalAlpha = age > 0.85 ? (1 - age) / 0.15 : 1;
+                c.globalAlpha = fade * 0.85;
                 c.beginPath();
                 c.arc(s.x, s.y, 14 * pulse, 0, TAU);
                 c.fillStyle = colors.shu;
-                c.globalAlpha *= 0.85;
                 c.fill();
-                c.globalAlpha = age > 0.85 ? (1 - age) / 0.15 : 1;
+                c.globalAlpha = fade;
                 c.beginPath();
                 c.arc(s.x, s.y, 20, -Math.PI / 2, -Math.PI / 2 + (1 - age) * TAU);
                 c.strokeStyle = colors.shu;
@@ -748,16 +1009,16 @@
                 c.restore();
             });
 
-            // 抓破的泡泡
+            // 抓破的泡泡、濺開的洗髮精
             bubbles = bubbles.filter(b => now - b.born < 600);
             bubbles.forEach(b => {
                 const age = now - b.born;
                 c.save();
                 c.globalAlpha = 1 - age / 600;
-                c.strokeStyle = '#9aa6b2';
-                c.lineWidth = 1;
+                c.strokeStyle = b.color || '#9aa6b2';
+                c.lineWidth = b.color ? 2 : 1;
                 c.beginPath();
-                c.arc(b.x + b.vx * age, b.y + b.vy * age, b.r, 0, TAU);
+                c.arc(b.x + b.vx * age, b.y + b.vy * age, b.color ? b.r * 0.5 : b.r, 0, TAU);
                 c.stroke();
                 c.restore();
             });
@@ -799,8 +1060,9 @@
         }
 
         // 表情：neutral 普通、happy 開心、bliss 爽、pain 痛、doubt 懷疑、wow 嚇到
-        function drawFace(c, kind, colors) {
+        function drawFace(c, kind) {
             const L = { x: 155, y: 216 }, R = { x: 205, y: 216 };
+            const cat = G.c.cat;
             c.save();
             c.strokeStyle = INK;
             c.fillStyle = INK;
@@ -809,11 +1071,13 @@
             c.lineJoin = 'round';
             const line = (pts) => { c.beginPath(); c.moveTo(pts[0], pts[1]); for (let i = 2; i < pts.length; i += 2) c.lineTo(pts[i], pts[i + 1]); c.stroke(); };
 
-            // 眉毛
-            if (kind === 'pain') { line([146, 197, 163, 203]); line([197, 203, 214, 197]); }
-            else if (kind === 'doubt') { line([146, 194, 163, 190]); line([197, 199, 214, 199]); }
-            else if (kind === 'wow' || kind === 'bliss') { line([146, 196, 163, 193]); line([197, 193, 214, 196]); }
-            else { line([146, 200, 163, 198]); line([197, 198, 214, 200]); }
+            // 眉毛（貓沒有眉毛）
+            if (!cat) {
+                if (kind === 'pain') { line([146, 197, 163, 203]); line([197, 203, 214, 197]); }
+                else if (kind === 'doubt') { line([146, 194, 163, 190]); line([197, 199, 214, 199]); }
+                else if (kind === 'wow' || kind === 'bliss') { line([146, 196, 163, 193]); line([197, 193, 214, 196]); }
+                else { line([146, 200, 163, 198]); line([197, 198, 214, 200]); }
+            }
 
             // 眼睛
             if (kind === 'happy') {
@@ -828,15 +1092,28 @@
                 line([199, 216, 211, 216]);
             } else if (kind === 'wow') {
                 [L, R].forEach(e => { c.beginPath(); c.arc(e.x, e.y, 4.5, 0, TAU); c.stroke(); });
+            } else if (cat) {
+                [L, R].forEach(e => { c.beginPath(); c.ellipse(e.x, e.y, 3.2, 5, 0, 0, TAU); c.fill(); });
             } else {
                 [L, R].forEach(e => { c.beginPath(); c.arc(e.x, e.y, 3.2, 0, TAU); c.fill(); });
             }
 
             // 鼻子
-            c.globalAlpha = 0.55;
-            c.lineWidth = 1.6;
-            line([180, 224, 176, 237, 183, 238]);
-            c.globalAlpha = 1;
+            if (cat) {
+                c.fillStyle = '#d98a7e';
+                c.beginPath(); c.moveTo(174, 230); c.lineTo(186, 230); c.lineTo(180, 237); c.closePath(); c.fill();
+                c.fillStyle = INK;
+                c.globalAlpha = 0.6;
+                c.lineWidth = 1.2;
+                line([150, 236, 118, 230]); line([150, 242, 118, 244]);
+                line([210, 236, 242, 230]); line([210, 242, 242, 244]);
+                c.globalAlpha = 1;
+            } else {
+                c.globalAlpha = 0.55;
+                c.lineWidth = 1.6;
+                line([180, 224, 176, 237, 183, 238]);
+                c.globalAlpha = 1;
+            }
             c.lineWidth = 2.4;
 
             // 嘴巴
@@ -850,6 +1127,9 @@
                 line([171, 253, 189, 249]);
             } else if (kind === 'wow') {
                 c.beginPath(); c.arc(180, 253, 5, 0, TAU); c.stroke();
+            } else if (cat) {
+                c.beginPath(); c.arc(175, 243, 5, 0.2, Math.PI - 0.2); c.stroke();
+                c.beginPath(); c.arc(185, 243, 5, 0.2, Math.PI - 0.2); c.stroke();
             } else {
                 c.beginPath(); c.moveTo(170, 251); c.quadraticCurveTo(180, 255, 190, 251); c.stroke();
             }
@@ -873,6 +1153,50 @@
             c.restore();
         }
 
+        // 配件：黑眼圈、雀斑、鬍子、眼鏡、墨鏡
+        function drawExtras(c) {
+            const C = G.c;
+            c.save();
+            c.lineCap = 'round';
+            if (C.bags) {
+                c.strokeStyle = 'rgba(120, 90, 110, 0.35)';
+                c.lineWidth = 2;
+                [155, 205].forEach(x => { c.beginPath(); c.arc(x, 220, 8, 0.5, Math.PI - 0.5); c.stroke(); });
+            }
+            if (C.freckles) {
+                c.fillStyle = 'rgba(150, 100, 70, 0.45)';
+                [[140, 230], [146, 236], [136, 237], [220, 230], [214, 236], [224, 237]].forEach(([x, y]) => { c.beginPath(); c.arc(x, y, 1.3, 0, TAU); c.fill(); });
+            }
+            if (C.mustache) {
+                c.fillStyle = C.hair === GREY ? '#9d968b' : C.hair;
+                c.beginPath();
+                c.moveTo(180, 240);
+                c.quadraticCurveTo(166, 234, 158, 246);
+                c.quadraticCurveTo(170, 243, 180, 244);
+                c.quadraticCurveTo(190, 243, 202, 246);
+                c.quadraticCurveTo(194, 234, 180, 240);
+                c.fill();
+            }
+            if (C.glasses === 'round') {
+                c.strokeStyle = INK;
+                c.lineWidth = 2;
+                [155, 205].forEach(x => { c.beginPath(); c.arc(x, 216, 12, 0, TAU); c.stroke(); });
+                c.beginPath(); c.moveTo(167, 214); c.quadraticCurveTo(180, 208, 193, 214); c.stroke();
+                c.beginPath(); c.moveTo(143, 213); c.lineTo(116, 208); c.moveTo(217, 213); c.lineTo(244, 208); c.stroke();
+            } else if (C.glasses === 'sun') {
+                c.fillStyle = '#2a2624';
+                [155, 205].forEach(x => { c.beginPath(); c.ellipse(x, 217, 15, 11, 0, 0, TAU); c.fill(); });
+                c.strokeStyle = '#2a2624';
+                c.lineWidth = 3;
+                c.beginPath(); c.moveTo(170, 214); c.lineTo(190, 214); c.stroke();
+                c.lineWidth = 2;
+                c.beginPath(); c.moveTo(140, 213); c.lineTo(116, 208); c.moveTo(220, 213); c.lineTo(244, 208); c.stroke();
+                c.fillStyle = 'rgba(255,255,255,0.35)';
+                [149, 199].forEach(x => { c.beginPath(); c.ellipse(x, 212, 4, 2, -0.4, 0, TAU); c.fill(); });
+            }
+            c.restore();
+        }
+
         // ===== 6. 五道工序 =====
         function go(i) {
             stage = i;
@@ -880,48 +1204,80 @@
             cur = [squeeze, rub, scratch, sculpt, pat][i]();
         }
 
-        // 6a. 擠：按住擠洗髮精，放開時要在框框裡
+        // 6a. 擠：點瓶子，一下擠一點，擠到框框裡就按「好了」
         function squeeze() {
-            say(G.customer.hello);
-            hint('按住「擠」，量尺走到框框裡就放開');
-            meter({ fill: 0, zone: [45, 65], label: '洗髮精' });
-            let holding = false, done = false, nextSquish = 0;
+            const st = G.c.st, [lo, hi] = st.pumps, MAX = 10;
+            say(G.c.hello);
+            setTimeout(() => { if (stage === 0 && !G.pumps) say(st.line); }, 1800);
+            hint('點瓶子擠洗髮精，一下擠一點。擠到框框裡就按「好了」');
+            meter({ fill: 0, zone: [(lo - 0.6) / MAX * 100, (hi + 0.6) / MAX * 100], label: '0 下' });
+            let finishing = false, judged = false, warned = 0;
 
-            function release() {
-                if (!holding || done) return;
-                holding = false;
-                if (G.amount < 3) { G.amount = 0; setFace(baseFace); return; }
-                done = true;
-                const a = G.amount;
+            function pump(now) {
+                if (finishing || G.pumps >= MAX) return;
+                if (!G.bottle) G.bottle = { in: now, press: 0, out: 0 };
+                G.bottle.press = now;
+                G.pumps++;
+                G.dollops.push({ x: 0, y: null, vy: 0.04, at: Math.max(now, G.bottle.in + 260) });
+                sfx.squeeze();
+                doneBtn.disabled = false;
+            }
+
+            function landed(d) {
+                G.landed++;
+                sfx.splat();
+                burst(d.x, d.y, 5, 'rgba(214, 166, 80, 0.9)');
+                $('meterFill').style.width = (G.landed / MAX * 100) + '%';
+                $('meterLabel').textContent = `${G.landed} 下`;
+                setFace('wow', 260);
+                if (warned < 1 && G.landed > hi + 1) { warned = 1; say('還要嗎？'); setFace('doubt'); }
+                if (warned < 2 && G.landed > hi + 3) { warned = 2; say('夠了夠了！'); setFace('pain'); }
+                if (G.landed >= MAX) { G.drip = true; finishing = true; }
+            }
+
+            function judge() {
+                judged = true;
+                G.bottle.out = performance.now();
+                const n = G.landed, less = n < lo;
+                const diff = less ? lo - n : n > hi ? n - hi : 0;
                 let r;
-                if (a < 25) r = { score: 4, label: '太少', line: '這樣起得了泡嗎？', face: 'doubt' };
-                else if (a < 45) r = { score: 10, label: '少了點', line: '還行，省著用。', face: 'neutral' };
-                else if (a <= 65) r = { score: 15, label: '剛剛好', line: '嗯，專業。', face: 'happy' };
-                else if (a < 90) r = { score: 9, label: '有點多', line: '是要洗兩顆頭嗎？', face: 'doubt' };
-                else r = { score: 3, label: '太多了', line: '流到眼睛了啦！', face: 'pain' };
+                if (G.drip) r = { score: 2, label: '太多了', line: '流到眼睛了啦！', face: 'pain' };
+                else if (!diff) r = { score: 15, label: '剛剛好', line: '嗯，專業。', face: 'happy' };
+                else if (diff === 1) r = { score: 10, label: less ? '少了點' : '多了點', line: less ? '還行，省著用。' : '有點多，沒關係。', face: 'neutral' };
+                else if (diff === 2) r = { score: 6, label: less ? '太少' : '太多', line: less ? '這樣起得了泡嗎？' : '是要洗兩顆頭嗎？', face: 'doubt' };
+                else r = { score: 3, label: less ? '少很多' : '多很多', line: less ? '你們店是不是快倒了。' : '這瓶是不是要被你擠完了。', face: 'pain' };
                 G.squeezeScore = r.score;
-                G.squeezeLabel = r.label;
-                G.foamMul = clamp(a / 55, 0.6, 1.35);
+                G.squeezeLabel = `${r.label}（${n} 下）`;
+                G.foamMul = clamp(n / ((lo + hi) / 2), 0.75, 1.4);
                 say(r.line);
                 setFace(r.face);
-                floatText(180, 92, r.label, pal.accent);
+                floatText(183, st.top - 22, r.label, pal.accent);
                 actions([]);
                 setTimeout(() => go(1), 1500);
             }
 
-            actions([{
-                label: '擠', round: true,
-                onDown: () => { if (done) return; holding = true; setFace('wow'); },
-                onUp: release,
-            }]);
+            const [, doneBtn] = actions([
+                { html: BOTTLE_SVG, round: true, aria: '擠洗髮精', onDown: pump },
+                { label: '好了', disabled: true, onClick: () => { if (G.pumps) finishing = true; } },
+            ]);
 
             return {
+                down(p, now) { pump(now); },
                 update(now, dt) {
-                    if (!holding) return;
-                    G.amount = Math.min(100, G.amount + dt * 0.06);
-                    $('meterFill').style.width = G.amount + '%';
-                    if (now > nextSquish) { sfx.squish(); nextSquish = now + 130; }
-                    if (G.amount >= 100) { G.drip = true; release(); }
+                    const { ry } = blobSize();
+                    const land = st.top + 3 - ry * 1.3;
+                    G.dollops.forEach(d => {
+                        if (now < d.at) return;
+                        if (d.y === null) { const tip = bottleTip(now); d.x = tip.x; d.y = tip.y; }
+                        d.vy += 0.0018 * dt;
+                        d.y += d.vy * dt;
+                    });
+                    G.dollops = G.dollops.filter(d => {
+                        if (d.y === null || d.y < land) return true;
+                        landed(d);
+                        return false;
+                    });
+                    if (finishing && !judged && !G.dollops.length) judge();
                 },
             };
         }
@@ -963,8 +1319,10 @@
                         carry -= 5;
                         const k = 1 - carry / Math.max(d, 1);
                         const q = { x: last.x + (p.x - last.x) * k, y: last.y + (p.y - last.y) * k };
-                        if (inRegion(q, FOAMABLE)) {
-                            addFoam(q.x + (Math.random() - 0.5) * 10, q.y + (Math.random() - 0.5) * 10, (8 + Math.random() * 7) * G.foamMul, true);
+                        if (foamable(q)) {
+                            // 泡泡長在頭髮上：中心要落在頭髮裡，才不會把整張臉蓋掉
+                            const f = { x: q.x + rand(-6, 6), y: q.y + rand(-8, 2) };
+                            if (G.c.st.inHair(f)) addFoam(f.x, f.y, Math.min(20, rand(10, 17) * G.foamMul), true);
                             if (Math.random() < 0.08) sfx.pop();
                         } else if (inEllipse(q, HEAD)) {
                             mutter('那是臉。', 'doubt');
@@ -1006,7 +1364,7 @@
 
             function spawn(now) {
                 let p, tries = 0;
-                do { p = pick(CELLS); tries++; } while (tries < 20 && spots.some(s => dist(s, p) < 50));
+                do { p = pick(G.cells); tries++; } while (tries < 30 && spots.some(s => dist(s, p) < 50));
                 const life = Math.max(900, 1600 - G.spawned * 50) + (G.hp > 1 ? 450 : 0);
                 spots.push({ x: p.x, y: p.y, born: now, life, hp: G.hp });
                 G.spawned++;
@@ -1041,9 +1399,9 @@
                         nextAt = Math.max(nextAt, now + 280);
                         return;
                     }
-                    if (EARS.some(e => dist(e, p) < 22)) mutter('那是我的耳朵。', 'wow');
-                    else if (inEllipse(p, HEAD) && p.y > HAIR.cut + 10) mutter('那是臉啦。', 'pain');
-                    else if (inRegion(p, FOAMABLE)) mutter(pick(['不是那裡。', '再過去一點。', '旁邊旁邊。']), 'doubt');
+                    if (!G.c.st.hideEars && EARS.some(e => dist(e, p) < 22)) mutter('那是我的耳朵。', 'wow');
+                    else if (inEllipse(p, HEAD) && !foamable(p)) mutter('那是臉啦。', 'pain');
+                    else if (foamable(p)) mutter(pick(['不是那裡。', '再過去一點。', '旁邊旁邊。']), 'doubt');
                 },
                 update(now) {
                     if (finished) return;
@@ -1081,15 +1439,15 @@
             };
         }
 
-        // 6d. 捏：從泡泡往外拉，捏個造型
+        // 6d. 捏：從泡泡往外拉，捏個造型。泡泡給很多，隨便捏
         function sculpt() {
-            hint('從泡泡上往外拉，捏個造型。好了按「照鏡子」');
+            hint('從泡泡上往外拉，想捏幾條就捏幾條。好了按「照鏡子」');
             say('要幫我抓個造型嗎？');
             setFace('happy');
-            G.budgetMax = G.budget = Math.round((450 + 450 * G.coverage) * clamp(G.foamMul, 0.8, 1.25));
+            G.budgetMax = G.budget = Math.round((1700 + 1300 * G.coverage) * clamp(G.foamMul, 0.85, 1.3));
             meter({ fill: 100, label: '泡泡' });
             let stroke = null, last = null, carry = 0, finished = false;
-            const r0 = clamp(14 * G.foamMul, 11, 18);
+            const r0 = clamp(17 * G.foamMul, 14, 22);
 
             function finish() {
                 if (finished) return;
@@ -1120,7 +1478,7 @@
                     if (finished) return;
                     if (G.budget <= 0) { hint('泡泡用完了，照鏡子吧'); return; }
                     if (!onFoam(p)) { hint('要從泡泡上開始拉'); return; }
-                    hint('從泡泡上往外拉，捏個造型。好了按「照鏡子」');
+                    hint('從泡泡上往外拉，想捏幾條就捏幾條。好了按「照鏡子」');
                     stroke = { pts: [p], len: 0 };
                     G.strokes.push(stroke);
                     last = p;
@@ -1136,7 +1494,7 @@
                         const q = { x: last.x + (p.x - last.x) * k, y: last.y + (p.y - last.y) * k };
                         stroke.len += 3;
                         G.budget -= 3;
-                        addFoam(q.x, q.y, Math.max(5, r0 - stroke.len * 0.04), false, 0.12);
+                        addFoam(q.x, q.y, Math.max(7, r0 - stroke.len * 0.025), false, 0.12);
                         if (dist(q, stroke.pts[stroke.pts.length - 1]) >= 6) stroke.pts.push(q);
                         if (Math.random() < 0.05) sfx.pop();
                     }
@@ -1165,19 +1523,21 @@
                 const top = Math.min(...s.pts.map(p => p.y));
                 return { x: a.x, dx: b.x - a.x, rise: a.y - top, turn: Math.abs(turn), up: (a.y - b.y) > Math.abs(b.x - a.x) * 0.6 };
             });
+            const n = list.length, ups = info.filter(i => i.up).length;
             if (info.some(i => i.turn > Math.PI * 1.7)) return SHAPES.cone;
-            if (list.length >= 5) return SHAPES.urchin;
-            const ups = info.filter(i => i.up);
-            if (list.length === 1) {
-                if (!ups.length) return SHAPES.wind;
+            if (n >= 7) return SHAPES.urchin;
+            if (n === 1) {
+                if (!ups) return SHAPES.wind;
                 return info[0].rise >= 110 ? SHAPES.rocket : SHAPES.unicorn;
             }
-            if (list.length === 2) {
-                if (ups.length === 2) return Math.min(info[0].rise, info[1].rise) >= 75 ? SHAPES.bunny : SHAPES.devil;
-                if (!ups.length && (info[0].dx < 0) !== (info[1].dx < 0)) return SHAPES.prop;
+            if (n === 2) {
+                if (ups === 2) return Math.min(info[0].rise, info[1].rise) >= 75 ? SHAPES.bunny : SHAPES.devil;
+                if (!ups && (info[0].dx < 0) !== (info[1].dx < 0)) return SHAPES.prop;
                 return SHAPES.abstract;
             }
-            return ups.length >= 3 ? SHAPES.crown : SHAPES.boom;
+            if (ups === n && n <= 5) return SHAPES.crown;
+            if (ups >= n - 1) return SHAPES.urchin;
+            return ups >= 2 ? SHAPES.boom : SHAPES.abstract;
         }
 
         // 照鏡子那一刻拍一張（固定白天的顏色，證明是紙本）
@@ -1298,14 +1658,14 @@
         async function makeCert(total, grade) {
             const SERIF = '"Noto Serif TC", serif', SANS = '"Noto Sans TC", sans-serif';
             const rows = [
-                ['客人', G.customer.who],
+                ['客人', G.c.who],
                 ['洗髮精', G.squeezeLabel],
                 ['泡泡', `蓋滿 ${Math.round(G.coverage * 100)}%`],
                 ['抓癢', `${G.hits} / 14`],
                 ['造型', G.shape.name],
                 ['拍背', G.patMarks.length ? G.patMarks.join('・') : '都沒拍到'],
             ];
-            const allText = rows.flat().join('') + '洗頭證明爽度二十七樓坐洗部' + grade.mark + grade.line + '0123456789';
+            const allText = rows.flat().join('') + '洗頭證明爽度二十七樓坐洗部' + grade.mark + grade.line + '0123456789（）';
             try {
                 await Promise.race([
                     Promise.all([document.fonts.load(`600 40px ${SERIF}`, allText), document.fonts.load(`400 40px ${SANS}`, allText)]),
