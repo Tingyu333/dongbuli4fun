@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>坐洗・泡 | 丼步喱</title>
+    <!-- 分享到 LINE、FB 時的預覽（標題、介紹、圖片）。圖片要用完整網址 -->
+    <meta name="description" content="二十七樓坐洗部。擠、搓、抓、捏、拍，洗完拿一張洗頭證明。">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="丼步喱・絆">
+    <meta property="og:title" content="坐洗・泡｜丼步喱">
+    <meta property="og:description" content="二十七樓坐洗部。擠、搓、抓、捏、拍，洗完拿一張洗頭證明。">
+    <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
+    <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/xitou.html">
+    <meta name="twitter:card" content="summary">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入日系字體 -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/theme.css">
+    <script src="assets/theme.js"></script>
+    <style>
+        /* 洗頭台：手指在上面搓、拉，不能捲動頁面，長按也不能跳出系統選單 */
+        .salon {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #cv {
+            display: block;
+            width: 100%;
+            aspect-ratio: 360 / 380;
+            touch-action: none;
+        }
+
+        /* 五道工序 */
+        .step {
+            width: 1.7rem;
+            height: 1.7rem;
+            border-radius: 9999px;
+            border: 1px solid rgb(var(--wabi-sub));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            line-height: 1;
+            color: rgb(var(--wabi-accent));
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        .step.is-now {
+            background: rgb(var(--wabi-dark));
+            border-color: rgb(var(--wabi-dark));
+            color: rgb(var(--wabi-bg));
+        }
+
+        .step.is-done {
+            border-color: rgb(var(--wabi-accent) / 0.5);
+            color: rgb(var(--wabi-accent) / 0.5);
+        }
+
+        /* 量尺：洗髮精、泡泡覆蓋、抓到幾個、剩多少泡泡、拍背的節奏 */
+        .meter {
+            position: relative;
+            height: 0.5rem;
+            border-radius: 9999px;
+            background: rgb(var(--wabi-sub) / 0.6);
+        }
+
+        .meter-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            border-radius: 9999px;
+            background: rgb(var(--wabi-accent));
+        }
+
+        .meter-zone {
+            position: absolute;
+            top: -0.2rem;
+            bottom: -0.2rem;
+            border: 1px solid rgb(var(--wabi-shu));
+            border-radius: 2px;
+        }
+
+        .meter-mark {
+            position: absolute;
+            top: -0.3rem;
+            bottom: -0.3rem;
+            width: 2px;
+            margin-left: -1px;
+            background: rgb(var(--wabi-shu));
+        }
+
+        .meter-mark.is-hit {
+            background: rgb(var(--wabi-accent) / 0.4);
+        }
+
+        .meter-cursor {
+            position: absolute;
+            top: -0.45rem;
+            bottom: -0.45rem;
+            width: 3px;
+            margin-left: -1.5px;
+            border-radius: 2px;
+            background: rgb(var(--wabi-dark));
+        }
+
+        /* 按住擠、點一下啪 */
+        .act-round {
+            width: 4.75rem;
+            height: 4.75rem;
+            border-radius: 9999px;
+            background: rgb(var(--wabi-dark));
+            color: rgb(var(--wabi-bg));
+            font-family: 'Noto Serif TC', serif;
+            font-size: 1.5rem;
+            box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.45);
+            transition: transform 0.12s ease;
+            touch-action: manipulation;
+        }
+
+        .act-round.is-pressed,
+        .act-round:active {
+            transform: scale(0.92);
+        }
+
+        .act-text {
+            min-height: 44px;
+            padding: 0.75rem 2rem;
+            border: 1px solid rgb(var(--wabi-dark));
+            color: rgb(var(--wabi-dark));
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.2em;
+            touch-action: manipulation;
+        }
+
+        .act-text:active {
+            background: rgb(var(--wabi-dark));
+            color: rgb(var(--wabi-bg));
+        }
+
+        /* 造型名稱：朱色印章蓋在鏡子下面 */
+        .shape-stamp {
+            position: absolute;
+            left: 50%;
+            bottom: 5%;
+            padding: 0.15rem 0.9rem;
+            border: 3px double rgb(var(--wabi-shu));
+            background: rgb(var(--wabi-card) / 0.9);
+            color: rgb(var(--wabi-shu));
+            font-family: 'Noto Serif TC', serif;
+            font-weight: 700;
+            font-size: 1.4rem;
+            letter-spacing: 0.2em;
+            white-space: nowrap;
+            transform: translateX(-50%) rotate(-6deg);
+            pointer-events: none;
+        }
+
+        .shape-stamp.is-in {
+            animation: stamp-in 0.35s cubic-bezier(.2, 1.6, .4, 1);
+        }
+
+        @keyframes stamp-in {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) rotate(-6deg) scale(1.8);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .shape-stamp.is-in {
+                animation: none;
+            }
+        }
+    </style>
+</head>
+
+<body
+    class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- 導航 -->
+    <nav
+        class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <a href="index.html"
+            class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-3 md:gap-8">
+            <a href="index.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <a href="reviews.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <a href="jiaobei.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">擲杯・問</a>
+            <a href="about.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+        </div>
+    </nav>
+
+    <!-- 主要內容 -->
+    <main class="flex-grow max-w-md mx-auto pt-24 md:pt-32 pb-16 px-6 w-full">
+
+        <!-- 標題區塊 -->
+        <div class="text-center mb-6">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">SHAMPOO</span>
+            <h1 class="text-3xl font-light text-wabi-dark tracking-widest">坐洗・泡</h1>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">
+                二十七樓坐洗部，一次只洗一顆頭。
+            </p>
+        </div>
+
+        <!-- 洗頭台 -->
+        <section id="salon"
+            class="salon bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-4 pt-4 pb-6">
+            <div class="flex items-center justify-between">
+                <ol id="steps" class="flex gap-1.5 font-sans" aria-label="五道工序">
+                    <li class="step">擠</li>
+                    <li class="step">搓</li>
+                    <li class="step">抓</li>
+                    <li class="step">捏</li>
+                    <li class="step">拍</li>
+                </ol>
+                <span id="best" class="text-[10px] font-sans tracking-widest text-stone-400"></span>
+            </div>
+
+            <p id="who" class="mt-3 text-[11px] font-sans tracking-widest text-stone-400"></p>
+
+            <!-- 客人說的話（或你說的話） -->
+            <div class="flex items-start gap-2 min-h-[3.4rem] mt-1" aria-live="polite">
+                <span id="saysWho" class="shrink-0 pt-[0.15rem] text-[10px] font-sans tracking-widest text-wabi-accent">客人</span>
+                <p id="says" class="text-sm text-wabi-dark tracking-wider leading-relaxed">（坐下了）</p>
+            </div>
+
+            <div id="mirror" class="relative">
+                <canvas id="cv" aria-label="鏡子裡的客人"></canvas>
+                <div id="shapeStamp" class="shape-stamp hidden"></div>
+            </div>
+
+            <div class="mt-4 flex items-center gap-3">
+                <div id="meter" class="meter flex-1">
+                    <div id="meterZone" class="meter-zone hidden"></div>
+                    <div id="meterFill" class="meter-fill" style="width:0"></div>
+                    <div id="meterMarks"></div>
+                    <div id="meterCursor" class="meter-cursor hidden"></div>
+                </div>
+                <span id="meterLabel" class="w-20 shrink-0 text-right text-[10px] font-sans tracking-widest text-stone-400"></span>
+            </div>
+
+            <p id="hint" class="mt-3 min-h-[2.6rem] text-xs text-center text-stone-500 font-sans tracking-widest leading-relaxed [text-wrap:balance]"></p>
+
+            <div id="actions" class="mt-2 min-h-[4.75rem] flex items-center justify-center gap-3"></div>
+        </section>
+
+        <!-- 洗好了 -->
+        <section id="result" class="hidden mt-10 text-center">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent">洗好了</span>
+            <p class="mt-2 text-wabi-dark"><span id="score" class="text-5xl font-light">0</span><span
+                    class="ml-2 text-xs font-sans tracking-widest text-stone-400">爽度</span></p>
+            <p id="gradeLine" class="mt-1 text-sm text-stone-500 tracking-widest"></p>
+            <img id="certImg" alt="洗頭證明"
+                class="mt-6 w-full border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]">
+            <div class="mt-6 flex flex-col gap-3">
+                <button id="shareBtn" type="button"
+                    class="w-full bg-wabi-dark text-wabi-bg py-4 px-8 tracking-[0.2em] font-sans text-xs shadow-lg">分享洗頭證明</button>
+                <button id="againBtn" type="button"
+                    class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">再洗一顆</button>
+            </div>
+        </section>
+
+        <p class="mt-10 text-[11px] font-sans tracking-widest text-stone-400 leading-relaxed text-center">
+            台式坐洗：坐著把泡泡堆滿整顆頭，<br>
+            抓完、捏完再去沖。不用預約。
+        </p>
+    </main>
+
+    <footer
+        class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
+        <p>&copy; 2026 DONGBULI · 純粹棲所</p>
+    </footer>
+
+    <script>
+        // ===== 0. 舞台 =====
+        // 畫布用固定的 360×380 座標畫，CSS 再縮放到螢幕寬度
+        const W = 360, H = 380, TAU = Math.PI * 2;
+        const HEAD = { x: 180, y: 200, rx: 68, ry: 82 };
+        const HAIR = { x: 180, y: 200, rx: 74, ry: 90, cut: 180 };  // 頭髮：頭頂那一片，瀏海切在 y=180
+        const FOAMABLE = { x: 180, y: 200, rx: 86, ry: 102, cut: 190 }; // 搓得出泡泡的範圍（比頭髮大一圈）
+        const EARS = [{ x: 112, y: 214 }, { x: 248, y: 214 }];
+        const SKIN = '#ecd3b8', SKIN_SHADE = '#dcb998', INK = '#3b3431';
+        const HAIRS = ['#2f2a26', '#3a2c22', '#24211f', '#4a3a2c'];
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const cv = document.getElementById('cv');
+        const ctx = cv.getContext('2d');
+        const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+        cv.width = Math.round(W * dpr);
+        cv.height = Math.round(H * dpr);
+
+        // 泡泡另外畫在一張畫布上，一層一層堆起來
+        const foamCv = document.createElement('canvas');
+        foamCv.width = cv.width;
+        foamCv.height = cv.height;
+        const fctx = foamCv.getContext('2d', { willReadFrequently: true });
+        fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        // 顏色：鏡子跟晝夜走，客人本身（皮膚、頭髮、圍布）是實物，顏色固定
+        const DAY = { sub: 'rgb(220 220 220)', accent: 'rgb(142 128 112)', dark: 'rgb(44 44 44)', shu: 'rgb(179 58 47)' };
+        let pal = DAY;
+        function readPalette() {
+            pal = { sub: themeColor('--wabi-sub'), accent: themeColor('--wabi-accent'), dark: themeColor('--wabi-dark'), shu: themeColor('--wabi-shu') };
+        }
+        readPalette();
+        new MutationObserver(readPalette).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+        const inEllipse = (p, e) => ((p.x - e.x) / e.rx) ** 2 + ((p.y - e.y) / e.ry) ** 2 <= 1;
+        const inRegion = (p, e) => inEllipse(p, e) && p.y < e.cut;
+        const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+        const pick = list => list[Math.floor(Math.random() * list.length)];
+        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+        // 頭髮切成小格子，算泡泡蓋了幾成
+        const CELLS = [];
+        for (let y = 106; y < HAIR.cut; y += 8) {
+            for (let x = 102; x < 258; x += 8) {
+                const c = { x: x + 4, y: y + 4 };
+                if (inRegion(c, HAIR)) CELLS.push(c);
+            }
+        }
+
+        // ===== 1. 客人 =====
+        const CUSTOMERS = [
+            { who: '熬夜打電動的旅人', hello: '眼睛先閉一下，你洗你的。' },
+            { who: '剛在陽台吹完風的旅人', hello: '頭髮裡應該有一點風。' },
+            { who: '說只是來修瀏海的旅人', hello: '我洗一下就好，真的。' },
+            { who: '住了三晚還不想退房的旅人', hello: '洗完可以再住一晚嗎。' },
+            { who: '群組裡已讀不回的旅人', hello: '……' },
+            { who: '昨天喝太多的旅人', hello: '小力一點，頭還在痛。' },
+            { who: '第一次來二十七樓的旅人', hello: '電梯好久，我差點睡著。' },
+        ];
+
+        // 抓到一半問「這樣力道可以嗎」，客人的回答
+        const ANSWERS = [
+            { text: '可以，剛好。', hp: 1 },
+            { text: '再大力一點。', hp: 2, hint: '客人要大力一點：每個癢處點兩下' },
+            { text: '你是不是在摸貓。', hp: 2, hint: '被嫌太小力：每個癢處點兩下' },
+            { text: '太大力了，頭皮要掉了。', hp: 1 },
+        ];
+
+        // 捏出來的造型
+        const SHAPES = {
+            plain: { name: '原味', line: '什麼都沒捏，懂得留白。' },
+            cone: { name: '霜淇淋', line: '一支三十五，第二支半價。' },
+            urchin: { name: '海膽', line: '摸了會痛的那種。' },
+            rocket: { name: '衝天炮', line: '點火要往外點。' },
+            unicorn: { name: '獨角獸', line: '許願可以，實現不保證。' },
+            wind: { name: '被風吹過', line: '騎車沒戴安全帽的樣子。' },
+            bunny: { name: '兔耳', line: '二十七樓限定的兔子。' },
+            devil: { name: '小惡魔', line: '笑起來有點壞。' },
+            prop: { name: '螺旋槳', line: '轉起來可以直接飛回二十七樓。' },
+            crown: { name: '皇冠', line: '今天你是二十七樓的王。' },
+            boom: { name: '爆炸頭', line: '實驗室剛炸過。' },
+            abstract: { name: '抽象派', line: '看不懂，但很有態度。' },
+        };
+
+        const GRADES = [
+            { min: 90, mark: '爽', line: '爽到不想走' },
+            { min: 75, mark: '讚', line: '下次指定你' },
+            { min: 55, mark: '可', line: '還可以啦' },
+            { min: 35, mark: '痛', line: '頭皮有點痛' },
+            { min: 0, mark: '訴', line: '已經在寫負評了' },
+        ];
+
+        // ===== 2. 畫面上的元件 =====
+        const $ = id => document.getElementById(id);
+        const stepEls = [...document.querySelectorAll('#steps .step')];
+        const BEST_KEY = 'dongbuli-xitou-best';
+
+        function say(text, who = '客人') {
+            $('saysWho').textContent = who;
+            $('says').textContent = text;
+        }
+
+        function hint(text) {
+            $('hint').textContent = text;
+        }
+
+        function setSteps(i) {
+            stepEls.forEach((el, k) => {
+                el.classList.toggle('is-now', k === i);
+                el.classList.toggle('is-done', k < i);
+            });
+        }
+
+        // 量尺：fill 0～100、zone [起, 迄]、marks 節拍位置、cursor 指針
+        function meter({ fill = 0, zone = null, marks = [], cursor = null, label = '' } = {}) {
+            $('meterFill').style.width = fill + '%';
+            $('meterZone').classList.toggle('hidden', !zone);
+            if (zone) Object.assign($('meterZone').style, { left: zone[0] + '%', width: (zone[1] - zone[0]) + '%' });
+            $('meterMarks').innerHTML = marks.map(m => `<span class="meter-mark" style="left:${m}%"></span>`).join('');
+            $('meterCursor').classList.toggle('hidden', cursor === null);
+            if (cursor !== null) $('meterCursor').style.left = cursor + '%';
+            $('meterLabel').textContent = label;
+        }
+
+        // 下面的按鈕：round 是圓的大按鈕（擠、啪），其他是長的
+        function actions(list) {
+            const box = $('actions');
+            box.innerHTML = '';
+            list.forEach(item => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = item.round ? 'act-round' : 'act-text';
+                btn.textContent = item.label;
+                if (item.onDown) {
+                    btn.addEventListener('pointerdown', e => {
+                        e.preventDefault();
+                        unlockAudio();
+                        btn.classList.add('is-pressed');
+                        item.onDown(performance.now());
+                    });
+                    const up = () => {
+                        btn.classList.remove('is-pressed');
+                        if (item.onUp) item.onUp();
+                    };
+                    ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => btn.addEventListener(t, up));
+                    btn.addEventListener('contextmenu', e => e.preventDefault());
+                }
+                if (item.onClick) btn.addEventListener('click', () => { unlockAudio(); item.onClick(); });
+                box.appendChild(btn);
+            });
+        }
+
+        // ===== 3. 聲音：全部用 Web Audio 合成，不載音檔 =====
+        let audioCtx = null;
+
+        function unlockAudio() {
+            try {
+                audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+            } catch (e) { }
+        }
+
+        function noise(dur, type, freq, q, vol) {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            try {
+                const length = Math.floor(audioCtx.sampleRate * dur);
+                const buffer = audioCtx.createBuffer(1, length, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 3);
+                const src = audioCtx.createBufferSource();
+                src.buffer = buffer;
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = type;
+                filter.frequency.value = freq;
+                filter.Q.value = q;
+                const gain = audioCtx.createGain();
+                gain.gain.value = vol;
+                src.connect(filter).connect(gain).connect(audioCtx.destination);
+                src.start();
+            } catch (e) { }
+        }
+
+        function tone(freq, dur, vol, to = freq, type = 'sine') {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            try {
+                const t = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, t);
+                osc.frequency.exponentialRampToValueAtTime(to, t + dur);
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(vol, t);
+                gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+                osc.connect(gain).connect(audioCtx.destination);
+                osc.start(t);
+                osc.stop(t + dur + 0.02);
+            } catch (e) { }
+        }
+
+        const sfx = {
+            squish: () => { noise(0.08, 'bandpass', 420 + Math.random() * 200, 3, 0.35); tone(170, 0.08, 0.06, 110); },
+            scrub: () => noise(0.07, 'highpass', 2600, 0.7, 0.07),
+            pop: () => tone(900 + Math.random() * 700, 0.05, 0.04, 1800),
+            scratch: () => { noise(0.04, 'bandpass', 3200, 2, 0.25); setTimeout(() => noise(0.04, 'bandpass', 2900, 2, 0.2), 55); },
+            pat: () => { tone(120, 0.14, 0.5, 55); noise(0.05, 'lowpass', 500, 0.7, 0.35); },
+            tick: () => tone(1500, 0.03, 0.05, 1400, 'triangle'),
+            stamp: () => { tone(90, 0.22, 0.5, 45); noise(0.08, 'lowpass', 300, 0.7, 0.4); },
+            water: () => noise(1.3, 'bandpass', 1700, 0.4, 0.12),
+        };
+
+        // ===== 4. 遊戲狀態 =====
+        let G = null;
+        let stage = -1;        // -1 還沒開始，0～4 擠搓抓捏拍，5 洗好了
+        let cur = {};          // 這一關的處理（down / move / up / update）
+        let face = { kind: 'neutral', until: 0 };
+        let baseFace = 'neutral';
+        let spots = [], floats = [], bubbles = [], drops = [];
+        let saidAt = 0;        // 客人碎念不要太頻繁
+
+        function newGame() {
+            G = {
+                customer: pick(CUSTOMERS), hair: pick(HAIRS),
+                amount: 0, drip: false, foamMul: 1, squeezeScore: 0, squeezeLabel: '',
+                coverage: 0, rubScore: 0,
+                hits: 0, spawned: 0, hp: 1, scratchScore: 0,
+                strokes: [], budget: 0, budgetMax: 0, shape: null, styleScore: 0, snapshot: null,
+                patScore: 0, patMarks: [],
+                foamAlpha: 1, wet: false,
+            };
+            CELLS.forEach(c => { c.on = false; });
+            fctx.clearRect(0, 0, W, H);
+            spots = []; floats = []; bubbles = []; drops = [];
+            baseFace = 'neutral';
+            face = { kind: 'neutral', until: 0 };
+            $('who').textContent = `今天的客人：${G.customer.who}`;
+            $('shapeStamp').classList.add('hidden');
+        }
+
+        function setFace(kind, ms) {
+            if (ms) face = { kind, until: performance.now() + ms };
+            else { baseFace = kind; face = { kind, until: 0 }; }
+        }
+
+        // 客人碎念：同一類的話 1.4 秒內不重複
+        function mutter(text, kind = 'doubt', ms = 700) {
+            const now = performance.now();
+            setFace(kind, ms);
+            if (now - saidAt < 1400) return;
+            saidAt = now;
+            say(text);
+        }
+
+        function floatText(x, y, text, color) {
+            floats.push({ x, y, text, color, born: performance.now() });
+        }
+
+        function burst(x, y, n = 6) {
+            for (let i = 0; i < n; i++) {
+                const a = Math.random() * TAU, s = 0.04 + Math.random() * 0.06;
+                bubbles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 0.03, r: 2 + Math.random() * 4, born: performance.now() });
+            }
+        }
+
+        function shake() {
+            if (reduceMotion) return;
+            $('mirror').animate([
+                { transform: 'translate(0,0)' }, { transform: 'translate(-3px,2px)' },
+                { transform: 'translate(3px,-1px)' }, { transform: 'translate(0,0)' }
+            ], { duration: 160 });
+        }
+
+        // 一團泡泡：先畫一圈淡灰的邊，再蓋白色，疊多了就像真的泡沫。
+        // 捏造型時是沿著手指連續畫，邊要淡一點，不然看起來像一疊銅板
+        function addFoam(x, y, r, count, edge = 0.45) {
+            fctx.beginPath();
+            fctx.arc(x, y, r + 1.3, 0, TAU);
+            fctx.fillStyle = `rgba(140, 150, 162, ${edge})`;
+            fctx.fill();
+            const g = fctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r);
+            g.addColorStop(0, '#ffffff');
+            g.addColorStop(1, '#e7ebef');
+            fctx.beginPath();
+            fctx.arc(x, y, r, 0, TAU);
+            fctx.fillStyle = g;
+            fctx.fill();
+            if (Math.random() < (count ? 0.3 : 0.08)) {
+                fctx.beginPath();
+                fctx.arc(x + (Math.random() - 0.5) * r, y + (Math.random() - 0.5) * r, 1.5 + Math.random() * 2.5, 0, TAU);
+                fctx.strokeStyle = 'rgba(140, 150, 162, 0.6)';
+                fctx.lineWidth = 0.8;
+                fctx.stroke();
+            }
+            if (!count) return;
+            let on = 0;
+            CELLS.forEach(c => {
+                if (!c.on && dist(c, { x, y }) < r * 0.95) c.on = true;
+                if (c.on) on++;
+            });
+            G.coverage = on / CELLS.length;
+        }
+
+        function onFoam(p) {
+            const d = fctx.getImageData(Math.round(p.x * dpr), Math.round(p.y * dpr), 1, 1).data;
+            return d[3] > 100;
+        }
+
+        // ===== 5. 畫畫 =====
+        function drawScene(c, colors, now, live) {
+            c.clearRect(0, 0, W, H);
+
+            // 鏡子：拱形，跟著晝夜換色
+            c.save();
+            c.beginPath();
+            c.moveTo(14, H);
+            c.lineTo(14, 160);
+            c.ellipse(180, 160, 166, 150, 0, Math.PI, TAU);
+            c.lineTo(346, H);
+            c.closePath();
+            c.globalAlpha = 0.28;
+            c.fillStyle = colors.sub;
+            c.fill();
+            c.globalAlpha = 0.5;
+            c.strokeStyle = colors.accent;
+            c.lineWidth = 1.5;
+            c.stroke();
+            c.globalAlpha = 0.35;
+            c.strokeStyle = '#ffffff';
+            c.lineWidth = 3;
+            c.beginPath();
+            c.moveTo(42, 150); c.lineTo(84, 74);
+            c.moveTo(48, 182); c.lineTo(104, 82);
+            c.stroke();
+            c.restore();
+
+            // 圍布
+            c.fillStyle = '#3e434a';
+            c.beginPath();
+            c.moveTo(34, H);
+            c.bezierCurveTo(52, 330, 110, 310, 180, 310);
+            c.bezierCurveTo(250, 310, 308, 330, 326, H);
+            c.closePath();
+            c.fill();
+            c.strokeStyle = 'rgba(255,255,255,0.08)';
+            c.lineWidth = 1;
+            for (let x = 80; x <= 280; x += 25) {
+                c.beginPath();
+                c.moveTo(180 + (x - 180) * 0.45, 314);
+                c.lineTo(x, H);
+                c.stroke();
+            }
+
+            // 脖子、毛巾
+            c.fillStyle = SKIN_SHADE;
+            c.fillRect(160, 262, 40, 50);
+            c.fillStyle = '#f3efe8';
+            roundRect(c, 116, 298, 128, 24, 12);
+            c.fill();
+            c.strokeStyle = '#d9d2c6';
+            c.lineWidth = 1;
+            c.stroke();
+
+            // 耳朵、頭
+            EARS.forEach(e => {
+                c.fillStyle = SKIN;
+                c.beginPath();
+                c.ellipse(e.x, e.y, 10, 15, 0, 0, TAU);
+                c.fill();
+                c.strokeStyle = SKIN_SHADE;
+                c.lineWidth = 1.5;
+                c.beginPath();
+                c.ellipse(e.x, e.y, 5, 9, 0, 0, TAU);
+                c.stroke();
+            });
+            c.fillStyle = SKIN;
+            c.beginPath();
+            c.ellipse(HEAD.x, HEAD.y, HEAD.rx, HEAD.ry, 0, 0, TAU);
+            c.fill();
+
+            drawFace(c, now < face.until ? face.kind : baseFace, colors);
+
+            // 頭髮：頭頂那一片，瀏海有一點波浪
+            const t = Math.asin((HAIR.cut - HAIR.y) / HAIR.ry);
+            c.fillStyle = G.hair;
+            c.beginPath();
+            c.ellipse(HAIR.x, HAIR.y, HAIR.rx, HAIR.ry, 0, Math.PI - t, TAU + t);
+            const xr = HAIR.x + HAIR.rx * Math.cos(t), xl = HAIR.x - HAIR.rx * Math.cos(t);
+            const n = 6, step = (xr - xl) / n;
+            for (let i = 0; i < n; i++) {
+                const x1 = xr - step * i, x2 = x1 - step;
+                c.quadraticCurveTo((x1 + x2) / 2, HAIR.cut + (i % 2 ? 4 : 9), x2, HAIR.cut - (i === n - 1 ? 0 : 3));
+            }
+            c.closePath();
+            c.fill();
+            if (G.wet) {
+                c.strokeStyle = 'rgba(255,255,255,0.28)';
+                c.lineWidth = 2;
+                c.beginPath();
+                c.arc(170, 200, 74, Math.PI * 1.28, Math.PI * 1.45);
+                c.moveTo(214, 140);
+                c.arc(176, 200, 70, Math.PI * 1.62, Math.PI * 1.72);
+                c.stroke();
+            }
+
+            // 洗髮精：擠在頭頂的一坨，擠太多會流下來
+            if (G.amount > 0 && stage <= 1) {
+                c.fillStyle = 'rgba(226, 182, 98, 0.88)';
+                if (G.drip) {
+                    c.strokeStyle = 'rgba(226, 182, 98, 0.88)';
+                    c.lineWidth = 5;
+                    c.lineCap = 'round';
+                    c.beginPath();
+                    c.moveTo(170, 116);
+                    c.quadraticCurveTo(150, 170, 160, 206);
+                    c.stroke();
+                    c.beginPath();
+                    c.arc(160, 208, 4.5, 0, TAU);
+                    c.fill();
+                }
+                c.beginPath();
+                c.ellipse(180, 110, 6 + G.amount * 0.24, 4 + G.amount * 0.12, 0, 0, TAU);
+                c.fill();
+                c.fillStyle = 'rgba(255,255,255,0.6)';
+                c.beginPath();
+                c.ellipse(174, 106, 3 + G.amount * 0.04, 1.5 + G.amount * 0.02, -0.3, 0, TAU);
+                c.fill();
+            }
+
+            // 泡泡
+            if (G.foamAlpha > 0) {
+                c.save();
+                c.globalAlpha = G.foamAlpha;
+                c.drawImage(foamCv, 0, 0, W, H);
+                c.restore();
+            }
+
+            if (!live) return;
+
+            // 癢的地方：朱色圈圈，外圈是剩下的時間
+            spots.forEach(s => {
+                const age = clamp((now - s.born) / s.life, 0, 1);
+                const pulse = 1 + 0.1 * Math.sin(now / 80);
+                c.save();
+                c.globalAlpha = age > 0.85 ? (1 - age) / 0.15 : 1;
+                c.beginPath();
+                c.arc(s.x, s.y, 14 * pulse, 0, TAU);
+                c.fillStyle = colors.shu;
+                c.globalAlpha *= 0.85;
+                c.fill();
+                c.globalAlpha = age > 0.85 ? (1 - age) / 0.15 : 1;
+                c.beginPath();
+                c.arc(s.x, s.y, 20, -Math.PI / 2, -Math.PI / 2 + (1 - age) * TAU);
+                c.strokeStyle = colors.shu;
+                c.lineWidth = 2;
+                c.stroke();
+                c.fillStyle = '#ffffff';
+                c.font = '600 13px "Noto Serif TC", serif';
+                c.textAlign = 'center';
+                c.textBaseline = 'middle';
+                c.fillText(s.hp > 1 ? '癢癢' : '癢', s.x, s.y + 1);
+                c.restore();
+            });
+
+            // 抓破的泡泡
+            bubbles = bubbles.filter(b => now - b.born < 600);
+            bubbles.forEach(b => {
+                const age = now - b.born;
+                c.save();
+                c.globalAlpha = 1 - age / 600;
+                c.strokeStyle = '#9aa6b2';
+                c.lineWidth = 1;
+                c.beginPath();
+                c.arc(b.x + b.vx * age, b.y + b.vy * age, b.r, 0, TAU);
+                c.stroke();
+                c.restore();
+            });
+
+            // 沖水
+            drops = drops.filter(d => d.y < 300);
+            drops.forEach(d => {
+                d.y += d.v;
+                c.strokeStyle = 'rgba(140, 175, 200, 0.7)';
+                c.lineWidth = 2;
+                c.beginPath();
+                c.moveTo(d.x, d.y);
+                c.lineTo(d.x, d.y + 10);
+                c.stroke();
+            });
+
+            // 飄起來的字
+            floats = floats.filter(f => now - f.born < 750);
+            floats.forEach(f => {
+                const age = (now - f.born) / 750;
+                c.save();
+                c.globalAlpha = 1 - age;
+                c.fillStyle = f.color || colors.shu;
+                c.font = '700 16px "Noto Serif TC", serif';
+                c.textAlign = 'center';
+                c.fillText(f.text, f.x, f.y - age * 30);
+                c.restore();
+            });
+        }
+
+        function roundRect(c, x, y, w, h, r) {
+            c.beginPath();
+            c.moveTo(x + r, y);
+            c.arcTo(x + w, y, x + w, y + h, r);
+            c.arcTo(x + w, y + h, x, y + h, r);
+            c.arcTo(x, y + h, x, y, r);
+            c.arcTo(x, y, x + w, y, r);
+            c.closePath();
+        }
+
+        // 表情：neutral 普通、happy 開心、bliss 爽、pain 痛、doubt 懷疑、wow 嚇到
+        function drawFace(c, kind, colors) {
+            const L = { x: 155, y: 216 }, R = { x: 205, y: 216 };
+            c.save();
+            c.strokeStyle = INK;
+            c.fillStyle = INK;
+            c.lineWidth = 2.4;
+            c.lineCap = 'round';
+            c.lineJoin = 'round';
+            const line = (pts) => { c.beginPath(); c.moveTo(pts[0], pts[1]); for (let i = 2; i < pts.length; i += 2) c.lineTo(pts[i], pts[i + 1]); c.stroke(); };
+
+            // 眉毛
+            if (kind === 'pain') { line([146, 197, 163, 203]); line([197, 203, 214, 197]); }
+            else if (kind === 'doubt') { line([146, 194, 163, 190]); line([197, 199, 214, 199]); }
+            else if (kind === 'wow' || kind === 'bliss') { line([146, 196, 163, 193]); line([197, 193, 214, 196]); }
+            else { line([146, 200, 163, 198]); line([197, 198, 214, 200]); }
+
+            // 眼睛
+            if (kind === 'happy') {
+                [L, R].forEach(e => { c.beginPath(); c.arc(e.x, e.y + 3, 6, Math.PI + 0.5, TAU - 0.5); c.stroke(); });
+            } else if (kind === 'bliss') {
+                [L, R].forEach(e => { c.beginPath(); c.arc(e.x, e.y - 3, 6, 0.4, Math.PI - 0.4); c.stroke(); });
+            } else if (kind === 'pain') {
+                line([149, 211, 158, 216, 149, 221]);
+                line([211, 211, 202, 216, 211, 221]);
+            } else if (kind === 'doubt') {
+                c.beginPath(); c.arc(L.x, L.y, 3.2, 0, TAU); c.fill();
+                line([199, 216, 211, 216]);
+            } else if (kind === 'wow') {
+                [L, R].forEach(e => { c.beginPath(); c.arc(e.x, e.y, 4.5, 0, TAU); c.stroke(); });
+            } else {
+                [L, R].forEach(e => { c.beginPath(); c.arc(e.x, e.y, 3.2, 0, TAU); c.fill(); });
+            }
+
+            // 鼻子
+            c.globalAlpha = 0.55;
+            c.lineWidth = 1.6;
+            line([180, 224, 176, 237, 183, 238]);
+            c.globalAlpha = 1;
+            c.lineWidth = 2.4;
+
+            // 嘴巴
+            if (kind === 'happy') {
+                c.beginPath(); c.arc(180, 246, 11, 0.35, Math.PI - 0.35); c.stroke();
+            } else if (kind === 'bliss') {
+                c.beginPath(); c.arc(180, 248, 10, 0, Math.PI); c.closePath(); c.fill();
+            } else if (kind === 'pain') {
+                line([167, 254, 172, 250, 177, 254, 182, 250, 187, 254, 192, 250]);
+            } else if (kind === 'doubt') {
+                line([171, 253, 189, 249]);
+            } else if (kind === 'wow') {
+                c.beginPath(); c.arc(180, 253, 5, 0, TAU); c.stroke();
+            } else {
+                c.beginPath(); c.moveTo(170, 251); c.quadraticCurveTo(180, 255, 190, 251); c.stroke();
+            }
+
+            // 臉紅、冒汗
+            if (kind === 'bliss' || kind === 'happy') {
+                c.globalAlpha = 0.25;
+                c.fillStyle = DAY.shu;
+                c.beginPath(); c.ellipse(143, 234, 9, 5, 0, 0, TAU); c.fill();
+                c.beginPath(); c.ellipse(217, 234, 9, 5, 0, 0, TAU); c.fill();
+            }
+            if (kind === 'pain') {
+                c.globalAlpha = 0.9;
+                c.fillStyle = '#9cc0d8';
+                c.beginPath();
+                c.moveTo(232, 186);
+                c.quadraticCurveTo(240, 200, 232, 202);
+                c.quadraticCurveTo(224, 200, 232, 186);
+                c.fill();
+            }
+            c.restore();
+        }
+
+        // ===== 6. 五道工序 =====
+        function go(i) {
+            stage = i;
+            setSteps(i);
+            cur = [squeeze, rub, scratch, sculpt, pat][i]();
+        }
+
+        // 6a. 擠：按住擠洗髮精，放開時要在框框裡
+        function squeeze() {
+            say(G.customer.hello);
+            hint('按住「擠」，量尺走到框框裡就放開');
+            meter({ fill: 0, zone: [45, 65], label: '洗髮精' });
+            let holding = false, done = false, nextSquish = 0;
+
+            function release() {
+                if (!holding || done) return;
+                holding = false;
+                if (G.amount < 3) { G.amount = 0; setFace(baseFace); return; }
+                done = true;
+                const a = G.amount;
+                let r;
+                if (a < 25) r = { score: 4, label: '太少', line: '這樣起得了泡嗎？', face: 'doubt' };
+                else if (a < 45) r = { score: 10, label: '少了點', line: '還行，省著用。', face: 'neutral' };
+                else if (a <= 65) r = { score: 15, label: '剛剛好', line: '嗯，專業。', face: 'happy' };
+                else if (a < 90) r = { score: 9, label: '有點多', line: '是要洗兩顆頭嗎？', face: 'doubt' };
+                else r = { score: 3, label: '太多了', line: '流到眼睛了啦！', face: 'pain' };
+                G.squeezeScore = r.score;
+                G.squeezeLabel = r.label;
+                G.foamMul = clamp(a / 55, 0.6, 1.35);
+                say(r.line);
+                setFace(r.face);
+                floatText(180, 92, r.label, pal.accent);
+                actions([]);
+                setTimeout(() => go(1), 1500);
+            }
+
+            actions([{
+                label: '擠', round: true,
+                onDown: () => { if (done) return; holding = true; setFace('wow'); },
+                onUp: release,
+            }]);
+
+            return {
+                update(now, dt) {
+                    if (!holding) return;
+                    G.amount = Math.min(100, G.amount + dt * 0.06);
+                    $('meterFill').style.width = G.amount + '%';
+                    if (now > nextSquish) { sfx.squish(); nextSquish = now + 130; }
+                    if (G.amount >= 100) { G.drip = true; release(); }
+                },
+            };
+        }
+
+        // 6b. 搓：手指在頭上搓出泡泡，十秒內蓋滿
+        function rub() {
+            setFace('neutral');
+            hint('手指在頭上來回搓，把頭髮蓋滿泡泡（開始搓才計時）');
+            meter({ fill: 0, label: '0%' });
+            const LIMIT = 10000;
+            let started = false, endAt = 0, done = false, last = null, carry = 0, nextScrub = 0, said = 0;
+
+            function finish() {
+                if (done) return;
+                done = true;
+                last = null;
+                G.rubScore = Math.round(G.coverage * 25);
+                const pct = Math.round(G.coverage * 100);
+                if (pct >= 95) { say('整顆都是泡泡了。'); setFace('bliss'); }
+                else if (pct >= 75) { say('嗯，差不多了。'); setFace('happy'); }
+                else if (pct >= 50) { say('後面好像還是乾的。'); setFace('doubt'); }
+                else { say('還有一大半是乾的耶。'); setFace('pain'); }
+                $('meterLabel').textContent = pct + '%';
+                setTimeout(() => go(2), 1400);
+            }
+
+            return {
+                down(p, now) {
+                    if (done) return;
+                    last = p;
+                    carry = 0;
+                    if (!started) { started = true; endAt = now + LIMIT; }
+                },
+                move(p, now) {
+                    if (done || !last) return;
+                    const d = dist(p, last);
+                    carry += d;
+                    while (carry >= 5) {
+                        carry -= 5;
+                        const k = 1 - carry / Math.max(d, 1);
+                        const q = { x: last.x + (p.x - last.x) * k, y: last.y + (p.y - last.y) * k };
+                        if (inRegion(q, FOAMABLE)) {
+                            addFoam(q.x + (Math.random() - 0.5) * 10, q.y + (Math.random() - 0.5) * 10, (8 + Math.random() * 7) * G.foamMul, true);
+                            if (Math.random() < 0.08) sfx.pop();
+                        } else if (inEllipse(q, HEAD)) {
+                            mutter('那是臉。', 'doubt');
+                        }
+                    }
+                    last = p;
+                    if (now > nextScrub) { sfx.scrub(); nextScrub = now + 80; }
+                    const pct = Math.round(G.coverage * 100);
+                    $('meterFill').style.width = pct + '%';
+                    if (said < 1 && pct >= 40) { said = 1; say('嗯～'); setFace('happy'); }
+                    if (said < 2 && pct >= 80) { said = 2; say('對，就是這樣。'); setFace('bliss'); }
+                    if (G.coverage >= 0.97) finish();
+                },
+                up() { last = null; },
+                update(now) {
+                    if (done) return;
+                    const pct = Math.round(G.coverage * 100);
+                    if (!started) { $('meterLabel').textContent = '10 秒'; return; }
+                    const left = Math.max(0, endAt - now);
+                    $('meterLabel').textContent = `${pct}%・${Math.ceil(left / 1000)} 秒`;
+                    if (left <= 0) finish();
+                },
+            };
+        }
+
+        // 6c. 抓：冒出「癢」就點，抓到一半問力道
+        function scratch() {
+            const TOTAL = 14;
+            hint('冒出「癢」的地方，點下去抓');
+            meter({ fill: 0, label: `0 / ${TOTAL}` });
+            say('有點癢。');
+            setFace('neutral');
+            let nextAt = performance.now() + 900, done = 0, asked = false, pauseUntil = 0, finished = false;
+
+            function progress() {
+                $('meterFill').style.width = (done / TOTAL * 100) + '%';
+                $('meterLabel').textContent = `${G.hits} / ${TOTAL}`;
+            }
+
+            function spawn(now) {
+                let p, tries = 0;
+                do { p = pick(CELLS); tries++; } while (tries < 20 && spots.some(s => dist(s, p) < 50));
+                const life = Math.max(900, 1600 - G.spawned * 50) + (G.hp > 1 ? 450 : 0);
+                spots.push({ x: p.x, y: p.y, born: now, life, hp: G.hp });
+                G.spawned++;
+            }
+
+            function finish() {
+                finished = true;
+                G.scratchScore = Math.round(G.hits / TOTAL * 30);
+                if (G.hits >= 12) { say('你是神。'); setFace('bliss'); }
+                else if (G.hits >= 8) { say('還不錯。'); setFace('happy'); }
+                else { say('我自己抓好了。'); setFace('doubt'); }
+                setTimeout(() => go(3), 1400);
+            }
+
+            return {
+                down(p, now) {
+                    if (finished) return;
+                    let best = null;
+                    spots.forEach(s => { const d = dist(s, p); if (d < 30 && (!best || d < dist(best, p))) best = s; });
+                    if (best) {
+                        sfx.scratch();
+                        best.hp--;
+                        burst(best.x, best.y, 4);
+                        if (best.hp > 0) { floatText(best.x, best.y - 18, '再'); return; }
+                        spots = spots.filter(s => s !== best);
+                        G.hits++;
+                        done++;
+                        progress();
+                        burst(best.x, best.y, 8);
+                        floatText(best.x, best.y - 18, '爽');
+                        setFace('bliss', 450);
+                        nextAt = Math.max(nextAt, now + 280);
+                        return;
+                    }
+                    if (EARS.some(e => dist(e, p) < 22)) mutter('那是我的耳朵。', 'wow');
+                    else if (inEllipse(p, HEAD) && p.y > HAIR.cut + 10) mutter('那是臉啦。', 'pain');
+                    else if (inRegion(p, FOAMABLE)) mutter(pick(['不是那裡。', '再過去一點。', '旁邊旁邊。']), 'doubt');
+                },
+                update(now) {
+                    if (finished) return;
+                    // 沒抓到，時間到就消失
+                    const gone = spots.filter(s => now - s.born > s.life);
+                    if (gone.length) {
+                        spots = spots.filter(s => !gone.includes(s));
+                        done += gone.length;
+                        progress();
+                        mutter(pick(['那邊啦。', '左邊一點……不對，右邊。', '很癢耶。']), 'pain', 600);
+                        nextAt = Math.max(nextAt, now + 300);
+                    }
+                    // 抓到一半，問力道
+                    if (!asked && G.spawned >= 7 && !spots.length) {
+                        asked = true;
+                        pauseUntil = now + 2600;
+                        say('這樣力道可以嗎？', '你');
+                        setFace('neutral');
+                        setTimeout(() => {
+                            const a = pick(ANSWERS);
+                            G.hp = a.hp;
+                            say(a.text);
+                            setFace(a.hp > 1 ? 'doubt' : 'happy');
+                            if (a.hint) hint(a.hint);
+                        }, 1100);
+                    }
+                    if (now < pauseUntil) return;
+                    const maxAlive = G.spawned >= 7 ? 2 : 1;
+                    if (G.spawned < TOTAL && spots.length < maxAlive && now >= nextAt) {
+                        spawn(now);
+                        nextAt = now + 450;
+                    }
+                    if (G.spawned >= TOTAL && !spots.length) finish();
+                },
+            };
+        }
+
+        // 6d. 捏：從泡泡往外拉，捏個造型
+        function sculpt() {
+            hint('從泡泡上往外拉，捏個造型。好了按「照鏡子」');
+            say('要幫我抓個造型嗎？');
+            setFace('happy');
+            G.budgetMax = G.budget = Math.round((450 + 450 * G.coverage) * clamp(G.foamMul, 0.8, 1.25));
+            meter({ fill: 100, label: '泡泡' });
+            let stroke = null, last = null, carry = 0, finished = false;
+            const r0 = clamp(14 * G.foamMul, 11, 18);
+
+            function finish() {
+                if (finished) return;
+                finished = true;
+                stroke = null;
+                const shape = classify(G.strokes);
+                G.shape = shape;
+                G.styleScore = shape === SHAPES.plain ? 6 : 10;
+                G.snapshot = snapshot();
+                const stamp = $('shapeStamp');
+                stamp.textContent = shape.name;
+                stamp.classList.remove('hidden', 'is-in');
+                void stamp.offsetWidth;
+                stamp.classList.add('is-in');
+                sfx.stamp();
+                say(shape.line);
+                setFace(shape === SHAPES.plain ? 'neutral' : 'wow');
+                setTimeout(() => setFace('happy'), 900);
+                actions([]);
+                hint('');
+                setTimeout(() => go(4), 2600);
+            }
+
+            actions([{ label: '照鏡子', onClick: finish }]);
+
+            return {
+                down(p) {
+                    if (finished) return;
+                    if (G.budget <= 0) { hint('泡泡用完了，照鏡子吧'); return; }
+                    if (!onFoam(p)) { hint('要從泡泡上開始拉'); return; }
+                    hint('從泡泡上往外拉，捏個造型。好了按「照鏡子」');
+                    stroke = { pts: [p], len: 0 };
+                    G.strokes.push(stroke);
+                    last = p;
+                    carry = 0;
+                },
+                move(p) {
+                    if (!stroke) return;
+                    const d = dist(p, last);
+                    carry += d;
+                    while (carry >= 3 && G.budget > 0) {
+                        carry -= 3;
+                        const k = 1 - carry / Math.max(d, 1);
+                        const q = { x: last.x + (p.x - last.x) * k, y: last.y + (p.y - last.y) * k };
+                        stroke.len += 3;
+                        G.budget -= 3;
+                        addFoam(q.x, q.y, Math.max(5, r0 - stroke.len * 0.04), false, 0.12);
+                        if (dist(q, stroke.pts[stroke.pts.length - 1]) >= 6) stroke.pts.push(q);
+                        if (Math.random() < 0.05) sfx.pop();
+                    }
+                    last = p;
+                    $('meterFill').style.width = Math.max(0, G.budget / G.budgetMax * 100) + '%';
+                    if (G.budget <= 0) { stroke = null; hint('泡泡用完了，照鏡子吧'); }
+                },
+                up() { stroke = null; },
+            };
+        }
+
+        // 看拉了幾條、往哪拉、有沒有轉圈，決定是什麼造型
+        function classify(strokes) {
+            const list = strokes.filter(s => s.len >= 24 && s.pts.length >= 3);
+            if (!list.length) return SHAPES.plain;
+            const info = list.map(s => {
+                const a = s.pts[0], b = s.pts[s.pts.length - 1];
+                let turn = 0;
+                for (let i = 2; i < s.pts.length; i++) {
+                    const p0 = s.pts[i - 2], p1 = s.pts[i - 1], p2 = s.pts[i];
+                    let d = Math.atan2(p2.y - p1.y, p2.x - p1.x) - Math.atan2(p1.y - p0.y, p1.x - p0.x);
+                    while (d > Math.PI) d -= TAU;
+                    while (d < -Math.PI) d += TAU;
+                    turn += d;
+                }
+                const top = Math.min(...s.pts.map(p => p.y));
+                return { x: a.x, dx: b.x - a.x, rise: a.y - top, turn: Math.abs(turn), up: (a.y - b.y) > Math.abs(b.x - a.x) * 0.6 };
+            });
+            if (info.some(i => i.turn > Math.PI * 1.7)) return SHAPES.cone;
+            if (list.length >= 5) return SHAPES.urchin;
+            const ups = info.filter(i => i.up);
+            if (list.length === 1) {
+                if (!ups.length) return SHAPES.wind;
+                return info[0].rise >= 110 ? SHAPES.rocket : SHAPES.unicorn;
+            }
+            if (list.length === 2) {
+                if (ups.length === 2) return Math.min(info[0].rise, info[1].rise) >= 75 ? SHAPES.bunny : SHAPES.devil;
+                if (!ups.length && (info[0].dx < 0) !== (info[1].dx < 0)) return SHAPES.prop;
+                return SHAPES.abstract;
+            }
+            return ups.length >= 3 ? SHAPES.crown : SHAPES.boom;
+        }
+
+        // 照鏡子那一刻拍一張（固定白天的顏色，證明是紙本）
+        function snapshot() {
+            const c = document.createElement('canvas');
+            c.width = W * 2;
+            c.height = H * 2;
+            const x = c.getContext('2d');
+            x.setTransform(2, 0, 0, 2, 0, 0);
+            const keep = face;
+            face = { kind: 'happy', until: Infinity };
+            drawScene(x, DAY, performance.now(), false);
+            face = keep;
+            return c;
+        }
+
+        // 6e. 拍：沖完水，照節奏拍背
+        function pat() {
+            $('shapeStamp').classList.add('hidden');
+            hint('沖水中……');
+            meter({ fill: 0, label: '' });
+            actions([]);
+            sfx.water();
+            const BEATS = [700, 1200, 1700, 1950], TRACK = 2600;
+            const start = performance.now();
+            let phase = 'rinse', trackStart = 0, ticked = 0, finished = false;
+            const hit = BEATS.map(() => false);
+
+            function tap(now) {
+                sfx.pat();
+                shake();
+                if (phase !== 'track') return;
+                const t = now - trackStart;
+                let k = -1, best = Infinity;
+                BEATS.forEach((b, i) => { const d = Math.abs(t - b); if (!hit[i] && d < best) { best = d; k = i; } });
+                if (k < 0 || best > 230) { floatText(180, 330, '空', pal.accent); setFace('doubt', 400); return; }
+                hit[k] = true;
+                document.querySelectorAll('#meterMarks .meter-mark')[k]?.classList.add('is-hit');
+                const g = best < 70 ? { w: '準', s: 5, f: 'bliss' } : best < 140 ? { w: '好', s: 3, f: 'happy' } : { w: '歪', s: 1, f: 'pain' };
+                G.patScore += g.s;
+                G.patMarks.push(g.w);
+                floatText(140 + k * 27, 330, g.w);
+                setFace(g.f, 400);
+            }
+
+            function finish() {
+                finished = true;
+                if (G.patScore >= 17) { say('啪得好專業。'); setFace('bliss'); }
+                else if (G.patScore >= 10) { say('舒服。'); setFace('happy'); }
+                else { say('你是在打我嗎？'); setFace('pain'); }
+                actions([]);
+                setTimeout(showResult, 1100);
+            }
+
+            return {
+                down(p, now) { tap(now); },
+                update(now) {
+                    if (finished) return;
+                    if (phase === 'rinse') {
+                        const t = now - start;
+                        G.foamAlpha = clamp(1 - t / 1300, 0, 1);
+                        if (Math.random() < 0.6) drops.push({ x: 115 + Math.random() * 130, y: 70 + Math.random() * 20, v: 4 + Math.random() * 3 });
+                        if (t > 1500) {
+                            G.foamAlpha = 0;
+                            G.wet = true;
+                            fctx.clearRect(0, 0, W, H);
+                            phase = 'ready';
+                            trackStart = now + 1600;
+                            say('沖好了，拍一拍就結束。');
+                            setFace('happy');
+                            hint('拍背：指針走到紅線就點「啪」（啪、啪、啪啪）');
+                            meter({ fill: 0, marks: BEATS.map(b => b / TRACK * 100), cursor: 0, label: '預備' });
+                            actions([{ label: '啪', round: true, onDown: tap }]);
+                        }
+                        return;
+                    }
+                    if (phase === 'ready') {
+                        if (now >= trackStart) { phase = 'track'; $('meterLabel').textContent = ''; }
+                        return;
+                    }
+                    const t = now - trackStart;
+                    $('meterCursor').style.left = clamp(t / TRACK * 100, 0, 100) + '%';
+                    while (ticked < BEATS.length && t >= BEATS[ticked]) { sfx.tick(); ticked++; }
+                    if (t > TRACK) finish();
+                },
+            };
+        }
+
+        // ===== 7. 洗好了：算爽度、印洗頭證明 =====
+        let certFile = null;
+
+        async function showResult() {
+            stage = 5;
+            setSteps(5);
+            const total = G.squeezeScore + G.rubScore + G.scratchScore + G.styleScore + G.patScore;
+            const grade = GRADES.find(g => total >= g.min);
+            let best = 0;
+            try { best = Number(localStorage.getItem(BEST_KEY)) || 0; } catch (e) { }
+            if (total > best) {
+                try { localStorage.setItem(BEST_KEY, String(total)); } catch (e) { }
+                if (best) showToast('新紀錄・最高爽度');
+            }
+            renderBest();
+            hint('');
+            actions([{ label: '再洗一顆', onClick: restart }]);
+
+            $('score').textContent = total;
+            $('gradeLine').textContent = grade.line;
+            const blob = await makeCert(total, grade);
+            certFile = new File([blob], 'dongbuli-shampoo.png', { type: 'image/png' });
+            $('certImg').src = URL.createObjectURL(blob);
+            const canShare = navigator.canShare && navigator.canShare({ files: [certFile] });
+            $('shareBtn').textContent = canShare ? '分享洗頭證明' : '下載洗頭證明';
+            $('result').classList.remove('hidden');
+            $('result').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+        }
+
+        async function makeCert(total, grade) {
+            const SERIF = '"Noto Serif TC", serif', SANS = '"Noto Sans TC", sans-serif';
+            const rows = [
+                ['客人', G.customer.who],
+                ['洗髮精', G.squeezeLabel],
+                ['泡泡', `蓋滿 ${Math.round(G.coverage * 100)}%`],
+                ['抓癢', `${G.hits} / 14`],
+                ['造型', G.shape.name],
+                ['拍背', G.patMarks.length ? G.patMarks.join('・') : '都沒拍到'],
+            ];
+            const allText = rows.flat().join('') + '洗頭證明爽度二十七樓坐洗部' + grade.mark + grade.line + '0123456789';
+            try {
+                await Promise.race([
+                    Promise.all([document.fonts.load(`600 40px ${SERIF}`, allText), document.fonts.load(`400 40px ${SANS}`, allText)]),
+                    new Promise(r => setTimeout(r, 2500)),
+                ]);
+            } catch (e) { }
+
+            const c = document.createElement('canvas');
+            c.width = 1080;
+            c.height = 1500;
+            const x = c.getContext('2d');
+            const text = (s, px, py, font, color, align = 'center') => { x.font = font; x.fillStyle = color; x.textAlign = align; x.fillText(s, px, py); };
+
+            x.fillStyle = '#fcfaf8';
+            x.fillRect(0, 0, c.width, c.height);
+            x.strokeStyle = '#8e8070';
+            x.lineWidth = 2;
+            x.strokeRect(40, 40, 1000, 1420);
+            x.lineWidth = 1;
+            x.strokeRect(54, 54, 972, 1392);
+
+            x.textBaseline = 'alphabetic';
+            text('D O N G B U L I ・ 2 7 F ・ 坐 洗 部', 540, 130, `400 26px ${SANS}`, '#8e8070');
+            text('洗頭證明', 540, 220, `600 76px ${SERIF}`, '#2c2c2c');
+            x.fillStyle = '#8e8070';
+            x.fillRect(500, 250, 80, 2);
+
+            // 照鏡子那一刻
+            const iw = 480, ih = Math.round(iw * H / W), ix = (1080 - iw) / 2, iy = 290;
+            x.drawImage(G.snapshot, ix, iy, iw, ih);
+            x.strokeStyle = '#dcdcdc';
+            x.lineWidth = 2;
+            x.strokeRect(ix, iy, iw, ih);
+
+            let y = iy + ih + 85;
+            rows.forEach(([k, v]) => {
+                text(k, 210, y, `400 30px ${SANS}`, '#8e8070', 'left');
+                text(v, 360, y, `400 38px ${SERIF}`, '#4a4a4a', 'left');
+                y += 66;
+            });
+
+            // 爽度、朱印
+            text(`爽度 ${total}`, 210, y + 40, `600 48px ${SERIF}`, '#2c2c2c', 'left');
+            text(grade.line, 210, y + 95, `400 30px ${SERIF}`, '#8e8070', 'left');
+
+            x.save();
+            x.translate(840, y + 10);
+            x.rotate(-0.12);
+            x.globalAlpha = 0.9;
+            x.strokeStyle = '#b33a2f';
+            x.lineWidth = 7;
+            x.strokeRect(-85, -85, 170, 170);
+            x.lineWidth = 2.5;
+            x.strokeRect(-100, -100, 200, 200);
+            x.textBaseline = 'middle';
+            text(grade.mark, 0, 6, `700 120px ${SERIF}`, '#b33a2f');
+            x.restore();
+
+            const d = new Date();
+            text(`${d.getFullYear()}・${d.getMonth() + 1}・${d.getDate()}`, 540, 1410, `400 24px ${SANS}`, '#8e8070');
+
+            return new Promise((resolve, reject) => c.toBlob(b => b ? resolve(b) : reject(), 'image/png'));
+        }
+
+        async function shareCert() {
+            if (!certFile) return;
+            if (navigator.canShare && navigator.canShare({ files: [certFile] })) {
+                try {
+                    await navigator.share({ files: [certFile], title: '丼步喱・絆 洗頭證明', text: `我在二十七樓洗了一顆頭，爽度 ${$('score').textContent}` });
+                } catch (e) { } // 使用者取消分享
+                return;
+            }
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(certFile);
+            link.download = certFile.name;
+            link.click();
+        }
+
+        function renderBest() {
+            let best = 0;
+            try { best = Number(localStorage.getItem(BEST_KEY)) || 0; } catch (e) { }
+            $('best').textContent = best ? `最高爽度 ${best}` : '';
+        }
+
+        // ===== 8. 開始、重來 =====
+        function intro() {
+            newGame();
+            stage = -1;
+            cur = {};
+            setSteps(-1);
+            say('（坐下了）');
+            hint('五道工序：擠、搓、抓、捏、拍。大約一分鐘');
+            meter({ fill: 0, label: '' });
+            actions([{ label: '開始洗頭', onClick: () => go(0) }]);
+        }
+
+        function restart() {
+            $('result').classList.add('hidden');
+            intro();
+            $('salon').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+            go(0);
+        }
+
+        $('shareBtn').addEventListener('click', shareCert);
+        $('againBtn').addEventListener('click', restart);
+
+        // 畫布上的手指：只認第一根
+        let pointerId = null;
+
+        function toPoint(e) {
+            const r = cv.getBoundingClientRect();
+            return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height };
+        }
+
+        cv.addEventListener('pointerdown', e => {
+            unlockAudio();
+            if (pointerId !== null) return;
+            pointerId = e.pointerId;
+            try { cv.setPointerCapture(e.pointerId); } catch (err) { }
+            cur.down?.(toPoint(e), performance.now());
+        });
+        cv.addEventListener('pointermove', e => {
+            if (e.pointerId !== pointerId) return;
+            const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+            (events.length ? events : [e]).forEach(ev => cur.move?.(toPoint(ev), performance.now()));
+        });
+        const lift = e => {
+            if (e.pointerId !== pointerId) return;
+            pointerId = null;
+            cur.up?.();
+        };
+        cv.addEventListener('pointerup', lift);
+        cv.addEventListener('pointercancel', lift);
+        cv.addEventListener('contextmenu', e => e.preventDefault());
+
+        let lastFrame = performance.now();
+        function frame(now) {
+            const dt = Math.min(50, now - lastFrame);
+            lastFrame = now;
+            cur.update?.(now, dt);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            drawScene(ctx, pal, now, true);
+            requestAnimationFrame(frame);
+        }
+
+        renderBest();
+        intro();
+        requestAnimationFrame(frame);
+    </script>
+</body>
+
+</html>
