@@ -132,6 +132,30 @@
             text-underline-offset: 2px;
         }
 
+        .trio-sub {
+            font-size: 0.95rem;
+            font-weight: 900;
+            color: #c0261d;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .trio-sub.is-zero {
+            font-size: 0.75rem;
+            color: #a8a29e;
+        }
+
+        .win-note {
+            display: inline-block;
+            margin-bottom: 0.4rem;
+            padding: 0.15rem 0.7rem;
+            border-radius: 9999px;
+            background: linear-gradient(90deg, #f59e0b, #dc2626);
+            color: #fff;
+            font-size: 0.8rem;
+            font-weight: 900;
+            letter-spacing: 0.2em;
+        }
+
         .pk-grid {
             display: grid;
             gap: 4px;
@@ -825,7 +849,7 @@
 
         <div class="text-center mb-5">
             <h1 class="text-3xl font-black text-wabi-dark tracking-wider">27 樓彩券行</h1>
-            <p class="mt-1 text-xs text-stone-500 tracking-wider">刮刮樂・頭獎最高 2000 萬・本店不收真錢</p>
+            <p class="mt-1 text-xs text-stone-500 tracking-wider">刮刮樂・頭獎最高 3000 萬・本店不收真錢</p>
         </div>
 
         <!-- 錢包 -->
@@ -969,6 +993,17 @@
             const single = out.find(c => c.length === 1);
             if (single && Math.random() < 0.5) return single;
             return out.length ? pick(out) : [T];
+        }
+
+        // 剛好拆得出 a 的組合（最多 k 份、只用 D 裡的面額），隨機挑一種；拆不出來回 null
+        function splitExact(a, D, k) {
+            const ds = D.filter(d => d <= a).sort((x, y) => x - y), out = [];
+            (function dfs(start, left, acc) {
+                if (!left) { out.push(acc.slice()); return; }
+                if (acc.length === k || out.length > 200) return;
+                for (let i = start; i < ds.length && ds[i] <= left; i++) { acc.push(ds[i]); dfs(i, left - ds[i], acc); acc.pop(); }
+            })(0, a, []);
+            return out.length ? pick(out) : null;
         }
 
         // 沒中的格子也要有獎金（大的偶爾出現，看了心癢）
@@ -1238,6 +1273,100 @@
         }
 
         Object.assign(GAMES, {
+            trio: {
+                name: '27 樓三重奏', price: 3000, book: 20, jackpot: 30000000, c1: '#1e3a8a', c2: '#0b1023', hi: '#fbbf24',
+                desc: '一張三種玩法，張張有獎',
+                hint: '三區分開刮：第一區刮開直接得，第二區比大小，第三區找三個一樣',
+                // 張張有獎（第一區一定有錢），平均拿回 50%
+                table: [[30000000, 0.000001], [1000000, 0.00001], [100000, 0.0001], [30000, 0.002], [10000, 0.01], [6000, 0.04], [3000, 0.09], [1500, 0.22], [1000, 0.26], [500, 0.377889]],
+                d1: [500, 1000, 1500, 2000, 3000, 5000, 6000, 10000, 30000, 100000, 1000000, 30000000],  // 第一區：刮開直接得
+                d2: [500, 1000, 2000, 5000, 10000, 100000],                                             // 第二區：比大小每局獎金
+                w2: [30, 25, 15, 10, 5, 2],
+                d3: [500, 1000, 2000, 3000, 5000, 10000, 30000, 100000, 1000000, 30000000],              // 第三區：三個一樣
+                // 總獎金 T 拆成 第一區 + 第二區 + 第三區（第一區至少 $500）
+                parts(T) {
+                    const opts = [];
+                    this.d1.filter(a => a <= T).forEach(a1 => {
+                        const R = T - a1;
+                        if (!R) { opts.push([a1, 0, 0, 1]); return; }
+                        [0, ...this.d3.filter(v => v <= R)].forEach(a3 => {
+                            const a2 = R - a3;
+                            if (a2 && !splitExact(a2, this.d2, 3)) return;
+                            opts.push([a1, a2, a3, a2 && a3 ? 3 : 2]);  // 越多區中越常出現
+                        });
+                    });
+                    const sum = opts.reduce((x, o) => x + o[3], 0);
+                    let r = Math.random() * sum;
+                    for (const o of opts) { if (r < o[3]) return o.slice(0, 3); r -= o[3]; }
+                    return [T, 0, 0];
+                },
+                gen() {
+                    const T = rollT(this.table) || 500;
+                    const [a1, a2, a3] = this.parts(T);
+                    // 第二區：三局
+                    const rows = [];
+                    if (a2) splitExact(a2, this.d2, 3).forEach(v => { const d = randint(1, 5); rows.push({ d, y: randint(d + 1, 6), prize: v }); });
+                    while (rows.length < 3) { const d = randint(1, 6); rows.push({ d, y: randint(1, d), prize: decoy(this.d2, this.w2) }); }
+                    // 第三區：六格，三個一樣才算
+                    const cells = [], count = {};
+                    const add = v => { cells.push(v); count[v] = (count[v] || 0) + 1; };
+                    if (a3) for (let i = 0; i < 3; i++) add(a3);
+                    if (a3 !== 30000000 && Math.random() < 0.35) { add(30000000); add(30000000); }  // 頭獎只差一個
+                    while (cells.length < 6) {
+                        const v = pick(this.d3.slice(0, 7));
+                        if (v === a3 || (count[v] || 0) >= 2) continue;
+                        add(v);
+                    }
+                    return { T, a1, rows: shuffle(rows), cells: shuffle(cells) };
+                },
+                z2: t => t.rows.reduce((s, r) => s + (r.y > r.d ? r.prize : 0), 0),
+                z3(t) {
+                    const count = {};
+                    t.cells.forEach(v => { count[v] = (count[v] || 0) + 1; });
+                    return Object.keys(count).filter(v => count[v] >= 3).reduce((s, v) => s + Number(v), 0);
+                },
+                score(t) { return t.a1 + this.z2(t) + this.z3(t); },
+                zones(t) { return [t.a1, this.z2(t), this.z3(t)]; },
+                html(t) {
+                    const w3 = this.z3(t);
+                    const sub = i => `<span class="trio-sub" data-sub="${i}"></span>`;
+                    return `
+                    <div class="tk-panel">
+                        <div class="tk-label flex items-center justify-between"><span>第一區・刮開直接得</span>${sub(0)}</div>
+                        <div class="zone g grid-cols-1" data-zone data-zi="0">
+                            <div class="c h-20" data-cell data-win><span class="c-amt !text-[1.9rem]">${t.a1 >= 100000 ? '$' + wan(t.a1) : fmt(t.a1)}</span><span class="c-cap">${capital(t.a1)}</span></div>
+                        </div>
+                    </div>
+                    <div class="tk-panel">
+                        <div class="tk-label flex items-center justify-between"><span>第二區・比大小 <small>紅色比黑色大就中</small></span>${sub(1)}</div>
+                        <div class="zone g grid-cols-1" data-zone data-zi="1">
+                            ${t.rows.map(r => `<div class="c h-[3.3rem] !flex-row justify-around" data-cell ${r.y > r.d ? 'data-win' : ''}>
+                                <div class="flex flex-col items-center gap-0.5">${dieHTML(r.d)}<span class="who">莊家</span></div>
+                                <div class="flex flex-col items-center gap-0.5">${dieHTML(r.y, true)}<span class="who">你</span></div>
+                                <div class="flex flex-col items-center w-20">${amtHTML(r.prize)}</div>
+                            </div>`).join('')}
+                        </div>
+                    </div>
+                    <div class="tk-panel">
+                        <div class="tk-label flex items-center justify-between"><span>第三區・三個一樣</span>${sub(2)}</div>
+                        <div class="zone g grid-cols-3" data-zone data-zi="2">
+                            ${t.cells.map(v => `<div class="c h-[3.9rem]" data-cell ${v === w3 ? 'data-win' : ''}><span class="c-amt !text-[1.05rem]">${v >= 10000 ? wan(v) : fmt(v)}</span><span class="c-cap">${capital(v)}</span></div>`).join('')}
+                        </div>
+                    </div>
+                    <p class="tk-rule">本券分三區，三區獎金合計兌領，張張有獎。第一區：刮開即獲得該金額。第二區：三局，「你」的點數大於「莊家」即獲得該局獎金，平手不算。第三區：六格中刮出 3 個相同金額，即獲得該金額。</p>`;
+                },
+                // 一區刮完就寫小計
+                onZoneDone(zone, host, t) {
+                    const i = Number(zone.dataset.zi), v = this.zones(t)[i];
+                    const el = host.querySelector(`[data-sub="${i}"]`);
+                    if (!el || el.textContent) return;
+                    el.textContent = v ? `+${fmt(v)}` : '沒中';
+                    el.classList.toggle('is-zero', !v);
+                    if (!reduceMotion) el.animate([{ transform: 'scale(1.6)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: 300, easing: 'cubic-bezier(.3,1.6,.5,1)' });
+                },
+                winNote(t) { return this.zones(t).every(Boolean) ? '三區連中' : ''; },
+            },
+
             ttt: {
                 name: '井字樂', price: 50, jackpot: 500000, c1: '#0ea5e9', c2: '#075985', hi: '#fef08a',
                 desc: '三個圈連成一線就中',
@@ -2036,7 +2165,7 @@
                         g.onOpen?.(el, host, t);
                         if (zone.hasAttribute('data-optional')) showToast(pick(['這裡是給店員刮的啦。', '兌獎區刮開了，店員會皺眉。']));
                     },
-                    () => { if (foils.filter(f => !f.optional).every(f => f.done)) settle(); }
+                    () => { g.onZoneDone?.(zone, host, t); if (foils.filter(f => !f.optional).every(f => f.done)) settle(); }
                 ));
                 g.resume?.(t, host);
             });
@@ -2054,7 +2183,8 @@
             wins.forEach((el, i) => setTimeout(() => { el.classList.add('is-win'); sfx.ding(i % 6); }, 250 + i * 160));
             setTimeout(() => {
                 if (t.total > 0) {
-                    $('playHint').innerHTML = `<span class="block text-xs font-black text-wabi-dark tracking-widest">中獎</span><span class="result-amt money block">${fmt(t.total)}</span><span class="block font-serif text-xs text-stone-500 mt-1">${capital(t.total)}</span>`;
+                    const note = g.winNote ? g.winNote(t) : '';
+                    $('playHint').innerHTML = `${note ? `<span class="win-note">${note}</span>` : ''}<span class="block text-xs font-black text-wabi-dark tracking-widest">中獎</span><span class="result-amt money block">${fmt(t.total)}</span><span class="block font-serif text-xs text-stone-500 mt-1">${capital(t.total)}</span>`;
                     sfx.win();
                     if (g.manual) { redeem(); afterRedeem(); }  // 自己按收手的，直接兌
                     else actions([{ label: `兌獎 ${fmt(t.total)}`, cls: 'is-gold', onClick: () => { redeem(); afterRedeem(); } }]);
