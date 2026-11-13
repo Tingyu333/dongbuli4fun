@@ -1935,9 +1935,16 @@
         });
 
         // ===== 挑一張：一本刮刮樂有編號，自己挑要幾號 =====
-        // 好運連連這些一本 100 張、超級加倍 50 張、大紅包 25 張；賣完換下一本。
+        // 好運連連這些一本 100 張、超級加倍 50 張、大紅包 25 張。
+        // 每次打開都是新的一本、全部號碼都能挑（不記誰買過哪一號，比較單純）。
         // 每一張的結果還是買的時候才抽（跟挑哪一號無關），所以機率跟獎金表一樣。
         const bookSize = key => GAMES[key].book || 100;
+        function newBook(key) {
+            S.books = S.books || {};
+            const b = S.books[key];
+            S.books[key] = { no: (b ? b.no : randint(10, 300)) + 1, sold: [] };
+            return S.books[key];
+        }
         function curBook(key) {
             S.books = S.books || {};
             let b = S.books[key];
@@ -1955,6 +1962,7 @@
             return out;
         }
         function takeRandom(key, k) {
+            newBook(key);
             let out = [];
             while (out.length < k) {
                 const b = curBook(key), left = range(1, bookSize(key)).filter(n => !b.sold.includes(n));
@@ -1965,7 +1973,7 @@
 
         let BK = null;  // { key, sel: [] }
         function openBook(key) {
-            const g = GAMES[key], b = curBook(key), N = bookSize(key);
+            const g = GAMES[key], b = newBook(key), N = bookSize(key);
             BK = { key, sel: [] };
             $('pickerBody').innerHTML = `
                 <div class="odds-head" style="--c1:${g.c1};--c2:${g.c2};--hi:${g.hi}">
@@ -1974,9 +1982,9 @@
                 <div class="p-4">
                     <div class="flex items-baseline justify-between">
                         <p class="text-sm font-black text-[#1c1917]">第 ${String(b.no).padStart(4, '0')} 本 <small class="font-bold text-stone-400">一本 ${N} 張</small></p>
-                        <p class="text-xs font-bold text-stone-500">還剩 <b class="text-base text-[#1c1917]">${N - b.sold.length}</b> 張</p>
+                        <p class="text-xs font-bold text-stone-500">01～${N} 都能挑</p>
                     </div>
-                    <p class="mt-1 text-[11px] text-stone-400">挑你覺得會中的號碼，最多一次 5 張。灰色的是賣掉的。</p>
+                    <p class="mt-1 text-[11px] text-stone-400">挑你覺得會中的號碼，最多一次 5 張。</p>
                     <div id="pkGrid" class="pk-grid mt-3 ${N <= 25 ? 'grid-cols-5' : 'grid-cols-10'}" style="--c1:${g.c1};--c2:${g.c2}">
                         ${range(1, N).map(n => { const sold = b.sold.includes(n); return `<button type="button" class="pk-n ${N <= 25 ? 'is-big' : ''} ${sold ? 'is-sold' : ''}" data-pk="${n}" ${sold ? 'disabled aria-label="已賣出"' : 'aria-pressed="false"'}>${String(n).padStart(2, '0')}</button>`; }).join('')}
                     </div>
