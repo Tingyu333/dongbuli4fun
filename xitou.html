@@ -191,6 +191,81 @@
                 animation: none;
             }
         }
+
+        /* 客人的點單：一張紙條，做到蓋「成」，搞砸蓋「破」 */
+        .order-slip {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-top: 0.5rem;
+            padding: 0.45rem 0.6rem;
+            border: 1px dashed rgb(var(--wabi-accent) / 0.5);
+            background: rgb(var(--wabi-bg));
+            border-radius: 2px;
+        }
+
+        .order-tag {
+            flex: none;
+            writing-mode: vertical-rl;
+            padding-right: 0.45rem;
+            border-right: 1px solid rgb(var(--wabi-sub));
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 10px;
+            letter-spacing: 0.2em;
+            color: rgb(var(--wabi-accent));
+        }
+
+        .order-mark {
+            flex: none;
+            width: 2.2rem;
+            height: 2.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid currentColor;
+            border-radius: 3px;
+            font-family: 'Noto Serif TC', serif;
+            font-weight: 700;
+            font-size: 1.15rem;
+            transform: rotate(-8deg);
+        }
+
+        .order-slip.hidden,
+        .order-mark.hidden {
+            display: none;
+        }
+
+        .order-mark.is-ok {
+            color: rgb(var(--wabi-shu));
+        }
+
+        .order-mark.is-no {
+            color: rgb(var(--wabi-accent));
+            opacity: 0.8;
+        }
+
+        .order-mark.is-in {
+            animation: mark-in 0.35s cubic-bezier(.2, 1.6, .4, 1);
+        }
+
+        @keyframes mark-in {
+            from {
+                opacity: 0;
+                transform: rotate(-8deg) scale(1.8);
+            }
+        }
+
+        .order-slip.is-broken #orderText {
+            text-decoration: line-through;
+            text-decoration-color: rgb(var(--wabi-accent) / 0.6);
+            color: rgb(var(--wabi-accent));
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .order-mark.is-in {
+                animation: none;
+            }
+        }
     </style>
 </head>
 
@@ -242,6 +317,16 @@
 
             <p id="who" class="mt-3 text-[11px] font-sans tracking-widest text-stone-400"></p>
 
+            <!-- 客人的點單（有的客人沒有） -->
+            <div id="order" class="order-slip hidden">
+                <span class="order-tag">點單</span>
+                <div class="min-w-0 flex-1">
+                    <p id="orderText" class="text-[13px] text-wabi-dark tracking-wider leading-snug"></p>
+                    <p id="orderHow" class="mt-0.5 text-[10px] font-sans tracking-widest text-stone-400 leading-relaxed"></p>
+                </div>
+                <span id="orderMark" class="order-mark hidden"></span>
+            </div>
+
             <!-- 客人說的話（或你說的話） -->
             <div class="flex items-start gap-2 min-h-[3.4rem] mt-1" aria-live="polite">
                 <span id="saysWho" class="shrink-0 pt-[0.15rem] text-[10px] font-sans tracking-widest text-wabi-accent">客人</span>
@@ -278,6 +363,7 @@
             <div class="mt-5 mx-auto max-w-[17rem] border-y border-stone-100 py-3 font-sans text-xs tracking-widest text-stone-500">
                 <p class="flex justify-between"><span>工資</span><span id="payWage" class="text-wabi-dark"></span></p>
                 <p class="flex justify-between mt-1"><span>小費</span><span id="payTip" class="text-wabi-dark"></span></p>
+                <p id="payOrderRow" class="hidden flex justify-between mt-1"><span>點單</span><span id="payOrder" class="text-wabi-dark"></span></p>
                 <p class="flex justify-between mt-2 pt-2 border-t border-stone-100"><span>錢包</span><span id="payWallet" class="text-wabi-shu text-sm"></span></p>
                 <p id="payAcct" class="mt-2 text-[10px] leading-relaxed text-stone-400"></p>
             </div>
@@ -543,7 +629,66 @@
             crown: { name: '皇冠', line: '今天你是二十七樓的王。' },
             boom: { name: '爆炸頭', line: '實驗室剛炸過。' },
             abstract: { name: '抽象派', line: '看不懂，但很有態度。' },
+            // 後來加的
+            ahoge: { name: '呆毛', line: '一根毛決定了今天的智商。' },
+            antenna: { name: '收訊不良', line: '天線歪了，訊號只剩一格。' },
+            bangs: { name: '厚瀏海', line: '眼睛先休息一下。' },
+            seaweed: { name: '海帶', line: '從頭頂垂下來的海帶，可以煮湯。' },
+            feelers: { name: '觸角', line: '蝸牛探出頭來了。' },
+            twin: { name: '雙馬尾', line: '二十七樓的偶像，今天出道。' },
+            horns: { name: '羊角', line: '今年是羊年嗎。' },
+            coil: { name: '蚊香', line: '點起來，蚊子就不敢靠近。' },
+            halo: { name: '天使光環', line: '洗完頭整個人都神聖了。' },
+            donut: { name: '甜甜圈', line: '頭上掛一個，晚點當宵夜。' },
+            bolt: { name: '被雷打到', line: '閃電劈下來的那一刻。' },
+            hedgehog: { name: '刺蝟', line: '現在不要抱我。' },
+            lion: { name: '獅子王', line: '吼。（萬獸之王剛洗好頭）' },
+            mohawk: { name: '龐克頭', line: '今晚去西門町玩團。' },
+            peacock: { name: '孔雀開屏', line: '開屏了，有人要看嗎。' },
+            mop: { name: '拖把', line: '順便把地拖一拖。' },
+            slick: { name: '油頭', line: '梳好了，等等去喝喜酒。' },
+            shine: { name: '反光', line: '燈泡亮了，不用開燈。' },
+            catears: { name: '雙層貓耳', line: '耳朵比本來的還多兩隻。' },
         };
+
+        // 客人的點單：做到多給小費。ok(G) 洗完才判定；broke 是途中就搞砸的（碰到臉、耳朵）
+        // how 是給玩家的提示（貓的點單只有喵，提示就是翻譯）
+        const ORDERS = {
+            unicorn: { text: '幫我捏個獨角獸。', how: '捏的時候，從頭頂往上直直拉一條', tip: 500, no: '我說的是獨角獸耶。', ok: g => g.shape === SHAPES.unicorn },
+            bunny: { text: '我想要兔耳朵。', how: '捏的時候，左右各往上拉一條長的', tip: 500, no: '兔耳朵呢？', ok: g => g.shape === SHAPES.bunny },
+            devil: { text: '今天想當壞人，弄個小惡魔。', how: '捏的時候，左右各往上拉一條短的', tip: 500, no: '這樣看起來太善良了。', ok: g => g.shape === SHAPES.devil },
+            crown: { text: '讓我當一下國王。', how: '捏的時候，往上拉三到五條', tip: 500, no: '皇冠被誰偷走了。', ok: g => g.shape === SHAPES.crown },
+            cone: { text: '頭上給我一支霜淇淋。', how: '捏的時候，邊拉邊轉一圈', tip: 500, no: '霜淇淋融化了嗎。', ok: g => g.shape === SHAPES.cone },
+            rocket: { text: '越高越好，要衝天的那種。', how: '捏的時候，從頭頂往上拉一條很長的', tip: 500, no: '還不夠高。', ok: g => g.shape === SHAPES.rocket },
+            twin: { text: '幫我綁雙馬尾。', how: '捏的時候，從頭的左右兩邊各往下拉一條', tip: 500, no: '馬尾呢？', ok: g => g.shape === SHAPES.twin },
+            halo: { text: '我想要天使光環。', how: '捏的時候，在頭頂上方畫一個圈，頭尾接起來', tip: 600, no: '光環掉了。', ok: g => g.shape === SHAPES.halo },
+            mohawk: { text: '我要龐克頭。', how: '捏的時候，從頭頂正中間往上拉三條以上', tip: 500, no: '不夠龐克。', ok: g => g.shape === SHAPES.mohawk },
+            plain: { text: '不要造型，我等等要見人。', how: '捏的時候什麼都不要拉，直接照鏡子', tip: 300, no: '我等等要見人耶。', ok: g => g.shape === SHAPES.plain },
+            less: { text: '我頭皮敏感，洗髮精少一點。', how: '擠在框框最左邊，或少一下', tip: 300, no: '頭皮開始癢了。', ok: g => !g.drip && g.landed >= g.c.st.pumps[0] - 1 && g.landed <= g.c.st.pumps[0], fits: c => c.st.pumps[0] >= 2 },
+            more: { text: '多擠一點，我喜歡香香的。', how: '擠在框框最右邊，或多一下，不要流下來', tip: 300, no: '不夠香。', ok: g => !g.drip && g.landed >= g.c.st.pumps[1] && g.landed <= g.c.st.pumps[1] + 1 },
+            foam: { text: '整顆都要有泡泡，不要漏。', how: '泡泡蓋到九成以上', tip: 300, no: '後面還是乾的。', ok: g => g.coverage >= 0.9 },
+            fast: { text: '等等有事，泡泡搓快一點。', how: '六秒內把泡泡蓋滿', tip: 400, no: '我要遲到了。', ok: g => g.rubMs !== null && g.rubMs <= 6000 },
+            itchy: { text: '今天超癢，全部都要抓到。', how: '十四個癢處抓到十二個以上', tip: 400, no: '還是好癢。', ok: g => g.hits >= 12 },
+            noface: { text: '泡泡不要弄到我的臉。', how: '搓泡泡、抓癢都不要碰到臉', tip: 300, no: '臉上都是泡泡。', ok: g => !g.pokes.face, broke: g => g.pokes.face > 0 },
+            noear: { text: '不要碰我的耳朵，我怕癢。', how: '抓癢時不要點到耳朵', tip: 300, no: '說好不碰耳朵的。', ok: g => !g.pokes.ear, broke: g => g.pokes.ear > 0, fits: c => !c.st.hideEars },
+            pat: { text: '拍背要準，我很講究節奏。', how: '四拍都要拍到，不能歪', tip: 300, no: '節奏感有待加強。', ok: g => g.patMarks.length === 4 && !g.patMarks.includes('歪') },
+        };
+        // 這些人比較常點這個
+        const ORDER_PREF = {
+            '等等有會的旅人': 'fast', '昨天喝太多的旅人': 'less', '熬夜打電動的旅人': 'noface', '說只是來修瀏海的旅人': 'plain',
+            '上缺德榜的旅人': 'devil', '住了三晚還不想退房的旅人': 'halo', '剛在陽台吹完風的旅人': 'rocket', '擲到笑杯的旅人': 'unicorn',
+            '吃掉最後一個布丁的旅人': 'cone', '每週都來的阿伯': 'pat', '戴墨鏡的神秘旅人': 'noface', '不知道怎麼進來的貓': 'bunny',
+            '一直在看手機的旅人': 'noear',  '群組裡已讀不回的旅人': 'mohawk', '第一次來二十七樓的旅人': 'foam', '剛分帳完臉色不太好的旅人': 'less',
+        };
+        const ORDER_OK_LINES = ['有照我說的，小費拿去。', '懂我。', '下次還找你。', '就是這樣，加錢。'];
+        const NO_ORDER_LINES = ['你專業，隨便洗。', '都可以。', '照你的來。'];
+
+        function pickOrder(c) {
+            if (Math.random() < 0.2) return null;  // 有兩成的客人沒意見
+            const fits = Object.keys(ORDERS).filter(k => !ORDERS[k].fits || ORDERS[k].fits(c));
+            const pref = ORDER_PREF[c.who];
+            return pref && fits.includes(pref) && Math.random() < 0.6 ? pref : pick(fits);
+        }
 
         const GRADES = [
             { min: 90, mark: '爽', line: '爽到不想走' },
@@ -557,6 +702,59 @@
         const $ = id => document.getElementById(id);
         const stepEls = [...document.querySelectorAll('#steps .step')];
         const BEST_KEY = 'dongbuli-xitou-best';
+        // 每一顆頭的資料（給之後的圖鑑、排行榜、店面升級用），只存在這支手機
+        const STATS_KEY = 'dongbuli-xitou-stats';
+        const shapeKey = sh => Object.keys(SHAPES).find(k => SHAPES[k] === sh) || 'plain';
+        const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        function loadStats() {
+            let st = null;
+            try { st = JSON.parse(localStorage.getItem(STATS_KEY)); } catch (e) { }
+            return Object.assign({
+                v: 1, washes: 0, scoreSum: 0, best: 0, paid: 0, tips: 0, orderTips: 0, msSum: 0, first: null, last: null,
+                grades: {}, who: {}, styles: {}, shapes: {}, forces: {},
+                orders: {},   // { unicorn: { asked, done } }
+                parts: { squeeze: { sum: 0, perfect: 0, drip: 0 }, rub: { sum: 0, full: 0, fastest: null }, scratch: { sum: 0, all: 0 }, style: { sum: 0 }, pat: { sum: 0, perfect: 0 } },
+                pokes: { face: 0, ear: 0 },
+                days: {},     // { '2026-11-14': 3 }，只留最近 60 天
+                recent: [],   // 最近 50 顆頭的細節
+            }, st || {});
+        }
+        const bump = (o, k, n = 1) => { o[k] = (o[k] || 0) + n; };
+        function recordWash(rec) {
+            const st = loadStats(), p = st.parts;
+            st.washes++;
+            st.scoreSum += rec.total;
+            st.best = Math.max(st.best, rec.total);
+            st.paid += rec.pay.wage + rec.pay.tip + rec.pay.order;
+            st.tips += rec.pay.tip;
+            st.orderTips += rec.pay.order;
+            st.msSum += rec.ms;
+            st.first = st.first || rec.at;
+            st.last = rec.at;
+            bump(st.grades, rec.grade);
+            bump(st.who, rec.who);
+            bump(st.styles, rec.style);
+            bump(st.shapes, rec.shape);
+            if (rec.force) bump(st.forces, rec.force);
+            if (rec.order) {
+                const o = st.orders[rec.order.id] = st.orders[rec.order.id] || { asked: 0, done: 0 };
+                o.asked++;
+                if (rec.order.done) o.done++;
+            } else bump(st.orders, 'none');
+            p.squeeze.sum += rec.parts.squeeze; if (rec.parts.squeeze === 15) p.squeeze.perfect++; if (rec.drip) p.squeeze.drip++;
+            p.rub.sum += rec.parts.rub; if (rec.coverage >= 0.97) p.rub.full++; if (rec.rubMs !== null && (p.rub.fastest === null || rec.rubMs < p.rub.fastest)) p.rub.fastest = rec.rubMs;
+            p.scratch.sum += rec.parts.scratch; if (rec.hits === 14) p.scratch.all++;
+            p.style.sum += rec.parts.style;
+            p.pat.sum += rec.parts.pat; if (rec.parts.pat === 20) p.pat.perfect++;
+            st.pokes.face += rec.pokes.face;
+            st.pokes.ear += rec.pokes.ear;
+            bump(st.days, rec.at.slice(0, 10));
+            Object.keys(st.days).sort().slice(0, -60).forEach(k => delete st.days[k]);
+            st.recent = [rec, ...st.recent].slice(0, 50);
+            try { localStorage.setItem(STATS_KEY, JSON.stringify(st)); } catch (e) { }
+            return st;
+        }
+        window.XitouStats = { load: loadStats };  // 之後別頁（會員中心、圖鑑）可以讀
         // 倒過來的擠壓瓶（按鈕上的圖）
         const BOTTLE_SVG = '<svg viewBox="0 0 24 34" width="24" height="34" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="1.5" width="16" height="19" rx="4.5"/><path d="M4 9h16M4 14h16"/><path d="M8 20.5l1.5 5h5l1.5-5"/><path d="M12 25.5v3.5"/><path d="M12 31.5v1" stroke-linecap="round"/></svg>';
 
@@ -698,6 +896,8 @@
                 strokes: [], budget: 0, budgetMax: 0, shape: null, styleScore: 0, snapshot: null,
                 patScore: 0, patMarks: [],
                 foamAlpha: 1, wet: false,
+                order: pickOrder(c), orderBroken: false,
+                pokes: { face: 0, ear: 0 }, rubMs: null, force: null, t0: 0,
                 cells: [], curls: [], dots: [],
             };
             // 頭髮切成小格子，算泡泡蓋了幾成、癢的地方冒在哪
@@ -715,6 +915,38 @@
             face = { kind: 'neutral', until: 0 };
             $('who').textContent = `今天的客人：${c.who}`;
             $('shapeStamp').classList.add('hidden');
+            renderOrder();
+        }
+
+        // 點單紙條
+        function renderOrder(mark) {
+            const o = G.order && ORDERS[G.order];
+            $('order').classList.toggle('hidden', !o);
+            if (!o) return;
+            $('orderText').textContent = G.c.cat ? (G.meow = G.meow || pick(MEOWS) + pick(MEOWS)) : o.text;
+            $('orderHow').textContent = (G.c.cat ? `（翻譯：${o.text}）` : '') + o.how + `・小費 ${Wallet.fmt(o.tip)}`;
+            $('order').classList.toggle('is-broken', G.orderBroken || mark === 'no');
+            const m = $('orderMark');
+            m.classList.toggle('hidden', !mark);
+            if (!mark) return;
+            m.textContent = mark === 'ok' ? '成' : '破';
+            m.className = `order-mark is-${mark}`;
+            if (!reduceMotion) { void m.offsetWidth; m.classList.add('is-in'); }
+        }
+        // 碰到臉、耳朵：記下來；點單說不能碰的，當場蓋「破」
+        function poke(kind) {
+            // 手指一直在臉上搓也只算一次：隔半秒以上才算新的一次
+            const now = performance.now();
+            G.pokeAt = G.pokeAt || {};
+            if (now - (G.pokeAt[kind] || -1e9) < 500) { G.pokeAt[kind] = now; return; }
+            G.pokeAt[kind] = now;
+            G.pokes[kind]++;
+            const o = G.order && ORDERS[G.order];
+            if (o && o.broke && !G.orderBroken && o.broke(G)) {
+                G.orderBroken = true;
+                renderOrder('no');
+                sfx.stamp();
+            }
         }
 
         // 搓得出泡泡的地方：頭髮附近一圈
@@ -1212,6 +1444,7 @@
         // ===== 6. 五道工序 =====
         function go(i) {
             stage = i;
+            if (i === 0) G.t0 = performance.now();
             setSteps(i);
             cur = [squeeze, rub, scratch, sculpt, pat][i]();
         }
@@ -1306,6 +1539,7 @@
                 if (done) return;
                 done = true;
                 last = null;
+                if (started && G.coverage >= 0.97) G.rubMs = Math.round(performance.now() - (endAt - LIMIT));
                 G.rubScore = Math.round(G.coverage * 25);
                 const pct = Math.round(G.coverage * 100);
                 if (pct >= 95) { say('整顆都是泡泡了。'); setFace('bliss'); }
@@ -1337,6 +1571,7 @@
                             if (G.c.st.inHair(f)) addFoam(f.x, f.y, Math.min(20, rand(10, 17) * G.foamMul), true);
                             if (Math.random() < 0.08) sfx.pop();
                         } else if (inEllipse(q, HEAD)) {
+                            poke('face');
                             mutter('那是臉。', 'doubt');
                         }
                     }
@@ -1411,8 +1646,8 @@
                         nextAt = Math.max(nextAt, now + 280);
                         return;
                     }
-                    if (!G.c.st.hideEars && EARS.some(e => dist(e, p) < 22)) mutter('那是我的耳朵。', 'wow');
-                    else if (inEllipse(p, HEAD) && !foamable(p)) mutter('那是臉啦。', 'pain');
+                    if (!G.c.st.hideEars && EARS.some(e => dist(e, p) < 22)) { poke('ear'); mutter('那是我的耳朵。', 'wow'); }
+                    else if (inEllipse(p, HEAD) && !foamable(p)) { poke('face'); mutter('那是臉啦。', 'pain'); }
                     else if (foamable(p)) mutter(pick(['不是那裡。', '再過去一點。', '旁邊旁邊。']), 'doubt');
                 },
                 update(now) {
@@ -1435,6 +1670,7 @@
                         setTimeout(() => {
                             const a = pick(ANSWERS);
                             G.hp = a.hp;
+                            G.force = a.text;
                             say(a.text);
                             setFace(a.hp > 1 ? 'doubt' : 'happy');
                             if (a.hint) hint(a.hint);
@@ -1518,36 +1754,94 @@
             };
         }
 
-        // 看拉了幾條、往哪拉、有沒有轉圈，決定是什麼造型
+        // 看拉了幾條、往哪拉、有沒有轉圈、有沒有繞回來、有沒有鋸齒，決定是什麼造型
+        // 每一條算：方向（上／左上／右上／左／右／下）、從頭的哪一邊開始、拉多高、總共轉幾圈、
+        //          轉彎方向換了幾次（鋸齒）、尾巴有沒有勾起來、頭尾有沒有接起來（圈）
+        function strokeInfo(s) {
+            const a = s.pts[0], b = s.pts[s.pts.length - 1];
+            let turn = 0, flips = 0, lastSign = 0, hook = 0;
+            const tail = Math.floor(s.pts.length * 0.65);
+            for (let i = 2; i < s.pts.length; i++) {
+                const p0 = s.pts[i - 2], p1 = s.pts[i - 1], p2 = s.pts[i];
+                let d = Math.atan2(p2.y - p1.y, p2.x - p1.x) - Math.atan2(p1.y - p0.y, p1.x - p0.x);
+                while (d > Math.PI) d -= TAU;
+                while (d < -Math.PI) d += TAU;
+                turn += d;
+                if (i >= tail) hook += d;
+                if (Math.abs(d) > 0.3) { const sg = Math.sign(d); if (lastSign && sg !== lastSign) flips++; lastSign = sg; }
+            }
+            const dx = b.x - a.x, dy = a.y - b.y;  // dy 往上是正的
+            const ang = Math.atan2(dy, dx) * 180 / Math.PI;
+            const dir = ang >= 60 && ang <= 120 ? 'up' : ang > 120 && ang < 160 ? 'upL' : ang > 20 && ang < 60 ? 'upR'
+                : (ang >= 160 || ang <= -160) ? 'L' : (ang >= -20 && ang <= 20) ? 'R' : 'down';
+            const top = Math.min(...s.pts.map(p => p.y));
+            const cx = s.pts.reduce((t, p) => t + p.x, 0) / s.pts.length;
+            const cy = s.pts.reduce((t, p) => t + p.y, 0) / s.pts.length;
+            // 圈還是漩渦：頭尾離中心的距離差不多是圈，越轉越小是漩渦（霜淇淋）
+            const q = Math.max(1, Math.floor(s.pts.length / 4));
+            const rad = list => list.reduce((t, p) => t + Math.hypot(p.x - cx, p.y - cy), 0) / list.length;
+            const round = rad(s.pts.slice(-q)) / Math.max(1, rad(s.pts.slice(0, q)));
+            return {
+                a, b, len: s.len, dx, dy, dir, top, cy,
+                rise: a.y - top, turn: Math.abs(turn), flips, hook: Math.abs(hook),
+                up: dy > Math.abs(dx) * 0.6,
+                loop: dist(a, b) < 30 && s.len > 110 && Math.abs(turn) > Math.PI * 1.4 && Math.abs(turn) < Math.PI * 2.7 && round > 0.7,
+                side: a.x < 168 ? 'L' : a.x > 192 ? 'R' : 'C',
+            };
+        }
+
         function classify(strokes) {
             const list = strokes.filter(s => s.len >= 24 && s.pts.length >= 3);
-            if (!list.length) return SHAPES.plain;
-            const info = list.map(s => {
-                const a = s.pts[0], b = s.pts[s.pts.length - 1];
-                let turn = 0;
-                for (let i = 2; i < s.pts.length; i++) {
-                    const p0 = s.pts[i - 2], p1 = s.pts[i - 1], p2 = s.pts[i];
-                    let d = Math.atan2(p2.y - p1.y, p2.x - p1.x) - Math.atan2(p1.y - p0.y, p1.x - p0.x);
-                    while (d > Math.PI) d -= TAU;
-                    while (d < -Math.PI) d += TAU;
-                    turn += d;
-                }
-                const top = Math.min(...s.pts.map(p => p.y));
-                return { x: a.x, dx: b.x - a.x, rise: a.y - top, turn: Math.abs(turn), up: (a.y - b.y) > Math.abs(b.x - a.x) * 0.6 };
-            });
-            const n = list.length, ups = info.filter(i => i.up).length;
-            if (info.some(i => i.turn > Math.PI * 1.7)) return SHAPES.cone;
-            if (n >= 7) return SHAPES.urchin;
+            const c = G ? G.c : { style: 'short', cat: false, st: STYLES.short };
+            let shape = classifyInfo(list.map(strokeInfo), c);
+            // 客人限定
+            if (shape === SHAPES.plain && c.style === 'bald') shape = SHAPES.shine;
+            if (shape === SHAPES.bunny && c.cat) shape = SHAPES.catears;
+            return shape;
+        }
+
+        function classifyInfo(info, c) {
+            const n = info.length;
+            if (!n) return SHAPES.plain;
+            const ups = info.filter(i => i.up).length;
+            const downs = info.filter(i => i.dir === 'down').length;
+            const maxTurn = Math.max(...info.map(i => i.turn));
+            // 圈：頭頂上方是光環，其他地方是甜甜圈
+            const loop = info.find(i => i.loop);
+            if (loop) return loop.cy < c.st.top + 6 ? SHAPES.halo : SHAPES.donut;
+            if (maxTurn > Math.PI * 3.4) return SHAPES.coil;
+            if (n === 2 && info.every(i => i.turn > Math.PI * 0.9)) return SHAPES.horns;
+            if (maxTurn > Math.PI * 1.7) return SHAPES.cone;
+            if (info.some(i => i.flips >= 4 && i.len > 90)) return SHAPES.bolt;
+            if (n >= 12) return SHAPES.hedgehog;
+            if (n >= 7) return new Set(info.map(i => i.dir)).size >= 4 ? SHAPES.lion : SHAPES.urchin;
             if (n === 1) {
-                if (!ups) return SHAPES.wind;
-                return info[0].rise >= 110 ? SHAPES.rocket : SHAPES.unicorn;
+                const i = info[0];
+                if (i.dir === 'down') return i.len > 110 ? SHAPES.seaweed : SHAPES.bangs;
+                if (!i.up) return SHAPES.wind;
+                if (i.hook > 1.3) return SHAPES.ahoge;
+                if (i.dir !== 'up') return SHAPES.antenna;
+                return i.rise >= 110 ? SHAPES.rocket : SHAPES.unicorn;
             }
             if (n === 2) {
-                if (ups === 2) return Math.min(info[0].rise, info[1].rise) >= 75 ? SHAPES.bunny : SHAPES.devil;
-                if (!ups && (info[0].dx < 0) !== (info[1].dx < 0)) return SHAPES.prop;
+                const [p, q] = info;
+                if (ups === 2) {
+                    if (Math.abs(p.a.x - q.a.x) < 40) return SHAPES.feelers;
+                    return Math.min(p.rise, q.rise) >= 75 ? SHAPES.bunny : SHAPES.devil;
+                }
+                if (downs === 2) return (p.a.x < 180) !== (q.a.x < 180) ? SHAPES.twin : SHAPES.mop;
+                if (!ups && (p.dx < 0) !== (q.dx < 0)) return SHAPES.prop;
                 return SHAPES.abstract;
             }
-            if (ups === n && n <= 5) return SHAPES.crown;
+            // 三到六條
+            if (ups === n) {
+                if (info.every(i => Math.abs(i.a.x - 180) < 30)) return SHAPES.mohawk;
+                const angs = info.map(i => Math.atan2(i.dy, i.dx));
+                if (n >= 5 && Math.max(...angs) - Math.min(...angs) > Math.PI * 0.55) return SHAPES.peacock;
+                return SHAPES.crown;
+            }
+            if (downs === n) return SHAPES.mop;
+            if (info.every(i => i.dir === 'L') || info.every(i => i.dir === 'R')) return SHAPES.slick;
             if (ups >= n - 1) return SHAPES.urchin;
             return ups >= 2 ? SHAPES.boom : SHAPES.abstract;
         }
@@ -1655,10 +1949,32 @@
             // 發工資：爽度 × 10（最少 100），洗得好客人另外給小費。存進共用錢包
             const wage = Math.max(100, total * 10);
             const tip = total >= 90 ? 500 : total >= 75 ? 200 : 0;
-            G.pay = { wage, tip };
-            Wallet.earn(wage + tip, 'xitou');
+            // 點單：做到另外給
+            const o = G.order && ORDERS[G.order];
+            const orderDone = !!(o && !G.orderBroken && o.ok(G));
+            const orderTip = orderDone ? o.tip : 0;
+            G.pay = { wage, tip, order: orderTip };
+            Wallet.earn(wage + tip + orderTip, 'xitou');
+            if (o) { renderOrder(orderDone ? 'ok' : 'no'); say(orderDone ? pick(ORDER_OK_LINES) : o.no); setFace(orderDone ? 'bliss' : 'doubt'); }
             $('payWage').textContent = Wallet.fmt(wage);
             $('payTip').textContent = tip ? Wallet.fmt(tip) : '客人沒給';
+            $('payOrderRow').classList.toggle('hidden', !o);
+            if (o) $('payOrder').textContent = orderDone ? Wallet.fmt(orderTip) : '沒做到';
+            recordWash({
+                at: new Date().toISOString(), ms: Math.round(performance.now() - G.t0),
+                who: G.c.who, style: G.c.style, cat: G.c.cat, glasses: G.c.glasses, mustache: G.c.mustache, freckles: G.c.freckles,
+                total, grade: grade.mark,
+                parts: { squeeze: G.squeezeScore, rub: G.rubScore, scratch: G.scratchScore, style: G.styleScore, pat: G.patScore },
+                pumps: G.landed, want: G.c.st.pumps, drip: G.drip,
+                coverage: Math.round(G.coverage * 100) / 100, rubMs: G.rubMs,
+                hits: G.hits, force: G.force,
+                shape: shapeKey(G.shape), strokes: G.strokes.filter(x => x.len >= 24).length,
+                patMarks: G.patMarks.join(''),
+                pokes: { ...G.pokes },
+                order: o ? { id: G.order, done: orderDone } : null,
+                pay: { ...G.pay },
+                login: !!(window.Line && Line.loggedIn),
+            });
             $('payWallet').textContent = Wallet.fmt(Wallet.money);
             renderAcct();
 
@@ -1686,7 +2002,8 @@
                 ['抓癢', `${G.hits} / 14`],
                 ['造型', G.shape.name],
                 ['拍背', G.patMarks.length ? G.patMarks.join('・') : '都沒拍到'],
-                ['工資', Wallet.fmt(G.pay.wage) + (G.pay.tip ? `＋小費 ${Wallet.fmt(G.pay.tip)}` : '')],
+                ...(G.order ? [['點單', `${ORDERS[G.order].text.replace(/[。，].*$/, '')}・${G.pay.order ? '達成' : '沒做到'}`]] : []),
+                ['工資', Wallet.fmt(G.pay.wage) + (G.pay.tip + G.pay.order ? `＋小費 ${Wallet.fmt(G.pay.tip + G.pay.order)}` : '')],
             ];
             const allText = rows.flat().join('') + '洗頭證明爽度二十七樓坐洗部' + grade.mark + grade.line + '0123456789（）';
             try {
@@ -1717,7 +2034,7 @@
             x.fillRect(500, 250, 80, 2);
 
             // 照鏡子那一刻
-            const iw = 480, ih = Math.round(iw * H / W), ix = (1080 - iw) / 2, iy = 290;
+            const iw = rows.length > 7 ? 440 : 480, ih = Math.round(iw * H / W), ix = (1080 - iw) / 2, iy = 290;
             x.drawImage(G.snapshot, ix, iy, iw, ih);
             x.strokeStyle = '#dcdcdc';
             x.lineWidth = 2;
@@ -1726,8 +2043,10 @@
             let y = iy + ih + 85;
             rows.forEach(([k, v]) => {
                 text(k, 210, y, `400 30px ${SANS}`, '#8e8070', 'left');
-                text(v, 360, y, `400 38px ${SERIF}`, '#4a4a4a', 'left');
-                y += 57;
+                x.font = `400 38px ${SERIF}`;
+                const fit = Math.min(38, Math.floor(38 * 660 / Math.max(1, x.measureText(v).width)));
+                text(v, 360, y, `400 ${fit}px ${SERIF}`, '#4a4a4a', 'left');
+                y += rows.length > 7 ? 54 : 57;
             });
 
             // 爽度、朱印
@@ -1794,8 +2113,8 @@
             stage = -1;
             cur = {};
             setSteps(-1);
-            say('（坐下了）');
-            hint('五道工序：擠、搓、抓、捏、拍。大約一分鐘');
+            say(G.order ? ORDERS[G.order].text : pick(NO_ORDER_LINES));
+            hint('五道工序：擠、搓、抓、捏、拍。大約一分鐘' + (G.order ? '。客人有點單，照做多給小費' : ''));
             meter({ fill: 0, label: '' });
             actions([{ label: '開始洗頭', onClick: () => go(0) }]);
         }
