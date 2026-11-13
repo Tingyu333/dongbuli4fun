@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>會員・我 | 丼步喱</title>
+    <!-- 分享到 LINE、FB 時的預覽（標題、介紹、圖片）。圖片要用完整網址 -->
+    <meta name="description" content="二十七樓的會員中心：LINE 登入、小遊戲的錢包、坐洗部和彩券行。">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="丼步喱・絆">
+    <meta property="og:title" content="會員・我｜丼步喱">
+    <meta property="og:description" content="二十七樓的會員中心：LINE 登入、小遊戲的錢包、坐洗部和彩券行。">
+    <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
+    <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/member.html">
+    <meta name="twitter:card" content="summary">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入日系字體 -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/theme.css">
+    <script src="assets/theme.js"></script>
+    <script src="assets/line.js"></script>
+    <script src="assets/wallet.js"></script>
+    <style>
+        .line-btn {
+            min-height: 44px;
+            padding: 0 1.4rem;
+            border-radius: 6px;
+            background: #06c755;
+            color: #fff;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-weight: 500;
+            font-size: 0.85rem;
+            letter-spacing: 0.1em;
+            touch-action: manipulation;
+        }
+
+        .game {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-top: 1px solid rgb(var(--wabi-sub) / 0.6);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .game:active {
+            opacity: 0.6;
+        }
+
+        .game-mark {
+            flex-shrink: 0;
+            width: 2.75rem;
+            height: 2.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgb(var(--wabi-accent) / 0.5);
+            border-radius: 9999px;
+            font-size: 1.1rem;
+            color: rgb(var(--wabi-dark));
+        }
+
+        .game-mark.is-shu {
+            border-color: rgb(var(--wabi-shu));
+            color: rgb(var(--wabi-shu));
+        }
+    </style>
+</head>
+
+<body
+    class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- 導航 -->
+    <nav
+        class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <a href="index.html"
+            class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-3 md:gap-8">
+            <a href="index.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <a href="reviews.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <a href="jiaobei.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">擲杯・問</a>
+            <a href="about.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-md mx-auto pt-28 md:pt-36 pb-16 px-6 w-full">
+
+        <!-- 標題區塊 -->
+        <div class="text-center mb-10">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-3">MEMBER</span>
+            <h1 class="text-3xl font-light text-wabi-dark tracking-widest">會員・我</h1>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">二十七樓的住戶名冊，你也在上面。</p>
+        </div>
+
+        <!-- 我是誰 -->
+        <section id="who" class="bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm p-6"></section>
+
+        <!-- 錢包 -->
+        <section class="mt-6 bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm p-6">
+            <div class="flex items-baseline justify-between">
+                <h2 class="text-sm tracking-[0.3em] text-wabi-dark">錢包</h2>
+                <a href="scratch.html#hb" class="min-h-[32px] inline-flex items-center text-[11px] font-sans tracking-widest text-wabi-accent underline underline-offset-4">有紅包碼？</a>
+            </div>
+            <p id="money" class="mt-2 text-4xl font-sans font-light text-wabi-dark">$0</p>
+            <p id="where" class="mt-1 text-[11px] font-sans tracking-widest text-stone-400"></p>
+            <dl id="ledger" class="mt-5 font-sans text-xs tracking-wider text-stone-500 space-y-2"></dl>
+        </section>
+
+        <!-- 小遊戲 -->
+        <section class="mt-6 bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-6 pt-6 pb-2">
+            <h2 class="text-sm tracking-[0.3em] text-wabi-dark mb-3">小遊戲</h2>
+            <a href="xitou.html" class="game">
+                <span class="game-mark">洗</span>
+                <span class="flex-1 min-w-0">
+                    <span class="block text-wabi-dark tracking-widest">坐洗・泡</span>
+                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">幫客人洗一顆頭，賺工資 $500～$1,500</span>
+                </span>
+                <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+            </a>
+            <a href="scratch.html" class="game">
+                <span class="game-mark is-shu">刮</span>
+                <span class="flex-1 min-w-0">
+                    <span class="block text-wabi-dark tracking-widest">二十七樓彩券行</span>
+                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">拿工資刮刮樂，十種，頭獎 2000 萬</span>
+                </span>
+                <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+            </a>
+            <a href="jiaobei.html" class="game">
+                <span class="game-mark">杯</span>
+                <span class="flex-1 min-w-0">
+                    <span class="block text-wabi-dark tracking-widest">擲杯・問</span>
+                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">不賺錢，問一下神明就好</span>
+                </span>
+                <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+            </a>
+        </section>
+
+        <!-- 我的預約 -->
+        <section class="mt-6 border border-dashed border-stone-200 rounded-sm p-6">
+            <h2 class="text-sm tracking-[0.3em] text-wabi-dark">我的預約</h2>
+            <p class="mt-2 text-xs font-sans tracking-wider text-stone-500 leading-relaxed">目前還是用電話在首頁查。之後訂房接上 LINE，登入就會直接出現在這裡。</p>
+            <a href="index.html" class="mt-3 inline-flex items-center min-h-[36px] text-xs font-sans tracking-widest text-wabi-dark underline underline-offset-4">到首頁查預約</a>
+        </section>
+    </main>
+
+    <footer
+        class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
+        <p>&copy; 2026 DONGBULI · 會員・我</p>
+    </footer>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+        const fmt = Wallet.fmt;
+
+        // 每種收入怎麼說
+        const SOURCES = {
+            xitou: e => `洗了 ${e.times} 顆頭，賺 ${fmt(e.total)}（最多一次 ${fmt(e.best)}）`,
+            scratch: e => `刮中 ${e.times} 次，${fmt(e.total)}（最大一筆 ${fmt(e.best)}）`,
+            bonus: e => `領了 ${e.times} 包紅包，${fmt(e.total)}`,
+        };
+        const LABELS = { xitou: '坐洗部', scratch: '彩券行', bonus: '主人紅包' };
+
+        function renderWho() {
+            const box = $('who');
+            if (Line.loggedIn) {
+                const p = Line.profile || {};
+                box.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        ${p.picture ? `<img src="${esc(p.picture)}" alt="" referrerpolicy="no-referrer" class="w-14 h-14 rounded-full shrink-0 border border-stone-100">` : '<span class="w-14 h-14 rounded-full shrink-0 border border-stone-200 flex items-center justify-center text-wabi-accent">我</span>'}
+                        <div class="min-w-0 flex-1">
+                            <p class="text-lg text-wabi-dark tracking-widest truncate">${esc(p.name || '旅人')}</p>
+                            <p class="text-[11px] font-sans tracking-widest text-stone-400">用 LINE 登入中</p>
+                        </div>
+                        <button type="button" data-logout class="shrink-0 min-h-[44px] px-2 text-xs font-sans tracking-widest text-stone-400 underline underline-offset-4">登出</button>
+                    </div>`;
+            } else {
+                box.innerHTML = `
+                    <p class="text-lg text-wabi-dark tracking-widest">還沒登入</p>
+                    <p class="mt-2 text-xs font-sans tracking-wider text-stone-500 leading-relaxed">用 LINE 登入，小遊戲的錢跟著帳號走，換手機也在。只會拿 LINE 的名字和大頭貼。</p>
+                    <button type="button" data-login class="line-btn mt-4 w-full">用 LINE 登入</button>`;
+            }
+        }
+
+        function renderWallet() {
+            const w = Wallet.stats();
+            $('money').textContent = fmt(w.money);
+            $('where').textContent = Line.loggedIn ? '存在 LINE 帳號，換手機也在' : '只存在這支手機';
+            const rows = Object.keys(w.earned || {})
+                .filter(k => w.earned[k].times)
+                .map(k => `<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">${esc(LABELS[k] || k)}</dt><dd class="flex-1">${SOURCES[k] ? SOURCES[k](w.earned[k]) : fmt(w.earned[k].total)}</dd></div>`);
+            if (w.spent) rows.push(`<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">花掉</dt><dd class="flex-1">${fmt(w.spent)}（都拿去刮刮樂了）</dd></div>`);
+            $('ledger').innerHTML = rows.length ? rows.join('') : '<p class="text-stone-400">還沒賺過錢。先去坐洗部洗一顆頭。</p>';
+        }
+
+        function render() {
+            renderWho();
+            renderWallet();
+        }
+
+        $('who').addEventListener('click', e => {
+            if (e.target.closest('[data-login]')) Line.login();
+            if (e.target.closest('[data-logout]') && confirm('登出以後，這支手機會換回登入前的錢包。帳號裡的錢不會不見，下次登入就回來。')) Line.logout();
+        });
+
+        Wallet.on((type, d) => {
+            render();
+            if (type === 'login') showToast(d.isNew ? `登入了，這支手機的 ${fmt(d.left)} 存進帳號了` : `歡迎回來，${d.name}`);
+            if (type === 'logout') showToast(d && d.expired ? '登入過期了，再登入一次' : '登出了');
+        });
+        // 回到這一頁（例如剛洗完頭）時重新讀錢包
+        window.addEventListener('pageshow', render);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+        render();
+    </script>
+</body>
+
+</html>

@@ -1840,6 +1840,8 @@
             save();
             renderShelf();
         }
+        // 從會員中心「有紅包碼？」過來（scratch.html#hb）：直接打開輸入框
+        if (location.hash === '#hb') { $('hbForm').classList.remove('hidden'); $('hbCode').focus(); }
         // 從主人給的連結進來（scratch.html?hb=紅包碼）：直接領，網址上的紅包碼拿掉
         const hbParam = new URLSearchParams(location.search).get('hb');
         if (hbParam) {
