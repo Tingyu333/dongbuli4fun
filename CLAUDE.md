@@ -22,6 +22,7 @@
 - **純靜態 HTML**：沒有建置工具、套件管理或測試框架。每個頁面是獨立的 `.html`，頁面專屬的 CSS 與 JS 寫在檔案內。
 - **共用主題 `assets/`**：前台頁面（`index`、`reviews`、`jiaobei`、`about`、`ticket`）和後台兩頁（`admin_login`、`admin_dashboard`）在 `<head>` 載入 `assets/theme.css` 與 `assets/theme.js`（要放在 Tailwind CDN 之後、同步載入）：
   - `theme.css`：色彩 CSS 變數、夜間模式覆寫、`body` 紙張背景、`nav` 獨立圖層（`translateZ(0)`）、`.toast`、`.nav-solid`、晝夜切換鈕。
+  - 載入時網址後面帶 `?v=日期`（例如 `assets/line.js?v=20261113`）：LINE 內建瀏覽器和 GitHub Pages 都會快取舊的 js／css，**改了 `assets/` 裡的檔案，要把所有頁面的 `?v=` 一起換新**（`sed` 全部取代即可）。
   - **導覽列不要加 `mix-blend-mode`**：iPhone（尤其 LINE 內建瀏覽器）捲動時固定導覽列會卡在畫面中間（about 頁跟首頁都踩過）。
   - `theme.js`：`tailwind.config`、夜間模式切換、`showToast()`、`themeColor()`（給 canvas 讀 CSS 變數）。
   - `404.html` 沒有接主題，仍在頁內自己宣告 `tailwind.config`（404 在 GitHub Pages 的子路徑下相對路徑會失效）。後台也有晝夜切換鈕，跟前台共用同一個 sessionStorage 設定。
