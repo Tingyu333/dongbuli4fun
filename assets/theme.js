@@ -63,19 +63,6 @@ tailwind.config = {
         });
         document.body.appendChild(toggle);
 
-        // 右下角：會員中心（導覽列在手機上塞不下第五個連結）。登入過的顯示 LINE 大頭貼
-        if (/admin_|member\.html/.test(location.pathname)) return;
-        const fab = document.createElement('a');
-        fab.href = 'member.html';
-        fab.className = 'member-fab';
-        fab.setAttribute('aria-label', '會員中心');
-        window.renderMemberFab = () => {
-            let p = null;
-            try { p = localStorage.getItem('dongbuli-session') && JSON.parse(localStorage.getItem('dongbuli-profile')); } catch (e) { }
-            fab.innerHTML = p && /^https:\/\//.test(p.picture || '') ? `<img src="${p.picture.replace(/"/g, '')}" alt="" referrerpolicy="no-referrer">` : '我';
-        };
-        window.renderMemberFab();
-        document.body.appendChild(fab);
     });
 })();
 

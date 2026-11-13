@@ -14,7 +14,6 @@
 
     function emit(type, data) {
         listeners.forEach(fn => { try { fn(type, data); } catch (e) { console.error(e); } });
-        if (window.renderMemberFab) window.renderMemberFab();  // 右下角的大頭貼跟著換
     }
 
     function loadSdk() {
