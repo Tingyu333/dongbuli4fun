@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>刮刮・樂 | 丼步喱</title>
+    <!-- 分享到 LINE、FB 時的預覽（標題、介紹、圖片）。圖片要用完整網址 -->
+    <meta name="description" content="二十七樓彩券行。三連絆、電梯樂、御神籤，刮中有兌換券。">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="丼步喱・絆">
+    <meta property="og:title" content="刮刮・樂｜丼步喱">
+    <meta property="og:description" content="二十七樓彩券行。三連絆、電梯樂、御神籤，刮中有兌換券。">
+    <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
+    <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/scratch.html">
+    <meta name="twitter:card" content="summary">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入日系字體 -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/theme.css">
+    <script src="assets/theme.js"></script>
+    <style>
+        /* 彩券是紙本：顏色固定用白天那套，不跟晝夜切換 */
+        :root {
+            --tk-paper: 252 250 248;
+            --tk-ink: 74 74 74;
+            --tk-accent: 142 128 112;
+            --tk-line: 220 220 220;
+            --tk-dark: 44 44 44;
+            --tk-shu: 179 58 47;
+        }
+
+        .shop {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* ===== 架上的彩券 ===== */
+        .t-cover {
+            display: flex;
+            align-items: stretch;
+            width: 100%;
+            text-align: left;
+            background: rgb(var(--tk-paper));
+            color: rgb(var(--tk-ink));
+            border: 1px solid rgb(var(--tk-line));
+            box-shadow: 0 12px 30px -18px rgba(0, 0, 0, 0.35);
+            transition: transform 0.15s ease, opacity 0.3s;
+            touch-action: manipulation;
+        }
+
+        .t-cover:active {
+            transform: scale(0.98);
+        }
+
+        .t-cover:disabled {
+            opacity: 0.45;
+        }
+
+        .t-band {
+            width: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .t-body {
+            flex: 1;
+            padding: 0.9rem 1rem;
+            min-width: 0;
+        }
+
+        .t-name {
+            display: block;
+            font-family: 'Noto Serif TC', serif;
+            font-size: 1.15rem;
+            letter-spacing: 0.25em;
+            color: rgb(var(--tk-dark));
+        }
+
+        .t-desc,
+        .t-top {
+            display: block;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            line-height: 1.6;
+            color: rgb(var(--tk-accent));
+        }
+
+        .t-top {
+            color: rgb(var(--tk-shu));
+            margin-top: 0.15rem;
+        }
+
+        .t-price {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 4.5rem;
+            flex-shrink: 0;
+            border-left: 1px dashed rgb(var(--tk-line));
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 10px;
+            letter-spacing: 0.15em;
+            color: rgb(var(--tk-accent));
+        }
+
+        .t-price b {
+            font-weight: 300;
+            font-size: 1.5rem;
+            letter-spacing: 0;
+            color: rgb(var(--tk-dark));
+        }
+
+        /* ===== 彩券本體 ===== */
+        .ticket {
+            position: relative;
+            background: rgb(var(--tk-paper));
+            color: rgb(var(--tk-ink));
+            border: 1px solid rgb(var(--tk-line));
+            padding: 1.1rem 1rem 0.9rem;
+            box-shadow: inset 0 0 0 5px rgb(var(--tk-paper)), inset 0 0 0 6px rgb(var(--tk-accent) / 0.35), 0 24px 50px -24px rgba(0, 0, 0, 0.35);
+        }
+
+        .tk-top {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 10px;
+            letter-spacing: 0.2em;
+            color: rgb(var(--tk-accent));
+            padding: 0 0.3rem;
+        }
+
+        .tk-title {
+            text-align: center;
+            font-family: 'Noto Serif TC', serif;
+            font-size: 1.6rem;
+            letter-spacing: 0.3em;
+            color: rgb(var(--tk-dark));
+            margin-top: 0.3rem;
+        }
+
+        .tk-rule {
+            text-align: center;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            line-height: 1.6;
+            color: rgb(var(--tk-accent));
+            margin: 0.2rem 0 0.9rem;
+        }
+
+        .zone {
+            position: relative;
+        }
+
+        .foil {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 4px;
+            touch-action: none;
+            transition: opacity 0.45s;
+        }
+
+        .foil.is-done {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .tk-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgb(var(--tk-line));
+            border-radius: 4px;
+            background: rgb(var(--tk-paper));
+            transition: box-shadow 0.3s, background-color 0.3s;
+        }
+
+        .tk-cell.is-win {
+            box-shadow: inset 0 0 0 2px rgb(var(--tk-shu));
+            background: rgb(var(--tk-shu) / 0.06);
+        }
+
+        .tk-cell.is-win .tk-sym,
+        .tk-cell.is-win .tk-floor {
+            color: rgb(var(--tk-shu));
+        }
+
+        /* 三連絆 */
+        .tk-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+
+        .tk-grid .tk-cell {
+            aspect-ratio: 1;
+        }
+
+        .tk-sym {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 2.2rem;
+            line-height: 1;
+            color: rgb(var(--tk-dark));
+        }
+
+        .tk-sym.is-long {
+            font-size: 1.4rem;
+            letter-spacing: 0.05em;
+        }
+
+        .tk-table {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.2rem 0.4rem;
+            margin-top: 0.9rem;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 10px;
+            color: rgb(var(--tk-accent));
+        }
+
+        .tk-table div {
+            display: flex;
+            justify-content: center;
+            align-items: baseline;
+            gap: 0.3rem;
+            white-space: nowrap;
+        }
+
+        .tk-table dt {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 12px;
+            color: rgb(var(--tk-dark));
+        }
+
+        /* 電梯樂 */
+        .tk-label {
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 10px;
+            letter-spacing: 0.3em;
+            color: rgb(var(--tk-accent));
+            margin: 0.2rem 0 0.4rem 0.2rem;
+        }
+
+        .tk-yours {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .tk-yours .tk-cell {
+            height: 3.6rem;
+        }
+
+        .tk-floors {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+
+        .tk-floors .tk-cell {
+            height: 4.8rem;
+        }
+
+        .tk-floor {
+            font-family: 'Noto Sans TC', sans-serif;
+            font-weight: 300;
+            font-size: 1.6rem;
+            line-height: 1.2;
+            color: rgb(var(--tk-dark));
+        }
+
+        .tk-amt {
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 10px;
+            letter-spacing: 0.15em;
+            color: rgb(var(--tk-accent));
+        }
+
+        /* 御神籤 */
+        .tk-omi .tk-title {
+            color: rgb(var(--tk-shu));
+        }
+
+        .tk-omi-zone {
+            height: 15rem;
+        }
+
+        .tk-omi-in {
+            height: 100%;
+            padding: 0 1.2rem;
+            text-align: center;
+        }
+
+        .tk-kichi {
+            font-family: 'Noto Serif TC', serif;
+            font-weight: 600;
+            font-size: 3.4rem;
+            line-height: 1.1;
+            letter-spacing: 0.15em;
+            color: rgb(var(--tk-shu));
+        }
+
+        .tk-kichi.is-kyo {
+            color: rgb(var(--tk-dark));
+        }
+
+        .tk-poem {
+            margin-top: 0.7rem;
+            font-family: 'Noto Serif TC', serif;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            letter-spacing: 0.08em;
+            color: rgb(var(--tk-ink));
+        }
+
+        .tk-omi-prize {
+            margin-top: 0.6rem;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            color: rgb(var(--tk-accent));
+        }
+
+        .tk-foot {
+            text-align: center;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 9px;
+            letter-spacing: 0.2em;
+            color: rgb(var(--tk-accent) / 0.75);
+            margin-top: 0.8rem;
+        }
+
+        /* 中了：朱色印章；沒中：枯茶色 */
+        .tk-stamp {
+            position: absolute;
+            right: 0.8rem;
+            top: 0.7rem;
+            padding: 0.15rem 0.7rem;
+            border: 3px double rgb(var(--tk-shu));
+            background: rgb(var(--tk-paper) / 0.9);
+            color: rgb(var(--tk-shu));
+            font-family: 'Noto Serif TC', serif;
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: 0.15em;
+            white-space: nowrap;
+            transform: rotate(8deg);
+            pointer-events: none;
+        }
+
+        .tk-stamp.is-lose {
+            border-color: rgb(var(--tk-accent));
+            color: rgb(var(--tk-accent));
+        }
+
+        .tk-stamp.is-in {
+            animation: stamp-in 0.35s cubic-bezier(.2, 1.6, .4, 1);
+        }
+
+        @keyframes stamp-in {
+            from {
+                opacity: 0;
+                transform: rotate(8deg) scale(1.8);
+            }
+        }
+
+        /* 錢包的加減 */
+        .delta {
+            animation: delta 1.1s ease-out forwards;
+        }
+
+        @keyframes delta {
+            0% {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            20% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-12px);
+            }
+        }
+
+        .act-text {
+            min-height: 44px;
+            padding: 0.75rem 1.5rem;
+            border: 1px solid rgb(var(--wabi-dark));
+            color: rgb(var(--wabi-dark));
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.2em;
+            touch-action: manipulation;
+        }
+
+        .act-text.is-main {
+            background: rgb(var(--wabi-dark));
+            color: rgb(var(--wabi-bg));
+        }
+
+        .act-text:disabled {
+            opacity: 0.3;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            .tk-stamp.is-in,
+            .delta {
+                animation: none;
+            }
+        }
+    </style>
+</head>
+
+<body
+    class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- 導航 -->
+    <nav
+        class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <a href="index.html"
+            class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-3 md:gap-8">
+            <a href="index.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <a href="reviews.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <a href="jiaobei.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">擲杯・問</a>
+            <a href="about.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+        </div>
+    </nav>
+
+    <main class="shop flex-grow max-w-md mx-auto pt-24 md:pt-32 pb-16 px-6 w-full">
+
+        <!-- 標題區塊 -->
+        <div class="text-center mb-8">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">LOTTERY</span>
+            <h1 class="text-3xl font-light text-wabi-dark tracking-widest">刮刮・樂</h1>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">
+                二十七樓彩券行。刮不中，不要怪神明。
+            </p>
+        </div>
+
+        <!-- 錢包 -->
+        <section id="wallet" class="scroll-mt-20 flex items-end justify-between border-b border-stone-100 pb-4 mb-6">
+            <div>
+                <span class="block text-[10px] font-sans tracking-[0.3em] text-wabi-accent">絆幣</span>
+                <p class="relative text-wabi-dark leading-none mt-1">
+                    <span id="coins" class="text-4xl font-light font-sans">100</span>
+                    <span id="delta" class="absolute left-full ml-2 bottom-1 text-sm font-sans opacity-0"></span>
+                </p>
+            </div>
+            <div class="text-right">
+                <button id="bagBtn" type="button"
+                    class="min-h-[44px] px-3 border border-stone-300 text-xs font-sans tracking-widest text-wabi-dark">獎品袋 <span
+                        id="bagCount" class="text-wabi-shu"></span></button>
+                <p id="stats" class="mt-1 text-[10px] font-sans tracking-wider text-stone-400"></p>
+            </div>
+        </section>
+
+        <!-- 架上 -->
+        <section id="shelf">
+            <div id="covers" class="flex flex-col gap-3"></div>
+            <div id="broke" class="hidden mt-8 text-center">
+                <p class="text-sm text-wabi-dark tracking-widest">絆幣花光了。</p>
+                <p class="mt-1 text-xs text-stone-500 font-sans tracking-widest">老闆在櫃檯後面看著你。</p>
+                <button id="loanBtn" type="button" class="act-text is-main mt-4">跟老闆借 50</button>
+            </div>
+        </section>
+
+        <!-- 刮 -->
+        <section id="play" class="hidden">
+            <div id="ticketHost"></div>
+            <p id="playHint" class="mt-5 min-h-[2.6rem] text-xs text-center text-stone-500 font-sans tracking-widest leading-relaxed"></p>
+            <div id="playActions" class="mt-2 flex flex-wrap items-center justify-center gap-3"></div>
+        </section>
+
+        <!-- 獎品袋 -->
+        <section id="bag" class="hidden">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg text-wabi-dark tracking-[0.3em]">獎品袋</h2>
+                <button id="bagBack" type="button" class="act-text">回彩券行</button>
+            </div>
+            <ul id="bagList" class="border-t border-stone-100"></ul>
+            <div id="couponView" class="hidden mt-6 text-center">
+                <img id="couponImg" alt="兌換券" class="w-full border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]">
+                <button id="couponShare" type="button"
+                    class="mt-4 w-full bg-wabi-dark text-wabi-bg py-4 px-8 tracking-[0.2em] font-sans text-xs shadow-lg">分享兌換券</button>
+            </div>
+        </section>
+
+        <p class="mt-12 text-[11px] font-sans tracking-widest text-stone-400 leading-relaxed text-center">
+            絆幣只在這支手機上，不能換錢，也不能拿來付房錢。<br>
+            兌換券請拿給老闆看，兌不兌看老闆心情。
+        </p>
+    </main>
+
+    <footer
+        class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
+        <p>&copy; 2026 DONGBULI · 純粹棲所</p>
+    </footer>
+
+    <script>
+        // ===== 0. 小工具 =====
+        const $ = id => document.getElementById(id);
+        const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const pick = list => list[Math.floor(Math.random() * list.length)];
+        const shuffle = list => { for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; } return list; };
+        const today = () => { const d = new Date(); return `${d.getFullYear()}・${d.getMonth() + 1}・${d.getDate()}`; };
+        const pad = n => String(n).padStart(4, '0');
+
+        // ===== 1. 獎品 =====
+        // 兌換券：中了會放進獎品袋，可以出示、分享。bad 是大凶附贈的「負獎」
+        const COUPONS = {
+            stay: { name: '免費續住一晚', desc: '憑本券可多住一晚（要先問老闆有沒有空房）' },
+            pudding: { name: '布丁一個', desc: '憑本券可向冰箱兌換布丁一個（被吃掉不負責）' },
+            bed: { name: '優先選床', desc: '憑本券下次入住可以第一個選床' },
+            dish: { name: '免洗碗一次', desc: '憑本券可以指定別人幫你洗一次碗' },
+            dishdo: { name: '洗碗一次（你洗）', desc: '大凶的代價：下次入住的碗你洗', bad: true },
+        };
+
+        // 三連絆：同一個字出現三次就中。p 是機率
+        const SANLIAN = [
+            { s: '絆', p: 0.004, coins: 500, coupon: 'stay', label: '續住一晚＋500' },
+            { s: '布丁', p: 0.02, coins: 50, coupon: 'pudding', label: '布丁＋50' },
+            { s: '籤', p: 0.025, coins: 100, label: '100' },
+            { s: '杯', p: 0.05, coins: 50, label: '50' },
+            { s: '泡', p: 0.1, coins: 15, label: '15' },
+            { s: '枕', p: 0.12, coins: 10, label: '10' },
+        ];
+
+        // 電梯樂：你的樓層對上下面任一格就中那格；刮到 27F 直接中、獎金加倍、送優先選床
+        const ELEVATOR = [
+            { p: 0.015, f27: true },
+            { p: 0.025, coins: 200 },
+            { p: 0.05, coins: 100 },
+            { p: 0.06, coins: 60 },
+            { p: 0.1, coins: 40 },
+            { p: 0.15, coins: 20 },
+        ];
+        const FLOOR_DECOR = [10, 20, 40, 60, 100, 200, 500];
+        const FLOORS = Array.from({ length: 30 }, (_, i) => i + 1).filter(f => f % 10 !== 4 && f !== 27); // 不停 4 樓
+
+        // 御神籤：一大格，刮開看運勢
+        const OMIKUJI = [
+            { k: '大吉', p: 0.03, coins: 300, coupon: 'dish', lines: ['電梯一按就到，布丁還在冰箱。', '今天做什麼都會被原諒。'] },
+            { k: '中吉', p: 0.1, coins: 120, lines: ['擲杯會一次就聖杯。', '有人會幫你把碗洗好。'] },
+            { k: '小吉', p: 0.2, coins: 60, lines: ['洗頭的時候泡泡不會跑進眼睛。', '分帳的時候零頭會被抹掉。'] },
+            { k: '吉', p: 0.15, coins: 50, lines: ['平平順順，像二十七樓的風。', '今天適合早點睡。'] },
+            { k: '末吉', p: 0.2, coins: 20, lines: ['好事會來，只是搭的是慢的那台電梯。', '晚一點會更好，晚多少不知道。'] },
+            { k: '凶', p: 0.2, coins: 0, lines: ['今天少說話，多喝水。', '群組訊息先不要回。'] },
+            { k: '大凶', p: 0.12, coins: 0, coupon: 'dishdo', lines: ['冰箱裡的布丁是別人的。', '你會是最後一個起床的人。'] },
+        ];
+
+        function roll(table) {
+            let r = Math.random();
+            for (const t of table) { if (r < t.p) return t; r -= t.p; }
+            return null;
+        }
+
+        // ===== 2. 三種彩券：怎麼開獎、長什麼樣子 =====
+        const TICKETS = {
+            sanlian: {
+                name: '三連絆', price: 10, metal: 'silver', desc: '刮開九格，同一個字出現三次就中', top: '頭獎　免費續住一晚',
+                gen() {
+                    const win = roll(SANLIAN);
+                    const syms = SANLIAN.map(t => t.s), count = {}, cells = [];
+                    const add = s => { cells.push(s); count[s] = (count[s] || 0) + 1; };
+                    if (win) for (let i = 0; i < 3; i++) add(win.s);
+                    // 常常讓「絆」出現兩次，差一個最刺激
+                    if (!win || win.s !== '絆') { if (Math.random() < 0.35) { add('絆'); add('絆'); } }
+                    while (cells.length < 9) {
+                        const s = pick(syms);
+                        if (win && s === win.s) continue;
+                        if ((count[s] || 0) >= 2) continue;
+                        add(s);
+                    }
+                    shuffle(cells);
+                    return {
+                        cells,
+                        winSym: win ? win.s : null,
+                        prize: win ? { coins: win.coins, coupon: win.coupon || null } : { coins: 0, coupon: null },
+                        tease: !win && count['絆'] === 2,
+                    };
+                },
+                html(t) {
+                    return `
+                    <div class="ticket">
+                        <div class="tk-top"><span>No. ${pad(t.serial)}</span><span>10 絆幣</span></div>
+                        <h3 class="tk-title">三連絆</h3>
+                        <p class="tk-rule">刮開九格，同一個字出現三次就中</p>
+                        <div class="zone tk-grid" data-zone>
+                            ${t.cells.map(s => `<div class="tk-cell" data-cell data-sym="${s}"><span class="tk-sym ${s.length > 1 ? 'is-long' : ''}">${s}</span></div>`).join('')}
+                        </div>
+                        <dl class="tk-table">${SANLIAN.map(x => `<div><dt>${x.s}</dt><dd>${x.label}</dd></div>`).join('')}</dl>
+                        <p class="tk-foot">丼步喱・二十七樓彩券行　刮壞不換</p>
+                        <div class="tk-stamp hidden"></div>
+                    </div>`;
+                },
+                highlight(t, host) {
+                    if (t.winSym) host.querySelectorAll(`[data-sym="${t.winSym}"]`).forEach(el => el.classList.add('is-win'));
+                },
+            },
+
+            elevator: {
+                name: '電梯樂', price: 20, metal: 'bronze', desc: '你的樓層對上就中，刮到 27F 加倍', top: '頭獎　優先選床＋100',
+                gen() {
+                    const win = roll(ELEVATOR);
+                    const low = FLOORS.filter(f => f <= 26);
+                    const yours = shuffle(low.slice()).slice(0, 2);
+                    const pool = FLOORS.filter(f => !yours.includes(f));
+                    const cells = shuffle(pool.slice()).slice(0, 6).map(f => ({ floor: f, coins: pick(FLOOR_DECOR) }));
+                    let idx = -1, prize = { coins: 0, coupon: null };
+                    if (win) {
+                        idx = Math.floor(Math.random() * 6);
+                        if (win.f27) {
+                            cells[idx] = { floor: 27, coins: 50 };
+                            prize = { coins: 100, coupon: 'bed' };
+                        } else {
+                            cells[idx] = { floor: pick(yours), coins: win.coins };
+                            prize = { coins: win.coins, coupon: null };
+                        }
+                    }
+                    return { yours, cells, idx, prize };
+                },
+                html(t) {
+                    return `
+                    <div class="ticket">
+                        <div class="tk-top"><span>No. ${pad(t.serial)}</span><span>20 絆幣</span></div>
+                        <h3 class="tk-title">電梯樂</h3>
+                        <p class="tk-rule">你的樓層跟下面任一格一樣，就中那格的獎金<br>刮到 27F 直接中，獎金加倍</p>
+                        <p class="tk-label">你的樓層</p>
+                        <div class="zone tk-yours" data-zone>
+                            ${t.yours.map(f => `<div class="tk-cell" data-cell data-floor="${f}"><span class="tk-floor">${f}F</span></div>`).join('')}
+                        </div>
+                        <p class="tk-label">電梯停在</p>
+                        <div class="zone tk-floors" data-zone>
+                            ${t.cells.map((c, i) => `<div class="tk-cell" data-cell data-i="${i}"><span class="tk-floor">${c.floor}F</span><span class="tk-amt">${c.coins} 幣</span></div>`).join('')}
+                        </div>
+                        <p class="tk-foot">丼步喱・二十七樓彩券行　本電梯不停 4 樓</p>
+                        <div class="tk-stamp hidden"></div>
+                    </div>`;
+                },
+                highlight(t, host) {
+                    if (t.idx < 0) return;
+                    host.querySelector(`[data-i="${t.idx}"]`).classList.add('is-win');
+                    const f = t.cells[t.idx].floor;
+                    host.querySelector(`[data-floor="${f}"]`)?.classList.add('is-win');
+                },
+            },
+
+            omikuji: {
+                name: '御神籤', price: 50, metal: 'gold', desc: '一大格，刮開看今天的運勢', top: '頭獎　300 絆幣＋免洗碗券',
+                gen() {
+                    const r = roll(OMIKUJI) || OMIKUJI[OMIKUJI.length - 1];
+                    return { k: r.k, line: pick(r.lines), prize: { coins: r.coins, coupon: r.coupon || null } };
+                },
+                html(t) {
+                    const c = t.prize.coupon ? COUPONS[t.prize.coupon] : null;
+                    const prizeText = t.prize.coins ? `${t.prize.coins} 絆幣${c ? '＋' + c.name + '券' : ''}` : (c ? `附贈：${c.name}` : '沒有獎金');
+                    return `
+                    <div class="ticket tk-omi">
+                        <div class="tk-top"><span>No. ${pad(t.serial)}</span><span>50 絆幣</span></div>
+                        <h3 class="tk-title">御神籤</h3>
+                        <p class="tk-rule">刮開看今天的運勢</p>
+                        <div class="zone tk-omi-zone" data-zone>
+                            <div class="tk-cell tk-omi-in" data-cell>
+                                <span class="tk-kichi ${t.k.includes('凶') ? 'is-kyo' : ''}">${t.k}</span>
+                                <p class="tk-poem">${t.line}</p>
+                                <p class="tk-omi-prize">${prizeText}</p>
+                            </div>
+                        </div>
+                        <p class="tk-foot">丼步喱・二十七樓彩券行　神明不負責兌獎</p>
+                        <div class="tk-stamp hidden"></div>
+                    </div>`;
+                },
+                highlight() { },
+            },
+        };
+
+        // ===== 3. 存檔：絆幣、獎品都只在這支手機 =====
+        const KEY = 'dongbuli-scratch';
+        let S = { coins: 100, loans: 0, bought: 0, won: 0, serial: 270, coupons: [], current: null };
+        try { Object.assign(S, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) { }
+        function save() {
+            try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { }
+        }
+
+        // ===== 4. 聲音：Web Audio 合成 =====
+        let audioCtx = null;
+
+        function unlockAudio() {
+            try {
+                audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+            } catch (e) { }
+        }
+
+        function noise(dur, type, freq, q, vol) {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            try {
+                const length = Math.floor(audioCtx.sampleRate * dur);
+                const buffer = audioCtx.createBuffer(1, length, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
+                const src = audioCtx.createBufferSource();
+                src.buffer = buffer;
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = type;
+                filter.frequency.value = freq;
+                filter.Q.value = q;
+                const gain = audioCtx.createGain();
+                gain.gain.value = vol;
+                src.connect(filter).connect(gain).connect(audioCtx.destination);
+                src.start();
+            } catch (e) { }
+        }
+
+        function tone(freq, dur, vol, to = freq, type = 'sine', delay = 0) {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            try {
+                const t = audioCtx.currentTime + delay;
+                const osc = audioCtx.createOscillator();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, t);
+                osc.frequency.exponentialRampToValueAtTime(to, t + dur);
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.0001, t);
+                gain.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+                osc.connect(gain).connect(audioCtx.destination);
+                osc.start(t);
+                osc.stop(t + dur + 0.02);
+            } catch (e) { }
+        }
+
+        const sfx = {
+            scratch: () => noise(0.05, 'highpass', 3200 + Math.random() * 1200, 0.8, 0.09),
+            open: () => tone(1300 + Math.random() * 300, 0.08, 0.05, 1900, 'triangle'),
+            coin: () => { tone(1800, 0.08, 0.08, 2400, 'triangle'); tone(2400, 0.12, 0.06, 2600, 'triangle', 0.07); },
+            win: () => [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.25, 0.09, f, 'triangle', i * 0.09)),
+            lose: () => tone(330, 0.4, 0.1, 160),
+            stamp: () => { tone(90, 0.22, 0.5, 45); noise(0.08, 'lowpass', 300, 0.7, 0.4); },
+        };
+
+        // ===== 5. 金屬箔：用手指刮 =====
+        const METALS = {
+            silver: ['#aaa69f', '#ebe9e4', '#c8c4bd', '#9a968d'],
+            bronze: ['#9a6b47', '#e0b993', '#b98b63', '#845a3a'],
+            gold: ['#a8843a', '#f2dc9c', '#cfae5f', '#93722c'],
+        };
+
+        function paintFoil(c, w, h, metal, cells) {
+            const m = METALS[metal];
+            const g = c.createLinearGradient(0, 0, w, h);
+            g.addColorStop(0, m[0]);
+            g.addColorStop(0.42, m[1]);
+            g.addColorStop(0.58, m[2]);
+            g.addColorStop(1, m[3]);
+            c.fillStyle = g;
+            c.fillRect(0, 0, w, h);
+            // 金屬顆粒
+            for (let i = 0; i < w * h / 28; i++) {
+                c.fillStyle = Math.random() < 0.5 ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.07)';
+                c.fillRect(Math.random() * w, Math.random() * h, 1, 1);
+            }
+            // 一排一排淡淡的「刮」
+            c.save();
+            c.globalAlpha = 0.16;
+            c.fillStyle = '#ffffff';
+            c.font = '600 13px "Noto Serif TC", serif';
+            c.textAlign = 'center';
+            c.textBaseline = 'middle';
+            for (let y = 6, row = 0; y < h + 10; y += 24, row++) {
+                for (let x = (row % 2) * 17 + 4; x < w + 10; x += 34) c.fillText('刮', x, y);
+            }
+            c.restore();
+            if (cells.length > 1) {
+                // 看得出格子在哪
+                cells.forEach(k => {
+                    c.strokeStyle = 'rgba(255,255,255,0.5)';
+                    c.lineWidth = 1;
+                    c.strokeRect(k.x + 0.5, k.y + 0.5, k.w - 1, k.h - 1);
+                    c.strokeStyle = 'rgba(0,0,0,0.12)';
+                    c.strokeRect(k.x + 1.5, k.y + 1.5, k.w - 3, k.h - 3);
+                });
+            } else {
+                c.fillStyle = 'rgba(70, 50, 30, 0.5)';
+                c.font = '500 13px "Noto Sans TC", sans-serif';
+                c.textAlign = 'center';
+                c.textBaseline = 'middle';
+                c.fillText('刮　開　看　運　勢', w / 2, h / 2);
+            }
+        }
+
+        // 一塊箔：底下有幾格（data-cell），每格刮掉一半就自動整格打開
+        function makeFoil(zone, metal, onCell, onDone) {
+            const zr = zone.getBoundingClientRect();
+            const w = zr.width, h = zr.height;
+            const cv = document.createElement('canvas');
+            cv.className = 'foil';
+            cv.width = Math.round(w * dpr);
+            cv.height = Math.round(h * dpr);
+            zone.appendChild(cv);
+            const c = cv.getContext('2d', { willReadFrequently: true });
+            c.setTransform(dpr, 0, 0, dpr, 0, 0);
+            const cells = [...zone.querySelectorAll('[data-cell]')].map(el => {
+                const b = el.getBoundingClientRect();
+                return { el, x: b.left - zr.left, y: b.top - zr.top, w: b.width, h: b.height, open: false };
+            });
+            const threshold = cells.length > 1 ? 0.5 : 0.55;
+            paintFoil(c, w, h, metal, cells);
+
+            let pid = null, last = null, lastCheck = 0, lastSound = 0, done = false;
+            const pt = e => {
+                const r = cv.getBoundingClientRect();
+                return { x: (e.clientX - r.left) * w / r.width, y: (e.clientY - r.top) * h / r.height };
+            };
+
+            function line(a, b) {
+                c.save();
+                c.globalCompositeOperation = 'destination-out';
+                c.strokeStyle = '#000';  // 要不透明才擦得乾淨（畫格線時留下的是半透明）
+                c.lineWidth = 28;
+                c.lineCap = 'round';
+                c.lineJoin = 'round';
+                c.beginPath();
+                c.moveTo(a.x, a.y);
+                c.lineTo(b.x + 0.01, b.y);
+                c.stroke();
+                c.restore();
+            }
+
+            function check() {
+                cells.forEach(cell => {
+                    if (cell.open) return;
+                    const x = Math.round(cell.x * dpr), y = Math.round(cell.y * dpr);
+                    const cw = Math.max(1, Math.round(cell.w * dpr)), ch = Math.max(1, Math.round(cell.h * dpr));
+                    const d = c.getImageData(x, y, cw, ch).data;
+                    let clear = 0, total = 0;
+                    for (let i = 3; i < d.length; i += 4 * 5) { total++; if (d[i] < 128) clear++; }
+                    if (clear / total >= threshold) open(cell);
+                });
+            }
+
+            function open(cell) {
+                if (cell.open) return;
+                cell.open = true;
+                c.clearRect(cell.x - 1, cell.y - 1, cell.w + 2, cell.h + 2);
+                sfx.open();
+                onCell(cell);
+                if (!done && cells.every(k => k.open)) {
+                    done = true;
+                    cv.classList.add('is-done');
+                    onDone();
+                }
+            }
+
+            cv.addEventListener('pointerdown', e => {
+                unlockAudio();
+                if (pid !== null || done) return;
+                pid = e.pointerId;
+                try { cv.setPointerCapture(e.pointerId); } catch (err) { }
+                last = pt(e);
+                line(last, last);
+            });
+            cv.addEventListener('pointermove', e => {
+                if (e.pointerId !== pid) return;
+                const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+                (evs.length ? evs : [e]).forEach(ev => { const p = pt(ev); line(last, p); last = p; });
+                const now = performance.now();
+                if (now - lastSound > 70) { sfx.scratch(); lastSound = now; }
+                if (now - lastCheck > 120) { check(); lastCheck = now; }
+            });
+            const lift = e => {
+                if (e.pointerId !== pid) return;
+                pid = null;
+                check();
+            };
+            cv.addEventListener('pointerup', lift);
+            cv.addEventListener('pointercancel', lift);
+            cv.addEventListener('contextmenu', e => e.preventDefault());
+
+            return {
+                // 一次刮開：一格一格打開
+                revealAll(step, start = 0) {
+                    const rest = cells.filter(k => !k.open);
+                    rest.forEach((k, i) => setTimeout(() => open(k), start + i * step));
+                    return rest.length;
+                },
+                get done() { return done; },
+            };
+        }
+
+        // ===== 6. 畫面 =====
+        let shownCoins = S.coins;
+        let foils = [];
+
+        function show(view) {
+            ['shelf', 'play', 'bag'].forEach(v => $(v).classList.toggle('hidden', v !== view));
+        }
+
+        function renderWallet() {
+            $('stats').textContent = `買了 ${S.bought} 張・中了 ${S.won} 張` + (S.loans ? `・借了 ${S.loans} 次` : '');
+            const n = S.coupons.filter(c => !c.used).length;
+            $('bagCount').textContent = n ? n : '';
+        }
+
+        function setCoins(to, delta) {
+            S.coins = to;
+            save();
+            if (delta) {
+                const el = $('delta');
+                el.textContent = (delta > 0 ? '+' : '') + delta;
+                el.style.color = delta > 0 ? 'rgb(var(--wabi-shu))' : 'rgb(var(--wabi-accent))';
+                el.classList.remove('delta');
+                void el.offsetWidth;
+                el.classList.add('delta');
+            }
+            if (reduceMotion) { shownCoins = to; $('coins').textContent = to; return; }
+            const from = shownCoins, t0 = performance.now();
+            const step = now => {
+                const k = Math.min(1, (now - t0) / 500);
+                shownCoins = Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3)));
+                $('coins').textContent = shownCoins;
+                if (k < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        }
+
+        function renderShelf() {
+            $('covers').innerHTML = Object.entries(TICKETS).map(([key, t]) => {
+                const m = METALS[t.metal];
+                const poor = S.coins < t.price;
+                return `
+                <button type="button" class="t-cover" data-type="${key}" ${poor ? 'disabled' : ''}>
+                    <span class="t-band" style="background:linear-gradient(160deg, ${m[0]}, ${m[1]} 45%, ${m[2]} 60%, ${m[3]})"></span>
+                    <span class="t-body">
+                        <span class="t-name">${t.name}</span>
+                        <span class="t-desc">${t.desc}</span>
+                        <span class="t-top">${t.top}</span>
+                    </span>
+                    <span class="t-price"><b>${t.price}</b>${poor ? '不夠' : '絆幣'}</span>
+                </button>`;
+            }).join('');
+            const cheapest = Math.min(...Object.values(TICKETS).map(t => t.price));
+            $('broke').classList.toggle('hidden', S.coins >= cheapest);
+            renderWallet();
+        }
+
+        $('covers').addEventListener('click', e => {
+            const btn = e.target.closest('.t-cover');
+            if (!btn || btn.disabled) return;
+            unlockAudio();
+            buy(btn.dataset.type);
+        });
+
+        $('loanBtn').addEventListener('click', () => {
+            unlockAudio();
+            S.loans++;
+            setCoins(S.coins + 50, 50);
+            sfx.coin();
+            showToast(pick(['老闆說：記帳。', '老闆嘆了一口氣。', '老闆說這是最後一次。', '老闆把你寫進缺德榜的候補名單。']));
+            renderShelf();
+        });
+
+        // ===== 7. 買、刮、開獎 =====
+        function buy(type) {
+            const t = TICKETS[type];
+            if (S.coins < t.price) return;
+            S.bought++;
+            S.serial++;
+            S.current = { type, serial: S.serial, applied: false, ...t.gen() };
+            setCoins(S.coins - t.price, -t.price);
+            sfx.coin();
+            openTicket();
+        }
+
+        function playActions(list) {
+            const box = $('playActions');
+            box.innerHTML = '';
+            list.forEach(item => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'act-text' + (item.main ? ' is-main' : '');
+                btn.textContent = item.label;
+                if (item.disabled) btn.disabled = true;
+                btn.addEventListener('click', () => { unlockAudio(); item.onClick(btn); });
+                box.appendChild(btn);
+            });
+        }
+
+        function openTicket() {
+            const cur = S.current, t = TICKETS[cur.type];
+            show('play');
+            const host = $('ticketHost');
+            host.innerHTML = t.html(cur);
+            $('playHint').textContent = '用手指刮開金屬箔，刮掉一半那格就會整格打開';
+            playActions([{
+                label: '一次刮開', onClick: btn => {
+                    btn.disabled = true;
+                    let start = 0;
+                    foils.forEach(f => { start += f.revealAll(110, start) * 110; });
+                },
+            }]);
+            // 捲到錢包：錢包和整張彩券都看得到（導覽列不會蓋住彩券上面的印章）
+            $('wallet').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+            // 等版面排好才量得到每格的位置
+            requestAnimationFrame(() => {
+                foils = [...host.querySelectorAll('[data-zone]')].map(zone =>
+                    makeFoil(zone, t.metal, () => { }, () => { if (foils.every(f => f.done)) finishTicket(); })
+                );
+            });
+        }
+
+        function finishTicket() {
+            const cur = S.current;
+            if (!cur || cur.applied) return;
+            const t = TICKETS[cur.type], host = $('ticketHost');
+            const { coins, coupon } = cur.prize;
+            const cp = coupon ? COUPONS[coupon] : null;
+            const good = coins > 0 || (cp && !cp.bad);
+
+            // 先記帳，再演
+            cur.applied = true;
+            if (good) S.won++;
+            if (cp) S.coupons.unshift({ id: Date.now(), key: coupon, date: today(), serial: cur.serial, ticket: t.name, used: false });
+            save();
+
+            setTimeout(() => {
+                t.highlight(cur, host);
+                const stamp = host.querySelector('.tk-stamp');
+                stamp.textContent = good ? (coins ? `中 ＋${coins}` : '中') : '銘謝惠顧';
+                stamp.classList.toggle('is-lose', !good);
+                stamp.classList.remove('hidden');
+                stamp.classList.add('is-in');
+                sfx.stamp();
+                if (good) { setTimeout(sfx.win, 150); }
+                else setTimeout(sfx.lose, 150);
+                if (coins) setCoins(S.coins + coins, coins);
+
+                let msg;
+                if (cp && !cp.bad) msg = `中了！${cp.name}＋${coins} 絆幣，兌換券放進獎品袋了`;
+                else if (coins) msg = `中了 ${coins} 絆幣`;
+                else if (cp && cp.bad) msg = `大凶另外附贈一張「${cp.name}」，已經放進獎品袋了`;
+                else if (cur.tease) msg = '差一個絆。';
+                else msg = pick(['銘謝惠顧，下次再絆。', '差一點。（其實差很多）', '神明說下一張。', '這張可以拿去墊杯子。']);
+                $('playHint').textContent = msg;
+                renderWallet();
+
+                const price = t.price;
+                playActions([
+                    { label: S.coins >= price ? `再買一張・${price}` : '絆幣不夠了', main: true, disabled: S.coins < price, onClick: () => buy(cur.type) },
+                    { label: '回彩券行', onClick: backToShelf },
+                ]);
+            }, 350);
+        }
+
+        function backToShelf() {
+            S.current = null;
+            save();
+            renderShelf();
+            show('shelf');
+        }
+
+        // ===== 8. 獎品袋、兌換券 =====
+        let couponFile = null;
+
+        function renderBag() {
+            const list = $('bagList');
+            if (!S.coupons.length) {
+                list.innerHTML = '<li class="py-10 text-center text-xs text-stone-400 font-sans tracking-widest">獎品袋是空的。刮中的兌換券會放在這裡。</li>';
+                return;
+            }
+            list.innerHTML = S.coupons.map(c => {
+                const cp = COUPONS[c.key];
+                return `
+                <li class="py-4 flex items-center justify-between gap-3 border-b border-stone-100">
+                    <div class="min-w-0">
+                        <p class="text-sm tracking-widest ${c.used ? 'text-stone-400 line-through' : 'text-wabi-dark'}">${cp.name}</p>
+                        <p class="text-[10px] font-sans tracking-wider text-stone-400">${c.date}・${c.ticket} No. ${pad(c.serial)}</p>
+                    </div>
+                    <div class="flex gap-2 shrink-0">
+                        <button type="button" class="act-text !px-3" data-show="${c.id}">出示</button>
+                        <button type="button" class="act-text !px-3" data-used="${c.id}">${c.used ? '還原' : '兌了'}</button>
+                    </div>
+                </li>`;
+            }).join('');
+        }
+
+        $('bagList').addEventListener('click', async e => {
+            const s = e.target.closest('[data-show]'), u = e.target.closest('[data-used]');
+            if (u) {
+                const c = S.coupons.find(x => String(x.id) === u.dataset.used);
+                c.used = !c.used;
+                save();
+                renderBag();
+                renderWallet();
+                $('couponView').classList.add('hidden');
+            }
+            if (s) {
+                const c = S.coupons.find(x => String(x.id) === s.dataset.show);
+                const blob = await makeCoupon(c);
+                couponFile = new File([blob], 'dongbuli-coupon.png', { type: 'image/png' });
+                $('couponImg').src = URL.createObjectURL(blob);
+                const canShare = navigator.canShare && navigator.canShare({ files: [couponFile] });
+                $('couponShare').textContent = canShare ? '分享兌換券' : '下載兌換券';
+                $('couponView').classList.remove('hidden');
+                $('couponView').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+            }
+        });
+
+        $('bagBtn').addEventListener('click', () => {
+            if (!$('play').classList.contains('hidden') && S.current && !S.current.applied) {
+                showToast('先把這張刮完');
+                return;
+            }
+            if (S.current && S.current.applied) { S.current = null; save(); }
+            renderBag();
+            $('couponView').classList.add('hidden');
+            show('bag');
+        });
+        $('bagBack').addEventListener('click', () => { renderShelf(); show('shelf'); });
+
+        $('couponShare').addEventListener('click', async () => {
+            if (!couponFile) return;
+            if (navigator.canShare && navigator.canShare({ files: [couponFile] })) {
+                try { await navigator.share({ files: [couponFile], title: '丼步喱・絆 兌換券' }); } catch (e) { }
+                return;
+            }
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(couponFile);
+            link.download = couponFile.name;
+            link.click();
+        });
+
+        // 兌換券圖片：紙本，固定白天的顏色
+        async function makeCoupon(c) {
+            const cp = COUPONS[c.key];
+            const SERIF = '"Noto Serif TC", serif', SANS = '"Noto Sans TC", sans-serif';
+            const allText = cp.name + cp.desc + '兌換券二十七樓彩券行已兌換罰No.・0123456789' + c.ticket;
+            try {
+                await Promise.race([
+                    Promise.all([document.fonts.load(`600 40px ${SERIF}`, allText), document.fonts.load(`400 40px ${SANS}`, allText)]),
+                    new Promise(r => setTimeout(r, 2500)),
+                ]);
+            } catch (e) { }
+
+            const cv = document.createElement('canvas');
+            cv.width = 1080;
+            cv.height = 680;
+            const x = cv.getContext('2d');
+            const text = (s, px, py, font, color, align = 'center') => { x.font = font; x.fillStyle = color; x.textAlign = align; x.fillText(s, px, py); };
+
+            x.fillStyle = '#fcfaf8';
+            x.fillRect(0, 0, cv.width, cv.height);
+            x.strokeStyle = '#8e8070';
+            x.lineWidth = 2;
+            x.strokeRect(36, 36, 1008, 608);
+            x.setLineDash([8, 8]);
+            x.lineWidth = 1;
+            x.strokeRect(52, 52, 976, 576);
+            x.setLineDash([]);
+            // 左邊撕線
+            x.strokeStyle = '#dcdcdc';
+            x.setLineDash([4, 10]);
+            x.beginPath(); x.moveTo(250, 52); x.lineTo(250, 628); x.stroke();
+            x.setLineDash([]);
+
+            x.textBaseline = 'middle';
+            // 左邊存根
+            x.save();
+            x.translate(150, 340);
+            text(cp.bad ? '罰' : '兌', 0, -40, `700 110px ${SERIF}`, '#b33a2f');
+            text(`No. ${pad(c.serial)}`, 0, 90, `400 22px ${SANS}`, '#8e8070');
+            x.restore();
+
+            text('D O N G B U L I ・ 二 十 七 樓 彩 券 行', 640, 120, `400 24px ${SANS}`, '#8e8070');
+            text(cp.bad ? '罰 單' : '兌 換 券', 640, 200, `600 44px ${SERIF}`, '#2c2c2c');
+            x.fillStyle = '#8e8070';
+            x.fillRect(600, 240, 80, 2);
+            text(cp.name, 640, 330, `600 68px ${SERIF}`, cp.bad ? '#2c2c2c' : '#b33a2f');
+            text(cp.desc, 640, 420, `400 28px ${SERIF}`, '#4a4a4a');
+            text(`${c.date}　${cp.bad ? '刮到' : '刮中'}於「${c.ticket}」`, 640, 540, `400 22px ${SANS}`, '#8e8070');
+
+            if (c.used) {
+                x.save();
+                x.translate(860, 330);
+                x.rotate(-0.25);
+                x.globalAlpha = 0.85;
+                x.strokeStyle = '#8e8070';
+                x.lineWidth = 6;
+                x.strokeRect(-130, -50, 260, 100);
+                text('已兌換', 0, 4, `700 56px ${SERIF}`, '#8e8070');
+                x.restore();
+            }
+            return new Promise((resolve, reject) => cv.toBlob(b => b ? resolve(b) : reject(), 'image/png'));
+        }
+
+        // ===== 9. 開店 =====
+        $('coins').textContent = S.coins;
+        if (S.current && !S.current.applied) {
+            // 上次買了沒刮完：接著刮（重新蓋上箔，結果不變）
+            renderWallet();
+            openTicket();
+        } else {
+            S.current = null;
+            save();
+            renderShelf();
+        }
+    </script>
+</body>
+
+</html>
