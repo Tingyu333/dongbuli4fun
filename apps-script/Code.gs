@@ -5,6 +5,8 @@
 //               J=email（選填）, K=confirm_mailed（確認信寄出的時間，寄過就不再寄）
 // Tickets  欄位: A=timestamp, B=booking_id, C=seat, D=name, E=email（選填）（入住券：誰領了第幾張，第 1 張是訂房的人）
 // Reviews  欄位: A=timestamp, B=name, C=rating, D=message
+// Bonuses  欄位: A=timestamp, B=code, C=amount, D=note, E=max, F=status（主人從後台發的紅包：小遊戲的錢，不是真的錢）
+// BonusClaims 欄位: A=timestamp, B=code, C=device（哪支手機領了哪一包；device 是手機自己產生的亂數，不是個資）
 //
 // status: pending（待確認）/ confirmed（已確認）/ cancelled（已取消）。舊資料沒填的當作 confirmed。
 //
@@ -31,6 +33,9 @@ var REVIEWS_PER_HOUR = 30;   // 全站每小時最多幾則新留言
 var REVIEW_MAX_LENGTH = 300; // 一則留言最多幾個字
 var LOGIN_FAILS_LIMIT = 10;  // 十分鐘內登入失敗幾次就先鎖起來
 var ADMIN_TOKEN_SECONDS = 6 * 60 * 60;
+var BONUS_MAX_AMOUNT = 20000000; // 一包紅包每人最多發多少（小遊戲的錢，不是真的錢）
+var BONUS_MAX_CLAIMS = 100;      // 一包最多幾個人領
+var BONUS_TRIES_PER_HOUR = 120;  // 全站每小時最多試幾次紅包碼，擋亂猜
 
 // doPost 用於接收資料：訂房、留言、後台改狀態
 function doPost(e) {
@@ -48,11 +53,15 @@ function doPost(e) {
     if (type === 'claim') return json(claimTicket(input));
     if (type === 'unclaim') return json(unclaimTicket(input));
     if (type === 'adminLogin') return json(adminLogin(input));
+    if (type === 'bonusClaim') return json(bonusClaim(input));
 
     // 以下只有後台能用，要帶登入拿到的通行證
-    if (type === 'updateStatus' || type === 'adminList') {
+    if (type === 'updateStatus' || type === 'adminList' || type === 'bonusCreate' || type === 'bonusList' || type === 'bonusClose') {
       if (!isAdmin(input.token)) return json({ result: 'unauthorized' });
       if (type === 'updateStatus') return json(updateStatus(input));
+      if (type === 'bonusCreate') return json(bonusCreate(input));
+      if (type === 'bonusList') return json(bonusList());
+      if (type === 'bonusClose') return json(bonusClose(input));
       return json(adminList());
     }
     return json({ result: 'error', error: '不認得的請求' });
@@ -611,6 +620,131 @@ function readReviews() {
     });
   }
   return data.reverse();
+}
+
+// --- 紅包：主人從後台發小遊戲的錢，旅人用紅包碼領進自己手機的錢包 ---
+// Bonuses：A timestamp、B code、C amount（每人）、D note、E max（幾份）、F status（open／closed）
+// BonusClaims：A timestamp、B code、C device（手機自己產生的亂數代號，不是個資）
+
+function bonusSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Bonuses');
+  if (!sheet) {
+    sheet = ss.insertSheet('Bonuses');
+    sheet.appendRow(['timestamp', 'code', 'amount', 'note', 'max', 'status']);
+  }
+  return sheet;
+}
+
+function bonusClaimsSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('BonusClaims');
+  if (!sheet) {
+    sheet = ss.insertSheet('BonusClaims');
+    sheet.appendRow(['timestamp', 'code', 'device']);
+  }
+  return sheet;
+}
+
+function readBonuses() {
+  var rows = bonusSheet().getDataRange().getValues();
+  var data = [];
+  for (var i = 1; i < rows.length; i++) {
+    if (!rows[i][1]) continue;
+    var time = rows[i][0];
+    data.push({
+      row: i + 1,
+      timestamp: Object.prototype.toString.call(time) === '[object Date]' ? time.toISOString() : time,
+      code: String(rows[i][1]), amount: Number(rows[i][2]) || 0, note: String(rows[i][3] || ''),
+      max: Number(rows[i][4]) || 1, status: rows[i][5] === 'closed' ? 'closed' : 'open'
+    });
+  }
+  return data;
+}
+
+function readBonusClaims() {
+  var rows = bonusClaimsSheet().getDataRange().getValues();
+  var data = [];
+  for (var i = 1; i < rows.length; i++) {
+    if (rows[i][1]) data.push({ code: String(rows[i][1]), device: String(rows[i][2]) });
+  }
+  return data;
+}
+
+// 紅包碼只留大寫英數（旅人可能手打，小寫、空白都幫忙整理）
+function cleanBonusCode(value) {
+  return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+}
+
+// 六碼，不用 0 O 1 I 這些長得像的
+function newBonusCode(taken) {
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  for (;;) {
+    var code = '';
+    for (var i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+    if (taken.indexOf(code) < 0) return code;
+  }
+}
+
+// 後台：全部的紅包，新的在前面，含已經領了幾份
+function bonusList() {
+  var claims = readBonusClaims();
+  var bonuses = readBonuses().map(function (b) {
+    return {
+      code: b.code, amount: b.amount, note: b.note, max: b.max, status: b.status, timestamp: b.timestamp,
+      claimed: claims.filter(function (c) { return c.code === b.code; }).length
+    };
+  });
+  return { result: 'success', bonuses: bonuses.reverse() };
+}
+
+// 後台：發一包。amount 是每個人領到的金額，max 是幾份
+function bonusCreate(input) {
+  var amount = Math.round(Number(input.amount));
+  var max = Math.round(Number(input.max));
+  var note = String(input.note || '').trim().slice(0, 30);
+  if (!(amount >= 1 && amount <= BONUS_MAX_AMOUNT)) return { result: 'error', error: '金額要 1 到 ' + BONUS_MAX_AMOUNT };
+  if (!(max >= 1 && max <= BONUS_MAX_CLAIMS)) return { result: 'error', error: '份數要 1 到 ' + BONUS_MAX_CLAIMS };
+
+  var code = newBonusCode(readBonuses().map(function (b) { return b.code; }));
+  bonusSheet().appendRow([new Date(), code, amount, asText(note), max, 'open']);
+  var list = bonusList();
+  list.code = code;
+  return list;
+}
+
+// 後台：收回（還沒領的份就不能領了，已經領走的不會扣回來）
+function bonusClose(input) {
+  var code = cleanBonusCode(input.code);
+  var b = readBonuses().filter(function (x) { return x.code === code; })[0];
+  if (!b) return { result: 'error', error: '找不到這包紅包' };
+  bonusSheet().getRange(b.row, 6).setValue('closed');
+  return bonusList();
+}
+
+// 公開：用紅包碼領。一支手機（device）一包只能領一次，領完 max 份就沒了。不回任何個資、不寄信
+function bonusClaim(input) {
+  var cache = CacheService.getScriptCache();
+  var triesKey = 'bonusTries:' + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var tries = Number(cache.get(triesKey) || 0);
+  if (tries >= BONUS_TRIES_PER_HOUR) return { result: 'error', error: '這小時太多人在領紅包了，晚點再來' };
+  cache.put(triesKey, String(tries + 1), 3600);
+
+  var code = cleanBonusCode(input.code);
+  var device = String(input.device || '').replace(/[^A-Za-z0-9-]/g, '').slice(0, 40);
+  if (!code) return { result: 'error', error: '要輸入紅包碼' };
+  if (device.length < 8) return { result: 'error', error: '這支手機領不了（沒有裝置代號）' };
+
+  var b = readBonuses().filter(function (x) { return x.code === code; })[0];
+  if (!b) return { result: 'error', error: '沒有這個紅包碼' };
+  if (b.status === 'closed') return { result: 'error', error: '這包紅包被主人收回去了' };
+
+  var claims = readBonusClaims().filter(function (c) { return c.code === code; });
+  if (claims.some(function (c) { return c.device === device; })) return { result: 'claimed' };
+  if (claims.length >= b.max) return { result: 'empty' };
+
+  bonusClaimsSheet().appendRow([new Date(), code, device]);
+  return { result: 'success', amount: b.amount, note: b.note, left: b.max - claims.length - 1 };
 }
 
 // --- 工具 ---

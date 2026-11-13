@@ -627,9 +627,17 @@
             <p id="stats" class="text-right text-[10px] leading-relaxed text-stone-400 tracking-wide"></p>
         </section>
 
-        <p class="-mt-2 mb-4 text-right text-[11px] text-stone-500">
-            錢不夠？<a href="xitou.html" class="font-bold text-wabi-dark underline underline-offset-4">去坐洗部洗頭賺錢</a>
-        </p>
+        <div class="-mt-2 mb-4 flex items-center justify-between gap-2 text-[11px] text-stone-500">
+            <button id="hbToggle" type="button" class="min-h-[32px] font-bold text-wabi-dark underline underline-offset-4">有紅包碼？</button>
+            <span>錢不夠？<a href="xitou.html" class="font-bold text-wabi-dark underline underline-offset-4">去坐洗部洗頭賺錢</a></span>
+        </div>
+        <!-- 主人從後台發的紅包：點連結（?hb=紅包碼）會自動領，也可以在這裡自己打 -->
+        <form id="hbForm" class="hidden mb-4 flex gap-2">
+            <input id="hbCode" type="text" maxlength="12" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false"
+                placeholder="紅包碼" aria-label="紅包碼"
+                class="flex-1 min-w-0 rounded-lg border-2 border-stone-300 bg-white px-3 text-base font-black tracking-[0.3em] uppercase text-wabi-dark placeholder:tracking-normal placeholder:font-normal">
+            <button type="submit" class="act is-main shrink-0">領紅包</button>
+        </form>
 
         <!-- 架上 -->
         <section id="shelf">
@@ -667,7 +675,7 @@
     <div id="bigwin" class="hidden fixed inset-0 z-50 flex items-center justify-center px-6 text-center"
         style="background: radial-gradient(circle at 50% 45%, rgba(120, 20, 20, 0.95), rgba(0, 0, 0, 0.92)); font-family: 'Noto Sans TC', sans-serif;">
         <div>
-            <p class="text-yellow-300 font-black text-xl tracking-widest">恭喜中大獎</p>
+            <p id="bigTitle" class="text-yellow-300 font-black text-xl tracking-widest">恭喜中大獎</p>
             <p id="bigAmt" class="amt mt-3">$0</p>
             <p id="bigCap" class="mt-2 text-yellow-100 font-serif text-sm tracking-widest"></p>
             <p class="mt-8 text-white/60 text-xs tracking-widest">點一下繼續</p>
@@ -1444,8 +1452,8 @@
 
         // ===== 5. 錢包、架上 =====
         let shown = S.money;
-        function setMoney(to, delta) {
-            if (delta > 0) Wallet.earn(delta, 'scratch');
+        function setMoney(to, delta, source) {
+            if (delta > 0) Wallet.earn(delta, source || 'scratch');
             else if (delta < 0) Wallet.spend(-delta);
             S.money = to = Wallet.money;
             save();
@@ -1663,8 +1671,9 @@
         }
 
         // ===== 7. 中大獎：全螢幕、彩帶 =====
-        function bigWin(amount) {
-            $('bigCap').textContent = capital(amount);
+        function bigWin(amount, title, cap) {
+            $('bigTitle').textContent = title || '恭喜中大獎';
+            $('bigCap').textContent = cap || capital(amount);
             $('bigwin').classList.remove('hidden');
             sfx.fanfare();
             confetti();
@@ -1704,6 +1713,71 @@
             requestAnimationFrame(step);
         }
 
+        // ===== 7b. 主人發的紅包（後台發，這裡領）=====
+        const API_URL = "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
+        const HB_KEY = 'dongbuli-hongbao';  // 這支手機領過哪些紅包碼
+
+        // 這支手機的代號（亂數，不是個資）：後端用來擋同一支手機重複領
+        function deviceId() {
+            let id = '';
+            try { id = localStorage.getItem('dongbuli-device') || ''; } catch (e) { }
+            if (!id) {
+                id = window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'd-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+                try { localStorage.setItem('dongbuli-device', id); } catch (e) { }
+            }
+            return id;
+        }
+        function hbClaimed() {
+            try { return JSON.parse(localStorage.getItem(HB_KEY)) || []; } catch (e) { return []; }
+        }
+        function hbRemember(code) {
+            try { localStorage.setItem(HB_KEY, JSON.stringify([...new Set([...hbClaimed(), code])].slice(-200))); } catch (e) { }
+        }
+
+        let hbBusy = false;
+        async function claimHongbao(raw) {
+            const code = String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+            if (!code) return showToast('要輸入紅包碼');
+            if (hbBusy) return;
+            if (hbClaimed().includes(code)) return showToast('這包紅包你領過了');
+            hbBusy = true;
+            showToast('正在拆紅包……');
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'bonusClaim', code, device: deviceId() }) });
+                const r = await res.json();
+                if (r.result === 'success') {
+                    hbRemember(code);
+                    document.querySelectorAll('.toast').forEach(t => t.remove());  // 「正在拆紅包」不要蓋在紅包上
+                    setMoney(S.money + r.amount, r.amount, 'bonus');
+                    sfx.cash();
+                    bigWin(r.amount, '主人發紅包', r.note ? `「${r.note}」` : '主人說：不用謝。');
+                    $('hbForm').classList.add('hidden');
+                    $('hbCode').value = '';
+                    if (!$('shelf').classList.contains('hidden')) renderShelf();
+                } else if (r.result === 'claimed') {
+                    hbRemember(code);
+                    showToast('這包紅包你領過了');
+                } else if (r.result === 'empty') {
+                    showToast('這包紅包被領完了，下次手腳要快');
+                } else {
+                    showToast(r.error === '不認得的請求' ? '紅包還沒開放，跟主人說一聲' : (r.error || '領不到，等一下再試'));
+                }
+            } catch (e) {
+                showToast('領不到，等一下再試');
+            }
+            hbBusy = false;
+        }
+
+        $('hbToggle').addEventListener('click', () => {
+            const hidden = $('hbForm').classList.toggle('hidden');
+            if (!hidden) $('hbCode').focus();
+        });
+        $('hbForm').addEventListener('submit', e => {
+            e.preventDefault();
+            unlockAudio();
+            claimHongbao($('hbCode').value);
+        });
+
         // ===== 8. 開店 =====
         $('money').textContent = fmt(S.money);
         if (S.current && !S.current.redeemed) {
@@ -1715,6 +1789,12 @@
             S.current = null;
             save();
             renderShelf();
+        }
+        // 從主人給的連結進來（scratch.html?hb=紅包碼）：直接領，網址上的紅包碼拿掉
+        const hbParam = new URLSearchParams(location.search).get('hb');
+        if (hbParam) {
+            history.replaceState(null, '', location.pathname);
+            claimHongbao(hbParam);
         }
     </script>
 </body>
