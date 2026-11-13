@@ -2141,6 +2141,121 @@ function welcomeText(type) {
   return (type === 'join' ? '二十七樓的神明來群組了。' : '歡迎來到丼步喱・絆。') + '\n\n' + replyHelp();
 }
 
+// --- 圖文選單（三個分頁） ---
+// 上面一排分頁（二十七樓／看天／過日子），點了 LINE app 自己換成那一頁的選單（richmenuswitch），不經過 bot。
+// 換分頁時 LINE 會送一個 postback 事件過來，doPost 只處理 message／follow／join，所以不會回話。
+// 圖在網站上（line-bot/richmenu-*.png），改圖或改格子後在編輯器執行一次 setupRichMenus() 就會整組重建。
+// 這不是寫入 Sheet、也不是推播：只是跟 LINE 說「選單長這樣」，跟在 Official Account Manager 按建立一樣。
+// 不想用了：執行 removeRichMenus()，會回到 Official Account Manager 裡設定的那個選單。
+// 每一格的順序跟圖一樣：上排左到右、下排左到右。
+
+var RICH_MENU_VERSION = 1; // 換圖時加一，LINE 才不會拿到快取的舊圖
+var RICH_MENUS = [
+  { alias: 'dbl-27', tab: '二十七樓', bar: '選單・二十七樓', image: 'line-bot/richmenu-27.png', items: [
+      { type: 'message', label: '空房', text: '空房' },
+      { type: 'uri', label: '訂房', uri: SITE_URL },
+      { type: 'message', label: '擲杯', text: '擲杯' },
+      { type: 'message', label: '抽籤', text: '抽籤' },
+      { type: 'uri', label: '分帳', uri: SPLIT_URL },
+      { type: 'message', label: '說明', text: '說明' }
+    ] },
+  { alias: 'dbl-sky', tab: '看天', bar: '選單・看天', image: 'line-bot/richmenu-sky.png', items: [
+      { type: 'message', label: '天氣', text: '天氣' },
+      { type: 'message', label: '空氣', text: '空氣' },
+      { type: 'message', label: '夕陽', text: '夕陽' },
+      { type: 'message', label: '月亮', text: '月亮' },
+      { type: 'message', label: '節氣', text: '節氣' },
+      { type: 'message', label: '放假', text: '放假' }
+    ] },
+  { alias: 'dbl-life', tab: '過日子', bar: '選單・過日子', image: 'line-bot/richmenu-life.png', items: [
+      { type: 'message', label: '油價', text: '油價' },
+      { type: 'message', label: '股價', text: '股 2330' },
+      { type: 'message', label: '排球', text: '排球' },
+      { type: 'message', label: '戰績', text: '排球 戰績' },
+      { type: 'message', label: '狗狗', text: '狗' },
+      { type: 'message', label: '貓咪', text: '貓' }
+    ] }
+];
+
+var RM_W = 2500, RM_H = 1686, RM_TAB = 250, RM_COLS = [0, 833, 1666, 2500];
+
+function richMenuBody(menu) {
+  var areas = [];
+  RICH_MENUS.forEach(function (m, i) {
+    areas.push({
+      bounds: { x: RM_COLS[i], y: 0, width: RM_COLS[i + 1] - RM_COLS[i], height: RM_TAB },
+      action: { type: 'richmenuswitch', richMenuAliasId: m.alias, data: 'tab=' + m.alias }
+    });
+  });
+  var rowH = (RM_H - RM_TAB) / 2;
+  menu.items.forEach(function (action, i) {
+    var col = i % 3, row = Math.floor(i / 3);
+    areas.push({
+      bounds: { x: RM_COLS[col], y: RM_TAB + row * rowH, width: RM_COLS[col + 1] - RM_COLS[col], height: rowH },
+      action: action
+    });
+  });
+  return { size: { width: RM_W, height: RM_H }, selected: true, name: menu.alias, chatBarText: menu.bar, areas: areas };
+}
+
+function lineApi(method, path, body, host) {
+  var token = prop('LINE_CHANNEL_ACCESS_TOKEN');
+  if (!token) throw new Error('沒設定 LINE_CHANNEL_ACCESS_TOKEN');
+  var opt = { method: method, headers: { Authorization: 'Bearer ' + token }, muteHttpExceptions: true };
+  if (body && body.getBytes) { opt.contentType = body.getContentType() || 'image/png'; opt.payload = body.getBytes(); }
+  else if (body) { opt.contentType = 'application/json'; opt.payload = JSON.stringify(body); }
+  var res = UrlFetchApp.fetch((host || 'https://api.line.me') + path, opt);
+  var text = res.getContentText();
+  return { code: res.getResponseCode(), data: text ? JSON.parse(text) : {} , text: text };
+}
+
+function mustOk(r, what) {
+  if (r.code !== 200) throw new Error(what + '失敗（' + r.code + '）：' + r.text);
+  return r.data;
+}
+
+// 在編輯器選這個函式按「執行」
+function setupRichMenus() {
+  // 先全部驗證過，有一個不對就整組不動
+  RICH_MENUS.forEach(function (m) { mustOk(lineApi('post', '/v2/bot/richmenu/validate', richMenuBody(m)), '檢查 ' + m.tab); });
+
+  // 圖也先抓好（網站還沒更新就停在這裡，不會建一半）
+  var images = RICH_MENUS.map(function (m) {
+    var img = UrlFetchApp.fetch(SITE_URL + m.image + '?v=' + RICH_MENU_VERSION, { muteHttpExceptions: true });
+    if (img.getResponseCode() !== 200) throw new Error('抓不到圖 ' + m.image + '（' + img.getResponseCode() + '），網站更新了嗎？');
+    return img.getBlob().setContentType('image/png');
+  });
+
+  var mine = function (rm) { return /^dbl-/.test(rm.name); };
+  var old = (mustOk(lineApi('get', '/v2/bot/richmenu/list'), '讀舊選單').richmenus || []).filter(mine);
+
+  var ids = RICH_MENUS.map(function (m, i) {
+    var id = mustOk(lineApi('post', '/v2/bot/richmenu', richMenuBody(m)), '建立 ' + m.tab).richMenuId;
+    mustOk(lineApi('post', '/v2/bot/richmenu/' + id + '/content', images[i], 'https://api-data.line.me'), '上傳圖 ' + m.tab);
+    console.log('建好 ' + m.tab + '：' + id);
+    return id;
+  });
+
+  var aliases = (mustOk(lineApi('get', '/v2/bot/richmenu/alias/list'), '讀分頁代號').aliases || []).map(function (a) { return a.richMenuAliasId; });
+  RICH_MENUS.forEach(function (m, i) {
+    if (aliases.indexOf(m.alias) >= 0) mustOk(lineApi('post', '/v2/bot/richmenu/alias/' + m.alias, { richMenuId: ids[i] }), '更新分頁 ' + m.alias);
+    else mustOk(lineApi('post', '/v2/bot/richmenu/alias', { richMenuAliasId: m.alias, richMenuId: ids[i] }), '建立分頁 ' + m.alias);
+  });
+
+  mustOk(lineApi('post', '/v2/bot/user/all/richmenu/' + ids[0]), '設成預設選單');
+  old.forEach(function (rm) { lineApi('delete', '/v2/bot/richmenu/' + rm.richMenuId); });
+  console.log('好了。打開跟 bot 的聊天室看看（可能要關掉聊天室再進來一次）。舊的刪了 ' + old.length + ' 個。');
+}
+
+// 拿掉這組選單，回到 Official Account Manager 裡設定的那個
+function removeRichMenus() {
+  lineApi('delete', '/v2/bot/user/all/richmenu');
+  RICH_MENUS.forEach(function (m) { lineApi('delete', '/v2/bot/richmenu/alias/' + m.alias); });
+  var list = (lineApi('get', '/v2/bot/richmenu/list').data.richmenus || []).filter(function (rm) { return /^dbl-/.test(rm.name); });
+  list.forEach(function (rm) { lineApi('delete', '/v2/bot/richmenu/' + rm.richMenuId); });
+  console.log('拿掉了 ' + list.length + ' 個選單。');
+}
+
 // --- LINE ---
 
 // message 可以是文字，或是組好的訊息物件（例如空房的月曆卡片）

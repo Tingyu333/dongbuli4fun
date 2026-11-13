@@ -9,7 +9,9 @@
 | 檔案 | 用途 |
 | --- | --- |
 | `Code.gs` | bot 程式，貼到新的 Apps Script 專案 |
-| `richmenu.png` | 圖文選單的圖（2500×1686，大型 3×2 六格） |
+| `richmenu-27.png`、`richmenu-sky.png`、`richmenu-life.png` | 三個分頁的圖文選單（2500×1686，上面一排分頁、下面 3×2 六格），`setupRichMenus()` 會從網站抓 |
+| `richmenu-tabs.json`、`richmenu-tabs.js` | 每格寫什麼、產生上面三張圖的程式（Node＋Playwright） |
+| `richmenu.png` | 舊的單頁圖文選單（在 Official Account Manager 手動設定用，留著備用） |
 
 ## 設定步驟
 
@@ -62,21 +64,29 @@
 
 想先看月曆卡片長什麼樣子：編輯器上方選 `printAvailabilityFlex` 按「執行」，把執行記錄裡的 JSON 貼到 [Flex Message Simulator](https://developers.line.biz/flex-simulator/)。
 
-### 5. 圖文選單（選用，不用寫程式）
+### 5. 圖文選單（三個分頁）
 
-Official Account Manager →「主頁 → 圖文選單 → 建立」：
+選單上面一排分頁，點了整張選單換成那一類：
 
-1. 版型選「大型」的 **3×2 六格**，圖片上傳 `richmenu.png`
-2. 六格的動作（上排左到右 A、B、C，下排左到右 D、E、F）：
-   - A 空房・查：類型「文字」，內容 `空房`
-   - B 訂房・歸：類型「連結」，網址 `https://tingyu333.github.io/dongbuli4fun/`
-   - C 天氣・觀：類型「文字」，內容 `天氣`
-   - D 擲杯・問：類型「文字」，內容 `擲杯`
-   - E 抽籤・運：類型「文字」，內容 `抽籤`
-   - F 說明・閱：類型「文字」，內容 `說明`
-3. 選單列顯示文字可以填「二十七樓」，設定成預設顯示，儲存。
+| 分頁 | 上排（左到右） | 下排（左到右） |
+| --- | --- | --- |
+| 壹 二十七樓 | 空房・查、訂房・歸（網站）、擲杯・問 | 抽籤・運、分帳・算（打開分帳）、說明・閱 |
+| 貳 看天 | 天氣・觀、空氣・吸、夕陽・望 | 月亮・圓、節氣・候、放假・休 |
+| 參 過日子 | 油價・漲、股價・看（台積電）、排球・賽 | 戰績・排、狗狗・汪、貓咪・喵 |
 
-> 已經建好舊的四格選單的話：直接編輯那個選單，換版型、換圖、照上面重設六格動作就好，不用刪掉重建。
+換分頁是 LINE app 自己換的，不經過 bot；點下面的格子等於幫你打那個指令。
+
+設定（只要做一次，之後改圖才要再做）：
+
+1. 等網站更新（推上 GitHub 後一兩分鐘，`setupRichMenus()` 要從網站抓圖）。
+2. 把新的 `Code.gs` 貼到 bot 專案的編輯器、存檔。
+3. 編輯器上方的函式選 `setupRichMenus`，按「執行」。執行記錄出現「好了」就完成。
+4. 打開跟 bot 的一對一聊天室（已經開著的話，退出再進來一次）。
+
+- Official Account Manager 裡原本那個選單不用刪：用程式設定的選單會蓋過它。
+- 不想用了：執行 `removeRichMenus()`，就回到 Official Account Manager 裡的那個。
+- 改格子或換圖：改 `richmenu-tabs.json` 重新產生圖，同時改 `Code.gs` 的 `RICH_MENUS`、把 `RICH_MENU_VERSION` 加一，再執行一次 `setupRichMenus()`（會換新的、刪掉舊的）。
+- **群組裡看不到圖文選單**，這是 LINE 的限制；群組裡照樣 @bot 打指令。
 
 ## 指令
 

@@ -116,7 +116,7 @@
 - 指令碼屬性：`LINE_CHANNEL_ACCESS_TOKEN`、`SHEET_ID`、`WEBHOOK_KEY`（webhook 網址要帶 `?key=`，對不上或沒設定就不處理）。
 - 擲杯的三聖杯存在 `CacheService`，key 是 `streak:` + groupId／roomId／userId，6 小時。
 - **台詞跟網站同步**：擲杯台詞（`jiaobei.html` 的 `RESULTS`）、御神籤（`index.html` 的 `FORTUNES`）改了，`line-bot/Code.gs` 的 `JIAOBEI_LINES`、`FORTUNES` 也要改，並請使用者重新部署 bot 專案。
-- 圖文選單的圖是 `line-bot/richmenu.png`（2500×1686，大型 3×2 六格：上排空房・查、訂房・歸、天氣・觀，下排擲杯・問、抽籤・運、說明・閱）。版型和每格動作在 `line-bot/README.md`，改圖的格子順序時要一起改。
+- **圖文選單是三個分頁**（`Code.gs` 的 `RICH_MENUS`，用 Messaging API 建，不是在 Official Account Manager 手動設）：上面一排分頁（壹 二十七樓、貳 看天、參 過日子，高 250px，`richmenuswitch` 切換，分頁代號 `dbl-27`／`dbl-sky`／`dbl-life`），下面 3×2 六格（message 動作等於幫使用者打指令，訂房、分帳是 uri）。圖是 `line-bot/richmenu-27/sky/life.png`（2500×1686），由 `line-bot/richmenu-tabs.js` 照 `richmenu-tabs.json` 產生；**`richmenu-tabs.json` 和 `RICH_MENUS` 要手動保持一致**，改了要把 `RICH_MENU_VERSION` 加一，請使用者在編輯器執行 `setupRichMenus()`（先驗證全部、先抓好圖才開始建，建好換分頁代號、設預設、刪掉舊的 `dbl-*`）；`removeRichMenus()` 回到 Official Account Manager 的舊選單（`line-bot/richmenu.png`）。點分頁 LINE 會送 postback，`doPost` 不處理 postback，所以不會回話。群組裡看不到圖文選單。新增指令想放進選單，要換掉某一格。
 
 ## 設計規範
 
