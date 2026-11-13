@@ -57,15 +57,18 @@
 
         .cover-name {
             font-weight: 900;
-            font-size: 1.45rem;
-            letter-spacing: 0.06em;
+            font-size: 1.2rem;
+            line-height: 1.3;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
             color: var(--hi);
             text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
         }
 
         .cover-price {
-            min-width: 3.6rem;
-            padding: 0.2rem 0.6rem;
+            padding: 0 0.55rem;
+            font-size: 0.8rem;
+            line-height: 1.5rem;
             border-radius: 9999px;
             background: var(--hi);
             color: var(--c2);
@@ -384,6 +387,120 @@
             color: #c0261d;
         }
 
+        /* 井字樂 */
+        .ox {
+            font-weight: 900;
+            font-size: 2.6rem;
+            line-height: 1;
+        }
+
+        .ox.o {
+            color: #c0261d;
+        }
+
+        .ox.x {
+            color: #1e3a8a;
+        }
+
+        /* 骰子 */
+        .die {
+            width: 2.1rem;
+            height: 2.1rem;
+            padding: 3px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border-radius: 6px;
+            background: #fff;
+            border: 2px solid #2a1d12;
+        }
+
+        .die i {
+            margin: auto;
+            width: 5px;
+            height: 5px;
+            border-radius: 9999px;
+            background: #2a1d12;
+        }
+
+        .die i.off {
+            visibility: hidden;
+        }
+
+        .die.is-you {
+            border-color: #c0261d;
+        }
+
+        .die.is-you i {
+            background: #c0261d;
+        }
+
+        .who {
+            font-size: 0.55rem;
+            font-weight: 700;
+            color: #8a7560;
+        }
+
+        /* 拉霸的圖案 */
+        .sy {
+            width: 2.3rem;
+            height: 2.3rem;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 1.05rem;
+            color: #fff;
+        }
+
+        .sy.s7 {
+            background: none;
+            color: #c0261d;
+            font-size: 2.3rem;
+            font-style: italic;
+            text-shadow: 2px 2px 0 #ffd34d;
+        }
+
+        .sy.bar {
+            width: 2.8rem;
+            height: 1.5rem;
+            border-radius: 4px;
+            background: #111;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+        }
+
+        /* 挖金礦 */
+        .c-bomb {
+            width: 2.1rem;
+            height: 2.1rem;
+            border-radius: 9999px;
+            background: #1f1f1f;
+            color: #ff6b5e;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .c.is-bomb {
+            background: #c0261d;
+            border-color: #1f1f1f;
+            box-shadow: 0 0 0 2px #1f1f1f;
+            animation: pop 0.4s ease;
+        }
+
+        .c.is-rest {
+            opacity: 0.45;
+        }
+
+        /* 加倍區 */
+        .c-mult {
+            font-weight: 900;
+            font-size: 1.7rem;
+            color: #c0261d;
+        }
+
         /* ===== 開獎結果 ===== */
         .result-amt {
             font-weight: 900;
@@ -512,7 +629,7 @@
         <!-- 架上 -->
         <section id="shelf">
             <div id="pending" class="hidden mb-3"></div>
-            <div id="covers" class="flex flex-col gap-3"></div>
+            <div id="covers" class="grid grid-cols-2 gap-2.5"></div>
             <div id="broke" class="hidden mt-6 rounded-xl border-2 border-dashed border-stone-300 p-5 text-center">
                 <p class="font-black text-wabi-dark">錢包空了</p>
                 <p class="mt-1 text-xs text-stone-500">隔壁就有提款機。</p>
@@ -860,6 +977,227 @@
             },
         };
 
+        // ===== 1b. 再五種 =====
+        const DIE_PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+        const dieHTML = (n, you) => `<span class="die ${you ? 'is-you' : ''}">${range(0, 8).map(i => `<i class="${DIE_PIPS[n].includes(i) ? '' : 'off'}"></i>`).join('')}</span>`;
+        const SLOT_COLORS = { 鑽: '#0891b2', 鈴: '#d97706', 桃: '#db2777', 瓜: '#15803d', 檸: '#ca8a04' };
+        const symHTML = s => s === '7' ? '<span class="sy s7">7</span>' : s === 'BAR' ? '<span class="sy bar">BAR</span>' : `<span class="sy" style="background:${SLOT_COLORS[s]}">${s}</span>`;
+
+        // 挖完（挖到炸彈、收手、金子全挖完）：把剩下的都翻開給你看
+        function endReveal() {
+            actions([]);
+            foils.filter(f => !f.optional).forEach(f => f.revealAll(45));
+        }
+
+        Object.assign(GAMES, {
+            ttt: {
+                name: '井字樂', price: 50, jackpot: 500000, c1: '#0ea5e9', c2: '#075985', hi: '#fef08a',
+                desc: '三個圈連成一線就中',
+                table: [[500000, 0.00001], [10000, 0.0003], [1000, 0.004], [500, 0.01], [200, 0.03], [100, 0.08], [50, 0.2]],
+                denoms: [50, 100, 200, 500, 1000, 10000, 500000],
+                weights: [30, 25, 18, 12, 8, 4, 3],
+                lines: [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]],
+                wins(grid) { return this.lines.filter(L => L.every(i => grid[i] === 'O')); },
+                gen() {
+                    const T = rollT(this.table);
+                    let grid;
+                    for (; ;) {
+                        grid = Array.from({ length: 9 }, () => Math.random() < 0.5 ? 'O' : 'X');
+                        if (T) pick(this.lines).forEach(i => { grid[i] = 'O'; });
+                        const n = grid.filter(x => x === 'O').length;
+                        if (n < 3 || n > 6) continue;
+                        if ((this.wins(grid).length > 0) === (T > 0)) break;
+                    }
+                    return { T, grid, prize: T || decoy(this.denoms, this.weights) };
+                },
+                score(t) { return this.wins(t.grid).length ? t.prize : 0; },
+                html(t) {
+                    const hot = new Set(this.wins(t.grid).flat());
+                    return `
+                    <div class="tk-panel">
+                        <div class="tk-label">井字 <small>橫、直、斜三個 ○ 連成一線</small></div>
+                        <div class="zone g grid-cols-3" data-zone>
+                            ${t.grid.map((x, i) => `<div class="c h-[4.4rem]" data-cell ${hot.has(i) ? 'data-win' : ''}><span class="ox ${x === 'O' ? 'o' : 'x'}">${x === 'O' ? '○' : '×'}</span></div>`).join('')}
+                        </div>
+                    </div>
+                    <div class="tk-panel flex items-center gap-3">
+                        <div class="tk-label !p-0 shrink-0">獎金</div>
+                        <div class="zone flex-1" data-zone>
+                            <div class="c h-12" data-cell ${hot.size ? 'data-win' : ''}>${amtHTML(t.prize)}</div>
+                        </div>
+                    </div>
+                    <p class="tk-rule">刮開井字九格，任一橫、直、斜線出現 3 個「○」，即可獲得「獎金」區的金額。</p>`;
+                },
+            },
+
+            dice: {
+                name: '骰子樂', price: 100, jackpot: 1000000, c1: '#ec4899', c2: '#9d174d', hi: '#fef08a',
+                desc: '你的骰子比莊家大就中',
+                table: [[1000000, 0.00002], [100000, 0.0001], [10000, 0.0008], [2000, 0.004], [1000, 0.008], [500, 0.018], [200, 0.05], [100, 0.17]],
+                denoms: [100, 200, 500, 1000, 2000, 10000, 100000, 1000000],
+                weights: [30, 25, 15, 10, 8, 5, 4, 3],
+                gen() {
+                    const T = rollT(this.table);
+                    const rows = [];
+                    if (T) split(T, this.denoms, 3).forEach(v => { const d = randint(1, 5); rows.push({ d, y: randint(d + 1, 6), prize: v }); });
+                    while (rows.length < 5) { const d = randint(1, 6); rows.push({ d, y: randint(1, d), prize: decoy(this.denoms, this.weights) }); }
+                    return { T, rows: shuffle(rows) };
+                },
+                score: t => t.rows.reduce((s, r) => s + (r.y > r.d ? r.prize : 0), 0),
+                html(t) {
+                    return `
+                    <div class="tk-panel">
+                        <div class="tk-label">五局 <small>黑色是莊家，紅色是你</small></div>
+                        <div class="zone g grid-cols-1" data-zone>
+                            ${t.rows.map(r => `<div class="c h-[3.3rem] !flex-row justify-around" data-cell ${r.y > r.d ? 'data-win' : ''}>
+                                <div class="flex flex-col items-center gap-0.5">${dieHTML(r.d)}<span class="who">莊家</span></div>
+                                <div class="flex flex-col items-center gap-0.5">${dieHTML(r.y, true)}<span class="who">你</span></div>
+                                <div class="flex flex-col items-center w-20">${amtHTML(r.prize)}</div>
+                            </div>`).join('')}
+                        </div>
+                    </div>
+                    <p class="tk-rule">刮開五局，每一局「你」的點數大於「莊家」的點數，即可獲得該局獎金。平手不算。可多重中獎，獎金累計。</p>`;
+                },
+            },
+
+            slot: {
+                name: '777 拉霸', price: 200, jackpot: 2000000, c1: '#374151', c2: '#030712', hi: '#facc15',
+                desc: '同一列三個一樣就中',
+                syms: [['7', 2000000], ['鑽', 100000], ['BAR', 10000], ['鈴', 2000], ['桃', 1000], ['瓜', 400], ['檸', 200]],
+                table: [[2000000, 0.00001], [100000, 0.00005], [10000, 0.0006], [2000, 0.006], [1000, 0.02], [600, 0.03], [400, 0.09], [200, 0.18]],
+                rowPrize(r) { return r[0] === r[1] && r[1] === r[2] ? this.syms.find(x => x[0] === r[0])[1] : 0; },
+                gen() {
+                    const T = rollT(this.table);
+                    const names = this.syms.map(x => x[0]), rows = [];
+                    if (T) split(T, this.syms.map(x => x[1]), 2).forEach(v => { const n = this.syms.find(x => x[1] === v)[0]; rows.push([n, n, n]); });
+                    while (rows.length < 4) {
+                        let r;
+                        if (Math.random() < 0.3) r = shuffle(['7', '7', pick(names.slice(1))]);  // 兩個 7，差一個
+                        else do { r = [pick(names), pick(names), pick(names)]; } while (r[0] === r[1] && r[1] === r[2]);
+                        rows.push(r);
+                    }
+                    return { T, rows: shuffle(rows) };
+                },
+                score(t) { return t.rows.reduce((s, r) => s + this.rowPrize(r), 0); },
+                html(t) {
+                    return `
+                    <div class="tk-panel">
+                        <div class="tk-label">拉四次 <small>每一橫列是一次</small></div>
+                        <div class="zone g grid-cols-3" data-zone>
+                            ${t.rows.map(r => r.map(x => `<div class="c h-[3.4rem]" data-cell ${this.rowPrize(r) ? 'data-win' : ''}>${symHTML(x)}</div>`).join('')).join('')}
+                        </div>
+                        <div class="prize-list">
+                            ${this.syms.map(([n, v]) => `<span>${n}${n}${n} <b>${wan(v)}</b></span>`).join('')}
+                        </div>
+                    </div>
+                    <p class="tk-rule">刮開 4 列，任一橫列出現 3 個相同圖案，即可獲得該圖案對應的獎金。可多重中獎，獎金累計。</p>`;
+                },
+            },
+
+            mine: {
+                name: '挖金礦', price: 300, jackpot: 0, jackpotText: '見好就收', manual: true, c1: '#a16207', c2: '#3f2a14', hi: '#ffd34d',
+                desc: '一格一格挖，挖到炸彈全沒了',
+                hint: '點一格挖一格。挖到金子可以繼續挖，也可以收手兌獎；挖到炸彈，全部歸零',
+                values: [[100, 0.42], [200, 0.35], [300, 0.14], [500, 0.07], [1000, 0.015], [5000, 0.005]],
+                gen() {
+                    const cells = shuffle([...range(1, 4).map(() => ({ bomb: true })), ...range(1, 12).map(() => ({ v: rollT(this.values) || 100 }))]);
+                    return { T: 0, cells, opened: [], dead: false, cashed: false };
+                },
+                sum: t => t.opened.reduce((s, i) => s + (t.cells[i].v || 0), 0),
+                score(t) { return t.dead ? 0 : this.sum(t); },
+                html(t) {
+                    return `
+                    <div class="tk-panel">
+                        <div class="tk-label">金礦區 <small>16 格裡埋了 4 顆炸彈</small></div>
+                        <div class="zone g grid-cols-4" data-zone data-tap>
+                            ${t.cells.map((c, i) => {
+                        const on = t.opened.includes(i);
+                        return `<div class="c h-[3.7rem] ${on ? (c.bomb ? 'is-bomb' : 'is-win') : ''}" data-cell data-i="${i}" ${on ? 'data-pre' : ''}>${c.bomb ? '<span class="c-bomb">炸</span>' : `<span class="c-amt !text-base">${fmt(c.v)}</span><span class="c-cap">${capital(c.v)}</span>`}</div>`;
+                    }).join('')}
+                        </div>
+                    </div>
+                    <p class="tk-rule">一次挖一格（點一下就挖開，不能反悔）。挖到金額就累計，可以隨時收手兌領累計獎金；挖到「炸」，累計獎金全部歸零。</p>`;
+                },
+                onOpen(el, host, t) {
+                    const i = Number(el.dataset.i), c = t.cells[i];
+                    if (t.dead || t.cashed) { el.classList.add('is-rest'); return; }
+                    t.opened.push(i);
+                    if (c.bomb) {
+                        t.dead = true;
+                        save();
+                        el.classList.add('is-bomb');
+                        sfx.boom();
+                        if (!reduceMotion) host.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(-6px,3px)' }, { transform: 'translate(6px,-3px)' }, { transform: 'translate(0,0)' }], { duration: 260 });
+                        endReveal();
+                        return;
+                    }
+                    el.classList.add('is-win');
+                    sfx.ding(t.opened.length % 6);
+                    if (t.opened.length === 12) t.cashed = true;  // 金子全挖完了
+                    save();
+                    if (t.cashed) endReveal();
+                    else this.status(t);
+                },
+                status(t) {
+                    const sum = this.sum(t);
+                    $('playHint').innerHTML = `<span class="block text-xs font-black text-wabi-dark tracking-widest">目前挖到</span><span class="result-amt money block">${fmt(sum)}</span><span class="block text-xs text-stone-500 mt-1">還剩 ${16 - t.opened.length} 格，裡面有 4 顆炸彈</span>`;
+                    actions([{ label: `收手，兌獎 ${fmt(sum)}`, cls: 'is-gold', onClick: () => { t.cashed = true; save(); endReveal(); } }]);
+                },
+                resume(t) {
+                    if (t.dead || t.cashed) endReveal();
+                    else if (t.opened.length) this.status(t);
+                },
+                loseLine: () => '挖到炸彈，全部歸零。',
+            },
+
+            multi: {
+                name: '超級加倍', price: 1000, jackpot: 10000000, c1: '#d97706', c2: '#451a03', hi: '#fde68a',
+                desc: '對中號碼，再乘上加倍區',
+                table: [[10000000, 0.000002], [1000000, 0.00002], [100000, 0.0004], [50000, 0.001], [20000, 0.004], [10000, 0.01], [5000, 0.03], [2000, 0.08], [1000, 0.2]],
+                denoms: [500, 1000, 2000, 5000, 10000, 50000, 100000, 1000000],
+                weights: [30, 25, 18, 10, 8, 4, 3, 2],
+                gen() {
+                    const T = rollT(this.table);
+                    const W = sample(range(1, 40), 4);
+                    const nonW = shuffle(range(1, 40).filter(n => !W.includes(n)));
+                    let m = pick([1, 1, 1, 2, 2, 5, 10]);
+                    const cells = [];
+                    if (T) {
+                        // 哪幾種倍數湊得出 T（例如 5000 可以是 5000×1、1000×5、500×10）
+                        const ok = [10, 5, 2, 1].filter(k => T % k === 0 && split(T / k, this.denoms, 3).every(v => this.denoms.includes(v)));
+                        m = Math.random() < 0.45 ? 1 : pick(ok);
+                        if (!ok.includes(m)) m = pick(ok);
+                        split(T / m, this.denoms, 3).forEach(v => cells.push({ n: pick(W), prize: v }));
+                    }
+                    while (cells.length < 12) cells.push({ n: nonW.pop(), prize: decoy(this.denoms, this.weights) });
+                    return { T, W, m, cells: shuffle(cells) };
+                },
+                score: t => t.m * t.cells.reduce((s, c) => s + (t.W.includes(c.n) ? c.prize : 0), 0),
+                html(t) {
+                    return `
+                    <div class="tk-panel">
+                        <div class="tk-label">中獎號碼</div>
+                        <div class="zone g grid-cols-4" data-zone>
+                            ${t.W.map(n => `<div class="c h-11" data-cell ${t.cells.some(c => c.n === n) ? 'data-win' : ''}><span class="c-num">${two(n)}</span></div>`).join('')}
+                        </div>
+                    </div>
+                    <div class="tk-panel">
+                        <div class="tk-label">我的號碼</div>
+                        <div class="zone g grid-cols-4" data-zone>
+                            ${t.cells.map(c => `<div class="c h-[4.1rem]" data-cell ${t.W.includes(c.n) ? 'data-win' : ''}><span class="c-num">${two(c.n)}</span>${amtHTML(c.prize)}</div>`).join('')}
+                        </div>
+                    </div>
+                    <div class="tk-panel flex items-center gap-3">
+                        <div class="tk-label !p-0 shrink-0 leading-tight">加倍區<br><small>最高 ×10</small></div>
+                        <div class="zone flex-1" data-zone>
+                            <div class="c h-14" data-cell ${t.T && t.m > 1 ? 'data-win' : ''}><span class="c-mult">×${t.m}</span></div>
+                        </div>
+                    </div>
+                    <p class="tk-rule">刮開「中獎號碼」及「我的號碼」，我的號碼與任一中獎號碼相同，即可獲得該號碼下方獎金，可多重中獎；中獎總金額再乘上「加倍區」的倍數。</p>`;
+                },
+            },
+        });
+
         function bingoLines(card, calls) {
             return BINGO_LINES.filter(L => L.every(i => card[i] === 0 || calls.has(card[i])));
         }
@@ -947,6 +1285,7 @@
             win: () => [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.25, 0.09, f, 'triangle', i * 0.09)),
             fanfare: () => [523, 659, 784, 1046, 784, 1046, 1318, 1568].forEach((f, i) => tone(f, 0.28, 0.08, f, 'square', i * 0.11)),
             lose: () => tone(330, 0.4, 0.08, 160),
+            boom: () => { noise(0.5, 'lowpass', 220, 0.7, 0.7); tone(90, 0.45, 0.4, 30); },
             buy: () => { tone(1800, 0.06, 0.06, 2400, 'triangle'); tone(2400, 0.1, 0.05, 2600, 'triangle', 0.06); },
         };
 
@@ -1009,7 +1348,13 @@
                 return { el, x: b.left - zr.left, y: b.top - zr.top, w: b.width, h: b.height, open: false };
             });
             const optional = zone.hasAttribute('data-optional');
+            const tap = zone.hasAttribute('data-tap');  // 點一下整格就開（挖金礦：不能刮一點偷看）
             paintFoil(c, w, h, cells, optional);
+            cells.forEach(k => {
+                if (!k.el.hasAttribute('data-pre')) return;  // 上次已經開過的
+                k.open = true;
+                c.clearRect(k.x - 1, k.y - 1, k.w + 2, k.h + 2);
+            });
             const brush = Math.max(18, Math.min(28, Math.min(...cells.map(k => k.w)) * 0.45));
 
             let pid = null, last = null, lastCheck = 0, lastSound = 0, done = false;
@@ -1056,6 +1401,12 @@
             cv.addEventListener('pointerdown', e => {
                 unlockAudio();
                 if (pid !== null || done) return;
+                if (tap) {
+                    const q = pt(e);
+                    const cell = cells.find(k => !k.open && q.x >= k.x && q.x <= k.x + k.w && q.y >= k.y && q.y <= k.y + k.h);
+                    if (cell) open(cell);
+                    return;
+                }
                 pid = e.pointerId;
                 try { cv.setPointerCapture(e.pointerId); } catch (err) { }
                 last = pt(e);
@@ -1116,22 +1467,20 @@
         function renderShelf() {
             $('pending').classList.toggle('hidden', !S.queue.length);
             $('pending').innerHTML = S.queue.length ? `<button type="button" class="act is-main w-full" data-resume>還有 ${S.queue.length} 張沒刮，繼續刮</button>` : '';
-            $('covers').innerHTML = Object.entries(GAMES).map(([key, g]) => `
-                <div class="cover p-3" style="--c1:${g.c1};--c2:${g.c2};--hi:${g.hi}">
-                    <div class="relative z-[1] flex items-start justify-between gap-2">
-                        <div class="min-w-0">
-                            <div class="cover-name">${g.name}</div>
-                            <div class="text-[11px] font-bold opacity-90">${g.desc}</div>
-                        </div>
-                        <div class="cover-price">${fmt(g.price)}</div>
+            $('covers').innerHTML = Object.entries(GAMES).sort((a, b) => a[1].price - b[1].price).map(([key, g]) => `
+                <div class="cover p-2.5 flex flex-col" style="--c1:${g.c1};--c2:${g.c2};--hi:${g.hi}">
+                    <div class="relative z-[1] cover-name">${g.name}</div>
+                    <div class="relative z-[1] text-[10px] font-bold opacity-90 leading-snug min-h-[1.9rem]">${g.desc}</div>
+                    <div class="relative z-[1] mt-1 flex items-center justify-between gap-1">
+                        <span class="cover-price">${fmt(g.price)}</span>
+                        <span class="text-[10px] font-bold text-right leading-tight">${g.jackpotText ? `<span class="text-sm font-black" style="color:var(--hi)">${g.jackpotText}</span>` : `頭獎 <span class="text-sm font-black" style="color:var(--hi)">${wan(g.jackpot)}</span>`}</span>
                     </div>
-                    <div class="relative z-[1] mt-1 text-xs font-bold">頭獎 <span class="text-lg font-black" style="color:var(--hi)">${wan(g.jackpot)}</span></div>
-                    <div class="relative z-[1] mt-2 flex gap-2">
+                    <div class="relative z-[1] mt-2 flex gap-1.5">
                         <button type="button" class="buy" data-buy="${key}" data-n="1" ${S.money < g.price ? 'disabled' : ''}>買 1 張</button>
-                        <button type="button" class="buy" data-buy="${key}" data-n="5" ${S.money < g.price * 5 ? 'disabled' : ''}>買 5 張・${fmt(g.price * 5)}</button>
+                        <button type="button" class="buy !flex-none w-12" data-buy="${key}" data-n="5" aria-label="買 5 張" ${S.money < g.price * 5 ? 'disabled' : ''}>×5</button>
                     </div>
                 </div>`).join('');
-            $('broke').classList.toggle('hidden', S.money >= 100 || S.queue.length > 0);
+            $('broke').classList.toggle('hidden', S.money >= 50 || S.queue.length > 0);
             $('bigs').innerHTML = S.bigs.length ? `
                 <p class="text-xs font-black text-wabi-dark tracking-widest mb-2">中獎紀錄（$2,000 以上）</p>
                 <ul class="text-xs text-stone-500 leading-relaxed">${S.bigs.slice(0, 10).map(b => `<li class="flex justify-between border-b border-stone-100 py-1"><span>${b.date}・${b.name}</span><span class="money text-wabi-dark">${fmt(b.amt)}</span></li>`).join('')}</ul>` : '';
@@ -1205,7 +1554,7 @@
                     <div class="tk-head">
                         <div>
                             <div class="tk-name">${g.name}</div>
-                            <div class="tk-jackpot">頭獎 <b>${wan(g.jackpot)}</b></div>
+                            <div class="tk-jackpot">${g.jackpotText ? `<b>${g.jackpotText}</b>` : `頭獎 <b>${wan(g.jackpot)}</b>`}</div>
                         </div>
                         <div class="tk-price">${fmt(g.price)}</div>
                     </div>
@@ -1215,8 +1564,8 @@
                         <div class="zone tk-code" data-zone data-optional><div class="tk-code-in" data-cell>${t.code}</div></div>
                     </div>
                 </div>`;
-            $('playHint').textContent = (S.queue.length ? `後面還有 ${S.queue.length} 張。` : '') + '用手指刮開銀漆，每格刮掉一半就會整格打開';
-            actions([{
+            $('playHint').textContent = (S.queue.length ? `後面還有 ${S.queue.length} 張。` : '') + (g.hint || '用手指刮開銀漆，每格刮掉一半就會整格打開');
+            actions(g.manual ? [] : [{
                 label: '全部刮開', onClick: btn => {
                     btn.disabled = true;
                     let start = 0;
@@ -1227,11 +1576,12 @@
             requestAnimationFrame(() => {
                 foils = [...host.querySelectorAll('[data-zone]')].map(zone => makeFoil(zone,
                     el => {
-                        g.onOpen?.(el, host);
+                        g.onOpen?.(el, host, t);
                         if (zone.hasAttribute('data-optional')) showToast(pick(['這裡是給店員刮的啦。', '兌獎區刮開了，店員會皺眉。']));
                     },
                     () => { if (foils.filter(f => !f.optional).every(f => f.done)) settle(); }
                 ));
+                g.resume?.(t, host);
             });
         }
 
@@ -1249,9 +1599,10 @@
                 if (t.total > 0) {
                     $('playHint').innerHTML = `<span class="block text-xs font-black text-wabi-dark tracking-widest">中獎</span><span class="result-amt money block">${fmt(t.total)}</span><span class="block font-serif text-xs text-stone-500 mt-1">${capital(t.total)}</span>`;
                     sfx.win();
-                    actions([{ label: `兌獎 ${fmt(t.total)}`, cls: 'is-gold', onClick: () => { redeem(); afterRedeem(); } }]);
+                    if (g.manual) { redeem(); afterRedeem(); }  // 自己按收手的，直接兌
+                    else actions([{ label: `兌獎 ${fmt(t.total)}`, cls: 'is-gold', onClick: () => { redeem(); afterRedeem(); } }]);
                 } else {
-                    $('playHint').innerHTML = `<span class="block text-lg font-black text-stone-400 tracking-widest">沒中</span><span class="block text-xs text-stone-500 mt-1">${pick(['差一點。', '下一張一定中。（沒有保證）', '槓龜。', '銀漆屑掃一掃。', '老闆說：再一張就中了。'])}</span>`;
+                    $('playHint').innerHTML = `<span class="block text-lg font-black text-stone-400 tracking-widest">沒中</span><span class="block text-xs text-stone-500 mt-1">${g.loseLine ? g.loseLine(t) : pick(['差一點。', '下一張一定中。（沒有保證）', '槓龜。', '銀漆屑掃一掃。', '老闆說：再一張就中了。'])}</span>`;
                     sfx.lose();
                     redeem(true);
                     afterRedeem();
