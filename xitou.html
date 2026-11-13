@@ -651,19 +651,9 @@
             catears: { name: '雙層貓耳', line: '耳朵比本來的還多兩隻。' },
         };
 
-        // 客人的點單：做到多給小費。ok(G) 洗完才判定；broke 是途中就搞砸的（碰到臉、耳朵）
+        // 客人的點單：做到多給小費（不點造型，造型判定太難猜）。ok(G) 洗完才判定；broke 是途中就搞砸的（碰到臉、耳朵）
         // how 是給玩家的提示（貓的點單只有喵，提示就是翻譯）
         const ORDERS = {
-            unicorn: { text: '幫我捏個獨角獸。', how: '捏的時候，從頭頂往上直直拉一條', tip: 500, no: '我說的是獨角獸耶。', ok: g => g.shape === SHAPES.unicorn },
-            bunny: { text: '我想要兔耳朵。', how: '捏的時候，左右各往上拉一條長的', tip: 500, no: '兔耳朵呢？', ok: g => g.shape === SHAPES.bunny },
-            devil: { text: '今天想當壞人，弄個小惡魔。', how: '捏的時候，左右各往上拉一條短的', tip: 500, no: '這樣看起來太善良了。', ok: g => g.shape === SHAPES.devil },
-            crown: { text: '讓我當一下國王。', how: '捏的時候，往上拉三到五條', tip: 500, no: '皇冠被誰偷走了。', ok: g => g.shape === SHAPES.crown },
-            cone: { text: '頭上給我一支霜淇淋。', how: '捏的時候，邊拉邊轉一圈', tip: 500, no: '霜淇淋融化了嗎。', ok: g => g.shape === SHAPES.cone },
-            rocket: { text: '越高越好，要衝天的那種。', how: '捏的時候，從頭頂往上拉一條很長的', tip: 500, no: '還不夠高。', ok: g => g.shape === SHAPES.rocket },
-            twin: { text: '幫我綁雙馬尾。', how: '捏的時候，從頭的左右兩邊各往下拉一條', tip: 500, no: '馬尾呢？', ok: g => g.shape === SHAPES.twin },
-            halo: { text: '我想要天使光環。', how: '捏的時候，在頭頂上方畫一個圈，頭尾接起來', tip: 600, no: '光環掉了。', ok: g => g.shape === SHAPES.halo },
-            mohawk: { text: '我要龐克頭。', how: '捏的時候，從頭頂正中間往上拉三條以上', tip: 500, no: '不夠龐克。', ok: g => g.shape === SHAPES.mohawk },
-            plain: { text: '不要造型，我等等要見人。', how: '捏的時候什麼都不要拉，直接照鏡子', tip: 300, no: '我等等要見人耶。', ok: g => g.shape === SHAPES.plain },
             less: { text: '我頭皮敏感，洗髮精少一點。', how: '擠在框框最左邊，或少一下', tip: 300, no: '頭皮開始癢了。', ok: g => !g.drip && g.landed >= g.c.st.pumps[0] - 1 && g.landed <= g.c.st.pumps[0], fits: c => c.st.pumps[0] >= 2 },
             more: { text: '多擠一點，我喜歡香香的。', how: '擠在框框最右邊，或多一下，不要流下來', tip: 300, no: '不夠香。', ok: g => !g.drip && g.landed >= g.c.st.pumps[1] && g.landed <= g.c.st.pumps[1] + 1 },
             foam: { text: '整顆都要有泡泡，不要漏。', how: '泡泡蓋到九成以上', tip: 300, no: '後面還是乾的。', ok: g => g.coverage >= 0.9 },
@@ -675,10 +665,10 @@
         };
         // 這些人比較常點這個
         const ORDER_PREF = {
-            '等等有會的旅人': 'fast', '昨天喝太多的旅人': 'less', '熬夜打電動的旅人': 'noface', '說只是來修瀏海的旅人': 'plain',
-            '上缺德榜的旅人': 'devil', '住了三晚還不想退房的旅人': 'halo', '剛在陽台吹完風的旅人': 'rocket', '擲到笑杯的旅人': 'unicorn',
-            '吃掉最後一個布丁的旅人': 'cone', '每週都來的阿伯': 'pat', '戴墨鏡的神秘旅人': 'noface', '不知道怎麼進來的貓': 'bunny',
-            '一直在看手機的旅人': 'noear',  '群組裡已讀不回的旅人': 'mohawk', '第一次來二十七樓的旅人': 'foam', '剛分帳完臉色不太好的旅人': 'less',
+            '等等有會的旅人': 'fast', '昨天喝太多的旅人': 'less', '熬夜打電動的旅人': 'noface', '說只是來修瀏海的旅人': 'fast',
+            '上缺德榜的旅人': 'foam', '住了三晚還不想退房的旅人': 'itchy', '剛在陽台吹完風的旅人': 'foam', '擲到笑杯的旅人': 'pat',
+            '吃掉最後一個布丁的旅人': 'more', '每週都來的阿伯': 'pat', '戴墨鏡的神秘旅人': 'noface', '不知道怎麼進來的貓': 'itchy',
+            '一直在看手機的旅人': 'noear', '群組裡已讀不回的旅人': 'less', '第一次來二十七樓的旅人': 'foam', '剛分帳完臉色不太好的旅人': 'less',
         };
         const ORDER_OK_LINES = ['有照我說的，小費拿去。', '懂我。', '下次還找你。', '就是這樣，加錢。'];
         const NO_ORDER_LINES = ['你專業，隨便洗。', '都可以。', '照你的來。'];
