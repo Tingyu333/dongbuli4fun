@@ -15,6 +15,8 @@
 
 var SITE_URL = 'https://tingyu333.github.io/dongbuli4fun/';
 var SPLIT_URL = 'https://liff.line.me/2012419790-HYQOWzgM'; // 老闆做的分帳 LIFF
+// 網站的會員中心（小遊戲入口），走網站的 LIFF：在 LINE 裡點開會自動用 LINE 登入，錢包跟著帳號
+var GAMES_URL = 'https://liff.line.me/2012419790-otENqBBj/member.html';
 var DAYS_AHEAD = 30;
 
 // 關鍵字：只認訊息開頭。群組裡被 @ 時，會先把 @bot 那段拿掉再判斷（「@丼步喱 空房」也算）
@@ -2149,14 +2151,14 @@ function welcomeText(type) {
 // 不想用了：執行 removeRichMenus()，會回到 Official Account Manager 裡設定的那個選單。
 // 每一格的順序跟圖一樣：上排左到右、下排左到右。
 
-var RICH_MENU_VERSION = 1; // 換圖時加一，LINE 才不會拿到快取的舊圖
+var RICH_MENU_VERSION = 2; // 換圖時加一，LINE 才不會拿到快取的舊圖
 var RICH_MENUS = [
   { alias: 'dbl-27', tab: '二十七樓', bar: '選單・二十七樓', image: 'line-bot/richmenu-27.png', items: [
       { type: 'message', label: '空房', text: '空房' },
       { type: 'uri', label: '訂房', uri: SITE_URL },
       { type: 'message', label: '擲杯', text: '擲杯' },
       { type: 'message', label: '抽籤', text: '抽籤' },
-      { type: 'uri', label: '分帳', uri: SPLIT_URL },
+      { type: 'uri', label: '小遊戲', uri: GAMES_URL },
       { type: 'message', label: '說明', text: '說明' }
     ] },
   { alias: 'dbl-sky', tab: '看天', bar: '選單・看天', image: 'line-bot/richmenu-sky.png', items: [
