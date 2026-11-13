@@ -45,6 +45,8 @@ var LINE_LOGINS_PER_HOUR = 300;  // 全站每小時最多驗證幾次 LINE 登�
 var WALLET_SYNCS_PER_HOUR = 1200; // 一個玩家每小時最多同步幾次錢包
 var WALLET_MAX = 1000000000000;  // 錢包上限一兆（小遊戲的錢，不是真的錢）
 var WALLET_START = 1000;         // 第一次來的錢
+var WASH_LOGS_PER_HOUR = 60;     // 一支手機每小時最多送幾次洗頭紀錄（一次最多 20 顆）
+var WASH_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾顆頭
 
 // doPost 用於接收資料：訂房、留言、後台改狀態
 function doPost(e) {
@@ -66,6 +68,7 @@ function doPost(e) {
     if (type === 'lineLogin') return json(lineLogin(input));
     if (type === 'lineLogout') return json(lineLogout(input));
     if (type === 'walletSync') return json(walletSync(input));
+    if (type === 'washLog') return json(washLog(input));
 
     // 以下只有後台能用，要帶登入拿到的通行證
     if (type === 'updateStatus' || type === 'adminList' || type === 'bonusCreate' || type === 'bonusList' || type === 'bonusClose') {
@@ -931,4 +934,94 @@ function json(data) {
 // Sheet 會把日期字串轉成 Date，這裡轉回台灣時間的 yyyy-MM-dd，避免時區差一天
 function toDateStr(value) {
   return value instanceof Date ? Utilities.formatDate(value, 'Asia/Taipei', 'yyyy-MM-dd') : value;
+}
+
+// --- 坐洗・泡：每一顆頭的紀錄 ---
+// 洗完網頁送上來，一列一顆頭，存在 Washes 分頁（之後排行榜、圖鑑用）。
+// 有登入 LINE 的記 line_id（不回給任何人）；沒登入的只有手機代號（亂數，不是個資）。
+// 不寄信、不回任何資料，只回存了幾顆。網頁送的數字改得動（朋友間玩，不防），這裡只擋格式和數量。
+
+var WASH_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'who', 'style', 'total', 'grade',
+  'squeeze', 'rub', 'scratch', 'style_score', 'pat', 'pumps', 'want', 'drip', 'coverage', 'rub_ms',
+  'hits', 'force', 'shape', 'strokes', 'pat_marks', 'face_pokes', 'ear_pokes', 'order', 'order_done',
+  'wage', 'tip', 'order_tip', 'ms', 'login', 'extra'];
+
+function washesSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Washes');
+  if (!sheet) {
+    sheet = ss.insertSheet('Washes');
+    sheet.appendRow(WASH_HEADERS);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function washNum(v, min, max) {
+  var n = Number(v);
+  if (!isFinite(n)) return '';
+  return Math.max(min, Math.min(max, Math.round(n * 100) / 100));
+}
+
+function washText(v, max) {
+  return asText(String(v == null ? '' : v).replace(/[\r\n\t]/g, ' ').slice(0, max));
+}
+
+function washKey(v) {
+  v = String(v || '');
+  return /^[a-z]{1,12}$/.test(v) ? v : '';
+}
+
+// 一顆頭變成一列；格式不對回 null（整顆不收）
+function washRow(r, now, lineId, device) {
+  if (!r || typeof r !== 'object') return null;
+  var at = new Date(r.at);
+  if (isNaN(at.getTime()) || at.getTime() > now.getTime() + 86400000 || at.getTime() < now.getTime() - 90 * 86400000) return null;
+  var parts = r.parts || {}, pay = r.pay || {}, pokes = r.pokes || {}, order = r.order || null;
+  var want = Array.isArray(r.want) ? r.want.slice(0, 2).map(function (x) { return washNum(x, 0, 20); }).join('-') : '';
+  var extra = { cat: !!r.cat, glasses: washKey(r.glasses), mustache: !!r.mustache, freckles: !!r.freckles };
+  return [
+    now, at, lineId || '', device,
+    washText(r.who, 30), washKey(r.style), washNum(r.total, 0, 100), washText(r.grade, 2),
+    washNum(parts.squeeze, 0, 15), washNum(parts.rub, 0, 25), washNum(parts.scratch, 0, 30), washNum(parts.style, 0, 10), washNum(parts.pat, 0, 20),
+    washNum(r.pumps, 0, 20), want, !!r.drip, washNum(r.coverage, 0, 1), r.rubMs == null ? '' : washNum(r.rubMs, 0, 60000),
+    washNum(r.hits, 0, 14), washText(r.force, 20), washKey(r.shape), washNum(r.strokes, 0, 200), washText(r.patMarks, 8),
+    washNum(pokes.face, 0, 999), washNum(pokes.ear, 0, 999),
+    order ? washKey(order.id) : '', order ? !!order.done : '',
+    washNum(pay.wage, 0, 100000), washNum(pay.tip, 0, 100000), washNum(pay.order, 0, 100000),
+    washNum(r.ms, 0, 3600000), !!r.login, JSON.stringify(extra)
+  ];
+}
+
+function washLog(input) {
+  var device = String(input.device || '').replace(/[^A-Za-z0-9-]/g, '').slice(0, 40);
+  if (device.length < 8) return { result: 'error', error: '沒有裝置代號' };
+  var recs = Array.isArray(input.recs) ? input.recs.slice(0, 20) : [];
+  if (!recs.length) return { result: 'success', saved: 0 };
+
+  var cache = CacheService.getScriptCache();
+  var hour = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var devKey = 'washLog:' + device + ':' + hour, allKey = 'washRows:' + hour;
+  var devCount = Number(cache.get(devKey) || 0), allCount = Number(cache.get(allKey) || 0);
+  if (devCount >= WASH_LOGS_PER_HOUR) return { result: 'error', error: '這小時送太多次了' };
+  if (allCount + recs.length > WASH_ROWS_PER_HOUR) return { result: 'error', error: '這小時全站洗太多頭了' };
+  cache.put(devKey, String(devCount + 1), 3600);
+
+  var lineId = input.session ? sessionUser(input.session) : null;  // 通行證不對就當沒登入，照樣存
+  var now = new Date(), rows = [], skipped = 0;
+  recs.forEach(function (r) {
+    var row = washRow(r, now, lineId, device);
+    if (!row) { skipped++; return; }
+    // 同一支手機同一個時間的同一顆頭，重送不要存兩次
+    var dupKey = 'wash:' + device + ':' + row[1].getTime();
+    if (cache.get(dupKey)) { skipped++; return; }
+    cache.put(dupKey, '1', 6 * 3600);
+    rows.push(row);
+  });
+  if (rows.length) {
+    var sheet = washesSheet();
+    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, WASH_HEADERS.length).setValues(rows);
+    cache.put(allKey, String(allCount + rows.length), 3600);
+  }
+  return { result: 'success', saved: rows.length, skipped: skipped };
 }

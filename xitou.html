@@ -745,6 +745,40 @@
             return st;
         }
         window.XitouStats = { load: loadStats };  // 之後別頁（會員中心、圖鑑）可以讀
+
+        // 也送一份到後端（Washes 分頁），換手機、清掉瀏覽器都還在。
+        // 送過到哪一顆記在 stats.synced（最後送成功那顆的時間），沒送成功的下次洗完或打開頁面再補送
+        const API_URL = "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
+        function deviceId() {
+            let id = '';
+            try { id = localStorage.getItem('dongbuli-device') || ''; } catch (e) { }
+            if (!id) {
+                id = window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'd-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+                try { localStorage.setItem('dongbuli-device', id); } catch (e) { }
+            }
+            return id;
+        }
+        let uploading = false;
+        async function uploadWashes() {
+            if (uploading) return;
+            const st = loadStats();
+            const todo = st.recent.filter(r => !st.synced || r.at > st.synced).reverse().slice(0, 20);  // 舊的先送
+            if (!todo.length) return;
+            uploading = true;
+            try {
+                let session = '';
+                try { session = localStorage.getItem('dongbuli-session') || ''; } catch (e) { }
+                const res = await fetch(API_URL, { method: 'POST', keepalive: true, body: JSON.stringify({ type: 'washLog', device: deviceId(), session, recs: todo }) });
+                const r = await res.json();
+                if (r.result === 'success') {
+                    const now = loadStats();
+                    now.synced = todo[todo.length - 1].at;
+                    try { localStorage.setItem(STATS_KEY, JSON.stringify(now)); } catch (e) { }
+                    if (todo.length === 20) setTimeout(uploadWashes, 1500);  // 還有沒送完的
+                }
+            } catch (e) { /* 沒網路、後端還沒部署：下次再送 */ }
+            uploading = false;
+        }
         // 倒過來的擠壓瓶（按鈕上的圖）
         const BOTTLE_SVG = '<svg viewBox="0 0 24 34" width="24" height="34" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="1.5" width="16" height="19" rx="4.5"/><path d="M4 9h16M4 14h16"/><path d="M8 20.5l1.5 5h5l1.5-5"/><path d="M12 25.5v3.5"/><path d="M12 31.5v1" stroke-linecap="round"/></svg>';
 
@@ -1965,6 +1999,7 @@
                 pay: { ...G.pay },
                 login: !!(window.Line && Line.loggedIn),
             });
+            uploadWashes();
             $('payWallet').textContent = Wallet.fmt(Wallet.money);
             renderAcct();
 
@@ -2161,6 +2196,7 @@
         renderBest();
         intro();
         requestAnimationFrame(frame);
+        setTimeout(uploadWashes, 2500);  // 之前沒送成功的補送
     </script>
 </body>
 
