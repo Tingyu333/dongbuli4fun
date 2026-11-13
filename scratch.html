@@ -132,22 +132,6 @@
             text-underline-offset: 2px;
         }
 
-        .c-badge {
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            min-width: 0.9rem;
-            height: 0.9rem;
-            padding: 0 1px;
-            border-radius: 3px;
-            background: #c0261d;
-            color: #fff;
-            font-size: 0.55rem;
-            font-weight: 900;
-            line-height: 0.9rem;
-            text-align: center;
-        }
-
         .pk-grid {
             display: grid;
             gap: 4px;
@@ -177,8 +161,19 @@
             box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
         }
 
-        .pk-grid.is-full .pk-n:not(.on) {
-            opacity: 0.4;
+        .pk-n.is-sold {
+            background: transparent;
+            color: #d6d3d1;
+            text-decoration: line-through;
+        }
+
+        .pk-grid.is-full .pk-n:not(.on):not(.is-sold) {
+            opacity: 0.45;
+        }
+
+        .tk-num {
+            font-size: 0.95em;
+            font-weight: 900;
         }
 
         #picker,
@@ -902,14 +897,13 @@
             <p class="mt-8 text-white/60 text-xs tracking-widest">點一下繼續</p>
         </div>
     </div>
-    <!-- 選號 -->
-    <div id="picker" class="hidden fixed inset-0 z-[90] flex items-end justify-center" role="dialog" aria-modal="true" aria-label="選號碼">
+    <!-- 挑一張 -->
+    <div id="picker" class="hidden fixed inset-0 z-[90] flex items-end justify-center" role="dialog" aria-modal="true" aria-label="挑一張">
         <div class="odds-sheet w-full max-w-md bg-white rounded-t-2xl overflow-hidden" style="font-family: 'Noto Sans TC', sans-serif;">
             <div id="pickerBody" class="max-h-[70vh] overflow-y-auto"></div>
-            <div class="px-4 pb-5 pt-2 grid grid-cols-2 gap-2 border-t border-stone-100">
-                <button type="button" id="pkBuy1" class="act is-main !px-2" data-pk-buy="1">買 1 張</button>
-                <button type="button" id="pkBuy5" class="act !px-2" data-pk-buy="5">買 5 張</button>
-                <button type="button" class="col-span-2 text-xs font-bold text-stone-400 py-2" data-pk-close>不買了</button>
+            <div class="px-4 pb-5 pt-2 border-t border-stone-100">
+                <button type="button" id="pkBuy" class="act is-main w-full !px-2">點一個號碼</button>
+                <button type="button" class="w-full text-xs font-bold text-stone-400 py-3" data-pk-close>不買了</button>
             </div>
         </div>
     </div>
@@ -1003,12 +997,19 @@
         const GAMES = {
             luck: {
                 name: '好運連連', price: 100, jackpot: 1000000, c1: '#e8382f', c2: '#a8141b', hi: '#ffd34d',
-                desc: '自己選 10 個號碼，對中就中',
-                pick: { n: 10, max: 100, w: 2 },
+                desc: '號碼對中就中',
                 table: [[1000000, 0.00002], [100000, 0.0001], [10000, 0.0008], [2000, 0.004], [1000, 0.01], [500, 0.02], [200, 0.06], [100, 0.18]],
                 denoms: [100, 200, 500, 1000, 2000, 10000, 100000, 1000000],
                 weights: [30, 25, 15, 10, 8, 5, 4, 3],
-                gen(picks) { return pickedTicket(this, rollT(this.table), picks, 0.25, 3); },
+                gen() {
+                    const T = rollT(this.table);
+                    const W = sample(range(1, 30), 2);
+                    const nonW = shuffle(range(1, 30).filter(n => !W.includes(n)));
+                    const cells = [];
+                    if (T) split(T, this.denoms, 3).forEach(v => cells.push(Math.random() < 0.25 ? { star: true, prize: v } : { n: pick(W), prize: v }));
+                    while (cells.length < 10) cells.push({ n: nonW.pop(), prize: decoy(this.denoms, this.weights) });
+                    return { T, W, cells: shuffle(cells) };
+                },
                 score: t => t.cells.reduce((s, c) => s + (c.star || t.W.includes(c.n) ? c.prize : 0), 0),
                 html(t) {
                     return `
@@ -1021,10 +1022,10 @@
                     <div class="tk-panel">
                         <div class="tk-label">我的號碼 <small>刮到 <b class="text-[#c0261d]">★</b> 直接得獎金</small></div>
                         <div class="zone g grid-cols-5" data-zone>
-                            ${t.cells.map(c => `<div class="c h-[4.1rem]" data-cell ${c.star || t.W.includes(c.n) ? 'data-win' : ''}>${numHTML(c)}${amtHTML(c.prize)}</div>`).join('')}
+                            ${t.cells.map(c => `<div class="c h-[4.1rem]" data-cell ${c.star || t.W.includes(c.n) ? 'data-win' : ''}>${c.star ? '<span class="c-sym">★</span>' : `<span class="c-num">${two(c.n)}</span>`}${amtHTML(c.prize)}</div>`).join('')}
                         </div>
                     </div>
-                    <p class="tk-rule">「我的號碼」是你自己選的 10 個號碼（01～100）。刮開「中獎號碼」及「我的號碼」，我的號碼與任一中獎號碼相同，即可獲得該號碼下方獎金；號碼旁刮出「★」直接獲得該獎金。可多重中獎，獎金累計。</p>`;
+                    <p class="tk-rule">刮開「中獎號碼」及「我的號碼」，我的號碼與任一中獎號碼相同，即可獲得該號碼下方獎金；刮出「★」直接獲得該獎金。可多重中獎，獎金累計。</p>`;
                 },
             },
 
@@ -1174,27 +1175,30 @@
             },
 
             hongbao: {
-                name: '27 樓大紅包', price: 2000, jackpot: 20000000, c1: '#c81e1e', c2: '#6f0f0f', hi: '#fcd34d',
-                desc: '選 20 個號碼，張張有獎',
-                pick: { n: 20, max: 25, w: 5 },
+                name: '27 樓大紅包', price: 2000, book: 25, jackpot: 20000000, c1: '#c81e1e', c2: '#6f0f0f', hi: '#fcd34d',
+                desc: '張張有獎，刮到「全」通通中',
                 // 張張有獎（中獎率 100%），但平均只拿回 43%：大多是 $200、$500
                 table: [[20000000, 0.000001], [1000000, 0.00001], [100000, 0.0001], [20000, 0.002], [10000, 0.008], [5000, 0.02], [3000, 0.03], [2000, 0.062], [1000, 0.155], [500, 0.29], [200, 0.432889]],
                 denoms: [200, 500, 1000, 2000, 3000, 4000, 5000, 10000, 20000, 100000, 1000000, 20000000],
                 weights: [30, 26, 20, 12, 8, 6, 5, 3, 2, 1.5, 0.8, 0.5],
-                gen(picks) {
+                gen() {
                     const T = rollT(this.table) || 200;  // 張張有獎：小數誤差抽空了也給最小獎
+                    const W = sample(range(1, 50), 5);
+                    const nonW = shuffle(range(1, 50).filter(n => !W.includes(n)));
+                    let cells = [];
                     // 刮到「全」：20 格獎金加起來剛好是 T
                     if ([10000, 20000, 100000].includes(T) && Math.random() < 0.35) {
                         const all = fillAll(T, 20, [200, 500, 1000, 2000, 5000, 10000]);
                         if (all) {
-                            const t = pickedTicket(this, 0, picks, 0, 0);
-                            t.T = T;
-                            t.cells.forEach((c, i) => { c.prize = all[i]; delete c.star; });
-                            t.cells[randint(0, 19)].all = true;
-                            return t;
+                            cells = all.map(v => ({ n: nonW.pop(), prize: v }));
+                            const i = randint(0, 19);
+                            cells[i] = { all: true, prize: cells[i].prize };
+                            return { T, W, cells };
                         }
                     }
-                    return pickedTicket(this, T, picks, 0.2, 4);
+                    if (T) split(T, this.denoms, 4).forEach(v => cells.push(Math.random() < 0.2 ? { star: true, prize: v } : { n: pick(W), prize: v }));
+                    while (cells.length < 20) cells.push({ n: nonW.pop(), prize: decoy(this.denoms, this.weights) });
+                    return { T, W, cells: shuffle(cells) };
                 },
                 score(t) {
                     if (t.cells.some(c => c.all)) return t.cells.reduce((s, c) => s + c.prize, 0);
@@ -1213,10 +1217,10 @@
                     <div class="tk-panel">
                         <div class="tk-label">我的號碼 <small><b class="text-[#c0261d]">★</b> 直接得獎金・<b class="text-[#c0261d]">全</b> 20 組全中</small></div>
                         <div class="zone g grid-cols-4" data-zone>
-                            ${t.cells.map(c => `<div class="c h-[4.1rem]" data-cell ${isWin(c) ? 'data-win' : ''}>${numHTML(c)}${amtHTML(c.prize)}</div>`).join('')}
+                            ${t.cells.map(c => `<div class="c h-[4.1rem]" data-cell ${isWin(c) ? 'data-win' : ''}>${c.all ? '<span class="c-sym">全</span>' : c.star ? '<span class="c-sym">★</span>' : `<span class="c-num">${two(c.n)}</span>`}${amtHTML(c.prize)}</div>`).join('')}
                         </div>
                     </div>
-                    <p class="tk-rule">「我的號碼」是你自己選的 20 個號碼（01～25），本券張張有獎。刮開「中獎號碼」及「我的號碼」，我的號碼與任一中獎號碼相同，即可獲得該號碼下方獎金；號碼旁刮出「★」直接獲得該獎金；刮出「全」即可獲得 20 組獎金。可多重中獎，獎金累計。</p>`;
+                    <p class="tk-rule">刮開「中獎號碼」及「我的號碼」，我的號碼與任一中獎號碼相同，即可獲得該號碼下方獎金；刮出「★」直接獲得該獎金；刮出「全」即可獲得 20 組獎金。可多重中獎，獎金累計。</p>`;
                 },
             },
         };
@@ -1395,23 +1399,26 @@
             },
 
             multi: {
-                name: '超級加倍', price: 1000, jackpot: 10000000, c1: '#d97706', c2: '#451a03', hi: '#fde68a',
-                desc: '選 12 個號碼，對中再乘加倍',
-                pick: { n: 12, max: 50, w: 4 },
+                name: '超級加倍', price: 1000, book: 50, jackpot: 10000000, c1: '#d97706', c2: '#451a03', hi: '#fde68a',
+                desc: '對中號碼，再乘上加倍區',
                 table: [[10000000, 0.000002], [1000000, 0.00002], [100000, 0.0004], [50000, 0.001], [20000, 0.004], [10000, 0.01], [5000, 0.03], [2000, 0.08], [1000, 0.2]],
                 denoms: [500, 1000, 2000, 5000, 10000, 50000, 100000, 1000000],
                 weights: [30, 25, 18, 10, 8, 4, 3, 2],
-                gen(picks) {
+                gen() {
                     const T = rollT(this.table);
+                    const W = sample(range(1, 40), 4);
+                    const nonW = shuffle(range(1, 40).filter(n => !W.includes(n)));
                     let m = pick([1, 1, 1, 2, 2, 5, 10]);
-                    if (!T) return { ...pickedTicket(this, 0, picks, 0, 0), m };
-                    // 哪幾種倍數湊得出 T（例如 5000 可以是 5000×1、1000×5、500×10）
-                    const ok = [10, 5, 2, 1].filter(k => T % k === 0 && split(T / k, this.denoms, 3).every(v => this.denoms.includes(v)));
-                    m = Math.random() < 0.45 ? 1 : pick(ok);
-                    if (!ok.includes(m)) m = pick(ok);
-                    const t = pickedTicket(this, T / m, picks, 0, 3);
-                    t.T = T;
-                    return { ...t, m };
+                    const cells = [];
+                    if (T) {
+                        // 哪幾種倍數湊得出 T（例如 5000 可以是 5000×1、1000×5、500×10）
+                        const ok = [10, 5, 2, 1].filter(k => T % k === 0 && split(T / k, this.denoms, 3).every(v => this.denoms.includes(v)));
+                        m = Math.random() < 0.45 ? 1 : pick(ok);
+                        if (!ok.includes(m)) m = pick(ok);
+                        split(T / m, this.denoms, 3).forEach(v => cells.push({ n: pick(W), prize: v }));
+                    }
+                    while (cells.length < 12) cells.push({ n: nonW.pop(), prize: decoy(this.denoms, this.weights) });
+                    return { T, W, m, cells: shuffle(cells) };
                 },
                 score: t => t.m * t.cells.reduce((s, c) => s + (t.W.includes(c.n) ? c.prize : 0), 0),
                 html(t) {
@@ -1425,7 +1432,7 @@
                     <div class="tk-panel">
                         <div class="tk-label">我的號碼</div>
                         <div class="zone g grid-cols-4" data-zone>
-                            ${t.cells.map(c => `<div class="c h-[4.1rem]" data-cell ${t.W.includes(c.n) ? 'data-win' : ''}>${numHTML(c)}${amtHTML(c.prize)}</div>`).join('')}
+                            ${t.cells.map(c => `<div class="c h-[4.1rem]" data-cell ${t.W.includes(c.n) ? 'data-win' : ''}><span class="c-num">${two(c.n)}</span>${amtHTML(c.prize)}</div>`).join('')}
                         </div>
                     </div>
                     <div class="tk-panel flex items-center gap-3">
@@ -1434,7 +1441,7 @@
                             <div class="c h-14" data-cell ${t.T && t.m > 1 ? 'data-win' : ''}><span class="c-mult">×${t.m}</span></div>
                         </div>
                     </div>
-                    <p class="tk-rule">「我的號碼」是你自己選的 12 個號碼（01～50）。刮開「中獎號碼」及「我的號碼」，我的號碼與任一中獎號碼相同，即可獲得該號碼下方獎金，可多重中獎；中獎總金額再乘上「加倍區」的倍數。</p>`;
+                    <p class="tk-rule">刮開「中獎號碼」及「我的號碼」，我的號碼與任一中獎號碼相同，即可獲得該號碼下方獎金，可多重中獎；中獎總金額再乘上「加倍區」的倍數。</p>`;
                 },
             },
         });
@@ -1442,26 +1449,6 @@
         function bingoLines(card, calls) {
             return BINGO_LINES.filter(L => L.every(i => card[i] === 0 || calls.has(card[i])));
         }
-
-        // 自己選號的票：我的號碼就是選的那幾個，再挑中獎號碼讓對中的獎金剛好是 T
-        //   T 拆成幾份，每份放在一個號碼下面，那個號碼放進中獎號碼（或標 ★ 直接得）；
-        //   其他中獎號碼從沒選的號碼裡挑，所以不會多中。沒帶 picks（模擬、舊存檔）就隨機選
-        function pickedTicket(g, T, picks, starRate, maxParts) {
-            const { n: N, max: R, w: nW } = g.pick;
-            const mine = picks && picks.length === N && new Set(picks).size === N ? picks.slice() : sample(range(1, R), N);
-            const pool = shuffle(mine.slice()), cells = [], W = [];
-            if (T) split(T, g.denoms, maxParts).forEach(v => {
-                const n = pool.pop();
-                if (W.length < nW && Math.random() >= starRate) { W.push(n); cells.push({ n, prize: v }); }
-                else cells.push({ n, star: true, prize: v });
-            });
-            pool.forEach(n => cells.push({ n, prize: decoy(g.denoms, g.weights) }));
-            const outside = shuffle(range(1, R).filter(n => !mine.includes(n)));
-            while (W.length < nW) W.push(outside.pop());
-            return { T, W: shuffle(W), cells: cells.sort((a, b) => a.n - b.n) };
-        }
-        // 我的號碼那一格：號碼，旁邊可能有 ★／全（舊存檔的 ★、全沒有號碼）
-        const numHTML = c => c.n ? `<span class="c-num">${two(c.n)}</span>${c.all ? '<span class="c-badge">全</span>' : c.star ? '<span class="c-badge">★</span>' : ''}` : `<span class="c-sym">${c.all ? '全' : '★'}</span>`;
 
         // 20 格獎金加起來剛好 T（值只用 V 裡的）
         function fillAll(T, n, V) {
@@ -1490,12 +1477,13 @@
             try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { }
         }
 
-        function newTicket(type, picks) {
+        function newTicket(type, at) {
             const g = GAMES[type];
             let t = null;
-            while (!t) t = g.gen(picks);
+            while (!t) t = g.gen();
             S.serial++;
-            return { type, serial: S.serial, code: `27-${String(S.serial).padStart(6, '0')}-${randint(1000, 9999)}`, settled: false, redeemed: false, ...t };
+            const code = at ? `${String(at.book).padStart(4, '0')}-${String(at.num).padStart(3, '0')}-${randint(1000, 9999)}` : `27-${String(S.serial).padStart(6, '0')}-${randint(1000, 9999)}`;
+            return { type, serial: S.serial, code, book: at && at.book, num: at && at.num, settled: false, redeemed: false, ...t };
         }
 
         // ===== 3. 聲音：Web Audio 合成 =====
@@ -1798,9 +1786,8 @@
                         <span class="text-[10px] font-bold text-right leading-tight">${g.jackpotText ? `<span class="text-sm font-black" style="color:var(--hi)">${g.jackpotText}</span>` : `頭獎 <span class="text-sm font-black" style="color:var(--hi)">${wan(g.jackpot)}</span>`}</span>
                     </div>
                     <div class="relative z-[1] mt-2 flex gap-1.5">
-                        ${g.pick ? `<button type="button" class="buy" data-buy="${key}" data-n="1" ${S.money < g.price ? 'disabled' : ''}>選號碼・買</button>` : `
-                        <button type="button" class="buy" data-buy="${key}" data-n="1" ${S.money < g.price ? 'disabled' : ''}>買 1 張</button>
-                        <button type="button" class="buy !flex-none w-12" data-buy="${key}" data-n="5" aria-label="買 5 張" ${S.money < g.price * 5 ? 'disabled' : ''}>×5</button>`}
+                        <button type="button" class="buy" data-buy="${key}" data-n="1" ${S.money < g.price ? 'disabled' : ''}>挑一張</button>
+                        <button type="button" class="buy !flex-none w-12" data-buy="${key}" data-n="5" aria-label="買 5 張" ${S.money < g.price * 5 ? 'disabled' : ''}>×5</button>
                     </div>
                 </div>`).join('');
             $('broke').classList.toggle('hidden', S.money >= 50 || S.queue.length > 0);
@@ -1814,74 +1801,108 @@
             const btn = e.target.closest('[data-buy]');
             if (!btn || btn.disabled) return;
             unlockAudio();
-            if (GAMES[btn.dataset.buy].pick) openPicker(btn.dataset.buy);
+            if (btn.dataset.n === '1') openBook(btn.dataset.buy);
             else buy(btn.dataset.buy, Number(btn.dataset.n));
         });
 
-        // ===== 選號 =====
-        let PK = null;  // { key, sel: [] }
-        function openPicker(key) {
-            const g = GAMES[key], last = (S.picks || {})[key];
-            PK = { key, sel: [] };
+        // ===== 挑一張：一本刮刮樂有編號，自己挑要幾號 =====
+        // 好運連連這些一本 100 張、超級加倍 50 張、大紅包 25 張；賣完換下一本。
+        // 每一張的結果還是買的時候才抽（跟挑哪一號無關），所以機率跟獎金表一樣。
+        const bookSize = key => GAMES[key].book || 100;
+        function curBook(key) {
+            S.books = S.books || {};
+            let b = S.books[key];
+            if (!b || b.sold.length >= bookSize(key)) {
+                b = S.books[key] = { no: (b ? b.no : randint(10, 300)) + 1, sold: [] };
+                save();
+            }
+            return b;
+        }
+        // 從這本拿 k 張（不夠就賣完這本、開下一本）
+        function takeNums(key, nums) {
+            const b = curBook(key), out = nums.map(num => ({ book: b.no, num }));
+            b.sold.push(...nums);
+            save();
+            return out;
+        }
+        function takeRandom(key, k) {
+            let out = [];
+            while (out.length < k) {
+                const b = curBook(key), left = range(1, bookSize(key)).filter(n => !b.sold.includes(n));
+                out = out.concat(takeNums(key, sample(left, Math.min(k - out.length, left.length)).sort((a, b) => a - b)));
+            }
+            return out;
+        }
+
+        let BK = null;  // { key, sel: [] }
+        function openBook(key) {
+            const g = GAMES[key], b = curBook(key), N = bookSize(key);
+            BK = { key, sel: [] };
             $('pickerBody').innerHTML = `
                 <div class="odds-head" style="--c1:${g.c1};--c2:${g.c2};--hi:${g.hi}">
                     <span class="cover-name">${g.name}</span><span class="cover-price">${fmt(g.price)}</span>
                 </div>
                 <div class="p-4">
                     <div class="flex items-baseline justify-between">
-                        <p class="text-sm font-black text-[#1c1917]">選 ${g.pick.n} 個號碼 <small class="font-bold text-stone-400">01～${g.pick.max}</small></p>
-                        <p class="text-xs font-bold text-stone-500">已選 <b id="pkCount" class="text-base text-[#1c1917]">0</b>／${g.pick.n}</p>
+                        <p class="text-sm font-black text-[#1c1917]">第 ${String(b.no).padStart(4, '0')} 本 <small class="font-bold text-stone-400">一本 ${N} 張</small></p>
+                        <p class="text-xs font-bold text-stone-500">還剩 <b class="text-base text-[#1c1917]">${N - b.sold.length}</b> 張</p>
                     </div>
-                    <div id="pkGrid" class="pk-grid mt-3 ${g.pick.max <= 25 ? 'grid-cols-5' : 'grid-cols-10'}" style="--c1:${g.c1};--c2:${g.c2}">
-                        ${range(1, g.pick.max).map(n => `<button type="button" class="pk-n ${g.pick.max <= 25 ? 'is-big' : ''}" data-pk="${n}" aria-pressed="false">${two(n)}</button>`).join('')}
+                    <p class="mt-1 text-[11px] text-stone-400">挑你覺得會中的號碼，最多一次 5 張。灰色的是賣掉的。</p>
+                    <div id="pkGrid" class="pk-grid mt-3 ${N <= 25 ? 'grid-cols-5' : 'grid-cols-10'}" style="--c1:${g.c1};--c2:${g.c2}">
+                        ${range(1, N).map(n => { const sold = b.sold.includes(n); return `<button type="button" class="pk-n ${N <= 25 ? 'is-big' : ''} ${sold ? 'is-sold' : ''}" data-pk="${n}" ${sold ? 'disabled aria-label="已賣出"' : 'aria-pressed="false"'}>${String(n).padStart(2, '0')}</button>`; }).join('')}
                     </div>
                     <div class="mt-3 flex gap-2">
-                        <button type="button" class="act flex-1 !px-2" data-pk-auto>電腦選號</button>
-                        ${last ? '<button type="button" class="act flex-1 !px-2" data-pk-last>上次的號碼</button>' : ''}
+                        <button type="button" class="act flex-1 !px-2" data-pk-auto>隨便抽一張</button>
                         <button type="button" class="act flex-1 !px-2" data-pk-clear>清除</button>
                     </div>
-                    <p class="mt-2 text-[11px] text-stone-400">買 5 張的話，5 張都用這組號碼。</p>
                 </div>`;
-            pkRender();
+            bkRender();
             $('picker').classList.remove('hidden');
             requestAnimationFrame(() => $('picker').classList.add('on'));
         }
-        function pkRender() {
-            const g = GAMES[PK.key], full = PK.sel.length === g.pick.n;
-            $('pkCount').textContent = PK.sel.length;
-            $('pkGrid').classList.toggle('is-full', full);
-            $('pkGrid').querySelectorAll('[data-pk]').forEach(b => { const on = PK.sel.includes(Number(b.dataset.pk)); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
-            const b1 = $('pkBuy1'), b5 = $('pkBuy5');
-            b1.textContent = full ? `買 1 張 ${fmt(g.price)}` : `還要選 ${g.pick.n - PK.sel.length} 個`;
-            b5.textContent = `買 5 張 ${fmt(g.price * 5)}`;
-            b1.disabled = !full || S.money < g.price;
-            b5.disabled = !full || S.money < g.price * 5;
+        function bkMax() {
+            const g = GAMES[BK.key], b = curBook(BK.key);
+            return Math.max(0, Math.min(5, bookSize(BK.key) - b.sold.length, Math.floor(S.money / g.price)));
+        }
+        function bkRender() {
+            const g = GAMES[BK.key], k = BK.sel.length, max = bkMax();
+            $('pkGrid').classList.toggle('is-full', k >= max);
+            $('pkGrid').querySelectorAll('[data-pk]:not(.is-sold)').forEach(btn => { const on = BK.sel.includes(Number(btn.dataset.pk)); btn.classList.toggle('on', on); btn.setAttribute('aria-pressed', on); });
+            const go = $('pkBuy');
+            go.disabled = !k;
+            go.textContent = k ? `買 ${BK.sel.slice().sort((a, b) => a - b).map(n => String(n).padStart(2, '0') + ' 號').join('、')}・${fmt(g.price * k)}` : (max ? '點一個號碼' : (S.money < g.price ? '錢不夠' : '這本賣完了'));
         }
         function hidePicker() {
             const el = $('picker'); el.classList.remove('on');
             setTimeout(() => el.classList.add('hidden'), reduceMotion ? 0 : 220);
         }
         $('picker').addEventListener('click', e => {
-            if (!PK) return;
-            const g = GAMES[PK.key], N = g.pick.n;
+            if (!BK) return;
+            const g = GAMES[BK.key];
             const num = e.target.closest('[data-pk]');
             if (num) {
-                const n = Number(num.dataset.pk), i = PK.sel.indexOf(n);
-                if (i >= 0) PK.sel.splice(i, 1);
-                else if (PK.sel.length < N) { PK.sel.push(n); sfx.ding && sfx.ding(PK.sel.length % 6); }
-                else { if (!reduceMotion) num.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-3px)' }, { transform: 'translateX(3px)' }, { transform: 'translateX(0)' }], { duration: 200 }); if (window.showToast) showToast(`已經選滿 ${N} 個了，先點掉一個再換`); }
-                pkRender(); return;
+                if (num.disabled) return;
+                const n = Number(num.dataset.pk), i = BK.sel.indexOf(n);
+                if (i >= 0) BK.sel.splice(i, 1);
+                else if (BK.sel.length < bkMax()) BK.sel.push(n);
+                else {
+                    if (!reduceMotion) num.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-3px)' }, { transform: 'translateX(3px)' }, { transform: 'translateX(0)' }], { duration: 200 });
+                    if (window.showToast) showToast(S.money < g.price * (BK.sel.length + 1) ? '錢包不夠再多買一張' : '一次最多 5 張，先點掉一張再換');
+                }
+                bkRender(); return;
             }
-            if (e.target.closest('[data-pk-auto]')) { const rest = shuffle(range(1, g.pick.max).filter(n => !PK.sel.includes(n))); PK.sel = PK.sel.concat(rest.slice(0, N - PK.sel.length)); pkRender(); return; }
-            if (e.target.closest('[data-pk-last]')) { PK.sel = ((S.picks || {})[PK.key] || []).slice(0, N); pkRender(); return; }
-            if (e.target.closest('[data-pk-clear]')) { PK.sel = []; pkRender(); return; }
-            const buyBtn = e.target.closest('[data-pk-buy]');
-            if (buyBtn && !buyBtn.disabled && PK.sel.length === N) {
-                const n = Number(buyBtn.dataset.pkBuy), picks = PK.sel.slice();
-                S.picks = { ...(S.picks || {}), [PK.key]: picks };
+            if (e.target.closest('[data-pk-auto]')) {
+                const b = curBook(BK.key), left = range(1, bookSize(BK.key)).filter(n => !b.sold.includes(n) && !BK.sel.includes(n));
+                if (left.length && BK.sel.length < bkMax()) BK.sel.push(pick(left));
+                bkRender(); return;
+            }
+            if (e.target.closest('[data-pk-clear]')) { BK.sel = []; bkRender(); return; }
+            if (e.target.closest('#pkBuy')) {
+                if (!BK.sel.length || S.money < g.price * BK.sel.length) return;
+                const key = BK.key, nums = takeNums(key, BK.sel.slice().sort((a, b) => a - b));
                 unlockAudio();
                 hidePicker();
-                buy(PK.key, n, picks);
+                buy(key, nums.length, nums);
                 return;
             }
             if (e.target.closest('[data-pk-close]') || e.target.id === 'picker') hidePicker();
@@ -1946,11 +1967,12 @@
         // ===== 6. 買、刮、對獎、兌獎 =====
         let foils = [];
 
-        function buy(type, n, picks) {
+        function buy(type, n, nums) {
             const g = GAMES[type];
             if (S.money < g.price * n) return;
             redeem(true); // 上一張還沒兌的先兌掉
-            for (let i = 0; i < n; i++) S.queue.push(newTicket(type, picks));  // 買 5 張是同一組號碼
+            const at = nums || takeRandom(type, n);
+            at.forEach(a => S.queue.push(newTicket(type, a)));
             S.spent += g.price * n;
             setMoney(S.money - g.price * n, -g.price * n);
             sfx.buy();
@@ -1995,7 +2017,7 @@
                     </div>
                     ${g.html(t)}
                     <div class="tk-foot">
-                        <span>27 樓彩券行<br>No. ${t.code.slice(0, 9)}<br><button type="button" class="tk-odds" data-odds="${t.type}">${g.manual ? '挖幾格最划算？' : `中獎率 ${pct(odds(g).win)}`}</button></span>
+                        <span>27 樓彩券行<br>${t.num ? `第 ${String(t.book).padStart(4, '0')} 本・<b class="tk-num">${String(t.num).padStart(2, '0')}</b> 號` : `No. ${t.code.slice(0, 9)}`}<br><button type="button" class="tk-odds" data-odds="${t.type}">${g.manual ? '挖幾格最划算？' : `中獎率 ${pct(odds(g).win)}`}</button></span>
                         <div class="zone tk-code" data-zone data-optional><div class="tk-code-in" data-cell>${t.code}</div></div>
                     </div>
                 </div>`;
