@@ -89,6 +89,161 @@
             text-align: center;
         }
 
+        .cover-odds {
+            position: relative;
+            z-index: 1;
+            margin-top: 0.35rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.25rem;
+            width: 100%;
+            min-height: 28px;
+            padding: 0 0.45rem;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.22);
+            font-size: 10px;
+            font-weight: 700;
+            text-align: left;
+            touch-action: manipulation;
+        }
+
+        .cover-odds b {
+            font-size: 0.8rem;
+            font-weight: 900;
+            color: var(--hi);
+        }
+
+        .cover-odds span {
+            flex: none;
+            font-size: 9px;
+            opacity: 0.85;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .tk-odds {
+            margin-top: 2px;
+            padding: 2px 0;
+            font: inherit;
+            font-weight: 900;
+            color: inherit;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        #odds {
+            background: rgba(0, 0, 0, 0);
+            transition: background 0.22s;
+        }
+
+        #odds.on {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .odds-sheet {
+            transform: translateY(100%);
+            transition: transform 0.22s ease-out;
+            color: #3f3f46;
+        }
+
+        #odds.on .odds-sheet {
+            transform: none;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #odds, .odds-sheet { transition: none; }
+        }
+
+        .odds-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.9rem 1rem;
+            background: linear-gradient(150deg, var(--c1), var(--c2));
+        }
+
+        .odds-big {
+            padding: 0.7rem 0.4rem;
+            border-radius: 10px;
+            background: #f5f5f4;
+        }
+
+        .odds-big span {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: #78716c;
+        }
+
+        .odds-big b {
+            display: block;
+            font-size: 1.6rem;
+            font-weight: 900;
+            line-height: 1.2;
+            color: #1c1917;
+        }
+
+        .odds-big small {
+            display: block;
+            font-size: 10px;
+            color: #a8a29e;
+        }
+
+        .odds-t {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .odds-t th {
+            padding: 0.3rem 0.4rem;
+            font-size: 10px;
+            font-weight: 700;
+            color: #a8a29e;
+            text-align: right;
+            border-bottom: 1px solid #e7e5e4;
+        }
+
+        .odds-t td {
+            padding: 0.45rem 0.4rem;
+            text-align: right;
+            border-bottom: 1px solid #f5f5f4;
+            white-space: nowrap;
+        }
+
+        .odds-t th:first-child,
+        .odds-t td:first-child {
+            text-align: left;
+        }
+
+        .odds-t td small {
+            margin-left: 0.4rem;
+            font-size: 10px;
+            font-weight: 700;
+            color: #a8a29e;
+        }
+
+        .odds-t td b {
+            margin-left: 0.35rem;
+            padding: 1px 5px;
+            border-radius: 4px;
+            background: #dc2626;
+            color: #fff;
+            font-size: 10px;
+        }
+
+        .odds-t tr.is-top td:first-child,
+        .odds-t tr.is-best td {
+            color: #dc2626;
+            font-weight: 900;
+        }
+
+        .odds-t tr.is-none td {
+            color: #a8a29e;
+        }
+
         .buy {
             position: relative;
             z-index: 1;
@@ -693,6 +848,13 @@
             <p id="bigAmt" class="amt mt-3">$0</p>
             <p id="bigCap" class="mt-2 text-yellow-100 font-serif text-sm tracking-widest"></p>
             <p class="mt-8 text-white/60 text-xs tracking-widest">點一下繼續</p>
+        </div>
+    </div>
+    <!-- 獎金表 -->
+    <div id="odds" class="hidden fixed inset-0 z-[90] flex items-end justify-center" role="dialog" aria-modal="true" aria-label="獎金表">
+        <div class="odds-sheet w-full max-w-md bg-white rounded-t-2xl overflow-hidden" style="font-family: 'Noto Sans TC', sans-serif;">
+            <div id="oddsBody" class="max-h-[78vh] overflow-y-auto"></div>
+            <div class="px-4 pb-5 pt-1"><button type="button" class="act w-full" data-odds-close>知道了</button></div>
         </div>
     </div>
     <canvas id="confetti" class="fixed inset-0 w-full h-full z-[60] pointer-events-none" aria-hidden="true"></canvas>
@@ -1495,6 +1657,62 @@
             $('stats').innerHTML = `刮了 ${S.count} 張・回收率 ${rate}<br>花 ${fmt(S.spent)}・中 ${fmt(S.won)}<br>最大一筆 ${S.best ? fmt(S.best) : '—'}`;
         }
 
+        // ===== 中獎機率（照機率表算，不是猜的；改了機率表這裡自己會跟著變） =====
+        const pct = p => { const v = p * 100; return String(parseFloat(v >= 10 ? v.toFixed(0) : v >= 1 ? v.toFixed(1) : v >= 0.1 ? v.toFixed(2) : v.toPrecision(1))) + '%'; };
+        const oneIn = p => { const n = Math.round(1 / p); return '1/' + (n >= 10000 ? wan(n) : n.toLocaleString('en-US')); };
+        const choose = (n, k) => { let r = 1; for (let i = 0; i < k; i++) r = r * (n - i) / (i + 1); return r; };
+        function odds(g) {
+            if (g.manual) {  // 挖金礦：看你挖幾格才收手
+                const ev = g.values.reduce((s, [v, p]) => s + v * p, 0);
+                const rows = [1, 2, 3, 4, 5, 6].map(k => { const live = choose(12, k) / choose(16, k); return { k, live, ret: live * k * ev / g.price }; });
+                const best = rows.reduce((a, b) => (b.ret > a.ret ? b : a));
+                return { manual: true, win: rows[0].live, rows, best, values: g.values };
+            }
+            const rows = g.table.map(([v, p]) => ({ v: g === GAMES.bingo ? BINGO_PRIZE[v] : v, p, k: g === GAMES.bingo ? v : 0 }));
+            const win = rows.reduce((s, r) => s + r.p, 0), ret = rows.reduce((s, r) => s + r.v * r.p, 0) / g.price;
+            return { win, ret, rows, top: rows[0] };
+        }
+
+        function showOdds(key) {
+            const g = GAMES[key], o = odds(g);
+            const body = o.manual ? `
+                <p class="text-xs text-stone-500 leading-relaxed">16 格裡有 4 顆炸彈。挖越多格，碰到炸彈的機會越大；收手時挖到的金子全部兌現。</p>
+                <table class="odds-t mt-3"><thead><tr><th>挖幾格就收手</th><th>都沒碰到炸彈</th><th>平均拿回</th></tr></thead><tbody>
+                ${o.rows.map(r => `<tr class="${r === o.best ? 'is-best' : ''}"><td>${r.k} 格</td><td>${pct(r.live)}</td><td>${pct(r.ret)}${r === o.best ? '<b>最划算</b>' : ''}</td></tr>`).join('')}
+                </tbody></table>
+                <p class="mt-4 text-xs font-black text-wabi-dark tracking-widest">每格金子多少錢</p>
+                <table class="odds-t mt-2"><thead><tr><th>金額</th><th>機率</th></tr></thead><tbody>
+                ${o.values.map(([v, p]) => `<tr><td class="money">${fmt(v)}</td><td>${pct(p)}</td></tr>`).join('')}
+                </tbody></table>` : `
+                <div class="grid grid-cols-2 gap-2 text-center">
+                    <div class="odds-big"><span>中獎率</span><b>${pct(o.win)}</b><small>大約每 ${(1 / o.win).toFixed(1)} 張中 1 張</small></div>
+                    <div class="odds-big"><span>回收率</span><b>${pct(o.ret)}</b><small>平均一張拿回 ${fmt(Math.round(o.ret * g.price))}</small></div>
+                </div>
+                <table class="odds-t mt-4"><thead><tr><th>獎金</th><th>機率</th><th></th></tr></thead><tbody>
+                ${o.rows.map((r, i) => `<tr class="${i === 0 ? 'is-top' : ''}"><td class="money">${r.v >= 100000 ? '$' + wan(r.v) : fmt(r.v)}${r.k ? `<small>${r.k === 6 ? '6 條以上' : r.k + ' 條'}連線</small>` : ''}${r.v === g.price ? '<small>回本</small>' : ''}</td><td>${oneIn(r.p)}</td><td>${pct(r.p)}</td></tr>`).join('')}
+                <tr class="is-none"><td>沒中</td><td></td><td>${pct(1 - o.win)}</td></tr>
+                </tbody></table>`;
+            $('oddsBody').innerHTML = `
+                <div class="odds-head" style="--c1:${g.c1};--c2:${g.c2};--hi:${g.hi}">
+                    <span class="cover-name">${g.name}</span><span class="cover-price">${fmt(g.price)}</span>
+                </div>
+                <div class="p-4">${body}
+                    <p class="mt-4 text-[11px] text-stone-400 leading-relaxed">每一張在買的時候就照這張表抽好了，刮的順序、刮多快都不會改變結果。</p>
+                </div>`;
+            $('odds').classList.remove('hidden');
+            requestAnimationFrame(() => $('odds').classList.add('on'));
+        }
+        function hideOdds() {
+            const el = $('odds'); el.classList.remove('on');
+            setTimeout(() => el.classList.add('hidden'), reduceMotion ? 0 : 220);
+        }
+        document.addEventListener('click', e => {
+            const b = e.target.closest('[data-odds]');
+            if (b) { e.preventDefault(); showOdds(b.dataset.odds); return; }
+            if (e.target.closest('[data-odds-close]') || e.target.id === 'odds') hideOdds();
+        });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('odds').classList.contains('hidden')) hideOdds(); });
+
         function renderShelf() {
             $('pending').classList.toggle('hidden', !S.queue.length);
             $('pending').innerHTML = S.queue.length ? `<button type="button" class="act is-main w-full" data-resume>還有 ${S.queue.length} 張沒刮，繼續刮</button>` : '';
@@ -1502,6 +1720,7 @@
                 <div class="cover p-2.5 flex flex-col" style="--c1:${g.c1};--c2:${g.c2};--hi:${g.hi}">
                     <div class="relative z-[1] cover-name">${g.name}</div>
                     <div class="relative z-[1] text-[10px] font-bold opacity-90 leading-snug min-h-[1.9rem]">${g.desc}</div>
+                    <button type="button" class="cover-odds" data-odds="${key}">${(o => o.manual ? `第一格是金子 <b>${pct(o.win)}</b>` : `中獎率 <b>${pct(o.win)}</b>`)(odds(g))}<span>獎金表</span></button>
                     <div class="relative z-[1] mt-1 flex items-center justify-between gap-1">
                         <span class="cover-price">${fmt(g.price)}</span>
                         <span class="text-[10px] font-bold text-right leading-tight">${g.jackpotText ? `<span class="text-sm font-black" style="color:var(--hi)">${g.jackpotText}</span>` : `頭獎 <span class="text-sm font-black" style="color:var(--hi)">${wan(g.jackpot)}</span>`}</span>
@@ -1632,7 +1851,7 @@
                     </div>
                     ${g.html(t)}
                     <div class="tk-foot">
-                        <span>27 樓彩券行<br>No. ${t.code.slice(0, 9)}</span>
+                        <span>27 樓彩券行<br>No. ${t.code.slice(0, 9)}<br><button type="button" class="tk-odds" data-odds="${t.type}">${g.manual ? '挖幾格最划算？' : `中獎率 ${pct(odds(g).win)}`}</button></span>
                         <div class="zone tk-code" data-zone data-optional><div class="tk-code-in" data-cell>${t.code}</div></div>
                     </div>
                 </div>`;
