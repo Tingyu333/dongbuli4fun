@@ -49,44 +49,57 @@ var WASH_LOGS_PER_HOUR = 60;     // 一支手機每小時最多送幾次洗頭�
 var WASH_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾顆頭
 
 // doPost 用於接收資料：訂房、留言、後台改狀態
-function doPost(e) {
+// 要排隊的動作：會「先讀再寫、讀到的決定寫什麼」的（撞期、領第幾張票、紅包還剩幾份、改狀態）。
+// 以前每個 POST 都排同一個隊，所有人一個一個來，洗頭、刮刮樂的人一多後台就擠不進來。
+// 現在只有這些整個排隊；錢包同步、LINE 登入只在寫 Players 那一下排隊（withLock）；
+// 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
+var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1 };
+
+function withLock(fn) {
   var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return { result: 'error', error: '後端在忙，等幾秒再試一次' };
   try {
-    lock.waitLock(10000); // 兩個人同時訂房時排隊，避免一起寫進去撞期
-
-    var input = JSON.parse(e.postData.contents);
-    var type = input.type || 'booking'; // 預設為 booking (相容舊版)
-
-    if (type === 'booking') return json(addBooking(input));
-    if (type === 'review') return json(addReview(input));
-    if (type === 'lookup') return json(lookupBookings(input));
-    if (type === 'cancel') return json(cancelBooking(input));
-    if (type === 'claim') return json(claimTicket(input));
-    if (type === 'unclaim') return json(unclaimTicket(input));
-    if (type === 'adminLogin') return json(adminLogin(input));
-    if (type === 'bonusClaim') return json(bonusClaim(input));
-    if (type === 'lineLogin') return json(lineLogin(input));
-    if (type === 'lineLogout') return json(lineLogout(input));
-    if (type === 'walletSync') return json(walletSync(input));
-    if (type === 'washLog') return json(washLog(input));
-
-    // 以下只有後台能用，要帶登入拿到的通行證
-    if (type === 'updateStatus' || type === 'adminList' || type === 'bonusCreate' || type === 'bonusList' || type === 'bonusClose') {
-      if (!isAdmin(input.token)) return json({ result: 'unauthorized' });
-      if (type === 'updateStatus') return json(updateStatus(input));
-      if (type === 'bonusCreate') return json(bonusCreate(input));
-      if (type === 'bonusList') return json(bonusList());
-      if (type === 'bonusClose') return json(bonusClose(input));
-      return json(adminList());
-    }
-    return json({ result: 'error', error: '不認得的請求' });
-
-  } catch (err) {
-    return json({ result: 'error', error: err.toString() });
-
+    return fn();
   } finally {
     lock.releaseLock();
   }
+}
+
+function doPost(e) {
+  try {
+    var input = JSON.parse(e.postData.contents);
+    var type = input.type || 'booking'; // 預設為 booking (相容舊版)
+    if (LOCKED_TYPES[type]) return json(withLock(function () { return route(type, input); }));
+    return json(route(type, input));
+  } catch (err) {
+    return json({ result: 'error', error: err.toString() });
+  }
+}
+
+function route(type, input) {
+    if (type === 'booking') return addBooking(input);
+    if (type === 'review') return addReview(input);
+    if (type === 'lookup') return lookupBookings(input);
+    if (type === 'cancel') return cancelBooking(input);
+    if (type === 'claim') return claimTicket(input);
+    if (type === 'unclaim') return unclaimTicket(input);
+    if (type === 'adminLogin') return adminLogin(input);
+    if (type === 'bonusClaim') return bonusClaim(input);
+    if (type === 'lineLogin') return lineLogin(input);
+    if (type === 'lineLogout') return lineLogout(input);
+    if (type === 'walletSync') return walletSync(input);
+    if (type === 'washLog') return washLog(input);
+
+    // 以下只有後台能用，要帶登入拿到的通行證
+    if (type === 'updateStatus' || type === 'adminList' || type === 'bonusCreate' || type === 'bonusList' || type === 'bonusClose') {
+      if (!isAdmin(input.token)) return { result: 'unauthorized' };
+      if (type === 'updateStatus') return updateStatus(input);
+      if (type === 'bonusCreate') return bonusCreate(input);
+      if (type === 'bonusList') return bonusList();
+      if (type === 'bonusClose') return bonusClose(input);
+      return adminList();
+    }
+    return { result: 'error', error: '不認得的請求' };
 }
 
 // doGet 用於獲取資料 (訂房狀況 + 留言列表)
@@ -854,11 +867,7 @@ function walletView(p) {
 }
 
 function writeWallet(p) {
-  var sheet = playersSheet();
-  sheet.getRange(p.row, 5).setValue(p.money);
-  sheet.getRange(p.row, 6).setValue(p.spent);
-  sheet.getRange(p.row, 7).setValue(JSON.stringify(p.earned));
-  sheet.getRange(p.row, 8).setValue(new Date());
+  playersSheet().getRange(p.row, 5, 1, 4).setValues([[p.money, p.spent, JSON.stringify(p.earned), new Date()]]);
 }
 
 // 公開：LINE 登入。第一次登入的人，用這支手機原本的錢包開帳號
@@ -872,17 +881,23 @@ function lineLogin(input) {
   var who = verifyLineToken(String(input.idToken || ''));
   if (!who) return { result: 'error', error: 'LINE 登入驗證不過，再試一次' };
 
-  var p = findPlayer(who.sub), isNew = !p;
-  if (isNew) {
+  // 問 LINE 那段比較慢，不排隊；只有查帳號、開帳號這一下排隊（同一個人兩支手機同時登入才不會開出兩個帳號）
+  var isNew = false;
+  var p = withLock(function () {
+    var found = findPlayer(who.sub);
+    if (found) {
+      playersSheet().getRange(found.row, 3, 1, 2).setValues([[asText(who.name), who.picture]]);
+      return found;
+    }
+    isNew = true;
     var w = input.wallet || {};
     var money = cleanMoney(w.money, 0, WALLET_MAX), spent = cleanMoney(w.spent, 0, WALLET_MAX), earned = cleanEarned(w.earned);
     playersSheet().appendRow([new Date(), who.sub, asText(who.name), who.picture,
       money === null ? WALLET_START : money, spent === null ? 0 : spent, JSON.stringify(earned || {}), new Date()]);
-    p = findPlayer(who.sub);
-  } else {
-    playersSheet().getRange(p.row, 3).setValue(asText(who.name));
-    playersSheet().getRange(p.row, 4).setValue(who.picture);
-  }
+    return findPlayer(who.sub);
+  });
+  if (!p) return { result: 'error', error: '帳號開不起來，再試一次' };
+  if (p.result) return p;  // 排不到隊
 
   var session = Utilities.getUuid();
   PropertiesService.getScriptProperties().setProperty('sess:' + session, who.sub);
@@ -914,15 +929,20 @@ function walletSync(input) {
   var money = cleanMoney(d.money || 0, -WALLET_MAX, WALLET_MAX), spent = cleanMoney(d.spent || 0, 0, WALLET_MAX), earned = cleanEarned(d.earned || {});
   if (money === null || spent === null || earned === null) return { result: 'error', error: '錢包的數字不對' };
 
-  var p = findPlayer(lineId);
-  if (!p) return { result: 'unauthorized' };
-  if (money || spent || Object.keys(earned).length) {
-    p.money = Math.max(0, Math.min(WALLET_MAX, p.money + money));
-    p.spent = Math.min(WALLET_MAX, p.spent + spent);
-    p.earned = addEarned(p.earned, earned);
-    writeWallet(p);
-  }
-  return { result: 'success', wallet: walletView(p) };
+  var changed = money || spent || Object.keys(earned).length;
+  // 單純讀不用排隊；有加減錢才排隊（讀出來、加上去、寫回去要一口氣做完，兩支手機同時送才不會少算）
+  var read = function () {
+    var p = findPlayer(lineId);
+    if (!p) return { result: 'unauthorized' };
+    if (changed) {
+      p.money = Math.max(0, Math.min(WALLET_MAX, p.money + money));
+      p.spent = Math.min(WALLET_MAX, p.spent + spent);
+      p.earned = addEarned(p.earned, earned);
+      writeWallet(p);
+    }
+    return { result: 'success', wallet: walletView(p) };
+  };
+  return changed ? withLock(read) : read();
 }
 
 // --- 工具 ---
@@ -1025,8 +1045,9 @@ function washLog(input) {
     rows.push(row);
   });
   if (rows.length) {
+    // appendRow 不排隊也不會兩個人寫到同一列（一次通常只有一顆）
     var sheet = washesSheet();
-    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, WASH_HEADERS.length).setValues(rows);
+    rows.forEach(function (row) { sheet.appendRow(row); });
     cache.put(allKey, String(allCount + rows.length), 3600);
   }
   return { result: 'success', saved: rows.length, skipped: skipped };
