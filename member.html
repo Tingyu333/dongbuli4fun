@@ -22,11 +22,11 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/theme.css?v=20261117">
-    <script src="assets/theme.js?v=20261117"></script>
-    <script src="assets/line.js?v=20261117"></script>
-    <script src="assets/wallet.js?v=20261117"></script>
-    <script src="assets/gongde.js?v=20261117"></script>
+    <link rel="stylesheet" href="assets/theme.css?v=20261118">
+    <script src="assets/theme.js?v=20261118"></script>
+    <script src="assets/line.js?v=20261118"></script>
+    <script src="assets/wallet.js?v=20261118"></script>
+    <script src="assets/gongde.js?v=20261118"></script>
     <style>
         .line-btn {
             min-height: 44px;
@@ -73,7 +73,7 @@
         }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261117">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261118">
 </head>
 
 <body
@@ -210,8 +210,7 @@
             const rows = Object.keys(w.earned || {})
                 .filter(k => w.earned[k].times)
                 .map(k => `<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">${esc(LABELS[k] || k)}</dt><dd class="flex-1">${SOURCES[k] ? SOURCES[k](w.earned[k]) : fmt(w.earned[k].total)}</dd></div>`);
-            let shopSpent = 0;
-            try { shopSpent = Number((JSON.parse(localStorage.getItem('dongbuli-xitou-shop')) || {}).spent) || 0; } catch (e) { }
+            const shopSpent = Wallet.shop.spent;
             const gd = Wallet.gongde, tier = Gongde.tierOf(gd.donated);
             const parts = [[shopSpent, '洗頭店升級'], [gd.donated, '捐香油錢'], [gd.lit, '點燈']].filter(x => x[0] > 0);
             const scratchSpent = Math.max(0, w.spent - parts.reduce((t, x) => t + x[0], 0));

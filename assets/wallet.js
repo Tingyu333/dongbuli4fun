@@ -5,6 +5,8 @@
 // 用法：Wallet.money、Wallet.earn(金額, '哪個遊戲')、Wallet.spend(金額)、Wallet.stats()、Wallet.on(fn)
 // 功德（gongde.html）也跟著錢包走：Wallet.gongde = { donated 累積捐了多少, oil 光明燈還剩多少燈油, oils 其他燈還剩多少 { caishen, taisui, wenchang, yuelao }, lamps 點過幾盞, lit 點燈花了多少 }
 //   Wallet.donate(金額)、Wallet.lightLamp(價錢, 燈油, 哪種燈)、Wallet.useOil(多少, 哪種燈)；登入時一樣送「變了多少」給後端
+// 坐洗部的店面升級也在這裡：Wallet.shop = { lv: { shampoo: 2, … }, spent }、Wallet.setShop(shop)。
+//   等級只會升不會降，同步時送整份，後端每一項取比較高的（兩支手機各買各的也不會蓋掉）
 (function () {
     const KEY = 'dongbuli-wallet';
     const GUEST_KEY = 'dongbuli-wallet-guest';  // 登入時把這支手機原本的（訪客）錢包收起來，登出再拿回來
@@ -15,12 +17,26 @@
 
     const noGongde = () => ({ donated: 0, oil: 0, lamps: 0, lit: 0, oils: {} });
     const pos = v => Math.max(0, Number(v) || 0);
+    const noShop = () => ({ lv: {}, spent: 0 });
+    const cleanShop = s => {
+        const lv = {};
+        Object.keys((s && s.lv) || {}).forEach(k => { const n = Math.floor(Number(s.lv[k]) || 0); if (/^[a-z]{1,16}$/.test(k) && n > 0) lv[k] = Math.min(10, n); });
+        return { lv, spent: pos(s && s.spent) };
+    };
+    // 兩份店面合起來：每一項取比較高的等級
+    const mergeShop = (a, b) => {
+        const out = cleanShop(a), o = cleanShop(b);
+        Object.keys(o.lv).forEach(k => { out.lv[k] = Math.max(out.lv[k] || 0, o.lv[k]); });
+        out.spent = Math.max(out.spent, o.spent);
+        return out;
+    };
+    const sameShop = (a, b) => JSON.stringify(cleanShop(a)) === JSON.stringify(cleanShop(b));
     const cleanOils = (o, keepNeg) => {
         const out = {};
         Object.keys(o || {}).forEach(k => { if (/^[a-z]{1,16}$/.test(k)) { const v = Number(o[k]) || 0; if (v) out[k] = keepNeg ? v : Math.max(0, v); } });
         return out;
     };
-    const blank = () => ({ money: START, spent: 0, earned: {}, gongde: noGongde() });
+    const blank = () => ({ money: START, spent: 0, earned: {}, gongde: noGongde(), shop: noShop() });
     const noPending = () => ({ money: 0, spent: 0, earned: {}, gongde: noGongde() });
     const cleanGongde = g => ({ donated: pos(g && g.donated), oil: pos(g && g.oil), lamps: pos(g && g.lamps), lit: pos(g && g.lit), oils: cleanOils(g && g.oils) });
     const read = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
@@ -42,6 +58,13 @@
         w.pending = w.pending || noPending();
         w.pending.gongde = w.pending.gongde || noGongde();
         w.pending.gongde.oils = w.pending.gongde.oils || {};
+        if (!w.shop) {
+            // 以前店面升級只存在坐洗部自己的存檔，搬進錢包（之後跟著 LINE 帳號走）
+            w.shop = cleanShop(read('dongbuli-xitou-shop'));
+            if (Object.keys(w.shop.lv).length && logged()) w.pending.shop = true;
+            save(w);
+        }
+        w.shop = cleanShop(w.shop);
         return w;
     }
 
@@ -77,7 +100,7 @@
         Object.keys(b.oils || {}).forEach(k => { a.oils[k] = (a.oils[k] || 0) + b.oils[k]; });
         return a;
     };
-    const isEmpty = p => !p.money && !p.spent && !Object.keys(p.earned).length &&
+    const isEmpty = p => !p.money && !p.spent && !Object.keys(p.earned).length && !p.shop &&
         !(p.gongde && (p.gongde.donated || p.gongde.oil || p.gongde.lamps || p.gongde.lit || Object.keys(cleanOils(p.gongde.oils, true)).length));
 
     // 後端回來的錢包 + 還沒送出去的變化 = 這支手機該顯示的
@@ -88,8 +111,17 @@
         w.earned = mergeEarned(JSON.parse(JSON.stringify(server.earned || {})), p.earned);
         // 後端還是舊版（沒有 gongde）就先用這支手機的
         if (server.gongde) w.gongde = cleanGongde(addGongde(cleanGongde(server.gongde), p.gongde));
+        let shopChanged = false;
+        if (server.shop) {
+            const merged = mergeShop(server.shop, w.shop);
+            shopChanged = !sameShop(merged, w.shop);
+            if (!sameShop(merged, server.shop)) p.shop = true;  // 這支手機有後端還沒有的，下次再送
+            w.shop = merged;
+            writeShopMirror(merged);
+        }
         save(w);
         if (w.money !== before) emit('server', { diff: w.money - before });
+        if (shopChanged) emit('shop');
     }
 
     function schedule() {
@@ -97,6 +129,9 @@
         clearTimeout(timer);
         timer = setTimeout(() => Wallet.sync(), 1500);
     }
+
+    // 坐洗部、會員中心以前讀的存檔，照樣寫一份
+    function writeShopMirror(shop) { write('dongbuli-xitou-shop', cleanShop(shop)); }
 
     function changeGongde(d) {
         const w = load();
@@ -153,6 +188,17 @@
             if (!Wallet.spend(price)) return false;
             return changeGongde(!kind || kind === 'guangming' ? { oil, lamps: 1, lit: price } : { oils: { [kind]: oil }, lamps: 1, lit: price });
         },
+        // 坐洗部店面升級
+        get shop() { return cleanShop(load().shop); },
+        setShop(shop) {
+            const w = load();
+            w.shop = mergeShop(w.shop, shop);
+            if (logged()) w.pending.shop = true;
+            save(w);
+            writeShopMirror(w.shop);
+            schedule();
+            return cleanShop(w.shop);
+        },
         oilOf(kind) { const g = load().gongde; return !kind || kind === 'guangming' ? g.oil : (g.oils[kind] || 0); },
         // 用掉燈油（不夠就用到 0），回傳實際用掉多少
         useOil(amount, kind) {
@@ -170,8 +216,10 @@
             w.pending = noPending();
             save(w);
             let ok = false;
+            const delta = { money: sent.money, spent: sent.spent, earned: sent.earned, gongde: sent.gongde };
+            if (sent.shop) delta.shop = cleanShop(w.shop);
             try {
-                const r = await Line.call({ type: 'walletSync', delta: sent }, keepalive);
+                const r = await Line.call({ type: 'walletSync', delta }, keepalive);
                 if (r.result === 'success') { adopt(r.wallet); ok = true; }
             } catch (e) { }
             if (!ok && logged()) {
@@ -181,6 +229,7 @@
                 back.pending.spent += sent.spent;
                 mergeEarned(back.pending.earned, sent.earned);
                 addGongde(back.pending.gongde, sent.gongde || {});
+                if (sent.shop) back.pending.shop = true;
                 save(back);
             }
             inflight = false;
@@ -197,22 +246,28 @@
         // 第一次用 LINE 登入：用這支手機現在的錢開帳號
         Line.beforeLogin = () => {
             const w = load();
-            return { wallet: { money: w.money, spent: w.spent, earned: w.earned, gongde: w.gongde } };
+            return { wallet: { money: w.money, spent: w.spent, earned: w.earned, gongde: w.gongde, shop: w.shop } };
         };
         Line.on((type, data) => {
             if (type === 'login') {
                 const local = load();
                 // 訪客錢包收起來（新帳號的話錢已經搬進帳號了，訪客重新開始）
-                if (!read(GUEST_KEY)) write(GUEST_KEY, data.player.isNew ? blank() : { money: local.money, spent: local.spent, earned: local.earned, gongde: local.gongde });
-                // 後端還是舊版（沒有 gongde）：功德先留在這支手機
-                save({ money: data.player.money, spent: data.player.spent, earned: data.player.earned || {}, gongde: cleanGongde(data.player.gongde || (data.player.isNew ? local.gongde : null)), pending: noPending() });
+                if (!read(GUEST_KEY)) write(GUEST_KEY, data.player.isNew ? blank() : { money: local.money, spent: local.spent, earned: local.earned, gongde: local.gongde, shop: local.shop });
+                // 後端還是舊版（沒有 gongde、shop）：先留這支手機的。店面升級：這支手機買過的併進帳號（後端登入時也會併）
+                const shop = data.player.shop ? mergeShop(data.player.shop, local.shop) : local.shop;
+                const pending = noPending();
+                if (data.player.shop && !sameShop(shop, data.player.shop)) pending.shop = true;
+                save({ money: data.player.money, spent: data.player.spent, earned: data.player.earned || {}, gongde: cleanGongde(data.player.gongde || (data.player.isNew ? local.gongde : null)), shop, pending });
+                writeShopMirror(shop);
+                if (pending.shop) schedule();
                 emit('login', { isNew: data.player.isNew, name: data.player.name, left: local.money });
             }
             if (type === 'logout') {
                 if (data && data.expired) { emit('logout', data); return; }  // 通行證過期：錢包先留著，重新登入會拿回帳號的
                 const guest = read(GUEST_KEY) || blank();
                 try { localStorage.removeItem(GUEST_KEY); } catch (e) { }
-                save({ money: guest.money, spent: guest.spent || 0, earned: guest.earned || {}, gongde: cleanGongde(guest.gongde), pending: noPending() });
+                save({ money: guest.money, spent: guest.spent || 0, earned: guest.earned || {}, gongde: cleanGongde(guest.gongde), shop: cleanShop(guest.shop), pending: noPending() });
+                writeShopMirror(guest.shop);
                 emit('logout', data);
             }
         });

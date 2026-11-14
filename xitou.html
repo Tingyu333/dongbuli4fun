@@ -22,10 +22,10 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/theme.css?v=20261117">
-    <script src="assets/theme.js?v=20261117"></script>
-    <script src="assets/line.js?v=20261117"></script>
-    <script src="assets/wallet.js?v=20261117"></script>
+    <link rel="stylesheet" href="assets/theme.css?v=20261118">
+    <script src="assets/theme.js?v=20261118"></script>
+    <script src="assets/line.js?v=20261118"></script>
+    <script src="assets/wallet.js?v=20261118"></script>
     <style>
         /* 洗頭台：手指在上面搓、拉，不能捲動頁面，長按也不能跳出系統選單 */
         .salon {
@@ -445,7 +445,7 @@
         }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261117">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261118">
 </head>
 
 <body
@@ -916,10 +916,12 @@
               tiers: ['', '橘貓'], fx: v => `三成機率醒來撒嬌，爽度 +${v}` },
         ];
         const SHOP_BY = Object.fromEntries(SHOP.map(u => [u.key, u]));
+        // 升級存在共用錢包（Wallet.shop），登入 LINE 就跟著帳號走；舊的 dongbuli-xitou-shop 錢包會自己搬過去
         function loadShop() {
             let d = null;
-            try { d = JSON.parse(localStorage.getItem(SHOP_KEY)); } catch (e) { }
-            d = d && typeof d === 'object' ? d : {};
+            try { d = Wallet.shop; } catch (e) { }
+            if (!d) try { d = JSON.parse(localStorage.getItem(SHOP_KEY)); } catch (e) { }
+            d = d && typeof d === 'object' ? { lv: { ...(d.lv || {}) }, spent: d.spent } : {};
             d.lv = d.lv || {};
             SHOP.forEach(u => { d.lv[u.key] = clamp(Math.floor(Number(d.lv[u.key]) || 0), 0, u.prices.length); });
             d.spent = Number(d.spent) || 0;
@@ -928,7 +930,8 @@
         let shop = loadShop();
         const lv = key => shop.lv[key] || 0;
         const val = key => lv(key) ? SHOP_BY[key].vals[lv(key) - 1] : 0;
-        function saveShop() { try { localStorage.setItem(SHOP_KEY, JSON.stringify(shop)); } catch (e) { } }
+        function saveShop() { shop = loadShop.fromWallet(Wallet.setShop(shop)); }
+        loadShop.fromWallet = w => { const d = { lv: { ...w.lv }, spent: w.spent }; SHOP.forEach(u => { d.lv[u.key] = d.lv[u.key] || 0; }); return d; };
         const GOLD = '#b8862e';
 
         // --- 實物：洗髮精瓶 ---
@@ -2748,6 +2751,10 @@
         }
         $('payAcct').addEventListener('click', e => { if (e.target.closest('[data-login]')) Line.login(); });
         Wallet.on(type => {
+            // 別支手機升級過、登入登出：店面重新讀
+            shop = loadShop();
+            renderSign(); renderShopLv(); sizeShelf();
+            if (!$('shop').classList.contains('hidden')) renderShop();
             renderBest();
             renderAcct();
             if (type === 'login') showToast('登入了，工資存進 LINE 帳號');

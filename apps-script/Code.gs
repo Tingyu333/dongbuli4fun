@@ -787,9 +787,32 @@ function playersSheet() {
   var sheet = ss.getSheetByName('Players');
   if (!sheet) {
     sheet = ss.insertSheet('Players');
-    sheet.appendRow(['created', 'line_id', 'name', 'picture', 'money', 'spent', 'earned', 'updated', 'gongde']);
+    sheet.appendRow(['created', 'line_id', 'name', 'picture', 'money', 'spent', 'earned', 'updated', 'gongde', 'shop']);
   }
   return sheet;
+}
+
+// 坐洗部店面升級：{ lv: { shampoo: 2, … }, spent }，存在 Players 的 J 欄（JSON）。等級只升不降，合併時每一項取高的
+function cleanShop(s) {
+  s = s && typeof s === 'object' ? s : {};
+  var lv = {}, raw = s.lv && typeof s.lv === 'object' && !Array.isArray(s.lv) ? s.lv : {}, keys = Object.keys(raw);
+  if (keys.length > 20) return null;
+  for (var i = 0; i < keys.length; i++) {
+    var n = cleanMoney(raw[keys[i]] || 0, 0, 10);
+    if (!/^[a-z]{1,16}$/.test(keys[i]) || n === null) return null;
+    if (n) lv[keys[i]] = n;
+  }
+  var spent = cleanMoney(s.spent || 0, 0, WALLET_MAX);
+  if (spent === null) return null;
+  return { lv: lv, spent: spent };
+}
+
+function mergeShop(a, b) {
+  var out = { lv: {}, spent: Math.max(a.spent || 0, b.spent || 0) };
+  [a.lv || {}, b.lv || {}].forEach(function (lv) {
+    Object.keys(lv).forEach(function (k) { out.lv[k] = Math.max(out.lv[k] || 0, lv[k]); });
+  });
+  return out;
 }
 
 // 功德：{ donated 累積捐了多少, oil 光明燈剩多少燈油, oils 其他燈剩多少 { caishen, taisui, wenchang, yuelao }, lamps 點過幾盞, lit 點燈花了多少 }，存在 Players 的 I 欄（JSON）
@@ -816,13 +839,15 @@ function findPlayer(lineId) {
   var rows = playersSheet().getDataRange().getValues();
   for (var i = 1; i < rows.length; i++) {
     if (String(rows[i][1]) !== lineId) continue;
-    var earned = {}, gongde = {};
+    var earned = {}, gongde = {}, shop = {};
     try { earned = JSON.parse(rows[i][6] || '{}') || {}; } catch (e) { }
     try { gongde = JSON.parse(rows[i][8] || '{}') || {}; } catch (e) { }
+    try { shop = JSON.parse(rows[i][9] || '{}') || {}; } catch (e) { }
     return {
       row: i + 1, lineId: lineId, name: String(rows[i][2] || ''), picture: String(rows[i][3] || ''),
       money: Number(rows[i][4]) || 0, spent: Number(rows[i][5]) || 0, earned: cleanEarned(earned) || {},
-      gongde: cleanGongde(gongde) || { donated: 0, oil: 0, lamps: 0, lit: 0, oils: {} }
+      gongde: cleanGongde(gongde) || { donated: 0, oil: 0, lamps: 0, lit: 0, oils: {} },
+      shop: cleanShop(shop) || { lv: {}, spent: 0 }
     };
   }
   return null;
@@ -888,11 +913,11 @@ function addEarned(base, more) {
 }
 
 function walletView(p) {
-  return { money: p.money, spent: p.spent, earned: p.earned, gongde: p.gongde };
+  return { money: p.money, spent: p.spent, earned: p.earned, gongde: p.gongde, shop: p.shop };
 }
 
 function writeWallet(p) {
-  playersSheet().getRange(p.row, 5, 1, 5).setValues([[p.money, p.spent, JSON.stringify(p.earned), new Date(), JSON.stringify(p.gongde)]]);
+  playersSheet().getRange(p.row, 5, 1, 6).setValues([[p.money, p.spent, JSON.stringify(p.earned), new Date(), JSON.stringify(p.gongde), JSON.stringify(p.shop)]]);
 }
 
 // 公開：LINE 登入。第一次登入的人，用這支手機原本的錢包開帳號
@@ -910,10 +935,17 @@ function lineLogin(input) {
   var isNew = false;
   var p = withLock(function () {
     var sheet = playersSheet();
-    if (!sheet.getRange(1, 9).getValue()) sheet.getRange(1, 9).setValue('gongde'); // 舊表補上功德那欄的標題
+    if (!sheet.getRange(1, 9).getValue()) sheet.getRange(1, 9).setValue('gongde'); // 舊表補上功德、店面那兩欄的標題
+    if (!sheet.getRange(1, 10).getValue()) sheet.getRange(1, 10).setValue('shop');
+    var localShop = cleanShop((input.wallet || {}).shop);
     var found = findPlayer(who.sub);
     if (found) {
       playersSheet().getRange(found.row, 3, 1, 2).setValues([[asText(who.name), who.picture]]);
+      // 這支手機登入前買過的店面升級，併進帳號
+      if (localShop && Object.keys(localShop.lv).length) {
+        found.shop = mergeShop(found.shop, localShop);
+        playersSheet().getRange(found.row, 10).setValue(JSON.stringify(found.shop));
+      }
       return found;
     }
     isNew = true;
@@ -921,7 +953,8 @@ function lineLogin(input) {
     var money = cleanMoney(w.money, 0, WALLET_MAX), spent = cleanMoney(w.spent, 0, WALLET_MAX), earned = cleanEarned(w.earned);
     var gongde = cleanGongde(w.gongde) || { donated: 0, oil: 0, lamps: 0, lit: 0, oils: {} };
     playersSheet().appendRow([new Date(), who.sub, asText(who.name), who.picture,
-      money === null ? WALLET_START : money, spent === null ? 0 : spent, JSON.stringify(earned || {}), new Date(), JSON.stringify(gongde)]);
+      money === null ? WALLET_START : money, spent === null ? 0 : spent, JSON.stringify(earned || {}), new Date(), JSON.stringify(gongde),
+      JSON.stringify(localShop || { lv: {}, spent: 0 })]);
     return findPlayer(who.sub);
   });
   if (!p) return { result: 'error', error: '帳號開不起來，再試一次' };
@@ -956,9 +989,10 @@ function walletSync(input) {
   var d = input.delta || {};
   var money = cleanMoney(d.money || 0, -WALLET_MAX, WALLET_MAX), spent = cleanMoney(d.spent || 0, 0, WALLET_MAX), earned = cleanEarned(d.earned || {});
   var gd = cleanGongde(d.gongde, true);  // 燈油可以是負的（刮刮樂用掉的）
-  if (money === null || spent === null || earned === null || gd === null) return { result: 'error', error: '錢包的數字不對' };
+  var shop = d.shop ? cleanShop(d.shop) : null;  // 店面送的是整份，不是變化量
+  if (money === null || spent === null || earned === null || gd === null || (d.shop && !shop)) return { result: 'error', error: '錢包的數字不對' };
 
-  var changed = money || spent || Object.keys(earned).length || gd.donated || gd.oil || gd.lamps || gd.lit || Object.keys(gd.oils).length;
+  var changed = money || spent || Object.keys(earned).length || gd.donated || gd.oil || gd.lamps || gd.lit || Object.keys(gd.oils).length || !!shop;
   // 單純讀不用排隊；有加減錢才排隊（讀出來、加上去、寫回去要一口氣做完，兩支手機同時送才不會少算）
   var read = function () {
     var p = findPlayer(lineId);
@@ -979,6 +1013,7 @@ function walletSync(input) {
         if (v) p.gongde.oils[k] = v; else delete p.gongde.oils[k];
       });
       if (Object.keys(p.gongde.oils).length > 10) return { result: 'error', error: '燈太多種了' };
+      if (shop) p.shop = mergeShop(p.shop, shop);
       writeWallet(p);
     }
     return { result: 'success', wallet: walletView(p) };
