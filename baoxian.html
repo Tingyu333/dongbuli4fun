@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>保險・存 | 丼步喱</title>
+    <!-- 分享到 LINE、FB 時的預覽（標題、介紹、圖片）。圖片要用完整網址 -->
+    <meta name="description" content="丼步喱人壽：把錢鎖起來，三天、五天、七天後連本帶利領回來。">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="丼步喱・絆">
+    <meta property="og:title" content="保險・存｜丼步喱人壽">
+    <meta property="og:description" content="丼步喱人壽：把錢鎖起來，三天、五天、七天後連本帶利領回來。">
+    <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
+    <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/baoxian.html">
+    <meta name="twitter:card" content="summary">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入日系字體 -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/theme.css?v=20261114d">
+    <script src="assets/theme.js?v=20261114d"></script>
+    <script src="assets/line.js?v=20261114d"></script>
+    <script src="assets/wallet.js?v=20261114d"></script>
+    <style>
+        .line-btn {
+            min-height: 44px;
+            padding: 0 1.4rem;
+            border-radius: 6px;
+            background: #06c755;
+            color: #fff;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-weight: 500;
+            font-size: 0.85rem;
+            letter-spacing: 0.1em;
+            touch-action: manipulation;
+        }
+
+        .btn {
+            min-height: 44px;
+            padding: 0 1rem;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 0.15em;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            transition: opacity .2s, transform .1s;
+        }
+
+        .btn:active { transform: scale(.98); }
+        .btn:disabled { opacity: .4; }
+        .btn-main { background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); }
+        .btn-line { border: 1px solid rgb(var(--wabi-sub)); color: rgb(var(--wabi-text)); }
+        .btn-shu { background: rgb(var(--wabi-shu)); color: #fff; }
+
+        /* 商品 */
+        .plan {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            padding: 1rem 0;
+            border-top: 1px solid rgb(var(--wabi-sub) / 0.7);
+        }
+
+        .plan-days {
+            flex-shrink: 0;
+            width: 3.2rem;
+            height: 3.2rem;
+            border: 1px solid rgb(var(--wabi-accent) / 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.1;
+            color: rgb(var(--wabi-dark));
+        }
+
+        /* ===== 保單是紙本（實物），顏色固定，不跟晝夜切換 ===== */
+        .policy {
+            --paper: #fbf7ec;
+            --ink: #3b342e;
+            --faint: #8c7f6c;
+            --rule: #d9cdb4;
+            --shu: #b33a2f;
+            position: relative;
+            overflow: hidden;
+            background: var(--paper);
+            color: var(--ink);
+            border: 1px solid var(--rule);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, .04), 0 10px 24px -14px rgba(0, 0, 0, .25);
+            padding: 1.1rem 1.1rem 1rem;
+            background-image:
+                repeating-linear-gradient(0deg, transparent 0 27px, rgba(140, 120, 90, .07) 27px 28px),
+                radial-gradient(circle at 100% 0, rgba(179, 58, 47, .06), transparent 40%);
+        }
+
+        /* 外框雙線 */
+        .policy::before {
+            content: '';
+            position: absolute;
+            inset: 5px;
+            border: 1px solid var(--rule);
+            pointer-events: none;
+        }
+
+        .pol-head {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            padding-bottom: 0.55rem;
+            border-bottom: 1.5px solid var(--ink);
+        }
+
+        .pol-co { font-weight: 700; letter-spacing: 0.25em; font-size: 0.95rem; }
+        .pol-title { letter-spacing: 0.3em; font-size: 0.75rem; color: var(--faint); }
+        .pol-no { margin-left: auto; font-family: 'Noto Sans TC', sans-serif; font-size: 0.65rem; letter-spacing: 0.08em; color: var(--faint); }
+
+        .pol-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.35rem 0.8rem;
+            margin-top: 0.7rem;
+            font-size: 0.8rem;
+        }
+
+        .pol-grid div { display: flex; gap: 0.5rem; min-width: 0; }
+        .pol-grid dt { flex-shrink: 0; color: var(--faint); font-size: 0.7rem; letter-spacing: 0.15em; padding-top: 0.1rem; }
+        .pol-grid dd { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'Noto Sans TC', sans-serif; }
+
+        .pol-due {
+            margin-top: 0.75rem;
+            padding-top: 0.6rem;
+            border-top: 1px dashed var(--rule);
+            font-size: 0.8rem;
+            letter-spacing: 0.1em;
+        }
+
+        .pol-due b { font-family: 'Noto Sans TC', sans-serif; font-weight: 500; font-size: 1.15rem; letter-spacing: 0.02em; margin-left: 0.25rem; }
+        .pol-due small { color: var(--faint); font-family: 'Noto Sans TC', sans-serif; letter-spacing: 0.02em; }
+
+        .pol-bar { margin-top: 0.6rem; height: 4px; background: rgba(140, 120, 90, .18); overflow: hidden; }
+        .pol-bar i { display: block; height: 100%; background: var(--ink); transition: width 1s linear; }
+        .pol-bar.is-done i { background: var(--shu); }
+        .pol-left { margin-top: 0.35rem; font-family: 'Noto Sans TC', sans-serif; font-size: 0.7rem; letter-spacing: 0.1em; color: var(--faint); }
+        .pol-left.is-done { color: var(--shu); }
+        .pol-act { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+        .pol-act .btn { flex: 1; }
+        .policy .btn-line { border-color: var(--rule); color: var(--ink); }
+        .policy .btn-main { background: var(--ink); color: var(--paper); }
+        .policy .btn-shu { background: var(--shu); color: #fff; }
+
+        /* 印章 */
+        .pol-stamp {
+            position: absolute;
+            right: 1rem;
+            top: 2.6rem;
+            width: 3.4rem;
+            height: 3.4rem;
+            border: 2.5px solid var(--shu);
+            border-radius: 6px;
+            color: var(--shu);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.05rem;
+            letter-spacing: 0.05em;
+            transform: rotate(-12deg);
+            opacity: .82;
+            pointer-events: none;
+            mix-blend-mode: multiply;
+        }
+
+        .pol-stamp.is-gray { border-color: #8c7f6c; color: #8c7f6c; }
+        .pol-stamp.is-new { animation: stamp-in .5s cubic-bezier(.3, 1.6, .5, 1) both; }
+
+        @keyframes stamp-in {
+            0% { transform: scale(2.6) rotate(-30deg); opacity: 0; }
+            60% { transform: scale(.9) rotate(-10deg); opacity: .9; }
+            100% { transform: scale(1) rotate(-12deg); opacity: .82; }
+        }
+
+        /* 可以領了：按鈕呼吸 */
+        .is-ripe { animation: ripe 1.6s ease-in-out infinite; }
+        @keyframes ripe { 50% { box-shadow: 0 0 0 6px rgba(179, 58, 47, .18); } }
+
+        /* 舊保單一行一張 */
+        .old-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.7rem 0;
+            border-top: 1px solid rgb(var(--wabi-sub) / 0.6);
+            font-size: 0.8rem;
+        }
+
+        .mini-stamp {
+            flex-shrink: 0;
+            width: 2rem;
+            height: 2rem;
+            border: 1.5px solid rgb(var(--wabi-shu));
+            border-radius: 3px;
+            color: rgb(var(--wabi-shu));
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: rotate(-8deg);
+        }
+
+        .mini-stamp.is-gray { border-color: rgb(var(--wabi-accent)); color: rgb(var(--wabi-accent)); }
+
+        /* 底部面板（投保、解約） */
+        .sheet-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 60;
+            background: rgba(20, 18, 16, .45);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .25s;
+        }
+
+        .sheet {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 61;
+            max-width: 28rem;
+            margin: 0 auto;
+            background: rgb(var(--wabi-bg));
+            border-top: 1px solid rgb(var(--wabi-sub));
+            padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
+            transform: translateY(105%);
+            transition: transform .3s cubic-bezier(.2, .8, .2, 1);
+            max-height: 88vh;
+            overflow-y: auto;
+        }
+
+        .sheet:not(.is-open) { visibility: hidden; transition: transform .3s cubic-bezier(.2, .8, .2, 1), visibility 0s .3s; }
+        .sheet-open .sheet-bg { opacity: 1; pointer-events: auto; }
+        .sheet.is-open { transform: none; }
+
+        .chip {
+            min-height: 44px;
+            border: 1px solid rgb(var(--wabi-sub));
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+            color: rgb(var(--wabi-text));
+            touch-action: manipulation;
+        }
+
+        .chip[aria-pressed="true"] { border-color: rgb(var(--wabi-dark)); background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); }
+        .chip:disabled { opacity: .35; }
+
+        /* 領錢、解約時畫面中間蓋一個大章 */
+        #bigStamp {
+            position: fixed;
+            inset: 0;
+            z-index: 70;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 1rem;
+            pointer-events: none;
+        }
+
+        #bigStamp.is-on { display: flex; }
+
+        #bigStamp .seal {
+            width: 8.5rem;
+            height: 8.5rem;
+            border: 5px solid rgb(var(--wabi-shu));
+            border-radius: 12px;
+            color: rgb(var(--wabi-shu));
+            background: rgb(var(--wabi-bg) / .92);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.6rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            animation: big-stamp .6s cubic-bezier(.3, 1.6, .5, 1) both;
+        }
+
+        #bigStamp.is-gray .seal { border-color: rgb(var(--wabi-accent)); color: rgb(var(--wabi-accent)); }
+
+        #bigStamp .amt {
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 1.4rem;
+            color: rgb(var(--wabi-dark));
+            background: rgb(var(--wabi-bg) / .92);
+            padding: 0.2rem 0.8rem;
+            animation: amt-up .9s .35s ease-out both;
+        }
+
+        @keyframes big-stamp {
+            0% { transform: scale(3) rotate(-25deg); opacity: 0; }
+            60% { transform: scale(.92) rotate(-8deg); opacity: 1; }
+            100% { transform: scale(1) rotate(-10deg); opacity: 1; }
+        }
+
+        @keyframes amt-up { from { opacity: 0; transform: translateY(10px); } }
+
+        @media (prefers-reduced-motion: reduce) {
+            .is-ripe, .pol-stamp.is-new, #bigStamp .seal, #bigStamp .amt { animation: none; }
+            .pol-stamp.is-new { transform: rotate(-12deg); }
+            #bigStamp .seal { transform: rotate(-10deg); }
+            .sheet, .sheet-bg { transition: none; }
+        }
+    </style>
+    <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261114d">
+</head>
+
+<body
+    class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- 導航 -->
+    <nav
+        class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <a href="index.html"
+            class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-3 md:gap-8">
+            <a href="index.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <a href="reviews.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <a href="about.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+            <a href="member.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">會員・我</a>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-md mx-auto pt-28 md:pt-36 pb-16 px-6 w-full">
+
+        <!-- 標題區塊 -->
+        <div class="text-center mb-8">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-3">INSURANCE</span>
+            <h1 class="text-3xl font-light text-wabi-dark tracking-widest">保險・存</h1>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">把錢鎖起來，<br>讓時間替你顧著。</p>
+            <p class="mt-4 text-[11px] font-sans tracking-[0.3em] text-stone-400">丼步喱人壽 承保</p>
+        </div>
+
+        <!-- 要保人：沒登入要先實名認證 -->
+        <section id="acct" class="mb-6"></section>
+
+        <!-- 商品 -->
+        <section class="bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-5 pt-5 pb-1">
+            <h2 class="text-sm tracking-[0.3em] text-wabi-dark">儲蓄險</h2>
+            <p id="planNote" class="mt-1 mb-3 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed"></p>
+            <div id="plans"></div>
+        </section>
+
+        <!-- 我的保單 -->
+        <section class="mt-8">
+            <h2 class="text-sm tracking-[0.3em] text-wabi-dark px-1">我的保單</h2>
+            <div id="policies" class="mt-3 space-y-4" aria-live="polite"></div>
+            <div id="old" class="mt-6"></div>
+        </section>
+
+        <!-- 條款 -->
+        <section class="mt-10 px-1">
+            <h2 class="text-sm tracking-[0.3em] text-wabi-dark">保單條款</h2>
+            <ol id="rules" class="mt-3 list-decimal pl-5 space-y-1.5 text-xs font-sans tracking-wide text-stone-500 leading-relaxed"></ol>
+        </section>
+
+        <p class="mt-10 text-center text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">這裡的錢都是二十七樓的遊戲幣，不是真的保險。<br>真的要買保險，請找真的保險公司。</p>
+    </main>
+
+    <footer
+        class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
+        <p>&copy; 2026 DONGBULI · 丼步喱人壽</p>
+    </footer>
+
+    <!-- 底部面板 -->
+    <div id="sheetBg" class="sheet-bg"></div>
+    <div id="sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"></div>
+    <div id="bigStamp" aria-hidden="true"><div class="seal"></div><div class="amt"></div></div>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+        const fmt = n => Wallet.fmt(Math.round(n || 0));
+        const wan = n => n % 10000 === 0 ? `${n / 10000} 萬` : fmt(n);
+
+        // 後端還沒回來（或沒登入）時給客人看的商品；登入後用後端回來的 rules
+        let RULES = {
+            plans: [
+                { key: 'd3', name: '三日・安', days: 3, rate: 0.03 },
+                { key: 'd5', name: '五日・穩', days: 5, rate: 0.06 },
+                { key: 'd7', name: '七日・久', days: 7, rate: 0.10 },
+            ],
+            min: 10000, max: 100000, activeMax: 3, surrenderBase: 0.7,
+        };
+        const PLAN_LINE = { d3: '短短三天，先試試水溫。', d5: '五天，剛好一個上班週。', d7: '一個禮拜，利息最多。' };
+
+        let book = null;         // 後端回來的 { now, policies, rules }
+        let offset = 0;          // 後端時間 - 手機時間（用後端的時鐘算到期）
+        let state = 'loading';   // loading / guest / ready / old / error
+        let errMsg = '', busy = false, fresh = null;  // fresh：剛剛蓋章的那張 { id, kind }
+        const now = () => Date.now() + offset;
+
+        const pad = n => String(n).padStart(2, '0');
+        const when = iso => { const d = new Date(iso); return `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+        function leftText(ms) {
+            if (ms <= 0) return '已經滿期，可以領了';
+            const s = Math.ceil(ms / 1000), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+            if (d) return `還有 ${d} 天 ${h} 小時`;
+            if (h) return `還有 ${h} 小時 ${m} 分`;
+            return `還有 ${m} 分 ${s % 60} 秒`;
+        }
+        const progress = p => Math.max(0, Math.min(1, (now() - Date.parse(p.start)) / (Date.parse(p.end) - Date.parse(p.start))));
+        const ripe = p => p.status === 'active' && now() >= Date.parse(p.end);
+        // 現在解約大約拿回多少（後端算才準）
+        const surrenderNow = p => Math.floor(p.amount * (RULES.surrenderBase + (1 - RULES.surrenderBase) * progress(p)));
+        const active = () => (book ? book.policies : []).filter(p => p.status === 'active');
+        const inPolicies = () => active().reduce((t, p) => t + p.amount, 0);
+
+        // ---- 畫面 ----
+        function renderAcct() {
+            const box = $('acct');
+            if (state === 'guest') {
+                box.innerHTML = `<div class="border border-dashed border-stone-300 rounded-sm p-5">
+                    <h2 class="text-sm tracking-[0.3em] text-wabi-dark">投保需實名認證</h2>
+                    <p class="mt-2 text-xs font-sans tracking-wider text-stone-500 leading-relaxed">保單跟著 LINE 帳號走，換手機也在；到期時間看丼步喱人壽的時鐘，把手機時間調快也沒用。</p>
+                    <button type="button" data-login class="line-btn mt-4 w-full">用 LINE 登入</button></div>`;
+                return;
+            }
+            const name = (Line.profile && Line.profile.name) || '旅人';
+            box.innerHTML = `<div class="flex items-end justify-between gap-3 px-1">
+                <div class="min-w-0"><span class="block text-[11px] font-sans tracking-widest text-stone-400">要保人</span>
+                    <span class="block truncate text-wabi-dark tracking-widest">${esc(name)}</span></div>
+                <div class="text-right font-sans"><span class="block text-[11px] tracking-widest text-stone-400">錢包・保單裡</span>
+                    <span class="text-wabi-dark">${fmt(Wallet.money)}</span><span class="text-stone-400"> ・ ${fmt(inPolicies())}</span></div>
+            </div>`;
+        }
+
+        function renderPlans() {
+            const full = active().length >= RULES.activeMax;
+            $('planNote').textContent = `每張 ${wan(RULES.min)}～${wan(RULES.max)}，同時最多 ${RULES.activeMax} 張${state === 'ready' ? `（你現在有 ${active().length} 張）` : ''}。`;
+            $('plans').innerHTML = RULES.plans.map(pl => {
+                const can = state === 'ready' && !full && Wallet.money >= RULES.min && !busy;
+                return `<div class="plan">
+                    <div class="plan-days"><span class="text-lg font-sans">${pl.days}</span><span class="text-[10px] tracking-widest text-stone-500">天</span></div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-baseline gap-2"><span class="text-wabi-dark tracking-widest">${esc(pl.name)}</span>
+                            <span class="font-sans text-sm text-wabi-shu">+${Math.round(pl.rate * 100)}%</span></div>
+                        <p class="text-[11px] font-sans tracking-wide text-stone-400 leading-snug">${esc(PLAN_LINE[pl.key] || '')}<br>投保 10 萬，${pl.days} 天後領回 ${fmt(100000 * (1 + pl.rate))}</p>
+                    </div>
+                    <button type="button" class="btn btn-main shrink-0" data-buy="${pl.key}" ${can ? '' : 'disabled'}>投保</button>
+                </div>`;
+            }).join('') + (state === 'ready' && full ? '<p class="pb-4 text-[11px] font-sans tracking-wider text-stone-400">保單滿 3 張了，等一張滿期再來。</p>'
+                : state === 'ready' && Wallet.money < RULES.min ? `<p class="pb-4 text-[11px] font-sans tracking-wider text-stone-400">錢包不到 ${wan(RULES.min)}，先去<a href="xitou.html" class="underline underline-offset-2">坐洗部</a>打工。</p>` : '');
+        }
+
+        function policyCard(p) {
+            const prog = progress(p), done = ripe(p);
+            const stampNew = fresh && fresh.id === p.id ? ' is-new' : '';
+            const name = (Line.profile && Line.profile.name) || '旅人';
+            return `<article class="policy" data-id="${esc(p.id)}">
+                <header class="pol-head"><span class="pol-co">丼步喱人壽</span><span class="pol-title">保險單</span><span class="pol-no">No. ${esc(p.id)}</span></header>
+                <dl class="pol-grid">
+                    <div><dt>方案</dt><dd>${esc(p.name)}</dd></div>
+                    <div><dt>受益人</dt><dd>本人</dd></div>
+                    <div><dt>要保人</dt><dd>${esc(name)}</dd></div>
+                    <div><dt>保額</dt><dd>${fmt(p.amount)}</dd></div>
+                    <div><dt>投保</dt><dd>${when(p.start)}</dd></div>
+                    <div><dt>滿期</dt><dd>${when(p.end)}</dd></div>
+                </dl>
+                <div class="pol-due">滿期金<b>${fmt(p.due)}</b> <small>（利息 ${fmt(p.due - p.amount)}）</small></div>
+                <div class="pol-bar${done ? ' is-done' : ''}"><i data-bar style="width:${(prog * 100).toFixed(2)}%"></i></div>
+                <p class="pol-left${done ? ' is-done' : ''}" data-left>${leftText(Date.parse(p.end) - now())}</p>
+                <div class="pol-act">${done
+                    ? `<button type="button" class="btn btn-shu is-ripe" data-claim="${esc(p.id)}" ${busy ? 'disabled' : ''}>領滿期金 ${fmt(p.due)}</button>`
+                    : `<button type="button" class="btn btn-line" data-cancel="${esc(p.id)}" ${busy ? 'disabled' : ''}>解約</button>`}</div>
+                <span class="pol-stamp${stampNew}">承保</span>
+            </article>`;
+        }
+
+        function renderPolicies() {
+            const box = $('policies');
+            if (state === 'loading') { box.innerHTML = '<p class="py-6 text-center text-xs font-sans tracking-widest text-stone-400">翻保單中…</p>'; $('old').innerHTML = ''; return; }
+            if (state === 'guest') { box.innerHTML = '<p class="py-6 text-center text-xs font-sans tracking-wider text-stone-400">登入以後，你的保單會放在這裡。</p>'; $('old').innerHTML = ''; return; }
+            if (state === 'old' || state === 'error') {
+                box.innerHTML = `<p class="py-6 text-center text-xs font-sans tracking-wider text-stone-500 leading-relaxed">${state === 'old' ? '丼步喱人壽還沒開張：後端要重新部署「新版本」。' : esc(errMsg)}</p>
+                    <div class="text-center"><button type="button" class="btn btn-line" data-retry>再試一次</button></div>`;
+                $('old').innerHTML = '';
+                return;
+            }
+            const act = active();
+            box.innerHTML = act.length ? act.map(policyCard).join('')
+                : '<p class="py-6 text-center text-xs font-sans tracking-wider text-stone-400 leading-relaxed">還沒有保單。<br>錢放在錢包裡，只會被拿去刮刮樂。</p>';
+            const old = book.policies.filter(p => p.status !== 'active');
+            $('old').innerHTML = old.length ? `<details ${fresh && old.some(p => p.id === fresh.id) ? 'open' : ''}>
+                <summary class="cursor-pointer min-h-[44px] flex items-center text-xs font-sans tracking-widest text-stone-500 px-1">舊保單（${old.length}）</summary>
+                <div class="px-1">${old.map(p => {
+                    const won = p.status === 'matured';
+                    return `<div class="old-row"><span class="mini-stamp${won ? '' : ' is-gray'}">${won ? '滿期' : '解約'}</span>
+                        <span class="flex-1 min-w-0"><span class="block text-wabi-dark tracking-wider">${esc(p.name)}・${fmt(p.amount)}</span>
+                        <span class="block text-[11px] font-sans tracking-wide text-stone-400">${when(p.closed || p.end)} ${won ? '領回' : '解約拿回'}</span></span>
+                        <span class="shrink-0 font-sans ${won ? 'text-wabi-dark' : 'text-stone-400'}">${fmt(p.payout)}</span></div>`;
+                }).join('')}</div></details>` : '';
+        }
+
+        function renderRules() {
+            const pl = RULES.plans.map(p => `${p.name} ${p.days} 天 +${Math.round(p.rate * 100)}%`).join('、');
+            $('rules').innerHTML = [
+                `三種方案：${pl}。`,
+                `每張保額 ${wan(RULES.min)}～${wan(RULES.max)}，同時最多 ${RULES.activeMax} 張。投保的錢從錢包扣，不算「花掉」。`,
+                '滿期後要自己按「領滿期金」，錢才回錢包。放著不會跑掉，但也不會多長利息。',
+                `提早解約沒有利息：剛投保只拿回 ${Math.round(RULES.surrenderBase * 100)}%，越接近滿期拿回越多。`,
+                '到期時間以丼步喱人壽的時鐘為準，把手機時間調快沒有用。',
+                '本公司不理賠前夫造成的任何損失。',
+                '投保前請詳閱條款。雖然你不會看。',
+            ].map(t => `<li>${esc(t)}</li>`).join('');
+        }
+
+        function render() {
+            renderAcct(); renderPlans(); renderPolicies(); renderRules();
+            fresh = null;
+        }
+
+        // 每秒更新倒數；有保單剛好滿期就整個重畫（解約鈕換成領錢鈕）
+        let ripeSeen = '';
+        setInterval(() => {
+            if (state !== 'ready') return;
+            const nowRipe = active().filter(ripe).map(p => p.id).join(',');
+            if (nowRipe !== ripeSeen) { ripeSeen = nowRipe; renderPolicies(); return; }
+            document.querySelectorAll('.policy').forEach(el => {
+                const p = active().find(x => x.id === el.dataset.id);
+                if (!p) return;
+                el.querySelector('[data-left]').textContent = leftText(Date.parse(p.end) - now());
+                el.querySelector('[data-bar]').style.width = (progress(p) * 100).toFixed(2) + '%';
+            });
+        }, 1000);
+
+        // ---- 後端 ----
+        function take(r) {
+            book = r;
+            offset = Date.parse(r.now) - Date.now();
+            if (r.rules && r.rules.plans) RULES = r.rules;
+            state = 'ready';
+            ripeSeen = active().filter(ripe).map(p => p.id).join(',');
+        }
+
+        async function load() {
+            if (!Line.loggedIn) { state = 'guest'; render(); return; }
+            try {
+                const r = await Line.call({ type: 'policyList' });
+                if (r.result === 'success') take(r);
+                else if (r.result === 'unauthorized') state = 'guest';
+                else if (/不認得的請求/.test(r.error || '')) state = 'old';
+                else { state = 'error'; errMsg = `讀不到保單（${r.error || r.result}）。`; }
+            } catch (e) { state = 'error'; errMsg = '連不到後端，可能是網路不穩。'; }
+            render();
+        }
+
+        // 投保、領錢、解約：先把錢包還沒送的送完，再請後端直接改帳號
+        async function act(body) {
+            if (busy) return null;
+            busy = true; render();
+            try {
+                await Wallet.settle();
+                const r = await Line.call(body);
+                if (r.result === 'success') { take(r); Wallet.adopt(r.wallet); return r; }
+                if (r.result === 'unauthorized') { state = 'guest'; showToast('登入過期了，再登入一次'); }
+                else showToast(/不認得的請求/.test(r.error || '') ? '後端還是舊版，要重新部署「新版本」' : (r.error || '保險公司沒回應'));
+            } catch (e) { showToast('連不到後端，可能是網路不穩'); }
+            finally { busy = false; render(); }
+            return null;
+        }
+
+        function bigStamp(text, amount, gray) {
+            const el = $('bigStamp');
+            el.querySelector('.seal').textContent = text;
+            el.querySelector('.amt').textContent = `+${fmt(amount)}`;
+            el.classList.toggle('is-gray', !!gray);
+            el.classList.remove('is-on'); void el.offsetWidth; el.classList.add('is-on');
+            clearTimeout(bigStamp.t); bigStamp.t = setTimeout(() => el.classList.remove('is-on'), 1500);
+        }
+
+        // ---- 底部面板 ----
+        let sheetKind = null, buyPlan = null, buyAmount = 0;
+        function openSheet(html) {
+            $('sheet').innerHTML = html;
+            document.body.classList.add('sheet-open');
+            requestAnimationFrame(() => $('sheet').classList.add('is-open'));
+        }
+        function closeSheet() {
+            sheetKind = null;
+            document.body.classList.remove('sheet-open');
+            $('sheet').classList.remove('is-open');
+        }
+
+        function openBuy(key) {
+            buyPlan = RULES.plans.find(p => p.key === key);
+            if (!buyPlan) return;
+            sheetKind = 'buy';
+            const cap = Math.min(RULES.max, Math.floor(Wallet.money / 1000) * 1000);
+            buyAmount = Math.max(RULES.min, Math.min(cap, buyAmount || 50000));
+            openSheet(`
+                <div class="flex items-baseline justify-between">
+                    <h3 id="sheetTitle" class="text-lg tracking-[0.3em] text-wabi-dark">${esc(buyPlan.name)}</h3>
+                    <span class="font-sans text-xs tracking-widest text-stone-400">${buyPlan.days} 天・+${Math.round(buyPlan.rate * 100)}%</span>
+                </div>
+                <p class="mt-1 text-[11px] font-sans tracking-wider text-stone-400">錢包 ${fmt(Wallet.money)}，保額 ${wan(RULES.min)}～${wan(RULES.max)}</p>
+                <div class="mt-4 grid grid-cols-4 gap-2">${[10000, 30000, 50000, 100000].map(v =>
+                    `<button type="button" class="chip" data-amt="${v}" ${v > Wallet.money ? 'disabled' : ''}>${wan(v)}</button>`).join('')}</div>
+                <label class="mt-4 flex items-center gap-2 border-b border-stone-300 pb-1">
+                    <span class="font-sans text-stone-400">$</span>
+                    <input id="amtInput" type="number" inputmode="numeric" step="1000" min="${RULES.min}" max="${cap}" value="${buyAmount}"
+                        class="flex-1 min-w-0 bg-transparent font-sans text-lg text-wabi-dark outline-none" aria-label="保額">
+                </label>
+                <div id="buyCalc" class="mt-4 text-xs font-sans tracking-wider text-stone-500 leading-relaxed"></div>
+                <div class="mt-5 grid grid-cols-3 gap-2">
+                    <button type="button" class="btn btn-line" data-close>再想想</button>
+                    <button type="button" id="buyGo" class="btn btn-main col-span-2" data-go></button>
+                </div>`);
+            updateBuy();
+        }
+
+        function updateBuy() {
+            if (sheetKind !== 'buy') return;
+            const ok = Number.isInteger(buyAmount) && buyAmount >= RULES.min && buyAmount <= RULES.max && buyAmount <= Wallet.money;
+            document.querySelectorAll('[data-amt]').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.amt) === buyAmount)));
+            const end = new Date(now() + buyPlan.days * 86400000), due = buyAmount + Math.round(buyAmount * buyPlan.rate);
+            $('buyCalc').innerHTML = ok
+                ? `${when(end.toISOString())} 滿期，領回 <b class="text-wabi-dark text-sm">${fmt(due)}</b>（利息 ${fmt(due - buyAmount)}）<br>提早解約沒有利息，剛投保只拿回 ${fmt(Math.floor(buyAmount * RULES.surrenderBase))}。`
+                : buyAmount > Wallet.money ? '錢包不夠。' : `保額要 ${wan(RULES.min)}～${wan(RULES.max)} 的整數。`;
+            const go = $('buyGo');
+            go.disabled = !ok || busy;
+            go.textContent = ok ? `確認投保・${fmt(buyAmount)}` : '確認投保';
+        }
+
+        // 解約：業務員來挽留
+        function openCancel(id) {
+            const p = active().find(x => x.id === id);
+            if (!p) return;
+            sheetKind = 'cancel';
+            const prog = progress(p), back = surrenderNow(p), left = leftText(Date.parse(p.end) - now()).replace('還有 ', '');
+            const plea = prog < 0.3 ? '才剛簽約就要解？保費我都還沒捂熱。'
+                : prog < 0.7 ? '已經撐過一半了，再忍一下，利息在路上了。'
+                : `只剩 ${left}！現在解約，等於把利息送給我。`;
+            openSheet(`
+                <h3 id="sheetTitle" class="text-lg tracking-[0.3em] text-wabi-dark">要解約嗎</h3>
+                <div class="mt-3 border-l-2 border-wabi-shu pl-3 text-sm tracking-wider text-wabi-dark leading-relaxed">「${esc(plea)}」<span class="block text-[11px] font-sans text-stone-400 mt-1">—— 丼步喱人壽業務員</span></div>
+                <p class="mt-4 text-xs font-sans tracking-wider text-stone-500 leading-relaxed">${esc(p.name)}・保額 ${fmt(p.amount)}<br>
+                    現在解約大約拿回 <b class="text-wabi-dark text-sm">${fmt(back)}</b>（少拿 ${fmt(p.amount - back)}，沒有利息）<br>
+                    撐到滿期可以領 ${fmt(p.due)}。</p>
+                <div class="mt-5 grid grid-cols-2 gap-2">
+                    <button type="button" class="btn btn-main" data-close>好啦，不解了</button>
+                    <button type="button" class="btn btn-line" data-confirm-cancel="${esc(p.id)}">我意已決，解約</button>
+                </div>`);
+        }
+
+        // ---- 事件 ----
+        document.addEventListener('click', async e => {
+            const t = e.target;
+            if (t.closest('[data-login]')) return Line.login();
+            if (t.closest('[data-retry]')) { state = 'loading'; render(); return load(); }
+            const buy = t.closest('[data-buy]'); if (buy) return openBuy(buy.dataset.buy);
+            const amt = t.closest('[data-amt]'); if (amt) { buyAmount = Number(amt.dataset.amt); $('amtInput').value = buyAmount; return updateBuy(); }
+            if (t.closest('[data-close]') || t === $('sheetBg')) return closeSheet();
+            if (t.closest('[data-go]')) {
+                const plan = buyPlan, amount = buyAmount;
+                const r = await act({ type: 'policyBuy', plan: plan.key, amount });
+                if (r) {
+                    closeSheet();
+                    fresh = { id: r.id, kind: 'buy' };
+                    renderPolicies(); fresh = null;
+                    showToast(`投保成功：${plan.name}・${fmt(amount)}`);
+                    const card = document.querySelector(`.policy[data-id="${r.id}"]`);
+                    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return;
+            }
+            const cancel = t.closest('[data-cancel]'); if (cancel) return openCancel(cancel.dataset.cancel);
+            const conf = t.closest('[data-confirm-cancel]');
+            if (conf) {
+                const id = conf.dataset.confirmCancel;
+                closeSheet();
+                const r = await act({ type: 'policyCancel', id });
+                if (r) { fresh = { id, kind: 'cancel' }; renderPolicies(); fresh = null; bigStamp('解約', r.payout, true); showToast(`解約了，拿回 ${fmt(r.payout)}`); }
+                return;
+            }
+            const claim = t.closest('[data-claim]');
+            if (claim) {
+                const id = claim.dataset.claim;
+                const r = await act({ type: 'policyClaim', id });
+                if (r) { fresh = { id, kind: 'claim' }; renderPolicies(); fresh = null; bigStamp('滿期', r.payout); showToast(`滿期金 ${fmt(r.payout)} 入帳（利息 ${fmt(r.interest)}）`); }
+            }
+        });
+        document.addEventListener('input', e => {
+            if (e.target.id === 'amtInput') { buyAmount = Math.round(Number(e.target.value) || 0); updateBuy(); }
+        });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetKind) closeSheet(); });
+
+        Wallet.on(type => {
+            if (type === 'login') { state = 'loading'; render(); setTimeout(load, 1500); }
+            else if (type === 'logout') { book = null; state = 'guest'; render(); }
+            else { renderAcct(); renderPlans(); if (sheetKind === 'buy') updateBuy(); }
+        });
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && state === 'ready') load(); });
+
+        render();
+        Line.ready.then(load, load);
+    </script>
+</body>
+
+</html>

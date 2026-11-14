@@ -57,7 +57,7 @@ var CLEAN_ROWS_PER_HOUR = 2000;  // 全站每小時最多存幾間
 // 以前每個 POST 都排同一個隊，所有人一個一個來，洗頭、刮刮樂的人一多後台就擠不進來。
 // 現在只有這些整個排隊；錢包同步、LINE 登入只在寫 Players 那一下排隊（withLock）；
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
-var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1 };
+var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1 };
 
 function withLock(fn) {
   var lock = LockService.getScriptLock();
@@ -96,6 +96,10 @@ function route(type, input) {
     if (type === 'cleanLog') return cleanLog(input);
     if (type === 'gongdeLog') return gongdeLog(input);
     if (type === 'leaderboard') return leaderboard(input);
+    if (type === 'policyList') return policyList(input);
+    if (type === 'policyBuy') return policyBuy(input);
+    if (type === 'policyClaim') return policyClaim(input);
+    if (type === 'policyCancel') return policyCancel(input);
 
     // 以下只有後台能用，要帶登入拿到的通行證
     if (type === 'updateStatus' || type === 'adminList' || type === 'bonusCreate' || type === 'bonusList' || type === 'bonusClose') {
@@ -1194,6 +1198,168 @@ function leaderboard(input) {
       return { name: p.name, picture: p.picture, xitou: p.xitou, clean: p.clean, spend: p.spend, me: !!me && p.id === me };
     })
   };
+}
+
+
+// --- 保險・存（baoxian.html）：丼步喱人壽的儲蓄險 ---
+// 要 LINE 登入。投保、領滿期金、解約都直接改 Players 的錢（排隊做），時間用後端的時鐘，手機調時間沒有用。
+// 投保扣的錢不算 spent（錢只是鎖起來）；領滿期金時利息記在 earned.insure；解約少拿的部分不算 spent。
+
+var POLICY_PLANS = {
+  d3: { name: '三日・安', days: 3, rate: 0.03 },
+  d5: { name: '五日・穩', days: 5, rate: 0.06 },
+  d7: { name: '七日・久', days: 7, rate: 0.10 }
+};
+var POLICY_MIN = 10000, POLICY_MAX = 100000, POLICY_ACTIVE_MAX = 3, POLICY_SURRENDER_BASE = 0.7, POLICY_OPS_PER_HOUR = 120;
+var POLICY_HEADERS = ['created', 'id', 'line_id', 'plan', 'amount', 'rate', 'start', 'end', 'status', 'closed', 'payout'];
+
+function policiesSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Policies');
+  if (!sheet) {
+    sheet = ss.insertSheet('Policies');
+    sheet.appendRow(POLICY_HEADERS);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function policyRows(lineId) {
+  var rows = policiesSheet().getDataRange().getValues(), out = [];
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][2]) !== lineId) continue;
+    out.push({
+      row: i + 1, id: String(rows[i][1]), plan: String(rows[i][3]), amount: Number(rows[i][4]) || 0, rate: Number(rows[i][5]) || 0,
+      start: new Date(rows[i][6]), end: new Date(rows[i][7]), status: String(rows[i][8] || 'active'),
+      closed: rows[i][9] ? new Date(rows[i][9]) : null, payout: Number(rows[i][10]) || 0
+    });
+  }
+  return out;
+}
+
+function policyDue(p) { return p.amount + Math.round(p.amount * p.rate); }
+
+// 現在解約拿回多少：剛投保 7 成，越接近滿期越多（沒有利息）
+function policySurrender(p, now) {
+  var span = p.end.getTime() - p.start.getTime();
+  var prog = span > 0 ? Math.max(0, Math.min(1, (now.getTime() - p.start.getTime()) / span)) : 1;
+  return Math.floor(p.amount * (POLICY_SURRENDER_BASE + (1 - POLICY_SURRENDER_BASE) * prog));
+}
+
+function policyView(p, now) {
+  var plan = POLICY_PLANS[p.plan] || { name: p.plan, days: 0 };
+  return {
+    id: p.id, plan: p.plan, name: plan.name, days: plan.days, amount: p.amount, rate: p.rate,
+    start: p.start.toISOString(), end: p.end.toISOString(), status: p.status,
+    closed: p.closed ? p.closed.toISOString() : '', payout: p.payout, due: policyDue(p),
+    surrender: p.status === 'active' && now < p.end ? policySurrender(p, now) : 0
+  };
+}
+
+// 回給網頁的：還在保的全部 + 最近 10 張結束的，加上現在時間和規則
+function policyBook(lineId, now) {
+  var all = policyRows(lineId);
+  var active = all.filter(function (p) { return p.status === 'active'; });
+  var done = all.filter(function (p) { return p.status !== 'active'; }).sort(function (a, b) { return (b.closed || 0) - (a.closed || 0); }).slice(0, 10);
+  var plans = Object.keys(POLICY_PLANS).map(function (k) { var x = POLICY_PLANS[k]; return { key: k, name: x.name, days: x.days, rate: x.rate }; });
+  return {
+    now: now.toISOString(), policies: active.concat(done).map(function (p) { return policyView(p, now); }),
+    rules: { plans: plans, min: POLICY_MIN, max: POLICY_MAX, activeMax: POLICY_ACTIVE_MAX, surrenderBase: POLICY_SURRENDER_BASE }
+  };
+}
+
+function policyGuard(input) {
+  var lineId = sessionUser(input.session);
+  if (!lineId) return { error: { result: 'unauthorized' } };
+  var cache = CacheService.getScriptCache();
+  var key = 'policy:' + lineId + ':' + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var n = Number(cache.get(key) || 0);
+  if (n >= POLICY_OPS_PER_HOUR) return { error: { result: 'error', error: '這小時跑保險公司太多次了，晚點再來' } };
+  cache.put(key, String(n + 1), 3600);
+  return { lineId: lineId };
+}
+
+function policyList(input) {
+  var g = policyGuard(input);
+  if (g.error) return g.error;
+  var out = policyBook(g.lineId, new Date());
+  out.result = 'success';
+  return out;
+}
+
+function policyBuy(input) {
+  var g = policyGuard(input);
+  if (g.error) return g.error;
+  var plan = POLICY_PLANS[String(input.plan || '')];
+  var amount = cleanMoney(input.amount, POLICY_MIN, POLICY_MAX);
+  if (!plan) return { result: 'error', error: '沒有這種保單' };
+  if (amount === null) return { result: 'error', error: '保額要是 $' + POLICY_MIN + '～$' + POLICY_MAX + ' 的整數' };
+  var p = findPlayer(g.lineId);
+  if (!p) return { result: 'unauthorized' };
+  var active = policyRows(g.lineId).filter(function (x) { return x.status === 'active'; });
+  if (active.length >= POLICY_ACTIVE_MAX) return { result: 'error', error: '同時最多 ' + POLICY_ACTIVE_MAX + ' 張保單' };
+  if (p.money < amount) return { result: 'error', error: '錢包不夠' };
+  p.money -= amount;
+  writeWallet(p);
+  var now = new Date(), end = new Date(now.getTime() + plan.days * 86400000);
+  var id = 'P' + Utilities.getUuid().replace(/-/g, '').slice(0, 7).toUpperCase();
+  policiesSheet().appendRow([now, id, g.lineId, String(input.plan), amount, plan.rate, now, end, 'active', '', '']);
+  var out = policyBook(g.lineId, now);
+  out.result = 'success'; out.id = id; out.wallet = walletView(p);
+  return out;
+}
+
+function policyFind(lineId, id) {
+  var list = policyRows(lineId);
+  for (var i = 0; i < list.length; i++) if (list[i].id === String(id || '')) return list[i];
+  return null;
+}
+
+function policyClose(p, status, payout, now) {
+  policiesSheet().getRange(p.row, 9, 1, 3).setValues([[status, now, payout]]);
+}
+
+function policyClaim(input) {
+  var g = policyGuard(input);
+  if (g.error) return g.error;
+  var pol = policyFind(g.lineId, input.id), now = new Date();
+  if (!pol) return { result: 'error', error: '找不到這張保單' };
+  if (pol.status !== 'active') return { result: 'error', error: '這張保單已經結束了' };
+  if (now < pol.end) return { result: 'error', error: '還沒滿期' };
+  var p = findPlayer(g.lineId);
+  if (!p) return { result: 'unauthorized' };
+  var due = policyDue(pol), interest = due - pol.amount;
+  p.money = Math.min(WALLET_MAX, p.money + due);
+  p.earned = addEarned(p.earned, { insure: { times: 1, total: interest, best: interest } });
+  writeWallet(p);
+  policyClose(pol, 'matured', due, now);
+  var out = policyBook(g.lineId, now);
+  out.result = 'success'; out.payout = due; out.interest = interest; out.wallet = walletView(p);
+  return out;
+}
+
+function policyCancel(input) {
+  var g = policyGuard(input);
+  if (g.error) return g.error;
+  var pol = policyFind(g.lineId, input.id), now = new Date();
+  if (!pol) return { result: 'error', error: '找不到這張保單' };
+  if (pol.status !== 'active') return { result: 'error', error: '這張保單已經結束了' };
+  if (now >= pol.end) return { result: 'error', error: '已經滿期了，直接領滿期金' };
+  var p = findPlayer(g.lineId);
+  if (!p) return { result: 'unauthorized' };
+  var back = policySurrender(pol, now);
+  p.money = Math.min(WALLET_MAX, p.money + back);
+  writeWallet(p);
+  policyClose(pol, 'surrendered', back, now);
+  var out = policyBook(g.lineId, now);
+  out.result = 'success'; out.payout = back; out.wallet = walletView(p);
+  return out;
+}
+
+// 在編輯器選這個按「執行」：先把 Policies 分頁建出來
+function setupPolicies() {
+  var sheet = policiesSheet();
+  Logger.log('Policies 分頁好了，目前有 ' + (sheet.getLastRow() - 1) + ' 張保單。網頁要能投保，還要「部署 → 管理部署作業 → 編輯 → 版本選新版本 → 部署」。');
 }
 
 

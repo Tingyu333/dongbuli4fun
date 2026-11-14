@@ -236,6 +236,16 @@
             if (!isEmpty(load().pending)) schedule();
         },
 
+        // 要直接改帳號的動作（保險・存的投保、領錢、解約）之前先叫這個：
+        // 等正在送的那包送完、再把還沒送的送出去，後端的帳才是最新的
+        async settle() {
+            if (!logged()) return;
+            for (let i = 0; i < 100 && inflight; i++) await new Promise(r => setTimeout(r, 100));
+            if (!isEmpty(load().pending)) await Wallet.sync();
+        },
+        // 後端直接改過帳號（例如投保扣錢）：用後端回來的錢包 + 還沒送的
+        adopt(server) { if (server && logged()) adopt(server); },
+
         // { money, spent, earned: { xitou: { times, total, best }, scratch: {…} } }
         stats() { return load(); },
         on(fn) { listeners.push(fn); },

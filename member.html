@@ -22,11 +22,11 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/theme.css?v=20261114c">
-    <script src="assets/theme.js?v=20261114c"></script>
-    <script src="assets/line.js?v=20261114c"></script>
-    <script src="assets/wallet.js?v=20261114c"></script>
-    <script src="assets/gongde.js?v=20261114c"></script>
+    <link rel="stylesheet" href="assets/theme.css?v=20261114d">
+    <script src="assets/theme.js?v=20261114d"></script>
+    <script src="assets/line.js?v=20261114d"></script>
+    <script src="assets/wallet.js?v=20261114d"></script>
+    <script src="assets/gongde.js?v=20261114d"></script>
     <style>
         .line-btn {
             min-height: 44px;
@@ -73,7 +73,7 @@
         }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261114c">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261114d">
 </head>
 
 <body
@@ -145,6 +145,14 @@
                 </span>
                 <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
             </a>
+            <a href="baoxian.html" class="game">
+                <span class="game-mark">保</span>
+                <span class="flex-1 min-w-0">
+                    <span class="block text-wabi-dark tracking-widest">保險・存</span>
+                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">丼步喱人壽：錢鎖三、五、七天，連本帶利領回來</span>
+                </span>
+                <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+            </a>
             <a href="scratch.html" class="game">
                 <span class="game-mark is-shu">刮</span>
                 <span class="flex-1 min-w-0">
@@ -196,8 +204,9 @@
             bonus: e => `領了 ${e.times} 包紅包，${fmt(e.total)}`,
             caishen: e => `財神加碼 ${e.times} 次，${fmt(e.total)}`,
             clean: e => `打掃了 ${e.times} 間，賺 ${fmt(e.total)}（最多一次 ${fmt(e.best)}）`,
+            insure: e => `滿期 ${e.times} 張，利息 ${fmt(e.total)}`,
         };
-        const LABELS = { xitou: '坐洗部', clean: '房務部', scratch: '彩券行', bonus: '主人紅包', caishen: '財神燈' };
+        const LABELS = { xitou: '坐洗部', clean: '房務部', scratch: '彩券行', bonus: '主人紅包', caishen: '財神燈', insure: '丼步喱人壽' };
 
         function renderWho() {
             const box = $('who');
