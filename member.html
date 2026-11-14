@@ -22,11 +22,11 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/theme.css?v=20261116">
-    <script src="assets/theme.js?v=20261116"></script>
-    <script src="assets/line.js?v=20261116"></script>
-    <script src="assets/wallet.js?v=20261116"></script>
-    <script src="assets/gongde.js?v=20261116"></script>
+    <link rel="stylesheet" href="assets/theme.css?v=20261117">
+    <script src="assets/theme.js?v=20261117"></script>
+    <script src="assets/line.js?v=20261117"></script>
+    <script src="assets/wallet.js?v=20261117"></script>
+    <script src="assets/gongde.js?v=20261117"></script>
     <style>
         .line-btn {
             min-height: 44px;
@@ -73,7 +73,7 @@
         }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261116">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261117">
 </head>
 
 <body
@@ -178,8 +178,9 @@
             xitou: e => `洗了 ${e.times} 顆頭，賺 ${fmt(e.total)}（最多一次 ${fmt(e.best)}）`,
             scratch: e => `刮中 ${e.times} 次，${fmt(e.total)}（最大一筆 ${fmt(e.best)}）`,
             bonus: e => `領了 ${e.times} 包紅包，${fmt(e.total)}`,
+            caishen: e => `財神加碼 ${e.times} 次，${fmt(e.total)}`,
         };
-        const LABELS = { xitou: '坐洗部', scratch: '彩券行', bonus: '主人紅包' };
+        const LABELS = { xitou: '坐洗部', scratch: '彩券行', bonus: '主人紅包', caishen: '財神燈' };
 
         function renderWho() {
             const box = $('who');
@@ -212,11 +213,11 @@
             let shopSpent = 0;
             try { shopSpent = Number((JSON.parse(localStorage.getItem('dongbuli-xitou-shop')) || {}).spent) || 0; } catch (e) { }
             const gd = Wallet.gongde, tier = Gongde.tierOf(gd.donated);
-            const parts = [[shopSpent, '洗頭店升級'], [gd.donated, '捐香油錢'], [gd.lit, '點光明燈']].filter(x => x[0] > 0);
+            const parts = [[shopSpent, '洗頭店升級'], [gd.donated, '捐香油錢'], [gd.lit, '點燈']].filter(x => x[0] > 0);
             const scratchSpent = Math.max(0, w.spent - parts.reduce((t, x) => t + x[0], 0));
             if (scratchSpent) parts.push([scratchSpent, '刮刮樂']);
             if (w.spent) rows.push(`<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">花掉</dt><dd class="flex-1">${fmt(w.spent)}${parts.length > 1 ? `（${parts.map(x => `${x[1]} ${fmt(x[0])}`).join('、')}）` : parts.length ? `（都拿去${parts[0][1]}了）` : ''}</dd></div>`);
-            if (gd.donated || gd.oil) rows.push(`<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">功德</dt><dd class="flex-1">${tier.name}${tier.q ? `，永久加持 ${Math.round(tier.q * 100)}%` : ''}${gd.oil ? `，光明燈油 ${fmt(gd.oil)}` : ''}</dd></div>`);
+            if (gd.donated || Gongde.lit(gd).length) rows.push(`<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">功德</dt><dd class="flex-1">${tier.name}${tier.q ? `，永久加持 ${Math.round(tier.q * 100)}%` : ''}${Gongde.lit(gd).map(l => `，${l.name} ${l.unit === 'money' ? fmt(l.oilLeft) : l.oilLeft + ' ' + l.unit}`).join('')}</dd></div>`);
             $('tierTag').textContent = gd.donated ? tier.name : '';
             $('ledger').innerHTML = rows.length ? rows.join('') : '<p class="text-stone-400">還沒賺過錢。先去坐洗部洗一顆頭。</p>';
         }

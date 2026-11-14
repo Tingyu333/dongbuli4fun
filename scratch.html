@@ -21,11 +21,11 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/theme.css?v=20261116">
-    <script src="assets/theme.js?v=20261116"></script>
-    <script src="assets/line.js?v=20261116"></script>
-    <script src="assets/wallet.js?v=20261116"></script>
-    <script src="assets/gongde.js?v=20261116"></script>
+    <link rel="stylesheet" href="assets/theme.css?v=20261117">
+    <script src="assets/theme.js?v=20261117"></script>
+    <script src="assets/line.js?v=20261117"></script>
+    <script src="assets/wallet.js?v=20261117"></script>
+    <script src="assets/gongde.js?v=20261117"></script>
     <style>
         /* 這頁走彩券行的熱鬧風格，不跟網站的侘寂風；彩券是紙本，顏色固定 */
         .shop {
@@ -790,6 +790,31 @@
             animation: pop 0.4s ease;
         }
 
+        /* 太歲燈擋下來的炸彈 */
+        .c.is-dud {
+            background: #57534e;
+            border-color: #1f1f1f;
+            box-shadow: 0 0 0 2px #fde047;
+        }
+
+        .c.is-dud::after {
+            content: '擋';
+            position: absolute;
+            right: 3px;
+            top: 3px;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1.5px solid #fde047;
+            border-radius: 3px;
+            color: #fde047;
+            font-size: 11px;
+            font-weight: 900;
+            transform: rotate(-8deg);
+        }
+
         .c.is-rest {
             opacity: 0.45;
         }
@@ -886,7 +911,7 @@
         }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261116">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261117">
 </head>
 
 <body class="text-wabi-text font-serif leading-loose antialiased min-h-screen flex flex-col overflow-x-hidden">
@@ -1568,7 +1593,7 @@
                         <div class="zone g grid-cols-4" data-zone data-tap>
                             ${t.cells.map((c, i) => {
                         const on = t.opened.includes(i);
-                        return `<div class="c h-[3.7rem] ${on ? (c.bomb ? 'is-bomb' : 'is-win') : ''}" data-cell data-i="${i}" ${on ? 'data-pre' : ''}>${c.bomb ? '<span class="c-bomb">炸</span>' : `<span class="c-amt !text-base">${fmt(c.v)}</span><span class="c-cap">${capital(c.v)}</span>`}</div>`;
+                        return `<div class="c h-[3.7rem] ${on ? (c.bomb ? (t.dud === i ? 'is-dud' : 'is-bomb') : 'is-win') : ''}" data-cell data-i="${i}" ${on ? 'data-pre' : ''}>${c.bomb ? '<span class="c-bomb">炸</span>' : `<span class="c-amt !text-base">${fmt(c.v)}</span><span class="c-cap">${capital(c.v)}</span>`}</div>`;
                     }).join('')}
                         </div>
                     </div>
@@ -1578,6 +1603,16 @@
                     const i = Number(el.dataset.i), c = t.cells[i];
                     if (t.dead || t.cashed) { el.classList.add('is-rest'); return; }
                     t.opened.push(i);
+                    if (c.bomb && t.shield && t.dud === undefined) {
+                        // 太歲燈：這顆炸彈擋下來（啞彈），可以繼續挖
+                        t.dud = i;
+                        save();
+                        el.classList.add('is-dud');
+                        sfx.lose();
+                        showToast('太歲擋下來了。這顆是啞彈，繼續挖。');
+                        this.status(t);
+                        return;
+                    }
                     if (c.bomb) {
                         t.dead = true;
                         save();
@@ -1589,14 +1624,14 @@
                     }
                     el.classList.add('is-win');
                     sfx.ding(t.opened.length % 6);
-                    if (t.opened.length === 12) t.cashed = true;  // 金子全挖完了
+                    if (t.opened.filter(k => !t.cells[k].bomb).length === 12) t.cashed = true;  // 金子全挖完了
                     save();
                     if (t.cashed) endReveal();
                     else this.status(t);
                 },
                 status(t) {
                     const sum = this.sum(t);
-                    $('playHint').innerHTML = `<span class="block text-xs font-black text-wabi-dark tracking-widest">目前挖到</span><span class="result-amt money block">${fmt(sum)}</span><span class="block text-xs text-stone-500 mt-1">還剩 ${16 - t.opened.length} 格，裡面有 4 顆炸彈</span>`;
+                    $('playHint').innerHTML = `<span class="block text-xs font-black text-wabi-dark tracking-widest">目前挖到</span><span class="result-amt money block">${fmt(sum)}</span><span class="block text-xs text-stone-500 mt-1">還剩 ${16 - t.opened.length} 格，裡面有 ${4 - t.opened.filter(k => t.cells[k].bomb).length} 顆炸彈${t.shield && t.dud === undefined ? '・太歲燈還能擋一次' : ''}</span>`;
                     actions([{ label: `收手，兌獎 ${fmt(sum)}`, cls: 'is-gold', onClick: () => { t.cashed = true; save(); endReveal(); } }]);
                 },
                 resume(t) {
@@ -1692,6 +1727,8 @@
             if (b.q > 0) BLESS = { q: b.q, minV: b.allWin ? Math.min(...g.table.map(x => x[0])) : 0, done: false, blessed: false };
             if (b.oilUse) Wallet.useOil(b.oilUse);  // 光明燈照這張，燈油照票價扣
             try { while (!t) t = g.gen(); } finally { t && BLESS && (t.blessed = BLESS.blessed); BLESS = null; }
+            if (b.caiUse) t.cai = Gongde.CAI * Wallet.useOil(b.caiUse, 'caishen') / g.price;  // 財神燈：中獎多兩成
+            if (g.manual && Wallet.useOil(1, 'taisui')) t.shield = true;                         // 太歲燈：挖到炸彈擋一次
             S.serial++;
             const code = at ? `${String(at.book).padStart(4, '0')}-${String(at.num).padStart(3, '0')}-${randint(1000, 9999)}` : `27-${String(S.serial).padStart(6, '0')}-${randint(1000, 9999)}`;
             return { type, serial: S.serial, code, book: at && at.book, num: at && at.num, settled: false, redeemed: false, ...t };
@@ -1944,27 +1981,35 @@
             return { win, ret, rows, top: rows[0] };
         }
 
+        // 財神燈加碼（中獎金額的兩成，燈油不夠一張就照比例），兌獎時另外給
+        const caiBonus = t => t.cai && t.total > 0 ? Math.max(10, Math.round(t.total * t.cai / 10) * 10) : 0;
         // 這種刮刮樂現在的加持（位階永久加持＋光明燈）
         function blessOf(g) { return window.Gongde ? Gongde.blessing(odds(g), g.price) : { q: 0, win: odds(g).win, ret: odds(g).ret }; }
         function renderBless() {
             const gd = Wallet.gongde, tier = Gongde.tierOf(gd.donated);
-            $('blessBar').innerHTML = gd.donated || gd.oil
-                ? `<span class="seal">佑</span><span class="flex-1 min-w-0"><b>神明加持・${tier.name}</b>${tier.q ? `　永久加持 ${Math.round(tier.q * 100)}%` : ''}<br>${gd.oil ? `光明燈還亮著，燈油 ${fmt(gd.oil)}` : '光明燈沒點'}</span><span class="font-bold underline underline-offset-4 shrink-0">添香油</span>`
+            const lamps = Gongde.lit(gd).filter(l => l.where === '彩券行' || l.where === '挖金礦');
+            $('blessBar').innerHTML = gd.donated || lamps.length
+                ? `<span class="seal">佑</span><span class="flex-1 min-w-0"><b>神明加持・${tier.name}</b>${tier.q ? `　永久加持 ${Math.round(tier.q * 100)}%` : ''}<br>${lamps.length ? lamps.map(l => `${l.name} ${l.unit === 'money' ? fmt(l.oilLeft) : l.oilLeft + ' ' + l.unit}`).join('・') : '沒有點燈'}</span><span class="font-bold underline underline-offset-4 shrink-0">添香油</span>`
                 : `<span class="seal">佑</span><span class="flex-1 min-w-0">去功德箱捐點香油錢，<b>沒中的票神明會幫你再抽一次</b></span><span class="font-bold underline underline-offset-4 shrink-0">功德箱</span>`;
         }
         function blessHTML(g) {
             const gd = Wallet.gongde, tier = Gongde.tierOf(gd.donated), o = odds(g);
-            if (g.manual) return `<div class="bless-box"><b>神明加持</b>：挖金礦靠自己挖，神明不管。光明燈的燈油也不會用到這裡。</div>`;
+            if (g.manual) {
+                const n = Wallet.oilOf('taisui');
+                return `<div class="bless-box"><b>神明加持</b>：挖金礦靠自己挖，永久加持和光明燈都不管這裡。${n ? `<br><b>太歲燈</b>亮著：挖到炸彈會擋一次（變啞彈），一張用一次，還能擋 ${n} 次。` : `<br>點<a href="gongde.html" class="font-bold underline underline-offset-4">太歲燈</a>的話，挖到炸彈會幫你擋一次。`}</div>`;
+            }
             const b = blessOf(g);
+            const caiLine = b.cai ? `<br>財神燈：中獎多 ${pct(b.cai)}（財神加碼，這張會用掉燈油 ${fmt(b.caiUse)}）` : '';
+            if (!b.q && b.cai) return `<div class="bless-box"><b>神明加持</b>：${caiLine.slice(4)}<div class="mt-2 text-center">回收率<br><b class="text-sm">${pct(o.ret)} → ${pct(b.ret)}</b></div><p class="mt-1 text-[10px] opacity-75">點燈的錢沒算進去；算進去，平均還是虧的。</p></div>`;
             if (!b.q) return `<div class="bless-box"><b>神明加持</b>：還沒有。<a href="gongde.html" class="font-bold underline underline-offset-4">去功德箱</a>捐香油錢，${b.allWin ? '抽到最小獎時' : '沒中的票'}神明會幫你再抽一次。</div>`;
             const parts = [];
             if (b.tierQ) parts.push(`${tier.name}永久加持 ${pct(b.tierQ)}${b.tierQ < tier.q - 1e-9 ? '（這種刮刮樂有上限，加持後回收率最多 98%）' : ''}`);
             if (b.lampQ) parts.push(`光明燈 ${pct(b.lampQ)}（這張會用掉燈油 ${fmt(b.oilUse)}）`);
-            return `<div class="bless-box"><b>神明加持</b>：${b.allWin ? '抽到最小獎時' : '沒中的票'}有 <b>${pct(b.q)}</b> 的機會神明再抽一次。<br>${parts.join('<br>')}
+            return `<div class="bless-box"><b>神明加持</b>：${b.allWin ? '抽到最小獎時' : '沒中的票'}有 <b>${pct(b.q)}</b> 的機會神明再抽一次。<br>${parts.join('<br>')}${caiLine}
                 <div class="mt-2 grid grid-cols-2 gap-2 text-center">
                     <div>中獎率<br><b class="text-sm">${pct(o.win)} → ${pct(b.win)}</b></div>
                     <div>回收率<br><b class="text-sm">${pct(o.ret)} → ${pct(b.ret)}</b></div>
-                </div>${b.lampQ ? '<p class="mt-1 text-[10px] opacity-75">點燈的錢沒算進去；算進去，平均還是虧的。</p>' : ''}</div>`;
+                </div>${b.lampQ || b.cai ? '<p class="mt-1 text-[10px] opacity-75">點燈的錢沒算進去；算進去，平均還是虧的。</p>' : ''}</div>`;
         }
 
         function showOdds(key) {
@@ -2014,7 +2059,7 @@
                 <div class="cover p-2.5 flex flex-col" style="--c1:${g.c1};--c2:${g.c2};--hi:${g.hi}">
                     <div class="relative z-[1] cover-name">${g.name}</div>
                     <div class="relative z-[1] text-[10px] font-bold opacity-90 leading-snug min-h-[1.9rem]">${g.desc}</div>
-                    <button type="button" class="cover-odds" data-odds="${key}">${(o => o.manual ? `第一格是金子 <b>${pct(o.win)}</b>` : (b => `中獎率 <b>${pct(b.q && !b.allWin ? b.win : o.win)}</b>${b.q ? '<i class="cover-bless">佑</i>' : ''}`)(blessOf(g)))(odds(g))}<span>獎金表</span></button>
+                    <button type="button" class="cover-odds" data-odds="${key}">${(o => o.manual ? `第一格是金子 <b>${pct(o.win)}</b>` : (b => `中獎率 <b>${pct(b.q && !b.allWin ? b.win : o.win)}</b>${b.q || b.cai ? '<i class="cover-bless">佑</i>' : ''}`)(blessOf(g)))(odds(g))}<span>獎金表</span></button>
                     <div class="relative z-[1] mt-1 flex items-center justify-between gap-1">
                         <span class="cover-price">${fmt(g.price)}</span>
                         <span class="text-[10px] font-bold text-right leading-tight">${g.jackpotText ? `<span class="text-sm font-black" style="color:var(--hi)">${g.jackpotText}</span>` : `頭獎 <span class="text-sm font-black" style="color:var(--hi)">${wan(g.jackpot)}</span>`}</span>
@@ -2297,7 +2342,7 @@
             wins.forEach((el, i) => setTimeout(() => { el.classList.add('is-win'); sfx.ding(i % 6); }, 250 + i * 160));
             setTimeout(() => {
                 if (t.total > 0) {
-                    const note = [t.blessed ? '神明加持' : '', g.winNote ? g.winNote(t) : ''].filter(Boolean).join('・');
+                    const note = [t.blessed ? '神明加持' : '', caiBonus(t) ? `財神加碼 ${fmt(caiBonus(t))}` : '', g.winNote ? g.winNote(t) : ''].filter(Boolean).join('・');
                     $('playHint').innerHTML = `${note ? `<span class="win-note">${note}</span>` : ''}<span class="block text-xs font-black text-wabi-dark tracking-widest">中獎</span><span class="result-amt money block">${fmt(t.total)}</span><span class="block font-serif text-xs text-stone-500 mt-1">${capital(t.total)}</span>`;
                     sfx.win();
                     if (g.manual) { redeem(); afterRedeem(); }  // 自己按收手的，直接兌
@@ -2322,6 +2367,8 @@
                 S.best = Math.max(S.best, t.total);
                 if (t.total >= 2000) S.bigs = [{ date: new Date().toLocaleDateString('zh-TW'), name: GAMES[t.type].name, amt: t.total }, ...S.bigs].slice(0, 30);
                 setMoney(S.money + t.total, t.total);
+                const bonus = caiBonus(t);
+                if (bonus) { setMoney(Wallet.money + bonus, bonus, 'caishen'); if (!silent) setTimeout(() => showToast(`財神加碼 ${fmt(bonus)}`), 700); }
                 if (!silent) {
                     sfx.cash();
                     if (t.total >= GAMES[t.type].price * 10) bigWin(t.total);

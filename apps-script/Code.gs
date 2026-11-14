@@ -792,7 +792,7 @@ function playersSheet() {
   return sheet;
 }
 
-// 功德：{ donated 累積捐了多少, oil 光明燈剩多少燈油, lamps 點過幾盞, lit 點燈花了多少 }，存在 Players 的 I 欄（JSON）
+// 功德：{ donated 累積捐了多少, oil 光明燈剩多少燈油, oils 其他燈剩多少 { caishen, taisui, wenchang, yuelao }, lamps 點過幾盞, lit 點燈花了多少 }，存在 Players 的 I 欄（JSON）
 function cleanGongde(g, allowNegative) {
   g = g && typeof g === 'object' ? g : {};
   var lo = allowNegative ? -WALLET_MAX : 0;
@@ -801,7 +801,15 @@ function cleanGongde(g, allowNegative) {
   var lamps = cleanMoney(g.lamps || 0, 0, 1000000);
   var lit = cleanMoney(g.lit || 0, 0, WALLET_MAX);
   if (donated === null || oil === null || lamps === null || lit === null) return null;
-  return { donated: donated, oil: oil, lamps: lamps, lit: lit };
+  // 其他種燈的燈油（財神、太歲、文昌、月老…）：小寫英文 key，最多 10 種
+  var oils = {}, raw = g.oils && typeof g.oils === 'object' && !Array.isArray(g.oils) ? g.oils : {}, keys = Object.keys(raw);
+  if (keys.length > 10) return null;
+  for (var i = 0; i < keys.length; i++) {
+    var v = cleanMoney(raw[keys[i]] || 0, lo, WALLET_MAX);
+    if (!/^[a-z]{1,16}$/.test(keys[i]) || v === null) return null;
+    if (v) oils[keys[i]] = v;
+  }
+  return { donated: donated, oil: oil, lamps: lamps, lit: lit, oils: oils };
 }
 
 function findPlayer(lineId) {
@@ -814,7 +822,7 @@ function findPlayer(lineId) {
     return {
       row: i + 1, lineId: lineId, name: String(rows[i][2] || ''), picture: String(rows[i][3] || ''),
       money: Number(rows[i][4]) || 0, spent: Number(rows[i][5]) || 0, earned: cleanEarned(earned) || {},
-      gongde: cleanGongde(gongde) || { donated: 0, oil: 0, lamps: 0, lit: 0 }
+      gongde: cleanGongde(gongde) || { donated: 0, oil: 0, lamps: 0, lit: 0, oils: {} }
     };
   }
   return null;
@@ -911,7 +919,7 @@ function lineLogin(input) {
     isNew = true;
     var w = input.wallet || {};
     var money = cleanMoney(w.money, 0, WALLET_MAX), spent = cleanMoney(w.spent, 0, WALLET_MAX), earned = cleanEarned(w.earned);
-    var gongde = cleanGongde(w.gongde) || { donated: 0, oil: 0, lamps: 0, lit: 0 };
+    var gongde = cleanGongde(w.gongde) || { donated: 0, oil: 0, lamps: 0, lit: 0, oils: {} };
     playersSheet().appendRow([new Date(), who.sub, asText(who.name), who.picture,
       money === null ? WALLET_START : money, spent === null ? 0 : spent, JSON.stringify(earned || {}), new Date(), JSON.stringify(gongde)]);
     return findPlayer(who.sub);
@@ -950,7 +958,7 @@ function walletSync(input) {
   var gd = cleanGongde(d.gongde, true);  // 燈油可以是負的（刮刮樂用掉的）
   if (money === null || spent === null || earned === null || gd === null) return { result: 'error', error: '錢包的數字不對' };
 
-  var changed = money || spent || Object.keys(earned).length || gd.donated || gd.oil || gd.lamps || gd.lit;
+  var changed = money || spent || Object.keys(earned).length || gd.donated || gd.oil || gd.lamps || gd.lit || Object.keys(gd.oils).length;
   // 單純讀不用排隊；有加減錢才排隊（讀出來、加上去、寫回去要一口氣做完，兩支手機同時送才不會少算）
   var read = function () {
     var p = findPlayer(lineId);
@@ -963,8 +971,14 @@ function walletSync(input) {
         donated: Math.min(WALLET_MAX, p.gongde.donated + gd.donated),
         oil: Math.max(0, Math.min(WALLET_MAX, p.gongde.oil + gd.oil)),
         lamps: p.gongde.lamps + gd.lamps,
-        lit: Math.min(WALLET_MAX, p.gongde.lit + gd.lit)
+        lit: Math.min(WALLET_MAX, p.gongde.lit + gd.lit),
+        oils: p.gongde.oils
       };
+      Object.keys(gd.oils).forEach(function (k) {
+        var v = Math.max(0, Math.min(WALLET_MAX, (p.gongde.oils[k] || 0) + gd.oils[k]));
+        if (v) p.gongde.oils[k] = v; else delete p.gongde.oils[k];
+      });
+      if (Object.keys(p.gongde.oils).length > 10) return { result: 'error', error: '燈太多種了' };
       writeWallet(p);
     }
     return { result: 'success', wallet: walletView(p) };
@@ -1085,7 +1099,7 @@ function washLog(input) {
 // 網頁捐了就送上來，一列一筆，存在 Gongde 分頁（之後功德榜用）。有登入 LINE 的記 line_id（不回給任何人）。
 // 跟洗頭紀錄一樣：不寄信、不回資料，只擋格式和數量；錢是手機算的（朋友間玩，不防）。
 
-var GONGDE_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'kind', 'amount', 'oil', 'total', 'tier', 'wish'];
+var GONGDE_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'kind', 'amount', 'oil', 'total', 'tier', 'wish', 'lamp'];
 
 function gongdeSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -1124,7 +1138,7 @@ function gongdeLog(input) {
     cache.put(dupKey, '1', 6 * 3600);
     sheet = sheet || gongdeSheet();
     sheet.appendRow([now, at, lineId || '', device, kind, amount, washNum(r.oil, 0, WALLET_MAX), washNum(r.total, 0, WALLET_MAX),
-      washText(r.tier, 6), washText(r.wish, 30)]);
+      washText(r.tier, 6), washText(r.wish, 30), kind === 'lamp' ? washKey(r.lamp || 'guangming') : '']);
     saved++;
   });
   if (saved) cache.put(allKey, String(allCount + saved), 3600);

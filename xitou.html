@@ -22,10 +22,10 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/theme.css?v=20261116">
-    <script src="assets/theme.js?v=20261116"></script>
-    <script src="assets/line.js?v=20261116"></script>
-    <script src="assets/wallet.js?v=20261116"></script>
+    <link rel="stylesheet" href="assets/theme.css?v=20261117">
+    <script src="assets/theme.js?v=20261117"></script>
+    <script src="assets/line.js?v=20261117"></script>
+    <script src="assets/wallet.js?v=20261117"></script>
     <style>
         /* 洗頭台：手指在上面搓、拉，不能捲動頁面，長按也不能跳出系統選單 */
         .salon {
@@ -445,7 +445,7 @@
         }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261116">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261117">
 </head>
 
 <body
@@ -498,6 +498,8 @@
             </div>
 
             <p id="who" class="mt-3 text-[11px] font-sans tracking-widest text-stone-400"></p>
+            <!-- 亮著的燈（功德・添的文昌燈、月老燈） -->
+            <a id="lampNote" href="gongde.html" class="hidden mt-1 block text-[10px] font-sans tracking-widest text-wabi-shu"></a>
 
             <!-- 客人的點單（有的客人沒有） -->
             <div id="order" class="order-slip hidden">
@@ -551,7 +553,7 @@
                 <p class="flex justify-between"><span>工資</span><span id="payWage" class="text-wabi-dark"></span></p>
                 <p class="flex justify-between mt-1"><span>小費</span><span id="payTip" class="text-wabi-dark"></span></p>
                 <p id="payOrderRow" class="hidden flex justify-between mt-1"><span>點單</span><span id="payOrder" class="text-wabi-dark"></span></p>
-                <p id="payShopRow" class="hidden flex justify-between mt-1"><span>店面加成</span><span id="payShop" class="text-wabi-dark"></span></p>
+                <p id="payShopRow" class="hidden flex justify-between mt-1"><span>加成</span><span id="payShop" class="text-wabi-dark"></span></p>
                 <p id="payShopNote" class="hidden mt-0.5 text-right text-[10px] leading-relaxed text-stone-400"></p>
                 <p class="flex justify-between mt-2 pt-2 border-t border-stone-100"><span>錢包</span><span id="payWallet" class="text-wabi-shu text-sm"></span></p>
                 <p id="payAcct" class="mt-2 text-[10px] leading-relaxed text-stone-400"></p>
@@ -823,8 +825,10 @@
         const beast = c => c.cat ? MEOWS : c.dog ? BARKS : null;  // 不會講人話的客人
 
         function makeCustomer() {
-            const r = Math.random() / (val('sign') || 1);  // 招牌：稀有客人變多
-            const c = { glasses: null, mustache: false, freckles: false, bags: false, cat: false, dog: false };
+            // 招牌：稀有客人變多；月老燈（功德・添）再兩倍，合起來最多 2.5 倍
+            const yuelao = Wallet.oilOf('yuelao') > 0;
+            const r = Math.random() / Math.min(2.5, (val('sign') || 1) * (yuelao ? 2 : 1));
+            const c = { glasses: null, mustache: false, freckles: false, bags: false, cat: false, dog: false, yuelao };
             if (r < 0.04) {
                 // 稀有：不知道怎麼進來的貓
                 Object.assign(c, { who: '不知道怎麼進來的貓', hello: '喵。', style: 'cat', cat: true, skin: ['#e3a35e', '#c98a46'], hair: '#e3a35e' });
@@ -2586,10 +2590,13 @@
             if (lv('chair') && tip + orderTip) sp.chair = Math.round((tip + orderTip) * val('chair') / 10) * 10;
             const rare = G.c.cat || G.c.dog || /阿伯|墨鏡/.test(G.c.who);
             if (lv('sign') && rare) sp.sign = 300;
+            // 功德・添的燈：文昌燈工資多兩成；月老燈有緣人多給 $200（這顆頭各用掉一次）
+            if (Wallet.useOil(1, 'wenchang')) sp.wenchang = Math.round(wage * 0.2 / 10) * 10;
+            if (G.c.yuelao && Wallet.useOil(1, 'yuelao') && rare) sp.yuelao = 200;
             const shopTotal = Object.values(sp).reduce((a, b) => a + b, 0);
             G.pay = { wage, tip, order: orderTip, shop: shopTotal, shopParts: sp };
             Wallet.earn(wage + tip + orderTip + shopTotal, 'xitou');
-            const SP_NAMES = { shampoo: '材料費', hourglass: '快手', glove: '抓癢計件', chair: '按摩椅', sign: '熟客紅包' };
+            const SP_NAMES = { shampoo: '材料費', hourglass: '快手', glove: '抓癢計件', chair: '按摩椅', sign: '熟客紅包', wenchang: '文昌燈', yuelao: '月老牽線' };
             $('payShopRow').classList.toggle('hidden', !shopTotal);
             $('payShopNote').classList.toggle('hidden', !shopTotal);
             if (shopTotal) {
@@ -2750,6 +2757,9 @@
             let best = 0;
             try { best = Number(localStorage.getItem(BEST_KEY)) || 0; } catch (e) { }
             $('best').innerHTML = (best ? `最高爽度 ${best}<br>` : '') + `錢包 ${Wallet.fmt(Wallet.money)}`;
+            const wc = Wallet.oilOf('wenchang'), yl = Wallet.oilOf('yuelao');
+            $('lampNote').classList.toggle('hidden', !wc && !yl);
+            $('lampNote').textContent = [wc ? `文昌燈亮著（工資多兩成，還有 ${wc} 顆）` : '', yl ? `月老燈亮著（有緣人多，還有 ${yl} 顆）` : ''].filter(Boolean).join('・');
         }
 
         // ===== 8. 開始、重來 =====

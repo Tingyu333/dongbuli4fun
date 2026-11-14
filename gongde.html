@@ -20,11 +20,11 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/theme.css?v=20261116">
-    <script src="assets/theme.js?v=20261116"></script>
-    <script src="assets/line.js?v=20261116"></script>
-    <script src="assets/wallet.js?v=20261116"></script>
-    <script src="assets/gongde.js?v=20261116"></script>
+    <link rel="stylesheet" href="assets/theme.css?v=20261117">
+    <script src="assets/theme.js?v=20261117"></script>
+    <script src="assets/line.js?v=20261117"></script>
+    <script src="assets/wallet.js?v=20261117"></script>
+    <script src="assets/gongde.js?v=20261117"></script>
     <style>
         /* 功德箱、光明燈是實物：木頭、金字、燈火，顏色固定，不跟晝夜 */
         .box-wrap {
@@ -175,8 +175,40 @@
         }
 
         .lamp-ico.on::before {
-            background: radial-gradient(circle at 50% 60%, #fff4c2, #f7b733 55%, #d9481c);
-            box-shadow: 0 0 14px 3px rgba(247, 183, 51, 0.55), inset 0 0 0 1.5px #c0392b;
+            background: radial-gradient(circle at 50% 60%, #fff4c2, var(--lc, #f7b733) 55%, #8a2a1d);
+            box-shadow: 0 0 14px 3px color-mix(in srgb, var(--lc, #f7b733) 55%, transparent), inset 0 0 0 1.5px #8a2a1d;
+        }
+
+        .lamp-row {
+            padding: 0.85rem;
+            border: 1px solid rgb(var(--wabi-accent) / 0.35);
+            border-radius: 6px;
+        }
+
+        .lamp-row.is-on {
+            border-color: rgb(var(--wabi-shu) / 0.5);
+        }
+
+        .lamp-buy {
+            min-height: 44px;
+            border: 1px solid rgb(var(--wabi-accent) / 0.5);
+            border-radius: 4px;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 11px;
+            line-height: 1.3;
+            color: rgb(var(--wabi-dark));
+            background: rgb(var(--wabi-bg));
+            touch-action: manipulation;
+        }
+
+        .lamp-buy b {
+            display: block;
+            font-weight: 400;
+            font-size: 12px;
+        }
+
+        .lamp-buy:disabled {
+            opacity: 0.35;
         }
 
         .lamp-ico.on::after {
@@ -220,94 +252,9 @@
             border-color: rgb(var(--wabi-shu));
         }
 
-        .lamp-card {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            width: 100%;
-            min-height: 60px;
-            padding: 0.6rem 0.8rem;
-            border: 1px solid rgb(var(--wabi-accent) / 0.4);
-            border-radius: 6px;
-            text-align: left;
-            background: rgb(var(--wabi-bg));
-            touch-action: manipulation;
-        }
-
-        .lamp-card:disabled {
-            opacity: 0.4;
-        }
-
-        .big-lamp {
-            position: relative;
-            width: 64px;
-            height: 84px;
-            flex: none;
-        }
-
-        .big-lamp .shade {
-            position: absolute;
-            inset: 8px 6px 10px;
-            border-radius: 42% 42% 30% 30%;
-            background: #e7e2da;
-            box-shadow: inset 0 0 0 2px #c9c0b1;
-            transition: background 0.4s, box-shadow 0.4s;
-        }
-
-        .big-lamp.on .shade {
-            background: radial-gradient(circle at 50% 62%, #fff8d6, #f7b733 50%, #d9481c);
-            box-shadow: 0 0 26px 6px rgba(247, 183, 51, 0.5), inset 0 0 0 2px #b33a2f;
-            animation: flicker 2.6s ease-in-out infinite;
-        }
-
-        .big-lamp .base {
-            position: absolute;
-            left: 18px;
-            right: 18px;
-            bottom: 0;
-            height: 10px;
-            border-radius: 3px;
-            background: #8a5a17;
-        }
-
-        .big-lamp .word {
-            position: absolute;
-            inset: 20px 0 0;
-            line-height: 1.25;
-            text-align: center;
-            font-weight: 700;
-            font-size: 15px;
-            color: #9a8f80;
-        }
-
-        .big-lamp.on .word {
-            color: #7c1d12;
-        }
-
-        @keyframes flicker {
-
-            0%,
-            100% {
-                filter: brightness(1);
-            }
-
-            45% {
-                filter: brightness(1.12);
-            }
-
-            55% {
-                filter: brightness(0.94);
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .big-lamp.on .shade {
-                animation: none;
-            }
-        }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261116">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261117">
 </head>
 
 <body
@@ -335,7 +282,7 @@
         <div class="text-center mb-6">
             <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-3">GONGDE</span>
             <h1 class="text-3xl font-light text-wabi-dark tracking-widest">功德・添</h1>
-            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">捐越多，神明越記得你。<br>刮刮樂沒中的時候，神明會幫你再抽一次。</p>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">捐越多，神明越記得你。<br>刮刮樂、坐洗部，點對燈就有神明照著。</p>
         </div>
 
         <!-- 錢包 -->
@@ -382,18 +329,12 @@
                 class="mt-4 w-full bg-transparent border-b border-stone-200 py-2 text-base text-wabi-dark focus:outline-none focus:border-wabi-accent">
         </section>
 
-        <!-- 光明燈 -->
+        <!-- 點燈 -->
         <section class="mt-6 bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm p-6">
-            <div class="flex items-center gap-4">
-                <div class="big-lamp" id="bigLamp"><span class="shade"></span><span class="word">光<br>明</span><span class="base"></span></div>
-                <div class="min-w-0 flex-1">
-                    <h2 class="text-sm tracking-[0.3em] text-wabi-dark">光明燈</h2>
-                    <p id="oilText" class="mt-1 text-xs font-sans tracking-wider text-stone-500 leading-relaxed"></p>
-                    <div class="mt-2 bar"><i id="oilBar" style="width:0"></i></div>
-                </div>
-            </div>
-            <p class="mt-4 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">燈亮著的時候，沒中的刮刮樂有一半的機會神明再抽一次。燈油照票價扣，例如刮一張 $200 的就用掉 $200。張張有獎的和挖金礦不點燈，不會用到燈油。</p>
-            <div id="lampList" class="mt-4 space-y-2"></div>
+            <h2 class="text-sm tracking-[0.3em] text-wabi-dark">點燈</h2>
+            <p class="mt-1 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">五種燈各管各的，燈油用完燈就熄。點越多盞不會比較便宜，只是一次點好。</p>
+            <div id="lampWall" class="mt-5 flex justify-between" aria-hidden="true"></div>
+            <div id="lampList" class="mt-5 space-y-3"></div>
         </section>
 
         <!-- 規則 -->
@@ -403,7 +344,8 @@
                 <li>買刮刮樂的那一刻，這張如果沒中（張張有獎的是抽到最小獎），有一定機會神明幫你<b class="text-wabi-dark font-normal">再抽一次</b>，只重抽一次。加持過還中獎的，票上會寫「神明加持」。</li>
                 <li>機會 = 位階的永久加持＋光明燈。彩券行每種刮刮樂的「獎金表」裡都看得到加持後的中獎率。</li>
                 <li>永久加持每一種都有上限：加持後回收率最多 98%，捐再多也不會越刮越賺。</li>
-                <li>挖金礦靠自己挖，神明不管。</li>
+                <li>挖金礦靠自己挖，永久加持和光明燈都不管；要點太歲燈，挖到炸彈才會擋一次。</li>
+                <li>財神燈的加碼在兌獎時另外給；文昌燈、月老燈是坐洗部的，洗完一顆頭用一次。</li>
             </ul>
             <table class="mt-4 w-full text-xs font-sans tracking-wider text-stone-500">
                 <thead><tr class="text-stone-400"><th class="text-left font-normal py-1">位階</th><th class="text-right font-normal">累積捐到</th><th class="text-right font-normal">永久加持</th></tr></thead>
@@ -510,19 +452,24 @@
             $('amounts').innerHTML = AMOUNTS.map(a => `<button type="button" class="amt" data-amt="${a}" ${w.money < a ? 'disabled' : ''}>${a >= 10000 ? (a / 10000) + ' 萬' : fmt(a)}</button>`).join('');
             $('customBtn').disabled = w.money < 100;
 
-            const oil = g.oil, full = Math.max(oil, ...Gongde.LAMPS.map(l => l.oil));
-            $('bigLamp').classList.toggle('on', oil > 0);
-            $('oilText').innerHTML = oil > 0 ? `亮著。燈油還有 <b class="font-normal text-wabi-dark">${fmt(oil)}</b>，可以照 ${fmt(oil)} 的刮刮樂。` : '沒點。點一盞，接下來的刮刮樂有神明照著。';
-            $('oilBar').style.width = (oil > 0 ? Math.max(3, Math.min(100, oil / full * 100)) : 0) + '%';
-            $('lampList').innerHTML = Gongde.LAMPS.map(l => `
-                <button type="button" class="lamp-card" data-lamp="${l.key}" ${w.money < l.price ? 'disabled' : ''}>
-                    <span class="lamp-ico on shrink-0" aria-hidden="true"></span>
-                    <span class="flex-1 min-w-0">
-                        <span class="block text-sm text-wabi-dark tracking-widest">${l.name}</span>
-                        <span class="block text-[11px] font-sans tracking-wider text-stone-500">燈油 ${fmt(l.oil)}・${l.line}</span>
-                    </span>
-                    <span class="shrink-0 font-sans text-sm text-wabi-dark">${fmt(l.price)}</span>
-                </button>`).join('');
+            $('lampWall').innerHTML = Gongde.LAMPS.map(l => `<span class="flex flex-col items-center gap-1"><span class="lamp-ico ${Gongde.oilOf(g, l.key) ? 'on' : ''}" style="--lc:${l.color}"></span><span class="text-[10px] font-sans tracking-wider ${Gongde.oilOf(g, l.key) ? 'text-wabi-dark' : 'text-stone-400'}">${l.word}</span></span>`).join('');
+            $('lampList').innerHTML = Gongde.LAMPS.map(l => {
+                const left = Gongde.oilOf(g, l.key);
+                return `
+                <div class="lamp-row ${left ? 'is-on' : ''}">
+                    <div class="flex items-center gap-3">
+                        <span class="lamp-ico ${left ? 'on' : ''} shrink-0" style="--lc:${l.color}" aria-hidden="true"></span>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm text-wabi-dark tracking-widest">${l.name}<span class="ml-2 text-[10px] font-sans tracking-wider text-stone-400">${l.where}</span></p>
+                            <p class="text-[11px] font-sans tracking-wider leading-relaxed ${left ? 'text-wabi-shu' : 'text-stone-400'}">${left ? '亮著・' + l.left(left) : '沒點'}</p>
+                        </div>
+                    </div>
+                    <p class="mt-2 text-xs font-sans tracking-wider text-stone-500 leading-relaxed">${l.fx}。一盞 ${fmt(l.price)}，${l.unit === 'money' ? `照 ${fmt(l.amount)} 的刮刮樂（照票價扣）` : `用 ${l.amount} ${l.unit}`}。</p>
+                    <div class="mt-3 grid grid-cols-3 gap-2">
+                        ${Gongde.PACKS.map(n => `<button type="button" class="lamp-buy" data-lamp="${l.key}" data-n="${n}" ${w.money < l.price * n ? 'disabled' : ''}><b>點 ${n} 盞</b>${fmt(l.price * n)}</button>`).join('')}
+                    </div>
+                </div>`;
+            }).join('');
 
             $('tierTable').innerHTML = Gongde.TIERS.map((t, i) => `<tr class="${i === tier.index ? 'text-wabi-dark' : ''} border-t border-stone-100"><td class="py-1.5">${t.name}</td><td class="text-right">${t.min ? fmt(t.min) : '—'}</td><td class="text-right">${t.q ? pctQ(t.q) : '—'}</td></tr>`).join('');
 
@@ -530,7 +477,7 @@
             $('book').innerHTML = book.length ? book.slice(0, 10).map(r => {
                 const d = new Date(r.at);
                 const when = `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-                return `<li class="flex justify-between gap-3 border-b border-stone-100 py-2"><span class="text-stone-400 shrink-0">${when}</span><span class="flex-1 min-w-0 truncate">${r.kind === 'lamp' ? '點光明燈' : '捐香油錢'}${r.wish ? `・${esc(r.wish)}` : ''}</span><span class="text-wabi-dark shrink-0">${fmt(r.amount)}</span></li>`;
+                return `<li class="flex justify-between gap-3 border-b border-stone-100 py-2"><span class="text-stone-400 shrink-0">${when}</span><span class="flex-1 min-w-0 truncate">${r.kind === 'lamp' ? `點${esc((Gongde.LAMPS.find(l => l.key === (r.lamp || 'guangming')) || {}).name || '燈')}${r.n > 1 ? ` ×${r.n}` : ''}` : '捐香油錢'}${r.wish ? `・${esc(r.wish)}` : ''}</span><span class="text-wabi-dark shrink-0">${fmt(r.amount)}</span></li>`;
             }).join('') : '<li class="py-2 text-stone-400">還沒有。神明在等。</li>';
         }
 
@@ -556,16 +503,17 @@
             else if (wish) setTimeout(() => showToast('願望收到了。神明會看，但不保證。'), reduceMotion ? 0 : 1400);
         }
 
-        function lightLamp(key) {
+        function lightLamp(key, n) {
             const l = Gongde.LAMPS.find(x => x.key === key);
+            n = Gongde.PACKS.includes(n) ? n : 1;
             if (!l) return;
-            if (Wallet.money < l.price) { showToast('錢包不夠點這盞'); return; }
-            const g = Wallet.lightLamp(l.price, l.oil);
+            if (Wallet.money < l.price * n) { showToast('錢包不夠點這麼多盞'); return; }
+            const g = Wallet.lightLamp(l.price * n, l.amount * n, l.key);
             if (!g) return;
-            Gongde.log({ kind: 'lamp', amount: l.price, oil: l.oil, total: g.donated, tier: Gongde.tierOf(g.donated).name });
+            Gongde.log({ kind: 'lamp', lamp: l.key, n, amount: l.price * n, oil: l.amount * n, total: g.donated, tier: Gongde.tierOf(g.donated).name });
             tok(); tok(0.35);
             render();
-            showToast(`${l.name}點上了。燈油 ${fmt(g.oil)}，去彩券行吧。`);
+            showToast(`${l.name}點上了・${l.left(Gongde.oilOf(g, l.key))}。去${l.where}吧。`);
         }
 
         $('amounts').addEventListener('click', e => {
@@ -575,7 +523,7 @@
         $('customBtn').addEventListener('click', () => donate(Number($('custom').value)));
         $('lampList').addEventListener('click', e => {
             const b = e.target.closest('[data-lamp]');
-            if (b && !b.disabled) lightLamp(b.dataset.lamp);
+            if (b && !b.disabled) lightLamp(b.dataset.lamp, Number(b.dataset.n));
         });
         $('box').addEventListener('click', () => { tok(); });
 

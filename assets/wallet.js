@@ -3,8 +3,8 @@
 // 用 LINE 登入（assets/line.js）：錢跟著 LINE 帳號存在後端，換手機也在。
 //   這支手機先照常加減（馬上看得到），再把「變了多少」（pending）送去後端，後端加進帳號、回傳最新的錢包。
 // 用法：Wallet.money、Wallet.earn(金額, '哪個遊戲')、Wallet.spend(金額)、Wallet.stats()、Wallet.on(fn)
-// 功德（gongde.html）也跟著錢包走：Wallet.gongde = { donated 累積捐了多少, oil 光明燈還剩多少燈油, lamps 點過幾盞, lit 點燈花了多少 }
-//   Wallet.donate(金額)、Wallet.lightLamp(價錢, 燈油)、Wallet.useOil(金額)；登入時一樣送「變了多少」給後端
+// 功德（gongde.html）也跟著錢包走：Wallet.gongde = { donated 累積捐了多少, oil 光明燈還剩多少燈油, oils 其他燈還剩多少 { caishen, taisui, wenchang, yuelao }, lamps 點過幾盞, lit 點燈花了多少 }
+//   Wallet.donate(金額)、Wallet.lightLamp(價錢, 燈油, 哪種燈)、Wallet.useOil(多少, 哪種燈)；登入時一樣送「變了多少」給後端
 (function () {
     const KEY = 'dongbuli-wallet';
     const GUEST_KEY = 'dongbuli-wallet-guest';  // 登入時把這支手機原本的（訪客）錢包收起來，登出再拿回來
@@ -13,10 +13,16 @@
     let timer = null, inflight = false;
     const listeners = [];
 
-    const noGongde = () => ({ donated: 0, oil: 0, lamps: 0, lit: 0 });
+    const noGongde = () => ({ donated: 0, oil: 0, lamps: 0, lit: 0, oils: {} });
+    const pos = v => Math.max(0, Number(v) || 0);
+    const cleanOils = (o, keepNeg) => {
+        const out = {};
+        Object.keys(o || {}).forEach(k => { if (/^[a-z]{1,16}$/.test(k)) { const v = Number(o[k]) || 0; if (v) out[k] = keepNeg ? v : Math.max(0, v); } });
+        return out;
+    };
     const blank = () => ({ money: START, spent: 0, earned: {}, gongde: noGongde() });
     const noPending = () => ({ money: 0, spent: 0, earned: {}, gongde: noGongde() });
-    const cleanGongde = g => ({ donated: Math.max(0, Number(g && g.donated) || 0), oil: Math.max(0, Number(g && g.oil) || 0), lamps: Math.max(0, Number(g && g.lamps) || 0), lit: Math.max(0, Number(g && g.lit) || 0) });
+    const cleanGongde = g => ({ donated: pos(g && g.donated), oil: pos(g && g.oil), lamps: pos(g && g.lamps), lit: pos(g && g.lit), oils: cleanOils(g && g.oils) });
     const read = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
     const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } };
     const logged = () => !!(window.Line && Line.loggedIn);
@@ -35,6 +41,7 @@
         w.gongde = cleanGongde(w.gongde);
         w.pending = w.pending || noPending();
         w.pending.gongde = w.pending.gongde || noGongde();
+        w.pending.gongde.oils = w.pending.gongde.oils || {};
         return w;
     }
 
@@ -64,8 +71,14 @@
         return base;
     }
 
-    const addGongde = (a, b) => { a.donated += b.donated || 0; a.oil += b.oil || 0; a.lamps += b.lamps || 0; a.lit = (a.lit || 0) + (b.lit || 0); return a; };
-    const isEmpty = p => !p.money && !p.spent && !Object.keys(p.earned).length && !(p.gongde && (p.gongde.donated || p.gongde.oil || p.gongde.lamps || p.gongde.lit));
+    const addGongde = (a, b) => {
+        a.donated += b.donated || 0; a.oil += b.oil || 0; a.lamps += b.lamps || 0; a.lit = (a.lit || 0) + (b.lit || 0);
+        a.oils = a.oils || {};
+        Object.keys(b.oils || {}).forEach(k => { a.oils[k] = (a.oils[k] || 0) + b.oils[k]; });
+        return a;
+    };
+    const isEmpty = p => !p.money && !p.spent && !Object.keys(p.earned).length &&
+        !(p.gongde && (p.gongde.donated || p.gongde.oil || p.gongde.lamps || p.gongde.lit || Object.keys(cleanOils(p.gongde.oils, true)).length));
 
     // 後端回來的錢包 + 還沒送出去的變化 = 這支手機該顯示的
     function adopt(server) {
@@ -129,21 +142,22 @@
         },
 
         // 功德：捐錢（錢從錢包扣，算在 spent 裡），錢不夠回 false
-        get gongde() { return { ...load().gongde }; },
+        get gongde() { const g = load().gongde; return { ...g, oils: { ...g.oils } }; },
         donate(amount) {
             amount = Math.round(amount);
             if (!(amount > 0) || !Wallet.spend(amount)) return false;
             return changeGongde({ donated: amount });
         },
-        // 點光明燈：花 price，燈油加 oil
-        lightLamp(price, oil) {
+        // 點燈：花 price，那種燈的燈油加 oil（光明燈是 oil，其他燈在 oils 裡）
+        lightLamp(price, oil, kind) {
             if (!Wallet.spend(price)) return false;
-            return changeGongde({ oil, lamps: 1, lit: price });
+            return changeGongde(!kind || kind === 'guangming' ? { oil, lamps: 1, lit: price } : { oils: { [kind]: oil }, lamps: 1, lit: price });
         },
-        // 刮刮樂用掉燈油（不夠就用到 0），回傳實際用掉多少
-        useOil(amount) {
-            const used = Math.min(load().gongde.oil, Math.max(0, Math.round(amount)));
-            if (used) changeGongde({ oil: -used });
+        oilOf(kind) { const g = load().gongde; return !kind || kind === 'guangming' ? g.oil : (g.oils[kind] || 0); },
+        // 用掉燈油（不夠就用到 0），回傳實際用掉多少
+        useOil(amount, kind) {
+            const used = Math.min(Wallet.oilOf(kind), Math.max(0, Math.round(amount)));
+            if (used) changeGongde(!kind || kind === 'guangming' ? { oil: -used } : { oils: { [kind]: -used } });
             return used;
         },
 

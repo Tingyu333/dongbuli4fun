@@ -6,7 +6,12 @@
 //   q = 位階的永久加持（每種刮刮樂各自設上限，加持後回收率最多 98%，不會越捐越賺）
 //     + 光明燈（燈油夠這張的票價就 +50%；燈油只給一般刮刮樂用，張張有獎和挖金礦不點燈）
 //   挖金礦靠自己挖，神明不管。
-// 換算：捐 $1 大約換回 $0.6～0.7 的期望值，捐錢本來就該有點虧，這樣才叫功德。
+// 其他燈（LAMPS，各自有燈油，存在 Wallet.gongde.oils）：
+//   財神燈：刮刮樂中獎多兩成（財神加碼，兌獎時另外給），燈油照票價扣，張張有獎也算
+//   太歲燈：挖金礦挖到炸彈擋一次（變啞彈），一張挖金礦用一次
+//   文昌燈：坐洗部工資多兩成，一顆頭用一次
+//   月老燈：坐洗部有緣人（稀有客人）來的機會兩倍（跟招牌合起來最多 2.5 倍），來了多給 $200 紅包，一顆頭用一次
+// 換算：捐 $1、點 $1 的燈，大約換回 $0.6～0.7 的期望值，捐錢本來就該有點虧，這樣才叫功德。
 (function () {
     const API_URL = (window.Line && Line.API_URL) || "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
     const LOG_KEY = 'dongbuli-gongde-log';
@@ -19,13 +24,24 @@
         { min: 200000, name: '大護法', q: 0.3, line: '香爐的煙會往你這邊飄。' },
         { min: 1000000, name: '活菩薩', q: 0.4, line: '神明看到你會站起來。' },
     ];
-    // 光明燈：燈油是「可以照多少錢的刮刮樂」，買票時照票價扣
+    // 點燈：一盞 price 換 amount 的燈油；unit 是燈油的單位（money：照多少錢的刮刮樂；次、顆）
+    // packs：一次點幾盞（點越多盞不會比較便宜，只是方便）
     const LAMPS = [
-        { key: 's', name: '小燈', price: 1000, oil: 2000, line: '照兩千塊的刮刮樂' },
-        { key: 'm', name: '中燈', price: 5000, oil: 10000, line: '照一萬塊的刮刮樂' },
-        { key: 'l', name: '光明燈王', price: 20000, oil: 40000, line: '照四萬塊的刮刮樂' },
+        { key: 'guangming', name: '光明燈', word: '光明', price: 1000, amount: 2000, unit: 'money', where: '彩券行', color: '#f7b733',
+          fx: '沒中的刮刮樂，一半機會神明再抽一次', left: n => `燈油 ${fmtMoney(n)}，照得到 ${fmtMoney(n)} 的刮刮樂` },
+        { key: 'caishen', name: '財神燈', word: '財神', price: 1000, amount: 3000, unit: 'money', where: '彩券行', color: '#e0a526',
+          fx: '刮刮樂中獎多兩成（財神加碼），張張有獎的也算', left: n => `燈油 ${fmtMoney(n)}，照得到 ${fmtMoney(n)} 的刮刮樂` },
+        { key: 'taisui', name: '太歲燈', word: '太歲', price: 600, amount: 1, unit: '次', where: '挖金礦', color: '#c0392b',
+          fx: '挖金礦挖到炸彈，太歲幫你擋一次（變啞彈）', left: n => `還能擋 ${n} 次` },
+        { key: 'wenchang', name: '文昌燈', word: '文昌', price: 300, amount: 1, unit: '顆頭', where: '坐洗部', color: '#5b8a72',
+          fx: '坐洗部手藝加持，工資多兩成', left: n => `還有 ${n} 顆頭` },
+        { key: 'yuelao', name: '月老燈', word: '月老', price: 200, amount: 1, unit: '顆頭', where: '坐洗部', color: '#d9667a',
+          fx: '有緣人（貓、狗、阿伯、墨鏡）來的機會兩倍，來了多給 $200 紅包', left: n => `還有 ${n} 顆頭` },
     ];
-    const LAMP_Q = 0.5, CAP = 0.98, MAX_Q = 0.9;
+    const PACKS = [1, 5, 20];
+    const LAMP_Q = 0.5, CAI = 0.2, CAP = 0.98, MAX_Q = 0.9;
+    const fmtMoney = n => '$' + Number(n).toLocaleString('en-US');
+    const oilOf = (g, key) => key === 'guangming' ? (g.oil || 0) : ((g.oils || {})[key] || 0);
 
     function tierOf(donated) {
         let i = 0;
@@ -38,7 +54,7 @@
     function blessing(o, price, g) {
         g = g || (window.Wallet ? Wallet.gongde : { donated: 0, oil: 0 });
         const t = tierOf(g.donated);
-        if (!o || o.manual) return { q: 0, tierQ: 0, lampQ: 0, win: o && o.win, ret: o && o.ret, manual: true, oilUse: 0 };
+        if (!o || o.manual) return { q: 0, tierQ: 0, lampQ: 0, win: o && o.win, ret: o && o.ret, manual: true, oilUse: 0, caiUse: 0, cai: 0, shield: oilOf(g, 'taisui') > 0 };
         const allWin = o.win > 0.9999;
         const minV = Math.min(...o.rows.map(r => r.v));
         const pMin = o.rows.filter(r => r.v === minV).reduce((s, r) => s + r.p, 0);
@@ -48,11 +64,16 @@
         const tierQ = Math.min(t.q, tierCap);
         const lampQ = allWin ? 0 : LAMP_Q * Math.min(1, (g.oil || 0) / price);
         const q = Math.min(MAX_Q, tierQ + lampQ);
+        // 財神燈：中獎多兩成（燈油不夠一張票價就照比例）
+        const caiOil = oilOf(g, 'caishen'), cai = CAI * Math.min(1, caiOil / price);
+        const retBless = o.ret + per * q;
         return {
-            q, tierQ, lampQ, allWin,
+            q, tierQ, lampQ, allWin, cai,
             win: allWin ? 1 : o.win + (1 - o.win) * q * o.win,
-            ret: o.ret + per * q,
+            retBless,
+            ret: retBless * (1 + cai),
             oilUse: allWin || !(g.oil > 0) ? 0 : Math.min(g.oil, price),
+            caiUse: caiOil > 0 ? Math.min(caiOil, price) : 0,
         };
     }
 
@@ -100,7 +121,13 @@
         return upload();
     }
 
-    window.Gongde = { TIERS, LAMPS, LAMP_Q, CAP, tierOf, blessing, log, upload, recent: () => read().recent || [] };
+    // 現在亮著的燈：[{ ...燈, left: 剩多少 }]
+    function lit(g) {
+        g = g || (window.Wallet ? Wallet.gongde : {});
+        return LAMPS.map(l => ({ ...l, oilLeft: oilOf(g, l.key) })).filter(l => l.oilLeft > 0);
+    }
+
+    window.Gongde = { TIERS, LAMPS, PACKS, LAMP_Q, CAI, CAP, tierOf, blessing, lit, oilOf, log, upload, recent: () => read().recent || [] };
     // 打開頁面時補送上次沒送成功的
     setTimeout(upload, 3000);
 })();
