@@ -124,6 +124,84 @@
             font-size: 0.95rem;
         }
 
+        /* ===== 前三名：金、銀、銅（金屬是實物，顏色固定；夜裡只把字調亮） ===== */
+        .p1 { --m1: #fff3b0; --m2: #e8c252; --m3: #a77b0c; --ink: #9a6f05; --tint: rgba(232, 194, 82, .16); --d: 0.6s; }
+        .p2 { --m1: #ffffff; --m2: #c4ccd4; --m3: #6f7a86; --ink: #5f6a76; --tint: rgba(170, 180, 192, .14); --d: 0.38s; }
+        .p3 { --m1: #ffd9b3; --m2: #d08a4e; --m3: #8a4f22; --ink: #8a4f22; --tint: rgba(208, 138, 78, .13); --d: 0.16s; }
+        html.night .p1 { --ink: #f2d16b; --m3: #c99a2a; }
+        html.night .p2 { --ink: #d4dbe2; --m3: #9aa5b1; }
+        html.night .p3 { --ink: #e2a46c; --m3: #b06a33; }
+
+        .row { animation: row-in .45s cubic-bezier(.2, .8, .2, 1) both; animation-delay: var(--i, 0s); }
+        @keyframes row-in { from { opacity: 0; transform: translateY(8px); } }
+
+        .row.top { position: relative; overflow: hidden; isolation: isolate; }
+        .row.p1 { padding-top: 1.15rem; padding-bottom: 1.15rem; }
+        /* 金箔底＋左邊一條金屬 */
+        .row.top::before {
+            content: ''; position: absolute; inset: 0; z-index: -1;
+            background: linear-gradient(100deg, var(--tint) 0%, transparent 75%),
+                linear-gradient(180deg, var(--m1), var(--m2) 45%, var(--m3)) left / 3px 100% no-repeat;
+        }
+        /* 一道光掃過去 */
+        .row.top::after {
+            content: ''; position: absolute; top: -10%; bottom: -10%; left: -50%; width: 40%; z-index: 2; pointer-events: none;
+            background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .6), transparent);
+            transform: skewX(-18deg); animation: sheen 4.5s ease-in-out infinite; animation-delay: calc(var(--d) + 0.8s);
+        }
+        html.night .row.top::after { background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .22), transparent); }
+        @keyframes sheen { 0%, 60% { transform: translateX(0) skewX(-18deg); } 90%, 100% { transform: translateX(420%) skewX(-18deg); } }
+
+        /* 名次章蓋下來：銅、銀、金依序 */
+        .row.top .rank { animation: stamp .55s cubic-bezier(.3, 1.6, .5, 1) both; animation-delay: var(--d); }
+        @keyframes stamp {
+            0% { transform: scale(2.6) rotate(-24deg); opacity: 0; }
+            60% { transform: scale(.88) rotate(-4deg); opacity: 1; }
+            100% { transform: scale(1) rotate(-6deg); opacity: 1; }
+        }
+        .row.p1 .rank.is-top { background: rgb(var(--wabi-shu)); color: #fff; box-shadow: 0 0 0 2px rgb(var(--wabi-bg)), 0 0 0 3.5px var(--m2), 0 0 14px var(--m2); }
+
+        /* 大頭貼外圈：金屬光圈在轉 */
+        .halo { position: relative; flex-shrink: 0; width: 2.5rem; height: 2.5rem; }
+        .halo::before {
+            content: ''; position: absolute; inset: -3px; border-radius: 9999px;
+            background: conic-gradient(var(--m3), var(--m1), var(--m2), var(--m3), var(--m1), var(--m3));
+            animation: spin 3.2s linear infinite;
+        }
+        .p1 .halo { width: 2.9rem; height: 2.9rem; }
+        .p1 .halo::before { inset: -4px; box-shadow: 0 0 14px var(--m2); }
+        .halo .avatar { position: relative; width: 100%; height: 100%; border: 2px solid rgb(var(--wabi-bg)); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        /* 第一名的王冠 */
+        .crown { position: absolute; left: 50%; top: -15px; width: 26px; margin-left: -13px; z-index: 3; transform-origin: 50% 100%; animation: crown 2.6s ease-in-out infinite; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .25)); }
+        @keyframes crown { 0%, 100% { transform: rotate(-12deg) translateY(0); } 50% { transform: rotate(-6deg) translateY(-2px); } }
+
+        /* 名字、數字：金屬字，第一名會流光 */
+        .gname { color: var(--ink); font-weight: 600; }
+        .p1 .gname {
+            background: linear-gradient(90deg, var(--ink) 0%, var(--ink) 30%, var(--m1) 45%, var(--m2) 55%, var(--ink) 70%, var(--ink) 100%);
+            background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+            animation: shimmer 3.6s linear infinite;
+        }
+        @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+        .gval { color: var(--ink); font-weight: 500; }
+        .p1 .gval { font-size: 1.1em; }
+
+        /* 金粉 */
+        .spark {
+            position: absolute; z-index: 1; width: var(--ss); height: var(--ss); pointer-events: none;
+            background: radial-gradient(circle, #fff 0 12%, var(--m2) 32%, var(--m3) 52%, transparent 74%);
+            clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+            opacity: 0; animation: twinkle var(--sd) ease-in-out infinite; animation-delay: var(--sdl);
+        }
+        @keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.3) rotate(0deg); } 45% { opacity: 1; transform: scale(1) rotate(45deg); } 70% { opacity: .2; transform: scale(.6) rotate(70deg); } }
+
+        @media (prefers-reduced-motion: reduce) {
+            .row, .row *, .halo::before { animation: none !important; }
+            .row.top::after, .spark { display: none; }
+            .row.top .rank { transform: rotate(-6deg); }
+        }
+
         .me-tag {
             display: inline-block;
             margin-left: 0.35rem;
@@ -213,6 +291,15 @@
         const secs = ms => ms ? `${(ms / 1000).toFixed(1)} 秒` : '';
         const TOP = ['壹', '貳', '參'];
         const DEPT = { xitou: '坐洗部', clean: '房務部' };
+        // 第一名頭上的王冠（金色，畫在大頭貼上面）
+        const CROWN = '<svg class="crown" viewBox="0 0 26 18" aria-hidden="true"><defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3b0"/><stop offset=".5" stop-color="#e8c252"/><stop offset="1" stop-color="#a77b0c"/></linearGradient></defs><path d="M2 16 L1 5 L7.5 10 L13 1.5 L18.5 10 L25 5 L24 16 Z" fill="url(#cg)" stroke="#8a6408" stroke-width="1" stroke-linejoin="round"/><circle cx="13" cy="11" r="1.8" fill="#b33a2f"/><circle cx="1" cy="5" r="1.3" fill="#e8c252"/><circle cx="25" cy="5" r="1.3" fill="#e8c252"/><circle cx="13" cy="1.5" r="1.3" fill="#e8c252"/></svg>';
+        // 金粉：第一名七顆、第二名四顆、第三名三顆，位置隨機，避開最左邊的名次章
+        function sparks(place) {
+            return Array.from({ length: [0, 7, 4, 3][place] }, () => {
+                const x = 22 + Math.random() * 74, y = 8 + Math.random() * 80, size = 8 + Math.random() * (place === 1 ? 9 : 6);
+                return `<i class="spark" aria-hidden="true" style="left:${x.toFixed(1)}%;top:${y.toFixed(1)}%;--ss:${size.toFixed(1)}px;--sd:${(1.8 + Math.random() * 1.8).toFixed(2)}s;--sdl:${(Math.random() * 2.5).toFixed(2)}s"></i>`;
+            }).join('');
+        }
         const SCORE = { xitou: '爽度', clean: '乾淨度' };
 
         const badPic = new Set();  // 載不到的大頭貼，下次直接用字
@@ -262,18 +349,21 @@
             list.forEach((r, i) => { const prev = list[i - 1]; rank = prev && prev.e.v === r.e.v && (prev.e.tie || 0) === (r.e.tie || 0) ? rank : i + 1; r.rank = rank; });
             const shown = list.slice(0, 50), mine = list.find(r => r.p.me);
             if (mine && !shown.includes(mine)) shown.push(mine);
-            box.innerHTML = shown.length ? shown.map(r => {
-                const pic = r.p.picture && !badPic.has(r.p.picture)
+            box.innerHTML = shown.length ? shown.map((r, i) => {
+                const place = r.rank <= 3 ? r.rank : 0;
+                const pic0 = r.p.picture && !badPic.has(r.p.picture)
                     ? `<img class="avatar" src="${esc(r.p.picture)}" alt="" referrerpolicy="no-referrer" loading="lazy" data-initial="${esc((r.p.name || '旅')[0])}">`
                     : `<span class="avatar" aria-hidden="true">${esc((r.p.name || '旅')[0])}</span>`;
-                return `<div class="row${r.p.me ? ' is-me' : ''}">
-                    <span class="rank${r.rank <= 3 ? ' is-top' : ''}">${r.rank <= 3 ? TOP[r.rank - 1] : r.rank}</span>
+                const pic = place ? `<span class="halo">${pic0}${place === 1 ? CROWN : ''}</span>` : pic0;
+                return `<div class="row${place ? ` top p${place}` : ''}${r.p.me ? ' is-me' : ''}" style="--i:${Math.min(i, 12) * 0.04}s">
+                    ${place ? sparks(place) : ''}
+                    <span class="rank${place ? ' is-top' : ''}">${place ? TOP[place - 1] : r.rank}</span>
                     ${pic}
                     <span class="flex-1 min-w-0">
-                        <span class="block truncate text-sm text-wabi-dark tracking-wider">${esc(r.p.name)}${r.p.me ? '<span class="me-tag">我</span>' : ''}</span>
+                        <span class="block truncate text-sm text-wabi-dark tracking-wider"><span class="${place ? 'gname' : ''}">${esc(r.p.name)}</span>${r.p.me ? '<span class="me-tag">我</span>' : ''}</span>
                         <span class="block text-[11px] font-sans tracking-wide leading-snug text-stone-400">${esc(r.e.sub)}</span>
                     </span>
-                    <span class="shrink-0 font-sans text-wabi-dark ${metric === 'best' ? 'text-xl font-light' : 'text-sm'}">${esc(r.e.main)}</span>
+                    <span class="shrink-0 font-sans ${place ? 'gval' : 'text-wabi-dark'} ${metric === 'best' ? 'text-xl font-light' : 'text-sm'}">${esc(r.e.main)}</span>
                 </div>`;
             }).join('') : `<p class="py-10 text-center text-xs font-sans tracking-wider text-stone-400 leading-relaxed">${dept === 'clean' ? '房務部' : dept === 'xitou' ? '坐洗部' : '二十七樓'}還沒有人上榜。<br>第一名在等你。</p>`;
             box.querySelectorAll('img.avatar').forEach(img => img.addEventListener('error', () => {
