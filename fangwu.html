@@ -223,6 +223,7 @@
                 <p id="payStarRow" class="hidden flex justify-between mt-1"><span>五星好評</span><span id="payStar" class="text-wabi-dark"></span></p>
                 <p class="flex justify-between mt-2 pt-2 border-t border-stone-100"><span>錢包</span><span id="payWallet" class="text-wabi-shu text-sm"></span></p>
                 <p id="payAcct" class="mt-2 text-[10px] leading-relaxed text-stone-400"></p>
+                <p id="syncNote" class="mt-1 text-[10px] leading-relaxed text-stone-400"></p>
             </div>
             <div id="wrongBox" class="hidden mt-6 text-left">
                 <p class="text-xs font-sans tracking-widest text-wabi-dark">分錯的垃圾</p>
@@ -1018,16 +1019,82 @@
             try { best = Number(localStorage.getItem(BEST_KEY)) || 0; } catch (e) { }
             $('best').innerHTML = (best ? `最高乾淨度 ${best}<br>` : '') + `錢包 ${Wallet.fmt(Wallet.money)}`;
         }
-        function recordRoom(total, pay) {
+        const loadStats = () => {
             let st = null;
             try { st = JSON.parse(localStorage.getItem(STATS_KEY)); } catch (e) { }
             st = st || { rooms: 0, best: 0, paid: 0, sortRight: 0, sortTotal: 0, made: 0, found: {}, guests: {}, wrong: {} };
+            st.recent = st.recent || [];
+            return st;
+        };
+        function recordRoom(total, pay, grade) {
+            const st = loadStats();
             st.rooms++; st.best = Math.max(st.best, total); st.paid += pay;
             st.sortRight += G.right; st.sortTotal += SORT_N; if (G.run.made) st.made++;
             G.find.found.forEach(k => { st.found[k] = (st.found[k] || 0) + 1; });
             st.guests[G.guest.key] = (st.guests[G.guest.key] || 0) + 1;
             G.wrongs.forEach(w => { st.wrong[w.item.name] = (st.wrong[w.item.name] || 0) + 1; });
+            // 這一間的細節（最近 50 間），也送到後端（Cleans 分頁）
+            const s = G.scores;
+            st.recent.unshift({
+                at: new Date().toISOString(),
+                ms: Math.round(performance.now() - G.startedAt),
+                guest: G.guest.key, total, grade: grade.mark,
+                parts: { sort: s.sort, wipe: s.wipe, bed: s.bed, find: s.find, run: s.run },
+                sort_right: G.right,
+                wrong: G.wrongs.map(w => `${w.item.name}:${w.bin}>${w.item.bin}`),
+                cleaned: Math.round(G.cleaned * 100), wipe_ms: G.wipeMs,
+                corners: G.bed.corners.filter(c => c.placed).length,
+                pillows: G.bed.pillows.filter(n => n >= 3).length,
+                peeks: PEEKS - G.find.peeks, hidden: G.find.total, found: G.find.found.slice(),
+                made: !!G.run.made, floor: G.run.floor,
+                pay: { ...G.pay },
+                login: !!(window.Line && Line.loggedIn),
+            });
+            st.recent = st.recent.slice(0, 50);
             try { localStorage.setItem(STATS_KEY, JSON.stringify(st)); } catch (e) { }
+        }
+
+        // ---- 打掃紀錄送後端（跟坐洗部一樣：洗完馬上送、打開頁面補送；不用 keepalive）----
+        const API_URL = (window.Line && Line.API_URL) || "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
+        function deviceId() {
+            let id = '';
+            try { id = localStorage.getItem('dongbuli-device') || ''; } catch (e) { }
+            if (!id) {
+                id = window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'd-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+                try { localStorage.setItem('dongbuli-device', id); } catch (e) { }
+            }
+            return id;
+        }
+        let uploading = null;
+        function uploadRooms() {
+            if (!uploading) uploading = doUpload().finally(() => { uploading = null; });
+            return uploading;
+        }
+        async function doUpload() {
+            const st = loadStats();
+            const todo = st.recent.filter(r => !st.synced || r.at > st.synced).reverse().slice(0, 20);  // 舊的先送
+            if (!todo.length) return { ok: true, saved: 0 };
+            try {
+                let session = '';
+                try { session = localStorage.getItem('dongbuli-session') || ''; } catch (e) { }
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'cleanLog', device: deviceId(), session, recs: todo }) });
+                const r = await res.json();
+                if (r.result !== 'success') return { ok: false, error: r.error || r.result || '後端沒回成功' };
+                const now = loadStats();
+                now.synced = todo[todo.length - 1].at;
+                try { localStorage.setItem(STATS_KEY, JSON.stringify(now)); } catch (e) { }
+                if (todo.length === 20) setTimeout(uploadRooms, 1500);
+                return { ok: true, saved: r.saved };
+            } catch (e) {
+                return { ok: false, error: '連不到後端' };
+            }
+        }
+        function showSyncNote(r) {
+            const el = $('syncNote');
+            if (!el) return;
+            if (r.ok) el.textContent = '這間房的打掃紀錄存到雲端了';
+            else if (/不認得的請求/.test(r.error)) el.textContent = '紀錄還沒存上去：後端還是舊版（要重新部署「新版本」）';
+            else el.textContent = `紀錄還沒存上去（${r.error}），下次打掃完會補存`;
         }
         async function showResult() {
             stage = 5; setSteps(5);
@@ -1039,7 +1106,9 @@
             G.pay = { base, lost, star };
             Wallet.earn(base + lost + star, 'clean');
             try { if (total > (Number(localStorage.getItem(BEST_KEY)) || 0)) localStorage.setItem(BEST_KEY, String(total)); } catch (e) { }
-            recordRoom(total, base + lost + star);
+            recordRoom(total, base + lost + star, grade);
+            $('syncNote').textContent = '';
+            uploadRooms().then(showSyncNote);
             note(grade.line + '。');
             hint('');
             meter(total, `乾淨度 ${total}`);
@@ -1129,6 +1198,7 @@
 
         intro();
         requestAnimationFrame(frame);
+        setTimeout(uploadRooms, 2500);  // 補送上次沒送成功的
     </script>
 </body>
 

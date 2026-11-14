@@ -49,6 +49,8 @@ var GONGDE_LOGS_PER_HOUR = 60;   // 一支手機每小時最多送幾次功德�
 var GONGDE_ROWS_PER_HOUR = 1000; // 全站每小時最多記幾筆功德
 var WASH_LOGS_PER_HOUR = 60;     // 一支手機每小時最多送幾次洗頭紀錄（一次最多 20 顆）
 var WASH_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾顆頭
+var CLEAN_LOGS_PER_HOUR = 60;    // 一支手機每小時最多送幾次打掃紀錄（一次最多 20 間）
+var CLEAN_ROWS_PER_HOUR = 2000;  // 全站每小時最多存幾間
 
 // doPost 用於接收資料：訂房、留言、後台改狀態
 // 要排隊的動作：會「先讀再寫、讀到的決定寫什麼」的（撞期、領第幾張票、紅包還剩幾份、改狀態）。
@@ -91,6 +93,7 @@ function route(type, input) {
     if (type === 'lineLogout') return lineLogout(input);
     if (type === 'walletSync') return walletSync(input);
     if (type === 'washLog') return washLog(input);
+    if (type === 'cleanLog') return cleanLog(input);
     if (type === 'gongdeLog') return gongdeLog(input);
 
     // 以下只有後台能用，要帶登入拿到的通行證
@@ -1123,6 +1126,84 @@ function washLog(input) {
   if (rows.length) {
     // appendRow 不排隊也不會兩個人寫到同一列（一次通常只有一顆）
     var sheet = washesSheet();
+    rows.forEach(function (row) { sheet.appendRow(row); });
+    cache.put(allKey, String(allCount + rows.length), 3600);
+  }
+  return { result: 'success', saved: rows.length, skipped: skipped };
+}
+
+
+// --- 房務・淨：每一間房的打掃紀錄 ---
+// 跟洗頭紀錄一樣：打掃完網頁送上來，一列一間，存在 Cleans 分頁。不寄信、不回資料，只擋格式和數量。
+
+var CLEAN_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'guest', 'total', 'grade',
+  'sort', 'wipe', 'bed', 'find', 'run', 'sort_right', 'wrong', 'cleaned', 'wipe_ms',
+  'corners', 'pillows', 'peeks', 'hidden', 'found', 'made', 'floor',
+  'fee', 'lost_bonus', 'star', 'ms', 'login'];
+
+function cleansSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Cleans');
+  if (!sheet) {
+    sheet = ss.insertSheet('Cleans');
+    sheet.appendRow(CLEAN_HEADERS);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+// 一間房變成一列；格式不對回 null（整間不收）
+function cleanRow(r, now, lineId, device) {
+  if (!r || typeof r !== 'object') return null;
+  var at = new Date(r.at);
+  if (isNaN(at.getTime()) || at.getTime() > now.getTime() + 86400000 || at.getTime() < now.getTime() - 90 * 86400000) return null;
+  var parts = r.parts || {}, pay = r.pay || {};
+  // 分錯的：「名字:丟哪>要丟哪」，最多 12 件
+  var wrong = Array.isArray(r.wrong) ? r.wrong.slice(0, 12).map(function (w) { return String(w).replace(/[\r\n\t,]/g, ' ').slice(0, 24); }).join(', ') : '';
+  var found = Array.isArray(r.found) ? r.found.slice(0, 6).map(washKey).filter(String).join(', ') : '';
+  return [
+    now, at, lineId || '', device,
+    washKey(r.guest), washNum(r.total, 0, 100), washText(r.grade, 2),
+    washNum(parts.sort, 0, 25), washNum(parts.wipe, 0, 20), washNum(parts.bed, 0, 15), washNum(parts.find, 0, 15), washNum(parts.run, 0, 25),
+    washNum(r.sort_right, 0, 12), washText(wrong, 300), washNum(r.cleaned, 0, 100), r.wipe_ms == null ? '' : washNum(r.wipe_ms, 0, 60000),
+    washNum(r.corners, 0, 4), washNum(r.pillows, 0, 2), washNum(r.peeks, 0, 6), washNum(r.hidden, 0, 6), found, !!r.made, washNum(r.floor, 1, 27),
+    washNum(pay.base, 0, 100000), washNum(pay.lost, 0, 100000), washNum(pay.star, 0, 100000),
+    washNum(r.ms, 0, 3600000), !!r.login
+  ];
+}
+
+// 在編輯器選這個按「執行」：先把 Cleans 分頁建出來
+function setupCleans() {
+  var sheet = cleansSheet();
+  Logger.log('Cleans 分頁好了，目前有 ' + (sheet.getLastRow() - 1) + ' 間房。網頁要能存，還要「部署 → 管理部署作業 → 編輯 → 版本選新版本 → 部署」。');
+}
+
+function cleanLog(input) {
+  var device = String(input.device || '').replace(/[^A-Za-z0-9-]/g, '').slice(0, 40);
+  if (device.length < 8) return { result: 'error', error: '沒有裝置代號' };
+  var recs = Array.isArray(input.recs) ? input.recs.slice(0, 20) : [];
+  if (!recs.length) return { result: 'success', saved: 0 };
+
+  var cache = CacheService.getScriptCache();
+  var hour = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var devKey = 'cleanLog:' + device + ':' + hour, allKey = 'cleanRows:' + hour;
+  var devCount = Number(cache.get(devKey) || 0), allCount = Number(cache.get(allKey) || 0);
+  if (devCount >= CLEAN_LOGS_PER_HOUR) return { result: 'error', error: '這小時送太多次了' };
+  if (allCount + recs.length > CLEAN_ROWS_PER_HOUR) return { result: 'error', error: '這小時全站打掃太多間了' };
+  cache.put(devKey, String(devCount + 1), 3600);
+
+  var lineId = input.session ? sessionUser(input.session) : null;
+  var now = new Date(), rows = [], skipped = 0;
+  recs.forEach(function (r) {
+    var row = cleanRow(r, now, lineId, device);
+    if (!row) { skipped++; return; }
+    var dupKey = 'clean:' + device + ':' + row[1].getTime();
+    if (cache.get(dupKey)) { skipped++; return; }
+    cache.put(dupKey, '1', 6 * 3600);
+    rows.push(row);
+  });
+  if (rows.length) {
+    var sheet = cleansSheet();
     rows.forEach(function (row) { sheet.appendRow(row); });
     cache.put(allKey, String(allCount + rows.length), 3600);
   }
