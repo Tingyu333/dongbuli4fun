@@ -2139,6 +2139,9 @@ function replyEat(arg, source) {
 // 「換外幣要付多少台幣」看本行賣出的現金價；沒有現金價的（瑞典幣這種）用即期。存 30 分鐘。
 
 var FX_URL = 'https://rate.bot.com.tw/xrt/flcsv/0/day';
+// 臺銀讀不到時的備援：ExchangeRate-API 的免費版（不用金鑰，一天更新一次，是國際參考價、不是銀行牌告）
+var FX_BACKUP_URL = 'https://open.er-api.com/v6/latest/TWD';
+var FX_FETCH_OPT = { muteHttpExceptions: true, followRedirects: true, headers: { 'User-Agent': 'Mozilla/5.0 (DongBuLi LINE bot)', 'Accept': 'text/csv,*/*' } };
 var FX_NAMES = [
   { code: 'JPY', name: '日圓', unit: 10000, words: ['日圓', '日幣', '日元', '日本', '円', 'JPY'] },
   { code: 'USD', name: '美金', unit: 100, words: ['美金', '美元', '美國', 'USD'] },
@@ -2172,22 +2175,62 @@ function fxRates(csv) {
   return out;
 }
 
+// 臺銀的牌告：讀到回 { rates }，讀不到回 { error: '原因' }
+function fetchBotFx() {
+  try {
+    var res = UrlFetchApp.fetch(FX_URL, FX_FETCH_OPT);
+    if (res.getResponseCode() !== 200) return { error: '臺銀回 ' + res.getResponseCode() };
+    var rates = fxRates(res.getContentText('UTF-8'));
+    if (!Object.keys(rates).length) rates = fxRates(res.getContentText('Big5'));  // 萬一編碼換了
+    if (!Object.keys(rates).length) return { error: '臺銀的檔案解析不到（開頭：' + res.getContentText('UTF-8').slice(0, 80) + '）' };
+    return { rates: rates };
+  } catch (err) {
+    return { error: '臺銀連不上：' + err };
+  }
+}
+
+// 備援：國際參考價（1 台幣換多少外幣 → 倒過來變成 1 外幣多少台幣，買賣同價）
+function fetchBackupFx() {
+  try {
+    var res = UrlFetchApp.fetch(FX_BACKUP_URL, { muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200) return { error: '備援回 ' + res.getResponseCode() };
+    var j = JSON.parse(res.getContentText());
+    if (j.result !== 'success' || !j.rates) return { error: '備援沒回匯率' };
+    var out = {};
+    FX_NAMES.forEach(function (f) {
+      var v = Number(j.rates[f.code]);
+      if (v > 0) out[f.code] = { cashBuy: null, spotBuy: 1 / v, cashSell: null, spotSell: 1 / v };
+    });
+    return Object.keys(out).length ? { rates: out } : { error: '備援解析不到' };
+  } catch (err) {
+    return { error: '備援連不上：' + err };
+  }
+}
+
 function fetchFx() {
   var cache = CacheService.getScriptCache();
   var cached = cache.get('fx');
   if (cached) return JSON.parse(cached);
-  try {
-    var res = UrlFetchApp.fetch(FX_URL, { muteHttpExceptions: true });
-    if (res.getResponseCode() !== 200) { console.error('匯率讀取失敗', res.getResponseCode()); return null; }
-    var rates = fxRates(res.getContentText('UTF-8'));
-    if (!Object.keys(rates).length) { console.error('匯率解析不到（臺銀可能改格式了）'); return null; }
-    var data = { at: Date.now(), rates: rates };
-    cache.put('fx', JSON.stringify(data), 1800);
-    return data;
-  } catch (err) {
-    console.error('匯率讀取失敗', err);
-    return null;
+  var bot = fetchBotFx(), data = null;
+  if (bot.rates) data = { at: Date.now(), rates: bot.rates, source: 'bot' };
+  else {
+    console.error('匯率：' + bot.error + '，改用備援');
+    var bk = fetchBackupFx();
+    if (bk.rates) data = { at: Date.now(), rates: bk.rates, source: 'backup' };
+    else console.error('匯率備援也失敗：' + bk.error);
   }
+  if (!data) return null;
+  cache.put('fx', JSON.stringify(data), data.source === 'bot' ? 1800 : 600);  // 用備援的話 10 分鐘後再試一次臺銀
+  return data;
+}
+
+// 在編輯器選這個按「執行」：看臺銀和備援讀不讀得到（執行紀錄會寫原因）
+function testFx() {
+  CacheService.getScriptCache().remove('fx');
+  var bot = fetchBotFx();
+  Logger.log('臺灣銀行：' + (bot.rates ? '讀得到 ' + Object.keys(bot.rates).length + ' 種幣，日圓現金賣出 ' + fxSell(bot.rates.JPY) : '讀不到，' + bot.error));
+  var bk = fetchBackupFx();
+  Logger.log('備援（國際參考價）：' + (bk.rates ? '讀得到 ' + Object.keys(bk.rates).length + ' 種幣，日圓 ' + fxSell(bk.rates.JPY) : '讀不到，' + bk.error));
 }
 
 function fxSell(r) { return r && (r.cashSell || r.spotSell); }
@@ -2211,6 +2254,7 @@ function replyFx(arg) {
   var fx = fetchFx();
   if (!fx) return '臺灣銀行讀不到匯率。錢先放著，它不會跑掉。';
   var when = Utilities.formatDate(new Date(fx.at), 'Asia/Taipei', 'M/d HH:mm');
+  var bk = fx.source === 'backup';  // 臺銀讀不到，用的是國際參考價
 
   if (!cur) {
     var rows = FX_DEFAULT.map(function (code) {
@@ -2225,16 +2269,16 @@ function replyFx(arg) {
       };
     }).filter(Boolean);
     var jpy = fxSell(fx.rates.JPY);
-    return hiddenCard('今天換外幣（臺銀現金賣出）：' + FX_DEFAULT.map(function (c) { var r = fxSell(fx.rates[c]); return r ? c + ' ' + fxRate(r) : ''; }).join('、'),
-      'FX', '匯率', [cardSub('換一塊外幣要付多少台幣・臺灣銀行現金賣出')].concat(rows).concat([
+    return hiddenCard('今天換外幣（' + (bk ? '國際參考價' : '臺銀現金賣出') + '）：' + FX_DEFAULT.map(function (c) { var r = fxSell(fx.rates[c]); return r ? c + ' ' + fxRate(r) : ''; }).join('、'),
+      'FX', '匯率', [cardSub(bk ? '換一塊外幣大約多少台幣・國際參考價（臺銀今天讀不到）' : '換一塊外幣要付多少台幣・臺灣銀行現金賣出')].concat(rows).concat([
         cardLine(),
         cardTip(jpy && jpy < 0.21 ? '日圓還是很便宜。宜飛，宜回來帶伴手禮。' : '換之前先想想，二十七樓也很好玩。'),
-        cardSub(when + ' 的牌告・打「匯率 日圓 3萬」幫你算')
+        cardSub(when + (bk ? ' 的參考價・銀行實際會再貴一點' : ' 的牌告') + '・打「匯率 日圓 3萬」幫你算')
       ]));
   }
 
   var r = fx.rates[cur.code], sell = fxSell(r), buy = fxBuy(r);
-  if (!sell) return '臺灣銀行今天沒有' + cur.name + '的牌告。';
+  if (!sell) return (bk ? '今天查不到' : '臺灣銀行今天沒有') + cur.name + '的' + (bk ? '匯率。' : '牌告。');
   var amount = fxAmount(q.replace(new RegExp(cur.words.join('|'), 'i'), ' '));
   var toForeign = /台幣|臺幣|NT|TWD/i.test(q); // 「台幣5000 換日圓」：給台幣，算換得到多少外幣
   var big, sub;
@@ -2248,14 +2292,14 @@ function replyFx(arg) {
     big = fxUnit(cur.unit) + ' ≈ $' + fxMoney(sell * cur.unit);
     sub = fxUnit(cur.unit) + ' ' + cur.name + '大約要付台幣';
   }
-  return hiddenCard(sub + ' ' + big + '（臺銀' + (r.cashSell ? '現金' : '即期') + '賣出 ' + fxRate(sell) + '）', 'FX', '匯率・' + cur.name, [
+  return hiddenCard(sub + ' ' + big + '（' + (bk ? '國際參考價 ' : '臺銀' + (r.cashSell ? '現金' : '即期') + '賣出 ') + fxRate(sell) + '）', 'FX', '匯率・' + cur.name, [
     cardBig(big),
     cardSub(sub),
     cardLine(),
-    cardRow('換' + cur.name + (r.cashSell ? '現金' : '（即期）'), fxRate(sell)),
-    r.spotSell && r.cashSell ? cardRow('換' + cur.name + '（即期）', fxRate(r.spotSell)) : null,
-    buy ? cardRow('換回台幣', fxRate(buy)) : null,
-    cardSub(when + ' 臺灣銀行牌告・實際以銀行為準')
+    cardRow('換' + cur.name + (bk ? '（參考價）' : r.cashSell ? '現金' : '（即期）'), fxRate(sell)),
+    !bk && r.spotSell && r.cashSell ? cardRow('換' + cur.name + '（即期）', fxRate(r.spotSell)) : null,
+    !bk && buy ? cardRow('換回台幣', fxRate(buy)) : null,
+    cardSub(when + (bk ? ' 國際參考價（臺銀讀不到）・銀行實際會再貴一點' : ' 臺灣銀行牌告・實際以銀行為準'))
   ].filter(Boolean));
 }
 
