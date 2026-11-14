@@ -2220,7 +2220,7 @@ function fetchFx() {
     else console.error('匯率備援也失敗：' + bk.error);
   }
   if (!data) return null;
-  cache.put('fx', JSON.stringify(data), data.source === 'bot' ? 1800 : 600);  // 用備援的話 10 分鐘後再試一次臺銀
+  cache.put('fx', JSON.stringify(data), data.source === 'bot' ? 1800 : 3600);  // 用備援的話一小時後再試一次臺銀（臺銀擋 Google 的機器，回的是一頁網頁）
   return data;
 }
 
