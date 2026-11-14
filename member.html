@@ -67,6 +67,25 @@
             color: rgb(var(--wabi-dark));
         }
 
+        /* 小遊戲分區 */
+        .game-group + .game-group { margin-top: 0.75rem; }
+        .group-h {
+            display: flex;
+            align-items: baseline;
+            gap: 0.6rem;
+            margin-top: 1.1rem;
+            padding-bottom: 0.4rem;
+        }
+        .group-no {
+            font-size: 0.7rem;
+            color: rgb(var(--wabi-shu));
+            border: 1px solid rgb(var(--wabi-shu) / 0.6);
+            padding: 0 0.3rem;
+            line-height: 1.5;
+        }
+        .group-name { font-size: 0.85rem; letter-spacing: 0.3em; color: rgb(var(--wabi-dark)); }
+        .group-desc { margin-left: auto; font-family: 'Noto Sans TC', sans-serif; font-size: 0.65rem; letter-spacing: 0.1em; color: rgb(var(--wabi-accent)); }
+
         .game-mark.is-shu {
             border-color: rgb(var(--wabi-shu));
             color: rgb(var(--wabi-shu));
@@ -118,65 +137,77 @@
             <dl id="ledger" class="mt-5 font-sans text-xs tracking-wider text-stone-500 space-y-2"></dl>
         </section>
 
-        <!-- 小遊戲 -->
+        <!-- 小遊戲：分四區 -->
         <section class="mt-6 bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-6 pt-6 pb-2">
-            <h2 class="text-sm tracking-[0.3em] text-wabi-dark mb-3">小遊戲</h2>
-            <a href="xitou.html" class="game">
-                <span class="game-mark">洗</span>
-                <span class="flex-1 min-w-0">
+            <h2 class="text-sm tracking-[0.3em] text-wabi-dark">小遊戲</h2>
+            <div class="game-group">
+                <h3 class="group-h"><span class="group-no">壹</span><span class="group-name">打工</span><span class="group-desc">賺錢的地方</span></h3>
+                <a href="xitou.html" class="game">
+                    <span class="game-mark">洗</span>
+                    <span class="flex-1 min-w-0">
                     <span class="block text-wabi-dark tracking-widest">坐洗・泡</span>
                     <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">幫客人洗一顆頭，賺工資 $500～$1,500</span>
-                </span>
-                <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
-            </a>
-            <a href="fangwu.html" class="game">
-                <span class="game-mark">淨</span>
-                <span class="flex-1 min-w-0">
+                    </span>
+                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                </a>
+                <a href="fangwu.html" class="game">
+                    <span class="game-mark">淨</span>
+                    <span class="flex-1 min-w-0">
                     <span class="block text-wabi-dark tracking-widest">房務・淨</span>
                     <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">打掃退房後的二十七樓，領房務費 $500～$1,500</span>
-                </span>
-                <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
-            </a>
-            <a href="rank.html" class="game">
-                <span class="game-mark is-shu">榜</span>
-                <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">排行・榜</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">打工・榜、花錢・榜：誰最會賺，誰最會花</span>
-                </span>
-                <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
-            </a>
-            <a href="baoxian.html" class="game">
-                <span class="game-mark">保</span>
-                <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">保險・存</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">丼步喱人壽：錢鎖三、五、七天，連本帶利領回來</span>
-                </span>
-                <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
-            </a>
-            <a href="scratch.html" class="game">
-                <span class="game-mark is-shu">刮</span>
-                <span class="flex-1 min-w-0">
+                    </span>
+                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                </a>
+            </div>
+            <div class="game-group">
+                <h3 class="group-h"><span class="group-no">貳</span><span class="group-name">錢的去處</span><span class="group-desc">花掉，或存起來</span></h3>
+                <a href="scratch.html" class="game">
+                    <span class="game-mark is-shu">刮</span>
+                    <span class="flex-1 min-w-0">
                     <span class="block text-wabi-dark tracking-widest">二十七樓彩券行</span>
                     <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">拿工資刮刮樂，十種，頭獎 2000 萬</span>
-                </span>
-                <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
-            </a>
-            <a href="gongde.html" class="game">
-                <span class="game-mark is-shu">佑</span>
-                <span class="flex-1 min-w-0">
+                    </span>
+                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                </a>
+                <a href="baoxian.html" class="game">
+                    <span class="game-mark">保</span>
+                    <span class="flex-1 min-w-0">
+                    <span class="block text-wabi-dark tracking-widest">保險・存</span>
+                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">丼步喱人壽：錢鎖三、五、七天，連本帶利領回來</span>
+                    </span>
+                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                </a>
+            </div>
+            <div class="game-group">
+                <h3 class="group-h"><span class="group-no">參</span><span class="group-name">廟口</span><span class="group-desc">求神明保佑</span></h3>
+                <a href="gongde.html" class="game">
+                    <span class="game-mark is-shu">佑</span>
+                    <span class="flex-1 min-w-0">
                     <span class="block text-wabi-dark tracking-widest">功德・添 <span id="tierTag" class="text-[11px] font-sans tracking-wider text-wabi-shu"></span></span>
                     <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">捐香油錢、點光明燈，刮刮樂沒中神明幫你再抽</span>
-                </span>
-                <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
-            </a>
-            <a href="jiaobei.html" class="game">
-                <span class="game-mark">杯</span>
-                <span class="flex-1 min-w-0">
+                    </span>
+                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                </a>
+                <a href="jiaobei.html" class="game">
+                    <span class="game-mark">杯</span>
+                    <span class="flex-1 min-w-0">
                     <span class="block text-wabi-dark tracking-widest">擲杯・問</span>
                     <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">不賺錢，問一下神明就好</span>
-                </span>
-                <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
-            </a>
+                    </span>
+                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                </a>
+            </div>
+            <div class="game-group">
+                <h3 class="group-h"><span class="group-no">肆</span><span class="group-name">公告欄</span><span class="group-desc">誰最會賺、誰最會花</span></h3>
+                <a href="rank.html" class="game">
+                    <span class="game-mark is-shu">榜</span>
+                    <span class="flex-1 min-w-0">
+                    <span class="block text-wabi-dark tracking-widest">排行・榜</span>
+                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">打工・榜、花錢・榜：誰最會賺，誰最會花</span>
+                    </span>
+                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                </a>
+            </div>
         </section>
 
         <!-- 我的預約 -->
