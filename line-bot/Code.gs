@@ -35,6 +35,8 @@ var COMMANDS = [
   { words: ['放假', '連假', '假日'], run: replyHoliday },
   { words: ['油價', '汽油', '柴油'], run: replyOil },
   { words: ['股價', '股票', '股'], run: replyStock },
+  { words: ['吃什麼', '要吃什麼', '吃啥'], run: replyEat },
+  { words: ['匯率'], run: replyFx },
   { words: ['排球', 'TPVL', 'tpvl'], run: replyVolley }, // 長的放前面，「股票 2330」才不會被切成「票 2330」
   // 狗、貓只認整句（「狗屎運」「貓咪好可愛」不會在群組裡突然冒出一張圖）
   { words: ['狗', '汪', '狗狗', '汪汪'], exact: true, run: replyDog },
@@ -2078,6 +2080,185 @@ function replySecrets() {
   return '已經沒有藏了，全部都在這裡。\n\n' + replyHelp();
 }
 
+// --- 吃什麼（不用網路，神明幫你抽） ---
+// 「吃什麼」照現在幾點挑早餐／午餐／下午茶／晚餐／宵夜；後面可以接餐別（宵夜、甜點…）和「不要火鍋」「火鍋以外」。
+// 群組裡「吃什麼都好啦我隨便」這種長句不是在問 bot，就不回。
+
+var EAT_MENUS = {
+  '早餐': ['蛋餅', '蘿蔔糕加蛋', '飯糰', '燒餅油條', '鐵板麵', '鹹豆漿', '火腿蛋吐司', '小籠包', '水煎包', '肉粥', '厚片吐司', '大冰奶配什麼都好'],
+  '午餐': ['雞腿便當', '排骨飯', '牛肉麵', '滷肉飯', '鍋燒意麵', '炒飯', '水餃', '自助餐', '拉麵', '咖哩飯', '丼飯', '越南河粉', '麻醬涼麵', '海南雞飯', '酸辣粉', '健康餐盒'],
+  '下午茶': ['雞排', '豆花', '車輪餅', '珍珠奶茶', '地瓜球', '雞蛋糕', '鬆餅', '蔥油餅', '紅豆餅', '剉冰'],
+  '晚餐': ['火鍋', '燒肉', '熱炒', '麻辣鍋', '羊肉爐', '薑母鴨', '牛排', '披薩', '韓式炸雞', '泰式料理', '壽司', '義大利麵', '港式燒臘', '居酒屋', '印度咖哩', '牛肉麵', '丼飯'],
+  '宵夜': ['鹹酥雞', '滷味', '泡麵加蛋', '永和豆漿', '清粥小菜', '麥當勞', '烤肉串', '臭豆腐', '超商關東煮', '鍋貼', '沙茶炒麵', '雞排'],
+  '甜點': ['豆花', '芒果冰', '布丁', '蛋塔', '冰淇淋', '仙草', '湯圓', '舒芙蕾', '鬆餅', '車輪餅']
+};
+var EAT_WORDS = { '早餐': '早餐', '早午餐': '早餐', '午餐': '午餐', '中餐': '午餐', '中午': '午餐', '下午茶': '下午茶', '點心': '下午茶',
+  '晚餐': '晚餐', '晚上': '晚餐', '宵夜': '宵夜', '消夜': '宵夜', '半夜': '宵夜', '甜點': '甜點', '甜的': '甜點' };
+var EAT_TIPS = ['神明抽的，不要問我。', '抽到就吃，不准重抽。（可以重抽）', '這不是建議，是命運。', '二十七樓不負責結帳。',
+  '跟上次一樣也沒關係，人生本來就一直重複。', '吃飽了，才有力氣決定下一餐。', '先吃再說，減肥明天的事。', '分帳的事，吃完再說。'];
+
+function eatMealNow() {
+  var h = Number(Utilities.formatDate(new Date(), 'Asia/Taipei', 'H'));
+  return h >= 5 && h < 10 ? '早餐' : h < 14 && h >= 10 ? '午餐' : h >= 14 && h < 17 ? '下午茶' : h >= 17 && h < 21 ? '晚餐' : '宵夜';
+}
+
+function replyEat(arg, source) {
+  var rest = String(arg || '').replace(/^[:：\s]+/, '');
+  var meal = null;
+  Object.keys(EAT_WORDS).sort(function (a, b) { return b.length - a.length; }).forEach(function (w) {
+    if (!meal && rest.indexOf(w) !== -1) { meal = EAT_WORDS[w]; rest = rest.replace(w, ' '); }
+  });
+  var bans = [];
+  rest = rest.replace(/(?:不要|不想吃|不吃)\s*([^\s，,、。]+)/g, function (m, x) { bans.push(x); return ' '; })
+    .replace(/([^\s，,、。]+?)\s*以外/g, function (m, x) { bans.push(x); return ' '; });
+  var leftover = rest.replace(/[\s，,、。!！?？~～好呢啊啦了的勒咧]/g, '');
+  if (source && source.type !== 'user' && leftover.length > 4) return null;
+
+  meal = meal || eatMealNow();
+  var pool = EAT_MENUS[meal].filter(function (f) { return !bans.some(function (b) { return f.indexOf(b) !== -1 || b.indexOf(f) !== -1; }); });
+  if (!pool.length) return '這個不要、那個也不要，那就喝水吧。';
+  var food = pool[Math.floor(Math.random() * pool.length)];
+  var tip = food === '布丁' ? '這次記得留一個給別人。' : food === '丼飯' ? '二十七樓的招牌，不吃說不過去。' : EAT_TIPS[Math.floor(Math.random() * EAT_TIPS.length)];
+
+  var card = hiddenCard(meal + '吃' + food + '。' + tip, 'EAT', '吃什麼', [
+    cardBig(food),
+    cardSub(meal + (bans.length ? '・不要' + bans.join('、') : '')),
+    cardTip(tip)
+  ]);
+  var again = ('吃什麼 ' + meal + (bans.length ? ' 不要' + bans.join(' 不要') : '')).slice(0, 300);
+  card.contents.styles.footer = { backgroundColor: COLOR.bg };
+  card.contents.footer = {
+    type: 'box', layout: 'vertical', paddingTop: '0px',
+    contents: [{ type: 'button', style: 'link', color: COLOR.accent, height: 'sm', action: { type: 'message', label: '再抽一次', text: again } }]
+  };
+  return card;
+}
+
+// --- 匯率（臺灣銀行牌告匯率，CSV 不用金鑰） ---
+// 一列一種外幣：幣別, 本行買入, 現金, 即期, 遠期…, 本行賣出, 現金, 即期, 遠期…（沒有現金的填 0）
+// 「換外幣要付多少台幣」看本行賣出的現金價；沒有現金價的（瑞典幣這種）用即期。存 30 分鐘。
+
+var FX_URL = 'https://rate.bot.com.tw/xrt/flcsv/0/day';
+var FX_NAMES = [
+  { code: 'JPY', name: '日圓', unit: 10000, words: ['日圓', '日幣', '日元', '日本', '円', 'JPY'] },
+  { code: 'USD', name: '美金', unit: 100, words: ['美金', '美元', '美國', 'USD'] },
+  { code: 'KRW', name: '韓元', unit: 10000, words: ['韓元', '韓幣', '韓國', 'KRW'] },
+  { code: 'EUR', name: '歐元', unit: 100, words: ['歐元', '歐洲', 'EUR'] },
+  { code: 'CNY', name: '人民幣', unit: 100, words: ['人民幣', '中國', 'RMB', 'CNY'] },
+  { code: 'HKD', name: '港幣', unit: 100, words: ['港幣', '香港', 'HKD'] },
+  { code: 'THB', name: '泰銖', unit: 1000, words: ['泰銖', '泰國', 'THB'] },
+  { code: 'GBP', name: '英鎊', unit: 100, words: ['英鎊', '英國', 'GBP'] },
+  { code: 'AUD', name: '澳幣', unit: 100, words: ['澳幣', '澳元', '澳洲', 'AUD'] },
+  { code: 'SGD', name: '新加坡幣', unit: 100, words: ['新加坡', '新幣', 'SGD'] },
+  { code: 'VND', name: '越南盾', unit: 100000, words: ['越南', 'VND'] },
+  { code: 'CAD', name: '加幣', unit: 100, words: ['加幣', '加拿大', 'CAD'] },
+  { code: 'NZD', name: '紐幣', unit: 100, words: ['紐幣', '紐西蘭', 'NZD'] },
+  { code: 'MYR', name: '馬幣', unit: 100, words: ['馬幣', '令吉', '馬來西亞', 'MYR'] },
+  { code: 'PHP', name: '菲律賓披索', unit: 1000, words: ['披索', '菲律賓', 'PHP'] },
+  { code: 'IDR', name: '印尼盾', unit: 100000, words: ['印尼', 'IDR'] },
+  { code: 'CHF', name: '瑞士法郎', unit: 100, words: ['瑞士', '法郎', 'CHF'] }
+];
+var FX_DEFAULT = ['JPY', 'USD', 'KRW', 'EUR', 'CNY', 'HKD', 'THB'];
+
+function fxRates(csv) {
+  var out = {};
+  String(csv || '').replace(/^\uFEFF/, '').split(/\r?\n/).forEach(function (line) {
+    var c = line.split(',');
+    var b = c.indexOf('本行買入'), s = c.indexOf('本行賣出');
+    if (!/^[A-Z]{3}$/.test(c[0]) || b < 0 || s < 0) return;
+    var n = function (i) { var v = parseFloat(c[i]); return isFinite(v) && v > 0 ? v : null; };
+    out[c[0]] = { cashBuy: n(b + 1), spotBuy: n(b + 2), cashSell: n(s + 1), spotSell: n(s + 2) };
+  });
+  return out;
+}
+
+function fetchFx() {
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get('fx');
+  if (cached) return JSON.parse(cached);
+  try {
+    var res = UrlFetchApp.fetch(FX_URL, { muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200) { console.error('匯率讀取失敗', res.getResponseCode()); return null; }
+    var rates = fxRates(res.getContentText('UTF-8'));
+    if (!Object.keys(rates).length) { console.error('匯率解析不到（臺銀可能改格式了）'); return null; }
+    var data = { at: Date.now(), rates: rates };
+    cache.put('fx', JSON.stringify(data), 1800);
+    return data;
+  } catch (err) {
+    console.error('匯率讀取失敗', err);
+    return null;
+  }
+}
+
+function fxSell(r) { return r && (r.cashSell || r.spotSell); }
+function fxBuy(r) { return r && (r.cashBuy || r.spotBuy); }
+function fxRate(n) { return n >= 1 ? n.toFixed(3) : n >= 0.01 ? n.toFixed(4) : n.toFixed(5); }
+function fxMoney(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function fxUnit(u) { return u >= 10000 ? (u / 10000) + ' 萬' : String(u); }
+
+// 「3萬」「1.5萬」「5000」「2k」
+function fxAmount(text) {
+  var m = String(text).replace(/,/g, '').match(/(\d+(?:\.\d+)?)\s*(萬|千|k|K)?/);
+  if (!m) return null;
+  var v = parseFloat(m[1]) * (m[2] === '萬' ? 10000 : m[2] === '千' || m[2] === 'k' || m[2] === 'K' ? 1000 : 1);
+  return v > 0 && v < 1e12 ? v : null;
+}
+
+function replyFx(arg) {
+  var q = String(arg || '').replace(/^[:：\s]+/, '');
+  var cur = null;
+  FX_NAMES.forEach(function (f) { if (!cur && f.words.some(function (w) { return q.toUpperCase().indexOf(w.toUpperCase()) !== -1; })) cur = f; });
+  var fx = fetchFx();
+  if (!fx) return '臺灣銀行讀不到匯率。錢先放著，它不會跑掉。';
+  var when = Utilities.formatDate(new Date(fx.at), 'Asia/Taipei', 'M/d HH:mm');
+
+  if (!cur) {
+    var rows = FX_DEFAULT.map(function (code) {
+      var f = FX_NAMES.filter(function (x) { return x.code === code; })[0], r = fx.rates[code], sell = fxSell(r);
+      if (!sell) return null;
+      return {
+        type: 'box', layout: 'horizontal', margin: 'md', contents: [
+          { type: 'text', text: f.name, size: 'sm', color: COLOR.accent, flex: 3 },
+          { type: 'text', text: fxRate(sell), size: 'sm', color: COLOR.ink, flex: 3, align: 'end' },
+          { type: 'text', text: fxUnit(f.unit) + '≈$' + fxMoney(sell * f.unit), size: 'xs', color: COLOR.text, flex: 5, align: 'end', gravity: 'center' }
+        ]
+      };
+    }).filter(Boolean);
+    var jpy = fxSell(fx.rates.JPY);
+    return hiddenCard('今天換外幣（臺銀現金賣出）：' + FX_DEFAULT.map(function (c) { var r = fxSell(fx.rates[c]); return r ? c + ' ' + fxRate(r) : ''; }).join('、'),
+      'FX', '匯率', [cardSub('換一塊外幣要付多少台幣・臺灣銀行現金賣出')].concat(rows).concat([
+        cardLine(),
+        cardTip(jpy && jpy < 0.21 ? '日圓還是很便宜。宜飛，宜回來帶伴手禮。' : '換之前先想想，二十七樓也很好玩。'),
+        cardSub(when + ' 的牌告・打「匯率 日圓 3萬」幫你算')
+      ]));
+  }
+
+  var r = fx.rates[cur.code], sell = fxSell(r), buy = fxBuy(r);
+  if (!sell) return '臺灣銀行今天沒有' + cur.name + '的牌告。';
+  var amount = fxAmount(q.replace(new RegExp(cur.words.join('|'), 'i'), ' '));
+  var toForeign = /台幣|臺幣|NT|TWD/i.test(q); // 「台幣5000 換日圓」：給台幣，算換得到多少外幣
+  var big, sub;
+  if (amount && toForeign) {
+    big = fxMoney(amount / sell) + ' ' + cur.name;
+    sub = '台幣 $' + fxMoney(amount) + ' 大約換得到';
+  } else if (amount) {
+    big = '$' + fxMoney(amount * sell);
+    sub = fxMoney(amount) + ' ' + cur.name + ' 大約要付台幣';
+  } else {
+    big = fxUnit(cur.unit) + ' ≈ $' + fxMoney(sell * cur.unit);
+    sub = fxUnit(cur.unit) + ' ' + cur.name + '大約要付台幣';
+  }
+  return hiddenCard(sub + ' ' + big + '（臺銀' + (r.cashSell ? '現金' : '即期') + '賣出 ' + fxRate(sell) + '）', 'FX', '匯率・' + cur.name, [
+    cardBig(big),
+    cardSub(sub),
+    cardLine(),
+    cardRow('換' + cur.name + (r.cashSell ? '現金' : '（即期）'), fxRate(sell)),
+    r.spotSell && r.cashSell ? cardRow('換' + cur.name + '（即期）', fxRate(r.spotSell)) : null,
+    buy ? cardRow('換回台幣', fxRate(buy)) : null,
+    cardSub(when + ' 臺灣銀行牌告・實際以銀行為準')
+  ].filter(Boolean));
+}
+
 // --- 分帳（老闆自己做的 LIFF，bot 只給連結） ---
 
 function replySplit() {
@@ -2126,7 +2307,9 @@ function replyHelp() {
     '放假　下一個連假還有幾天\n' +
     '分帳　出去玩誰欠誰，打開就算（打記帳、拆帳、AA 也可以）\n' +
     '油價　這週的油價，下週漲還是跌\n' +
-    '股　　收盤價，例如「股 2330」「股 台積電」\n\n' +
+    '股　　收盤價，例如「股 2330」「股 台積電」\n' +
+    '吃什麼　幫你決定這一餐，例如「吃什麼 宵夜」「吃什麼 不要火鍋」\n' +
+    '匯率　換外幣要多少台幣，例如「匯率 日圓」「匯率 日圓 3萬」「匯率 台幣5000 韓元」\n\n' +
     '【看排球】TPVL\n' +
     '排球　下一場、最近一場比分\n' +
     '排球 雲豹　一隊的賽程和勝敗（連莊、天鷹、伊斯特、可利也可以）\n' +
@@ -2151,7 +2334,7 @@ function welcomeText(type) {
 // 不想用了：執行 removeRichMenus()，會回到 Official Account Manager 裡設定的那個選單。
 // 每一格的順序跟圖一樣：上排左到右、下排左到右。
 
-var RICH_MENU_VERSION = 3; // 換圖時加一，LINE 才不會拿到快取的舊圖
+var RICH_MENU_VERSION = 4; // 換圖時加一，LINE 才不會拿到快取的舊圖
 var RICH_MENUS = [
   { alias: 'dbl-27', tab: '二十七樓', bar: '選單・二十七樓', image: 'line-bot/richmenu-27.png', items: [
       { type: 'message', label: '空房', text: '空房' },
@@ -2171,8 +2354,8 @@ var RICH_MENUS = [
     ] },
   { alias: 'dbl-life', tab: '過日子', bar: '選單・過日子', image: 'line-bot/richmenu-life.png', items: [
       { type: 'message', label: '油價', text: '油價' },
-      { type: 'message', label: '台積電', text: '股 2330' },
-      { type: 'message', label: '0050', text: '股 0050' },
+      { type: 'message', label: '吃什麼', text: '吃什麼' },
+      { type: 'message', label: '匯率', text: '匯率' },
       { type: 'uri', label: '分帳', uri: SPLIT_URL },
       { type: 'message', label: '狗狗', text: '狗' },
       { type: 'message', label: '貓咪', text: '貓' }
@@ -2183,7 +2366,7 @@ var RICH_MENUS = [
       { type: 'message', label: '得分王', text: '排球 得分王' },
       { type: 'message', label: '攔網', text: '排球 攔網' },
       { type: 'message', label: '攻擊', text: '排球 攻擊' },
-      { type: 'message', label: '發球', text: '排球 發球' }
+      { type: 'message', label: '吳宗軒', text: '排球 球員 吳宗軒' }
     ] }
 ];
 
