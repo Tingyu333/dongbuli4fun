@@ -283,8 +283,14 @@
             { key: 'food', who: '宵夜派', note: '冰箱是空的，垃圾桶是滿的。', tags: ['food'], stains: ['sauce', 'sauce', 'sauce', 'ring'], lost: ['pudding', 'sock', 'charger'] },
             { key: 'cat', who: '帶貓來住的旅人', note: '貓比人還早起，毛比人還多。', tags: ['cat'], stains: ['fur', 'fur', 'fur', 'sauce'], lost: ['cattoy', 'sock', 'key'] },
             { key: 'ex', who: '前夫', note: '不知道為什麼會來住。', tags: ['ex'], stains: ['print', 'print', 'print', 'ring'], lost: ['exprint', 'key', 'split'], rare: true },
+            // 稀有房客：每一位各 5%。likes：垃圾照哪一種房客挑；sign：一定會留下的招牌遺失物
+            { key: 'mike', who: '大橋頭麥克雞塊', note: '說只喝一杯。冰箱裡的啤酒全部退房了。', likes: 'drink', tags: ['drink'], stains: ['ring', 'ring', 'ring', 'ring', 'sauce'], lost: ['nugget', 'earphone', 'key'], sign: 'nugget', rare: true },
+            { key: 'ito', who: '伊藤開晴', note: '說再刮一張就退房，刮了四十張。', likes: 'lottery', tags: ['lottery'], stains: ['flake', 'flake', 'flake', 'flake', 'ring'], lost: ['mingpai', 'bei', 'split'], sign: 'mingpai', lotto: 0.5, rare: true },
         ];
-        function pickGuest() { return Math.random() < 0.05 ? GUESTS.find(g => g.rare) : pick(GUESTS.filter(g => !g.rare)); }
+        function pickGuest() {
+            const rare = GUESTS.filter(g => g.rare), r = Math.random();
+            return r < 0.05 * rare.length ? rare[Math.floor(r / 0.05)] : pick(GUESTS.filter(g => !g.rare));
+        }
 
         // ===== 2. 垃圾：照台灣（台北市）的分類 =====
         // bin：gen 一般垃圾、rec 資源回收、food 廚餘；why 分錯時說明；tags 哪種房客比較會留下
@@ -319,7 +325,7 @@
         ];
         const SORT_N = 12;
         function pickItems(guest) {
-            const mine = shuffle(ITEMS.filter(i => i.tags.includes(guest.key))).slice(0, 5);
+            const mine = shuffle(ITEMS.filter(i => i.tags.includes(guest.likes || guest.key))).slice(0, 5);
             const rest = shuffle(ITEMS.filter(i => !mine.includes(i)));
             // 三個桶子都至少要有兩件
             const out = mine.slice();
@@ -342,6 +348,8 @@
             comb: { name: '梳子', bonus: 100, icon: 'comb' },
             lotto: { name: '一張還沒刮的刮刮樂', bonus: 500, icon: 'ticket', rare: true },
             exprint: { name: '前夫的指紋（裱框）', bonus: 800, icon: 'exprint', rare: true },
+            nugget: { name: '一盒雞塊（還剩一塊）', bonus: 600, icon: 'nugget', rare: true },
+            mingpai: { name: '伊藤的明牌筆記', bonus: 600, icon: 'mingpai', rare: true },
         };
         // 藏東西的地方（找・物那一關的房間）
         const SPOTS = [
@@ -422,6 +430,14 @@
                 case 'cattoy': c.strokeStyle = '#8a6a3c'; c.lineWidth = 3; c.beginPath(); c.moveTo(-22, 22); c.lineTo(10, -10); c.stroke();
                     ['#e74c3c', '#f1c40f', '#3498db'].forEach((col, i) => { c.strokeStyle = col; c.lineWidth = 2; c.beginPath(); c.moveTo(10, -10); c.quadraticCurveTo(20 + i * 4, -20, 26 - i * 6, -26 + i * 3); c.stroke(); }); break;
                 case 'comb': c.fillStyle = '#c98b3c'; c.fillRect(-22, -8, 44, 7); for (let x = -20; x < 22; x += 4) c.fillRect(x, -1, 2, 12); break;
+                case 'nugget': c.fillStyle = '#d23a2a'; c.beginPath(); c.moveTo(-22, -8); c.lineTo(22, -8); c.lineTo(18, 22); c.lineTo(-18, 22); c.closePath(); c.fill();
+                    c.fillStyle = '#f2c230'; c.font = `900 9px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('雞塊', 0, 10);
+                    c.fillStyle = '#d99a3e'; c.strokeStyle = '#a8681e'; c.lineWidth = 1.5; c.beginPath(); c.ellipse(2, -14, 11, 8, 0.3, 0, TAU); c.fill(); c.stroke();
+                    c.fillStyle = '#b97a2c'; [[-2, -16], [5, -12], [6, -18]].forEach(([x, y]) => { c.beginPath(); c.arc(x, y, 1.4, 0, TAU); c.fill(); }); break;
+                case 'mingpai': c.fillStyle = '#2f4a6b'; c.fillRect(-18, -24, 36, 48); c.fillStyle = '#fffdf6'; c.fillRect(-14, -20, 30, 42);
+                    c.fillStyle = '#c0392b'; c.font = `700 8px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('明牌', 1, -13);
+                    c.fillStyle = '#3b3431'; c.font = `400 7px ${SANS}`; ['0727', '下一張', '一定中'].forEach((t, i) => c.fillText(t, 1, -2 + i * 9));
+                    c.strokeStyle = '#c0392b'; c.lineWidth = 1.5; c.beginPath(); c.ellipse(1, -2, 11, 5, 0, 0, TAU); c.stroke(); break;
                 case 'exprint': c.fillStyle = '#7a5a3c'; c.fillRect(-22, -26, 44, 52); c.fillStyle = '#fbf8f2'; c.fillRect(-16, -20, 32, 40);
                     c.strokeStyle = '#8e8070'; c.lineWidth = 1; for (let r = 3; r < 14; r += 2.5) { c.beginPath(); c.ellipse(0, 0, r, r * 1.3, 0.2, 0.3, TAU - 0.3); c.stroke(); } break;
             }
@@ -549,8 +565,9 @@
             };
             // 遺失物：兩件（房客那一類挑），偶爾多一張沒刮的刮刮樂
             const lostKeys = shuffle(guest.lost).slice(0, 2);
-            if (guest.key === 'ex' && !lostKeys.includes('exprint')) lostKeys[0] = 'exprint';
-            if (Math.random() < 0.05) lostKeys.push('lotto');
+            const sign = guest.key === 'ex' ? 'exprint' : guest.sign;
+            if (sign && !lostKeys.includes(sign)) lostKeys[0] = sign;
+            if (Math.random() < (guest.lotto || 0.05)) lostKeys.push('lotto');  // 伊藤一半機會多留一張
             const spots = shuffle(SPOTS.map(s => s.key));
             G.find = { hidden: Object.fromEntries(lostKeys.map((k, i) => [spots[i], k])), total: lostKeys.length, peeked: {}, found: [], peeks: PEEKS, lift: {} };
         }
