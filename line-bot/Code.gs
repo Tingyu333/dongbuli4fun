@@ -2143,15 +2143,15 @@ function welcomeText(type) {
   return (type === 'join' ? '二十七樓的神明來群組了。' : '歡迎來到丼步喱・絆。') + '\n\n' + replyHelp();
 }
 
-// --- 圖文選單（三個分頁） ---
-// 上面一排分頁（二十七樓／看天／過日子），點了 LINE app 自己換成那一頁的選單（richmenuswitch），不經過 bot。
+// --- 圖文選單（四個分頁） ---
+// 上面一排分頁（二十七樓／看天／過日子／看排球），點了 LINE app 自己換成那一頁的選單（richmenuswitch），不經過 bot。
 // 換分頁時 LINE 會送一個 postback 事件過來，doPost 只處理 message／follow／join，所以不會回話。
 // 圖在網站上（line-bot/richmenu-*.png），改圖或改格子後在編輯器執行一次 setupRichMenus() 就會整組重建。
 // 這不是寫入 Sheet、也不是推播：只是跟 LINE 說「選單長這樣」，跟在 Official Account Manager 按建立一樣。
 // 不想用了：執行 removeRichMenus()，會回到 Official Account Manager 裡設定的那個選單。
 // 每一格的順序跟圖一樣：上排左到右、下排左到右。
 
-var RICH_MENU_VERSION = 2; // 換圖時加一，LINE 才不會拿到快取的舊圖
+var RICH_MENU_VERSION = 3; // 換圖時加一，LINE 才不會拿到快取的舊圖
 var RICH_MENUS = [
   { alias: 'dbl-27', tab: '二十七樓', bar: '選單・二十七樓', image: 'line-bot/richmenu-27.png', items: [
       { type: 'message', label: '空房', text: '空房' },
@@ -2171,21 +2171,29 @@ var RICH_MENUS = [
     ] },
   { alias: 'dbl-life', tab: '過日子', bar: '選單・過日子', image: 'line-bot/richmenu-life.png', items: [
       { type: 'message', label: '油價', text: '油價' },
-      { type: 'message', label: '股價', text: '股 2330' },
-      { type: 'message', label: '排球', text: '排球' },
-      { type: 'message', label: '戰績', text: '排球 戰績' },
+      { type: 'message', label: '台積電', text: '股 2330' },
+      { type: 'message', label: '0050', text: '股 0050' },
+      { type: 'uri', label: '分帳', uri: SPLIT_URL },
       { type: 'message', label: '狗狗', text: '狗' },
       { type: 'message', label: '貓咪', text: '貓' }
+    ] },
+  { alias: 'dbl-volley', tab: '看排球', bar: '選單・看排球', image: 'line-bot/richmenu-volley.png', items: [
+      { type: 'message', label: '比分', text: '排球' },
+      { type: 'message', label: '戰績', text: '排球 戰績' },
+      { type: 'message', label: '得分王', text: '排球 得分王' },
+      { type: 'message', label: '攔網', text: '排球 攔網' },
+      { type: 'message', label: '攻擊', text: '排球 攻擊' },
+      { type: 'message', label: '發球', text: '排球 發球' }
     ] }
 ];
 
-var RM_W = 2500, RM_H = 1686, RM_TAB = 250, RM_COLS = [0, 833, 1666, 2500];
+var RM_W = 2500, RM_H = 1686, RM_TAB = 250, RM_COLS = [0, 833, 1666, 2500], RM_TABS = [0, 625, 1250, 1875, 2500];
 
 function richMenuBody(menu) {
   var areas = [];
   RICH_MENUS.forEach(function (m, i) {
     areas.push({
-      bounds: { x: RM_COLS[i], y: 0, width: RM_COLS[i + 1] - RM_COLS[i], height: RM_TAB },
+      bounds: { x: RM_TABS[i], y: 0, width: RM_TABS[i + 1] - RM_TABS[i], height: RM_TAB },
       action: { type: 'richmenuswitch', richMenuAliasId: m.alias, data: 'tab=' + m.alias }
     });
   });

@@ -9,7 +9,7 @@
 | 檔案 | 用途 |
 | --- | --- |
 | `Code.gs` | bot 程式，貼到新的 Apps Script 專案 |
-| `richmenu-27.png`、`richmenu-sky.png`、`richmenu-life.png` | 三個分頁的圖文選單（2500×1686，上面一排分頁、下面 3×2 六格），`setupRichMenus()` 會從網站抓 |
+| `richmenu-27.png`、`richmenu-sky.png`、`richmenu-life.png`、`richmenu-volley.png` | 四個分頁的圖文選單（2500×1686，上面一排分頁、下面 3×2 六格），`setupRichMenus()` 會從網站抓 |
 | `richmenu-tabs.json`、`richmenu-tabs.js` | 每格寫什麼、產生上面三張圖的程式（Node＋Playwright） |
 | `richmenu.png` | 舊的單頁圖文選單（在 Official Account Manager 手動設定用，留著備用） |
 
@@ -64,7 +64,7 @@
 
 想先看月曆卡片長什麼樣子：編輯器上方選 `printAvailabilityFlex` 按「執行」，把執行記錄裡的 JSON 貼到 [Flex Message Simulator](https://developers.line.biz/flex-simulator/)。
 
-### 5. 圖文選單（三個分頁）
+### 5. 圖文選單（四個分頁）
 
 選單上面一排分頁，點了整張選單換成那一類：
 

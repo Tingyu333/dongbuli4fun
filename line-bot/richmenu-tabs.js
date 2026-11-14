@@ -1,9 +1,9 @@
-// 產生三張分頁圖文選單的圖（richmenu-27/sky/life.png）。要 Node 和 Playwright：node line-bot/richmenu-tabs.js line-bot
+// 產生四張分頁圖文選單的圖（richmenu-27/sky/life/volley.png）。要 Node 和 Playwright：node line-bot/richmenu-tabs.js line-bot
 // 格子內容在 richmenu-tabs.json，改了要跟 Code.gs 的 RICH_MENUS 一起改，再把 RICH_MENU_VERSION 加一、執行 setupRichMenus()。
 const { chromium } = require('playwright'); const fs = require('fs');
 const menus = JSON.parse(fs.readFileSync(__dirname + '/richmenu-tabs.json', 'utf8'));
 const OUT = process.argv[2] || __dirname;
-const W = 2500, H = 1686, TAB = 250, COLW = [833, 833, 834], ROWH = (H - TAB) / 2;
+const W = 2500, H = 1686, TAB = 250, COLW = [833, 833, 834], TABW = [625, 625, 625, 625], ROWH = (H - TAB) / 2;
 const css = `
 @font-face{font-family:S;font-weight:400;src:local('Noto Serif CJK TC')}
 @font-face{font-family:S;font-weight:700;src:local('Noto Serif CJK TC Bold')}
@@ -30,7 +30,7 @@ body{width:${W}px;height:${H}px;background:#fcfaf8;font-family:S;color:#2c2c2c;o
 .stamp{position:absolute;right:120px;top:88px;width:104px;height:104px;border:7px solid #b33a2f;border-radius:12px;color:#b33a2f;font-weight:700;font-size:66px;display:flex;align-items:center;justify-content:center;transform:rotate(-8deg);opacity:.92}
 `;
 const html = (m, ti) => `<!doctype html><meta charset=utf-8><style>${css}</style>
-<div class=tabs>${menus.map((x, i) => `<div class="tab${i === ti ? ' on' : ''}" style="width:${COLW[i]}px"><span class=n>${'壹貳參'[i]}</span>${x.tab}</div>`).join('')}</div>
+<div class=tabs>${menus.map((x, i) => `<div class="tab${i === ti ? ' on' : ''}" style="width:${TABW[i]}px"><span class=n>${'壹貳參肆'[i]}</span>${x.tab}</div>`).join('')}</div>
 <div class=grid>${m.items.map(it => `<div class=cell>${it.stamp ? `<div class=stamp>${it.stamp}</div>` : ''}<div class=ttl>${it.t}<span class=dot></span><span class=k>${it.k}</span></div><div class=rule></div><div class=sub>${it.s}</div></div>`).join('')}</div>`;
 (async () => {
   const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
