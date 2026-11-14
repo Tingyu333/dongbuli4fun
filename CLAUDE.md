@@ -26,7 +26,7 @@
   - **導覽列不要加 `mix-blend-mode`**：iPhone（尤其 LINE 內建瀏覽器）捲動時固定導覽列會卡在畫面中間（about 頁跟首頁都踩過）。
   - `theme.js`：`tailwind.config`、夜間模式切換、`showToast()`、`themeColor()`（給 canvas 讀 CSS 變數）。
   - `404.html` 沒有接主題，仍在頁內自己宣告 `tailwind.config`（404 在 GitHub Pages 的子路徑下相對路徑會失效）。後台也有晝夜切換鈕，跟前台共用同一個 sessionStorage 設定。
-- **Tailwind CSS（Play CDN）**：透過 `https://cdn.tailwindcss.com` 載入。
+- **Tailwind CSS**：Play CDN（`https://cdn.tailwindcss.com`）之外，**每頁 `</head>` 前面另外載入先打包好的 `assets/tailwind.css`**（有人手機的廣告阻擋、公司 Wi-Fi 擋掉 CDN，整頁排版會不見）。放在 head 最後，跟 CDN 插入 style 的位置一樣，同權重時兩邊行為一致。打包設定在 `tools/tailwind.config.js`（顏色字體要跟 `theme.js` 一樣），**新增或改了頁面裡的 Tailwind class 要重新產生**：`npx tailwindcss@3 -c tools/tailwind.config.js -i tools/tailwind.in.css -o assets/tailwind.css --minify`（在專案根目錄跑），再把所有頁面 `tailwind.css?v=` 換新。用字串拼出來的 class（例如 `'text-' + x`）打包抓不到，要寫完整的 class 名。`theme.js` 開頭有 `window.tailwind = window.tailwind || {}`，CDN 沒載到也不會整支壞掉。`404.html` 用完整網址載入、自己在 `<style>` 補了 `--wabi-*` 變數。
 - **後端**：Google Apps Script Web App（`API_URL`，在 `index.html`、`reviews.html`、`ticket.html`、`scratch.html`、`xitou.html`、`admin_login.html`、`admin_dashboard.html` 中各自寫死同一個網址）。資料存在對應的 Google Sheet。後端程式碼備份在 `apps-script/Code.gs`，改完要由使用者貼到 Apps Script 編輯器並「部署 → 管理部署作業 → 編輯 → 新版本」才會生效（Claude 無法代為部署）。
 - **部署**：GitHub repo `Tingyu333/dongbuli4fun`，有 `404.html`，推測透過 GitHub Pages 發布。
 - **分享預覽**：前台五頁的 `<head>` 都有 `description` 和 Open Graph（`og:title`、`og:description`、`og:image`）。圖是 `assets/og.png`（1200×1200 正方形，使用者指定），`og:image`／`og:url` 要寫完整網址 `https://tingyu333.github.io/dongbuli4fun/…`。沒寫的話 LINE 會抓網頁開頭的文字當介紹（電梯開場的「▲ 1F 點擊略過」）。新增前台頁面記得一起加。LINE 會快取預覽一段時間，改了不會馬上變；**圖片是用圖片網址另外快取的**，換圖時要把 `og:image` 後面的 `?v=` 數字加一（五頁一起改），不然只有文字會更新。

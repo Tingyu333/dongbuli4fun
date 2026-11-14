@@ -1,6 +1,8 @@
 // 全站共用（前台頁面和後台；404 沒接）：Tailwind 設定、夜間模式、提示紙條
 // 要放在 Tailwind CDN 之後、<head> 裡同步載入，夜間模式才不會先閃一下白天
 
+// Tailwind CDN 被擋時 tailwind 不存在，先補一個空的，下面的夜間模式、提示紙條才不會跟著壞
+window.tailwind = window.tailwind || {};
 tailwind.config = {
     theme: {
         extend: {

@@ -25,10 +25,10 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/theme.css?v=20261113">
-    <script src="assets/theme.js?v=20261113"></script>
+    <link rel="stylesheet" href="assets/theme.css?v=20261114">
+    <script src="assets/theme.js?v=20261114"></script>
     <!-- LINE 登入：從 LIFF 連結（liff.line.me/…/某頁）進來時，LINE 會先開首頁，要在這裡 init 才會轉到那一頁 -->
-    <script src="assets/line.js?v=20261113"></script>
+    <script src="assets/line.js?v=20261114"></script>
     <style>
         .modal-fade {
             transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
@@ -496,6 +496,8 @@
         }
 
     </style>
+    <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261114">
 </head>
 
 <body class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white">
