@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>打工・榜 | 丼步喱</title>
+    <!-- 分享到 LINE、FB 時的預覽（標題、介紹、圖片）。圖片要用完整網址 -->
+    <meta name="description" content="二十七樓打工排行榜：坐洗部、房務部，誰賺最多、誰分數最高、誰最勤勞。">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="丼步喱・絆">
+    <meta property="og:title" content="打工・榜｜丼步喱">
+    <meta property="og:description" content="二十七樓打工排行榜：坐洗部、房務部，誰賺最多、誰分數最高、誰最勤勞。">
+    <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
+    <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/rank.html">
+    <meta name="twitter:card" content="summary">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入日系字體 -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/theme.css?v=20261114b">
+    <script src="assets/theme.js?v=20261114b"></script>
+    <script src="assets/line.js?v=20261114b"></script>
+    <script src="assets/wallet.js?v=20261114b"></script>
+    <style>
+        .line-btn {
+            min-height: 44px;
+            padding: 0 1.4rem;
+            border-radius: 6px;
+            background: #06c755;
+            color: #fff;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-weight: 500;
+            font-size: 0.85rem;
+            letter-spacing: 0.1em;
+            touch-action: manipulation;
+        }
+
+        /* 分頁：比什麼、哪個部門 */
+        .seg {
+            display: flex;
+            border: 1px solid rgb(var(--wabi-sub));
+            border-radius: 2px;
+        }
+
+        .seg button {
+            flex: 1;
+            min-height: 44px;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 0.78rem;
+            letter-spacing: 0.15em;
+            color: rgb(var(--wabi-accent));
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .seg button+button {
+            border-left: 1px solid rgb(var(--wabi-sub));
+        }
+
+        .seg button[aria-pressed="true"] {
+            background: rgb(var(--wabi-dark));
+            color: rgb(var(--wabi-bg));
+        }
+
+        .seg.is-small button {
+            min-height: 36px;
+            font-size: 0.72rem;
+        }
+
+        /* 一列一個人 */
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.8rem 0.5rem;
+            border-top: 1px solid rgb(var(--wabi-sub) / 0.6);
+        }
+
+        .row.is-me {
+            background: rgb(var(--wabi-shu) / 0.06);
+            box-shadow: inset 3px 0 0 rgb(var(--wabi-shu));
+        }
+
+        .rank {
+            flex-shrink: 0;
+            width: 2rem;
+            text-align: center;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 0.85rem;
+            color: rgb(var(--wabi-accent));
+        }
+
+        /* 前三名蓋朱印 */
+        .rank.is-top {
+            width: 2rem;
+            height: 2rem;
+            line-height: 1.85rem;
+            border: 2px solid rgb(var(--wabi-shu));
+            border-radius: 3px;
+            color: rgb(var(--wabi-shu));
+            font-family: 'Noto Serif TC', serif;
+            font-weight: 700;
+            font-size: 1rem;
+            transform: rotate(-6deg);
+        }
+
+        .avatar {
+            flex-shrink: 0;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 9999px;
+            border: 1px solid rgb(var(--wabi-sub));
+            object-fit: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgb(var(--wabi-accent));
+            background: rgb(var(--wabi-bg));
+            font-size: 0.95rem;
+        }
+
+        .me-tag {
+            display: inline-block;
+            margin-left: 0.35rem;
+            padding: 0 0.3rem;
+            border: 1px solid rgb(var(--wabi-shu));
+            color: rgb(var(--wabi-shu));
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 0.6rem;
+            letter-spacing: 0.1em;
+            line-height: 1.3;
+            vertical-align: 0.15em;
+        }
+    </style>
+    <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261114b">
+</head>
+
+<body
+    class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- 導航 -->
+    <nav
+        class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <a href="index.html"
+            class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-3 md:gap-8">
+            <a href="index.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <a href="reviews.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <a href="about.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+            <a href="member.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">會員・我</a>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-md mx-auto pt-28 md:pt-36 pb-16 px-6 w-full">
+
+        <!-- 標題區塊 -->
+        <div class="text-center mb-8">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-3">RANKING</span>
+            <h1 class="text-3xl font-light text-wabi-dark tracking-widest">打工・榜</h1>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">誰在二十七樓最勤勞，<br>牆上寫得清清楚楚。</p>
+        </div>
+
+        <section class="bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-4 pt-5 pb-3">
+            <div class="seg" role="group" aria-label="比什麼">
+                <button type="button" data-metric="money" aria-pressed="true">賺最多</button>
+                <button type="button" data-metric="best" aria-pressed="false">最高分</button>
+                <button type="button" data-metric="count" aria-pressed="false">做最多</button>
+            </div>
+            <div class="seg is-small mt-2" role="group" aria-label="哪個部門">
+                <button type="button" data-dept="all" aria-pressed="true">全部</button>
+                <button type="button" data-dept="xitou" aria-pressed="false">坐洗部</button>
+                <button type="button" data-dept="clean" aria-pressed="false">房務部</button>
+            </div>
+            <p id="boardNote" class="mt-3 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed"></p>
+            <div id="board" class="mt-2" aria-live="polite"></div>
+            <p id="boardAt" class="mt-2 mb-1 text-right text-[10px] font-sans tracking-widest text-stone-300"></p>
+        </section>
+
+        <!-- 登入才上榜 -->
+        <section id="join" class="hidden mt-6 border border-dashed border-stone-200 rounded-sm p-6"></section>
+
+        <div class="mt-6 grid grid-cols-2 gap-3">
+            <a href="xitou.html" class="block py-4 border border-stone-300 text-center text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">去坐洗部</a>
+            <a href="fangwu.html" class="block py-4 border border-stone-300 text-center text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">去房務部</a>
+        </div>
+
+        <p class="mt-10 text-[11px] font-sans tracking-widest text-stone-400 leading-relaxed text-center">
+            只有用 LINE 登入的人會上榜，<br>只顯示 LINE 名字和大頭貼。<br>
+            榜每五分鐘重新寫一次，<br>剛打完工的等一下就上去了。
+        </p>
+    </main>
+
+    <footer
+        class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
+        <p>&copy; 2026 DONGBULI · 打工・榜</p>
+    </footer>
+
+    <script>
+        const API_URL = (window.Line && Line.API_URL) || "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
+        const $ = id => document.getElementById(id);
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+        const fmt = n => '$' + Number(n || 0).toLocaleString('en-US');
+        const secs = ms => ms ? `${(ms / 1000).toFixed(1)} 秒` : '';
+        const TOP = ['壹', '貳', '參'];
+        const DEPT = { xitou: '坐洗部', clean: '房務部' };
+        const SCORE = { xitou: '爽度', clean: '乾淨度' };
+
+        const badPic = new Set();  // 載不到的大頭貼，下次直接用字
+        let players = null, at = '', metric = 'money', dept = 'all', loading = false, failed = '';
+        try { const s = JSON.parse(sessionStorage.getItem('dongbuli-rank-tab') || '{}'); if (s.metric) metric = s.metric; if (s.dept) dept = s.dept; } catch (e) { }
+
+        // 每個人在這個榜的成績：{ v 排名用的數字, tie 同分再比（越小越前面）, main 大字, sub 小字 }，沒成績回 null
+        function entry(p) {
+            const x = p.xitou || {}, c = p.clean || {};
+            if (metric === 'money') {
+                if (dept === 'all') { const v = (x.money || 0) + (c.money || 0); return v ? { v, main: fmt(v), sub: [x.money ? `洗 ${fmt(x.money)}` : '', c.money ? `掃 ${fmt(c.money)}` : ''].filter(Boolean).join('・') } : null; }
+                const d = p[dept] || {};
+                return d.money ? { v: d.money, main: fmt(d.money), sub: dept === 'xitou' ? `洗了 ${d.n} 顆頭` : `打掃了 ${d.n} 間` } : null;
+            }
+            if (metric === 'count') {
+                if (dept === 'all') { const v = (x.n || 0) + (c.n || 0); return v ? { v, main: `${v} 次`, sub: [x.n ? `洗 ${x.n} 顆頭` : '', c.n ? `掃 ${c.n} 間` : ''].filter(Boolean).join('・') } : null; }
+                const d = p[dept] || {};
+                return d.n ? { v: d.n, main: dept === 'xitou' ? `${d.n} 顆` : `${d.n} 間`, sub: `賺 ${fmt(d.money)}` } : null;
+            }
+            // 最高分：同分比快
+            const pickDept = dept === 'all'
+                ? ['xitou', 'clean'].filter(k => p[k] && p[k].best != null).sort((a, b) => p[b].best - p[a].best || (p[a].ms || 9e9) - (p[b].ms || 9e9))[0]
+                : (p[dept] && p[dept].best != null ? dept : null);
+            if (!pickDept) return null;
+            const d = p[pickDept];
+            return { v: d.best, tie: d.ms || 9e9, main: `${d.best}`, sub: [dept === 'all' ? `${DEPT[pickDept]}${SCORE[pickDept]}` : SCORE[pickDept], secs(d.ms)].filter(Boolean).join('・') };
+        }
+
+        function renderBoard() {
+            document.querySelectorAll('[data-metric]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.metric === metric)));
+            document.querySelectorAll('[data-dept]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.dept === dept)));
+            $('boardNote').textContent = metric === 'best'
+                ? '一場的最高分（爽度、乾淨度都是滿分 100），同分比誰快。從洗完、打掃完存到雲端開始算。'
+                : metric === 'money' ? '打工賺的錢加起來（工資、小費、失物招領、加成都算）。' : '洗幾顆頭、打掃幾間。';
+            const box = $('board');
+            if (!players) {
+                box.innerHTML = failed
+                    ? `<p class="py-8 text-center text-xs font-sans tracking-wider text-stone-500 leading-relaxed">${esc(failed)}</p><div class="text-center pb-4"><button type="button" data-retry class="min-h-[44px] px-6 border border-stone-300 text-xs font-sans tracking-widest text-wabi-dark">再試一次</button></div>`
+                    : '<p class="py-10 text-center text-xs font-sans tracking-widest text-stone-400">翻名冊中…</p>';
+                $('boardAt').textContent = '';
+                return;
+            }
+            const list = players.map(p => ({ p, e: entry(p) })).filter(r => r.e)
+                .sort((a, b) => b.e.v - a.e.v || (a.e.tie || 0) - (b.e.tie || 0));
+            // 同分（最高分還要同秒）同名次
+            let rank = 0;
+            list.forEach((r, i) => { const prev = list[i - 1]; rank = prev && prev.e.v === r.e.v && (prev.e.tie || 0) === (r.e.tie || 0) ? rank : i + 1; r.rank = rank; });
+            const shown = list.slice(0, 50), mine = list.find(r => r.p.me);
+            if (mine && !shown.includes(mine)) shown.push(mine);
+            box.innerHTML = shown.length ? shown.map(r => {
+                const pic = r.p.picture && !badPic.has(r.p.picture)
+                    ? `<img class="avatar" src="${esc(r.p.picture)}" alt="" referrerpolicy="no-referrer" loading="lazy" data-initial="${esc((r.p.name || '旅')[0])}">`
+                    : `<span class="avatar" aria-hidden="true">${esc((r.p.name || '旅')[0])}</span>`;
+                return `<div class="row${r.p.me ? ' is-me' : ''}">
+                    <span class="rank${r.rank <= 3 ? ' is-top' : ''}">${r.rank <= 3 ? TOP[r.rank - 1] : r.rank}</span>
+                    ${pic}
+                    <span class="flex-1 min-w-0">
+                        <span class="block truncate text-sm text-wabi-dark tracking-wider">${esc(r.p.name)}${r.p.me ? '<span class="me-tag">我</span>' : ''}</span>
+                        <span class="block text-[11px] font-sans tracking-wide leading-snug text-stone-400">${esc(r.e.sub)}</span>
+                    </span>
+                    <span class="shrink-0 font-sans text-wabi-dark ${metric === 'best' ? 'text-xl font-light' : 'text-sm'}">${esc(r.e.main)}</span>
+                </div>`;
+            }).join('') : `<p class="py-10 text-center text-xs font-sans tracking-wider text-stone-400 leading-relaxed">${dept === 'clean' ? '房務部' : dept === 'xitou' ? '坐洗部' : '二十七樓'}還沒有人上榜。<br>第一名在等你。</p>`;
+            box.querySelectorAll('img.avatar').forEach(img => img.addEventListener('error', () => {
+                badPic.add(img.getAttribute('src'));
+                const s = document.createElement('span'); s.className = 'avatar'; s.textContent = img.dataset.initial; img.replaceWith(s);
+            }, { once: true }));
+            if (Line.loggedIn && players.length && !players.some(p => p.me)) {
+                box.insertAdjacentHTML('beforeend', '<p class="pt-3 text-center text-[11px] font-sans tracking-wider text-stone-400">你還沒上榜：去打一次工，五分鐘內就會出現。</p>');
+            }
+            const d = at ? new Date(at) : null;
+            $('boardAt').textContent = d && !isNaN(d) ? `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')} 寫的榜` : '';
+        }
+
+        function renderJoin() {
+            const box = $('join');
+            box.classList.toggle('hidden', Line.loggedIn);
+            if (Line.loggedIn) return;
+            box.innerHTML = `
+                <h2 class="text-sm tracking-[0.3em] text-wabi-dark">還沒登入</h2>
+                <p class="mt-2 text-xs font-sans tracking-wider text-stone-500 leading-relaxed">沒登入的人打工只記在這支手機，不會上榜。用 LINE 登入以後，打工的成績就會寫上去。</p>
+                <button type="button" data-login class="line-btn mt-4 w-full">用 LINE 登入</button>`;
+        }
+
+        async function load() {
+            if (loading) return;
+            loading = true; failed = '';
+            if (!players) renderBoard();
+            try {
+                let session = '';
+                try { session = localStorage.getItem('dongbuli-session') || ''; } catch (e) { }
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'leaderboard', session: session || undefined }) });
+                const r = await res.json();
+                if (r.result !== 'success') {
+                    failed = /不認得的請求/.test(r.error || '') ? '排行榜還沒開張：後端要重新部署「新版本」。' : `讀不到排行榜（${r.error || r.result}）。`;
+                } else { players = r.players || []; at = r.at || ''; }
+            } catch (e) {
+                failed = '連不到後端，可能是網路不穩。';
+            }
+            loading = false;
+            renderBoard();
+        }
+
+        document.querySelectorAll('[data-metric]').forEach(b => b.addEventListener('click', () => { metric = b.dataset.metric; save(); renderBoard(); }));
+        document.querySelectorAll('[data-dept]').forEach(b => b.addEventListener('click', () => { dept = b.dataset.dept; save(); renderBoard(); }));
+        function save() { try { sessionStorage.setItem('dongbuli-rank-tab', JSON.stringify({ metric, dept })); } catch (e) { } }
+        $('board').addEventListener('click', e => { if (e.target.closest('[data-retry]')) load(); });
+        $('join').addEventListener('click', e => { if (e.target.closest('[data-login]')) Line.login(); });
+        Wallet.on(type => {
+            if (type === 'login' || type === 'logout') { renderJoin(); setTimeout(load, 2000); }  // 等錢包同步完再讀
+        });
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && players) load(); });
+
+        renderJoin();
+        load();
+    </script>
+</body>
+
+</html>

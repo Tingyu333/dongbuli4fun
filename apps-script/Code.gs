@@ -95,6 +95,7 @@ function route(type, input) {
     if (type === 'washLog') return washLog(input);
     if (type === 'cleanLog') return cleanLog(input);
     if (type === 'gongdeLog') return gongdeLog(input);
+    if (type === 'leaderboard') return leaderboard(input);
 
     // 以下只有後台能用，要帶登入拿到的通行證
     if (type === 'updateStatus' || type === 'adminList' || type === 'bonusCreate' || type === 'bonusList' || type === 'bonusClose') {
@@ -1130,6 +1131,61 @@ function washLog(input) {
     cache.put(allKey, String(allCount + rows.length), 3600);
   }
   return { result: 'success', saved: rows.length, skipped: skipped };
+}
+
+
+// --- 打工排行榜（rank.html）---
+// 只有用 LINE 登入過的玩家：賺多少、做幾次從 Players 的 earned 讀，單場最高分從 Washes／Cleans 讀（同分比快）。
+// 公開：回 LINE 名字和大頭貼，不回 line_id；有帶 session 的話把自己那列標 me。算好的榜存 CacheService 5 分鐘。
+
+var BOARD_CACHE_KEY = 'board:v1', BOARD_CACHE_SEC = 300;
+
+function boardBest(sheetName, totalCol, msCol) {
+  var best = {}, sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  if (!sheet || sheet.getLastRow() < 2) return best;
+  var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, msCol + 1).getValues();
+  rows.forEach(function (r) {
+    var id = String(r[2] || ''), total = Number(r[totalCol]), ms = Number(r[msCol]) || 0;
+    if (!id || r[totalCol] === '' || !isFinite(total)) return;
+    var b = best[id];
+    if (!b || total > b.score || (total === b.score && ms && (!b.ms || ms < b.ms))) best[id] = { score: total, ms: ms };
+  });
+  return best;
+}
+
+function buildBoard() {
+  var washBest = boardBest('Washes', 6, 30), cleanBest = boardBest('Cleans', 5, 26);
+  var rows = playersSheet().getDataRange().getValues(), out = [];
+  for (var i = 1; i < rows.length; i++) {
+    var id = String(rows[i][1] || '');
+    if (!id) continue;
+    var earned = {};
+    try { earned = JSON.parse(rows[i][6] || '{}') || {}; } catch (e) { }
+    var part = function (src, best) {
+      var e = earned[src] || {}, b = best[id] || {};
+      return { n: Number(e.times) || 0, money: Number(e.total) || 0, best: b.score == null ? null : b.score, ms: b.ms || 0 };
+    };
+    var x = part('xitou', washBest), c = part('clean', cleanBest);
+    if (!x.n && !c.n && x.best == null && c.best == null) continue;
+    out.push({ id: id, name: String(rows[i][2] || '旅人').slice(0, 20), picture: /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c });
+  }
+  return { at: new Date().toISOString(), players: out };
+}
+
+function leaderboard(input) {
+  var cache = CacheService.getScriptCache(), board = null, hit = cache.get(BOARD_CACHE_KEY);
+  if (hit) { try { board = JSON.parse(hit); } catch (e) { } }
+  if (!board) {
+    board = buildBoard();
+    try { cache.put(BOARD_CACHE_KEY, JSON.stringify(board), BOARD_CACHE_SEC); } catch (e) { }  // 太大存不進去就每次重算
+  }
+  var me = input && input.session ? sessionUser(input.session) : null;
+  return {
+    result: 'success', at: board.at,
+    players: board.players.map(function (p) {
+      return { name: p.name, picture: p.picture, xitou: p.xitou, clean: p.clean, me: !!me && p.id === me };
+    })
+  };
 }
 
 
