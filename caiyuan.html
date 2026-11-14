@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>菜園・拔 | 丼步喱</title>
+    <meta name="description" content="二十七樓頂樓菜園：六十秒拔紅蘿蔔。先把土搖鬆，再往上拉，力道太猛會斷。">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="丼步喱・絆">
+    <meta property="og:title" content="菜園・拔｜丼步喱">
+    <meta property="og:description" content="二十七樓頂樓菜園：六十秒拔紅蘿蔔。先把土搖鬆，再往上拉，力道太猛會斷。">
+    <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
+    <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/caiyuan.html">
+    <meta name="twitter:card" content="summary">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/theme.css?v=20261114e">
+    <script src="assets/theme.js?v=20261114e"></script>
+    <script src="assets/line.js?v=20261114e"></script>
+    <script src="assets/wallet.js?v=20261114e"></script>
+    <style>
+        /* 菜園：手指在上面搖、拉，不能捲動頁面，長按也不能跳出系統選單 */
+        .garden {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #cv {
+            display: block;
+            width: 100%;
+            aspect-ratio: 360 / 440;
+            touch-action: none;
+            border-radius: 4px;
+        }
+
+        .act-text {
+            min-height: 48px;
+            padding: 0.75rem 1.2rem;
+            border: 1px solid rgb(var(--wabi-dark));
+            color: rgb(var(--wabi-dark));
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 0.15em;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .act-text:active { background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); }
+        .act-text:disabled { opacity: .35; }
+
+        .act-heave {
+            min-height: 56px;
+            min-width: 7rem;
+            padding: 0 1.4rem;
+            border-radius: 9999px;
+            background: rgb(var(--wabi-shu));
+            color: #fff;
+            font-family: 'Noto Serif TC', serif;
+            font-size: 1.25rem;
+            letter-spacing: 0.2em;
+            box-shadow: 0 12px 26px -12px rgba(179, 58, 47, .6);
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform .06s;
+        }
+
+        .act-heave:active { transform: scale(.93); }
+
+        .harvest li {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.4rem 0;
+            border-bottom: 1px solid rgb(var(--wabi-sub) / 0.7);
+        }
+    </style>
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261114e">
+</head>
+
+<body
+    class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white min-h-screen flex flex-col overflow-x-hidden">
+
+    <nav
+        class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <a href="index.html"
+            class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-3 md:gap-8">
+            <a href="index.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <a href="reviews.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <a href="about.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+            <a href="member.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">會員・我</a>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-md mx-auto pt-24 md:pt-32 pb-16 px-6 w-full">
+
+        <div class="text-center mb-6">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">ROOFTOP FARM</span>
+            <h1 class="text-3xl font-light text-wabi-dark tracking-widest">菜園・拔</h1>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">二十七樓頂樓的菜園，蘿蔔熟了。</p>
+        </div>
+
+        <section id="garden"
+            class="garden bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-4 pt-4 pb-5">
+            <div class="flex items-baseline justify-between">
+                <p id="note" class="text-sm text-wabi-dark tracking-wider leading-relaxed">按住葉子，左右搖，再往上拉。</p>
+                <span id="best" class="shrink-0 text-right text-[10px] leading-relaxed font-sans tracking-widest text-stone-400"></span>
+            </div>
+            <canvas id="cv" class="mt-2" aria-label="頂樓菜園，九格紅蘿蔔"></canvas>
+            <p id="hint" class="mt-3 min-h-[2.6rem] text-xs text-center text-stone-500 font-sans tracking-widest leading-relaxed [text-wrap:balance]" aria-live="polite"></p>
+            <div id="actions" class="mt-1 min-h-[3.5rem] flex items-center justify-center gap-2"></div>
+        </section>
+
+        <!-- 收成 -->
+        <section id="result" class="hidden mt-10 text-center scroll-mt-24">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent">收工了</span>
+            <p class="mt-2 text-wabi-dark"><span id="score" class="text-5xl font-light">$0</span></p>
+            <p id="gradeLine" class="mt-1 text-sm text-stone-500 tracking-widest"></p>
+            <ul id="harvest" class="harvest mt-5 mx-auto max-w-[17rem] text-left font-sans text-xs tracking-widest text-stone-500"></ul>
+            <div class="mt-3 mx-auto max-w-[17rem] border-y border-stone-100 py-3 font-sans text-xs tracking-widest text-stone-500">
+                <p class="flex justify-between"><span>賣給市場</span><span id="paySales" class="text-wabi-dark"></span></p>
+                <p id="payBonusRow" class="hidden flex justify-between mt-1"><span>農會表揚</span><span id="payBonus" class="text-wabi-dark"></span></p>
+                <p id="payMinRow" class="hidden flex justify-between mt-1"><span>出勤費補到</span><span id="payMin" class="text-wabi-dark"></span></p>
+                <p class="flex justify-between mt-2 pt-2 border-t border-stone-100"><span>錢包</span><span id="payWallet" class="text-wabi-shu text-sm"></span></p>
+                <p id="payAcct" class="mt-2 text-[10px] leading-relaxed text-stone-400"></p>
+                <p id="syncNote" class="mt-1 text-[10px] leading-relaxed text-stone-400"></p>
+            </div>
+            <img id="sheetImg" alt="菜園收成單"
+                class="mt-6 w-full border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]">
+            <div class="mt-6 flex flex-col gap-3">
+                <button id="shareBtn" type="button"
+                    class="w-full bg-wabi-dark text-wabi-bg py-4 px-8 tracking-[0.2em] font-sans text-xs shadow-lg">分享收成單</button>
+                <button id="againBtn" type="button"
+                    class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">再拔一輪</button>
+                <a href="scratch.html"
+                    class="block w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">拿菜錢去彩券行</a>
+                <a href="rank.html"
+                    class="block w-full py-3 text-stone-500 underline underline-offset-4 tracking-[0.2em] font-sans text-xs">看打工排行榜</a>
+            </div>
+        </section>
+
+        <section class="mt-10 px-1">
+            <h2 class="text-sm tracking-[0.3em] text-wabi-dark">怎麼拔</h2>
+            <ol class="mt-3 list-decimal pl-5 space-y-1.5 text-xs font-sans tracking-wide text-stone-500 leading-relaxed">
+                <li>點菜園開始，六十秒。九格都會一直長新的出來。</li>
+                <li>按住葉子<b class="font-normal text-wabi-dark">左右搖</b>，把土搖鬆。搖得越鬆，等一下越好拔。</li>
+                <li>手指<b class="font-normal text-wabi-dark">往上拉</b>，上面那條力道要在綠色裡。拉太猛跑進紅色，蘿蔔會歪，再不放手就斷了。</li>
+                <li>葉子越多根越大、越值錢，也越難拔：三片小的 $30、四片中的 $55、五片大的 $90。歪的打七折，斷的只剩四成。</li>
+                <li>心形的蘿蔔多賣 $80。土裡偶爾有地瓜、伊藤埋的刮刮樂；也有鼴鼠，拔到扣 $50。</li>
+                <li>運氣好會長出<b class="font-normal text-wabi-shu">巨型蘿蔔</b>，一個人拔不動，要叫二十七樓的人來幫忙，一人收 $50 幫手費。</li>
+                <li>一根都沒斷、又拔了十根以上，農會再表揚 $200。</li>
+            </ol>
+        </section>
+    </main>
+
+    <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
+        <p>&copy; 2026 DONGBULI · 菜園・拔</p>
+    </footer>
+
+    <script>
+        // ===== 0. 舞台：畫布用固定的 360×440 座標畫，CSS 再縮放 =====
+        const W = 360, H = 440, TAU = Math.PI * 2, ROUND = 60;
+        const $ = id => document.getElementById(id);
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const cv = $('cv'), ctx = cv.getContext('2d');
+        const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+        cv.width = Math.round(W * dpr);
+        cv.height = Math.round(H * dpr);
+        const SERIF = '"Noto Serif TC", serif', SANS = '"Noto Sans TC", sans-serif';
+        // 菜園、蘿蔔是實物，顏色固定；天空跟晝夜走
+        const K = {
+            wood: '#9a7350', woodD: '#6e4f34', soil: '#5b3e2b', soilD: '#3f2a1d', soilL: '#8a6446', ink: '#3b3431', shu: '#b33a2f',
+            carrot: '#ee7a2a', carrotD: '#c95c17', leaf: '#4f8a3c', leafD: '#2f6a2a', gold: '#e8c252',
+        };
+        const pick = list => list[Math.floor(Math.random() * list.length)];
+        const rand = (lo, hi) => lo + Math.random() * (hi - lo);
+        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+        const night = () => document.documentElement.classList.contains('night');
+        const note = t => { $('note').textContent = t; };
+        const hint = h => { $('hint').innerHTML = h; };
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
+
+        // ===== 1. 規則 =====
+        const SIZES = {
+            1: { name: '小', price: 30, len: 32, wid: 12, leaves: 3, loosen: 0.3, speed: 1.6 },
+            2: { name: '中', price: 55, len: 44, wid: 16, leaves: 4, loosen: 0.2, speed: 1.1 },
+            3: { name: '大', price: 90, len: 56, wid: 20, leaves: 5, loosen: 0.14, speed: 0.75 },
+        };
+        const OTHERS = {
+            mole: { name: '鼴鼠', price: -50, loosen: 0.25, speed: 1.3, line: '被鼴鼠咬了一口' },
+            sweet: { name: '地瓜', price: 60, loosen: 0.2, speed: 1.1, line: '挖到地瓜' },
+            ticket: { name: '伊藤埋的刮刮樂', price: 300, loosen: 0.35, speed: 1.6, line: '伊藤埋的刮刮樂' },
+        };
+        const GIANT = { price: 600, fee: 50 };
+        const HELPERS = [
+            { mark: '麥', name: '大橋頭麥克雞塊', line: '拔完雞塊錢記得算我的。', color: '#d99a3e' },
+            { mark: '伊', name: '伊藤開晴', line: '拔完可以去刮一張嗎？', color: '#c0392b' },
+            { mark: '汪', name: '坐洗部的狗', line: '汪！', color: '#c9a66b' },
+            { mark: '喵', name: '店貓', line: '（假裝在幫忙）', color: '#5a5048' },
+        ];
+        const GRADES = [
+            { min: 1400, mark: '豐', line: '大豐收，農會要來頒獎了。' },
+            { min: 1000, mark: '好', line: '今天的蘿蔔很爭氣。' },
+            { min: 600, mark: '可', line: '夠煮一鍋蘿蔔排骨湯。' },
+            { min: 300, mark: '歉', line: '收成不太好，可能是土太硬。' },
+            { min: -1e9, mark: '荒', line: '鼴鼠吃得比你多。' },
+        ];
+        const BEST_KEY = 'dongbuli-caiyuan-best', STATS_KEY = 'dongbuli-caiyuan-stats';
+
+        // 九格：3×3
+        const PLOTS = [];
+        for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) PLOTS.push({ x: 18 + c * 112, y: 134 + r * 98, w: 100, h: 88, col: c, row: r });
+        const groundY = p => p.y + 42;
+
+        // ===== 2. 狀態 =====
+        let G = null;
+        let grab = null;     // 手指抓著哪一格 { i, sx, sy, x, y, lastX, dir, travel, force }
+        const floats = [], dirt = [], flyers = [];
+        let lastNow = performance.now();
+
+        function spawn(i, now) {
+            const s = { kind: 'carrot', size: 1, heart: false, loosen: 0, progress: 0, strain: 0, bent: false, born: now, state: 'ground', seed: Math.random() * 10 };
+            const elapsed = G.started ? (now - G.started) / 1000 : 0;
+            if (G.giantAt != null && !G.giantDone && elapsed >= G.giantAt && !G.plots.some(p => p && p.kind === 'giant')) {
+                s.kind = 'giant'; G.giantDone = true; G.helpers = 0;
+                return s;
+            }
+            const r = Math.random();
+            if (r < 0.07) s.kind = 'mole';
+            else if (r < 0.13) s.kind = 'sweet';
+            else if (r < 0.155) s.kind = 'ticket';
+            else {
+                const q = Math.random();
+                s.size = q < 0.45 ? 1 : q < 0.8 ? 2 : 3;
+                s.heart = Math.random() < 0.06;
+            }
+            return s;
+        }
+        const ruleOf = s => s.kind === 'carrot' ? SIZES[s.size] : OTHERS[s.kind];
+
+        function newRound() {
+            const now = performance.now();
+            G = {
+                plots: [], started: 0, ended: false, money: 0, pay: null,
+                giantAt: Math.random() < 0.35 ? rand(8, 38) : null, giantDone: false, helpers: 0, heaveAt: 0,
+                tally: { 1: 0, 2: 0, 3: 0, giant: 0, heart: 0, snapped: 0, bent: 0, sweet: 0, ticket: 0, mole: 0 },
+                wiggles: 0, helpersUsed: 0, regrow: [],
+            };
+            PLOTS.forEach((p, i) => { G.plots[i] = spawn(i, now); });
+            grab = null;
+            floats.length = dirt.length = flyers.length = 0;
+            $('result').classList.add('hidden');
+            note('按住葉子，左右搖，再往上拉。');
+            hint('點任何一根蘿蔔就開始計時，六十秒。');
+            renderActions();
+            renderBest();
+        }
+
+        // ===== 3. 聲音（Web Audio 合成） =====
+        let audioCtx = null;
+        function audio() {
+            try {
+                audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                return audioCtx;
+            } catch (e) { return null; }
+        }
+        function tone(freq, dur, vol = 0.15, type = 'sine', at = 0, slide = 1) {
+            const a = audio();
+            if (!a) return;
+            const t = a.currentTime + at, o = a.createOscillator(), g = a.createGain();
+            o.type = type; o.frequency.setValueAtTime(freq, t);
+            if (slide !== 1) o.frequency.exponentialRampToValueAtTime(freq * slide, t + dur);
+            g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+            o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + 0.05);
+        }
+        function noise(dur, vol = 0.1, freq = 1200) {
+            const a = audio();
+            if (!a) return;
+            const buf = a.createBuffer(1, Math.floor(a.sampleRate * dur), a.sampleRate), d = buf.getChannelData(0);
+            for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+            const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+            src.buffer = buf; f.type = 'bandpass'; f.frequency.value = freq; g.gain.setValueAtTime(vol, a.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + dur);
+            src.connect(f).connect(g).connect(a.destination); src.start();
+        }
+        const sfx = {
+            rustle: () => noise(0.07, 0.06, 700),
+            pop: size => { tone(260 + size * 70, 0.16, 0.18, 'triangle', 0, 1.9); noise(0.06, 0.05, 900); },
+            snap: () => { noise(0.1, 0.25, 3200); tone(1100, 0.05, 0.08, 'square'); },
+            creak: () => tone(140, 0.18, 0.06, 'sawtooth', 0, 0.8),
+            mole: () => { tone(1500, 0.06, 0.08, 'square'); tone(1700, 0.06, 0.08, 'square', 0.08); tone(1300, 0.08, 0.08, 'square', 0.16); },
+            chime: () => { tone(988, 0.2, 0.1, 'triangle'); tone(1319, 0.3, 0.1, 'triangle', 0.12); },
+            heave: () => { tone(110, 0.22, 0.2, 'sine', 0, 0.7); noise(0.08, 0.06, 400); },
+            giant: () => { [392, 494, 587, 784].forEach((f, i) => tone(f, 0.25, 0.1, 'triangle', i * 0.09)); },
+            bell: () => { tone(1046, 0.6, 0.1, 'sine'); tone(1568, 0.8, 0.05, 'sine', 0.02); },
+            tick: () => tone(1200, 0.03, 0.04, 'square'),
+        };
+
+        // ===== 4. 畫 =====
+        function roundRect(c, x, y, w, h, r) {
+            c.beginPath(); c.moveTo(x + r, y);
+            c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+            c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+        }
+
+        // 天空、遠方的大樓、頂樓欄杆
+        let stars = null;
+        function drawSky(c, now) {
+            const n = night();
+            const g = c.createLinearGradient(0, 0, 0, 120);
+            if (n) { g.addColorStop(0, '#141a2b'); g.addColorStop(1, '#2b3350'); } else { g.addColorStop(0, '#bcd9ee'); g.addColorStop(1, '#eef4f2'); }
+            c.fillStyle = g; c.fillRect(0, 0, W, 122);
+            if (n) {
+                stars = stars || Array.from({ length: 26 }, () => ({ x: rand(0, W), y: rand(4, 60), r: rand(0.5, 1.3), p: rand(0, TAU) }));
+                stars.forEach(s => { c.globalAlpha = 0.5 + 0.5 * Math.sin(now / 700 + s.p); c.fillStyle = '#fff'; c.beginPath(); c.arc(s.x, s.y, s.r, 0, TAU); c.fill(); });
+                c.globalAlpha = 1;
+                c.fillStyle = '#f3e7b8'; c.beginPath(); c.arc(210, 30, 12, 0, TAU); c.fill();
+            } else {
+                c.fillStyle = 'rgba(255,255,255,.8)';
+                [[60, 34], [210, 22]].forEach(([x, y], i) => { const dx = ((now / 90 + i * 140) % (W + 120)) - 60; c.beginPath(); c.ellipse(dx, y, 26, 8, 0, 0, TAU); c.ellipse(dx + 16, y - 5, 16, 8, 0, 0, TAU); c.fill(); });
+            }
+            // 遠方的大樓
+            const blds = [[0, 70, 40], [36, 52, 30], [64, 80, 44], [104, 62, 26], [128, 44, 38], [164, 74, 30], [192, 58, 46], [236, 82, 32], [266, 50, 40], [304, 68, 30], [332, 56, 34]];
+            blds.forEach(([x, top, w], i) => {
+                c.fillStyle = n ? '#1d2236' : '#c9d3d6'; c.fillRect(x, top, w, 122 - top);
+                for (let yy = top + 6; yy < 108; yy += 9) for (let xx = x + 4; xx < x + w - 4; xx += 8) {
+                    const lit = n ? ((xx * 7 + yy * 3 + i) % 5 < 2) : false;
+                    c.fillStyle = lit ? '#f5d77a' : (n ? '#2a3150' : '#dfe7e9'); c.fillRect(xx, yy, 4, 5);
+                }
+            });
+            // 欄杆
+            c.fillStyle = n ? '#555' : '#9aa0a3'; c.fillRect(0, 104, W, 3); c.fillRect(0, 116, W, 2);
+            for (let x = 6; x < W; x += 16) c.fillRect(x, 104, 2, 14);
+        }
+
+        function drawBed(c) {
+            c.fillStyle = K.wood; roundRect(c, 8, 122, 344, 314, 6); c.fill();
+            c.fillStyle = K.woodD; c.fillRect(8, 122, 344, 4);
+            c.fillStyle = K.soilD; roundRect(c, 13, 128, 334, 302, 4); c.fill();
+            // 木紋
+            c.strokeStyle = 'rgba(0,0,0,.12)'; c.lineWidth = 1;
+            for (let y = 140; y < 430; y += 26) { c.beginPath(); c.moveTo(8, y); c.lineTo(13, y + 6); c.stroke(); c.beginPath(); c.moveTo(352, y + 10); c.lineTo(347, y + 16); c.stroke(); }
+        }
+
+        function drawLeaves(c, x, y, n, len, sway, color, colorD, scale = 1) {
+            for (let i = 0; i < n; i++) {
+                const a = -Math.PI / 2 + (i - (n - 1) / 2) * (1.6 / Math.max(1, n - 1)) * 0.75 + sway * 0.25;
+                const L = len * scale * (0.85 + 0.15 * Math.cos(i * 1.7));
+                const ex = x + Math.cos(a) * L, ey = y + Math.sin(a) * L;
+                c.strokeStyle = colorD; c.lineWidth = 1.8; c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + Math.cos(a) * L * 0.5 + sway * 3, y + Math.sin(a) * L * 0.5, ex, ey); c.stroke();
+                // 羽狀小葉
+                c.fillStyle = color;
+                for (let k = 1; k <= 3; k++) {
+                    const t = 0.35 + k * 0.2, px = x + (ex - x) * t, py = y + (ey - y) * t;
+                    c.beginPath(); c.ellipse(px, py, 4.5 * scale, 2.4 * scale, a + 0.9, 0, TAU); c.fill();
+                    c.beginPath(); c.ellipse(px, py, 4.5 * scale, 2.4 * scale, a - 0.9, 0, TAU); c.fill();
+                }
+                c.beginPath(); c.ellipse(ex, ey, 4 * scale, 2.6 * scale, a, 0, TAU); c.fill();
+            }
+        }
+
+        function drawCarrotBody(c, x, top, len, wid, heart, color = K.carrot, colorD = K.carrotD) {
+            c.fillStyle = color;
+            c.beginPath();
+            if (heart) {
+                // 心形：兩個圓頂 + 尖尖的底
+                c.moveTo(x, top + len);
+                c.bezierCurveTo(x - wid * 1.3, top + len * 0.45, x - wid * 0.9, top - 4, x, top + len * 0.22);
+                c.bezierCurveTo(x + wid * 0.9, top - 4, x + wid * 1.3, top + len * 0.45, x, top + len);
+            } else {
+                c.moveTo(x - wid / 2, top);
+                c.quadraticCurveTo(x - wid / 2, top + len * 0.55, x, top + len);
+                c.quadraticCurveTo(x + wid / 2, top + len * 0.55, x + wid / 2, top);
+                c.closePath();
+            }
+            c.fill();
+            c.strokeStyle = colorD; c.lineWidth = 1.2;
+            for (let k = 1; k <= 4; k++) { const yy = top + len * k / 5.5, ww = wid * 0.5 * (1 - k / 6); c.beginPath(); c.moveTo(x - ww, yy); c.lineTo(x - ww + 4, yy + 1); c.stroke(); }
+        }
+
+        function drawThing(c, s, x, gy, now) {
+            const sway = (grab && G.plots[grab.i] === s ? clamp((grab.x - grab.sx) / 20, -2, 2) : 0) + Math.sin(now / 600 + s.seed) * 0.25;
+            const grow = clamp((now - s.born) / 350, 0, 1);
+            if (s.kind === 'giant') {
+                const len = 92, wid = 40, top = gy - s.progress * len - 4;
+                drawCarrotBody(c, x, top, len, wid, false, '#f08a2c', '#c25b13');
+                c.save(); c.shadowColor = 'rgba(232,194,82,.9)'; c.shadowBlur = 10 + 6 * Math.sin(now / 300);
+                drawLeaves(c, x, top, 7, 46, sway, '#3f7d32', '#245a22', grow); c.restore();
+                return;
+            }
+            const rule = ruleOf(s);
+            if (s.kind === 'carrot') {
+                const z = SIZES[s.size], top = gy - s.progress * z.len - 2;
+                drawCarrotBody(c, x + (s.bent ? 3 : 0), top, z.len, z.wid, s.heart);
+                drawLeaves(c, x, top, z.leaves, 20 + s.size * 4, sway, K.leaf, K.leafD, grow);
+            } else if (s.kind === 'mole') {
+                const top = gy - s.progress * 30 - 2;
+                // 葉子跟蘿蔔一樣，偶爾自己抽一下（看得出來的人就賺到了）
+                const twitch = Math.sin(now / 90) * (Math.sin(now / 1300 + s.seed) > 0.93 ? 1.2 : 0);
+                c.fillStyle = '#6d5f57'; c.beginPath(); c.ellipse(x, top + 16, 13, 16, 0, 0, TAU); c.fill();
+                c.fillStyle = '#e9a3a8'; c.beginPath(); c.arc(x, top + 4, 3.5, 0, TAU); c.fill();
+                c.fillStyle = '#222'; c.beginPath(); c.arc(x - 5, top + 9, 1.4, 0, TAU); c.arc(x + 5, top + 9, 1.4, 0, TAU); c.fill();
+                drawLeaves(c, x, top - 2, 4, 26, sway + twitch, K.leaf, K.leafD, grow);
+            } else if (s.kind === 'sweet') {
+                const top = gy - s.progress * 34 - 2;
+                c.fillStyle = '#9c3f5b'; c.beginPath(); c.ellipse(x, top + 18, 11, 18, 0.25, 0, TAU); c.fill();
+                c.fillStyle = '#7a2d45'; c.fillRect(x - 3, top + 10, 2, 2); c.fillRect(x + 4, top + 22, 2, 2);
+                // 地瓜葉：心形，看得出來
+                c.fillStyle = '#5e9a3f';
+                [-0.7, 0, 0.7].forEach((a, i) => {
+                    const L = 20 * grow, ex = x + Math.sin(a + sway * 0.2) * L, ey = top - Math.cos(a) * L;
+                    c.strokeStyle = '#3f7a2c'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x, top); c.lineTo(ex, ey); c.stroke();
+                    c.save(); c.translate(ex, ey); c.rotate(a); c.beginPath(); c.moveTo(0, 5); c.bezierCurveTo(-9, -2, -5, -10, 0, -5); c.bezierCurveTo(5, -10, 9, -2, 0, 5); c.fill(); c.restore();
+                });
+            } else if (s.kind === 'ticket') {
+                const top = gy - s.progress * 40 - 8;
+                c.save(); c.translate(x + sway * 2, top + 14); c.rotate(-0.25);
+                c.fillStyle = '#fffaf0'; c.fillRect(-11, -16, 22, 34);
+                c.fillStyle = '#c0392b'; c.fillRect(-11, -16, 22, 7);
+                c.fillStyle = '#b8b8b8'; c.fillRect(-7, -4, 14, 10);
+                c.fillStyle = '#c0392b'; c.font = `700 6px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('27F', 0, -12);
+                c.restore();
+            }
+        }
+
+        function drawPlot(c, p, s, now) {
+            const gy = groundY(p), cx = p.x + p.w / 2;
+            // 後面的土
+            c.fillStyle = K.soil; roundRect(c, p.x, p.y + 20, p.w, p.h - 20, 10); c.fill();
+            if (s && s.state === 'ground') {
+                // 鬆過的土顏色淺一點、有一圈裂縫
+                if (s.loosen > 0) {
+                    c.fillStyle = `rgba(160,120,85,${0.15 + s.loosen * 0.45})`;
+                    c.beginPath(); c.ellipse(cx, gy + 4, 20 + s.loosen * 18, 7 + s.loosen * 4, 0, 0, TAU); c.fill();
+                }
+                c.save();
+                c.beginPath(); c.rect(p.x - 40, 0, p.w + 80, p.y + p.h); c.clip();  // 不要畫到下一排
+                drawThing(c, s, cx, gy, now);
+                c.restore();
+            } else {
+                c.fillStyle = K.soilD; c.beginPath(); c.ellipse(cx, gy + 4, 14, 5, 0, 0, TAU); c.fill();
+            }
+            // 前面的土蓋住埋著的部分
+            c.fillStyle = K.soil; roundRect(c, p.x, gy + 4, p.w, p.y + p.h - gy - 4, 8); c.fill();
+            if (s && s.kind === 'giant' && s.state === 'ground') {
+                // 巨型蘿蔔：整格框金邊、寫一個「巨」
+                c.save(); c.strokeStyle = K.gold; c.lineWidth = 2.5; c.setLineDash([6, 4]); c.lineDashOffset = -now / 60;
+                roundRect(c, p.x + 1, p.y + 1, p.w - 2, p.h - 2, 10); c.stroke(); c.restore();
+                c.fillStyle = K.gold; c.font = `700 22px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('巨', cx, gy + 26);
+            }
+            c.fillStyle = 'rgba(0,0,0,.18)';
+            for (let k = 0; k < 7; k++) { const dx = ((k * 37 + p.col * 11) % (p.w - 16)) + 8, dy = ((k * 23 + p.row * 7) % (p.y + p.h - gy - 14)) + 10; c.fillRect(p.x + dx, gy + dy, 2, 2); }
+            c.fillStyle = K.soilL; c.fillRect(p.x + 6, gy + 4, p.w - 12, 2);
+        }
+
+        // 力道條：抓著的那格上面
+        function drawMeter(c, p, s) {
+            const x = p.x + 4, y = p.y + 8, w = p.w - 8, h = 9;
+            const { lo, hi } = band(s);
+            c.fillStyle = 'rgba(255,255,255,.92)'; roundRect(c, x - 2, y - 2, w + 4, h + 10, 4); c.fill();
+            c.fillStyle = '#ddd'; c.fillRect(x, y, w, h);
+            const fx = v => x + clamp(v / 1.3, 0, 1) * w;
+            c.fillStyle = '#7fb069'; c.fillRect(fx(lo), y, fx(hi) - fx(lo), h);
+            c.fillStyle = '#e07a6a'; c.fillRect(fx(hi), y, x + w - fx(hi), h);
+            const f = grab ? grab.force : 0;
+            c.fillStyle = s.strain > 0 ? K.shu : K.ink; c.fillRect(fx(f) - 1.5, y - 3, 3, h + 6);
+            // 下面一條細的是土鬆了多少
+            c.fillStyle = '#e8dccb'; c.fillRect(x, y + h + 3, w, 3);
+            c.fillStyle = '#8a6446'; c.fillRect(x, y + h + 3, w * (s.kind === 'giant' ? 0 : s.loosen), 3);
+        }
+
+        function drawHelpers(c, now) {
+            const i = G.plots.findIndex(s => s && s.kind === 'giant' && s.state === 'ground');
+            if (i < 0 || !G.helpers) return;
+            const p = PLOTS[i], gy = groundY(p), cx = p.x + p.w / 2;
+            const dir = p.col === 2 ? -1 : 1;  // 往有空間的那邊排
+            const lean = now - G.heaveAt < 160 ? 6 : 0;
+            const top = gy - G.plots[i].progress * 92 - 4;
+            c.strokeStyle = '#c9b48a'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(cx, top + 6);
+            for (let k = 0; k < G.helpers; k++) c.lineTo(cx + dir * (44 + k * 30 + lean), gy - 6);
+            c.stroke();
+            for (let k = 0; k < G.helpers; k++) {
+                const h = HELPERS[k], hx = cx + dir * (44 + k * 30 + lean), hy = gy - 8;
+                c.fillStyle = h.color; c.beginPath(); c.arc(hx, hy, 13, 0, TAU); c.fill();
+                c.strokeStyle = '#fff'; c.lineWidth = 2; c.stroke();
+                c.fillStyle = '#fff'; c.font = `700 13px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(h.mark, hx, hy + 1);
+            }
+        }
+
+        function drawHud(c, now) {
+            const left = G.started ? Math.max(0, ROUND - (now - G.started) / 1000) : ROUND;
+            c.fillStyle = night() ? 'rgba(20,24,40,.6)' : 'rgba(255,255,255,.75)';
+            roundRect(c, 8, 8, 74, 30, 15); c.fill(); roundRect(c, W - 112, 8, 104, 30, 15); c.fill();
+            c.fillStyle = left <= 10 && G.started ? K.shu : (night() ? '#f2ead8' : K.ink);
+            c.font = `500 15px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+            c.fillText(`${Math.ceil(left)} 秒`, 45, 24);
+            c.fillStyle = night() ? '#f2ead8' : K.ink; c.fillText(Wallet.fmt(G.money), W - 60, 24);
+            if (!G.started) {
+                c.fillStyle = 'rgba(30,26,22,.55)'; roundRect(c, 50, 252, 260, 66, 10); c.fill();
+                c.fillStyle = '#fff'; c.font = `500 15px ${SERIF}`; c.fillText('點一根蘿蔔，開始六十秒', 180, 274);
+                c.font = `400 11px ${SANS}`; c.fillText('左右搖鬆土，往上拉，力道留在綠色', 180, 298);
+            }
+        }
+
+        function drawFx(c, now) {
+            for (let i = dirt.length - 1; i >= 0; i--) {
+                const d = dirt[i], t = (now - d.born) / 500;
+                if (t > 1) { dirt.splice(i, 1); continue; }
+                c.fillStyle = `rgba(110,80,55,${1 - t})`; c.fillRect(d.x + d.vx * t * 30, d.y - 14 * t + 30 * t * t, 3, 3);
+            }
+            for (let i = flyers.length - 1; i >= 0; i--) {
+                const f = flyers[i], t = (now - f.born) / 700;
+                if (t > 1) { flyers.splice(i, 1); continue; }
+                c.save(); c.globalAlpha = 1 - t * t; c.translate(f.x, f.y - 40 * t); c.rotate(f.spin * t);
+                drawThing(c, f.s, 0, 0, now); c.restore();
+            }
+            for (let i = floats.length - 1; i >= 0; i--) {
+                const f = floats[i], t = (now - f.born) / f.life;
+                if (t > 1) { floats.splice(i, 1); continue; }
+                c.globalAlpha = 1 - t * t; c.fillStyle = f.color; c.font = `600 ${f.big ? 18 : 13}px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+                c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 3; c.strokeText(f.text, f.x, f.y - 26 * t); c.fillText(f.text, f.x, f.y - 26 * t);
+                c.globalAlpha = 1;
+            }
+        }
+        const floatText = (x, y, text, color = K.shu, big = false, life = 1000) => floats.push({ x, y, text, color, big, born: performance.now(), life });
+
+        // ===== 5. 規則：力道、鬆土、拔起來 =====
+        function band(s) {
+            if (s.kind === 'giant') return { lo: 0.12, hi: 0.5 };
+            return { lo: 0.12, hi: 0.36 + 0.5 * s.loosen };
+        }
+
+        function update(now, dt) {
+            if (!G || !G.started || G.ended) return;
+            const elapsed = (now - G.started) / 1000;
+            if (elapsed >= ROUND) { endRound(); return; }
+            if (Math.ceil(ROUND - elapsed) <= 5 && Math.ceil(ROUND - elapsed) !== G.lastTick) { G.lastTick = Math.ceil(ROUND - elapsed); sfx.tick(); }
+            // 長回來
+            for (let k = G.regrow.length - 1; k >= 0; k--) {
+                if (now >= G.regrow[k].at) { const i = G.regrow[k].i; G.plots[i] = spawn(i, now); G.regrow.splice(k, 1); if (G.plots[i].kind === 'giant') { sfx.giant(); floatText(PLOTS[i].x + 50, PLOTS[i].y + 10, '長出巨型蘿蔔了', K.shu, true, 1600); renderActions(); } }
+            }
+            if (!grab) return;
+            const s = G.plots[grab.i];
+            if (!s || s.state !== 'ground') return;
+            const f = grab.force;
+            if (s.kind === 'giant') {
+                if (f > 0.15 && s.progress < 0.1) s.progress = Math.min(0.1, s.progress + dt * 0.3);
+                if (f > 0.3 && !grab.toldGiant) { grab.toldGiant = true; floatText(PLOTS[grab.i].x + 50, PLOTS[grab.i].y + 20, '拔不動…叫幫手'); }
+                return;
+            }
+            const rule = ruleOf(s), { lo, hi } = band(s);
+            if (f > hi) {
+                s.strain += dt;
+                if (s.strain > 0.1 && !s.bent && s.kind === 'carrot') { s.bent = true; sfx.creak(); floatText(PLOTS[grab.i].x + 50, PLOTS[grab.i].y + 26, '太大力了', '#c95c17'); }
+                if (s.strain > 0.42) { snap(grab.i, now); return; }
+            } else {
+                s.strain = Math.max(0, s.strain - dt * 0.6);
+                if (f >= lo) s.progress += dt * rule.speed * (0.35 + 0.65 * s.loosen);
+            }
+            if (s.progress >= 1) harvest(grab.i, now);
+        }
+
+        function emptyPlot(i, now, delay = 900) {
+            G.plots[i] = { state: 'empty' };
+            G.regrow.push({ i, at: now + delay });
+            if (grab && grab.i === i) grab = null;
+        }
+
+        function harvest(i, now) {
+            const s = G.plots[i], p = PLOTS[i], cx = p.x + p.w / 2, gy = groundY(p);
+            let price, label, color = K.ink;
+            if (s.kind === 'carrot') {
+                const z = SIZES[s.size];
+                price = Math.round(z.price * (s.bent ? 0.7 : 1)) + (s.heart ? 80 : 0);
+                label = `${s.heart ? '心形' : z.name}${s.bent ? '・歪' : ''} +${Wallet.fmt(price)}`;
+                G.tally[s.size]++; if (s.heart) G.tally.heart++; if (s.bent) G.tally.bent++;
+                sfx.pop(s.size);
+            } else if (s.kind === 'giant') {
+                const fee = G.helpers * GIANT.fee;
+                price = GIANT.price - fee;
+                label = `巨型蘿蔔 +${Wallet.fmt(price)}`;
+                G.tally.giant++; G.helpersUsed = G.helpers; G.helpers = 0;
+                sfx.giant(); color = K.shu;
+                if (fee) setTimeout(() => floatText(cx, gy - 30, `幫手費 −${Wallet.fmt(fee)}`, '#8e8070', false, 1400), 400);
+                renderActions();
+            } else {
+                const o = OTHERS[s.kind];
+                price = o.price; label = `${o.line} ${price < 0 ? '−' : '+'}${Wallet.fmt(Math.abs(price))}`;
+                G.tally[s.kind]++;
+                if (s.kind === 'mole') { sfx.mole(); color = '#7a6a60'; } else if (s.kind === 'ticket') { sfx.chime(); color = K.shu; } else sfx.pop(2);
+            }
+            G.money += price;
+            floatText(cx, gy - 34, label, color, s.kind === 'giant' || s.kind === 'ticket', 1200);
+            flyers.push({ s: { ...s, progress: 0 }, x: cx, y: gy - 30, born: now, spin: rand(-0.6, 0.6) });
+            emptyPlot(i, now, s.kind === 'giant' ? 1400 : 900);
+        }
+
+        function snap(i, now) {
+            const s = G.plots[i], p = PLOTS[i], cx = p.x + p.w / 2, gy = groundY(p);
+            let price = 0;
+            if (s.kind === 'carrot') { price = Math.round(SIZES[s.size].price * 0.4); G.tally.snapped++; }
+            else if (s.kind === 'sweet') { price = 20; G.tally.snapped++; }
+            else if (s.kind === 'ticket') { price = 0; floatText(cx, gy - 50, '刮刮樂撕破了', '#8e8070'); }
+            else if (s.kind === 'mole') { price = 0; floatText(cx, gy - 50, '鼴鼠跑掉了', '#8e8070'); }
+            G.money += price;
+            sfx.snap();
+            floatText(cx, gy - 34, price ? `斷了 +${Wallet.fmt(price)}` : '斷了', K.shu);
+            for (let k = 0; k < 10; k++) dirt.push({ x: cx + rand(-10, 10), y: gy, vx: rand(-1, 1), born: now });
+            emptyPlot(i, now);
+        }
+
+        // 巨型蘿蔔：叫幫手、一起嘿呦
+        function callHelper() {
+            if (!G || G.ended || G.helpers >= HELPERS.length) return;
+            const h = HELPERS[G.helpers++];
+            const i = G.plots.findIndex(s => s && s.kind === 'giant' && s.state === 'ground');
+            if (i >= 0) floatText(PLOTS[i].x + 50, PLOTS[i].y + 4 + (G.helpers % 2 ? 0 : -18), `${h.name}：${h.line}`, '#6e4f34', false, 1800);
+            tone(660 + G.helpers * 80, 0.1, 0.08, 'triangle');
+            renderActions();
+        }
+        function heave() {
+            if (!G || G.ended) return;
+            const i = G.plots.findIndex(s => s && s.kind === 'giant' && s.state === 'ground');
+            if (i < 0) return;
+            if (!G.started) G.started = performance.now();
+            const s = G.plots[i];
+            s.progress += 0.012 + 0.02 * G.helpers;
+            G.heaveAt = performance.now();
+            sfx.heave();
+            floatText(PLOTS[i].x + 50, PLOTS[i].y + 30 + rand(-6, 6), '嘿呦', '#6e4f34', false, 600);
+            for (let k = 0; k < 5; k++) dirt.push({ x: PLOTS[i].x + 50 + rand(-18, 18), y: groundY(PLOTS[i]), vx: rand(-1, 1), born: performance.now() });
+            if (s.progress >= 1) harvest(i, performance.now());
+        }
+
+        function renderActions() {
+            const box = $('actions');
+            const giant = G && !G.ended && G.plots.some(s => s && s.kind === 'giant' && s.state === 'ground');
+            if (!giant) { box.innerHTML = ''; if (G && !G.ended && G.started) hint('按住葉子左右搖，把土搖鬆；再往上拉，力道留在綠色。'); return; }
+            const next = HELPERS[G.helpers];
+            box.innerHTML = `<button type="button" class="act-text" data-helper ${next ? '' : 'disabled'}>${next ? `叫${esc(next.mark === '汪' || next.mark === '喵' ? next.name : next.name.slice(-4))}來幫忙` : '大家都來了'}</button>
+                <button type="button" class="act-heave" data-heave>嘿呦</button>`;
+            hint(`巨型蘿蔔一個人拔不動。叫人來幫忙（一人收 ${Wallet.fmt(GIANT.fee)}），再一直按「嘿呦」。現在 ${G.helpers} 個幫手。`);
+        }
+        $('actions').addEventListener('click', e => {
+            audio();
+            if (e.target.closest('[data-helper]')) callHelper();
+            else if (e.target.closest('[data-heave]')) heave();
+        });
+
+        // ===== 6. 手指 =====
+        const toP = e => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height }; };
+        cv.addEventListener('pointerdown', e => {
+            if (!G || G.ended) return;
+            audio();
+            const pt = toP(e);
+            const i = PLOTS.findIndex(p => pt.x >= p.x - 4 && pt.x <= p.x + p.w + 4 && pt.y >= p.y - 10 && pt.y <= p.y + p.h + 4);
+            if (i < 0) return;
+            const s = G.plots[i];
+            if (!s || s.state !== 'ground' || performance.now() - s.born < 250) return;
+            if (!G.started) { G.started = performance.now(); hint('按住葉子左右搖，把土搖鬆；再往上拉，力道留在綠色。'); }
+            e.preventDefault();
+            try { cv.setPointerCapture(e.pointerId); } catch (err) { }
+            grab = { i, sx: pt.x, sy: pt.y, x: pt.x, y: pt.y, lastX: pt.x, dir: 0, travel: 0, force: 0, id: e.pointerId };
+        });
+        cv.addEventListener('pointermove', e => {
+            if (!grab || e.pointerId !== grab.id) return;
+            const pt = toP(e), s = G.plots[grab.i];
+            if (!s || s.state !== 'ground') { grab = null; return; }
+            // 左右搖：方向反過來、而且這一趟走了 10px 以上，就算搖一下
+            const dx = pt.x - grab.lastX, d = Math.sign(dx);
+            if (d && d !== grab.dir) {
+                if (grab.travel > 10 && s.kind !== 'giant') {
+                    s.loosen = Math.min(1, s.loosen + ruleOf(s).loosen);
+                    G.wiggles++;
+                    sfx.rustle();
+                    const p = PLOTS[grab.i];
+                    for (let k = 0; k < 3; k++) dirt.push({ x: p.x + p.w / 2 + rand(-14, 14), y: groundY(p), vx: rand(-1, 1), born: performance.now() });
+                }
+                grab.dir = d; grab.travel = 0;
+            }
+            grab.travel += Math.abs(dx);
+            grab.lastX = pt.x; grab.x = pt.x; grab.y = pt.y;
+            // 往上拉多少：手指離按下去的地方往上幾 px
+            grab.force = clamp((grab.sy - pt.y - 6) / 130, 0, 1.3);
+        });
+        const release = e => { if (grab && (!e || e.pointerId === grab.id)) { const s = G.plots[grab.i]; if (s && s.strain) s.strain = 0; grab = null; } };
+        cv.addEventListener('pointerup', release);
+        cv.addEventListener('pointercancel', release);
+        cv.addEventListener('contextmenu', e => e.preventDefault());
+
+        // ===== 7. 主迴圈 =====
+        function frame(now) {
+            const dt = Math.min(0.05, (now - lastNow) / 1000); lastNow = now;
+            update(now, dt);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, W, H);
+            if (G) {
+                drawSky(ctx, now);
+                drawBed(ctx);
+                PLOTS.forEach((p, i) => drawPlot(ctx, p, G.plots[i], now));
+                drawHelpers(ctx, now);
+                if (grab && G.plots[grab.i] && G.plots[grab.i].state === 'ground') drawMeter(ctx, PLOTS[grab.i], G.plots[grab.i]);
+                drawFx(ctx, now);
+                drawHud(ctx, now);
+            }
+            requestAnimationFrame(frame);
+        }
+
+        // ===== 8. 收工 =====
+        function gradeOf(pay) { return GRADES.find(g => pay >= g.min); }
+        let sheetFile = null;
+
+        async function endRound() {
+            G.ended = true; grab = null;
+            sfx.bell();
+            renderActions();
+            const t = G.tally, carrots = t[1] + t[2] + t[3];
+            const sales = G.money;
+            const bonus = carrots >= 10 && !t.snapped ? 200 : 0;
+            const pay = Math.max(100, sales + bonus);
+            const grade = gradeOf(pay);
+            G.pay = { sales, bonus, pay };
+            note('時間到，收工。');
+            hint('');
+            Wallet.earn(pay, 'farm');
+            recordRound(pay, grade);
+            $('syncNote').textContent = '';
+            uploadRounds().then(showSyncNote);
+
+            $('score').textContent = Wallet.fmt(pay);
+            $('gradeLine').textContent = `${grade.mark}・${grade.line}`;
+            const rows = [
+                ['小蘿蔔', t[1], '根'], ['中蘿蔔', t[2], '根'], ['大蘿蔔', t[3], '根'], ['巨型蘿蔔', t.giant, '根'],
+                ['其中心形的', t.heart, '根'], ['歪掉的', t.bent, '根'], ['斷掉的', t.snapped, '根'],
+                ['地瓜', t.sweet, '條'], ['伊藤埋的刮刮樂', t.ticket, '張'], ['鼴鼠', t.mole, '隻'],
+            ].filter(r => r[1]);
+            $('harvest').innerHTML = rows.length ? rows.map(([k, v, u]) => `<li><span>${k}</span><span class="text-wabi-dark">${v} ${u}</span></li>`).join('')
+                : '<li><span>什麼都沒拔到</span><span></span></li>';
+            $('paySales').textContent = (sales < 0 ? '−' : '') + Wallet.fmt(Math.abs(sales));
+            $('payBonusRow').classList.toggle('hidden', !bonus); $('payBonus').textContent = Wallet.fmt(bonus);
+            $('payMinRow').classList.toggle('hidden', pay === sales + bonus); $('payMin').textContent = Wallet.fmt(pay);
+            $('payWallet').textContent = Wallet.fmt(Wallet.money);
+            $('payAcct').innerHTML = Line.loggedIn ? `存在 ${esc((Line.profile || {}).name || 'LINE')} 的 LINE 帳號` : '錢只存在這支手機。<button type="button" data-login class="min-h-[32px] underline underline-offset-4 text-wabi-dark">用 LINE 登入</button>，換手機也在';
+            renderBest();
+            try {
+                const blob = await makeSheet(pay, grade, rows);
+                sheetFile = new File([blob], `dongbuli-caiyuan-${Date.now()}.png`, { type: 'image/png' });
+                $('sheetImg').src = URL.createObjectURL(blob);
+            } catch (e) { }
+            const canShare = !!(sheetFile && navigator.canShare && navigator.canShare({ files: [sheetFile] }));
+            $('shareBtn').textContent = canShare ? '分享收成單' : '下載收成單';
+            setTimeout(() => {
+                $('result').classList.remove('hidden');
+                $('result').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+            }, 700);
+        }
+
+        async function makeSheet(pay, grade, rows) {
+            const lines = rows.slice(0, 8).map(([k, v, u]) => [k, `${v} ${u}`]);
+            const allText = lines.flat().join('') + '頂樓菜園收成單賣給市場農會表揚二十七樓菜園部主人' + grade.mark + grade.line + '0123456789$,';
+            try { await Promise.race([Promise.all([document.fonts.load(`600 40px ${SERIF}`, allText), document.fonts.load(`400 40px ${SANS}`, allText)]), new Promise(res => setTimeout(res, 2500))]); } catch (e) { }
+            const c = document.createElement('canvas'); c.width = 1080; c.height = 1350;
+            const x = c.getContext('2d');
+            const text = (str, px, py, font, color, align = 'center') => { x.font = font; x.fillStyle = color; x.textAlign = align; x.fillText(str, px, py); };
+            x.fillStyle = '#fcfaf8'; x.fillRect(0, 0, c.width, c.height);
+            x.strokeStyle = '#8e8070'; x.lineWidth = 2; x.strokeRect(40, 40, 1000, 1270); x.lineWidth = 1; x.strokeRect(54, 54, 972, 1242);
+            text('D O N G B U L I ・ 2 7 F ・ 頂 樓 菜 園', 540, 130, `400 26px ${SANS}`, '#8e8070');
+            text('收成單', 540, 220, `600 76px ${SERIF}`, '#2c2c2c');
+            x.fillStyle = '#8e8070'; x.fillRect(500, 250, 80, 2);
+            // 一根大蘿蔔當插圖
+            x.save(); x.translate(880, 330); x.scale(2.4, 2.4); x.rotate(0.35);
+            drawCarrotBody(x, 0, 0, 56, 20, false); drawLeaves(x, 0, 0, 5, 30, 0, K.leaf, K.leafD); x.restore();
+            let y = 340;
+            (lines.length ? lines : [['什麼都沒拔到', '']]).forEach(([k, v]) => {
+                text(k, 150, y, `400 34px ${SERIF}`, '#4a4a4a', 'left');
+                text(v, 700, y, `400 34px ${SANS}`, '#2c2c2c', 'right');
+                x.strokeStyle = '#e4ddd2'; x.lineWidth = 1; x.beginPath(); x.moveTo(150, y + 22); x.lineTo(700, y + 22); x.stroke();
+                y += 74;
+            });
+            y = Math.max(y, 900);
+            text(`賣給市場 ${Wallet.fmt(G.pay.sales)}`, 150, y + 10, `400 30px ${SANS}`, '#8e8070', 'left');
+            if (G.pay.bonus) text(`農會表揚 ${Wallet.fmt(G.pay.bonus)}`, 150, y + 56, `400 30px ${SANS}`, '#8e8070', 'left');
+            text(`共 ${Wallet.fmt(pay)}`, 150, y + 140, `600 60px ${SERIF}`, '#2c2c2c', 'left');
+            text(grade.line, 150, y + 200, `400 30px ${SERIF}`, '#8e8070', 'left');
+            x.save(); x.translate(850, y + 110); x.rotate(-0.12); x.globalAlpha = 0.9;
+            x.strokeStyle = '#b33a2f'; x.lineWidth = 7; x.strokeRect(-85, -85, 170, 170); x.lineWidth = 2.5; x.strokeRect(-100, -100, 200, 200);
+            x.textBaseline = 'middle'; text(grade.mark, 0, 6, `700 120px ${SERIF}`, '#b33a2f');
+            x.restore();
+            const d = new Date();
+            text(`${d.getFullYear()}・${d.getMonth() + 1}・${d.getDate()}`, 540, 1270, `400 24px ${SANS}`, '#8e8070');
+            return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(), 'image/png'));
+        }
+        async function shareSheet() {
+            if (!sheetFile) return;
+            if (navigator.canShare && navigator.canShare({ files: [sheetFile] })) {
+                try { await navigator.share({ files: [sheetFile], title: '丼步喱・絆 菜園收成單', text: `我在二十七樓頂樓拔了一輪蘿蔔，賺 ${$('score').textContent}` }); } catch (e) { }
+                return;
+            }
+            const a = document.createElement('a'); a.href = URL.createObjectURL(sheetFile); a.download = sheetFile.name; a.click();
+        }
+
+        // ===== 9. 紀錄：這支手機的統計，也送到後端（Farms 分頁） =====
+        const loadStats = () => {
+            let st = null;
+            try { st = JSON.parse(localStorage.getItem(STATS_KEY)); } catch (e) { }
+            st = st || { rounds: 0, best: 0, paid: 0, carrots: 0, giants: 0, snapped: 0, moles: 0, tickets: 0, hearts: 0 };
+            st.recent = st.recent || [];
+            return st;
+        };
+        function recordRound(pay, grade) {
+            const st = loadStats(), t = G.tally;
+            st.rounds++; st.paid += pay; st.best = Math.max(st.best, pay);
+            st.carrots += t[1] + t[2] + t[3]; st.giants += t.giant; st.snapped += t.snapped; st.moles += t.mole; st.tickets += t.ticket; st.hearts += t.heart;
+            st.recent.unshift({
+                at: new Date().toISOString(), ms: Math.round(performance.now() - G.started),
+                total: pay, sales: G.pay.sales, bonus: G.pay.bonus, grade: grade.mark,
+                small: t[1], mid: t[2], big: t[3], giant: t.giant, heart: t.heart, snapped: t.snapped, bent: t.bent,
+                sweet: t.sweet, ticket: t.ticket, mole: t.mole, wiggles: G.wiggles, helpers: G.helpersUsed,
+                login: !!(window.Line && Line.loggedIn),
+            });
+            st.recent = st.recent.slice(0, 50);
+            try { localStorage.setItem(STATS_KEY, JSON.stringify(st)); } catch (e) { }
+            try { if (pay > Number(localStorage.getItem(BEST_KEY) || 0)) localStorage.setItem(BEST_KEY, String(pay)); } catch (e) { }
+        }
+        function renderBest() {
+            let best = 0;
+            try { best = Number(localStorage.getItem(BEST_KEY) || 0); } catch (e) { }
+            $('best').innerHTML = best ? `最好一輪<br>${Wallet.fmt(best)}` : '';
+        }
+
+        const API_URL = (window.Line && Line.API_URL) || "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
+        function deviceId() {
+            let id = '';
+            try { id = localStorage.getItem('dongbuli-device') || ''; } catch (e) { }
+            if (!id) {
+                id = window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'd-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+                try { localStorage.setItem('dongbuli-device', id); } catch (e) { }
+            }
+            return id;
+        }
+        let uploading = null;
+        function uploadRounds() {
+            if (!uploading) uploading = doUpload().finally(() => { uploading = null; });
+            return uploading;
+        }
+        async function doUpload() {
+            const st = loadStats();
+            const todo = st.recent.filter(r => !st.synced || r.at > st.synced).reverse().slice(0, 20);
+            if (!todo.length) return { ok: true, saved: 0 };
+            try {
+                let session = '';
+                try { session = localStorage.getItem('dongbuli-session') || ''; } catch (e) { }
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'farmLog', device: deviceId(), session, recs: todo }) });
+                const r = await res.json();
+                if (r.result !== 'success') return { ok: false, error: r.error || r.result || '後端沒回成功' };
+                const now = loadStats();
+                now.synced = todo[todo.length - 1].at;
+                try { localStorage.setItem(STATS_KEY, JSON.stringify(now)); } catch (e) { }
+                if (todo.length === 20) setTimeout(uploadRounds, 1500);
+                return { ok: true, saved: r.saved };
+            } catch (e) {
+                return { ok: false, error: '連不到後端' };
+            }
+        }
+        function showSyncNote(r) {
+            const el = $('syncNote');
+            if (r.ok) el.textContent = '這一輪的收成存到雲端了';
+            else if (/不認得的請求/.test(r.error)) el.textContent = '紀錄還沒存上去：後端還是舊版（要重新部署「新版本」）';
+            else el.textContent = `紀錄還沒存上去（${r.error}），下次拔完會補存`;
+        }
+
+        $('shareBtn').addEventListener('click', shareSheet);
+        $('againBtn').addEventListener('click', () => { newRound(); $('garden').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' }); });
+        $('payAcct').addEventListener('click', e => { if (e.target.closest('[data-login]')) Line.login(); });
+        Wallet.on(type => { if (type === 'login') showToast('登入了，菜錢存進 LINE 帳號'); });
+
+        newRound();
+        requestAnimationFrame(frame);
+        setTimeout(uploadRounds, 2500);  // 補送上次沒送成功的
+    </script>
+</body>
+
+</html>

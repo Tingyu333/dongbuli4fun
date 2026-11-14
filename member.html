@@ -22,11 +22,11 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/theme.css?v=20261114d">
-    <script src="assets/theme.js?v=20261114d"></script>
-    <script src="assets/line.js?v=20261114d"></script>
-    <script src="assets/wallet.js?v=20261114d"></script>
-    <script src="assets/gongde.js?v=20261114d"></script>
+    <link rel="stylesheet" href="assets/theme.css?v=20261114e">
+    <script src="assets/theme.js?v=20261114e"></script>
+    <script src="assets/line.js?v=20261114e"></script>
+    <script src="assets/wallet.js?v=20261114e"></script>
+    <script src="assets/gongde.js?v=20261114e"></script>
     <style>
         .line-btn {
             min-height: 44px;
@@ -92,7 +92,7 @@
         }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261114d">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261114e">
 </head>
 
 <body
@@ -155,6 +155,14 @@
                     <span class="flex-1 min-w-0">
                     <span class="block text-wabi-dark tracking-widest">房務・淨</span>
                     <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">打掃退房後的二十七樓，領房務費 $500～$1,500</span>
+                    </span>
+                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                </a>
+                <a href="caiyuan.html" class="game">
+                    <span class="game-mark">拔</span>
+                    <span class="flex-1 min-w-0">
+                    <span class="block text-wabi-dark tracking-widest">菜園・拔</span>
+                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">頂樓菜園拔蘿蔔，六十秒賣 $500～$1,500</span>
                     </span>
                     <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
                 </a>
@@ -236,8 +244,9 @@
             caishen: e => `財神加碼 ${e.times} 次，${fmt(e.total)}`,
             clean: e => `打掃了 ${e.times} 間，賺 ${fmt(e.total)}（最多一次 ${fmt(e.best)}）`,
             insure: e => `滿期 ${e.times} 張，利息 ${fmt(e.total)}`,
+            farm: e => `拔了 ${e.times} 輪，賺 ${fmt(e.total)}（最多一輪 ${fmt(e.best)}）`,
         };
-        const LABELS = { xitou: '坐洗部', clean: '房務部', scratch: '彩券行', bonus: '主人紅包', caishen: '財神燈', insure: '丼步喱人壽' };
+        const LABELS = { xitou: '坐洗部', clean: '房務部', scratch: '彩券行', bonus: '主人紅包', caishen: '財神燈', insure: '丼步喱人壽', farm: '菜園部' };
 
         function renderWho() {
             const box = $('who');
