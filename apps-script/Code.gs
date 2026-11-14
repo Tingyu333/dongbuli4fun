@@ -1134,11 +1134,12 @@ function washLog(input) {
 }
 
 
-// --- 打工排行榜（rank.html）---
+// --- 排行榜（rank.html：打工・榜、花錢・榜）---
 // 只有用 LINE 登入過的玩家：賺多少、做幾次從 Players 的 earned 讀，單場最高分從 Washes／Cleans 讀（同分比快）。
+// 花錢：Players 的 spent（全部花掉的）拆成洗頭店升級（shop.spent）、捐香油錢（gongde.donated）、點燈（gongde.lit），剩下的算刮刮樂。
 // 公開：回 LINE 名字和大頭貼，不回 line_id；有帶 session 的話把自己那列標 me。算好的榜存 CacheService 5 分鐘。
 
-var BOARD_CACHE_KEY = 'board:v1', BOARD_CACHE_SEC = 300;
+var BOARD_CACHE_KEY = 'board:v2', BOARD_CACHE_SEC = 300;
 
 function boardBest(sheetName, totalCol, msCol) {
   var best = {}, sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
@@ -1166,8 +1167,15 @@ function buildBoard() {
       return { n: Number(e.times) || 0, money: Number(e.total) || 0, best: b.score == null ? null : b.score, ms: b.ms || 0 };
     };
     var x = part('xitou', washBest), c = part('clean', cleanBest);
-    if (!x.n && !c.n && x.best == null && c.best == null) continue;
-    out.push({ id: id, name: String(rows[i][2] || '旅人').slice(0, 20), picture: /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c });
+    var gd = {}, shop = {};
+    try { gd = JSON.parse(rows[i][8] || '{}') || {}; } catch (e) { }
+    try { shop = JSON.parse(rows[i][9] || '{}') || {}; } catch (e) { }
+    var num = function (v) { v = Number(v); return isFinite(v) && v > 0 ? Math.round(v) : 0; };
+    var sp = { total: num(rows[i][5]), shop: num(shop.spent), donate: num(gd.donated), lamp: num(gd.lit) };
+    sp.scratch = Math.max(0, sp.total - sp.shop - sp.donate - sp.lamp);
+    sp.won = num((earned.scratch || {}).total) + num((earned.caishen || {}).total);  // 刮中的（含財神加碼）
+    if (!x.n && !c.n && x.best == null && c.best == null && !sp.total) continue;
+    out.push({ id: id, name: String(rows[i][2] || '旅人').slice(0, 20), picture: /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c, spend: sp });
   }
   return { at: new Date().toISOString(), players: out };
 }
@@ -1183,7 +1191,7 @@ function leaderboard(input) {
   return {
     result: 'success', at: board.at,
     players: board.players.map(function (p) {
-      return { name: p.name, picture: p.picture, xitou: p.xitou, clean: p.clean, me: !!me && p.id === me };
+      return { name: p.name, picture: p.picture, xitou: p.xitou, clean: p.clean, spend: p.spend, me: !!me && p.id === me };
     })
   };
 }
