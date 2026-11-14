@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>房務・淨 | 丼步喱</title>
+    <meta name="description" content="二十七樓房務部。撿、擦、鋪、找、倒，打掃乾淨領房務費。">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="丼步喱・絆">
+    <meta property="og:title" content="房務・淨｜丼步喱">
+    <meta property="og:description" content="二十七樓房務部。撿、擦、鋪、找、倒，打掃乾淨領房務費。">
+    <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
+    <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/fangwu.html">
+    <meta name="twitter:card" content="summary">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/theme.css?v=20261119">
+    <script src="assets/theme.js?v=20261119"></script>
+    <script src="assets/line.js?v=20261119"></script>
+    <script src="assets/wallet.js?v=20261119"></script>
+    <style>
+        /* 房間：手指在上面拖、擦，不能捲動頁面，長按也不能跳出系統選單 */
+        .room {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #cv {
+            display: block;
+            width: 100%;
+            aspect-ratio: 360 / 400;
+            touch-action: none;
+            border-radius: 4px;
+        }
+
+        .step {
+            width: 1.7rem;
+            height: 1.7rem;
+            border-radius: 9999px;
+            border: 1px solid rgb(var(--wabi-sub));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            line-height: 1;
+            color: rgb(var(--wabi-accent));
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        .step.is-now {
+            background: rgb(var(--wabi-dark));
+            border-color: rgb(var(--wabi-dark));
+            color: rgb(var(--wabi-bg));
+        }
+
+        .step.is-done {
+            border-color: rgb(var(--wabi-accent) / 0.5);
+            color: rgb(var(--wabi-accent) / 0.5);
+        }
+
+        .meter {
+            position: relative;
+            height: 0.5rem;
+            border-radius: 9999px;
+            background: rgb(var(--wabi-sub) / 0.6);
+            overflow: hidden;
+        }
+
+        .meter-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            border-radius: 9999px;
+            background: rgb(var(--wabi-accent));
+            transition: width 0.2s;
+        }
+
+        .act-round {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 4.75rem;
+            height: 4.75rem;
+            border-radius: 9999px;
+            background: rgb(var(--wabi-dark));
+            color: rgb(var(--wabi-bg));
+            font-family: 'Noto Serif TC', serif;
+            font-size: 1.5rem;
+            box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.45);
+            transition: transform 0.08s ease;
+            touch-action: manipulation;
+        }
+
+        .act-round:active {
+            transform: scale(0.92);
+        }
+
+        .act-text {
+            min-height: 44px;
+            padding: 0.75rem 2rem;
+            border: 1px solid rgb(var(--wabi-dark));
+            color: rgb(var(--wabi-dark));
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.2em;
+            touch-action: manipulation;
+        }
+
+        .act-text:active {
+            background: rgb(var(--wabi-dark));
+            color: rgb(var(--wabi-bg));
+        }
+
+        /* 三個垃圾桶的按鈕：桶子是實物，顏色固定 */
+        .bin-btn {
+            flex: 1;
+            min-height: 64px;
+            border-radius: 8px;
+            color: #fff;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            line-height: 1.3;
+            box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.18);
+            touch-action: manipulation;
+        }
+
+        .bin-btn small {
+            display: block;
+            font-size: 10px;
+            font-weight: 400;
+            opacity: 0.85;
+            letter-spacing: 0.05em;
+        }
+
+        .bin-btn:active {
+            transform: translateY(2px);
+            box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.18);
+        }
+
+        .bin-gen { background: #6b6b6b; }
+        .bin-rec { background: #2f6ea5; }
+        .bin-food { background: #4f8a3c; }
+
+        .wrong-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgb(var(--wabi-sub) / 0.7);
+        }
+    </style>
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261119">
+</head>
+
+<body
+    class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white min-h-screen flex flex-col overflow-x-hidden">
+
+    <nav
+        class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <a href="index.html"
+            class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-3 md:gap-8">
+            <a href="index.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <a href="reviews.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <a href="about.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+            <a href="member.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">會員・我</a>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-md mx-auto pt-24 md:pt-32 pb-16 px-6 w-full">
+
+        <div class="text-center mb-6">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">HOUSEKEEPING</span>
+            <h1 class="text-3xl font-light text-wabi-dark tracking-widest">房務・淨</h1>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">上一組房客退房了。房間交給你。</p>
+        </div>
+
+        <section id="room"
+            class="room bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-4 pt-4 pb-6">
+            <div class="flex items-center justify-between">
+                <ol id="steps" class="flex gap-1.5 font-sans" aria-label="五道工序">
+                    <li class="step">撿</li>
+                    <li class="step">擦</li>
+                    <li class="step">鋪</li>
+                    <li class="step">找</li>
+                    <li class="step">倒</li>
+                </ol>
+                <span id="best" class="text-right text-[10px] leading-relaxed font-sans tracking-widest text-stone-400"></span>
+            </div>
+            <p id="who" class="mt-3 text-[11px] font-sans tracking-widest text-stone-400"></p>
+            <p id="note" class="mt-1 min-h-[1.6rem] text-sm text-wabi-dark tracking-wider leading-relaxed"></p>
+
+            <canvas id="cv" class="mt-2" aria-label="二十七樓的房間"></canvas>
+
+            <div class="mt-4 flex items-center gap-3">
+                <div class="meter flex-1"><div id="meterFill" class="meter-fill" style="width:0"></div></div>
+                <span id="meterLabel" class="w-24 shrink-0 text-right text-[10px] font-sans tracking-widest text-stone-400"></span>
+            </div>
+            <p id="hint" class="mt-3 min-h-[2.6rem] text-xs text-center text-stone-500 font-sans tracking-widest leading-relaxed [text-wrap:balance]" aria-live="polite"></p>
+            <div id="actions" class="mt-2 min-h-[4.75rem] flex items-center justify-center gap-2"></div>
+        </section>
+
+        <!-- 打掃好了 -->
+        <section id="result" class="hidden mt-10 text-center scroll-mt-24">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent">打掃好了</span>
+            <p class="mt-2 text-wabi-dark"><span id="score" class="text-5xl font-light">0</span><span
+                    class="ml-2 text-xs font-sans tracking-widest text-stone-400">乾淨度</span></p>
+            <p id="gradeLine" class="mt-1 text-sm text-stone-500 tracking-widest"></p>
+            <div class="mt-5 mx-auto max-w-[17rem] border-y border-stone-100 py-3 font-sans text-xs tracking-widest text-stone-500">
+                <p class="flex justify-between"><span>房務費</span><span id="payBase" class="text-wabi-dark"></span></p>
+                <p id="payLostRow" class="hidden flex justify-between mt-1"><span>失物招領</span><span id="payLost" class="text-wabi-dark"></span></p>
+                <p id="payStarRow" class="hidden flex justify-between mt-1"><span>五星好評</span><span id="payStar" class="text-wabi-dark"></span></p>
+                <p class="flex justify-between mt-2 pt-2 border-t border-stone-100"><span>錢包</span><span id="payWallet" class="text-wabi-shu text-sm"></span></p>
+                <p id="payAcct" class="mt-2 text-[10px] leading-relaxed text-stone-400"></p>
+            </div>
+            <div id="wrongBox" class="hidden mt-6 text-left">
+                <p class="text-xs font-sans tracking-widest text-wabi-dark">分錯的垃圾</p>
+                <ul id="wrongList" class="wrong-list mt-1 text-xs font-sans tracking-wider text-stone-500 leading-relaxed"></ul>
+            </div>
+            <img id="sheetImg" alt="房務檢查表"
+                class="mt-6 w-full border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]">
+            <div class="mt-6 flex flex-col gap-3">
+                <button id="shareBtn" type="button"
+                    class="w-full bg-wabi-dark text-wabi-bg py-4 px-8 tracking-[0.2em] font-sans text-xs shadow-lg">分享房務檢查表</button>
+                <button id="againBtn" type="button"
+                    class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">再打掃一間</button>
+                <a href="scratch.html"
+                    class="block w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">拿房務費去彩券行</a>
+            </div>
+        </section>
+
+        <p class="mt-10 text-[11px] font-sans tracking-widest text-stone-400 leading-relaxed text-center">
+            垃圾分類照台灣（台北市）的規則，各縣市可能有一點不一樣。<br>
+            打掃一間發一次房務費，可以拿去<a href="scratch.html" class="underline underline-offset-4">二十七樓彩券行</a>。
+        </p>
+    </main>
+
+    <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
+        <p>&copy; 2026 DONGBULI · 房務・淨</p>
+    </footer>
+
+    <script>
+        // ===== 0. 舞台：畫布用固定的 360×400 座標畫，CSS 再縮放 =====
+        const W = 360, H = 400, TAU = Math.PI * 2;
+        const $ = id => document.getElementById(id);
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const cv = $('cv'), ctx = cv.getContext('2d');
+        const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+        cv.width = Math.round(W * dpr);
+        cv.height = Math.round(H * dpr);
+        const SERIF = '"Noto Serif TC", serif', SANS = '"Noto Sans TC", sans-serif';
+        // 房間裡的東西是實物，顏色固定，不跟晝夜
+        const K = { floor: '#dcc9a6', floorLine: '#c8b18a', wood: '#a9825a', woodD: '#7a5a3c', wall: '#efe8dc', white: '#fbf8f2',
+            ink: '#3b3431', shu: '#b33a2f', gen: '#6b6b6b', rec: '#2f6ea5', food: '#4f8a3c', sheet: '#dfe8ef', sheetD: '#b9c8d4' };
+        const pick = list => list[Math.floor(Math.random() * list.length)];
+        const rand = (lo, hi) => lo + Math.random() * (hi - lo);
+        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+        const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+        const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+        function roundRect(c, x, y, w, h, r) {
+            c.beginPath(); c.moveTo(x + r, y);
+            c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+            c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+        }
+
+        // ===== 1. 上一組房客：房間亂成什麼樣子看是誰住的 =====
+        const GUESTS = [
+            { key: 'drink', who: '喝酒團（四個人）', note: '退房的時候還在唱歌。', tags: ['drink'], stains: ['ring', 'ring', 'ring', 'sauce', 'print'], lost: ['earphone', 'key', 'sock'] },
+            { key: 'lottery', who: '刮刮樂狂', note: '說要刮到中才退房，最後還是退了。', tags: ['lottery'], stains: ['flake', 'flake', 'flake', 'ring'], lost: ['bei', 'split', 'charger'] },
+            { key: 'shampoo', who: '坐洗部的常客', note: '頭髮很香，桌上都是泡泡。', tags: ['shampoo'], stains: ['bubble', 'bubble', 'bubble', 'ring'], lost: ['comb', 'lash', 'sock'] },
+            { key: 'food', who: '宵夜派', note: '冰箱是空的，垃圾桶是滿的。', tags: ['food'], stains: ['sauce', 'sauce', 'sauce', 'ring'], lost: ['pudding', 'sock', 'charger'] },
+            { key: 'cat', who: '帶貓來住的旅人', note: '貓比人還早起，毛比人還多。', tags: ['cat'], stains: ['fur', 'fur', 'fur', 'sauce'], lost: ['cattoy', 'sock', 'key'] },
+            { key: 'ex', who: '前夫', note: '不知道為什麼會來住。', tags: ['ex'], stains: ['print', 'print', 'print', 'ring'], lost: ['exprint', 'key', 'split'], rare: true },
+        ];
+        function pickGuest() { return Math.random() < 0.05 ? GUESTS.find(g => g.rare) : pick(GUESTS.filter(g => !g.rare)); }
+
+        // ===== 2. 垃圾：照台灣（台北市）的分類 =====
+        // bin：gen 一般垃圾、rec 資源回收、food 廚餘；why 分錯時說明；tags 哪種房客比較會留下
+        const BINS = { gen: { name: '一般垃圾', color: K.gen }, rec: { name: '資源回收', color: K.rec }, food: { name: '廚餘', color: K.food } };
+        const ITEMS = [
+            { name: '啤酒罐', bin: 'rec', icon: 'can', tags: ['drink'], why: '鋁罐倒乾淨，資源回收。' },
+            { name: '寶特瓶', bin: 'rec', icon: 'bottle', tags: ['all'], why: '寶特瓶倒空、壓扁，資源回收。' },
+            { name: '玻璃酒瓶', bin: 'rec', icon: 'glass', tags: ['drink'], why: '玻璃瓶資源回收（破掉的要包好丟一般垃圾）。' },
+            { name: '吃剩的丼飯', bin: 'food', icon: 'bowl', tags: ['food', 'all'], why: '剩飯剩菜是廚餘，湯汁先瀝乾。' },
+            { name: '香蕉皮', bin: 'food', icon: 'peel', tags: ['food'], why: '果皮是廚餘。' },
+            { name: '茶葉渣', bin: 'food', icon: 'leaves', tags: ['drink'], why: '茶葉渣是廚餘。' },
+            { name: '咖啡渣', bin: 'food', icon: 'coffee', tags: ['all'], why: '咖啡渣是廚餘。' },
+            { name: '喝剩的珍珠', bin: 'food', icon: 'pearls', tags: ['food'], why: '珍珠是食物，倒出來丟廚餘。' },
+            { name: '布丁杯', bin: 'rec', icon: 'pudding', tags: ['food', 'ex'], why: '塑膠杯沖乾淨，資源回收（布丁要先吃完）。' },
+            { name: '手搖飲杯', bin: 'rec', icon: 'drinkcup', tags: ['food', 'all'], why: '塑膠杯洗乾淨回收；吸管、封膜丟一般垃圾。' },
+            { name: '鋁箔包', bin: 'rec', icon: 'tetra', tags: ['all'], why: '鋁箔包壓扁，資源回收。' },
+            { name: '紙箱', bin: 'rec', icon: 'box', tags: ['all'], why: '紙箱攤平，紙類回收。' },
+            { name: '舊報紙', bin: 'rec', icon: 'paper', tags: ['all'], why: '報紙是紙類，資源回收。' },
+            { name: '洗髮精空瓶', bin: 'rec', icon: 'shampoo', tags: ['shampoo'], why: '塑膠瓶沖乾淨，資源回收。' },
+            { name: '乾電池', bin: 'rec', icon: 'battery', tags: ['all'], why: '乾電池是資源回收，要另外交給回收車或便利商店，不能丟一般垃圾。' },
+            { name: '用過的衛生紙', bin: 'gen', icon: 'tissue', tags: ['all'], why: '衛生紙不能回收（纖維太短），一般垃圾。' },
+            { name: '刮刮樂彩券', bin: 'gen', icon: 'ticket', tags: ['lottery'], why: '刮刮樂有銀漆塗層，不能回收，一般垃圾。' },
+            { name: '發票', bin: 'gen', icon: 'receipt', tags: ['lottery', 'all'], why: '發票是感熱紙，不能回收，一般垃圾（先對完獎）。' },
+            { name: '免洗筷', bin: 'gen', icon: 'sticks', tags: ['food'], why: '免洗筷是一般垃圾。' },
+            { name: '口罩', bin: 'gen', icon: 'mask', tags: ['all'], why: '口罩是一般垃圾。' },
+            { name: '舊牙刷', bin: 'gen', icon: 'brush', tags: ['shampoo'], why: '牙刷是一般垃圾。' },
+            { name: '濕紙巾', bin: 'gen', icon: 'wipe', tags: ['shampoo', 'cat'], why: '濕紙巾是不織布，不能回收，一般垃圾。' },
+            { name: '菸蒂', bin: 'gen', icon: 'butt', tags: ['drink'], why: '菸蒂熄滅後丟一般垃圾。' },
+            { name: '牙線', bin: 'gen', icon: 'floss', tags: ['shampoo'], why: '牙線是一般垃圾。' },
+            { name: '用過的貓砂', bin: 'gen', icon: 'litter', tags: ['cat'], why: '用過的貓砂丟一般垃圾，不能倒馬桶。' },
+            { name: '貓罐頭空罐', bin: 'rec', icon: 'catcan', tags: ['cat'], why: '鐵罐沖乾淨，資源回收。' },
+        ];
+        const SORT_N = 12;
+        function pickItems(guest) {
+            const mine = shuffle(ITEMS.filter(i => i.tags.includes(guest.key))).slice(0, 5);
+            const rest = shuffle(ITEMS.filter(i => !mine.includes(i)));
+            // 三個桶子都至少要有兩件
+            const out = mine.slice();
+            ['gen', 'rec', 'food'].forEach(b => { while (out.filter(i => i.bin === b).length < 2) { const k = rest.findIndex(i => i.bin === b && !out.includes(i)); out.push(rest.splice(k, 1)[0]); } });
+            while (out.length < SORT_N) out.push(rest.splice(rest.findIndex(i => !out.includes(i)), 1)[0]);
+            return shuffle(out.slice(0, SORT_N));
+        }
+
+        // ===== 3. 遺失物：藏在房間裡，找到另外給錢 =====
+        const LOST = {
+            bei: { name: '筊杯（擲杯用的）', bonus: 150, icon: 'bei' },
+            earphone: { name: '一隻耳機', bonus: 150, icon: 'earphone' },
+            sock: { name: '一隻襪子', bonus: 100, icon: 'sock' },
+            key: { name: '車鑰匙', bonus: 200, icon: 'key' },
+            charger: { name: '充電線', bonus: 100, icon: 'charger' },
+            split: { name: '還沒算完的分帳單', bonus: 150, icon: 'split' },
+            pudding: { name: '沒吃完的布丁', bonus: 120, icon: 'pudding' },
+            lash: { name: '假睫毛', bonus: 100, icon: 'lash' },
+            cattoy: { name: '逗貓棒', bonus: 120, icon: 'cattoy' },
+            comb: { name: '梳子', bonus: 100, icon: 'comb' },
+            lotto: { name: '一張還沒刮的刮刮樂', bonus: 500, icon: 'ticket', rare: true },
+            exprint: { name: '前夫的指紋（裱框）', bonus: 800, icon: 'exprint', rare: true },
+        };
+        // 藏東西的地方（找・物那一關的房間）
+        const SPOTS = [
+            { key: 'pillow', label: '枕頭下', x: 32, y: 34, w: 140, h: 46 },
+            { key: 'underbed', label: '床底', x: 24, y: 168, w: 156, h: 34 },
+            { key: 'sofa', label: '沙發縫', x: 236, y: 112, w: 104, h: 70 },
+            { key: 'rug', label: '地毯下', x: 92, y: 236, w: 176, h: 84 },
+            { key: 'plant', label: '盆栽後', x: 286, y: 300, w: 62, h: 82 },
+            { key: 'curtain', label: '窗簾後', x: 206, y: 8, w: 140, h: 44 },
+        ];
+        const PEEKS = 4;
+
+        // ===== 4. 畫東西 =====
+        // 垃圾、遺失物的小圖：都畫在 (0,0) 附近，大小約 ±30
+        function drawIcon(c, icon, s = 1) {
+            c.save(); c.scale(s, s); c.lineWidth = 2; c.lineJoin = 'round'; c.lineCap = 'round';
+            const f = (col, path) => { c.fillStyle = col; path(); c.fill(); };
+            const st = (col, w = 2) => { c.strokeStyle = col; c.lineWidth = w; c.stroke(); };
+            switch (icon) {
+                case 'can': roundRect(c, -14, -24, 28, 48, 5); f('#d4a72c', () => 0); st('#8a6a14');
+                    c.fillStyle = '#fff'; c.fillRect(-14, -6, 28, 12); c.fillStyle = '#b33a2f'; c.font = `700 9px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('BEER', 0, 0); break;
+                case 'bottle': roundRect(c, -12, -18, 24, 44, 8); f('rgba(150,200,230,.75)', () => 0); st('#5b8fb0');
+                    c.fillStyle = '#2f6ea5'; c.fillRect(-6, -28, 12, 10); c.fillStyle = 'rgba(255,255,255,.6)'; c.fillRect(-8, -12, 4, 26); break;
+                case 'glass': c.beginPath(); c.moveTo(-5, -30); c.lineTo(5, -30); c.lineTo(5, -14); c.quadraticCurveTo(14, -10, 14, 0); c.lineTo(14, 28); c.lineTo(-14, 28); c.lineTo(-14, 0); c.quadraticCurveTo(-14, -10, -5, -14); c.closePath();
+                    f('rgba(60,130,70,.85)', () => 0); st('#2d5a33'); c.fillStyle = '#efe6c9'; c.fillRect(-10, 4, 20, 14); break;
+                case 'bowl': c.beginPath(); c.ellipse(0, -6, 24, 9, 0, 0, TAU); f('#f7f3ea', () => 0);
+                    c.beginPath(); c.moveTo(-26, -4); c.quadraticCurveTo(-24, 22, 0, 22); c.quadraticCurveTo(24, 22, 26, -4); c.closePath(); f('#8a3b2a', () => 0);
+                    c.fillStyle = '#c98b3c'; c.beginPath(); c.ellipse(4, -9, 12, 5, 0, 0, TAU); c.fill(); break;
+                case 'peel': c.fillStyle = '#f2cf3b'; c.strokeStyle = '#a8861b';
+                    [[-0.6, -18], [0, -24], [0.6, -18]].forEach(([a]) => { c.save(); c.rotate(a); c.beginPath(); c.ellipse(0, -12, 7, 16, 0, 0, TAU); c.fill(); c.stroke(); c.restore(); });
+                    c.fillStyle = '#6b5a1c'; c.fillRect(-3, 0, 6, 10); break;
+                case 'leaves': for (let i = 0; i < 18; i++) { c.fillStyle = i % 3 ? '#5b4a2a' : '#6f7b3a'; c.beginPath(); c.ellipse(Math.cos(i * 2.3) * 16, Math.sin(i * 1.7) * 9 + 6, 5, 2.5, i, 0, TAU); c.fill(); } break;
+                case 'coffee': c.beginPath(); c.ellipse(0, 8, 24, 12, 0, 0, TAU); f('#3b2a20', () => 0); for (let i = 0; i < 14; i++) { c.fillStyle = '#5a4030'; c.fillRect(Math.cos(i * 2.1) * 16, 4 + Math.sin(i * 1.3) * 6, 2, 2); } break;
+                case 'pearls': for (let i = 0; i < 14; i++) { c.fillStyle = '#1f1a17'; c.beginPath(); c.arc(Math.cos(i * 2.4) * (6 + i), Math.sin(i * 2.4) * (4 + i * 0.6) + 6, 4, 0, TAU); c.fill(); } break;
+                case 'pudding': c.beginPath(); c.moveTo(-14, -12); c.lineTo(14, -12); c.lineTo(10, 18); c.lineTo(-10, 18); c.closePath(); f('rgba(240,235,225,.9)', () => 0); st('#bdb3a3');
+                    c.fillStyle = '#e9c46a'; c.fillRect(-11, -4, 22, 18); c.fillStyle = '#7a4a1e'; c.fillRect(-12, -10, 24, 6); break;
+                case 'drinkcup': c.beginPath(); c.moveTo(-14, -24); c.lineTo(14, -24); c.lineTo(10, 26); c.lineTo(-10, 26); c.closePath(); f('rgba(235,225,205,.85)', () => 0); st('#a99a80');
+                    c.fillStyle = '#c9a47c'; c.fillRect(-12, 0, 23, 24); c.strokeStyle = '#2f6ea5'; c.lineWidth = 3; c.beginPath(); c.moveTo(4, -24); c.lineTo(10, -36); c.stroke(); break;
+                case 'tetra': c.fillStyle = '#f6f1e6'; c.fillRect(-12, -18, 24, 36); c.strokeStyle = '#a99a80'; c.strokeRect(-12, -18, 24, 36); c.fillStyle = '#4f8a3c'; c.fillRect(-12, -4, 24, 12);
+                    c.strokeStyle = '#d97706'; c.lineWidth = 2; c.beginPath(); c.moveTo(6, -18); c.lineTo(10, -28); c.stroke(); break;
+                case 'box': c.fillStyle = '#c9a06a'; c.fillRect(-24, -16, 48, 32); c.strokeStyle = '#8a6a3c'; c.strokeRect(-24, -16, 48, 32); c.fillStyle = '#e8d7b0'; c.fillRect(-4, -16, 8, 32); break;
+                case 'paper': c.fillStyle = '#ece8df'; c.fillRect(-22, -18, 44, 36); c.strokeStyle = '#b9b2a4'; c.strokeRect(-22, -18, 44, 36);
+                    c.fillStyle = '#555'; c.fillRect(-18, -14, 20, 6); c.strokeStyle = '#999'; c.lineWidth = 1.5; for (let y = -4; y < 16; y += 5) { c.beginPath(); c.moveTo(-18, y); c.lineTo(18, y); c.stroke(); } break;
+                case 'shampoo': roundRect(c, -13, -14, 26, 38, 8); f('#f6f1e8', () => 0); st('#cdbfae'); c.fillStyle = '#8e8070'; c.fillRect(-13, 0, 26, 12);
+                    c.fillStyle = '#8e8070'; c.fillRect(-4, -24, 8, 10); c.fillRect(-4, -26, 14, 4); break;
+                case 'battery': roundRect(c, -10, -22, 20, 44, 4); f('#2c2c2c', () => 0); c.fillStyle = '#d4a72c'; c.fillRect(-10, -22, 20, 14); c.fillStyle = '#999'; c.fillRect(-4, -26, 8, 4);
+                    c.fillStyle = '#fff'; c.font = `700 12px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('+', 0, -15); break;
+                case 'tissue': c.fillStyle = '#fbfaf7'; c.strokeStyle = '#cfc8bb'; c.beginPath();
+                    for (let i = 0; i < 10; i++) { const a = i / 10 * TAU, r = 18 + (i % 2 ? 6 : 0); c.lineTo(Math.cos(a) * r, Math.sin(a) * r * 0.85); } c.closePath(); c.fill(); c.stroke(); break;
+                case 'ticket': c.fillStyle = '#dc2626'; roundRect(c, -24, -16, 48, 32, 4); c.fill(); c.fillStyle = '#fde047'; c.font = `900 8px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('27樓彩券行', 0, -9);
+                    c.fillStyle = '#b8b8b8'; c.fillRect(-18, -2, 36, 13); break;
+                case 'receipt': c.fillStyle = '#fff'; c.fillRect(-12, -26, 24, 52); c.strokeStyle = '#ccc'; c.strokeRect(-12, -26, 24, 52); c.fillStyle = '#555'; c.font = `700 6px ${SANS}`; c.textAlign = 'center'; c.fillText('電子發票', 0, -16);
+                    c.lineWidth = 1; for (let y = -10; y < 20; y += 5) { c.beginPath(); c.moveTo(-8, y); c.lineTo(8, y); c.stroke(); } break;
+                case 'sticks': c.strokeStyle = '#d9b97e'; c.lineWidth = 4; c.beginPath(); c.moveTo(-18, 20); c.lineTo(14, -24); c.moveTo(-10, 24); c.lineTo(20, -20); c.stroke(); break;
+                case 'mask': roundRect(c, -20, -12, 40, 24, 8); f('#cfe3f2', () => 0); st('#8fb1cc'); c.strokeStyle = '#8fb1cc'; c.beginPath(); c.arc(-24, 0, 7, 0.5 * Math.PI, 1.5 * Math.PI); c.arc(24, 0, 7, -0.5 * Math.PI, 0.5 * Math.PI); c.stroke();
+                    c.lineWidth = 1; [-4, 2, 8].forEach(y => { c.beginPath(); c.moveTo(-16, y - 2); c.lineTo(16, y - 2); c.stroke(); }); break;
+                case 'brush': c.fillStyle = '#5bb0d9'; roundRect(c, -24, -3, 40, 6, 3); c.fill(); c.fillStyle = '#f8f8f8'; c.fillRect(12, -9, 12, 6); c.strokeStyle = '#ccc'; c.strokeRect(12, -9, 12, 6); break;
+                case 'wipe': c.fillStyle = '#fbfaf7'; c.fillRect(-18, -14, 36, 28); c.strokeStyle = '#cfc8bb'; c.strokeRect(-18, -14, 36, 28); c.beginPath(); c.moveTo(-18, 0); c.lineTo(18, -6); c.stroke(); break;
+                case 'butt': c.fillStyle = '#d98b3a'; c.fillRect(-16, -4, 12, 8); c.fillStyle = '#f2ede4'; c.fillRect(-4, -4, 18, 8); c.fillStyle = '#555'; c.fillRect(14, -4, 4, 8); break;
+                case 'floss': roundRect(c, -12, -12, 24, 24, 4); f('#e9f3f8', () => 0); st('#8fb1cc'); c.strokeStyle = '#fff'; c.beginPath(); c.moveTo(12, 0); c.quadraticCurveTo(26, -10, 22, -24); c.stroke(); break;
+                case 'litter': for (let i = 0; i < 9; i++) { c.fillStyle = i % 2 ? '#9a948a' : '#b8b2a6'; c.beginPath(); c.arc(Math.cos(i * 2.2) * 14, Math.sin(i * 1.9) * 8 + 4, 7, 0, TAU); c.fill(); } break;
+                case 'catcan': c.beginPath(); c.ellipse(0, 6, 20, 9, 0, 0, TAU); f('#c9cdd2', () => 0); c.beginPath(); c.ellipse(0, -4, 20, 9, 0, 0, TAU); f('#e5e7ea', () => 0); st('#8a9097');
+                    c.fillStyle = '#e3a35e'; c.beginPath(); c.moveTo(-6, -6); c.lineTo(-3, -12); c.lineTo(0, -6); c.moveTo(0, -6); c.lineTo(3, -12); c.lineTo(6, -6); c.fill(); break;
+                // 遺失物
+                case 'bei': c.fillStyle = '#c0392b'; [[-12, 1], [12, -1]].forEach(([x, k]) => { c.beginPath(); c.ellipse(x, 0, 9, 18, k * 0.4, 0, TAU); c.fill(); });
+                    c.fillStyle = '#f6d2a0'; c.beginPath(); c.ellipse(-12, 0, 4, 12, 0.4, 0, TAU); c.fill(); break;
+                case 'earphone': c.fillStyle = '#fafafa'; c.strokeStyle = '#bbb'; c.beginPath(); c.arc(0, -8, 9, 0, TAU); c.fill(); c.stroke(); roundRect(c, -3, -2, 6, 22, 3); c.fill(); c.stroke(); break;
+                case 'sock': c.fillStyle = '#7a8fb8'; c.beginPath(); c.moveTo(-6, -24); c.lineTo(8, -24); c.lineTo(8, 6); c.quadraticCurveTo(22, 8, 20, 20); c.lineTo(-4, 20); c.quadraticCurveTo(-8, 12, -6, 4); c.closePath(); c.fill();
+                    c.fillStyle = '#fff'; c.fillRect(-6, -24, 14, 5); break;
+                case 'key': c.strokeStyle = '#b8964f'; c.lineWidth = 4; c.beginPath(); c.arc(-10, 0, 8, 0, TAU); c.moveTo(-2, 0); c.lineTo(22, 0); c.moveTo(14, 0); c.lineTo(14, 7); c.moveTo(20, 0); c.lineTo(20, 6); c.stroke();
+                    c.fillStyle = '#2c2c2c'; roundRect(c, -26, -8, 10, 16, 3); c.fill(); break;
+                case 'charger': c.strokeStyle = '#f5f5f5'; c.lineWidth = 3; c.beginPath(); c.moveTo(-20, 12); c.bezierCurveTo(-30, -20, 30, 20, 16, -14); c.stroke(); c.strokeStyle = '#aaa'; c.lineWidth = 1; c.stroke();
+                    c.fillStyle = '#eee'; c.fillRect(-24, 10, 8, 10); c.strokeRect(-24, 10, 8, 10); break;
+                case 'split': c.fillStyle = '#fffdf6'; c.fillRect(-16, -22, 32, 44); c.strokeStyle = '#cfc6b6'; c.strokeRect(-16, -22, 32, 44); c.fillStyle = '#3b3431'; c.font = `700 8px ${SANS}`; c.textAlign = 'center'; c.fillText('分帳', 0, -10);
+                    c.font = `400 6px ${SANS}`; ['阿華 -320', '小明 +120', '??? '].forEach((t, i) => c.fillText(t, 0, 2 + i * 8)); break;
+                case 'lash': c.strokeStyle = '#1f1a17'; c.lineWidth = 1.5; c.beginPath(); c.arc(0, 8, 18, Math.PI * 1.15, Math.PI * 1.85); c.stroke();
+                    for (let a = 1.18; a < 1.84; a += 0.07) { c.beginPath(); c.moveTo(Math.cos(a * Math.PI) * 18, 8 + Math.sin(a * Math.PI) * 18); c.lineTo(Math.cos(a * Math.PI) * 26, 8 + Math.sin(a * Math.PI) * 26); c.stroke(); } break;
+                case 'cattoy': c.strokeStyle = '#8a6a3c'; c.lineWidth = 3; c.beginPath(); c.moveTo(-22, 22); c.lineTo(10, -10); c.stroke();
+                    ['#e74c3c', '#f1c40f', '#3498db'].forEach((col, i) => { c.strokeStyle = col; c.lineWidth = 2; c.beginPath(); c.moveTo(10, -10); c.quadraticCurveTo(20 + i * 4, -20, 26 - i * 6, -26 + i * 3); c.stroke(); }); break;
+                case 'comb': c.fillStyle = '#c98b3c'; c.fillRect(-22, -8, 44, 7); for (let x = -20; x < 22; x += 4) c.fillRect(x, -1, 2, 12); break;
+                case 'exprint': c.fillStyle = '#7a5a3c'; c.fillRect(-22, -26, 44, 52); c.fillStyle = '#fbf8f2'; c.fillRect(-16, -20, 32, 40);
+                    c.strokeStyle = '#8e8070'; c.lineWidth = 1; for (let r = 3; r < 14; r += 2.5) { c.beginPath(); c.ellipse(0, 0, r, r * 1.3, 0.2, 0.3, TAU - 0.3); c.stroke(); } break;
+            }
+            c.restore();
+        }
+
+        // 桌上的污漬（擦・亮），畫在 stainCv 上，擦的時候用 destination-out 擦掉
+        function drawStain(c, kind, x, y) {
+            c.save(); c.translate(x, y);
+            switch (kind) {
+                case 'ring': c.strokeStyle = 'rgba(122,74,30,.55)'; c.lineWidth = 6; c.beginPath(); c.arc(0, 0, rand(18, 24), 0, TAU); c.stroke();
+                    c.lineWidth = 2; c.beginPath(); c.arc(2, 1, rand(14, 18), 0.3, 5); c.stroke(); break;
+                case 'sauce': c.fillStyle = 'rgba(150,60,30,.6)'; c.beginPath();
+                    for (let i = 0; i < 12; i++) { const a = i / 12 * TAU, r = rand(14, 26); c.lineTo(Math.cos(a) * r, Math.sin(a) * r); } c.closePath(); c.fill();
+                    for (let i = 0; i < 5; i++) { c.beginPath(); c.arc(rand(-34, 34), rand(-30, 30), rand(2, 5), 0, TAU); c.fill(); } break;
+                case 'flake': for (let i = 0; i < 40; i++) { c.fillStyle = i % 3 ? 'rgba(170,170,175,.95)' : 'rgba(210,210,215,.95)'; c.fillRect(rand(-30, 30), rand(-22, 22), rand(2, 5), rand(2, 4)); } break;
+                case 'bubble': for (let i = 0; i < 9; i++) { const r = rand(5, 13); c.fillStyle = 'rgba(255,255,255,.85)'; c.strokeStyle = 'rgba(160,190,210,.9)'; c.lineWidth = 1.5; c.beginPath(); c.arc(rand(-28, 28), rand(-20, 20), r, 0, TAU); c.fill(); c.stroke(); } break;
+                case 'fur': c.strokeStyle = 'rgba(227,163,94,.85)'; c.lineWidth = 1.5; for (let i = 0; i < 26; i++) { const a = rand(0, TAU), x0 = rand(-28, 28), y0 = rand(-20, 20); c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo(x0 + 6, y0 + 3, x0 + Math.cos(a) * 12, y0 + Math.sin(a) * 12); c.stroke(); } break;
+                case 'print': c.strokeStyle = 'rgba(90,80,70,.45)'; c.lineWidth = 1.6; for (let r = 3; r < 15; r += 2.6) { c.beginPath(); c.ellipse(0, 0, r, r * 1.35, 0.3, 0.2, TAU - 0.4); c.stroke(); } break;
+            }
+            c.restore();
+        }
+
+        // ===== 5. 聲音（Web Audio 合成） =====
+        let audioCtx = null;
+        function audio() {
+            try {
+                audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                return audioCtx;
+            } catch (e) { return null; }
+        }
+        function tone(freq, dur, vol = 0.15, type = 'sine', at = 0, slide = 1) {
+            const a = audio();
+            if (!a) return;
+            const t = a.currentTime + at, o = a.createOscillator(), g = a.createGain();
+            o.type = type; o.frequency.setValueAtTime(freq, t);
+            if (slide !== 1) o.frequency.exponentialRampToValueAtTime(freq * slide, t + dur);
+            g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+            o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + 0.05);
+            return o;
+        }
+        function noise(dur, vol = 0.1, freq = 1200) {
+            const a = audio();
+            if (!a) return;
+            const buf = a.createBuffer(1, Math.floor(a.sampleRate * dur), a.sampleRate), d = buf.getChannelData(0);
+            for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+            const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+            src.buffer = buf; f.type = 'bandpass'; f.frequency.value = freq; g.gain.setValueAtTime(vol, a.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + dur);
+            src.connect(f).connect(g).connect(a.destination); src.start();
+        }
+        const sfx = {
+            right: () => { tone(880, 0.12, 0.12, 'triangle'); tone(1320, 0.15, 0.08, 'triangle', 0.08); },
+            wrong: () => tone(180, 0.25, 0.15, 'square', 0, 0.7),
+            drop: () => tone(260, 0.12, 0.15, 'sine', 0, 0.6),
+            wipe: () => noise(0.08, 0.05, 2600),
+            snap: () => { tone(520, 0.08, 0.12, 'triangle'); tone(780, 0.1, 0.08, 'triangle', 0.05); },
+            fluff: () => noise(0.12, 0.08, 500),
+            peek: () => noise(0.15, 0.07, 800),
+            found: () => [660, 880, 1100].forEach((f, i) => tone(f, 0.18, 0.1, 'triangle', i * 0.08)),
+            step: () => tone(140 + Math.random() * 40, 0.05, 0.12, 'square'),
+            stamp: () => { tone(90, 0.25, 0.3, 'sine', 0, 0.5); noise(0.1, 0.08, 300); },
+        };
+        // 垃圾車：給愛麗絲（貝多芬，公有領域）
+        const NOTE = { C4: 261.63, E4: 329.63, 'G#4': 415.3, A4: 440, B4: 493.88, C5: 523.25, D5: 587.33, 'D#5': 622.25, E5: 659.25 };
+        const ELISE = [['E5', 1], ['D#5', 1], ['E5', 1], ['D#5', 1], ['E5', 1], ['B4', 1], ['D5', 1], ['C5', 1], ['A4', 2], ['C4', 1], ['E4', 1], ['A4', 1], ['B4', 2], ['E4', 1], ['G#4', 1], ['B4', 1], ['C5', 2], ['E4', 1],
+            ['E5', 1], ['D#5', 1], ['E5', 1], ['D#5', 1], ['E5', 1], ['B4', 1], ['D5', 1], ['C5', 1], ['A4', 2], ['C4', 1], ['E4', 1], ['A4', 1], ['B4', 2], ['E4', 1], ['C5', 1], ['B4', 1], ['A4', 3]];
+        let music = null;
+        function playElise() {
+            const a = audio();
+            if (!a) return;
+            stopElise();
+            const beat = 0.19, nodes = [];
+            let t = a.currentTime + 0.05;
+            const lap = ELISE.reduce((s, n) => s + n[1], 0) * beat;
+            for (let lapI = 0; lapI < 3; lapI++) {
+                ELISE.forEach(([n, len]) => {
+                    const o = a.createOscillator(), g = a.createGain();
+                    o.type = 'triangle'; o.frequency.value = NOTE[n];
+                    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.09, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + len * beat * 0.95);
+                    o.connect(g).connect(a.destination); o.start(t); o.stop(t + len * beat);
+                    nodes.push(o); t += len * beat;
+                });
+            }
+            music = { nodes, lap };
+        }
+        function stopElise() {
+            if (!music) return;
+            music.nodes.forEach(o => { try { o.stop(); } catch (e) { } });
+            music = null;
+        }
+
+        // ===== 6. 一間房間 =====
+        let G = null, stage = -1;
+        let floats = [];
+        const stepEls = [...document.querySelectorAll('#steps .step')];
+        function setSteps(i) { stepEls.forEach((el, k) => { el.classList.toggle('is-now', k === i); el.classList.toggle('is-done', k < i); }); }
+        function meter(fill, label = '') { $('meterFill').style.width = clamp(fill, 0, 100) + '%'; $('meterLabel').textContent = label; }
+        function hint(html) { $('hint').innerHTML = html; }
+        function note(text) { $('note').textContent = text; }
+        function floatText(x, y, text, color = K.shu, life = 900) { floats.push({ x, y, text, color, born: performance.now(), life }); }
+        function actions(list) {
+            const box = $('actions');
+            box.innerHTML = '';
+            return list.map(item => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = item.cls || 'act-text';
+                b.innerHTML = item.html || item.label;
+                if (item.aria) b.setAttribute('aria-label', item.aria);
+                b.addEventListener('click', e => { audio(); item.onClick(e); });
+                box.appendChild(b);
+                return b;
+            });
+        }
+
+        function newRoom() {
+            const guest = pickGuest();
+            G = {
+                guest, items: pickItems(guest), si: 0, right: 0, wrongs: [], fly: null, shake: 0,
+                stains: null, stainStart: 0, cleaned: 0, wipeStart: 0, wipeMs: null, wipeEnd: 0, cloth: null,
+                bed: null, find: null, run: null,
+                scores: { sort: 0, wipe: 0, bed: 0, find: 0, run: 0 },
+                startedAt: 0,
+            };
+            // 遺失物：兩件（房客那一類挑），偶爾多一張沒刮的刮刮樂
+            const lostKeys = shuffle(guest.lost).slice(0, 2);
+            if (guest.key === 'ex' && !lostKeys.includes('exprint')) lostKeys[0] = 'exprint';
+            if (Math.random() < 0.05) lostKeys.push('lotto');
+            const spots = shuffle(SPOTS.map(s => s.key));
+            G.find = { hidden: Object.fromEntries(lostKeys.map((k, i) => [spots[i], k])), total: lostKeys.length, peeked: {}, found: [], peeks: PEEKS, lift: {} };
+        }
+
+        function intro() {
+            newRoom();
+            stage = -1;
+            setSteps(-1);
+            $('result').classList.add('hidden');
+            $('who').textContent = `上一組房客：${G.guest.who}`;
+            note(G.guest.note);
+            meter(0, '');
+            hint('五道工序：撿、擦、鋪、找、倒。<br>大約一分鐘，打掃乾淨領房務費。');
+            actions([{ label: '開始打掃', onClick: startSort }]);
+            renderBest();
+        }
+
+        // ---- 撿・分：垃圾分類 ----
+        function startSort() {
+            stage = 0; setSteps(0); G.startedAt = performance.now();
+            note('地上的東西，一件一件丟進對的桶子。');
+            hint('一般垃圾、資源回收、廚餘，照台灣的規則分。');
+            sortButtons();
+            meter(0, `0 / ${SORT_N}`);
+        }
+        function sortButtons() {
+            actions(['gen', 'rec', 'food'].map(b => ({
+                cls: `bin-btn bin-${b}`, html: `${BINS[b].name}`, aria: BINS[b].name, onClick: () => answer(b),
+            })));
+        }
+        function answer(bin) {
+            if (stage !== 0 || G.fly || G.si >= SORT_N) return;
+            const item = G.items[G.si], ok = item.bin === bin;
+            G.fly = { item, bin, t0: performance.now(), ok };
+            if (ok) { G.right++; sfx.right(); hint(`<b class="text-wabi-dark font-normal">對。</b>${item.name}：${item.why}`); }
+            else {
+                G.wrongs.push({ item, bin }); sfx.wrong(); G.shake = performance.now();
+                hint(`<b class="text-wabi-shu font-normal">錯，要丟${BINS[item.bin].name}。</b>${item.name}：${item.why}`);
+            }
+            G.si++;
+            meter(G.si / SORT_N * 100, `${G.si} / ${SORT_N}`);
+            if (G.si >= SORT_N) {
+                G.scores.sort = Math.round(25 * G.right / SORT_N);
+                actions([]);
+                setTimeout(startWipe, ok ? 900 : 1800);
+            }
+        }
+
+        // ---- 擦・亮：擦桌子 ----
+        const TABLE = { x: 22, y: 40, w: 316, h: 320 };
+        const WIPE_LIMIT = 10000;
+        let stainCv = null, sctx = null;
+        function startWipe() {
+            stage = 1; setSteps(1);
+            note('桌上一圈一圈的，擦乾淨。');
+            hint('手指在桌上來回擦，一遍擦不乾淨。開始擦才計時，10 秒。');
+            actions([]);
+            stainCv = document.createElement('canvas');
+            stainCv.width = W; stainCv.height = H;
+            sctx = stainCv.getContext('2d', { willReadFrequently: true });
+            const kinds = shuffle([...G.guest.stains, ...G.guest.stains.slice(0, 2), pick(['ring', 'sauce'])]);
+            const cols = 3, rows = 3, cw = (TABLE.w - 60) / cols, ch = (TABLE.h - 60) / rows;
+            kinds.slice(0, 8).forEach((k, i) => {
+                const cx = TABLE.x + 30 + (i % cols + 0.5) * cw + rand(-14, 14), cy = TABLE.y + 30 + (Math.floor(i / cols) % rows + 0.5) * ch + rand(-14, 14);
+                drawStain(sctx, k, cx, cy);
+            });
+            G.stainStart = countStain();
+            G.cleaned = 0; G.wipeStart = 0; G.wipeMs = null;
+            meter(0, '0%');
+        }
+        function countStain() {
+            const d = sctx.getImageData(0, 0, W, H).data;
+            let n = 0;
+            for (let i = 3; i < d.length; i += 16) if (d[i] > 24) n++;
+            return n;
+        }
+        let lastCount = 0;
+        function wipeAt(p, prev) {
+            if (stage !== 1 || G.wipeMs !== null) return;
+            const now = performance.now();
+            if (!G.wipeStart) { G.wipeStart = now; G.wipeEnd = now + WIPE_LIMIT; }
+            sctx.save();
+            sctx.globalCompositeOperation = 'destination-out';
+            // 一次擦不乾淨，要來回擦兩遍
+            sctx.globalAlpha = 0.6;
+            sctx.strokeStyle = '#000'; sctx.fillStyle = '#000'; sctx.lineCap = 'round'; sctx.lineWidth = 46;
+            sctx.beginPath(); sctx.moveTo((prev || p).x, (prev || p).y); sctx.lineTo(p.x, p.y); sctx.stroke();
+            sctx.restore();
+            G.cloth = { ...p, t: now };
+            if (now - lastCount > 120) {
+                lastCount = now;
+                G.cleaned = 1 - countStain() / Math.max(1, G.stainStart);
+                meter(G.cleaned * 100, `${Math.round(G.cleaned * 100)}%`);
+                if (Math.random() < 0.5) sfx.wipe();
+                if (G.cleaned >= 0.97) endWipe();
+            }
+        }
+        function endWipe() {
+            if (stage !== 1 || G.wipeMs !== null) return;
+            G.cleaned = 1 - countStain() / Math.max(1, G.stainStart);
+            G.wipeMs = G.wipeStart ? Math.round(performance.now() - G.wipeStart) : WIPE_LIMIT;
+            G.scores.wipe = Math.round(20 * clamp(G.cleaned / 0.95, 0, 1));
+            meter(G.cleaned * 100, `${Math.round(G.cleaned * 100)}%`);
+            hint(G.cleaned >= 0.95 ? '亮到可以照出自己。' : G.cleaned >= 0.7 ? '還有一點，算了，看不太出來。' : '主人說：這叫擦過？');
+            floatText(180, 200, G.cleaned >= 0.95 ? '亮' : '還有', G.cleaned >= 0.95 ? K.shu : '#8e8070', 1200);
+            setTimeout(startBed, 1200);
+        }
+
+        // ---- 鋪・床：床單四個角拉到位、拍枕頭 ----
+        const MAT = [{ x: 70, y: 76 }, { x: 290, y: 76 }, { x: 290, y: 344 }, { x: 70, y: 344 }];
+        function startBed() {
+            stage = 2; setSteps(2);
+            note('床單皺成一團。四個角拉好，枕頭拍鬆。');
+            hint('拖床單的四個角到床墊的角；兩顆枕頭各拍三下。');
+            const corners = MAT.map((m, i) => {
+                const dx = (i === 0 || i === 3 ? 1 : -1), dy = (i < 2 ? 1 : -1);
+                return { x: m.x + dx * rand(28, 70), y: m.y + dy * rand(28, 80), placed: false };
+            });
+            G.bed = { corners, pillows: [0, 0], bounce: [0, 0], drag: -1 };
+            actions([{ label: '好了', onClick: endBed }]);
+            bedMeter();
+        }
+        function bedMeter() {
+            const b = G.bed, done = b.corners.filter(c => c.placed).length + b.pillows.filter(n => n >= 3).length;
+            meter(done / 6 * 100, `角 ${b.corners.filter(c => c.placed).length}/4・枕 ${b.pillows.filter(n => n >= 3).length}/2`);
+            if (done === 6) setTimeout(endBed, 500);
+        }
+        const PILLOWS = [{ x: 130, y: 112 }, { x: 230, y: 112 }];
+        function bedDown(p) {
+            const b = G.bed;
+            const k = b.corners.findIndex(c => !c.placed && dist(c, p) < 34);
+            if (k >= 0) { b.drag = k; return; }
+            const pi = PILLOWS.findIndex(q => Math.abs(p.x - q.x) < 44 && Math.abs(p.y - q.y) < 24);
+            if (pi >= 0 && b.corners.filter(c => c.placed).length >= 0) {
+                if (b.pillows[pi] < 3) { b.pillows[pi]++; b.bounce[pi] = performance.now(); sfx.fluff(); if (b.pillows[pi] === 3) floatText(PILLOWS[pi].x, PILLOWS[pi].y - 26, '鬆', K.shu); bedMeter(); }
+            }
+        }
+        function bedMove(p) {
+            const b = G.bed;
+            if (b.drag < 0) return;
+            const c = b.corners[b.drag];
+            c.x = clamp(p.x, 10, W - 10); c.y = clamp(p.y, 10, H - 10);
+        }
+        function bedUp() {
+            const b = G.bed;
+            if (b.drag < 0) return;
+            const c = b.corners[b.drag], m = MAT[b.drag];
+            if (dist(c, m) < 26) { c.x = m.x; c.y = m.y; c.placed = true; sfx.snap(); floatText(m.x, m.y - 18, '好', K.shu); bedMeter(); }
+            b.drag = -1;
+        }
+        function endBed() {
+            if (stage !== 2) return;
+            const b = G.bed;
+            const cs = b.corners.reduce((s, c, i) => s + (c.placed ? 3 : Math.max(0, 3 * (1 - dist(c, MAT[i]) / 70))), 0);
+            const ps = b.pillows.reduce((s, n) => s + (n >= 3 ? 1.5 : n * 0.4), 0);
+            G.scores.bed = Math.round(Math.min(15, cs + ps));
+            stage = 2.5;
+            actions([]);
+            hint(G.scores.bed >= 14 ? '跟飯店一樣。' : G.scores.bed >= 9 ? '睡得下去。' : '下一組房客會自己鋪。');
+            setTimeout(startFind, 1000);
+        }
+
+        // ---- 找・物：房客掉的東西 ----
+        function startFind() {
+            stage = 3; setSteps(3);
+            note(`上一組房客打電話來：「好像有東西忘了帶。」`);
+            hint(`點房間裡的地方翻翻看，只有 ${PEEKS} 次機會。`);
+            actions([{ label: '不找了', onClick: endFind }]);
+            findMeter();
+        }
+        function findMeter() {
+            const f = G.find;
+            meter(f.found.length / f.total * 100, `找到 ${f.found.length}/${f.total}・剩 ${f.peeks} 次`);
+        }
+        function findTap(p) {
+            const f = G.find;
+            if (stage !== 3 || f.peeks <= 0) return;
+            const s = SPOTS.find(s => p.x >= s.x && p.x <= s.x + s.w && p.y >= s.y && p.y <= s.y + s.h);
+            if (!s || f.peeked[s.key]) return;
+            f.peeked[s.key] = true; f.lift[s.key] = performance.now(); f.peeks--;
+            const k = f.hidden[s.key];
+            if (k) {
+                f.found.push(k); sfx.found();
+                const L = LOST[k];
+                floatText(s.x + s.w / 2, s.y - 6, `+$${L.bonus}`, '#b8862e', 1300);
+                hint(`${s.label}找到了：<b class="text-wabi-dark font-normal">${L.name}</b>。收進失物招領。`);
+            } else { sfx.peek(); hint(`${s.label}：${pick(['沒有。', '只有灰塵。', '沒有東西，有一點點頭髮。', '空的。'])}`); }
+            findMeter();
+            if (f.found.length === f.total || f.peeks === 0) setTimeout(endFind, 1100);
+        }
+        function endFind() {
+            if (stage !== 3) return;
+            const f = G.find;
+            G.scores.find = Math.round(15 * f.found.length / f.total);
+            stage = 3.5; actions([]);
+            setTimeout(startRun, 600);
+        }
+
+        // ---- 倒・垃圾：垃圾車來了 ----
+        const RUN_LIMIT = 11500;
+        function startRun() {
+            stage = 4; setSteps(4);
+            note('遠遠聽到〈給愛麗絲〉。垃圾車來了。');
+            hint('一直點「衝」，從二十七樓跑下去，趕在垃圾車開走前倒垃圾。');
+            G.run = { floor: 27, t0: 0, end: 0, done: false, made: false, step: 0 };
+            actions([{ cls: 'act-round', label: '衝', aria: '往下衝一層', onClick: runTap }]);
+            meter(0, '27F');
+            G.run.t0 = performance.now() + 900;
+            G.run.end = G.run.t0 + RUN_LIMIT;
+            playElise();
+        }
+        function runTap() {
+            const r = G.run;
+            if (stage !== 4 || r.done || performance.now() < r.t0) return;
+            r.floor = Math.max(1, r.floor - 1);
+            r.step = performance.now();
+            sfx.step();
+            meter((27 - r.floor) / 26 * 100, `${r.floor}F`);
+            if (r.floor === 1) endRun(true);
+        }
+        function endRun(made) {
+            const r = G.run;
+            if (r.done) return;
+            r.done = true; r.made = made;
+            G.scores.run = made ? 25 : Math.round(15 * (27 - r.floor) / 26);
+            actions([]);
+            if (made) { hint('趕上了。垃圾車阿姨說：「少年仔，跑很快喔。」'); floatText(180, 300, '趕上', K.shu, 1400); }
+            else { stopElise(); hint(`垃圾車開走了，你還在 ${r.floor} 樓。垃圾放房間再臭一天。`); floatText(180, 300, '沒趕上', '#8e8070', 1400); }
+            setTimeout(() => { stopElise(); showResult(); }, made ? 1500 : 1300);
+        }
+
+        // ===== 7. 畫面 =====
+        function drawRoomBase(c) {
+            // 木地板
+            c.fillStyle = K.floor; c.fillRect(0, 0, W, H);
+            c.strokeStyle = K.floorLine; c.lineWidth = 1;
+            for (let y = 0; y < H; y += 26) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); for (let x = (y / 26 % 2) * 60; x < W; x += 120) { c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + 26); c.stroke(); } }
+        }
+        function drawFindRoom(c, now, mess) {
+            drawRoomBase(c);
+            const f = G.find, lift = k => f && f.lift[k] ? clamp((now - f.lift[k]) / 300, 0, 1) : 0;
+            // 窗戶＋窗簾
+            c.fillStyle = '#cfe3f2'; c.fillRect(206, 0, 140, 14);
+            const cl = lift('curtain');
+            c.fillStyle = '#c7a4a0'; c.fillRect(206 + cl * 60, 0, 70 - cl * 30, 52); c.fillRect(276 + cl * 30, 0, 70 - cl * 30, 52);
+            c.strokeStyle = 'rgba(0,0,0,.12)'; for (let x = 214; x < 346; x += 12) { c.beginPath(); c.moveTo(x, 4); c.lineTo(x, 50); c.stroke(); }
+            // 床
+            c.fillStyle = K.woodD; roundRect(c, 20, 20, 164, 186, 6); c.fill();
+            c.fillStyle = K.white; roundRect(c, 26, 26, 152, 174, 5); c.fill();
+            c.fillStyle = K.sheet; c.fillRect(26, 90, 152, 110);
+            const pl = lift('pillow');
+            c.fillStyle = '#fff'; c.strokeStyle = '#d9d2c6'; roundRect(c, 40, 36 - pl * 18, 124, 38, 12); c.fill(); c.stroke();
+            if (lift('underbed')) { c.fillStyle = 'rgba(0,0,0,.25)'; c.fillRect(24, 170, 156, 30); }
+            // 沙發
+            c.fillStyle = '#6f7d6b'; roundRect(c, 236, 70, 104, 170, 10); c.fill();
+            c.fillStyle = '#8a9a86'; roundRect(c, 250, 84, 80, 70, 8); c.fill(); roundRect(c, 250, 158, 80, 70, 8); c.fill();
+            if (lift('sofa')) { c.fillStyle = '#4f5a4c'; c.fillRect(250, 150, 80, 10); }
+            // 地毯
+            const rl = lift('rug');
+            c.save(); c.translate(180, 278); c.rotate(-rl * 0.12);
+            c.fillStyle = '#b5654a'; c.fillRect(-88, -42 - rl * 14, 176, 84); c.strokeStyle = '#f1d9a8'; c.lineWidth = 3; c.strokeRect(-80, -34 - rl * 14, 160, 68);
+            c.restore();
+            // 盆栽
+            const pt = lift('plant');
+            c.save(); c.translate(316 - pt * 22, 350);
+            c.fillStyle = '#9a5b3a'; c.beginPath(); c.moveTo(-16, 0); c.lineTo(16, 0); c.lineTo(12, 28); c.lineTo(-12, 28); c.closePath(); c.fill();
+            c.fillStyle = '#4f8a3c'; [[-14, -18], [0, -30], [14, -16], [-4, -12]].forEach(([x, y]) => { c.beginPath(); c.ellipse(x, y, 10, 18, x / 20, 0, TAU); c.fill(); });
+            c.restore();
+            // 地上的垃圾（開場時）
+            if (mess) G.items.slice(0, 7).forEach((it, i) => { c.save(); c.translate(70 + (i % 4) * 66 + (i * 13) % 20, 220 + Math.floor(i / 4) * 70 + (i * 7) % 18); c.rotate((i * 0.7) % 1.2 - 0.6); drawIcon(c, it.icon, 0.75); c.restore(); });
+            // 可以翻的地方：虛線框＋名字
+            if (stage === 3 && f) SPOTS.forEach(s => {
+                const k = f.hidden[s.key];
+                if (f.peeked[s.key]) {
+                    if (k) { c.save(); c.translate(s.x + s.w / 2, s.y + s.h / 2); drawIcon(c, LOST[k].icon, 0.85); c.restore(); }
+                    else { c.fillStyle = 'rgba(255,255,255,.75)'; c.font = `500 12px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('沒有', s.x + s.w / 2, s.y + s.h / 2); }
+                    return;
+                }
+                if (f.peeks <= 0) return;
+                c.save(); c.setLineDash([5, 4]); c.strokeStyle = 'rgba(179,58,47,.75)'; c.lineWidth = 1.5; roundRect(c, s.x, s.y, s.w, s.h, 6); c.stroke(); c.restore();
+                c.fillStyle = 'rgba(179,58,47,.9)'; c.font = `500 11px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(s.label, s.x + s.w / 2, s.y + s.h / 2);
+            });
+        }
+        function drawSort(c, now) {
+            drawRoomBase(c);
+            // 三個桶子
+            ['gen', 'rec', 'food'].forEach((b, i) => {
+                const x = 30 + i * 108, y = 300;
+                c.fillStyle = BINS[b].color; roundRect(c, x, y, 84, 86, 8); c.fill();
+                c.fillStyle = 'rgba(0,0,0,.2)'; c.fillRect(x - 4, y - 8, 92, 12);
+                c.fillStyle = '#fff'; c.font = `500 13px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(BINS[b].name, x + 42, y + 44);
+            });
+            // 這一件
+            if (G.si < SORT_N) {
+                const it = G.items[G.si], sh = G.shake && now - G.shake < 300 ? Math.sin((now - G.shake) / 25) * 6 : 0;
+                c.save(); c.translate(180 + sh, 140);
+                c.fillStyle = 'rgba(255,255,255,.75)'; c.beginPath(); c.arc(0, 0, 70, 0, TAU); c.fill();
+                drawIcon(c, it.icon, 1.9);
+                c.restore();
+                c.fillStyle = K.ink; c.font = `600 20px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillText(it.name, 180, 244);
+                c.fillStyle = '#7a6a58'; c.font = `400 12px ${SANS}`; c.fillText(`第 ${G.si + 1} 件，共 ${SORT_N} 件`, 180, 266);
+            }
+            // 飛進桶子
+            if (G.fly) {
+                const k = clamp((now - G.fly.t0) / 380, 0, 1), bi = ['gen', 'rec', 'food'].indexOf(G.fly.bin);
+                const x = 180 + (72 + bi * 108 - 180) * k, y = 140 + (330 - 140) * k - Math.sin(k * Math.PI) * 60;
+                c.save(); c.translate(x, y); c.rotate(k * 3); drawIcon(c, G.fly.item.icon, 1.6 - k); c.restore();
+                if (k >= 1) { G.fly = null; sfx.drop(); }
+            }
+        }
+        function drawWipe(c, now) {
+            drawRoomBase(c);
+            c.fillStyle = K.woodD; roundRect(c, TABLE.x - 6, TABLE.y - 6, TABLE.w + 12, TABLE.h + 12, 14); c.fill();
+            const g = c.createLinearGradient(0, TABLE.y, 0, TABLE.y + TABLE.h);
+            g.addColorStop(0, '#b48a5e'); g.addColorStop(1, '#9a7148');
+            c.fillStyle = g; roundRect(c, TABLE.x, TABLE.y, TABLE.w, TABLE.h, 10); c.fill();
+            c.strokeStyle = 'rgba(0,0,0,.07)'; c.lineWidth = 2;
+            for (let y = TABLE.y + 20; y < TABLE.y + TABLE.h; y += 34) { c.beginPath(); c.moveTo(TABLE.x + 10, y); c.bezierCurveTo(120, y + 8, 240, y - 8, TABLE.x + TABLE.w - 10, y + 3); c.stroke(); }
+            if (G.cleaned >= 0.95) { c.fillStyle = 'rgba(255,255,255,.18)'; c.beginPath(); c.moveTo(60, 60); c.lineTo(120, 60); c.lineTo(40, 340); c.lineTo(20, 340); c.closePath(); c.fill(); }
+            c.drawImage(stainCv, 0, 0, W, H);
+            // 抹布
+            if (G.cloth && now - G.cloth.t < 400) {
+                c.save(); c.translate(G.cloth.x, G.cloth.y); c.rotate(0.3);
+                c.fillStyle = '#f2c94c'; roundRect(c, -22, -16, 44, 32, 6); c.fill(); c.strokeStyle = '#c9a227'; c.stroke();
+                c.restore();
+            }
+            // 倒數
+            if (G.wipeStart && G.wipeMs === null) {
+                const left = Math.max(0, G.wipeEnd - now);
+                c.fillStyle = 'rgba(255,255,255,.85)'; c.font = `700 22px ${SANS}`; c.textAlign = 'right'; c.textBaseline = 'top'; c.fillText((left / 1000).toFixed(1), W - 26, 50);
+                if (left <= 0) endWipe();
+            }
+        }
+        function drawBed(c, now) {
+            drawRoomBase(c);
+            const b = G.bed;
+            // 床架、床墊
+            c.fillStyle = K.woodD; roundRect(c, 52, 50, 256, 312, 10); c.fill();
+            c.fillStyle = K.white; roundRect(c, MAT[0].x, MAT[0].y, MAT[1].x - MAT[0].x, MAT[2].y - MAT[0].y, 6); c.fill();
+            // 目標角
+            MAT.forEach((m, i) => { if (b.corners[i].placed) return; c.strokeStyle = 'rgba(179,58,47,.6)'; c.lineWidth = 2; c.setLineDash([4, 4]); c.beginPath(); c.arc(m.x, m.y, 14, 0, TAU); c.stroke(); c.setLineDash([]); });
+            // 床單
+            const P = b.corners;
+            c.fillStyle = K.sheet; c.strokeStyle = K.sheetD; c.lineWidth = 2;
+            c.beginPath(); c.moveTo(P[0].x, P[0].y);
+            [1, 2, 3, 0].forEach(i => { const a = P[(i + 3) % 4], q = P[i]; c.quadraticCurveTo((a.x + q.x) / 2 + (i % 2 ? 8 : -8) * (q.placed && a.placed ? 0 : 1), (a.y + q.y) / 2 + (i % 2 ? -6 : 6) * (q.placed && a.placed ? 0 : 1), q.x, q.y); });
+            c.closePath(); c.fill(); c.stroke();
+            // 皺褶：拉好越多越少
+            const wr = 4 - P.filter(q => q.placed).length;
+            c.strokeStyle = 'rgba(120,150,170,.45)'; c.lineWidth = 1.5;
+            const cx = P.reduce((s, q) => s + q.x, 0) / 4, cy = P.reduce((s, q) => s + q.y, 0) / 4;
+            for (let i = 0; i < wr * 3; i++) { const a = i * 1.9; c.beginPath(); c.moveTo(cx + Math.cos(a) * 20, cy + Math.sin(a) * 30); c.quadraticCurveTo(cx + Math.cos(a + 0.4) * 60, cy + Math.sin(a + 0.4) * 70, cx + Math.cos(a + 0.2) * 90, cy + Math.sin(a + 0.2) * 100); c.stroke(); }
+            // 枕頭
+            PILLOWS.forEach((q, i) => {
+                const bt = b.bounce[i] && now - b.bounce[i] < 250 ? Math.sin((now - b.bounce[i]) / 250 * Math.PI) * 6 : 0;
+                const fl = b.pillows[i];
+                c.save(); c.translate(q.x, q.y); c.scale(1 + bt / 60, 1 - bt / 80);
+                c.fillStyle = '#fff'; c.strokeStyle = '#d9d2c6'; c.lineWidth = 1.5;
+                roundRect(c, -42, -20 - fl * 1.5, 84, 40 + fl * 3, 14); c.fill(); c.stroke();
+                if (fl < 3) { c.strokeStyle = 'rgba(0,0,0,.12)'; c.beginPath(); c.moveTo(-28, 0); c.lineTo(28, 2); c.stroke(); }
+                c.fillStyle = fl >= 3 ? K.shu : '#b9ae9f'; c.font = `500 10px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(fl >= 3 ? '鬆' : `拍 ${3 - fl}`, 0, 0);
+                c.restore();
+            });
+            // 角的把手
+            P.forEach((q, i) => {
+                if (q.placed) return;
+                c.fillStyle = b.drag === i ? K.shu : '#fff'; c.strokeStyle = K.shu; c.lineWidth = 2.5;
+                c.beginPath(); c.arc(q.x, q.y, 13, 0, TAU); c.fill(); c.stroke();
+                c.fillStyle = b.drag === i ? '#fff' : K.shu; c.font = `700 11px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('拉', q.x, q.y + 0.5);
+            });
+        }
+        function drawRun(c, now) {
+            const r = G.run;
+            c.fillStyle = '#e9e3d8'; c.fillRect(0, 0, W, H);
+            // 樓梯間（之字形）
+            c.strokeStyle = '#b5aa98'; c.lineWidth = 3;
+            const off = ((27 - r.floor) * 40 + (r.step && now - r.step < 120 ? (now - r.step) / 120 * 40 - 40 : 0)) % 80;
+            for (let y = -80 + off; y < 320; y += 80) { c.beginPath(); c.moveTo(60, y); c.lineTo(300, y + 40); c.lineTo(60, y + 80); c.stroke(); }
+            // 樓層
+            c.fillStyle = K.ink; c.font = `700 64px ${SANS}`; c.textAlign = 'left'; c.textBaseline = 'top'; c.fillText(`${r.floor}F`, 20, 14);
+            // 人（扛著垃圾袋）
+            const bob = r.step && now - r.step < 150 ? -6 : 0;
+            c.save(); c.translate(200, 170 + bob);
+            c.fillStyle = '#3b3431'; c.beginPath(); c.arc(0, -36, 11, 0, TAU); c.fill();
+            c.fillRect(-7, -24, 14, 30);
+            c.strokeStyle = '#3b3431'; c.lineWidth = 5; c.beginPath(); c.moveTo(-3, 6); c.lineTo(-10 + (bob ? 8 : 0), 30); c.moveTo(3, 6); c.lineTo(10 - (bob ? 8 : 0), 30); c.stroke();
+            c.fillStyle = '#2c2c2c'; [-22, 22].forEach(x => { c.beginPath(); c.ellipse(x, -4, 13, 16, 0, 0, TAU); c.fill(); c.fillStyle = '#4a4a4a'; c.fillRect(x - 3, -22, 6, 6); c.fillStyle = '#2c2c2c'; });
+            c.restore();
+            // 街上：垃圾車開過來又開走
+            c.fillStyle = '#9aa0a6'; c.fillRect(0, 330, W, 70);
+            c.fillStyle = '#fff'; for (let x = 0; x < W; x += 40) c.fillRect(x, 362, 20, 4);
+            const t = now < r.t0 ? 0 : clamp((now - r.t0) / RUN_LIMIT, 0, 1);
+            const tx = r.done && r.made ? 150 : W + 20 - t * (W + 160);
+            c.save(); c.translate(tx, 336);
+            c.fillStyle = '#f2c94c'; roundRect(c, 0, 0, 52, 30, 4); c.fill();
+            c.fillStyle = '#2f6ea5'; roundRect(c, 50, 4, 70, 26, 4); c.fill();
+            c.fillStyle = '#cfe3f2'; c.fillRect(6, 4, 22, 12);
+            c.fillStyle = '#2c2c2c'; [14, 44, 96].forEach(x => { c.beginPath(); c.arc(x, 32, 7, 0, TAU); c.fill(); });
+            c.restore();
+            // 音符
+            if (!r.done) for (let i = 0; i < 3; i++) { const k = ((now / 900) + i / 3) % 1; c.fillStyle = `rgba(59,52,49,${1 - k})`; c.font = `700 16px ${SANS}`; c.fillText('♪', tx + 20 + i * 18, 320 - k * 40); }
+            if (now < r.t0) { c.fillStyle = K.shu; c.font = `700 30px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('預備', 180, 250); }
+            // 時間到
+            if (!r.done && now > r.end) endRun(false);
+        }
+        function drawFloats(c, now) {
+            floats = floats.filter(f => now - f.born < f.life);
+            floats.forEach(f => {
+                const k = (now - f.born) / f.life;
+                c.save(); c.globalAlpha = 1 - k; c.fillStyle = f.color; c.font = `700 22px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+                c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = 4; c.strokeText(f.text, f.x, f.y - k * 30); c.fillText(f.text, f.x, f.y - k * 30);
+                c.restore();
+            });
+        }
+        function frame(now) {
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, W, H);
+            if (G) {
+                if (stage === -1 || stage === 5) drawFindRoom(ctx, now, stage === -1);
+                else if (stage === 0) drawSort(ctx, now);
+                else if (stage === 1) drawWipe(ctx, now);
+                else if (stage === 2 || stage === 2.5) drawBed(ctx, now);
+                else if (stage === 3 || stage === 3.5) drawFindRoom(ctx, now, false);
+                else if (stage === 4) drawRun(ctx, now);
+                drawFloats(ctx, now);
+            }
+            requestAnimationFrame(frame);
+        }
+
+        // ===== 8. 手指 =====
+        const toP = e => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height }; };
+        let down = false, lastP = null;
+        cv.addEventListener('pointerdown', e => {
+            audio();
+            down = true; const p = toP(e); lastP = p;
+            try { cv.setPointerCapture(e.pointerId); } catch (err) { }
+            if (stage === 1) wipeAt(p, null);
+            else if (stage === 2) bedDown(p);
+            else if (stage === 3) findTap(p);
+            else if (stage === 0) { const bi = [0, 1, 2].find(i => p.y > 296 && p.x > 26 + i * 108 && p.x < 118 + i * 108); if (bi !== undefined) answer(['gen', 'rec', 'food'][bi]); }
+        });
+        cv.addEventListener('pointermove', e => {
+            if (!down) return;
+            const p = toP(e);
+            if (stage === 1) wipeAt(p, lastP);
+            else if (stage === 2) bedMove(p);
+            lastP = p;
+        });
+        const up = () => { if (!down) return; down = false; if (stage === 2) bedUp(); };
+        cv.addEventListener('pointerup', up);
+        cv.addEventListener('pointercancel', up);
+        cv.addEventListener('contextmenu', e => e.preventDefault());
+
+        // ===== 9. 結算 =====
+        const GRADES = [
+            { min: 90, mark: '淨', line: '一塵不染' },
+            { min: 75, mark: '亮', line: '可以直接入住' },
+            { min: 55, mark: '可', line: '勉強可以' },
+            { min: 35, mark: '亂', line: '主人會念' },
+            { min: 0, mark: '髒', line: '下一組要退房了' },
+        ];
+        const BEST_KEY = 'dongbuli-fangwu-best', STATS_KEY = 'dongbuli-fangwu-stats';
+        let sheetFile = null;
+        function renderBest() {
+            let best = 0;
+            try { best = Number(localStorage.getItem(BEST_KEY)) || 0; } catch (e) { }
+            $('best').innerHTML = (best ? `最高乾淨度 ${best}<br>` : '') + `錢包 ${Wallet.fmt(Wallet.money)}`;
+        }
+        function recordRoom(total, pay) {
+            let st = null;
+            try { st = JSON.parse(localStorage.getItem(STATS_KEY)); } catch (e) { }
+            st = st || { rooms: 0, best: 0, paid: 0, sortRight: 0, sortTotal: 0, made: 0, found: {}, guests: {}, wrong: {} };
+            st.rooms++; st.best = Math.max(st.best, total); st.paid += pay;
+            st.sortRight += G.right; st.sortTotal += SORT_N; if (G.run.made) st.made++;
+            G.find.found.forEach(k => { st.found[k] = (st.found[k] || 0) + 1; });
+            st.guests[G.guest.key] = (st.guests[G.guest.key] || 0) + 1;
+            G.wrongs.forEach(w => { st.wrong[w.item.name] = (st.wrong[w.item.name] || 0) + 1; });
+            try { localStorage.setItem(STATS_KEY, JSON.stringify(st)); } catch (e) { }
+        }
+        async function showResult() {
+            stage = 5; setSteps(5);
+            const s = G.scores, total = s.sort + s.wipe + s.bed + s.find + s.run;
+            const grade = GRADES.find(g => total >= g.min);
+            const base = Math.max(100, total * 10);
+            const lost = G.find.found.reduce((t, k) => t + LOST[k].bonus, 0);
+            const star = total >= 90 ? 500 : total >= 75 ? 200 : 0;
+            G.pay = { base, lost, star };
+            Wallet.earn(base + lost + star, 'clean');
+            try { if (total > (Number(localStorage.getItem(BEST_KEY)) || 0)) localStorage.setItem(BEST_KEY, String(total)); } catch (e) { }
+            recordRoom(total, base + lost + star);
+            note(grade.line + '。');
+            hint('');
+            meter(total, `乾淨度 ${total}`);
+            sfx.stamp();
+            $('score').textContent = total;
+            $('gradeLine').textContent = `${grade.mark}・${grade.line}`;
+            $('payBase').textContent = Wallet.fmt(base);
+            $('payLostRow').classList.toggle('hidden', !lost);
+            $('payLost').textContent = Wallet.fmt(lost);
+            $('payStarRow').classList.toggle('hidden', !star);
+            $('payStar').textContent = Wallet.fmt(star);
+            $('payWallet').textContent = Wallet.fmt(Wallet.money);
+            $('payAcct').innerHTML = Line.loggedIn ? `存在 ${esc((Line.profile || {}).name || 'LINE')} 的 LINE 帳號` : '錢只存在這支手機。<button type="button" data-login class="min-h-[32px] underline underline-offset-4 text-wabi-dark">用 LINE 登入</button>，換手機也在';
+            $('wrongBox').classList.toggle('hidden', !G.wrongs.length);
+            $('wrongList').innerHTML = G.wrongs.map(w => `<li><b class="font-normal text-wabi-dark">${esc(w.item.name)}</b>：你丟${BINS[w.bin].name}，要丟<b class="font-normal text-wabi-shu">${BINS[w.item.bin].name}</b>。${esc(w.item.why)}</li>`).join('');
+            actions([]);
+            renderBest();
+            try {
+                const blob = await makeSheet(total, grade);
+                sheetFile = new File([blob], `dongbuli-fangwu-${Date.now()}.png`, { type: 'image/png' });
+                $('sheetImg').src = URL.createObjectURL(blob);
+            } catch (e) { }
+            const canShare = !!(sheetFile && navigator.canShare && navigator.canShare({ files: [sheetFile] }));
+            $('shareBtn').textContent = canShare ? '分享房務檢查表' : '下載房務檢查表';
+            $('result').classList.remove('hidden');
+            $('result').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+        }
+
+        async function makeSheet(total, grade) {
+            const s = G.scores, r = G.run, f = G.find;
+            const rows = [
+                ['上一組', G.guest.who],
+                ['撿・分', `分對 ${G.right} / ${SORT_N} 件`],
+                ['擦・亮', `擦掉 ${Math.round(G.cleaned * 100)}%${G.wipeMs && G.cleaned >= 0.95 ? `（${(G.wipeMs / 1000).toFixed(1)} 秒）` : ''}`],
+                ['鋪・床', `${G.bed.corners.filter(c => c.placed).length} 個角到位・枕頭${G.bed.pillows.filter(n => n >= 3).length === 2 ? '拍鬆了' : '還扁扁的'}`],
+                ['找・物', f.found.length ? f.found.map(k => LOST[k].name).join('、') : '什麼都沒找到'],
+                ['倒・垃圾', r.made ? '趕上垃圾車' : `沒趕上，在 ${r.floor} 樓`],
+                ['房務費', Wallet.fmt(G.pay.base) + (G.pay.lost + G.pay.star ? `＋${Wallet.fmt(G.pay.lost + G.pay.star)}` : '')],
+            ];
+            const allText = rows.flat().join('') + '房務檢查表乾淨度二十七樓房務部主人' + grade.mark + grade.line + '0123456789';
+            try { await Promise.race([Promise.all([document.fonts.load(`600 40px ${SERIF}`, allText), document.fonts.load(`400 40px ${SANS}`, allText)]), new Promise(res => setTimeout(res, 2500))]); } catch (e) { }
+            const c = document.createElement('canvas'); c.width = 1080; c.height = 1350;
+            const x = c.getContext('2d');
+            const text = (str, px, py, font, color, align = 'center') => { x.font = font; x.fillStyle = color; x.textAlign = align; x.fillText(str, px, py); };
+            x.fillStyle = '#fcfaf8'; x.fillRect(0, 0, c.width, c.height);
+            x.strokeStyle = '#8e8070'; x.lineWidth = 2; x.strokeRect(40, 40, 1000, 1270); x.lineWidth = 1; x.strokeRect(54, 54, 972, 1242);
+            text('D O N G B U L I ・ 2 7 F ・ 房 務 部', 540, 130, `400 26px ${SANS}`, '#8e8070');
+            text('房務檢查表', 540, 220, `600 76px ${SERIF}`, '#2c2c2c');
+            x.fillStyle = '#8e8070'; x.fillRect(500, 250, 80, 2);
+            let y = 340;
+            rows.forEach(([k, v], i) => {
+                const done = [true, G.right >= 10, G.cleaned >= 0.95, G.scores.bed >= 14, f.found.length === f.total, r.made, true][i];
+                if (i > 0 && i < 6) { x.strokeStyle = '#8e8070'; x.lineWidth = 2; x.strokeRect(150, y - 30, 34, 34); if (done) { x.strokeStyle = '#b33a2f'; x.lineWidth = 5; x.beginPath(); x.moveTo(156, y - 14); x.lineTo(166, y - 2); x.lineTo(186, y - 36); x.stroke(); } }
+                text(k, 210, y, `400 30px ${SANS}`, '#8e8070', 'left');
+                x.font = `400 36px ${SERIF}`;
+                const fit = Math.min(36, Math.floor(36 * 600 / Math.max(1, x.measureText(v).width)));
+                text(v, 380, y, `400 ${fit}px ${SERIF}`, '#4a4a4a', 'left');
+                y += 92;
+            });
+            text(`乾淨度 ${total}`, 150, y + 50, `600 52px ${SERIF}`, '#2c2c2c', 'left');
+            text(grade.line, 150, y + 110, `400 30px ${SERIF}`, '#8e8070', 'left');
+            text('主人', 640, y + 110, `400 26px ${SANS}`, '#8e8070', 'left');
+            x.strokeStyle = '#8e8070'; x.lineWidth = 1.5; x.beginPath(); x.moveTo(700, y + 112); x.lineTo(760, y + 112); x.stroke();
+            x.save(); x.translate(850, y + 50); x.rotate(-0.12); x.globalAlpha = 0.9;
+            x.strokeStyle = '#b33a2f'; x.lineWidth = 7; x.strokeRect(-85, -85, 170, 170); x.lineWidth = 2.5; x.strokeRect(-100, -100, 200, 200);
+            x.textBaseline = 'middle'; text(grade.mark, 0, 6, `700 120px ${SERIF}`, '#b33a2f');
+            x.restore();
+            const d = new Date();
+            text(`${d.getFullYear()}・${d.getMonth() + 1}・${d.getDate()}`, 540, 1270, `400 24px ${SANS}`, '#8e8070');
+            return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(), 'image/png'));
+        }
+        async function shareSheet() {
+            if (!sheetFile) return;
+            if (navigator.canShare && navigator.canShare({ files: [sheetFile] })) {
+                try { await navigator.share({ files: [sheetFile], title: '丼步喱・絆 房務檢查表', text: `我在二十七樓打掃了一間房，乾淨度 ${$('score').textContent}` }); } catch (e) { }
+                return;
+            }
+            const a = document.createElement('a'); a.href = URL.createObjectURL(sheetFile); a.download = sheetFile.name; a.click();
+        }
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
+
+        $('shareBtn').addEventListener('click', shareSheet);
+        $('againBtn').addEventListener('click', () => { intro(); $('room').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' }); });
+        $('payAcct').addEventListener('click', e => { if (e.target.closest('[data-login]')) Line.login(); });
+        Wallet.on(type => { renderBest(); if (type === 'login') showToast('登入了，房務費存進 LINE 帳號'); });
+        document.addEventListener('visibilitychange', () => { if (document.hidden) stopElise(); });
+
+        intro();
+        requestAnimationFrame(frame);
+    </script>
+</body>
+
+</html>
