@@ -979,7 +979,7 @@ function washRow(r, now, lineId, device) {
   if (isNaN(at.getTime()) || at.getTime() > now.getTime() + 86400000 || at.getTime() < now.getTime() - 90 * 86400000) return null;
   var parts = r.parts || {}, pay = r.pay || {}, pokes = r.pokes || {}, order = r.order || null;
   var want = Array.isArray(r.want) ? r.want.slice(0, 2).map(function (x) { return washNum(x, 0, 20); }).join('-') : '';
-  var extra = { cat: !!r.cat, glasses: washKey(r.glasses), mustache: !!r.mustache, freckles: !!r.freckles };
+  var extra = { cat: !!r.cat, dog: !!r.dog, glasses: washKey(r.glasses), mustache: !!r.mustache, freckles: !!r.freckles };
   return [
     now, at, lineId || '', device,
     washText(r.who, 30), washKey(r.style), washNum(r.total, 0, 100), washText(r.grade, 2),

@@ -257,6 +257,27 @@
 
         const API_URL = "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
 
+        // 連不上後端時，說得出是哪裡卡住（Apps Script 出錯會回一頁 HTML，不是 JSON）
+        async function callApi(body) {
+            let res;
+            try {
+                res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(body) });
+            } catch (e) {
+                throw new Error('網路連不到 Google。手機網路正常的話，多半是部署的「誰可以存取」不是「所有人」，或部署被封存了');
+            }
+            const text = await res.text();
+            try { return JSON.parse(text); } catch (e) { }
+            const plain = text.replace(/<style[\s\S]*?<\/style>|<script[\s\S]*?<\/script>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+            const why =
+                /authoriz|授權|權限/i.test(plain) ? 'Apps Script 要重新授權：打開編輯器，隨便執行一個函式（例如 authorizeLine），按「允許」' :
+                /simultaneous|同時/i.test(plain) ? '同時太多人在用（Google 一個帳號最多同時跑 30 個），等一兩分鐘再試' :
+                /too many times|超出|quota|配額/i.test(plain) ? 'Google 今天的用量到上限了，明天會自己恢復' :
+                /function not found|找不到.*函式|doPost/i.test(plain) ? '部署的版本裡沒有 doPost：Code.gs 可能沒貼完整，貼好後部署新版本' :
+                /syntax|語法/i.test(plain) ? 'Code.gs 有語法錯誤，貼上時可能少了一段，重貼後部署新版本' :
+                `後端回了一頁錯誤（HTTP ${res.status}）`;
+            throw new Error(why + (plain ? `。Google 說：${plain.slice(0, 120)}` : ''));
+        }
+
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
         // 歷史紀錄收合（只有手機上有作用，CSS 在電腦版會一直攤開）
@@ -283,9 +304,10 @@
                 <p class="mt-4 text-xs tracking-widest text-stone-400">正在翻名簿……</p>`);
         }
 
-        function showLoadError() {
+        function showLoadError(why) {
             showLoadState(`
                 <p class="text-xs tracking-widest text-stone-400">名簿讀不到，可能是網路或後端忙碌。</p>
+                ${why ? `<p class="mt-3 mx-auto max-w-sm text-[11px] leading-relaxed tracking-wider text-wabi-shu [overflow-wrap:anywhere]">${esc(why)}</p>` : ''}
                 <button type="button" onclick="fetchData()"
                     class="mt-4 px-5 py-3 border border-stone-300 text-xs tracking-widest text-wabi-dark hover:border-wabi-dark transition-colors">再試一次</button>`);
         }
@@ -293,16 +315,15 @@
         async function fetchData() {
             showLoading();
             try {
-                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'adminList', token: adminToken }) });
-                const result = await res.json();
+                const result = await callApi({ type: 'adminList', token: adminToken });
                 if (result.result === 'unauthorized') return backToLogin();
-                if (result.result !== 'success') throw new Error(result.error);
+                if (result.result !== 'success') throw new Error('後端說：' + (result.error || '不明的錯誤'));
                 processData(result.bookings || []);
                 showLoadState('');
 
             } catch (e) {
                 console.error("Fetch error", e);
-                showLoadError();
+                showLoadError(e.message);
             }
         }
 
@@ -418,11 +439,7 @@
                 c.classList.add('opacity-40', 'animate-pulse'); // 儲存中（重畫時會換掉）
             });
             try {
-                const res = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ type: 'updateStatus', id: item.id, status, token: adminToken })
-                });
-                const result = await res.json();
+                const result = await callApi({ type: 'updateStatus', id: item.id, status, token: adminToken });
                 if (result.result === 'unauthorized') return backToLogin();
                 if (result.result !== 'success') {
                     alert(result.error || '更新失敗，請稍後再試。');
@@ -601,8 +618,7 @@
         let bonuses = [];
 
         async function bonusCall(body) {
-            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ ...body, token: adminToken }) });
-            const result = await res.json();
+            const result = await callApi({ ...body, token: adminToken });
             if (result.result === 'unauthorized') { backToLogin(); throw new Error('通行證過期了'); }
             if (result.result !== 'success') {
                 // 後端還沒更新時，新的動作會被當成「不認得的請求」

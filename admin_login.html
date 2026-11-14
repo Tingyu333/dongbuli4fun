@@ -56,7 +56,7 @@
                         <span class="group-hover:mr-2 transition-all">進入</span> ➔
                     </button>
                     <p id="errorMsg"
-                        class="text-[10px] text-wabi-shu text-center mt-4 tracking-widest opacity-0 transition-opacity duration-300">
+                        class="text-[10px] leading-relaxed text-wabi-shu text-center mt-4 tracking-widest opacity-0 [overflow-wrap:anywhere] transition-opacity duration-300">
                         密碼不對</p>
                 </div>
             </form>
@@ -67,6 +67,27 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
 
         // 密碼送到後端比對（密碼存在 Apps Script 的指令碼屬性，不寫在這裡），對了會拿到 6 小時的通行證
+        // 連不上後端時，說得出是哪裡卡住（Apps Script 出錯會回一頁 HTML，不是 JSON）
+        async function callApi(body) {
+            let res;
+            try {
+                res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(body) });
+            } catch (e) {
+                throw new Error('網路連不到 Google。手機網路正常的話，多半是部署的「誰可以存取」不是「所有人」，或部署被封存了');
+            }
+            const text = await res.text();
+            try { return JSON.parse(text); } catch (e) { }
+            const plain = text.replace(/<style[\s\S]*?<\/style>|<script[\s\S]*?<\/script>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+            const why =
+                /authoriz|授權|權限/i.test(plain) ? 'Apps Script 要重新授權：打開編輯器，隨便執行一個函式（例如 authorizeLine），按「允許」' :
+                /simultaneous|同時/i.test(plain) ? '同時太多人在用（Google 一個帳號最多同時跑 30 個），等一兩分鐘再試' :
+                /too many times|超出|quota|配額/i.test(plain) ? 'Google 今天的用量到上限了，明天會自己恢復' :
+                /function not found|找不到.*函式|doPost/i.test(plain) ? '部署的版本裡沒有 doPost：Code.gs 可能沒貼完整，貼好後部署新版本' :
+                /syntax|語法/i.test(plain) ? 'Code.gs 有語法錯誤，貼上時可能少了一段，重貼後部署新版本' :
+                `後端回了一頁錯誤（HTTP ${res.status}）`;
+            throw new Error(why + (plain ? `。Google 說：${plain.slice(0, 120)}` : ''));
+        }
+
         document.getElementById('loginForm').addEventListener('submit', async function (e) {
             e.preventDefault();
             const password = document.getElementById('password').value;
@@ -74,8 +95,7 @@
             const btn = document.getElementById('loginBtn');
             btn.disabled = true;
             try {
-                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'adminLogin', password }) });
-                const result = await res.json();
+                const result = await callApi({ type: 'adminLogin', password });
                 if (result.result === 'success') {
                     localStorage.setItem('adminToken', result.token);
                     localStorage.removeItem('isAdmin'); // 舊版的登入記號
@@ -85,12 +105,15 @@
                 msg.textContent = result.error || '密碼不對';
             } catch (err) {
                 console.error('登入失敗', err);
-                msg.textContent = '連不上後端，等一下再試';
+                msg.textContent = '連不上後端：' + err.message;
+                msg.dataset.keep = '1';
             }
             btn.disabled = false;
             msg.classList.remove('opacity-0');
-            // 3秒後隱藏錯誤訊息
-            setTimeout(() => msg.classList.add('opacity-0'), 3000);
+            // 密碼不對 3 秒後隱藏；連不上後端的原因留著，方便截圖
+            clearTimeout(msg._t);
+            if (!msg.dataset.keep) msg._t = setTimeout(() => msg.classList.add('opacity-0'), 3000);
+            delete msg.dataset.keep;
         });
     </script>
 </body>
