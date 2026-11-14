@@ -36,6 +36,7 @@ var COMMANDS = [
   { words: ['油價', '汽油', '柴油'], run: replyOil },
   { words: ['股價', '股票', '股'], run: replyStock },
   { words: ['吃什麼', '要吃什麼', '吃啥'], run: replyEat },
+  { words: ['喝什麼', '要喝什麼', '喝啥', '喝甚麼', '飲料'], run: replyDrink },
   { words: ['匯率'], run: replyFx },
   { words: ['排球', 'TPVL', 'tpvl'], run: replyVolley }, // 長的放前面，「股票 2330」才不會被切成「票 2330」
   // 狗、貓只認整句（「狗屎運」「貓咪好可愛」不會在群組裡突然冒出一張圖）
@@ -2134,6 +2135,238 @@ function replyEat(arg, source) {
   return card;
 }
 
+// --- 喝什麼（不用網路，神明幫你點飲料） ---
+// 先照時間挑一類（早上咖啡豆漿多、晚上才有酒），再挑一杯，最後照那一類的規矩配甜度、冰塊、加料、大小。
+// 名字後面的 # 是限制：#熱 只能熱的、#冰 只能冰的、#冷熱 只有冰跟熱、#料 已經有料不再加。
+// 後面可以接種類（咖啡、奶茶、果汁、古早味、超商、酒…）、熱的／冰的、無糖，和「不要珍珠」「咖啡以外」。
+// 天氣有快取的話（有人剛問過「天氣」）冷天多給熱的、熱天多給冰的，不另外抓網路。
+
+var DRINK_KINDS = [
+  { key: 'tea', name: '手搖純茶', opt: 'shake', items: ['紅茶', '綠茶', '青茶', '烏龍茶', '四季春', '金萱', '翡翠綠茶', '阿薩姆紅茶', '鐵觀音', '東方美人',
+    '蜜香紅茶', '高山青', '碧螺春', '文山包種', '桂花烏龍', '茉莉綠茶', '玄米煎茶', '焙茶', '白桃烏龍', '荔枝紅茶', '伯爵紅茶', '炭焙烏龍',
+    '冬片仙', '日月潭紅玉', '蕎麥茶#冷熱', '黃金烏龍', '錫蘭紅茶', '大麥紅茶', '梔子花綠茶', '春烏龍'] },
+  { key: 'milk', name: '奶茶', opt: 'shake', items: ['珍珠奶茶#料', '波霸奶茶#料', '奶茶', '鐵觀音奶茶', '伯爵奶茶', '阿薩姆奶茶', '四季春奶茶', '烏龍奶茶',
+    '紅茶拿鐵', '烏龍拿鐵', '焙茶拿鐵', '抹茶拿鐵', '鐵觀音拿鐵', '黑糖珍珠鮮奶#料', '芋頭鮮奶', '紫米鮮奶', '可可芭蕾', '阿華田', '厚奶茶',
+    '泰式奶茶#冰', '港式奶茶#冷熱', '鴛鴦奶茶#冷熱', '粉粿奶茶#料', '仙草凍奶茶#料', '布丁奶茶#料', '椰香奶茶', '黑糖鮮奶', '桂花奶茶',
+    '玫瑰奶茶', '杏仁奶茶', '奶綠', '茉香奶綠', '蜜香奶茶', '大麥奶茶', '奶蓋綠茶#料'] },
+  { key: 'fruit', name: '果茶', opt: 'fruit', items: ['百香綠茶', '百香雙響炮#料', '柳橙綠茶', '葡萄柚綠茶', '檸檬綠茶', '檸檬紅茶', '金桔檸檬', '多多綠茶',
+    '冬瓜檸檬', '蜂蜜檸檬#冷熱', '鳳梨冰茶', '芒果綠茶', '荔枝烏龍', '水蜜桃紅茶', '草莓果粒茶', '柚子茶#冷熱', '梅子綠茶', '蔓越莓綠茶', '青梅冰茶',
+    '甘蔗青茶', '楊枝甘露#料', '鮮榨柳橙綠', '檸檬多多', '芭樂綠茶', '紅柚翡翠', '香橙烏龍', '奇異果綠茶', '桑椹烏龍', '洛神烏梅茶', '一顆檸檬綠'] },
+  { key: 'special', name: '特調', opt: 'shake', items: ['芝士奶蓋四季春#料', '海鹽奶蓋紅茶#料', '黑糖奶霜鐵觀音#料', '冬瓜奶蓋#料', '杏仁凍奶茶#料',
+    '布蕾奶茶#料', '奧利奧奶茶#料', '黑糖粉粿鮮奶#料', '手炒黑糖鮮奶', '芋泥波波鮮奶#料', '冬瓜青茶', '冬瓜鮮奶', '仙草凍飲#料', '愛玉檸檬#料',
+    '紅豆鮮奶#料', '綠豆沙牛奶#冰', '雪花冰沙奶茶#冰', '燕麥奶茶#料', '黑芝麻鮮奶', '桂圓紅棗鮮奶#冷熱', '焦糖奶茶', '蜂蜜鮮奶#冷熱'] },
+  { key: 'coffee', name: '咖啡', opt: 'coffee', items: ['美式', '拿鐵', '卡布奇諾#冷熱', '澳白#熱', '摩卡', '焦糖瑪奇朵', '冰滴咖啡#冰', '手沖耶加雪菲',
+    '西西里咖啡#冰', '燕麥拿鐵', '黑糖拿鐵', '海鹽焦糖拿鐵', '義式濃縮#熱', '阿芙佳朵#冰', '越南滴漏#冷熱', '鴛鴦咖啡#冷熱', '柳橙美式#冰',
+    '氣泡美式#冰', '椰子美式#冰', '冷萃咖啡#冰', '手沖藝伎', '榛果拿鐵', '香草拿鐵', '肉桂拿鐵#冷熱', '黑糖燕麥拿鐵', '咖啡牛奶#冰', '濃縮通寧#冰',
+    '超商大杯美式', '超商大杯拿鐵', '加了三份濃縮的美式'] },
+  { key: 'juice', name: '果汁・冰沙', opt: 'juice', items: ['西瓜汁', '木瓜牛奶', '芒果冰沙', '奇異果汁', '鳳梨汁', '柳橙汁', '芭樂汁', '蘋果牛奶',
+    '香蕉牛奶', '酪梨牛奶', '綜合果汁', '火龍果冰沙', '草莓牛奶', '藍莓優格冰沙', '番茄汁', '胡蘿蔔汁', '蓮霧汁', '葡萄汁', '檸檬汁',
+    '百香果汁', '鳳梨苦瓜汁', '精力湯', '香蕉巧克力冰沙', '芒果優格', '荔枝冰沙', '紅心芭樂牛奶', '哈密瓜牛奶', '西瓜鳳梨', '水蜜桃冰沙'] },
+  { key: 'old', name: '古早味', opt: 'old', items: ['青草茶#冰', '冬瓜茶#冰', '楊桃汁#冰', '酸梅湯#冰', '杏仁茶#冷熱', '豆漿#冷熱', '米漿#冷熱', '仙草蜜#冰',
+    '黑豆漿#冷熱', '麥茶#冰', '紅茶牛奶#冰', '桂圓紅棗茶#熱', '老薑茶#熱', '黑糖薑茶#熱', '菊花茶#冷熱', '洛神花茶#冷熱', '決明子茶#冰', '苦茶#熱',
+    '蘆筍汁#冰', '甘蔗汁#冰', '花生湯#熱', '燒仙草#熱', '熱豆花水#熱', '鹹豆漿#熱', '紅豆湯#熱', '綠豆湯#冰', '黑糖粉圓冰#冰', '檸檬愛玉#冰',
+    '酸梅汁加冰塊#冰', '麵茶#熱', '四物飲#冷熱'] },
+  { key: 'store', name: '超商', opt: 'store', items: ['麥香紅茶', '麥香奶茶', '麥香綠茶', '蜜豆奶', '養樂多', '罐裝咖啡', '陽光豆漿', '果菜汁', '舒跑',
+    '寶礦力', '沙士', '蘋果西打', '可爾必思', '御茶園', '茶裏王', '純喫茶', '午後紅茶', '鮮奶', '保久乳', '維他露P', '彈珠汽水', '運動飲料',
+    '可樂', '雪碧', '椰子水', '燕麥奶', '巧克力牛奶', '黑麥汁', '芒果青', '冬瓜茶鋁箔包', '統一布丁奶茶#料'] },
+  { key: 'bar', name: '酒', opt: 'bar', items: ['台啤十八天', '金牌台啤', '水果啤酒', '梅酒', '檸檬沙瓦', '高球', '紅酒', '白酒', '清酒', '燒酎', '高粱',
+    '威士忌', '琴通寧', '莫西多', '長島冰茶', '自由古巴', '螺絲起子', '柚子酒', '馬格利', '米酒加養樂多', '精釀啤酒', '香檳', '熱紅酒#熱', '啤酒塔',
+    '一杯就倒的那種'] },
+  { key: 'water', name: '水', opt: 'water', items: ['白開水', '溫開水#熱', '熱水#熱', '冰水#冰', '氣泡水#冰', '檸檬水', '鹽水（不是）'] }
+];
+// 每一類的權重：照時段調，酒只有晚上、或指定「酒」才會出現；水很少，但神明偶爾會覺得你需要水
+var DRINK_WEIGHTS = {
+  morning: { tea: 2, milk: 3, fruit: 1, special: 1, coffee: 5, juice: 2, old: 4, store: 2, bar: 0, water: 0.3 },
+  day: { tea: 4, milk: 4, fruit: 4, special: 3, coffee: 3, juice: 3, old: 2, store: 1, bar: 0, water: 0.3 },
+  night: { tea: 3, milk: 3, fruit: 3, special: 2, coffee: 1, juice: 2, old: 2, store: 1.5, bar: 2, water: 0.3 },
+  late: { tea: 1, milk: 2, fruit: 1, special: 1, coffee: 0.5, juice: 1, old: 2, store: 3, bar: 3, water: 0.5 }
+};
+var DRINK_WORDS = { '手搖': ['tea', 'milk', 'fruit', 'special'], '純茶': ['tea'], '茶': ['tea', 'fruit'], '奶茶': ['milk'], '鮮奶': ['milk', 'special'], '拿鐵': ['milk', 'coffee'],
+  '果茶': ['fruit'], '特調': ['special'], '奶蓋': ['special'], '咖啡': ['coffee'], '提神': ['coffee', 'tea'], '果汁': ['juice'], '冰沙': ['juice'],
+  '水果': ['juice', 'fruit'], '古早味': ['old'], '傳統': ['old'], '超商': ['store'], '便利商店': ['store'], '小七': ['store'], '全家': ['store'],
+  '酒': ['bar'], '喝酒': ['bar'], '啤酒': ['bar'], '調酒': ['bar'], '微醺': ['bar'], '水': ['water'] };
+var DRINK_SUGAR = ['無糖', '一分糖', '微糖', '半糖', '少糖', '正常糖'];
+var DRINK_ICE = ['去冰', '微冰', '少冰', '正常冰'];
+var DRINK_HOT = ['溫', '熱'];
+var DRINK_TOPPINGS = ['珍珠', '波霸', '小珍珠', '白玉珍珠', '黑糖珍珠', '椰果', '仙草凍', '布丁', '芋圓', '地瓜圓', '粉粿', '寒天晶球', '蘆薈', '愛玉',
+  '茶凍', '咖啡凍', '紅豆', '芋泥', '奶霜', '芝士奶蓋', '杏仁凍', '燕麥', '蒟蒻', '桂花凍', '西米露', '粉條', '綠豆', '黑糖粉粿', '珍珠＋椰果（QQ）'];
+var DRINK_COFFEE_ADD = ['加一份濃縮', '換燕麥奶', '換豆奶', '加香草糖漿', '加焦糖醬', '加榛果糖漿', '加奶泡', '換低咖啡因', '多加奶', '少奶'];
+var DRINK_BAR_ADD = ['加冰塊', '不加冰', '加檸檬', '一杯就好', '兩杯起跳', '小酌', '乾杯', '配鹹酥雞', '配滷味'];
+var DRINK_TIPS = ['神明點的，不要問我。', '不要再看菜單了，就這杯。', '甜度冰塊是神明決定的，店員問就照念。', '二十七樓不負責結帳。',
+  '喝完記得回收，杯子跟吸管分開。', '點錯了也是一種緣分。', '多喝水沒事，多喝這杯也沒事。', '這不是建議，是命運。',
+  '排隊太久就換一家，神明不會怪你。', '幫隔壁那個也點一杯吧。', '喝完再抽一杯是不行的，你會睡不著。'];
+var DRINK_SPECIAL_TIPS = {
+  '珍珠奶茶': '台灣之光，不用解釋。', '波霸奶茶': '珍珠的大哥，吸的時候小心噎到。', '白開水': '神明說你需要水。', '溫開水': '多喝溫開水，什麼病都會好（不會）。',
+  '熱水': '神明覺得你需要熱水，不要問為什麼。', '鹽水（不是）': '神明開玩笑的，去喝點正常的。', '一杯就倒的那種': '酒量就是一杯，這樣很好，省錢。',
+  '加了三份濃縮的美式': '今晚就是你跟天花板的事了。', '米酒加養樂多': '台灣人才懂的調酒，不要跟外國人解釋。', '苦茶': '人生已經夠苦了，你確定？（確定）',
+  '四物飲': '喝了不會變漂亮，但神明說可以。', '精力湯': '健康的味道，喝完一整天都在打嗝。', '鹹豆漿': '這是喝的還是吃的？是喝的，用湯匙喝。'
+};
+
+function drinkPart() {
+  var h = Number(Utilities.formatDate(new Date(), 'Asia/Taipei', 'H'));
+  return h >= 5 && h < 11 ? 'morning' : h >= 11 && h < 18 ? 'day' : h >= 18 && h < 23 ? 'night' : 'late';
+}
+
+// 天氣快取裡的氣溫（有人剛問過「天氣」才有），沒有就 null，不另外抓
+function drinkTemp() {
+  try {
+    var c = CacheService.getScriptCache().get('weather');
+    var t = c && JSON.parse(c).current && JSON.parse(c).current.temperature_2m;
+    return typeof t === 'number' ? t : null;
+  } catch (err) { return null; }
+}
+
+function pickOne(list) { return list[Math.floor(Math.random() * list.length)]; }
+
+function pickWeighted(pairs) {
+  var sum = pairs.reduce(function (s, p) { return s + p[1]; }, 0);
+  var r = Math.random() * sum;
+  for (var i = 0; i < pairs.length; i++) { r -= pairs[i][1]; if (r < 0) return pairs[i][0]; }
+  return pairs[pairs.length - 1][0];
+}
+
+function drinkName(item) { return item.split('#')[0]; }
+function drinkRule(item) { return item.split('#')[1] || ''; }
+
+// 這杯能不能冰、能不能熱
+function drinkCan(kind, item, want) {
+  var rule = drinkRule(item);
+  if (want === 'hot') {
+    if (rule === '冰') return false;
+    if (rule === '熱' || rule === '冷熱') return true;
+    return kind.opt === 'shake' || kind.opt === 'coffee' || kind.opt === 'water' || (kind.opt === 'fruit' && /檸檬|柚子|金桔/.test(item));
+  }
+  if (want === 'cold') return rule !== '熱';
+  return true;
+}
+
+// 配甜度、冰塊、加料、大小，回傳 ['大杯', '半糖', '少冰', '加珍珠'] 這樣的一串
+function drinkOptions(kind, item, f, temp) {
+  var rule = drinkRule(item), name = drinkName(item);
+  var hotOk = drinkCan(kind, item, 'hot'), coldOk = drinkCan(kind, item, 'cold');
+  // 冷熱：指定的照指定，不然看天氣，再不然大多數冰的
+  var pHot = rule === '熱' ? 1 : !hotOk ? 0 : f.temp === 'hot' ? 1 : f.temp === 'cold' ? 0 : temp == null ? 0.2 : temp < 16 ? 0.7 : temp < 21 ? 0.4 : temp > 29 ? 0.05 : 0.2;
+  if (!coldOk) pHot = 1;
+  var hot = Math.random() < pHot;
+  var out = [];
+  var ICE = f.noIce ? ['去冰'] : DRINK_ICE;
+  if (kind.opt === 'shake' || kind.opt === 'fruit') {
+    out.push(Math.random() < 0.55 ? '大杯' : '中杯');
+    var sugars = kind.opt === 'fruit' ? DRINK_SUGAR.slice(1) : DRINK_SUGAR;
+    out.push(f.sugarFree ? '無糖' : pickOne(sugars));
+    out.push(hot ? pickOne(DRINK_HOT) : pickOne(rule === '冰' ? ICE : ICE.concat(['常溫'])));
+    var tops = DRINK_TOPPINGS.filter(function (t) {
+      return name.indexOf(t) === -1 && !f.bans.some(function (b) { return t.indexOf(b) !== -1; }) && !(f.sugarFree && /黑糖|布丁|芋泥|西米露/.test(t));
+    });
+    var n = rule === '料' ? (Math.random() < 0.2 ? 1 : 0) : pickWeighted([[0, 3], [1, 4], [2, 2], [3, 0.5]]);
+    for (var i = 0; i < n && tops.length; i++) out.push('加' + tops.splice(Math.floor(Math.random() * tops.length), 1)[0]);
+  } else if (kind.opt === 'coffee') {
+    if (rule !== '熱' || Math.random() < 0.5) out.push(Math.random() < 0.5 ? '大杯' : '中杯');
+    out.push(hot ? '熱' : f.noIce ? '去冰' : pickOne(['正常冰', '少冰', '去冰']));
+    out.push(f.sugarFree ? '無糖' : pickWeighted([['無糖', 4], ['微糖', 2], ['半糖', 2], ['正常糖', 1]]));
+    if (Math.random() < 0.45) out.push(pickOne(DRINK_COFFEE_ADD.filter(function (a) { return !(name.indexOf('燕麥') !== -1 && a === '換燕麥奶'); })));
+  } else if (kind.opt === 'juice') {
+    out.push(Math.random() < 0.5 ? '大杯' : '中杯');
+    if (name.indexOf('冰沙') === -1) out.push(f.noIce ? '去冰' : pickOne(['正常冰', '少冰', '去冰']));
+    out.push(f.sugarFree ? '不加糖' : pickOne(['不加糖', '微糖', '正常']));
+    if (Math.random() < 0.25) out.push(pickOne(['加椰果', '加蘆薈', '加寒天', '加優格', '加蜂蜜', '加檸檬']));
+  } else if (kind.opt === 'old') {
+    out.push(hot ? '熱的' : f.noIce ? '去冰' : pickOne(['冰的', '少冰', '去冰']));
+    if (/豆漿|米漿|杏仁茶|麥茶|冬瓜茶|紅茶牛奶/.test(name)) out.push(f.sugarFree ? '無糖' : pickOne(['無糖', '微糖', '半糖', '正常甜']));
+    if (Math.random() < 0.3) out.push(pickOne(['大杯', '一大壺', '外帶一袋（綁吸管那種）', '小杯']));
+  } else if (kind.opt === 'store') {
+    out.push(pickOne(['冰的', '冰的', '常溫']));
+    if (Math.random() < 0.35) out.push(pickOne(['第二件六折', '買一送一', '集點貼紙記得拿', '大瓶的', '鋁箔包', '兩瓶']));
+  } else if (kind.opt === 'bar') {
+    out.push(hot ? '熱的' : pickOne(DRINK_BAR_ADD));
+  } else if (kind.opt === 'water') {
+    out.push(hot ? pickOne(['溫的', '熱的', '溫溫的一大杯']) : pickOne(['一大杯', '小口小口喝', '一口氣喝完', '加片檸檬']));
+  }
+  return { opts: out, hot: hot };
+}
+
+function replyDrink(arg, source) {
+  var rest = String(arg || '').replace(/^[:：\s]+/, '');
+  var f = { kinds: null, temp: null, sugarFree: false, noIce: false, bans: [] };
+  // 甜度、冰塊的說法先認掉，不然「不要糖」「不要冰」會被當成不要某種飲料
+  if (/無糖|不要甜|不甜|不加糖|不要糖|健康/.test(rest)) { f.sugarFree = true; rest = rest.replace(/無糖|不要甜|不甜|不加糖|不要糖|健康/g, ' '); }
+  if (/去冰|不要冰(?![水沙])|不加冰/.test(rest)) { f.noIce = true; rest = rest.replace(/去冰|不要冰(?![水沙])|不加冰/g, ' '); }
+  rest = rest.replace(/(?:不要|不想喝|不喝|不加)\s*([^\s，,、。]+)/g, function (m, x) { f.bans.push(x); return ' '; })
+    .replace(/([^\s，,、。]+?)\s*以外/g, function (m, x) { f.bans.push(x); return ' '; });
+  if (/熱的|熱飲|熱|暖|溫的/.test(rest)) { f.temp = 'hot'; rest = rest.replace(/熱的|熱飲|熱|暖|溫的/g, ' '); }
+  else if (/冰的|冰涼|涼的|冷飲|消暑/.test(rest)) { f.temp = 'cold'; rest = rest.replace(/冰的|冰涼|涼的|冷飲|消暑/g, ' '); }
+  Object.keys(DRINK_WORDS).sort(function (a, b) { return b.length - a.length; }).forEach(function (w) {
+    if (rest.indexOf(w) === -1) return;
+    rest = rest.split(w).join(' ');
+    f.kinds = (f.kinds || []).concat(DRINK_WORDS[w].filter(function (k) { return !(f.kinds || []).includes(k); }));
+  });
+  var leftover = rest.replace(/[\s，,、。!！?？~～好呢啊啦了的勒咧要點杯喝]/g, '');
+  if (source && source.type !== 'user' && leftover.length > 4) return null;
+
+  // 「不要咖啡」「不要酒」也能整類拿掉
+  var banKinds = [];
+  f.bans.forEach(function (b) { if (DRINK_WORDS[b]) banKinds = banKinds.concat(DRINK_WORDS[b]); });
+  var part = drinkPart(), temp = drinkTemp();
+  var pairs = [];
+  DRINK_KINDS.forEach(function (kind) {
+    if (f.kinds ? f.kinds.indexOf(kind.key) === -1 : banKinds.indexOf(kind.key) !== -1) return;
+    var items = kind.items.filter(function (it) {
+      var n = drinkName(it);
+      if (f.bans.some(function (b) { return n.indexOf(b) !== -1; })) return false;
+      if (f.temp && !drinkCan(kind, it, f.temp)) return false;
+      if (f.sugarFree && /珍珠|波霸|黑糖|焦糖|可可|蜜|布丁|奧利奧|布蕾|芋泥|仙草蜜|酸梅|冬瓜|汽水|可樂|雪碧|西打|沙士|養樂多|多多|可爾必思|甘蔗|麥香|奶茶$/.test(n)) return false;
+      return true;
+    });
+    var w = f.kinds ? 1 : DRINK_WEIGHTS[part][kind.key];
+    if (items.length && w > 0) pairs.push([{ kind: kind, items: items }, w * Math.sqrt(items.length / 20)]);
+  });
+  if (!pairs.length) return '這個不要、那個也不要，那就喝白開水吧。';
+  var got = pickWeighted(pairs);
+  var item = pickOne(got.items), name = drinkName(item);
+  var o = drinkOptions(got.kind, item, f, temp);
+
+  var tip = DRINK_SPECIAL_TIPS[name] ||
+    (got.kind.key === 'bar' ? pickOne(['喝酒不開車，開車不喝酒。', '喝完不要傳訊息給前任。', '二十七樓的電梯還記得你上次喝醉的樣子。', '乾杯之前先想好誰送誰回家。']) :
+      got.kind.key === 'coffee' && (part === 'night' || part === 'late') ? '這個時間喝咖啡，今晚就是你跟天花板的事了。' :
+      o.hot && temp != null && temp < 18 ? '外面' + Math.round(temp) + '度，捧著熱的比較好。' :
+      !o.hot && temp != null && temp > 30 ? '外面' + Math.round(temp) + '度，冰的才是正義。' :
+      o.opts.some(function (x) { return x === '正常糖'; }) ? '正常糖，今天就放過自己吧。' :
+      pickOne(DRINK_TIPS));
+
+  var card = hiddenCard(name + (o.opts.length ? '，' + o.opts.join('、') : '') + '。' + tip, 'DRINK', '喝什麼', [
+    cardBig(name),
+    cardSub(o.opts.join('・') || got.kind.name),
+    cardSub(got.kind.name + (f.bans.length ? '・不要' + f.bans.join('、') : '')),
+    cardTip(tip)
+  ]);
+  var words = (f.kinds ? Object.keys(DRINK_WORDS).filter(function (w) {
+    return String(arg).indexOf(w) !== -1 && !Object.keys(DRINK_WORDS).some(function (v) { return v !== w && v.indexOf(w) !== -1 && String(arg).indexOf(v) !== -1; });
+  }) : []);
+  var again = ('喝什麼 ' + words.join(' ') + (f.temp === 'hot' ? ' 熱的' : f.temp === 'cold' ? ' 冰的' : '') + (f.sugarFree ? ' 無糖' : '') + (f.noIce ? ' 去冰' : '') +
+    (f.bans.length ? ' 不要' + f.bans.join(' 不要') : '')).replace(/\s+/g, ' ').trim().slice(0, 300);
+  card.contents.styles.footer = { backgroundColor: COLOR.bg };
+  card.contents.footer = {
+    type: 'box', layout: 'vertical', paddingTop: '0px',
+    contents: [{ type: 'button', style: 'link', color: COLOR.accent, height: 'sm', action: { type: 'message', label: '再抽一杯', text: again } }]
+  };
+  return card;
+}
+
+// 總共可以抽出幾種不同的組合（給 testDrink() 印出來看，不影響回覆）
+function drinkCombos() {
+  var total = 0, tops = DRINK_TOPPINGS.length;
+  var topCombos = 1 + tops + tops * (tops - 1) / 2 + tops * (tops - 1) * (tops - 2) / 6;
+  DRINK_KINDS.forEach(function (kind) {
+    kind.items.forEach(function (it) {
+      var rule = drinkRule(it), temps = (drinkCan(kind, it, 'cold') ? 1 : 0) + (drinkCan(kind, it, 'hot') ? 1 : 0);
+      if (kind.opt === 'shake' || kind.opt === 'fruit') total += 2 * (kind.opt === 'fruit' ? 5 : 6) * ((rule === '冰' ? 4 : 5) + (drinkCan(kind, it, 'hot') ? 2 : 0)) * (rule === '料' ? 1 + tops : topCombos);
+      else if (kind.opt === 'coffee') total += 2 * 4 * temps * 2 * (1 + DRINK_COFFEE_ADD.length);
+      else total += 10 * temps;
+    });
+  });
+  return total;
+}
+
 // --- 匯率（臺灣銀行牌告匯率，CSV 不用金鑰） ---
 // 一列一種外幣：幣別, 本行買入, 現金, 即期, 遠期…, 本行賣出, 現金, 即期, 遠期…（沒有現金的填 0）
 // 「換外幣要付多少台幣」看本行賣出的現金價；沒有現金價的（瑞典幣這種）用即期。存 30 分鐘。
@@ -2353,6 +2586,7 @@ function replyHelp() {
     '油價　這週的油價，下週漲還是跌\n' +
     '股　　收盤價，例如「股 2330」「股 台積電」\n' +
     '吃什麼　幫你決定這一餐，例如「吃什麼 宵夜」「吃什麼 不要火鍋」\n' +
+    '喝什麼　幫你點一杯飲料，甜度冰塊加料都幫你決定，例如「喝什麼 咖啡」「喝什麼 熱的 無糖」「喝什麼 不要珍珠」\n' +
     '匯率　換外幣要多少台幣，例如「匯率 日圓」「匯率 日圓 3萬」「匯率 台幣5000 韓元」\n\n' +
     '【看排球】TPVL\n' +
     '排球　下一場、最近一場比分\n' +
@@ -2378,7 +2612,7 @@ function welcomeText(type) {
 // 不想用了：執行 removeRichMenus()，會回到 Official Account Manager 裡設定的那個選單。
 // 每一格的順序跟圖一樣：上排左到右、下排左到右。
 
-var RICH_MENU_VERSION = 4; // 換圖時加一，LINE 才不會拿到快取的舊圖
+var RICH_MENU_VERSION = 5; // 換圖時加一，LINE 才不會拿到快取的舊圖
 var RICH_MENUS = [
   { alias: 'dbl-27', tab: '二十七樓', bar: '選單・二十七樓', image: 'line-bot/richmenu-27.png', items: [
       { type: 'message', label: '空房', text: '空房' },
@@ -2399,7 +2633,7 @@ var RICH_MENUS = [
   { alias: 'dbl-life', tab: '過日子', bar: '選單・過日子', image: 'line-bot/richmenu-life.png', items: [
       { type: 'message', label: '油價', text: '油價' },
       { type: 'message', label: '吃什麼', text: '吃什麼' },
-      { type: 'message', label: '匯率', text: '匯率' },
+      { type: 'message', label: '喝什麼', text: '喝什麼' },
       { type: 'uri', label: '分帳', uri: SPLIT_URL },
       { type: 'message', label: '狗狗', text: '狗' },
       { type: 'message', label: '貓咪', text: '貓' }

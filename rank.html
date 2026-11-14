@@ -293,9 +293,10 @@
         <!-- 登入才上榜 -->
         <section id="join" class="hidden mt-6 border border-dashed border-stone-200 rounded-sm p-6"></section>
 
-        <div class="mt-6 grid grid-cols-2 gap-3">
+        <div class="mt-6 grid grid-cols-3 gap-2">
             <a id="go1" href="xitou.html" class="block py-4 border border-stone-300 text-center text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">去坐洗部</a>
             <a id="go2" href="fangwu.html" class="block py-4 border border-stone-300 text-center text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">去房務部</a>
+            <a id="go3" href="caiyuan.html" class="block py-4 border border-stone-300 text-center text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">去菜園部</a>
         </div>
 
         <p class="mt-10 text-[11px] font-sans tracking-widest text-stone-400 leading-relaxed text-center">
@@ -333,8 +334,8 @@
         try { const s = JSON.parse(sessionStorage.getItem('dongbuli-rank-tab') || '{}'); if (s.book) book = s.book; if (s.metric) metric = s.metric; if (s.dept) dept = s.dept; if (s.cat) cat = s.cat; } catch (e) { }
         if (location.hash === '#spend') book = 'spend'; else if (location.hash === '#work') book = 'work';
         const BOOKS = {
-            work: { title: '打工・榜', tag: '誰在二十七樓最勤勞，<br>牆上寫得清清楚楚。', go: [['xitou.html', '去坐洗部'], ['fangwu.html', '去房務部']], join: '打工' },
-            spend: { title: '花錢・榜', tag: '錢不是賺來的，<br>是花出去才算數。', go: [['scratch.html', '去彩券行'], ['gongde.html', '去功德箱']], join: '花錢' },
+            work: { title: '打工・榜', tag: '誰在二十七樓最勤勞，<br>牆上寫得清清楚楚。', go: [['xitou.html', '去坐洗部'], ['fangwu.html', '去房務部'], ['caiyuan.html', '去菜園部']], join: '打工' },
+            spend: { title: '花錢・榜', tag: '錢不是賺來的，<br>是花出去才算數。', go: [['scratch.html', '去彩券行'], ['gongde.html', '去功德箱'], ['xitou.html', '去洗頭店']], join: '花錢' },
         };
         // 花錢榜：每一類多少錢、小字寫什麼
         const CATS = {
@@ -396,7 +397,7 @@
             const B = BOOKS[book];
             $('title').textContent = B.title; $('tagline').innerHTML = B.tag;
             $('workCtl').classList.toggle('hidden', book !== 'work'); $('spendCtl').classList.toggle('hidden', book !== 'spend');
-            [$('go1'), $('go2')].forEach((a, i) => { a.href = B.go[i][0]; a.textContent = B.go[i][1]; });
+            [$('go1'), $('go2'), $('go3')].forEach((a, i) => { a.href = B.go[i][0]; a.textContent = B.go[i][1]; });
             $('boardNote').textContent = book === 'spend' ? CATS[cat].note : metric === 'best'
                 ? (dept === 'farm' ? '菜園比的是一輪賣最多少錢（單位跟另外兩部不同，「全部」那頁不算菜園）。' : '一場的最高分（爽度、乾淨度都是滿分 100），同分比誰快。從洗完、打掃完存到雲端開始算。')
                 : metric === 'money' ? '打工賺的錢加起來（工資、小費、失物招領、加成都算）。' : '洗幾顆頭、打掃幾間。';
@@ -433,7 +434,7 @@
                 </div>`;
             }).join('') : `<p class="py-10 text-center text-xs font-sans tracking-wider text-stone-400 leading-relaxed">${
                 book === 'spend' ? (players.length && !players.some(p => p.spend) ? '花錢・榜要等後端重新部署「新版本」才有。' : CATS[cat].empty)
-                : `${dept === 'clean' ? '房務部' : dept === 'xitou' ? '坐洗部' : '二十七樓'}還沒有人上榜。<br>第一名在等你。`}</p>`;
+                : `${DEPT[dept] || '二十七樓'}還沒有人上榜。<br>第一名在等你。`}</p>`;
             box.querySelectorAll('img.avatar').forEach(img => img.addEventListener('error', () => {
                 badPic.add(img.getAttribute('src'));
                 const s = document.createElement('span'); s.className = 'avatar'; s.textContent = img.dataset.initial; img.replaceWith(s);
