@@ -22,10 +22,11 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/theme.css?v=20261115">
-    <script src="assets/theme.js?v=20261115"></script>
-    <script src="assets/line.js?v=20261115"></script>
-    <script src="assets/wallet.js?v=20261115"></script>
+    <link rel="stylesheet" href="assets/theme.css?v=20261116">
+    <script src="assets/theme.js?v=20261116"></script>
+    <script src="assets/line.js?v=20261116"></script>
+    <script src="assets/wallet.js?v=20261116"></script>
+    <script src="assets/gongde.js?v=20261116"></script>
     <style>
         .line-btn {
             min-height: 44px;
@@ -72,7 +73,7 @@
         }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261115">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261116">
 </head>
 
 <body
@@ -133,6 +134,14 @@
                 <span class="flex-1 min-w-0">
                     <span class="block text-wabi-dark tracking-widest">二十七樓彩券行</span>
                     <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">拿工資刮刮樂，十種，頭獎 2000 萬</span>
+                </span>
+                <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+            </a>
+            <a href="gongde.html" class="game">
+                <span class="game-mark is-shu">佑</span>
+                <span class="flex-1 min-w-0">
+                    <span class="block text-wabi-dark tracking-widest">功德・添 <span id="tierTag" class="text-[11px] font-sans tracking-wider text-wabi-shu"></span></span>
+                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">捐香油錢、點光明燈，刮刮樂沒中神明幫你再抽</span>
                 </span>
                 <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
             </a>
@@ -202,7 +211,13 @@
                 .map(k => `<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">${esc(LABELS[k] || k)}</dt><dd class="flex-1">${SOURCES[k] ? SOURCES[k](w.earned[k]) : fmt(w.earned[k].total)}</dd></div>`);
             let shopSpent = 0;
             try { shopSpent = Number((JSON.parse(localStorage.getItem('dongbuli-xitou-shop')) || {}).spent) || 0; } catch (e) { }
-            if (w.spent) rows.push(`<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">花掉</dt><dd class="flex-1">${fmt(w.spent)}（${!shopSpent ? '都拿去刮刮樂了' : shopSpent >= w.spent ? '都拿去升級洗頭店了' : `洗頭店升級 ${fmt(shopSpent)}，其他拿去刮刮樂`}）</dd></div>`);
+            const gd = Wallet.gongde, tier = Gongde.tierOf(gd.donated);
+            const parts = [[shopSpent, '洗頭店升級'], [gd.donated, '捐香油錢'], [gd.lit, '點光明燈']].filter(x => x[0] > 0);
+            const scratchSpent = Math.max(0, w.spent - parts.reduce((t, x) => t + x[0], 0));
+            if (scratchSpent) parts.push([scratchSpent, '刮刮樂']);
+            if (w.spent) rows.push(`<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">花掉</dt><dd class="flex-1">${fmt(w.spent)}${parts.length > 1 ? `（${parts.map(x => `${x[1]} ${fmt(x[0])}`).join('、')}）` : parts.length ? `（都拿去${parts[0][1]}了）` : ''}</dd></div>`);
+            if (gd.donated || gd.oil) rows.push(`<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">功德</dt><dd class="flex-1">${tier.name}${tier.q ? `，永久加持 ${Math.round(tier.q * 100)}%` : ''}${gd.oil ? `，光明燈油 ${fmt(gd.oil)}` : ''}</dd></div>`);
+            $('tierTag').textContent = gd.donated ? tier.name : '';
             $('ledger').innerHTML = rows.length ? rows.join('') : '<p class="text-stone-400">還沒賺過錢。先去坐洗部洗一顆頭。</p>';
         }
 
