@@ -284,7 +284,7 @@
             { key: 'cat', who: '帶貓來住的旅人', note: '貓比人還早起，毛比人還多。', tags: ['cat'], stains: ['fur', 'fur', 'fur', 'sauce'], lost: ['cattoy', 'sock', 'key'] },
             { key: 'ex', who: '前夫', note: '不知道為什麼會來住。', tags: ['ex'], stains: ['print', 'print', 'print', 'ring'], lost: ['exprint', 'key', 'split'], rare: true },
             // 稀有房客：每一位各 5%。likes：垃圾照哪一種房客挑；sign：一定會留下的招牌遺失物
-            { key: 'mike', who: '大橋頭麥克雞塊', note: '說只喝一杯。冰箱裡的啤酒全部退房了。', likes: 'drink', tags: ['drink'], stains: ['ring', 'ring', 'ring', 'ring', 'sauce'], lost: ['nugget', 'earphone', 'key'], sign: 'nugget', rare: true },
+            { key: 'mike', who: '大橋頭麥克雞塊', note: '說只喝一杯，冰箱裡的啤酒全部退房了。睡相東倒西歪，棉被整晚被他一個人捲走。', likes: 'drink', sprawl: true, tags: ['drink'], stains: ['ring', 'ring', 'ring', 'ring', 'sauce'], lost: ['nugget', 'earphone', 'key'], sign: 'nugget', rare: true },
             { key: 'ito', who: '伊藤開晴', note: '說再刮一張就退房，刮了四十張。', likes: 'lottery', tags: ['lottery'], stains: ['flake', 'flake', 'flake', 'flake', 'ring'], lost: ['mingpai', 'bei', 'split'], sign: 'mingpai', lotto: 0.5, rare: true },
         ];
         function pickGuest() {
@@ -680,19 +680,25 @@
         const MAT = [{ x: 70, y: 76 }, { x: 290, y: 76 }, { x: 290, y: 344 }, { x: 70, y: 344 }];
         function startBed() {
             stage = 2; setSteps(2);
-            note('床單皺成一團。四個角拉好，枕頭拍鬆。');
-            hint('拖床單的四個角到床墊的角；兩顆枕頭各拍三下。');
+            // 睡相東倒西歪的房客：床單整張轉了方向，枕頭被壓扁（要拍五下）
+            const sprawl = !!G.guest.sprawl, need = sprawl ? 5 : 3;
+            note(sprawl ? '床單被睡得整張轉了方向，枕頭壓得扁扁的。棉被在沙發上捲成一條。' : '床單皺成一團。四個角拉好，枕頭拍鬆。');
+            hint(`拖床單的四個角到床墊的角；兩顆枕頭各拍${sprawl ? '五' : '三'}下。`);
             const corners = MAT.map((m, i) => {
+                if (sprawl) {
+                    const o = MAT[(i + 1) % 4];  // 每個角都跑到隔壁那個角附近（往床中間縮一點）
+                    return { x: o.x + (180 - o.x) * 0.25 + rand(-12, 12), y: o.y + (210 - o.y) * 0.25 + rand(-12, 12), placed: false };
+                }
                 const dx = (i === 0 || i === 3 ? 1 : -1), dy = (i < 2 ? 1 : -1);
                 return { x: m.x + dx * rand(28, 70), y: m.y + dy * rand(28, 80), placed: false };
             });
-            G.bed = { corners, pillows: [0, 0], bounce: [0, 0], drag: -1 };
+            G.bed = { corners, pillows: [0, 0], bounce: [0, 0], drag: -1, need };
             actions([{ label: '好了', onClick: endBed }]);
             bedMeter();
         }
         function bedMeter() {
-            const b = G.bed, done = b.corners.filter(c => c.placed).length + b.pillows.filter(n => n >= 3).length;
-            meter(done / 6 * 100, `角 ${b.corners.filter(c => c.placed).length}/4・枕 ${b.pillows.filter(n => n >= 3).length}/2`);
+            const b = G.bed, done = b.corners.filter(c => c.placed).length + b.pillows.filter(n => n >= b.need).length;
+            meter(done / 6 * 100, `角 ${b.corners.filter(c => c.placed).length}/4・枕 ${b.pillows.filter(n => n >= b.need).length}/2`);
             if (done === 6) setTimeout(endBed, 500);
         }
         const PILLOWS = [{ x: 130, y: 112 }, { x: 230, y: 112 }];
@@ -702,7 +708,7 @@
             if (k >= 0) { b.drag = k; return; }
             const pi = PILLOWS.findIndex(q => Math.abs(p.x - q.x) < 44 && Math.abs(p.y - q.y) < 24);
             if (pi >= 0 && b.corners.filter(c => c.placed).length >= 0) {
-                if (b.pillows[pi] < 3) { b.pillows[pi]++; b.bounce[pi] = performance.now(); sfx.fluff(); if (b.pillows[pi] === 3) floatText(PILLOWS[pi].x, PILLOWS[pi].y - 26, '鬆', K.shu); bedMeter(); }
+                if (b.pillows[pi] < b.need) { b.pillows[pi]++; b.bounce[pi] = performance.now(); sfx.fluff(); if (b.pillows[pi] === b.need) floatText(PILLOWS[pi].x, PILLOWS[pi].y - 26, '鬆', K.shu); bedMeter(); }
             }
         }
         function bedMove(p) {
@@ -722,7 +728,7 @@
             if (stage !== 2) return;
             const b = G.bed;
             const cs = b.corners.reduce((s, c, i) => s + (c.placed ? 3 : Math.max(0, 3 * (1 - dist(c, MAT[i]) / 70))), 0);
-            const ps = b.pillows.reduce((s, n) => s + (n >= 3 ? 1.5 : n * 0.4), 0);
+            const ps = b.pillows.reduce((s, n) => s + (n >= b.need ? 1.5 : n * 1.2 / b.need), 0);
             G.scores.bed = Math.round(Math.min(15, cs + ps));
             stage = 2.5;
             actions([]);
@@ -806,6 +812,26 @@
             c.strokeStyle = K.floorLine; c.lineWidth = 1;
             for (let y = 0; y < H; y += 26) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); for (let x = (y / 26 % 2) * 60; x < W; x += 120) { c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + 26); c.stroke(); } }
         }
+        // 睡相東倒西歪的房客（還沒鋪床之前）：床單斜一邊、枕頭歪掉、棉被被捲成一條丟在沙發上
+        function drawSprawl(c) {
+            c.save(); c.beginPath(); c.rect(26, 26, 152, 174); c.clip();
+            c.fillStyle = K.floor; c.fillRect(26, 26, 152, 174); c.fillStyle = K.white; c.fillRect(26, 26, 152, 174);
+            c.translate(102, 120); c.rotate(0.5);
+            c.fillStyle = K.sheet; c.fillRect(-70, -40, 140, 100);
+            c.strokeStyle = 'rgba(120,150,170,.45)'; c.lineWidth = 1.5;
+            for (let i = 0; i < 5; i++) { c.beginPath(); c.moveTo(-60 + i * 25, -30); c.quadraticCurveTo(-40 + i * 25, 10, -55 + i * 28, 50); c.stroke(); }
+            c.restore();
+            c.save(); c.translate(70, 160); c.rotate(-0.9);  // 枕頭睡到床尾
+            c.fillStyle = '#fff'; c.strokeStyle = '#d9d2c6'; c.lineWidth = 1.5; roundRect(c, -40, -14, 80, 28, 10); c.fill(); c.stroke();
+            c.restore();
+            c.save(); c.translate(288, 156); c.rotate(-1.35);  // 棉被捲
+            c.fillStyle = '#e9d9b8'; c.strokeStyle = '#b9a47e'; c.lineWidth = 2; roundRect(c, -62, -22, 124, 44, 22); c.fill(); c.stroke();
+            c.strokeStyle = 'rgba(150,120,80,.5)'; c.lineWidth = 1.5;
+            [-30, 0, 30].forEach(x => { c.beginPath(); c.moveTo(x, -20); c.quadraticCurveTo(x + 8, 0, x, 20); c.stroke(); });
+            c.beginPath(); c.ellipse(-52, 0, 9, 18, 0, 0, TAU); c.fillStyle = '#f2e6cc'; c.fill(); c.stroke();
+            c.beginPath(); c.arc(-52, 0, 6, 0, TAU * 0.8); c.stroke();
+            c.restore();
+        }
         function drawFindRoom(c, now, mess) {
             drawRoomBase(c);
             const f = G.find, lift = k => f && f.lift[k] ? clamp((now - f.lift[k]) / 300, 0, 1) : 0;
@@ -825,6 +851,7 @@
             c.fillStyle = '#6f7d6b'; roundRect(c, 236, 70, 104, 170, 10); c.fill();
             c.fillStyle = '#8a9a86'; roundRect(c, 250, 84, 80, 70, 8); c.fill(); roundRect(c, 250, 158, 80, 70, 8); c.fill();
             if (lift('sofa')) { c.fillStyle = '#4f5a4c'; c.fillRect(250, 150, 80, 10); }
+            if (G.guest && G.guest.sprawl && stage < 2) drawSprawl(c);
             // 地毯
             const rl = lift('rug');
             c.save(); c.translate(180, 278); c.rotate(-rl * 0.12);
@@ -923,12 +950,12 @@
             // 枕頭
             PILLOWS.forEach((q, i) => {
                 const bt = b.bounce[i] && now - b.bounce[i] < 250 ? Math.sin((now - b.bounce[i]) / 250 * Math.PI) * 6 : 0;
-                const fl = b.pillows[i];
+                const fl = Math.round(b.pillows[i] * 3 / b.need), left = b.need - b.pillows[i];
                 c.save(); c.translate(q.x, q.y); c.scale(1 + bt / 60, 1 - bt / 80);
                 c.fillStyle = '#fff'; c.strokeStyle = '#d9d2c6'; c.lineWidth = 1.5;
                 roundRect(c, -42, -20 - fl * 1.5, 84, 40 + fl * 3, 14); c.fill(); c.stroke();
                 if (fl < 3) { c.strokeStyle = 'rgba(0,0,0,.12)'; c.beginPath(); c.moveTo(-28, 0); c.lineTo(28, 2); c.stroke(); }
-                c.fillStyle = fl >= 3 ? K.shu : '#b9ae9f'; c.font = `500 10px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(fl >= 3 ? '鬆' : `拍 ${3 - fl}`, 0, 0);
+                c.fillStyle = !left ? K.shu : '#b9ae9f'; c.font = `500 10px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(!left ? '鬆' : `拍 ${left}`, 0, 0);
                 c.restore();
             });
             // 角的把手
@@ -1061,7 +1088,7 @@
                 wrong: G.wrongs.map(w => `${w.item.name}:${w.bin}>${w.item.bin}`),
                 cleaned: Math.round(G.cleaned * 100), wipe_ms: G.wipeMs,
                 corners: G.bed.corners.filter(c => c.placed).length,
-                pillows: G.bed.pillows.filter(n => n >= 3).length,
+                pillows: G.bed.pillows.filter(n => n >= G.bed.need).length,
                 peeks: PEEKS - G.find.peeks, hidden: G.find.total, found: G.find.found.slice(),
                 made: !!G.run.made, floor: G.run.floor,
                 pay: { ...G.pay },
@@ -1160,7 +1187,7 @@
                 ['上一組', G.guest.who],
                 ['撿・分', `分對 ${G.right} / ${SORT_N} 件`],
                 ['擦・亮', `擦掉 ${Math.round(G.cleaned * 100)}%${G.wipeMs && G.cleaned >= 0.95 ? `（${(G.wipeMs / 1000).toFixed(1)} 秒）` : ''}`],
-                ['鋪・床', `${G.bed.corners.filter(c => c.placed).length} 個角到位・枕頭${G.bed.pillows.filter(n => n >= 3).length === 2 ? '拍鬆了' : '還扁扁的'}`],
+                ['鋪・床', `${G.bed.corners.filter(c => c.placed).length} 個角到位・枕頭${G.bed.pillows.filter(n => n >= G.bed.need).length === 2 ? '拍鬆了' : '還扁扁的'}`],
                 ['找・物', f.found.length ? f.found.map(k => LOST[k].name).join('、') : '什麼都沒找到'],
                 ['倒・垃圾', r.made ? '趕上垃圾車' : `沒趕上，在 ${r.floor} 樓`],
                 ['房務費', Wallet.fmt(G.pay.base) + (G.pay.lost + G.pay.star ? `＋${Wallet.fmt(G.pay.lost + G.pay.star)}` : '')],
