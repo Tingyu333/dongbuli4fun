@@ -22,10 +22,10 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/theme.css?v=20261114">
-    <script src="assets/theme.js?v=20261114"></script>
-    <script src="assets/line.js?v=20261114"></script>
-    <script src="assets/wallet.js?v=20261114"></script>
+    <link rel="stylesheet" href="assets/theme.css?v=20261115">
+    <script src="assets/theme.js?v=20261115"></script>
+    <script src="assets/line.js?v=20261115"></script>
+    <script src="assets/wallet.js?v=20261115"></script>
     <style>
         /* 洗頭台：手指在上面搓、拉，不能捲動頁面，長按也不能跳出系統選單 */
         .salon {
@@ -192,6 +192,183 @@
             }
         }
 
+        /* ===== 店面升級 ===== */
+        .shop-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            height: 1.7rem;
+            padding: 0 0.6rem;
+            border: 1px solid rgb(var(--wabi-accent) / 0.5);
+            border-radius: 9999px;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            color: rgb(var(--wabi-dark));
+            white-space: nowrap;
+            flex: none;
+            touch-action: manipulation;
+        }
+
+        /* 招牌、鏡台是實物，顏色固定，不跟晝夜 */
+        .signboard {
+            position: relative;
+            width: 78%;
+            margin: 14px auto 8px;
+            padding: 8px 0 7px;
+            text-align: center;
+            border-radius: 4px;
+            font-family: 'Noto Serif TC', serif;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .signboard::before,
+        .signboard::after {
+            content: '';
+            position: absolute;
+            top: -12px;
+            width: 1px;
+            height: 12px;
+            background: #6b5236;
+        }
+
+        .signboard::before { left: 14px; }
+        .signboard::after { right: 14px; }
+
+        .signboard.lv1 {
+            width: 52%;
+            background: #d9b98c;
+            box-shadow: inset 0 0 0 1px #a8875c, 0 4px 10px -6px rgba(0, 0, 0, 0.4);
+            color: #3b2a1c;
+            font-size: 17px;
+            letter-spacing: 0.3em;
+            padding-left: 0.3em;
+        }
+
+        .signboard.lv2 {
+            width: 70%;
+            background: #fffdf6;
+            box-shadow: 0 0 0 2px #cfc6b6, 0 0 18px 2px rgba(255, 236, 170, 0.75);
+            color: #2c2c2c;
+            font-size: 17px;
+            letter-spacing: 0.25em;
+            padding-left: 0.25em;
+        }
+
+        .signboard.lv3 {
+            background: linear-gradient(180deg, #2b2420, #1a1512);
+            box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.45), inset 0 0 0 2px #6b5236, inset 0 0 0 4px #1a1512, inset 0 0 0 5px #b8964f;
+            font-size: 18px;
+            letter-spacing: 0.22em;
+        }
+
+        .signboard.lv3 .sign-text {
+            margin-right: 18px;
+            background: linear-gradient(180deg, #f6e3a1, #c99a3b 55%, #f3d985);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .signboard .sign-seal {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1.5px solid #c0392b;
+            border-radius: 2px;
+            background: #f3e6c8;
+            color: #c0392b;
+            font-size: 11px;
+            letter-spacing: 0;
+            transform: translateY(-50%) rotate(-8deg);
+        }
+
+        #shelf {
+            display: block;
+            width: 100%;
+            aspect-ratio: 360 / 66;
+            margin-top: -2px;
+        }
+
+        #shop {
+            background: rgba(0, 0, 0, 0);
+            transition: background 0.22s;
+        }
+
+        #shop.on {
+            background: rgba(0, 0, 0, 0.45);
+        }
+
+        #shop .shop-sheet {
+            transform: translateY(100%);
+            transition: transform 0.22s ease-out;
+        }
+
+        #shop.on .shop-sheet {
+            transform: none;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #shop, #shop .shop-sheet { transition: none; }
+        }
+
+        .shop-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgb(var(--wabi-sub) / 0.6);
+        }
+
+        .shop-icon {
+            flex: none;
+            width: 56px;
+            height: 56px;
+            border-radius: 6px;
+            background: rgb(var(--wabi-sub) / 0.35);
+        }
+
+        .shop-dots i {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            margin-left: 3px;
+            border-radius: 50%;
+            border: 1px solid rgb(var(--wabi-accent));
+        }
+
+        .shop-dots i.on {
+            background: rgb(var(--wabi-shu));
+            border-color: rgb(var(--wabi-shu));
+        }
+
+        .shop-buy {
+            flex: none;
+            min-width: 5.6rem;
+            min-height: 44px;
+            padding: 0 0.6rem;
+            border: 1px solid rgb(var(--wabi-dark));
+            background: rgb(var(--wabi-dark));
+            color: rgb(var(--wabi-bg));
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            line-height: 1.3;
+            touch-action: manipulation;
+        }
+
+        .shop-buy:disabled {
+            background: transparent;
+            color: rgb(var(--wabi-accent));
+            border-color: rgb(var(--wabi-sub));
+        }
+
         /* 客人的點單：一張紙條，做到蓋「成」，搞砸蓋「破」 */
         .order-slip {
             display: flex;
@@ -268,7 +445,7 @@
         }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261114">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261115">
 </head>
 
 <body
@@ -314,7 +491,10 @@
                     <li class="step">捏</li>
                     <li class="step">拍</li>
                 </ol>
-                <span id="best" class="text-right text-[10px] leading-relaxed font-sans tracking-widest text-stone-400"></span>
+                <div class="flex items-center gap-2">
+                    <span id="best" class="text-right text-[10px] leading-relaxed font-sans tracking-widest text-stone-400"></span>
+                    <button id="shopBtn" type="button" class="shop-btn" aria-haspopup="dialog">店面</button>
+                </div>
             </div>
 
             <p id="who" class="mt-3 text-[11px] font-sans tracking-widest text-stone-400"></p>
@@ -335,10 +515,15 @@
                 <p id="says" class="text-sm text-wabi-dark tracking-wider leading-relaxed">（坐下了）</p>
             </div>
 
+            <!-- 招牌（升級才有） -->
+            <div id="sign" class="signboard hidden" aria-hidden="true"></div>
+
             <div id="mirror" class="relative">
                 <canvas id="cv" aria-label="鏡子裡的客人"></canvas>
                 <div id="shapeStamp" class="shape-stamp hidden"></div>
             </div>
+            <!-- 鏡台：沙漏、節拍器、店貓（升級才有） -->
+            <canvas id="shelf" class="hidden" aria-hidden="true"></canvas>
 
             <div class="mt-4 flex items-center gap-3">
                 <div id="meter" class="meter flex-1">
@@ -366,6 +551,8 @@
                 <p class="flex justify-between"><span>工資</span><span id="payWage" class="text-wabi-dark"></span></p>
                 <p class="flex justify-between mt-1"><span>小費</span><span id="payTip" class="text-wabi-dark"></span></p>
                 <p id="payOrderRow" class="hidden flex justify-between mt-1"><span>點單</span><span id="payOrder" class="text-wabi-dark"></span></p>
+                <p id="payShopRow" class="hidden flex justify-between mt-1"><span>店面加成</span><span id="payShop" class="text-wabi-dark"></span></p>
+                <p id="payShopNote" class="hidden mt-0.5 text-right text-[10px] leading-relaxed text-stone-400"></p>
                 <p class="flex justify-between mt-2 pt-2 border-t border-stone-100"><span>錢包</span><span id="payWallet" class="text-wabi-shu text-sm"></span></p>
                 <p id="payAcct" class="mt-2 text-[10px] leading-relaxed text-stone-400"></p>
                 <p id="syncNote" class="mt-1 text-[10px] leading-relaxed text-stone-400"></p>
@@ -388,6 +575,23 @@
             洗一顆頭發一次工資，可以拿去<a href="scratch.html" class="underline underline-offset-4">二十七樓彩券行</a>。
         </p>
     </main>
+
+    <!-- 店面升級 -->
+    <div id="shop" class="hidden fixed inset-0 z-[80] flex items-end justify-center" role="dialog" aria-modal="true" aria-label="店面升級">
+        <div class="shop-sheet w-full max-w-md bg-wabi-bg rounded-t-xl">
+            <div class="px-5 pt-5 pb-2 flex items-baseline justify-between border-b border-stone-200">
+                <div>
+                    <p class="text-lg text-wabi-dark tracking-widest">店面・升</p>
+                    <p class="mt-1 text-[10px] font-sans tracking-widest text-stone-400">花錢升級，洗得好就多賺</p>
+                </div>
+                <p class="text-xs font-sans tracking-widest text-stone-500">錢包 <b id="shopMoney" class="font-normal text-wabi-shu"></b></p>
+            </div>
+            <div id="shopList" class="px-5 max-h-[60vh] overflow-y-auto overscroll-contain"></div>
+            <div class="px-5 py-4">
+                <button type="button" data-shop-close class="w-full py-3 border border-stone-300 text-wabi-dark tracking-[0.2em] font-sans text-xs">回去洗頭</button>
+            </div>
+        </div>
+    </div>
 
     <footer
         class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
@@ -589,7 +793,7 @@
         const MEOWS = ['喵。', '喵～', '喵？', '……喵。', '呼嚕嚕。', '喵嗚。'];
 
         function makeCustomer() {
-            const r = Math.random();
+            const r = Math.random() / (val('sign') || 1);  // 招牌：稀有客人變多
             const c = { glasses: null, mustache: false, freckles: false, bags: false, cat: false };
             if (r < 0.05) {
                 // 稀有：不知道怎麼進來的貓
@@ -653,6 +857,302 @@
             shine: { name: '反光', line: '燈泡亮了，不用開燈。' },
             catears: { name: '雙層貓耳', line: '耳朵比本來的還多兩隻。' },
         };
+
+        // ===== 店面升級 =====
+        // 每一項三級（店貓一級）。洗髮精、沙漏、按摩手套是「做得好就多拿錢」，其他照原本的規劃。
+        // 升級存在這支手機（dongbuli-xitou-shop），錢從共用錢包扣。招牌、鏡台、椅子是實物，顏色固定。
+        const SHOP_KEY = 'dongbuli-xitou-shop';
+        const SHOP = [
+            { key: 'shampoo', name: '洗髮精', sub: '材料費', prices: [3000, 12000, 40000], vals: [100, 200, 350],
+              tiers: ['白瓶', '綠茶', '琥珀', '金色沙龍'], fx: v => `擠剛好，客人多付 $${v}` },
+            { key: 'hourglass', name: '沙漏', sub: '快手獎金', prices: [5000, 15000, 45000], vals: [100, 200, 300],
+              tiers: ['', '木頭', '銅', '金'], fx: v => `泡泡蓋滿 +$${v}，6 秒內蓋滿再翻倍` },
+            { key: 'glove', name: '按摩手套', sub: '抓癢計件', prices: [4000, 12000, 35000], vals: [10, 20, 30],
+              tiers: ['', '白棉', '竹編', '金'], fx: v => `每抓到一個癢 +$${v}` },
+            { key: 'metronome', name: '節拍器', sub: '拍背', prices: [5000, 15000, 40000], vals: [1.2, 1.4, 1.6],
+              tiers: ['', '木頭', '黑漆', '金'], fx: v => `拍背的判定放寬 ${Math.round((v - 1) * 100)}%` },
+            { key: 'chair', name: '按摩椅', sub: '小費', prices: [8000, 25000, 60000], vals: [0.1, 0.2, 0.3],
+              tiers: ['塑膠凳', '軟墊椅', '木頭椅', '皮革按摩椅'], fx: v => `小費（含點單）多 ${Math.round(v * 100)}%` },
+            { key: 'sign', name: '招牌', sub: '客人', prices: [10000, 30000, 80000], vals: [1.3, 1.6, 2],
+              tiers: ['', '手寫木板', '燈箱', '金字招牌'], fx: v => `稀有客人多 ${Math.round((v - 1) * 100)}%，而且多給 $300` },
+            { key: 'cat', name: '店貓', sub: '隨機', prices: [20000], vals: [3],
+              tiers: ['', '橘貓'], fx: v => `三成機率醒來撒嬌，爽度 +${v}` },
+        ];
+        const SHOP_BY = Object.fromEntries(SHOP.map(u => [u.key, u]));
+        function loadShop() {
+            let d = null;
+            try { d = JSON.parse(localStorage.getItem(SHOP_KEY)); } catch (e) { }
+            d = d && typeof d === 'object' ? d : {};
+            d.lv = d.lv || {};
+            SHOP.forEach(u => { d.lv[u.key] = clamp(Math.floor(Number(d.lv[u.key]) || 0), 0, u.prices.length); });
+            d.spent = Number(d.spent) || 0;
+            return d;
+        }
+        let shop = loadShop();
+        const lv = key => shop.lv[key] || 0;
+        const val = key => lv(key) ? SHOP_BY[key].vals[lv(key) - 1] : 0;
+        function saveShop() { try { localStorage.setItem(SHOP_KEY, JSON.stringify(shop)); } catch (e) { } }
+        const GOLD = '#b8862e';
+
+        // --- 實物：洗髮精瓶 ---
+        const BOTTLES = [
+            { body: ['#f6f1e8', '#f6f1e8'], edge: '#cdbfae', label: '#8e8070', ink: '#fcfaf8', text: '洗', cap: '#8e8070' },
+            { body: ['#e3eedb', '#cfe0c2'], edge: '#8fae7a', label: '#5f8a4c', ink: '#f4f9ef', text: '茶', cap: '#5f8a4c' },
+            { body: ['#d39a4e', '#a8661f'], edge: '#7a4a14', label: '#4a2f1a', ink: '#f3dfb8', text: '琥', cap: '#4a2f1a' },
+            { body: ['#f3d27a', '#a87522'], edge: '#7d5a18', label: '#b33a2f', ink: '#fcfaf8', text: '沙龍', cap: '#7d5a18' },
+        ];
+        function drawBottleArt(c, level, k = 0) {
+            const b = BOTTLES[level];
+            c.save();
+            c.translate(0, 26);
+            c.scale(1 - 0.22 * k, 1 + 0.04 * k);
+            roundRect(c, -19, -24, 38, 48, 11);
+            const g = c.createLinearGradient(-19, 0, 19, 0);
+            g.addColorStop(0, b.body[1]); g.addColorStop(0.45, b.body[0]); g.addColorStop(1, b.body[1]);
+            c.fillStyle = level ? g : b.body[0];
+            c.fill();
+            c.strokeStyle = b.edge;
+            c.lineWidth = 1.5;
+            c.stroke();
+            c.fillStyle = b.label;
+            c.fillRect(-19, -8, 38, 18);
+            c.fillStyle = b.ink;
+            c.font = `${level === 3 ? 700 : 600} ${b.text.length > 1 ? 11 : 12}px "Noto Serif TC", serif`;
+            c.textAlign = 'center';
+            c.textBaseline = 'middle';
+            c.fillText(b.text, 0, 2);
+            c.fillStyle = 'rgba(255,255,255,0.7)';
+            c.fillRect(-13, -19, 4, 10);
+            c.restore();
+            c.fillStyle = b.cap;
+            c.beginPath(); c.moveTo(-12, 50); c.lineTo(12, 50); c.lineTo(7, 60); c.lineTo(-7, 60); c.closePath(); c.fill();
+            c.fillStyle = 'rgba(0,0,0,0.35)';
+            c.fillRect(-2.5, 60, 5, 8);
+        }
+
+        // --- 實物：沙漏（frac 是上面還剩多少沙） ---
+        const METALS = [null, ['#9a7550', '#6b4d31'], ['#c07a46', '#8a4f26'], ['#e2c27a', '#b8964f']];
+        function drawHourglass(c, level, frac = 1, flowing = false) {
+            const [m, md] = METALS[level] || METALS[1];
+            c.fillStyle = md; c.fillRect(-13, -4, 26, 4); c.fillRect(-13, -42, 26, 4);
+            c.fillStyle = m; c.fillRect(-13, -4, 26, 1.5); c.fillRect(-13, -42, 26, 1.5);
+            c.strokeStyle = md; c.lineWidth = 2;
+            c.beginPath(); c.moveTo(-11, -38); c.lineTo(-11, -4); c.moveTo(11, -38); c.lineTo(11, -4); c.stroke();
+            c.fillStyle = 'rgba(220,235,240,.65)'; c.strokeStyle = 'rgba(120,130,135,.6)'; c.lineWidth = 1;
+            c.beginPath(); c.moveTo(-8, -38); c.quadraticCurveTo(-8, -24, -1.5, -21); c.quadraticCurveTo(-8, -18, -8, -4); c.lineTo(8, -4); c.quadraticCurveTo(8, -18, 1.5, -21); c.quadraticCurveTo(8, -24, 8, -38); c.closePath(); c.fill(); c.stroke();
+            c.fillStyle = '#e2c27a';
+            const top = 10 * frac;  // 上半部沙的高度
+            if (top > 0.3) { const w = 5.5 * frac + 1; c.beginPath(); c.moveTo(-w, -23 - top); c.lineTo(w, -23 - top); c.lineTo(0, -23); c.closePath(); c.fill(); }
+            if (flowing && frac > 0) c.fillRect(-0.6, -22, 1.2, 17);
+            const bot = 10 * (1 - frac) + 1;
+            c.beginPath(); c.moveTo(-7, -4); c.quadraticCurveTo(0, -4 - bot * 1.4, 7, -4); c.closePath(); c.fill();
+        }
+
+        // --- 實物：節拍器 ---
+        function drawMetronome(c, level, angle = 0.25) {
+            const body = level === 2 ? '#2a2522' : level === 3 ? '#5a3a24' : '#8a6a48';
+            c.fillStyle = body; c.beginPath(); c.moveTo(-12, 0); c.lineTo(12, 0); c.lineTo(6, -40); c.lineTo(-6, -40); c.closePath(); c.fill();
+            c.fillStyle = '#f3e6c8'; c.beginPath(); c.moveTo(-7, -6); c.lineTo(7, -6); c.lineTo(3.5, -34); c.lineTo(-3.5, -34); c.closePath(); c.fill();
+            c.save(); c.translate(0, -8); c.rotate(angle);
+            c.strokeStyle = '#2c2c2c'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(0, 0); c.lineTo(0, -33); c.stroke();
+            c.fillStyle = level === 3 ? '#e2c27a' : '#8e8070'; c.fillRect(-2.5, -24, 5, 4);
+            c.restore();
+            if (level === 3) { c.fillStyle = '#e2c27a'; c.fillRect(-12, -1.5, 24, 1.5); }
+        }
+
+        // --- 實物：店貓（awake 時睜眼、尾巴翹高） ---
+        function drawCatArt(c, awake = false, t = 0) {
+            c.fillStyle = '#e8a35c';
+            c.beginPath(); c.ellipse(0, -11, 30, 13, 0, Math.PI, TAU); c.lineTo(30, 0); c.lineTo(-30, 0); c.fill();
+            c.beginPath(); c.ellipse(-26, awake ? -16 : -12, 12, 11, 0, 0, TAU); c.fill();
+            const hy = awake ? -4 : 0;
+            c.beginPath(); c.moveTo(-34, -19 + hy); c.lineTo(-33, -30 + hy); c.lineTo(-26, -22 + hy); c.fill();
+            c.beginPath(); c.moveTo(-22, -21 + hy); c.lineTo(-17, -30 + hy); c.lineTo(-15, -19 + hy); c.fill();
+            c.strokeStyle = '#c97b35'; c.lineWidth = 2;
+            c.beginPath(); c.moveTo(-6, -20); c.lineTo(-3, -12); c.moveTo(4, -22); c.lineTo(7, -13); c.moveTo(14, -21); c.lineTo(16, -13); c.stroke();
+            c.strokeStyle = '#3a2a20'; c.fillStyle = '#3a2a20'; c.lineWidth = 1.3;
+            if (awake) { c.beginPath(); c.arc(-30, -17, 1.8, 0, TAU); c.arc(-22, -17, 1.8, 0, TAU); c.fill(); }
+            else { c.beginPath(); c.arc(-30, -13, 2.5, 0.15 * Math.PI, 0.85 * Math.PI); c.moveTo(-21, -13); c.arc(-23.5, -13, 2.5, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke(); }
+            c.fillStyle = '#f2a0a0'; c.beginPath(); c.arc(-26, awake ? -13 : -9, 1.4, 0, TAU); c.fill();
+            c.strokeStyle = '#e8a35c'; c.lineWidth = 5; c.lineCap = 'round';
+            const sway = Math.sin(t / 500) * 4;
+            c.beginPath(); c.moveTo(28, -4); c.quadraticCurveTo(44, awake ? -20 : -6, 42 + sway, awake ? -34 : -18); c.stroke();
+            c.lineCap = 'butt';
+            if (!awake) { c.fillStyle = 'rgba(142,128,112,.9)'; c.font = '600 9px "Noto Sans TC"'; c.fillText('z', -10, -32 + Math.sin(t / 700) * 2); c.font = '600 7px "Noto Sans TC"'; c.fillText('z', -4, -38 + Math.sin(t / 700) * 2); }
+        }
+
+        // --- 實物：按摩手套（抓癢點下去時閃一下） ---
+        const GLOVES = [null, ['#f7f4ee', '#cfc6b6'], ['#d9b97e', '#9b7a42'], ['#f3d27a', '#a87522']];
+        function drawGloveArt(c, level) {
+            const [f, e] = GLOVES[level] || GLOVES[1];
+            c.fillStyle = f; c.strokeStyle = e; c.lineWidth = 1.5;
+            roundRect(c, -9, -6, 18, 16, 6); c.fill(); c.stroke();
+            [-6, -2, 2, 6].forEach((x, i) => { roundRect(c, x - 2, -16 + (i === 0 || i === 3 ? 3 : 0), 4, 13, 2); c.fill(); c.stroke(); });
+            roundRect(c, -15, -3, 7, 4, 2); c.fill(); c.stroke();
+            if (level === 2) { c.strokeStyle = 'rgba(155,122,66,.6)'; c.lineWidth = 1; for (let y = -3; y < 9; y += 3) { c.beginPath(); c.moveTo(-8, y); c.lineTo(8, y); c.stroke(); } }
+        }
+
+        // --- 實物：椅背（畫在圍布後面） ---
+        const CHAIRS = [null, ['#9aa0a6', '#6f757b'], ['#a9825a', '#6a4c31'], ['#7a3f2a', '#4e2618']];
+        function drawChairBack(c) {
+            const level = lv('chair');
+            if (!level) return;
+            const [top, bot] = CHAIRS[level];
+            c.save();
+            roundRect(c, 22, 296, 316, 130, level === 1 ? 18 : 30);
+            const g = c.createLinearGradient(0, 296, 0, H);
+            g.addColorStop(0, top); g.addColorStop(1, bot);
+            c.fillStyle = g; c.fill();
+            c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 2; c.stroke();
+            if (level === 3) {
+                c.fillStyle = 'rgba(255,255,255,.2)';
+                [[40, 332], [42, 360], [318, 332], [316, 360]].forEach(([x, y]) => { c.beginPath(); c.arc(x, y, 2.2, 0, TAU); c.fill(); });
+            }
+            if (level === 2) { c.strokeStyle = 'rgba(255,255,255,.18)'; c.lineWidth = 1; [[34, 310], [326, 310]].forEach(([x, y]) => { c.beginPath(); c.moveTo(x, y); c.lineTo(x, H); c.stroke(); }); }
+            c.restore();
+        }
+
+        // --- 招牌 ---
+        function renderSign() {
+            const level = lv('sign'), el = $('sign');
+            el.className = 'signboard' + (level ? ' lv' + level : ' hidden');
+            el.innerHTML = level === 1 ? '<span class="sign-text">坐洗部</span>'
+                : level === 2 ? '<span class="sign-text">二十七樓坐洗部</span>'
+                : level === 3 ? '<span class="sign-text">二十七樓坐洗部</span><span class="sign-seal">絆</span>' : '';
+        }
+
+        // --- 鏡台：沙漏（搓的時候流沙）、節拍器（拍的時候擺）、店貓 ---
+        const shelfCv = document.getElementById('shelf'), sctx = shelfCv.getContext('2d');
+        function shelfVisible() { return lv('hourglass') || lv('metronome') || lv('cat') || lv('shampoo') >= 2; }
+        function sizeShelf() {
+            shelfCv.classList.toggle('hidden', !shelfVisible());
+            const w = shelfCv.clientWidth || 300;
+            shelfCv.width = Math.round(w * dpr); shelfCv.height = Math.round(w * 66 / 360 * dpr);
+        }
+        function drawShelf(now) {
+            if (!shelfVisible() || !shelfCv.width) return;
+            const c = sctx, k = shelfCv.width / 360;
+            c.setTransform(k, 0, 0, k, 0, 0);
+            c.clearRect(0, 0, 360, 66);
+            const wood = c.createLinearGradient(0, 40, 0, 66);
+            wood.addColorStop(0, '#a9825a'); wood.addColorStop(1, '#7a5a3c');
+            c.fillStyle = wood; c.fillRect(4, 48, 352, 11);
+            c.fillStyle = '#6a4c31'; c.fillRect(4, 59, 352, 3);
+            c.fillStyle = 'rgba(255,255,255,.25)'; c.fillRect(4, 48, 352, 1.5);
+            if (lv('hourglass')) {
+                let frac = 1, flowing = false;
+                if (stage === 1 && G.rubEnd) { frac = clamp((G.rubEnd - now) / 10000, 0, 1); flowing = frac > 0 && !G.rubDone; }
+                else if (stage > 1 && G.rubEnd) frac = G.rubFrac || 0;
+                c.save(); c.translate(34, 48); drawHourglass(c, lv('hourglass'), frac, flowing); c.restore();
+                if (G && G.fastStamp && now - G.fastStamp < 2500) {
+                    c.save(); c.translate(60, 20); c.rotate(-0.15);
+                    c.strokeStyle = '#b33a2f'; c.fillStyle = '#b33a2f'; c.lineWidth = 1.5; c.strokeRect(-9, -9, 18, 18);
+                    c.font = '700 12px "Noto Serif TC", serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('快', 0, 1);
+                    c.restore();
+                }
+            }
+            if (lv('metronome')) {
+                const swing = stage === 4 ? Math.sin(now / 160) * 0.45 : 0.18;
+                c.save(); c.translate(84, 48); drawMetronome(c, lv('metronome'), swing); c.restore();
+            }
+            if (lv('cat')) { c.save(); c.translate(250, 48); drawCatArt(c, !!G && G.catAwake && now - G.catAwake < 3000, now); c.restore(); }
+            if (lv('shampoo') >= 2) {
+                [312, 330].forEach(x => {
+                    c.save(); c.translate(x, 48); c.scale(0.38, 0.38); c.translate(0, -68);
+                    drawBottleArt(c, lv('shampoo'));
+                    c.restore();
+                });
+            }
+        }
+
+        // --- 店面清單 ---
+        function shopIcon(cv, u, level) {
+            const c = cv.getContext('2d'), sz = 56;
+            cv.width = sz * dpr; cv.height = sz * dpr;
+            c.setTransform(dpr, 0, 0, dpr, 0, 0);
+            c.clearRect(0, 0, sz, sz);
+            c.save();
+            const L = Math.max(level, 1);
+            if (u.key === 'shampoo') { c.translate(28, 3); c.scale(0.7, 0.7); drawBottleArt(c, level); }
+            else if (u.key === 'hourglass') { c.translate(28, 50); drawHourglass(c, L, 0.6); }
+            else if (u.key === 'glove') { c.translate(28, 32); c.scale(1.4, 1.4); drawGloveArt(c, L); }
+            else if (u.key === 'metronome') { c.translate(28, 50); drawMetronome(c, L, 0.3); }
+            else if (u.key === 'chair') {
+                const [t, b] = level ? CHAIRS[level] : ['#e8e2d8', '#c9c0b1'];
+                c.fillStyle = b; roundRect(c, 12, 10, 32, 30, level ? 8 : 3); c.fill();
+                c.fillStyle = t; roundRect(c, 14, 12, 28, 26, level ? 7 : 3); c.fill();
+                c.fillStyle = b; c.fillRect(10, 38, 36, 6); c.fillRect(13, 44, 3, 8); c.fillRect(40, 44, 3, 8);
+            }
+            else if (u.key === 'sign') {
+                c.fillStyle = L === 1 ? '#d9b98c' : L === 2 ? '#fffdf6' : '#1f1915';
+                roundRect(c, 4, 18, 48, 20, 3); c.fill();
+                c.strokeStyle = L === 3 ? '#b8964f' : '#a8875c'; c.lineWidth = 1.5; c.stroke();
+                c.fillStyle = L === 3 ? '#e2c27a' : '#3b2a1c'; c.font = '700 10px "Noto Serif TC", serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+                c.fillText(L === 1 ? '坐洗部' : '坐洗部', 28, 29);
+            }
+            else if (u.key === 'cat') { c.translate(31, 44); c.scale(0.62, 0.62); drawCatArt(c, false, 0); }
+            c.restore();
+        }
+
+        function renderShop() {
+            $('shopMoney').textContent = Wallet.fmt(Wallet.money);
+            $('shopList').innerHTML = SHOP.map(u => {
+                const now = lv(u.key), max = u.prices.length, next = now < max ? now + 1 : null;
+                const price = next ? u.prices[now] : 0;
+                const dots = Array.from({ length: max }, (_, i) => `<i class="${i < now ? 'on' : ''}"></i>`).join('');
+                const cur = now ? u.fx(u.vals[now - 1]) : '還沒買';
+                const nxt = next ? u.fx(u.vals[next - 1]) : '';
+                const tier = next ? `${u.tiers[now] ? u.tiers[now] + ' → ' : ''}${u.tiers[next]}` : u.tiers[now];
+                return `<div class="shop-row">
+                    <canvas class="shop-icon" data-icon="${u.key}" data-lv="${next || now}"></canvas>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm text-wabi-dark tracking-widest">${u.name}<span class="ml-1 text-[10px] font-sans text-stone-400">${u.sub}</span><span class="shop-dots ml-1">${dots}</span></p>
+                        <p class="mt-0.5 text-[10px] font-sans tracking-wider text-stone-400">${tier}</p>
+                        <p class="mt-1 text-[11px] font-sans leading-relaxed text-stone-600">${now ? '現在：' + cur : ''}${next ? `${now ? '<br>' : ''}升級：${nxt}` : '<br>已經是最高級'}</p>
+                    </div>
+                    <button type="button" class="shop-buy" data-buy="${u.key}" ${!next || Wallet.money < price ? 'disabled' : ''}>${next ? `${now ? '升級' : '買'}<br>${Wallet.fmt(price)}` : '滿級'}</button>
+                </div>`;
+            }).join('');
+            $('shopList').querySelectorAll('[data-icon]').forEach(cv => shopIcon(cv, SHOP_BY[cv.dataset.icon], Number(cv.dataset.lv)));
+        }
+        function renderShopLv() {
+            const total = SHOP.reduce((s, u) => s + lv(u.key), 0);
+            $('shopBtn').setAttribute('aria-label', total ? `店面，升級了 ${total} 次` : '店面升級');
+        }
+        function openShop() {
+            shop = loadShop();
+            renderShop();
+            const el = $('shop');
+            el.classList.remove('hidden');
+            requestAnimationFrame(() => el.classList.add('on'));
+        }
+        function closeShop() {
+            const el = $('shop');
+            el.classList.remove('on');
+            setTimeout(() => el.classList.add('hidden'), reduceMotion ? 0 : 220);
+        }
+        function buyUpgrade(key) {
+            const u = SHOP_BY[key], now = lv(key);
+            if (now >= u.prices.length) return;
+            const price = u.prices[now];
+            if (!Wallet.spend(price)) { showToast('錢包不夠，先去洗幾顆頭'); return; }
+            shop.lv[key] = now + 1;
+            shop.spent += price;
+            saveShop();
+            sfx.ding && sfx.ding();
+            showToast(`${u.name}升級了：${u.tiers[now + 1]}`);
+            renderShop(); renderShopLv(); renderSign(); sizeShelf(); renderBest();
+        }
+        document.getElementById('shopBtn').addEventListener('click', openShop);
+        document.getElementById('shop').addEventListener('click', e => {
+            const b = e.target.closest('[data-buy]');
+            if (b && !b.disabled) { buyUpgrade(b.dataset.buy); return; }
+            if (e.target.closest('[data-shop-close]') || e.target.id === 'shop') closeShop();
+        });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('shop').classList.contains('hidden')) closeShop(); });
+
+        // 加成金額跳出來（畫在鏡子上，飄久一點）
+        function moneyPop(x, y, text) { floats.push({ x, y, text, color: GOLD, born: performance.now(), life: 1300, money: true }); }
 
         // 客人的點單：做到多給小費（不點造型，造型判定太難猜）。ok(G) 洗完才判定；broke 是途中就搞砸的（碰到臉、耳朵）
         // how 是給玩家的提示（貓的點單只有喵，提示就是翻譯）
@@ -718,7 +1218,8 @@
             st.washes++;
             st.scoreSum += rec.total;
             st.best = Math.max(st.best, rec.total);
-            st.paid += rec.pay.wage + rec.pay.tip + rec.pay.order;
+            st.paid += rec.pay.wage + rec.pay.tip + rec.pay.order + (rec.pay.shop || 0);
+            st.shopTips = (st.shopTips || 0) + (rec.pay.shop || 0);
             st.tips += rec.pay.tip;
             st.orderTips += rec.pay.order;
             st.msSum += rec.ms;
@@ -819,7 +1320,8 @@
             $('meterFill').style.width = fill + '%';
             $('meterZone').classList.toggle('hidden', !zone);
             if (zone) Object.assign($('meterZone').style, { left: zone[0] + '%', width: (zone[1] - zone[0]) + '%' });
-            $('meterMarks').innerHTML = marks.map(m => `<span class="meter-mark" style="left:${m}%"></span>`).join('');
+            const mw = stage === 4 ? Math.round(2 * (val('metronome') || 1) * (val('metronome') ? 2 : 1)) : 2;  // 節拍器：紅線變寬
+            $('meterMarks').innerHTML = marks.map(m => `<span class="meter-mark" style="left:${m}%;width:${mw}px;margin-left:${-mw / 2}px"></span>`).join('');
             $('meterCursor').classList.toggle('hidden', cursor === null);
             if (cursor !== null) $('meterCursor').style.left = cursor + '%';
             $('meterLabel').textContent = label;
@@ -922,7 +1424,7 @@
         let cur = {};          // 這一關的處理（down / move / up / update）
         let face = { kind: 'neutral', until: 0 };
         let baseFace = 'neutral';
-        let spots = [], floats = [], bubbles = [], drops = [];
+        let spots = [], floats = [], bubbles = [], drops = [], gloves = [];
         let saidAt = 0;        // 客人碎念不要太頻繁
 
         function newGame() {
@@ -937,6 +1439,7 @@
                 foamAlpha: 1, wet: false,
                 order: pickOrder(c), orderBroken: false,
                 pokes: { face: 0, ear: 0 }, rubMs: null, force: null, t0: 0,
+                rubEnd: 0, rubDone: false, rubFrac: 1, fastStamp: 0, catAwake: 0, catBonus: 0,
                 cells: [], curls: [], dots: [],
             };
             // 頭髮切成小格子，算泡泡蓋了幾成、癢的地方冒在哪
@@ -949,7 +1452,7 @@
             if (c.style === 'curly') for (let i = 0; i < 26; i++) { const q = pick(G.cells); G.curls.push({ x: q.x + rand(-4, 4), y: q.y + rand(-4, 4), a: rand(0, TAU) }); }
             if (c.style === 'buzz') for (let i = 0; i < 160; i++) { const q = pick(G.cells); G.dots.push({ x: q.x + rand(-4, 4), y: q.y + rand(-4, 4) }); }
             fctx.clearRect(0, 0, W, H);
-            spots = []; floats = []; bubbles = []; drops = [];
+            spots = []; floats = []; bubbles = []; drops = []; gloves = [];
             baseFace = 'neutral';
             face = { kind: 'neutral', until: 0 };
             $('who').textContent = `今天的客人：${c.who}`;
@@ -1094,29 +1597,7 @@
             c.save();
             c.translate(BOTTLE_X, s.oy);
             c.rotate(s.sway);
-            c.save();
-            c.translate(0, 26);
-            c.scale(1 - 0.22 * k, 1 + 0.04 * k);
-            roundRect(c, -19, -24, 38, 48, 11);
-            c.fillStyle = '#f6f1e8';
-            c.fill();
-            c.strokeStyle = '#cdbfae';
-            c.lineWidth = 1.5;
-            c.stroke();
-            c.fillStyle = '#8e8070';
-            c.fillRect(-19, -7, 38, 17);
-            c.fillStyle = '#fcfaf8';
-            c.font = '600 12px "Noto Serif TC", serif';
-            c.textAlign = 'center';
-            c.textBaseline = 'middle';
-            c.fillText('洗', 0, 2);
-            c.fillStyle = 'rgba(255,255,255,0.7)';
-            c.fillRect(-13, -19, 4, 10);
-            c.restore();
-            c.fillStyle = '#8e8070';
-            c.beginPath(); c.moveTo(-12, 50); c.lineTo(12, 50); c.lineTo(7, 60); c.lineTo(-7, 60); c.closePath(); c.fill();
-            c.fillStyle = '#6f6458';
-            c.fillRect(-2.5, 60, 5, 8);
+            drawBottleArt(c, lv('shampoo'), k);
             c.restore();
         }
 
@@ -1152,6 +1633,9 @@
             c.moveTo(48, 182); c.lineTo(104, 82);
             c.stroke();
             c.restore();
+
+            // 按摩椅的椅背（圍布會蓋住中間）
+            drawChairBack(c);
 
             // 長髮的後面那片
             if (st.back) st.back(c, C.hair);
@@ -1319,15 +1803,28 @@
             });
 
             // 飄起來的字
-            floats = floats.filter(f => now - f.born < 750);
+            floats = floats.filter(f => now - f.born < (f.life || 750));
             floats.forEach(f => {
-                const age = (now - f.born) / 750;
+                const age = (now - f.born) / (f.life || 750);
                 c.save();
-                c.globalAlpha = 1 - age;
+                c.globalAlpha = f.money ? Math.min(1, (1 - age) * 2.5) : 1 - age;
                 c.fillStyle = f.color || colors.shu;
-                c.font = '700 16px "Noto Serif TC", serif';
+                c.font = f.money ? '900 15px "Noto Sans TC", sans-serif' : '700 16px "Noto Serif TC", serif';
                 c.textAlign = 'center';
+                if (f.money) { c.strokeStyle = 'rgba(255,255,255,0.9)'; c.lineWidth = 3; c.strokeText(f.text, f.x, f.y - age * 30); }
                 c.fillText(f.text, f.x, f.y - age * 30);
+                c.restore();
+            });
+
+            // 按摩手套：抓下去那一下
+            gloves = gloves.filter(g => now - g.born < 380);
+            gloves.forEach(g => {
+                const age = (now - g.born) / 380;
+                c.save();
+                c.globalAlpha = 1 - age * age;
+                c.translate(g.x + 10, g.y + 6 - age * 6);
+                c.rotate(-0.4 + age * 0.3);
+                drawGloveArt(c, lv('glove'));
                 c.restore();
             });
         }
@@ -1536,6 +2033,7 @@
                 say(r.line);
                 setFace(r.face);
                 floatText(183, st.top - 22, r.label, pal.accent);
+                if (r.score === 15 && lv('shampoo')) setTimeout(() => moneyPop(268, 70, `+$${val('shampoo')} 材料費`), 350);
                 actions([]);
                 setTimeout(() => go(1), 1500);
             }
@@ -1579,6 +2077,13 @@
                 done = true;
                 last = null;
                 if (started && G.coverage >= 0.97) G.rubMs = Math.round(performance.now() - (endAt - LIMIT));
+                G.rubDone = true;
+                G.rubFrac = started ? clamp((endAt - performance.now()) / LIMIT, 0, 1) : 1;
+                if (lv('hourglass') && G.rubMs !== null) {
+                    const fast = G.rubMs <= 6000, v = val('hourglass') * (fast ? 2 : 1);
+                    moneyPop(180, 96, `+$${v} 快手${fast ? '×2' : ''}`);
+                    if (fast) G.fastStamp = performance.now();
+                }
                 G.rubScore = Math.round(G.coverage * 25);
                 const pct = Math.round(G.coverage * 100);
                 if (pct >= 95) { say('整顆都是泡泡了。'); setFace('bliss'); }
@@ -1594,7 +2099,7 @@
                     if (done) return;
                     last = p;
                     carry = 0;
-                    if (!started) { started = true; endAt = now + LIMIT; }
+                    if (!started) { started = true; endAt = now + LIMIT; G.rubEnd = endAt; }
                 },
                 move(p, now) {
                     if (done || !last) return;
@@ -1681,6 +2186,7 @@
                         progress();
                         burst(best.x, best.y, 8);
                         floatText(best.x, best.y - 18, '爽');
+                        if (lv('glove')) { gloves.push({ x: best.x, y: best.y, born: now }); moneyPop(best.x + 26, best.y - 2, `+$${val('glove')}`); }
                         setFace('bliss', 450);
                         nextAt = Math.max(nextAt, now + 280);
                         return;
@@ -1918,10 +2424,11 @@
                 const t = now - trackStart;
                 let k = -1, best = Infinity;
                 BEATS.forEach((b, i) => { const d = Math.abs(t - b); if (!hit[i] && d < best) { best = d; k = i; } });
-                if (k < 0 || best > 230) { floatText(180, 330, '空', pal.accent); setFace('doubt', 400); return; }
+                const wide = val('metronome') || 1;  // 節拍器：判定放寬
+                if (k < 0 || best > 230 * wide) { floatText(180, 330, '空', pal.accent); setFace('doubt', 400); return; }
                 hit[k] = true;
                 document.querySelectorAll('#meterMarks .meter-mark')[k]?.classList.add('is-hit');
-                const g = best < 70 ? { w: '準', s: 5, f: 'bliss' } : best < 140 ? { w: '好', s: 3, f: 'happy' } : { w: '歪', s: 1, f: 'pain' };
+                const g = best < 70 * wide ? { w: '準', s: 5, f: 'bliss' } : best < 140 * wide ? { w: '好', s: 3, f: 'happy' } : { w: '歪', s: 1, f: 'pain' };
                 G.patScore += g.s;
                 G.patMarks.push(g.w);
                 floatText(140 + k * 27, 330, g.w);
@@ -1977,7 +2484,15 @@
         async function showResult() {
             stage = 5;
             setSteps(5);
-            const total = G.squeezeScore + G.rubScore + G.scratchScore + G.styleScore + G.patScore;
+            // 店貓：三成機率醒來撒嬌，爽度 +3
+            G.catBonus = 0;
+            if (lv('cat') && Math.random() < 0.3) {
+                G.catBonus = val('cat');
+                G.catAwake = performance.now();
+                floatText(250, 340, '喵', GOLD);
+                sfx.ding && sfx.ding();
+            }
+            const total = Math.min(100, G.squeezeScore + G.rubScore + G.scratchScore + G.styleScore + G.patScore + G.catBonus);
             const grade = GRADES.find(g => total >= g.min);
             let best = 0;
             try { best = Number(localStorage.getItem(BEST_KEY)) || 0; } catch (e) { }
@@ -1992,8 +2507,24 @@
             const o = G.order && ORDERS[G.order];
             const orderDone = !!(o && !G.orderBroken && o.ok(G));
             const orderTip = orderDone ? o.tip : 0;
-            G.pay = { wage, tip, order: orderTip };
-            Wallet.earn(wage + tip + orderTip, 'xitou');
+            // 店面加成
+            const sp = {};
+            if (lv('shampoo') && G.squeezeScore === 15) sp.shampoo = val('shampoo');
+            if (lv('hourglass') && G.rubMs !== null) sp.hourglass = val('hourglass') * (G.rubMs <= 6000 ? 2 : 1);
+            if (lv('glove') && G.hits) sp.glove = G.hits * val('glove');
+            if (lv('chair') && tip + orderTip) sp.chair = Math.round((tip + orderTip) * val('chair') / 10) * 10;
+            const rare = G.c.cat || /阿伯|墨鏡/.test(G.c.who);
+            if (lv('sign') && rare) sp.sign = 300;
+            const shopTotal = Object.values(sp).reduce((a, b) => a + b, 0);
+            G.pay = { wage, tip, order: orderTip, shop: shopTotal, shopParts: sp };
+            Wallet.earn(wage + tip + orderTip + shopTotal, 'xitou');
+            const SP_NAMES = { shampoo: '材料費', hourglass: '快手', glove: '抓癢計件', chair: '按摩椅', sign: '熟客紅包' };
+            $('payShopRow').classList.toggle('hidden', !shopTotal);
+            $('payShopNote').classList.toggle('hidden', !shopTotal);
+            if (shopTotal) {
+                $('payShop').textContent = Wallet.fmt(shopTotal);
+                $('payShopNote').textContent = Object.entries(sp).map(([k, v]) => `${SP_NAMES[k]} ${Wallet.fmt(v)}`).join('・');
+            }
             if (o) { renderOrder(orderDone ? 'ok' : 'no'); say(orderDone ? pick(ORDER_OK_LINES) : o.no); setFace(orderDone ? 'bliss' : 'doubt'); }
             $('payWage').textContent = Wallet.fmt(wage);
             $('payTip').textContent = tip ? Wallet.fmt(tip) : '客人沒給';
@@ -2012,6 +2543,8 @@
                 pokes: { ...G.pokes },
                 order: o ? { id: G.order, done: orderDone } : null,
                 pay: { ...G.pay },
+                shop: { ...shop.lv },
+                cat_bonus: G.catBonus || 0,
                 login: !!(window.Line && Line.loggedIn),
             });
             $('syncNote').textContent = '紀錄存檔中……';
@@ -2044,7 +2577,7 @@
                 ['造型', G.shape.name],
                 ['拍背', G.patMarks.length ? G.patMarks.join('・') : '都沒拍到'],
                 ...(G.order ? [['點單', `${ORDERS[G.order].text.replace(/[。，].*$/, '')}・${G.pay.order ? '達成' : '沒做到'}`]] : []),
-                ['工資', Wallet.fmt(G.pay.wage) + (G.pay.tip + G.pay.order ? `＋小費 ${Wallet.fmt(G.pay.tip + G.pay.order)}` : '')],
+                ['工資', Wallet.fmt(G.pay.wage) + (G.pay.tip + G.pay.order + (G.pay.shop || 0) ? `＋${G.pay.shop ? '加給' : '小費'} ${Wallet.fmt(G.pay.tip + G.pay.order + (G.pay.shop || 0))}` : '')],
             ];
             const allText = rows.flat().join('') + '洗頭證明爽度二十七樓坐洗部' + grade.mark + grade.line + '0123456789（）';
             try {
@@ -2206,10 +2739,15 @@
             cur.update?.(now, dt);
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             drawScene(ctx, pal, now, true);
+            drawShelf(now);
             requestAnimationFrame(frame);
         }
 
         renderBest();
+        renderSign();
+        renderShopLv();
+        sizeShelf();
+        window.addEventListener('resize', sizeShelf);
         intro();
         requestAnimationFrame(frame);
         setTimeout(uploadWashes, 2500);  // 之前沒送成功的補送
