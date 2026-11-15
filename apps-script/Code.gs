@@ -801,7 +801,7 @@ function playersSheet() {
   var sheet = ss.getSheetByName('Players');
   if (!sheet) {
     sheet = ss.insertSheet('Players');
-    sheet.appendRow(['created', 'line_id', 'name', 'picture', 'money', 'spent', 'earned', 'updated', 'gongde', 'shop']);
+    sheet.appendRow(['created', 'line_id', 'name', 'picture', 'money', 'spent', 'earned', 'updated', 'gongde', 'shop', 'syncs']);
   }
   return sheet;
 }
@@ -857,11 +857,14 @@ function findPlayer(lineId) {
     try { earned = JSON.parse(rows[i][6] || '{}') || {}; } catch (e) { }
     try { gongde = JSON.parse(rows[i][8] || '{}') || {}; } catch (e) { }
     try { shop = JSON.parse(rows[i][9] || '{}') || {}; } catch (e) { }
+    var syncs = [];
+    try { syncs = JSON.parse(rows[i][10] || '[]') || []; } catch (e) { }
     return {
       row: i + 1, lineId: lineId, name: String(rows[i][2] || ''), picture: String(rows[i][3] || ''),
       money: Number(rows[i][4]) || 0, spent: Number(rows[i][5]) || 0, earned: cleanEarned(earned) || {},
       gongde: cleanGongde(gongde) || { donated: 0, oil: 0, lamps: 0, lit: 0, oils: {} },
-      shop: cleanShop(shop) || { lv: {}, spent: 0 }
+      shop: cleanShop(shop) || { lv: {}, spent: 0 },
+      syncs: Array.isArray(syncs) ? syncs.slice(-SYNC_IDS_KEPT) : []
     };
   }
   return null;
@@ -931,7 +934,15 @@ function walletView(p) {
 }
 
 function writeWallet(p) {
-  playersSheet().getRange(p.row, 5, 1, 6).setValues([[p.money, p.spent, JSON.stringify(p.earned), new Date(), JSON.stringify(p.gongde), JSON.stringify(p.shop)]]);
+  playersSheet().getRange(p.row, 5, 1, 7).setValues([[p.money, p.spent, JSON.stringify(p.earned), new Date(), JSON.stringify(p.gongde), JSON.stringify(p.shop), JSON.stringify(p.syncs || [])]]);
+}
+
+// 錢包同步的「這包變化」編號：手機沒收到回覆會用同一個編號再送，後端看過就不再加一次
+// （iPhone 上回覆常常收不到，以前同一包會被加兩三次，錢被扣到 0）。存在 Players 的 K 欄，留最近 SYNC_IDS_KEPT 個
+var SYNC_IDS_KEPT = 40;
+function cleanSyncId(v) {
+  v = String(v || '');
+  return /^[A-Za-z0-9-]{8,40}$/.test(v) ? v : '';
 }
 
 // 公開：LINE 登入。第一次登入的人，用這支手機原本的錢包開帳號
@@ -951,6 +962,7 @@ function lineLogin(input) {
     var sheet = playersSheet();
     if (!sheet.getRange(1, 9).getValue()) sheet.getRange(1, 9).setValue('gongde'); // 舊表補上功德、店面那兩欄的標題
     if (!sheet.getRange(1, 10).getValue()) sheet.getRange(1, 10).setValue('shop');
+    if (!sheet.getRange(1, 11).getValue()) sheet.getRange(1, 11).setValue('syncs');
     var localShop = cleanShop((input.wallet || {}).shop);
     var found = findPlayer(who.sub);
     if (found) {
@@ -1007,11 +1019,15 @@ function walletSync(input) {
   if (money === null || spent === null || earned === null || gd === null || (d.shop && !shop)) return { result: 'error', error: '錢包的數字不對' };
 
   var changed = money || spent || Object.keys(earned).length || gd.donated || gd.oil || gd.lamps || gd.lit || Object.keys(gd.oils).length || !!shop;
+  var sid = cleanSyncId(input.sid);
   // 單純讀不用排隊；有加減錢才排隊（讀出來、加上去、寫回去要一口氣做完，兩支手機同時送才不會少算）
   var read = function () {
     var p = findPlayer(lineId);
     if (!p) return { result: 'unauthorized' };
+    // 同一包已經加過了（上次的回覆手機沒收到）：不再加，直接回現在的錢包
+    if (changed && sid && p.syncs.indexOf(sid) >= 0) return { result: 'success', wallet: walletView(p), dup: true };
     if (changed) {
+      if (sid) { p.syncs.push(sid); p.syncs = p.syncs.slice(-SYNC_IDS_KEPT); }
       p.money = Math.max(0, Math.min(WALLET_MAX, p.money + money));
       p.spent = Math.min(WALLET_MAX, p.spent + spent);
       p.earned = addEarned(p.earned, earned);

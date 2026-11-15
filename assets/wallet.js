@@ -104,13 +104,14 @@
         !(p.gongde && (p.gongde.donated || p.gongde.oil || p.gongde.lamps || p.gongde.lit || Object.keys(cleanOils(p.gongde.oils, true)).length));
 
     // 後端回來的錢包 + 還沒送出去的變化 = 這支手機該顯示的
+    // 送出去還沒收到回覆的那包（outbox）也還沒算進後端，一起加上去
     function adopt(server) {
-        const w = load(), p = w.pending, before = w.money;
-        w.money = server.money + p.money;
-        w.spent = server.spent + p.spent;
-        w.earned = mergeEarned(JSON.parse(JSON.stringify(server.earned || {})), p.earned);
+        const w = load(), p = w.pending, o = w.outbox ? w.outbox.pending : noPending(), before = w.money;
+        w.money = server.money + p.money + o.money;
+        w.spent = server.spent + p.spent + o.spent;
+        w.earned = mergeEarned(mergeEarned(JSON.parse(JSON.stringify(server.earned || {})), p.earned), o.earned);
         // 後端還是舊版（沒有 gongde）就先用這支手機的
-        if (server.gongde) w.gongde = cleanGongde(addGongde(cleanGongde(server.gongde), p.gongde));
+        if (server.gongde) w.gongde = cleanGongde(addGongde(addGongde(cleanGongde(server.gongde), p.gongde), o.gongde || {}));
         let shopChanged = false;
         if (server.shop) {
             const merged = mergeShop(server.shop, w.shop);
@@ -124,11 +125,12 @@
         if (shopChanged) emit('shop');
     }
 
-    function schedule() {
+    function schedule(ms = 1500) {
         if (!logged()) return;
         clearTimeout(timer);
-        timer = setTimeout(() => Wallet.sync(), 1500);
+        timer = setTimeout(() => Wallet.sync(), ms);
     }
+    const newSid = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'w-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12)).slice(0, 40);
 
     // 坐洗部、會員中心以前讀的存檔，照樣寫一份
     function writeShopMirror(shop) { write('dongbuli-xitou-shop', cleanShop(shop)); }
@@ -208,32 +210,38 @@
         },
 
         // 把還沒送的變化送去後端（沒有變化就單純讀一次最新的）
-        async sync(keepalive) {
+        // 每一包變化有自己的編號（sid）。送出去沒收到回覆（iPhone 很常見：後端其實加好了，回覆在轉址時掉了），
+        // 這包留在 outbox 用同一個編號再送，新版後端看過這個編號就不會再加一次。
+        // 以前是把那包放回 pending 跟新的變化混在一起重送，同一筆錢會被扣兩三次。
+        async sync() {
             if (!logged() || inflight) return;
             clearTimeout(timer);
             inflight = true;
-            const w = load(), sent = w.pending;
-            w.pending = noPending();
-            save(w);
+            let w = load();
+            if (!w.outbox && !isEmpty(w.pending)) {
+                w.outbox = { sid: newSid(), pending: w.pending };
+                w.pending = noPending();
+                save(w);
+            }
+            const box = w.outbox, sent = box ? box.pending : noPending();
             let ok = false;
             const delta = { money: sent.money, spent: sent.spent, earned: sent.earned, gongde: sent.gongde };
             if (sent.shop) delta.shop = cleanShop(w.shop);
             try {
-                const r = await Line.call({ type: 'walletSync', delta }, keepalive);
-                if (r.result === 'success') { adopt(r.wallet); ok = true; }
+                const r = await Line.call(box ? { type: 'walletSync', sid: box.sid, delta } : { type: 'walletSync', delta });
+                if (r.result === 'success') {
+                    const now = load();
+                    if (box && now.outbox && now.outbox.sid === box.sid) { now.outbox = null; save(now); }
+                    adopt(r.wallet);
+                    ok = true;
+                } else if (box && r.result === 'error' && r.error === '錢包的數字不對') {
+                    // 後端說這包本身不合格，再送幾次都一樣：丟掉，照後端的錢包
+                    const now = load(); now.outbox = null; save(now);
+                }
             } catch (e) { }
-            if (!ok && logged()) {
-                // 沒送成功：把剛剛那包放回去，等下一次
-                const back = load();
-                back.pending.money += sent.money;
-                back.pending.spent += sent.spent;
-                mergeEarned(back.pending.earned, sent.earned);
-                addGongde(back.pending.gongde, sent.gongde || {});
-                if (sent.shop) back.pending.shop = true;
-                save(back);
-            }
             inflight = false;
-            if (!isEmpty(load().pending)) schedule();
+            const after = load();
+            if (after.outbox || !isEmpty(after.pending)) schedule(ok ? 1500 : 5000);
         },
 
         // 要直接改帳號的動作（保險・存的投保、領錢、解約）之前先叫這個：
@@ -241,7 +249,11 @@
         async settle() {
             if (!logged()) return;
             for (let i = 0; i < 100 && inflight; i++) await new Promise(r => setTimeout(r, 100));
-            if (!isEmpty(load().pending)) await Wallet.sync();
+            for (let i = 0; i < 2; i++) {
+                const w = load();
+                if (!w.outbox && isEmpty(w.pending)) break;
+                await Wallet.sync();
+            }
         },
         // 後端直接改過帳號（例如投保扣錢）：用後端回來的錢包 + 還沒送的
         adopt(server) { if (server && logged()) adopt(server); },
@@ -283,9 +295,10 @@
         });
         // 打開頁面時拿一次帳號最新的錢（可能在別支手機玩過）
         Line.ready.then(() => { if (Line.loggedIn) Wallet.sync(); });
-        // 離開頁面前把沒送的送出去
+        // 離開頁面前把沒送的送出去（不用 keepalive：Apps Script 會轉址，iPhone 的 keepalive 遇到轉址一定失敗）
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden && !isEmpty(load().pending)) Wallet.sync(true);
+            const w = load();
+            if (document.hidden && (w.outbox || !isEmpty(w.pending))) Wallet.sync();
         });
     }
 
