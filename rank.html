@@ -22,10 +22,10 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/theme.css?v=20261115a">
-    <script src="assets/theme.js?v=20261115a"></script>
-    <script src="assets/line.js?v=20261115a"></script>
-    <script src="assets/wallet.js?v=20261115a"></script>
+    <link rel="stylesheet" href="assets/theme.css?v=20261115b">
+    <script src="assets/theme.js?v=20261115b"></script>
+    <script src="assets/line.js?v=20261115b"></script>
+    <script src="assets/wallet.js?v=20261115b"></script>
     <style>
         .line-btn {
             min-height: 44px;
@@ -227,7 +227,7 @@
         }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261115a">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261115b">
 </head>
 
 <body
@@ -284,7 +284,7 @@
                     <button type="button" data-cat="all" aria-pressed="true">全部</button>
                     <button type="button" data-cat="scratch" aria-pressed="false">刮刮樂</button>
                     <button type="button" data-cat="gongde" aria-pressed="false">功德</button>
-                    <button type="button" data-cat="shop" aria-pressed="false">洗頭店</button>
+                    <button type="button" data-cat="shop" aria-pressed="false">升級</button>
                 </div>
             </div>
             <p id="boardNote" class="mt-3 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed"></p>
@@ -342,16 +342,16 @@
         };
         // 花錢榜：每一類多少錢、小字寫什麼
         const CATS = {
-            all: { note: '花掉的錢加起來：刮刮樂、捐香油錢、點燈、洗頭店升級。', empty: '還沒有人花錢。<br>錢放著不會變多。' },
+            all: { note: '花掉的錢加起來：刮刮樂、捐香油錢、點燈、升級洗頭店和菜園。', empty: '還沒有人花錢。<br>錢放著不會變多。' },
             scratch: { note: '買刮刮樂花掉的（小字是刮中拿回來的，含財神加碼）。', empty: '還沒有人買刮刮樂。' },
             gongde: { note: '捐香油錢加點燈。神明都有記下來。', empty: '還沒有人做功德。' },
-            shop: { note: '坐洗部的店面升級花掉的。', empty: '還沒有人升級洗頭店。' },
+            shop: { note: '坐洗部的店面、菜園的農具升級花掉的。', empty: '還沒有人升級。' },
         };
         function spendEntry(p) {
             const s = p.spend;
             if (!s) return null;
             if (cat === 'all') {
-                const parts = [[s.scratch, '刮刮樂'], [s.donate + s.lamp, '功德'], [s.shop, '洗頭店']].filter(x => x[0] > 0).sort((a, b) => b[0] - a[0]);
+                const parts = [[s.scratch, '刮刮樂'], [s.donate + s.lamp, '功德'], [s.shop, '升級']].filter(x => x[0] > 0).sort((a, b) => b[0] - a[0]);
                 return s.total ? { v: s.total, main: fmt(s.total), sub: parts.map(x => `${x[1]} ${fmt(x[0])}`).join('・') } : null;
             }
             if (cat === 'scratch') {
@@ -363,7 +363,7 @@
                 const v = s.donate + s.lamp;
                 return v ? { v, main: fmt(v), sub: [s.donate ? `捐 ${fmt(s.donate)}` : '', s.lamp ? `點燈 ${fmt(s.lamp)}` : ''].filter(Boolean).join('・') } : null;
             }
-            return s.shop ? { v: s.shop, main: fmt(s.shop), sub: '洗頭店升級' } : null;
+            return s.shop ? { v: s.shop, main: fmt(s.shop), sub: '洗頭店、菜園升級' } : null;
         }
 
         // 每個人在這個榜的成績：{ v 排名用的數字, tie 同分再比（越小越前面）, main 大字, sub 小字 }，沒成績回 null

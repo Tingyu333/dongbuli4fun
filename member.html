@@ -22,11 +22,11 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/theme.css?v=20261115a">
-    <script src="assets/theme.js?v=20261115a"></script>
-    <script src="assets/line.js?v=20261115a"></script>
-    <script src="assets/wallet.js?v=20261115a"></script>
-    <script src="assets/gongde.js?v=20261115a"></script>
+    <link rel="stylesheet" href="assets/theme.css?v=20261115b">
+    <script src="assets/theme.js?v=20261115b"></script>
+    <script src="assets/line.js?v=20261115b"></script>
+    <script src="assets/wallet.js?v=20261115b"></script>
+    <script src="assets/gongde.js?v=20261115b"></script>
     <style>
         .line-btn {
             min-height: 44px;
@@ -92,7 +92,7 @@
         }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261115a">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261115b">
 </head>
 
 <body
@@ -287,7 +287,7 @@
                 .map(k => `<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">${esc(LABELS[k] || k)}</dt><dd class="flex-1">${SOURCES[k] ? SOURCES[k](w.earned[k]) : fmt(w.earned[k].total)}</dd></div>`);
             const shopSpent = Wallet.shop.spent;
             const gd = Wallet.gongde, tier = Gongde.tierOf(gd.donated);
-            const parts = [[shopSpent, '洗頭店升級'], [gd.donated, '捐香油錢'], [gd.lit, '點燈']].filter(x => x[0] > 0);
+            const parts = [[shopSpent, '店面升級'], [gd.donated, '捐香油錢'], [gd.lit, '點燈']].filter(x => x[0] > 0);
             const scratchSpent = Math.max(0, w.spent - parts.reduce((t, x) => t + x[0], 0));
             if (scratchSpent) parts.push([scratchSpent, '刮刮樂']);
             if (w.spent) rows.push(`<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">花掉</dt><dd class="flex-1">${fmt(w.spent)}${parts.length > 1 ? `（${parts.map(x => `${x[1]} ${fmt(x[0])}`).join('、')}）` : parts.length ? `（都拿去${parts[0][1]}了）` : ''}</dd></div>`);

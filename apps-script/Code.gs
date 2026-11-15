@@ -1146,7 +1146,7 @@ function washLog(input) {
 
 // --- 排行榜（rank.html：打工・榜、花錢・榜）---
 // 只有用 LINE 登入過的玩家：賺多少、做幾次從 Players 的 earned 讀，單場最高分從 Washes／Cleans 讀（同分比快）。
-// 花錢：Players 的 spent（全部花掉的）拆成洗頭店升級（shop.spent）、捐香油錢（gongde.donated）、點燈（gongde.lit），剩下的算刮刮樂。
+// 花錢：Players 的 spent（全部花掉的）拆成店面升級（shop.spent，洗頭店＋菜園農具）、捐香油錢（gongde.donated）、點燈（gongde.lit），剩下的算刮刮樂。
 // 公開：回 LINE 名字和大頭貼，不回 line_id；有帶 session 的話把自己那列標 me。算好的榜存 CacheService 5 分鐘。
 
 var BOARD_CACHE_KEY = 'board:v4', BOARD_CACHE_SEC = 300;

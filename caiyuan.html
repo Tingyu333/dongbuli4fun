@@ -20,10 +20,10 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/theme.css?v=20261115a">
-    <script src="assets/theme.js?v=20261115a"></script>
-    <script src="assets/line.js?v=20261115a"></script>
-    <script src="assets/wallet.js?v=20261115a"></script>
+    <link rel="stylesheet" href="assets/theme.css?v=20261115b">
+    <script src="assets/theme.js?v=20261115b"></script>
+    <script src="assets/line.js?v=20261115b"></script>
+    <script src="assets/wallet.js?v=20261115b"></script>
     <style>
         /* 菜園：手指在上面搖、拉，不能捲動頁面，長按也不能跳出系統選單 */
         .garden {
@@ -73,6 +73,89 @@
 
         .act-heave:active { transform: scale(.93); }
 
+        /* 農具店（跟坐洗部的店面同一套樣子） */
+        .shop-btn {
+            display: inline-flex;
+            align-items: center;
+            height: 1.9rem;
+            padding: 0 0.75rem;
+            border: 1px solid rgb(var(--wabi-accent) / 0.5);
+            border-radius: 9999px;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            color: rgb(var(--wabi-dark));
+            white-space: nowrap;
+            flex: none;
+            touch-action: manipulation;
+        }
+
+        .shop-btn b {
+            margin-left: 0.3rem;
+            font-weight: 400;
+            color: rgb(var(--wabi-shu));
+        }
+
+        #shop { background: rgba(0, 0, 0, 0); transition: background 0.22s; }
+        #shop.on { background: rgba(0, 0, 0, 0.45); }
+        #shop .shop-sheet { transform: translateY(100%); transition: transform 0.22s ease-out; }
+        #shop.on .shop-sheet { transform: none; }
+
+        @media (prefers-reduced-motion: reduce) {
+            #shop, #shop .shop-sheet { transition: none; }
+        }
+
+        .shop-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgb(var(--wabi-sub) / 0.6);
+        }
+
+        .shop-icon {
+            flex: none;
+            width: 56px;
+            height: 56px;
+            border-radius: 6px;
+            background: rgb(var(--wabi-sub) / 0.35);
+        }
+
+        .shop-dots i {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            margin-left: 3px;
+            border-radius: 50%;
+            border: 1px solid rgb(var(--wabi-accent));
+        }
+
+        .shop-dots i.on {
+            background: rgb(var(--wabi-shu));
+            border-color: rgb(var(--wabi-shu));
+        }
+
+        .shop-buy {
+            flex: none;
+            min-width: 5.6rem;
+            min-height: 44px;
+            padding: 0 0.6rem;
+            border: 1px solid rgb(var(--wabi-dark));
+            background: rgb(var(--wabi-dark));
+            color: rgb(var(--wabi-bg));
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            line-height: 1.3;
+            touch-action: manipulation;
+        }
+
+        .shop-buy:disabled {
+            background: transparent;
+            color: rgb(var(--wabi-accent));
+            border-color: rgb(var(--wabi-sub));
+        }
+
         .harvest li {
             display: flex;
             justify-content: space-between;
@@ -80,7 +163,7 @@
             border-bottom: 1px solid rgb(var(--wabi-sub) / 0.7);
         }
     </style>
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261115a">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261115b">
 </head>
 
 <body
@@ -112,10 +195,11 @@
 
         <section id="garden"
             class="garden bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-4 pt-4 pb-5">
-            <div class="flex items-baseline justify-between">
-                <p id="note" class="text-sm text-wabi-dark tracking-wider leading-relaxed">按住葉子，左右搖，再往上拉。</p>
-                <span id="best" class="shrink-0 text-right text-[10px] leading-relaxed font-sans tracking-widest text-stone-400"></span>
+            <div class="flex items-center justify-between gap-2">
+                <span id="best" class="text-[10px] leading-relaxed font-sans tracking-widest text-stone-400"></span>
+                <button id="shopBtn" type="button" class="shop-btn" aria-haspopup="dialog">農具<b id="shopLv"></b></button>
             </div>
+            <p id="note" class="mt-2 text-sm text-wabi-dark tracking-wider leading-relaxed">按住葉子，左右搖，再往上拉。</p>
             <canvas id="cv" class="mt-2" aria-label="頂樓菜園，九格紅蘿蔔"></canvas>
             <p id="hint" class="mt-3 min-h-[2.6rem] text-xs text-center text-stone-500 font-sans tracking-widest leading-relaxed [text-wrap:balance]" aria-live="polite"></p>
             <div id="actions" class="mt-1 min-h-[3.5rem] flex items-center justify-center gap-2"></div>
@@ -142,6 +226,8 @@
                     class="w-full bg-wabi-dark text-wabi-bg py-4 px-8 tracking-[0.2em] font-sans text-xs shadow-lg">分享收成單</button>
                 <button id="againBtn" type="button"
                     class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">再拔一輪</button>
+                <button id="shopBtn2" type="button"
+                    class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">拿菜錢買農具</button>
                 <a href="scratch.html"
                     class="block w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">拿菜錢去彩券行</a>
                 <a href="rank.html"
@@ -159,9 +245,27 @@
                 <li>心形的蘿蔔多賣 $80。土裡偶爾有地瓜、伊藤埋的刮刮樂；也有鼴鼠，拔到扣 $50。別理牠，等旁邊再長出兩根，牠會自己跑走，放過牠 +$50。</li>
                 <li>運氣好會長出<b class="font-normal text-wabi-shu">巨型蘿蔔</b>，一個人拔不動，要叫二十七樓的人來幫忙，一人收 $50 幫手費。</li>
                 <li>一根都沒斷、又拔了十根以上，農會再表揚 $200。</li>
+                <li>賺來的錢可以按右上的<b class="font-normal text-wabi-dark">農具</b>升級：鋤頭、手套、堆肥、灑水、菜攤、稻草人、收音機。買了會擺在頂樓，登入 LINE 換手機也在。</li>
             </ol>
         </section>
     </main>
+
+    <!-- 農具店 -->
+    <div id="shop" class="hidden fixed inset-0 z-[80] flex items-end justify-center" role="dialog" aria-modal="true" aria-label="農具升級">
+        <div class="shop-sheet w-full max-w-md bg-wabi-bg rounded-t-xl">
+            <div class="px-5 pt-5 pb-2 flex items-baseline justify-between border-b border-stone-200">
+                <div>
+                    <p class="text-lg text-wabi-dark tracking-widest">農具・升</p>
+                    <p class="mt-1 text-[10px] font-sans tracking-widest text-stone-400">買農具，拔得快、賣得貴</p>
+                </div>
+                <p class="text-xs font-sans tracking-widest text-stone-500">錢包 <b id="shopMoney" class="font-normal text-wabi-shu"></b></p>
+            </div>
+            <div id="shopList" class="px-5 max-h-[60vh] overflow-y-auto overscroll-contain"></div>
+            <div class="px-5 py-4">
+                <button type="button" data-shop-close class="w-full py-3 border border-stone-300 text-wabi-dark tracking-[0.2em] font-sans text-xs">回去拔蘿蔔</button>
+            </div>
+        </div>
+    </div>
 
     <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
         <p>&copy; 2026 DONGBULI · 菜園・拔</p>
@@ -225,7 +329,7 @@
         // ===== 2. 狀態 =====
         let G = null;
         let grab = null;     // 手指抓著哪一格 { i, sx, sy, x, y, lastX, dir, travel, force }
-        const floats = [], dirt = [], flyers = [], runners = [];
+        const floats = [], dirt = [], flyers = [], runners = [], drops = [];
         let lastNow = performance.now();
 
         function spawn(i, now) {
@@ -240,9 +344,9 @@
             else if (r < 0.13) s.kind = 'sweet';
             else if (r < 0.155) s.kind = 'ticket';
             else {
-                const q = Math.random();
-                s.size = q < 0.45 ? 1 : q < 0.8 ? 2 : 3;
-                s.heart = Math.random() < 0.06;
+                const q = Math.random(), cp = val('compost') || { small: 0.45, mid: 0.8, heart: 0.06 };
+                s.size = q < cp.small ? 1 : q < cp.mid ? 2 : 3;
+                s.heart = Math.random() < cp.heart;
             }
             return s;
         }
@@ -250,23 +354,59 @@
         // 鼴鼠：別的格子再長出 MOLE_STAY 根之後自己跑走，放過牠（沒拔）多給 MOLE_FREE
         const MOLE_STAY = 2, MOLE_FREE = 50;
 
+        // ===== 1b. 農具（升級）=====
+        // 存在共用錢包的 shop（跟坐洗部的店面同一份，key 不一樣），登入 LINE 就跟著帳號走。等級只升不降。
+        // 錢包的 shop.spent 是兩家店加起來花掉的。
+        const SHOP = [
+            { key: 'hoe', name: '鋤頭', sub: '鬆土', prices: [4000, 12000, 35000], vals: [1.3, 1.6, 2],
+              tiers: ['', '竹柄鋤頭', '鐵鋤頭', '金鋤頭'], fx: v => `搖一下鬆的土 ×${v}` },
+            { key: 'mitt', name: '工作手套', sub: '力道', prices: [4000, 12000, 35000], vals: [0.06, 0.12, 0.18],
+              tiers: ['', '棉紗手套', '防滑手套', '皮手套'], fx: v => `綠色區寬 ${Math.round(v / 0.24 * 100)}%，比較不會歪、不會斷` },
+            { key: 'compost', name: '堆肥', sub: '大蘿蔔', prices: [6000, 18000, 50000],
+              vals: [{ small: 0.37, mid: 0.75, heart: 0.08 }, { small: 0.3, mid: 0.7, heart: 0.1 }, { small: 0.22, mid: 0.62, heart: 0.12 }],
+              tiers: ['', '廚餘堆肥', '有機肥', '黑金肥'], fx: v => `大蘿蔔 ${Math.round((1 - v.mid) * 100)}%（原本 20%），心形 ${Math.round(v.heart * 100)}%（原本 6%）` },
+            { key: 'sprinkler', name: '澆水', sub: '長得快', prices: [5000, 15000, 40000], vals: [700, 500, 320],
+              tiers: ['', '澆水壺', '水管', '自動灑水器'], fx: v => `拔掉 ${v / 1000} 秒就長新的（原本 0.9 秒）` },
+            { key: 'stall', name: '菜攤', sub: '賣價', prices: [8000, 25000, 60000], vals: [0.1, 0.2, 0.3],
+              tiers: ['', '紙板', '木頭招牌', '農會認證'], fx: v => `蘿蔔、地瓜賣價多 ${Math.round(v * 100)}%` },
+            { key: 'scarecrow', name: '稻草人', sub: '鼴鼠', prices: [3000, 10000, 30000], vals: [50, 100, 150],
+              tiers: ['', '草紮的', '戴斗笠', '穿雨衣'], fx: v => `鼴鼠的葉子抖得比較明顯，放過牠再多 $${v}` },
+            { key: 'radio', name: '收音機', sub: '時間', prices: [20000], vals: [8],
+              tiers: ['', '紅色收音機'], fx: v => `邊聽邊拔，一輪多 ${v} 秒` },
+        ];
+        const SHOP_BY = Object.fromEntries(SHOP.map(u => [u.key, u]));
+        function loadShop() {
+            let d = null;
+            try { d = Wallet.shop; } catch (e) { }
+            d = d && typeof d === 'object' ? { lv: { ...(d.lv || {}) }, spent: Number(d.spent) || 0 } : { lv: {}, spent: 0 };
+            SHOP.forEach(u => { d.lv[u.key] = clamp(Math.floor(Number(d.lv[u.key]) || 0), 0, u.prices.length); });
+            return d;
+        }
+        let shop = loadShop();
+        const lv = key => shop.lv[key] || 0;
+        const val = key => lv(key) ? SHOP_BY[key].vals[lv(key) - 1] : 0;
+        const regrowMs = () => val('sprinkler') || 900;
+        const moleFree = () => MOLE_FREE + val('scarecrow');
+
         function newRound() {
             const now = performance.now();
+            shop = loadShop();
             G = {
-                plots: [], started: 0, ended: false, money: 0, pay: null,
+                plots: [], started: 0, ended: false, money: 0, pay: null, len: ROUND + val('radio'),
                 giantAt: Math.random() < 0.35 ? rand(8, 38) : null, giantDone: false, helpers: 0, heaveAt: 0,
-                tally: { 1: 0, 2: 0, 3: 0, giant: 0, heart: 0, snapped: 0, bent: 0, sweet: 0, ticket: 0, mole: 0, moleFree: 0 },
+                tally: { 1: 0, 2: 0, 3: 0, giant: 0, heart: 0, snapped: 0, bent: 0, sweet: 0, ticket: 0, mole: 0, moleFree: 0, stall: 0 },
                 spawned: 0,  // 開局之後長出來幾根（鼴鼠用這個算什麼時候跑走）
                 // 每一項賺（或少賺、被扣）多少，結算明細用；加起來等於 money
-                earn: { 1: 0, 2: 0, 3: 0, giant: 0, fee: 0, heart: 0, snapped: 0, bent: 0, sweet: 0, ticket: 0, mole: 0, moleFree: 0 },
+                earn: { 1: 0, 2: 0, 3: 0, giant: 0, fee: 0, heart: 0, snapped: 0, bent: 0, sweet: 0, ticket: 0, mole: 0, moleFree: 0, stall: 0 },
                 wiggles: 0, helpersUsed: 0, regrow: [],
             };
             PLOTS.forEach((p, i) => { G.plots[i] = spawn(i, now); });
             grab = null;
-            floats.length = dirt.length = flyers.length = runners.length = 0;
+            floats.length = dirt.length = flyers.length = runners.length = drops.length = 0;
             $('result').classList.add('hidden');
             note('按住葉子，左右搖，再往上拉。');
-            hint('點任何一根蘿蔔就開始計時，六十秒。');
+            hint(`點任何一根蘿蔔就開始計時，${G.len} 秒。`);
+            renderShopLv();
             renderActions();
             renderBest();
         }
@@ -348,6 +488,118 @@
             for (let x = 6; x < W; x += 16) c.fillRect(x, 104, 2, 14);
         }
 
+        // --- 農具：實物，顏色固定。頂樓欄杆前面一排（買了才擺出來），農具店的小圖也用同一支 ---
+        function drawHoe(c, L) {
+            const handle = L === 1 ? '#c9b26a' : L === 2 ? '#8a5a35' : '#5e3a22';
+            c.strokeStyle = handle; c.lineWidth = 3.2; c.lineCap = 'round';
+            c.beginPath(); c.moveTo(0, 0); c.lineTo(0, -58); c.stroke();
+            if (L === 1) { c.strokeStyle = 'rgba(0,0,0,.28)'; c.lineWidth = 1; [-14, -30, -46].forEach(y => { c.beginPath(); c.moveTo(-1.8, y); c.lineTo(1.8, y); c.stroke(); }); }
+            c.fillStyle = L === 3 ? '#e2b94a' : L === 2 ? '#aab1b7' : '#7e807b';
+            c.beginPath(); c.moveTo(-1, -61); c.lineTo(15, -59); c.lineTo(17, -45); c.lineTo(1, -50); c.closePath(); c.fill();
+            c.fillStyle = 'rgba(0,0,0,.3)'; c.fillRect(-3, -63, 6, 6);
+            if (L === 3) { c.fillStyle = 'rgba(255,255,255,.7)'; c.fillRect(5, -57, 8, 1.6); }
+            c.lineCap = 'butt';
+        }
+        function drawMitt(c, L) {
+            const base = L === 1 ? '#f1ece0' : L === 2 ? '#d9dde2' : '#9a6a3e', edge = L === 3 ? '#6e4a2a' : '#b9b2a2';
+            c.fillStyle = base; c.strokeStyle = edge; c.lineWidth = 1;
+            [-7, -2.5, 2, 6.5].forEach((x, i) => { roundRect(c, x - 2, -24 + (i === 0 || i === 3 ? 3 : 0), 4.4, 14, 2.2); c.fill(); c.stroke(); });
+            roundRect(c, -9, -14, 18, 18, 5); c.fill(); c.stroke();
+            c.save(); c.translate(-9, -6); c.rotate(-0.7); roundRect(c, -2, -9, 4.6, 11, 2.3); c.fill(); c.stroke(); c.restore();
+            if (L === 2) { c.fillStyle = '#e07a3a'; roundRect(c, -8, -12, 16, 9, 3); c.fill(); }
+            if (L === 1) { c.fillStyle = '#c0392b'; c.fillRect(-9, 1, 18, 2); }
+            if (L === 3) { c.strokeStyle = '#e8c252'; c.lineWidth = 1; c.beginPath(); c.moveTo(-8, 0); c.lineTo(8, 0); c.stroke(); }
+        }
+        function drawCompost(c, L) {
+            const bag = L === 1 ? '#c9b58f' : L === 2 ? '#6f8a4a' : '#2a2522';
+            c.fillStyle = bag; c.beginPath(); c.moveTo(-12, 0); c.lineTo(-10, -26); c.lineTo(10, -26); c.lineTo(12, 0); c.closePath(); c.fill();
+            c.fillStyle = 'rgba(0,0,0,.2)'; c.fillRect(-10, -28, 20, 4);
+            c.fillStyle = L === 3 ? '#e8c252' : L === 2 ? '#f3efe2' : '#5b3e2b';
+            c.font = `700 8px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+            c.fillText(L === 1 ? '廚餘' : L === 2 ? '有機' : '黑金', 0, -12);
+        }
+        function drawWater(c, L, now) {
+            if (L === 1) {  // 澆水壺
+                c.fillStyle = '#7fa6b8'; roundRect(c, -10, -18, 18, 18, 3); c.fill();
+                c.strokeStyle = '#7fa6b8'; c.lineWidth = 3; c.beginPath(); c.moveTo(7, -12); c.lineTo(17, -24); c.stroke();
+                c.lineWidth = 2; c.beginPath(); c.arc(-1, -18, 6, Math.PI, 0); c.stroke();
+            } else if (L === 2) {  // 一捲綠色水管
+                c.strokeStyle = '#4f8a3c'; c.lineWidth = 3;
+                [10, 7, 4].forEach(r => { c.beginPath(); c.arc(0, -10, r, 0, TAU); c.stroke(); });
+                c.beginPath(); c.moveTo(10, -10); c.quadraticCurveTo(18, -4, 16, 0); c.stroke();
+            } else {  // 自動灑水器：轉著噴水
+                c.fillStyle = '#6d7377'; c.fillRect(-1.5, -16, 3, 16); c.fillRect(-6, -2, 12, 2);
+                const a = now / 300;
+                c.fillStyle = '#9a9fa3'; c.save(); c.translate(0, -17); c.rotate(Math.sin(a) * 0.6); c.fillRect(-8, -1.5, 16, 3); c.restore();
+                c.fillStyle = 'rgba(120,180,220,.75)';
+                for (let k = 0; k < 6; k++) { const t = ((now / 500 + k / 6) % 1), dx = Math.sin(a) * 30 * t + (k - 2.5) * 2; c.beginPath(); c.arc(dx, -18 - 14 * t + 22 * t * t, 1.2, 0, TAU); c.fill(); }
+            }
+        }
+        function drawStallSign(c, L) {
+            const w = 66, h = 20;
+            if (L === 1) {
+                c.fillStyle = '#d8bf94'; c.save(); c.rotate(-0.04); c.fillRect(-w / 2, -h / 2, w, h);
+                c.fillStyle = '#3b3431'; c.font = `600 10px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('蘿蔔 便宜賣', 0, 1); c.restore();
+                return;
+            }
+            c.fillStyle = L === 2 ? '#9a7350' : '#2b2420'; roundRect(c, -w / 2, -h / 2, w, h, 3); c.fill();
+            if (L === 3) { c.strokeStyle = '#c9a24a'; c.lineWidth = 1.2; roundRect(c, -w / 2 + 2, -h / 2 + 2, w - 4, h - 4, 2); c.stroke(); }
+            c.fillStyle = L === 2 ? '#f5ecd8' : '#e8c252'; c.font = `700 11px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+            c.fillText('頂樓蘿蔔', L === 3 ? -6 : 0, 1);
+            if (L === 3) {  // 農會認證的朱印
+                c.save(); c.translate(w / 2 - 10, 0); c.rotate(-0.12);
+                c.fillStyle = '#b33a2f'; c.fillRect(-6, -6, 12, 12);
+                c.fillStyle = '#fff'; c.font = `700 8px ${SERIF}`; c.fillText('認', 0, 0.5); c.restore();
+            }
+        }
+        function drawScarecrow(c, L, now) {
+            const coat = L === 3 ? '#e2b13a' : '#c8a35a';
+            c.save(); c.rotate(Math.sin(now / 900) * 0.04);
+            c.strokeStyle = '#8a6a45'; c.lineWidth = 3; c.beginPath(); c.moveTo(0, 0); c.lineTo(0, -60); c.stroke();
+            c.strokeStyle = coat; c.lineWidth = 6; c.beginPath(); c.moveTo(-19, -42); c.lineTo(19, -42); c.stroke();
+            c.fillStyle = coat; c.beginPath(); c.moveTo(-9, -47); c.lineTo(9, -47); c.lineTo(12, -20); c.lineTo(-12, -20); c.closePath(); c.fill();
+            c.strokeStyle = '#e0c27a'; c.lineWidth = 1.2;
+            [-1, 1].forEach(d => { for (let k = -1; k <= 1; k++) { c.beginPath(); c.moveTo(d * 21, -42); c.lineTo(d * 26, -42 + k * 3); c.stroke(); } });
+            for (let k = -2; k <= 2; k++) { c.beginPath(); c.moveTo(k * 4, -20); c.lineTo(k * 5, -14); c.stroke(); }
+            if (L === 3) { c.fillStyle = '#b33a2f'; c.fillRect(-7, -48, 14, 3); }
+            c.fillStyle = '#e8d6ae'; c.beginPath(); c.arc(0, -54, 7.5, 0, TAU); c.fill();
+            c.fillStyle = '#3b3431'; c.fillRect(-4, -56, 2, 2); c.fillRect(2, -56, 2, 2);
+            c.fillStyle = '#b33a2f'; c.fillRect(-3, -51, 6, 1.4);
+            if (L >= 2) {  // 斗笠
+                c.fillStyle = '#c9a35e'; c.beginPath(); c.moveTo(-15, -58); c.lineTo(0, -70); c.lineTo(15, -58); c.closePath(); c.fill();
+                c.strokeStyle = '#9c7a3e'; c.lineWidth = 1; c.stroke();
+            }
+            c.restore();
+        }
+        function drawRadio(c, now, playing) {
+            c.fillStyle = '#9c3a2c'; roundRect(c, -15, -18, 30, 18, 3); c.fill();
+            c.strokeStyle = '#3b3431'; c.lineWidth = 1; c.beginPath(); c.moveTo(9, -18); c.lineTo(16, -32); c.stroke();
+            c.fillStyle = '#e9dcc0'; c.beginPath(); c.arc(-6, -9, 5.5, 0, TAU); c.fill();
+            c.strokeStyle = '#9c3a2c'; c.lineWidth = 0.8; [-8, -6, -4].forEach(x => { c.beginPath(); c.moveTo(x, -13); c.lineTo(x, -5); c.stroke(); });
+            c.fillStyle = '#e8c252'; c.fillRect(3, -14, 9, 4);
+            c.fillStyle = '#3b3431'; c.beginPath(); c.arc(7, -5, 2, 0, TAU); c.fill();
+            if (!playing) return;
+            // 音符飄出來（畫的，不用符號字）
+            for (let k = 0; k < 2; k++) {
+                const t = ((now / 1400 + k * 0.5) % 1), x = 8 + t * 14 + Math.sin(t * 6) * 3, y = -22 - t * 26;
+                c.globalAlpha = 1 - t; c.fillStyle = '#3b3431'; c.strokeStyle = '#3b3431'; c.lineWidth = 1;
+                c.beginPath(); c.ellipse(x, y, 2.4, 1.8, -0.4, 0, TAU); c.fill();
+                c.beginPath(); c.moveTo(x + 2, y); c.lineTo(x + 2, y - 8); c.lineTo(x + 5, y - 6); c.stroke();
+                c.globalAlpha = 1;
+            }
+        }
+        // 頂樓欄杆前面：買了什麼就擺什麼
+        function drawTools(c, now) {
+            const at = (x, y, rot, fn) => { c.save(); c.translate(x, y); if (rot) c.rotate(rot); fn(); c.restore(); };
+            if (lv('scarecrow')) at(26, 120, 0, () => drawScarecrow(c, lv('scarecrow'), now));
+            if (lv('hoe')) at(60, 120, 0.22, () => drawHoe(c, lv('hoe')));
+            if (lv('compost')) at(96, 121, 0, () => drawCompost(c, lv('compost')));
+            if (lv('stall')) at(180, 111, 0, () => drawStallSign(c, lv('stall')));
+            if (lv('mitt')) at(236, 112, 0.15, () => drawMitt(c, lv('mitt')));
+            if (lv('sprinkler')) at(272, 121, 0, () => drawWater(c, lv('sprinkler'), now));
+            if (lv('radio')) at(318, 121, 0, () => drawRadio(c, now, G && G.started && !G.ended));
+        }
+
         function drawBed(c) {
             c.fillStyle = K.wood; roundRect(c, 8, 122, 344, 314, 6); c.fill();
             c.fillStyle = K.woodD; c.fillRect(8, 122, 344, 4);
@@ -411,7 +663,8 @@
             } else if (s.kind === 'mole') {
                 const top = gy - s.progress * 30 - 2;
                 // 葉子跟蘿蔔一樣，偶爾自己抽一下（看得出來的人就賺到了）
-                const twitch = Math.sin(now / 90) * (Math.sin(now / 1300 + s.seed) > 0.93 ? 1.2 : 0);
+                // 稻草人越高級，抽得越常、越明顯
+                const sc = lv('scarecrow'), twitch = Math.sin(now / 90) * (Math.sin(now / 1300 + s.seed) > [0.93, 0.8, 0.65, 0.5][sc] ? 1.2 + sc * 0.3 : 0);
                 c.fillStyle = '#6d5f57'; c.beginPath(); c.ellipse(x, top + 16, 13, 16, 0, 0, TAU); c.fill();
                 c.fillStyle = '#e9a3a8'; c.beginPath(); c.arc(x, top + 4, 3.5, 0, TAU); c.fill();
                 c.fillStyle = '#222'; c.beginPath(); c.arc(x - 5, top + 9, 1.4, 0, TAU); c.arc(x + 5, top + 9, 1.4, 0, TAU); c.fill();
@@ -503,7 +756,7 @@
         }
 
         function drawHud(c, now) {
-            const left = G.started ? Math.max(0, ROUND - (now - G.started) / 1000) : ROUND;
+            const left = G.started ? Math.max(0, G.len - (now - G.started) / 1000) : G.len;
             c.fillStyle = night() ? 'rgba(20,24,40,.6)' : 'rgba(255,255,255,.75)';
             roundRect(c, 8, 8, 74, 30, 15); c.fill(); roundRect(c, W - 112, 8, 104, 30, 15); c.fill();
             c.fillStyle = left <= 10 && G.started ? K.shu : (night() ? '#f2ead8' : K.ink);
@@ -512,7 +765,7 @@
             c.fillStyle = night() ? '#f2ead8' : K.ink; c.fillText(Wallet.fmt(G.money), W - 60, 24);
             if (!G.started) {
                 c.fillStyle = 'rgba(30,26,22,.55)'; roundRect(c, 50, 252, 260, 66, 10); c.fill();
-                c.fillStyle = '#fff'; c.font = `500 15px ${SERIF}`; c.fillText('點一根蘿蔔，開始六十秒', 180, 274);
+                c.fillStyle = '#fff'; c.font = `500 15px ${SERIF}`; c.fillText(`點一根蘿蔔，開始 ${G.len} 秒`, 180, 274);
                 c.font = `400 11px ${SANS}`; c.fillText('左右搖鬆土，往上拉，力道留在綠色', 180, 298);
             }
         }
@@ -528,6 +781,14 @@
                 if (t > 1) { flyers.splice(i, 1); continue; }
                 c.save(); c.globalAlpha = 1 - t * t; c.translate(f.x, f.y - 40 * t); c.rotate(f.spin * t);
                 drawThing(c, f.s, 0, 0, now); c.restore();
+            }
+            // 澆水：長新的時候灑下來的水滴
+            for (let i = drops.length - 1; i >= 0; i--) {
+                const d = drops[i], t = (now - d.born) / 450;
+                if (t < 0) continue;
+                if (t > 1) { drops.splice(i, 1); continue; }
+                c.fillStyle = `rgba(120,180,220,${0.85 * (1 - t)})`;
+                c.beginPath(); c.ellipse(d.x, d.y + 30 * t, 1.4, 2.6, 0, 0, TAU); c.fill();
             }
             // 跑走的鼴鼠：從洞裡鑽出來、往旁邊跑出畫面
             for (let i = runners.length - 1; i >= 0; i--) {
@@ -555,18 +816,19 @@
         // ===== 5. 規則：力道、鬆土、拔起來 =====
         function band(s) {
             if (s.kind === 'giant') return { lo: 0.12, hi: 0.5 };
-            return { lo: 0.12, hi: 0.36 + 0.5 * s.loosen };
+            return { lo: 0.12, hi: 0.36 + 0.5 * s.loosen + val('mitt') };
         }
 
         function update(now, dt) {
             if (!G || !G.started || G.ended) return;
             const elapsed = (now - G.started) / 1000;
-            if (elapsed >= ROUND) { endRound(); return; }
-            if (Math.ceil(ROUND - elapsed) <= 5 && Math.ceil(ROUND - elapsed) !== G.lastTick) { G.lastTick = Math.ceil(ROUND - elapsed); sfx.tick(); }
+            if (elapsed >= G.len) { endRound(); return; }
+            if (Math.ceil(G.len - elapsed) <= 5 && Math.ceil(G.len - elapsed) !== G.lastTick) { G.lastTick = Math.ceil(G.len - elapsed); sfx.tick(); }
             // 長回來
             for (let k = G.regrow.length - 1; k >= 0; k--) {
                 if (now >= G.regrow[k].at) {
                     const i = G.regrow[k].i; G.plots[i] = spawn(i, now); G.regrow.splice(k, 1); G.spawned++;
+                    if (lv('sprinkler')) { const p = PLOTS[i]; for (let d = 0; d < 7; d++) drops.push({ x: p.x + p.w / 2 + rand(-26, 26), y: p.y + rand(4, 16), born: now + d * 25 }); }
                     if (G.plots[i].kind === 'giant') { sfx.giant(); floatText(PLOTS[i].x + 50, PLOTS[i].y + 10, '長出巨型蘿蔔了', K.shu, true, 1600); renderActions(); }
                     // 別的格子長出來了：待夠久的鼴鼠跑走
                     G.plots.forEach((m, j) => { if (j !== i && m && m.kind === 'mole' && m.state === 'ground' && G.spawned >= m.leaveAt) moleLeaves(j, now); });
@@ -593,7 +855,7 @@
             if (s.progress >= 1) harvest(grab.i, now);
         }
 
-        function emptyPlot(i, now, delay = 900) {
+        function emptyPlot(i, now, delay = regrowMs()) {
             G.plots[i] = { state: 'empty' };
             G.regrow.push({ i, at: now + delay });
             if (grab && grab.i === i) grab = null;
@@ -626,18 +888,26 @@
                 G.tally[s.kind]++; G.earn[s.kind] += price;
                 if (s.kind === 'mole') { sfx.mole(); color = '#7a6a60'; } else if (s.kind === 'ticket') { sfx.chime(); color = K.shu; } else sfx.pop(2);
             }
+            // 菜攤：蘿蔔（含歪的、心形）、巨型蘿蔔（幫手費之前）、地瓜賣價多幾成
+            const sold = s.kind === 'carrot' ? price : s.kind === 'giant' ? GIANT.price : s.kind === 'sweet' ? price : 0;
+            const extra = Math.round(sold * val('stall'));
+            if (extra) {
+                price += extra; G.earn.stall += extra; G.tally.stall++;
+                setTimeout(() => floatText(cx + 18, gy - 52, `菜攤 +${Wallet.fmt(extra)}`, '#a8782a', false, 900), 180);
+            }
             G.money += price;
             floatText(cx, gy - 34, label, color, s.kind === 'giant' || s.kind === 'ticket', 1200);
             flyers.push({ s: { ...s, progress: 0 }, x: cx, y: gy - 30, born: now, spin: rand(-0.6, 0.6) });
-            emptyPlot(i, now, s.kind === 'giant' ? 1400 : 900);
+            emptyPlot(i, now, s.kind === 'giant' ? 1400 : regrowMs());
         }
 
         // 鼴鼠自己跑走：沒被拔就算放過牠，結算多一筆
         function moleLeaves(i, now) {
             const p = PLOTS[i], cx = p.x + p.w / 2, gy = groundY(p);
-            G.tally.moleFree++; G.earn.moleFree += MOLE_FREE; G.money += MOLE_FREE;
+            const free = moleFree();
+            G.tally.moleFree++; G.earn.moleFree += free; G.money += free;
             sfx.mole();
-            floatText(cx, gy - 34, `鼴鼠跑走了 +${Wallet.fmt(MOLE_FREE)}`, '#4f7a35', false, 1300);
+            floatText(cx, gy - 34, `鼴鼠跑走了 +${Wallet.fmt(free)}`, '#4f7a35', false, 1300);
             runners.push({ x: cx, y: gy - 6, born: now, dir: cx < W / 2 ? -1 : 1, seed: G.plots[i].seed });
             for (let k = 0; k < 8; k++) dirt.push({ x: cx + rand(-12, 12), y: gy, vx: rand(-1, 1), born: now });
             emptyPlot(i, now);
@@ -718,7 +988,7 @@
             const dx = pt.x - grab.lastX, d = Math.sign(dx);
             if (d && d !== grab.dir) {
                 if (grab.travel > 10 && s.kind !== 'giant') {
-                    s.loosen = Math.min(1, s.loosen + ruleOf(s).loosen);
+                    s.loosen = Math.min(1, s.loosen + ruleOf(s).loosen * (val('hoe') || 1));
                     G.wiggles++;
                     sfx.rustle();
                     const p = PLOTS[grab.i];
@@ -744,6 +1014,7 @@
             ctx.clearRect(0, 0, W, H);
             if (G) {
                 drawSky(ctx, now);
+                drawTools(ctx, now);
                 drawBed(ctx);
                 PLOTS.forEach((p, i) => drawPlot(ctx, p, G.plots[i], now));
                 drawHelpers(ctx, now);
@@ -791,7 +1062,8 @@
                 ['地瓜', t.sweet, '條', e.sweet, `每條 ${Wallet.fmt(OTHERS.sweet.price)}`],
                 ['伊藤埋的刮刮樂', t.ticket, '張', e.ticket, `每張 ${Wallet.fmt(OTHERS.ticket.price)}`],
                 ['鼴鼠', t.mole, '隻', e.mole, `每隻扣 ${Wallet.fmt(-OTHERS.mole.price)}`],
-                ['放過鼴鼠', t.moleFree, '隻', e.moleFree, `讓牠自己跑走，每隻 +${Wallet.fmt(MOLE_FREE)}`],
+                ['放過鼴鼠', t.moleFree, '隻', e.moleFree, `讓牠自己跑走，每隻 +${Wallet.fmt(moleFree())}${val('scarecrow') ? `（稻草人多 ${Wallet.fmt(val('scarecrow'))}）` : ''}`],
+                ['菜攤加價', t.stall, '筆', e.stall, `${SHOP_BY.stall.tiers[lv('stall')]}，賣價多 ${Math.round(val('stall') * 100)}%`],
             ].filter(r => r[1]);
             const money = v => (v < 0 ? '−' : v > 0 ? '+' : '') + Wallet.fmt(Math.abs(v));
             $('harvest').innerHTML = rows.length ? rows.map(([k, v, u, m, how]) => `<li><span>${k} <span class="text-wabi-dark">${each(v, u)}</span><span class="block text-[10px] text-stone-400">${how}</span></span><span class="${m < 0 ? 'text-wabi-shu' : 'text-wabi-dark'} self-center">${money(m)}</span></li>`).join('')
@@ -816,8 +1088,8 @@
         }
 
         async function makeSheet(pay, grade, rows) {
-            const lines = rows.slice(0, 11).map(([k, v, u, m]) => [`${k} ${v} ${u}`, (m < 0 ? '−' : '') + Wallet.fmt(Math.abs(m))]);
-            const step = lines.length > 8 ? 52 : 74, lineFont = lines.length > 8 ? 30 : 34;
+            const lines = rows.map(([k, v, u, m]) => [`${k} ${v} ${u}`, (m < 0 ? '−' : '') + Wallet.fmt(Math.abs(m))]);
+            const step = lines.length > 11 ? 42 : lines.length > 8 ? 52 : 74, lineFont = lines.length > 11 ? 27 : lines.length > 8 ? 30 : 34;
             const allText = lines.flat().join('') + '頂樓菜園收成單賣給市場農會表揚二十七樓菜園部主人' + grade.mark + grade.line + '0123456789$,−';
             try { await Promise.race([Promise.all([document.fonts.load(`600 40px ${SERIF}`, allText), document.fonts.load(`400 40px ${SANS}`, allText)]), new Promise(res => setTimeout(res, 2500))]); } catch (e) { }
             const c = document.createElement('canvas'); c.width = 1080; c.height = 1350;
@@ -877,6 +1149,7 @@
                 total: pay, sales: G.pay.sales, bonus: G.pay.bonus, grade: grade.mark,
                 small: t[1], mid: t[2], big: t[3], giant: t.giant, heart: t.heart, snapped: t.snapped, bent: t.bent,
                 sweet: t.sweet, ticket: t.ticket, mole: t.mole, mole_free: t.moleFree, wiggles: G.wiggles, helpers: G.helpersUsed,
+                stall: G.earn.stall, len: G.len, shop: Object.fromEntries(SHOP.map(u => [u.key, lv(u.key)]).filter(x => x[1])),
                 login: !!(window.Line && Line.loggedIn),
             });
             st.recent = st.recent.slice(0, 50);
@@ -886,7 +1159,7 @@
         function renderBest() {
             let best = 0;
             try { best = Number(localStorage.getItem(BEST_KEY) || 0); } catch (e) { }
-            $('best').innerHTML = best ? `最好一輪<br>${Wallet.fmt(best)}` : '';
+            $('best').textContent = best ? `最好一輪 ${Wallet.fmt(best)}` : '';
         }
 
         const API_URL = (window.Line && Line.API_URL) || "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
@@ -930,10 +1203,96 @@
             else el.textContent = `紀錄還沒存上去（${r.error}），下次拔完會補存`;
         }
 
+        // ===== 10. 農具店 =====
+        function shopIcon(cv, u, level) {
+            const c = cv.getContext('2d'), sz = 56, L = Math.max(level, 1), now = performance.now();
+            cv.width = sz * dpr; cv.height = sz * dpr;
+            c.setTransform(dpr, 0, 0, dpr, 0, 0);
+            c.clearRect(0, 0, sz, sz);
+            c.save();
+            if (u.key === 'hoe') { c.translate(22, 52); c.rotate(0.3); c.scale(0.78, 0.78); drawHoe(c, L); }
+            else if (u.key === 'mitt') { c.translate(29, 42); c.scale(1.45, 1.45); drawMitt(c, L); }
+            else if (u.key === 'compost') { c.translate(28, 48); c.scale(1.4, 1.4); drawCompost(c, L); }
+            else if (u.key === 'sprinkler') { c.translate(26, 46); c.scale(1.5, 1.5); drawWater(c, L, now); }
+            else if (u.key === 'stall') { c.translate(28, 28); c.scale(0.78, 0.78); drawStallSign(c, L); }
+            else if (u.key === 'scarecrow') { c.translate(28, 54); c.scale(0.7, 0.7); drawScarecrow(c, L, 0); }
+            else if (u.key === 'radio') { c.translate(26, 47); c.scale(1.15, 1.15); drawRadio(c, 0, false); }
+            c.restore();
+        }
+        const playing = () => G && G.started && !G.ended;
+        function renderShop() {
+            $('shopMoney').textContent = Wallet.fmt(Wallet.money);
+            $('shopList').innerHTML = SHOP.map(u => {
+                const now = lv(u.key), max = u.prices.length, next = now < max ? now + 1 : null;
+                const price = next ? u.prices[now] : 0;
+                const dots = Array.from({ length: max }, (_, i) => `<i class="${i < now ? 'on' : ''}"></i>`).join('');
+                const tier = next ? `${u.tiers[now] ? u.tiers[now] + ' → ' : ''}${u.tiers[next]}` : u.tiers[now];
+                return `<div class="shop-row">
+                    <canvas class="shop-icon" data-icon="${u.key}" data-lv="${next || now}"></canvas>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm text-wabi-dark tracking-widest">${u.name}<span class="ml-1 text-[10px] font-sans text-stone-400">${u.sub}</span><span class="shop-dots ml-1">${dots}</span></p>
+                        <p class="mt-0.5 text-[10px] font-sans tracking-wider text-stone-400">${tier}</p>
+                        <p class="mt-1 text-[11px] font-sans leading-relaxed text-stone-600">${now ? '現在：' + u.fx(u.vals[now - 1]) : ''}${next ? `${now ? '<br>' : ''}升級：${u.fx(u.vals[next - 1])}` : '<br>已經是最高級'}</p>
+                    </div>
+                    <button type="button" class="shop-buy" data-buy="${u.key}" ${!next || Wallet.money < price ? 'disabled' : ''}>${next ? `${now ? '升級' : '買'}<br>${Wallet.fmt(price)}` : '滿級'}</button>
+                </div>`;
+            }).join('');
+            $('shopList').querySelectorAll('[data-icon]').forEach(cv => shopIcon(cv, SHOP_BY[cv.dataset.icon], Number(cv.dataset.lv)));
+        }
+        function renderShopLv() {
+            const total = SHOP.reduce((t, u) => t + lv(u.key), 0);
+            $('shopLv').textContent = total ? total : '';
+            $('shopBtn').setAttribute('aria-label', total ? `農具，升級了 ${total} 次` : '農具升級');
+        }
+        function openShop() {
+            if (playing()) { showToast('拔完這一輪再去買農具'); return; }
+            shop = loadShop();
+            renderShop();
+            const el = $('shop');
+            el.classList.remove('hidden');
+            requestAnimationFrame(() => el.classList.add('on'));
+        }
+        function closeShop() {
+            const el = $('shop');
+            el.classList.remove('on');
+            setTimeout(() => el.classList.add('hidden'), reduceMotion ? 0 : 220);
+        }
+        function buyUpgrade(key) {
+            if (playing()) return;
+            shop = loadShop();  // 用錢包裡最新的（坐洗部可能也買過東西，spent 要接著加）
+            const u = SHOP_BY[key], now = lv(key);
+            if (now >= u.prices.length) return;
+            const price = u.prices[now];
+            if (!Wallet.spend(price)) { showToast('錢包不夠，先多拔幾輪'); return; }
+            shop.lv[key] = now + 1;
+            shop.spent += price;
+            Wallet.setShop(shop);
+            shop = loadShop();
+            audio(); sfx.chime();
+            showToast(`${u.name}升級了：${u.tiers[now + 1]}`);
+            // 還沒開始的這一輪也照新的算（收音機多的秒數）
+            if (G && !G.started && !G.ended) { G.len = ROUND + val('radio'); hint(`點任何一根蘿蔔就開始計時，${G.len} 秒。`); }
+            renderShop(); renderShopLv();
+        }
+        $('shopBtn').addEventListener('click', openShop);
+        $('shopBtn2').addEventListener('click', openShop);
+        $('shop').addEventListener('click', e => {
+            const b = e.target.closest('[data-buy]');
+            if (b && !b.disabled) { buyUpgrade(b.dataset.buy); return; }
+            if (e.target.closest('[data-shop-close]') || e.target.id === 'shop') closeShop();
+        });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('shop').classList.contains('hidden')) closeShop(); });
+
         $('shareBtn').addEventListener('click', shareSheet);
         $('againBtn').addEventListener('click', () => { newRound(); $('garden').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' }); });
         $('payAcct').addEventListener('click', e => { if (e.target.closest('[data-login]')) Line.login(); });
-        Wallet.on(type => { if (type === 'login') showToast('登入了，菜錢存進 LINE 帳號'); });
+        Wallet.on(type => {
+            if (type === 'login') showToast('登入了，菜錢存進 LINE 帳號');
+            // 別支手機買過農具、登入登出：重新讀（拔到一半不換，下一輪才算）
+            if (!playing()) { shop = loadShop(); if (G && !G.started) G.len = ROUND + val('radio'); }
+            renderShopLv();
+            if (!$('shop').classList.contains('hidden')) renderShop();
+        });
 
         newRound();
         requestAnimationFrame(frame);
