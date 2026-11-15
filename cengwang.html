@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蹭・網 | 丼步喱</title>
+    <meta name="description" content="二十七樓：按住偷連 28 樓的 Wi-Fi 追劇，茱莉鴨轉頭之前要放開。被抓三次就收工。">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="丼步喱・絆">
+    <meta property="og:title" content="蹭・網｜丼步喱">
+    <meta property="og:description" content="二十七樓：按住偷連 28 樓的 Wi-Fi 追劇，茱莉鴨轉頭之前要放開。被抓三次就收工。">
+    <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
+    <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/cengwang.html">
+    <meta name="twitter:card" content="summary">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/theme.css?v=20261115a">
+    <script src="assets/theme.js?v=20261115a"></script>
+    <script src="assets/line.js?v=20261115a"></script>
+    <script src="assets/wallet.js?v=20261115a"></script>
+    <style>
+        /* 整塊都是「按住」的地方：不能捲動、長按不能跳系統選單、不能選字 */
+        .stage {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #cv {
+            display: block;
+            width: 100%;
+            aspect-ratio: 360 / 480;
+            touch-action: none;
+            border-radius: 4px;
+        }
+
+        .act-hold {
+            width: 100%;
+            min-height: 64px;
+            border-radius: 9999px;
+            background: rgb(var(--wabi-shu));
+            color: #fff;
+            font-family: 'Noto Serif TC', serif;
+            font-size: 1.2rem;
+            letter-spacing: 0.25em;
+            box-shadow: 0 14px 28px -14px rgba(179, 58, 47, .65);
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform .08s, background-color .15s;
+        }
+
+        .act-hold.is-on { transform: scale(.96); background: #2f7a4d; box-shadow: 0 10px 22px -12px rgba(47, 122, 77, .7); }
+        .act-hold.is-lock { background: rgb(var(--wabi-accent)); }
+        .act-hold:disabled { opacity: .4; }
+
+        .bill li {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.4rem 0;
+            border-bottom: 1px solid rgb(var(--wabi-sub) / 0.7);
+        }
+    </style>
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261115a">
+</head>
+
+<body
+    class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white min-h-screen flex flex-col overflow-x-hidden">
+
+    <nav
+        class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <a href="index.html"
+            class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-3 md:gap-8">
+            <a href="index.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <a href="reviews.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <a href="about.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+            <a href="member.html"
+                class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">會員・我</a>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-md mx-auto pt-24 md:pt-32 pb-16 px-6 w-full">
+
+        <div class="text-center mb-6">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">FREE WI-FI</span>
+            <h1 class="text-3xl font-light text-wabi-dark tracking-widest">蹭・網</h1>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">樓上的 Wi-Fi 有五格，茱莉鴨在顧湯。</p>
+        </div>
+
+        <section id="stage"
+            class="stage bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-4 pt-4 pb-5">
+            <div class="flex items-baseline justify-between">
+                <p id="note" class="text-sm text-wabi-dark tracking-wider leading-relaxed">按住，偷連 28 樓。</p>
+                <span id="best" class="shrink-0 text-right text-[10px] leading-relaxed font-sans tracking-widest text-stone-400"></span>
+            </div>
+            <canvas id="cv" class="mt-2" aria-label="二十七樓房間，茱莉鴨背對你在顧湯，你的手機正在追劇"></canvas>
+            <p id="hint" class="mt-3 min-h-[2.6rem] text-xs text-center text-stone-500 font-sans tracking-widest leading-relaxed [text-wrap:balance]" aria-live="polite"></p>
+            <button id="hold" type="button" class="act-hold mt-1">按住・偷連</button>
+        </section>
+
+        <!-- 收工 -->
+        <section id="result" class="hidden mt-10 text-center scroll-mt-24">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent">收工了</span>
+            <p class="mt-2 text-wabi-dark"><span id="score" class="text-5xl font-light">$0</span></p>
+            <p id="gradeLine" class="mt-1 text-sm text-stone-500 tracking-widest"></p>
+            <ul id="bill" class="bill mt-5 mx-auto max-w-[17rem] text-left font-sans text-xs tracking-widest text-stone-500"></ul>
+            <div class="mt-3 mx-auto max-w-[17rem] border-y border-stone-100 py-3 font-sans text-xs tracking-widest text-stone-500">
+                <p class="flex justify-between"><span>合計</span><span id="paySales" class="text-wabi-dark"></span></p>
+                <p id="payMinRow" class="hidden flex justify-between mt-1"><span>出勤費補到</span><span id="payMin" class="text-wabi-dark"></span></p>
+                <p class="flex justify-between mt-2 pt-2 border-t border-stone-100"><span>錢包</span><span id="payWallet" class="text-wabi-shu text-sm"></span></p>
+                <p id="payAcct" class="mt-2 text-[10px] leading-relaxed text-stone-400"></p>
+                <p id="syncNote" class="mt-1 text-[10px] leading-relaxed text-stone-400"></p>
+            </div>
+            <img id="sheetImg" alt="蹭網日報"
+                class="mt-6 w-full border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]">
+            <div class="mt-6 flex flex-col gap-3">
+                <button id="shareBtn" type="button"
+                    class="w-full bg-wabi-dark text-wabi-bg py-4 px-8 tracking-[0.2em] font-sans text-xs shadow-lg">分享蹭網日報</button>
+                <button id="againBtn" type="button"
+                    class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">再蹭一輪</button>
+                <a href="scratch.html"
+                    class="block w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">拿省下的流量費去彩券行</a>
+                <a href="rank.html"
+                    class="block w-full py-3 text-stone-500 underline underline-offset-4 tracking-[0.2em] font-sans text-xs">看打工排行榜</a>
+            </div>
+        </section>
+
+        <section class="mt-10 px-1">
+            <h2 class="text-sm tracking-[0.3em] text-wabi-dark">怎麼蹭</h2>
+            <ol class="mt-3 list-decimal pl-5 space-y-1.5 text-xs font-sans tracking-wide text-stone-500 leading-relaxed">
+                <li><b class="font-normal text-wabi-dark">按住</b>畫面或下面的按鈕，就是偷連 28 樓的 Wi-Fi：劇順順播，每秒省 $12 流量費。第一下按住開始計時，六十秒。</li>
+                <li><b class="font-normal text-wabi-dark">放開</b>就切回自己的 4G：安全，但劇一直轉圈圈，也不省錢。</li>
+                <li>茱莉鴨背對你在顧湯。她會停下來說「嗯？」，然後<b class="font-normal text-wabi-shu">轉頭查你的手機</b>。她轉過來的時候你還連著 28 樓，就是被抓到。</li>
+                <li>她也會伸懶腰、抓頭、試湯、轉到一半又轉回去。太早放開沒事，只是少賺。越後面轉得越快。</li>
+                <li>每追完一集 +$100。被抓一次賠 28 樓 $200 網路使用費，下載到一半的那集也會斷掉。<b class="font-normal text-wabi-shu">被抓三次就收工</b>。</li>
+                <li>一次都沒被抓，另外 +$200「完美蹭網」。</li>
+            </ol>
+        </section>
+    </main>
+
+    <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
+        <p>&copy; 2026 DONGBULI · 蹭・網</p>
+    </footer>
+
+    <script>
+        // ===== 0. 舞台：畫布用固定的 360×480 座標畫，CSS 再縮放 =====
+        const W = 360, H = 480, TAU = Math.PI * 2, ROUND = 60;
+        const $ = id => document.getElementById(id);
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const cv = $('cv'), ctx = cv.getContext('2d');
+        const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+        cv.width = Math.round(W * dpr);
+        cv.height = Math.round(H * dpr);
+        const SERIF = '"Noto Serif TC", serif', SANS = '"Noto Sans TC", sans-serif';
+        // 房間、茱莉鴨、手機都是實物，顏色固定；窗外的天空跟晝夜走
+        const K = {
+            wall: '#efe7da', wallD: '#e2d7c6', ceil: '#cdbfa9', ceilD: '#a99a83', wood: '#9a7350', woodD: '#6e4f34', woodL: '#b48d66',
+            ink: '#3b3431', shu: '#b33a2f', green: '#2f7a4d', wifi: '#4fbf7a',
+            hair: '#1d1918', hairL: '#3a3330', skin: '#e9c6a5', skinD: '#d2a782', shirt: '#6f6253', shirtD: '#5a4f43', lip: '#c48a80',
+            pot: '#232222', potL: '#3d3b3a', phone: '#1c1c1e', screen: '#0f1217',
+        };
+        const pick = list => list[Math.floor(Math.random() * list.length)];
+        const rand = (lo, hi) => lo + Math.random() * (hi - lo);
+        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+        const lerp = (a, b, t) => a + (b - a) * t;
+        const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        const night = () => document.documentElement.classList.contains('night');
+        const note = t => { $('note').textContent = t; };
+        const hint = h => { $('hint').innerHTML = h; };
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
+
+        // ===== 1. 規則 =====
+        const RATE = 12;          // 連著 28 樓，每秒省的流量費
+        const EP_SEC = 8;         // 連著 28 樓幾秒追完一集
+        const EP_PAY = 100;       // 追完一集
+        const FINE = 200;         // 被抓一次賠 28 樓
+        const STRIKES = 3;        // 被抓幾次收工
+        const PERFECT = 200;      // 一次都沒被抓
+        const SLOW = 0.06;        // 4G 的下載速度（相對）
+        const DRAMAS = ['二十七樓的秘密', '樓上的密碼', '五格訊號', '前夫回來了', '雞塊的逆襲', '偷連 Wi-Fi 的女人',
+            '二十八樓的鄰居', '頂樓菜園物語', '刮刮樂人生', '伊藤的明牌', '坐洗部的狗', '湯快煮好了'];
+        const SUBS = ['你為什麼有五格？', '密碼是生日吧。', '我們分手吧。', '這碗湯太鹹了。', '樓上的燈還亮著。', '你騙我。',
+            '我只是借一下。', '別回頭。', '這一集好長。', '下一集更精彩。', '我要回 27 樓。', '雞塊冷了。'];
+        const TELLS = ['嗯？', '咦？', '……？', '欸', '等一下'];
+        const LOOK_OK = ['……', '嗯。', '（盯）', '收訊好嗎？', '4G 很慢吧。', '你在看什麼。', '沒事。'];
+        const CAUGHT = ['你手機為什麼有五格？', '28 樓的密碼你哪來的？', '我家網路不夠你用嗎。', '樓上說他網路很慢。',
+            '這個月 28 樓的網路費你出。', '你在看哪一集。', '再一次就停你網。', '……（把湯攪得很用力）'];
+        const GRADES = [
+            { min: 1200, mark: '隱', line: '蹭網界的忍者，28 樓完全沒發現。' },
+            { min: 900, mark: '穩', line: '劇追了好幾集，湯也快好了。' },
+            { min: 600, mark: '可', line: '看了幾集，還行。' },
+            { min: 300, mark: '險', line: '茱莉鴨已經在懷疑你了。' },
+            { min: -1e9, mark: '抓', line: '下次乖乖用 4G。' },
+        ];
+        const BEST_KEY = 'dongbuli-cengwang-best', STATS_KEY = 'dongbuli-cengwang-stats';
+
+        // ===== 2. 狀態 =====
+        // G.clock 是遊戲時間（秒），只在畫面上跑的時候往前走，所以切到背景不會偷跑
+        let G = null;
+        const holds = new Set();  // 按著的手指
+        let keyHeld = false;
+        const floats = [];
+        let lastNow = performance.now();
+
+        function newRound() {
+            G = {
+                started: false, ended: false, clock: 0, on: false, lock: false, onSince: 0,
+                wifiMs: 0, ep: 0, epProg: 0, strikes: 0, drama: pick(DRAMAS), sub: pick(SUBS), subAt: 0,
+                looks: 0, dodged: 0, fakes: 0, connects: 0, flash: 0, stampAt: -9, pay: null,
+                earn: { wifi: 0, ep: 0, perfect: 0, fine: 0 },
+            };
+            W8 = { state: 'busy', t0: 0, dur: 3.6, kind: '', bubble: '', bubbleAt: -9, turn: 0 };
+            holds.clear(); keyHeld = false;
+            floats.length = 0;
+            $('result').classList.add('hidden');
+            note('按住，偷連 28 樓。');
+            hint('按住畫面或下面的按鈕偷連 28 樓的 Wi-Fi，茱莉鴨轉頭之前放開。');
+            renderHold();
+            renderBest();
+        }
+
+        // ===== 3. 茱莉鴨：背對你顧湯，偶爾轉頭 =====
+        // state: busy（顧湯）→ tell（停下來「嗯？」）→ turn（轉頭）→ look（盯著你）→ back（轉回去）
+        //        假動作：fake（伸懶腰、抓頭、試湯）、half（嗯？之後轉到一半又回去）；被抓：scold
+        let W8 = null;
+        const prog = () => clamp(G.clock / ROUND, 0, 1);
+        function goto(state, dur, kind = '') { W8.state = state; W8.t0 = G.clock; W8.dur = dur; W8.kind = kind; }
+        function say(text) { W8.bubble = text; W8.bubbleAt = G.clock; }
+        function nextMove() {
+            const p = prog();
+            if (Math.random() < lerp(0.22, 0.45, p)) {
+                const kind = pick(['stretch', 'scratch', 'sip', 'half', 'half']);
+                G.fakes++;
+                if (kind === 'half') { goto('tell', tellDur(), 'half'); say(pick(TELLS)); sfx.hmm(); }
+                else { goto('fake', kind === 'stretch' ? 1.3 : 1.1, kind); if (kind === 'stretch') { say('啊～'); sfx.yawn(); } if (kind === 'sip') say('（試一口）'); }
+            } else if (G.clock > 20 && Math.random() < lerp(0, 0.3, p)) {
+                // 後半場偶爾「！」一聲就轉：反應要快
+                goto('tell', rand(0.24, 0.32), 'real'); say('！'); sfx.hmm();
+            } else {
+                goto('tell', tellDur(), 'real'); say(pick(TELLS)); sfx.hmm();
+            }
+        }
+        const tellDur = () => lerp(0.85, 0.42, prog()) * rand(0.9, 1.15);
+        const busyDur = () => { const p = prog(); return rand(lerp(2.6, 1.0, p), lerp(4.6, 2.2, p)); };
+
+        function updateWatcher() {
+            const k = W8.dur ? clamp((G.clock - W8.t0) / W8.dur, 0, 1) : 1, done = G.clock - W8.t0 >= W8.dur;
+            switch (W8.state) {
+                case 'busy': W8.turn = 0; if (done) nextMove(); break;
+                case 'tell':
+                    W8.turn = 0.05;
+                    if (done) { if (W8.kind === 'half') goto('half', 0.9); else { goto('turn', 0.22); sfx.turn(); } }
+                    break;
+                case 'half': W8.turn = 0.45 * Math.sin(Math.PI * k); if (done) { if (Math.random() < 0.5) say('……算了'); goto('busy', busyDur()); } break;
+                case 'fake': W8.turn = 0; if (done) { if (W8.kind === 'sip') say('好鹹'); goto('busy', busyDur()); } break;
+                case 'turn': W8.turn = ease(k); if (k > 0.85) check(); if (W8.state === 'turn' && done) { goto('look', rand(0.7, 1.5)); G.looks++; } break;
+                case 'look': W8.turn = 1; check(); if (W8.state === 'look' && done) { if (!G.caughtThisLook) { G.dodged++; say(pick(LOOK_OK)); } G.caughtThisLook = false; goto('back', 0.3); } break;
+                case 'scold': W8.turn = 1; if (done) { G.caughtThisLook = false; if (G.strikes >= STRIKES) { endRound(); return; } goto('back', 0.3); } break;
+                case 'back': W8.turn = 1 - ease(k); if (done) goto('busy', Math.random() < lerp(0.05, 0.3, prog()) ? 0.4 : busyDur()); break;  // 越後面越常轉回去馬上又轉頭
+            }
+        }
+        // 她看過來的時候，你還連著 28 樓：抓到
+        function check() {
+            if (!G.on || G.ended) return;
+            G.strikes++; G.caughtThisLook = true;
+            G.earn.fine -= FINE;
+            G.epProg = 0;  // 下載到一半的那集斷了
+            G.on = false; G.lock = true;
+            G.flash = G.clock; G.stampAt = G.clock;
+            sfx.caught();
+            say(pick(CAUGHT));
+            goto('scold', 1.6);
+            floatText(180, 296, `被抓到了 −${Wallet.fmt(FINE)}`, K.shu, true, 1500);
+            if (navigator.vibrate) try { navigator.vibrate([60, 40, 120]); } catch (e) { }
+            note(G.strikes >= STRIKES ? '第三次了，收工。' : `被抓到了（${G.strikes}／${STRIKES}）。`);
+            hint(G.strikes >= STRIKES ? '' : '先放開手指，再按住才會重新連上。');
+            renderHold();
+        }
+
+        // ===== 4. 聲音（Web Audio 合成） =====
+        let audioCtx = null;
+        function audio() {
+            try {
+                audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                return audioCtx;
+            } catch (e) { return null; }
+        }
+        function tone(freq, dur, vol = 0.15, type = 'sine', at = 0, slide = 1) {
+            const a = audio();
+            if (!a) return;
+            const t = a.currentTime + at, o = a.createOscillator(), g = a.createGain();
+            o.type = type; o.frequency.setValueAtTime(freq, t);
+            if (slide !== 1) o.frequency.exponentialRampToValueAtTime(freq * slide, t + dur);
+            g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+            o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + 0.05);
+        }
+        function noise(dur, vol = 0.1, freq = 1200) {
+            const a = audio();
+            if (!a) return;
+            const buf = a.createBuffer(1, Math.floor(a.sampleRate * dur), a.sampleRate), d = buf.getChannelData(0);
+            for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+            const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+            src.buffer = buf; f.type = 'bandpass'; f.frequency.value = freq; g.gain.setValueAtTime(vol, a.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + dur);
+            src.connect(f).connect(g).connect(a.destination); src.start();
+        }
+        const sfx = {
+            on: () => tone(880, 0.08, 0.07, 'sine', 0, 1.5),
+            off: () => tone(660, 0.08, 0.05, 'sine', 0, 0.67),
+            hmm: () => tone(210, 0.32, 0.16, 'triangle', 0, 1.35),
+            yawn: () => tone(320, 0.6, 0.08, 'triangle', 0, 0.6),
+            turn: () => noise(0.14, 0.08, 500),
+            caught: () => { [880, 660, 880, 660].forEach((f, i) => tone(f, 0.12, 0.1, 'square', i * 0.13)); noise(0.18, 0.25, 180); },
+            ep: () => { tone(988, 0.2, 0.1, 'triangle'); tone(1319, 0.3, 0.1, 'triangle', 0.12); },
+            bell: () => { tone(1046, 0.6, 0.1, 'sine'); tone(1568, 0.8, 0.05, 'sine', 0.02); },
+            tick: () => tone(1200, 0.03, 0.04, 'square'),
+        };
+
+        // ===== 5. 畫 =====
+        function roundRect(c, x, y, w, h, r) {
+            c.beginPath(); c.moveTo(x + r, y);
+            c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+            c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+        }
+
+        // 房間：天花板（上面就是 28 樓）、牆、窗、流理台
+        function drawRoom(c, now) {
+            c.fillStyle = K.wall; c.fillRect(0, 0, W, 330);
+            c.fillStyle = K.wallD; for (let x = 0; x < W; x += 24) c.fillRect(x, 26, 1, 220);
+            // 天花板
+            c.fillStyle = K.ceil; c.fillRect(0, 0, W, 26);
+            c.fillStyle = K.ceilD; c.fillRect(0, 24, W, 3);
+            c.fillStyle = K.woodD; c.font = `500 10px ${SANS}`; c.textAlign = 'left'; c.textBaseline = 'middle';
+            c.fillText('▲ 28F 樓上', 10, 13);
+            // 樓上的路由器：天花板上露出一點天線和燈
+            const rx = 300;
+            c.fillStyle = '#f6f2ea'; roundRect(c, rx - 18, 4, 36, 14, 3); c.fill();
+            c.strokeStyle = '#bdb3a2'; c.lineWidth = 1; roundRect(c, rx - 18, 4, 36, 14, 3); c.stroke();
+            const blink = W8 && (W8.state === 'tell' || W8.state === 'turn') ? Math.sin(now / 60) > 0 : true;
+            [0, 1, 2].forEach(i => { c.fillStyle = G && G.on ? (blink && Math.sin(now / 90 + i * 2) > -0.3 ? '#3ad07a' : '#1d6b3c') : '#3ad07a'; c.beginPath(); c.arc(rx - 9 + i * 9, 11, 1.8, 0, TAU); c.fill(); });
+            // 窗：外面是台北，天空跟晝夜走
+            const n = night();
+            const g = c.createLinearGradient(0, 52, 0, 172);
+            if (n) { g.addColorStop(0, '#141a2b'); g.addColorStop(1, '#2b3350'); } else { g.addColorStop(0, '#bcd9ee'); g.addColorStop(1, '#eef4f2'); }
+            c.fillStyle = K.woodL; c.fillRect(18, 46, 108, 132);
+            c.fillStyle = g; c.fillRect(24, 52, 96, 120);
+            c.fillStyle = n ? '#232a40' : '#c9d3d6';
+            [[24, 120, 22], [46, 98, 18], [64, 132, 20], [84, 108, 16], [100, 126, 20]].forEach(([x, y, w]) => c.fillRect(x, y, w, 172 - y));
+            if (n) { c.fillStyle = '#f5d77a'; [[28, 126], [50, 104], [52, 116], [68, 140], [88, 114], [104, 132], [106, 150]].forEach(([x, y]) => c.fillRect(x, y, 3, 3)); }
+            c.fillStyle = K.woodL; c.fillRect(70, 52, 3, 120); c.fillRect(24, 110, 96, 3);
+            // 牆上的時鐘
+            const ckx = 152, cky = 112;
+            c.fillStyle = '#fbf8f2'; c.beginPath(); c.arc(ckx, cky, 13, 0, TAU); c.fill();
+            c.strokeStyle = K.woodD; c.lineWidth = 2; c.stroke();
+            const sec = (G && G.started ? G.clock : now / 1000);
+            c.lineWidth = 1.5; c.beginPath(); c.moveTo(ckx, cky); c.lineTo(ckx + Math.sin(sec / 60 * TAU) * 10, cky - Math.cos(sec / 60 * TAU) * 10); c.stroke();
+            c.lineWidth = 2; c.beginPath(); c.moveTo(ckx, cky); c.lineTo(ckx + 5, cky - 3); c.stroke();
+            // 地板
+            c.fillStyle = '#c7ad8a'; c.fillRect(0, 300, W, 30);
+            // 你坐的沙發（前景）
+            c.fillStyle = '#b9a58a'; c.fillRect(0, 330, W, H - 330);
+            c.fillStyle = '#a8937a'; c.fillRect(0, 330, W, 4);
+            c.fillStyle = 'rgba(255,255,255,.08)'; for (let x = 0; x < W; x += 40) c.fillRect(x, 338, 20, H - 338);
+        }
+
+        function drawCounter(c, now) {
+            // 流理台：茱莉鴨站在後面，只看得到腰以上
+            c.fillStyle = K.woodL; c.fillRect(140, 244, W - 140, 8);
+            c.fillStyle = K.wood; c.fillRect(146, 252, W - 146, 50);
+            c.fillStyle = K.woodD; c.fillRect(146, 252, W - 146, 3);
+            for (let x = 186; x < W; x += 60) c.fillRect(x, 258, 1.5, 40);
+            // 黑鍋和熱氣
+            const px = 300, py = 244;
+            c.fillStyle = K.pot; roundRect(c, px - 30, py - 30, 60, 30, 8); c.fill();
+            c.fillStyle = K.potL; c.fillRect(px - 34, py - 30, 68, 5);
+            c.fillStyle = K.pot; roundRect(c, px - 44, py - 24, 12, 6, 3); c.fill(); roundRect(c, px + 32, py - 24, 12, 6, 3); c.fill();
+            for (let i = 0; i < 3; i++) {
+                const t = ((now / 1600) + i / 3) % 1;
+                c.strokeStyle = `rgba(255,255,255,${0.55 * (1 - t)})`; c.lineWidth = 3; c.lineCap = 'round';
+                c.beginPath();
+                const sx = px - 14 + i * 14;
+                c.moveTo(sx, py - 34 - t * 30);
+                c.quadraticCurveTo(sx + 6 * Math.sin(t * 6 + i), py - 44 - t * 30, sx, py - 54 - t * 30);
+                c.stroke();
+            }
+            c.lineCap = 'butt';
+        }
+
+        // 茱莉鴨：齊肩黑直髮、中分瀏海、棕色長袖、細項鍊、半睜眼面無表情
+        // turn：0 背對你，1 正面看著你
+        function drawJulie(c, now, cx, base, turn, pose, scale = 1) {
+            c.save(); c.translate(cx, base); c.scale(scale, scale);
+            const e = turn, lift = pose.lift || 0;
+            const hy = -116 - lift, fx = (1 - e) * 13;   // 臉從右邊轉過來
+            // 手臂（在身體後面的那段先畫）
+            const arm = (x1, y1, x2, y2, w = 13) => {
+                c.strokeStyle = K.shirt; c.lineWidth = w; c.lineCap = 'round';
+                c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
+                c.fillStyle = K.skin; c.beginPath(); c.arc(x2, y2, 5.5, 0, TAU); c.fill();
+            };
+            // 身體
+            c.fillStyle = K.shirt;
+            c.beginPath(); c.moveTo(-50, 0); c.lineTo(-48, -58 - lift); c.quadraticCurveTo(-46, -72 - lift, -26, -76 - lift);
+            c.lineTo(26, -76 - lift); c.quadraticCurveTo(46, -72 - lift, 48, -58 - lift); c.lineTo(50, 0); c.closePath(); c.fill();
+            c.fillStyle = K.shirtD; c.fillRect(-2, -60 - lift, 1.5, 60);
+            // 頭髮後面那片（背面看到的就是這片）
+            c.fillStyle = K.hair;
+            c.beginPath();
+            c.moveTo(-27, -64 - lift);
+            c.lineTo(-29, hy + 4); c.quadraticCurveTo(-30, hy - 34, 0, hy - 36); c.quadraticCurveTo(30, hy - 34, 29, hy + 4);
+            c.lineTo(27, -64 - lift);
+            for (let i = 0; i <= 8; i++) c.lineTo(27 - i * 6.75, -64 - lift + (i % 2 ? 4 : 0));
+            c.closePath(); c.fill();
+            // 背面的頭髮光澤
+            if (e < 0.6) {
+                c.globalAlpha = 1 - e / 0.6;
+                c.strokeStyle = K.hairL; c.lineWidth = 1.2;
+                for (let i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(i * 6, hy - 30); c.quadraticCurveTo(i * 8, hy, i * 9, -70 - lift); c.stroke(); }
+                c.globalAlpha = 1;
+            }
+            // 轉過來才看得到脖子、領口和項鍊（背面被頭髮蓋住）
+            if (e > 0.25) {
+                c.globalAlpha = clamp((e - 0.25) / 0.4, 0, 1);
+                c.fillStyle = K.skinD; c.fillRect(-8 + fx * 0.3, -94 - lift, 16, 20);
+                c.fillStyle = K.skin; c.beginPath(); c.ellipse(fx * 0.3, -76 - lift, 15, 6, 0, 0, Math.PI); c.fill();
+                c.strokeStyle = '#d8c08a'; c.lineWidth = 1;
+                c.beginPath(); c.moveTo(-12 + fx * 0.3, -82 - lift); c.quadraticCurveTo(fx * 0.3, -62 - lift, 12 + fx * 0.3, -82 - lift); c.stroke();
+                c.fillStyle = '#efe1b4'; c.beginPath(); c.arc(fx * 0.3, -66 - lift, 1.8, 0, TAU); c.fill();
+                c.globalAlpha = 1;
+            }
+            // 臉
+            if (e > 0.08) {
+                const a = clamp((e - 0.08) / 0.35, 0, 1), rx = 20 * (0.35 + 0.65 * e);
+                c.globalAlpha = a;
+                c.fillStyle = K.skin; c.beginPath(); c.ellipse(fx, hy + 2, rx, 26, 0, 0, TAU); c.fill();
+                // 耳朵（頭髮蓋住大半）
+                // 眼睛：半睜、面無表情
+                const ex = 8 * e;
+                [-1, 1].forEach(s => {
+                    const x = fx + s * ex, y = hy + 3;
+                    c.fillStyle = '#2a2220'; c.beginPath(); c.ellipse(x, y + 1.2, 3.3 * e, 2, 0, 0, Math.PI); c.fill();   // 下半顆眼珠
+                    c.strokeStyle = '#2a2220'; c.lineWidth = 1.8; c.beginPath(); c.moveTo(x - 4.5 * e, y + 0.4); c.quadraticCurveTo(x, y - 1.2, x + 4.5 * e, y + 0.4); c.stroke();  // 眼皮垂著
+                    c.strokeStyle = '#3a2f2b'; c.lineWidth = 1.1; c.beginPath(); c.moveTo(x - 4.5 * e, y - 6); c.lineTo(x + 4.5 * e, y - 6.5); c.stroke();  // 眉毛平平的
+                });
+                c.strokeStyle = K.skinD; c.lineWidth = 1.2; c.beginPath(); c.moveTo(fx + 0.5, hy + 6); c.lineTo(fx - 1, hy + 12); c.lineTo(fx + 1.5, hy + 12.5); c.stroke();
+                c.fillStyle = K.lip; c.beginPath(); c.ellipse(fx, hy + 18.5, 5 * e, 1.8, 0, 0, TAU); c.fill();
+                c.strokeStyle = '#a9706a'; c.lineWidth = 1; c.beginPath(); c.moveTo(fx - 5.5 * e, hy + 19); c.quadraticCurveTo(fx, hy + 18, fx + 5.5 * e, hy + 19.3); c.stroke();
+                // 正面的頭髮：中分、瀏海幾撮、兩側垂到肩膀
+                c.fillStyle = K.hair;
+                c.beginPath(); c.moveTo(fx, hy - 33); c.quadraticCurveTo(fx - 22, hy - 30, fx - 23 * e - 4, hy - 4); c.lineTo(fx - 26 * e - 5, -66 - lift); c.lineTo(fx - 17 * e - 4, -68 - lift);
+                c.quadraticCurveTo(fx - 18 * e, hy - 6, fx - 6 * e, hy - 14); c.quadraticCurveTo(fx - 3, hy - 22, fx, hy - 33); c.fill();
+                c.beginPath(); c.moveTo(fx, hy - 33); c.quadraticCurveTo(fx + 22, hy - 30, fx + 23 * e + 4, hy - 4); c.lineTo(fx + 26 * e + 5, -66 - lift); c.lineTo(fx + 17 * e + 4, -68 - lift);
+                c.quadraticCurveTo(fx + 18 * e, hy - 6, fx + 6 * e, hy - 14); c.quadraticCurveTo(fx + 3, hy - 22, fx, hy - 33); c.fill();
+                // 瀏海：幾撮細細的垂到眉毛
+                c.strokeStyle = K.hair; c.lineWidth = 2; c.lineCap = 'round';
+                [[-3, -8], [-7, -4], [3, 7], [8, 5]].forEach(([s, t2]) => { c.beginPath(); c.moveTo(fx + s * e, hy - 24); c.quadraticCurveTo(fx + (s + t2 * 0.4) * e, hy - 12, fx + (s + t2 * 0.6) * e, hy - 3); c.stroke(); });
+                c.lineCap = 'butt';
+                c.globalAlpha = 1;
+            }
+            // 手臂姿勢
+            const t = now / 1000;
+            if (pose.arms === 'stir') {
+                // 右手伸去攪鍋子（從背面看，手在右前方畫圈）
+                const ax = 74 + Math.cos(t * 5) * 7, ay = -38 + Math.sin(t * 5) * 3;
+                arm(40, -64 - lift, ax, ay);
+                c.strokeStyle = '#c9b48c'; c.lineWidth = 3; c.beginPath(); c.moveTo(ax, ay); c.lineTo(ax + 6, ay + 22); c.stroke();
+                arm(-42, -62 - lift, -46, -16);
+            } else if (pose.arms === 'up') {
+                const k = pose.k || 0, up = Math.sin(Math.PI * k);
+                arm(40, -64 - lift, lerp(50, 22, up), lerp(-16, -168, up));
+                arm(-40, -64 - lift, lerp(-50, -22, up), lerp(-16, -168, up));
+            } else if (pose.arms === 'scratch') {
+                const j = Math.sin(t * 30) * 2;
+                arm(40, -64 - lift, 30 + j, hy - 18);
+                arm(-42, -62 - lift, -46, -16);
+            } else if (pose.arms === 'sip') {
+                arm(40, -64 - lift, 12, hy + 14);
+                arm(-42, -62 - lift, -46, -16);
+            } else {
+                arm(42, -62 - lift, 46, -16);
+                arm(-42, -62 - lift, -46, -16);
+            }
+            c.restore();
+        }
+
+        function bubble(c, text, x, y, color = K.ink) {
+            c.font = `500 13px ${SANS}`;
+            const w = Math.min(220, c.measureText(text).width + 22), h = 28;
+            const bx = clamp(x - w / 2, 6, W - w - 6);
+            c.fillStyle = 'rgba(255,255,255,.95)'; roundRect(c, bx, y - h, w, h, 12); c.fill();
+            c.strokeStyle = 'rgba(0,0,0,.12)'; c.lineWidth = 1; roundRect(c, bx, y - h, w, h, 12); c.stroke();
+            c.fillStyle = 'rgba(255,255,255,.95)'; c.beginPath(); c.moveTo(x - 6, y - 1); c.lineTo(x + 2, y + 8); c.lineTo(x + 6, y - 1); c.fill();
+            c.fillStyle = color; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(text, bx + w / 2, y - h / 2 + 1);
+        }
+
+        // 28 樓的訊號：連著的時候從天花板一圈一圈打到手機
+        function drawWaves(c, now) {
+            if (!G.on) return;
+            c.lineCap = 'round';
+            for (let i = 0; i < 3; i++) {
+                const t = ((now / 900) + i / 3) % 1;
+                c.strokeStyle = `rgba(79,191,122,${0.6 * (1 - t)})`; c.lineWidth = 2.5;
+                c.beginPath(); c.arc(300, 14, 10 + t * 46, Math.PI * 0.2, Math.PI * 0.8); c.stroke();     // 路由器往下
+                c.beginPath(); c.arc(180, 330, 8 + t * 26, Math.PI * 1.2, Math.PI * 1.8); c.stroke();    // 手機收到
+            }
+            c.lineCap = 'butt';
+        }
+
+        // 你的手機：前景，兩隻手拿著，正在追劇
+        function drawPhone(c, now) {
+            const x = 96, y = 316, w = 168, h = 200;
+            // 手
+            c.fillStyle = '#e3bd9c';
+            c.beginPath(); c.ellipse(x + 6, y + 120, 26, 46, -0.25, 0, TAU); c.fill();
+            c.beginPath(); c.ellipse(x + w - 6, y + 120, 26, 46, 0.25, 0, TAU); c.fill();
+            c.fillStyle = K.phone; roundRect(c, x, y, w, h, 20); c.fill();
+            c.fillStyle = K.screen; roundRect(c, x + 7, y + 7, w - 14, h - 14, 14); c.fill();
+            // 拇指
+            c.fillStyle = '#e3bd9c';
+            c.beginPath(); c.ellipse(x + 10, y + 108, 9, 16, 0.5, 0, TAU); c.fill();
+            c.beginPath(); c.ellipse(x + w - 10, y + 108, 9, 16, -0.5, 0, TAU); c.fill();
+            const sx = x + 14, sw = w - 28;
+            // 狀態列
+            c.textBaseline = 'middle'; c.font = `500 10px ${SANS}`; c.textAlign = 'left'; c.fillStyle = '#e8e8e8';
+            const d = new Date(); c.fillText(`${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`, sx, y + 20);
+            c.textAlign = 'right';
+            if (G.on) {
+                c.fillStyle = K.wifi;
+                for (let i = 0; i < 3; i++) { c.strokeStyle = K.wifi; c.lineWidth = 1.6; c.beginPath(); c.arc(sx + sw - 8, y + 25, 3 + i * 3.2, Math.PI * 1.25, Math.PI * 1.75); c.stroke(); }
+                c.font = `500 9px ${SANS}`; c.fillText('28F_家用_5G', sx + sw - 20, y + 20);
+            } else {
+                c.fillStyle = '#9aa0a6'; c.font = `600 10px ${SANS}`; c.fillText('4G', sx + sw - 18, y + 20);
+                [4, 7, 10, 13].forEach((hh, i) => { c.fillStyle = i < 1 ? '#e8e8e8' : '#4a4f55'; c.fillRect(sx + sw - 14 + i * 3.5, y + 24 - hh, 2.4, hh); });
+            }
+            // 影片
+            const vx = sx, vy = y + 34, vw = sw, vh = 80;
+            const vg = c.createLinearGradient(0, vy, 0, vy + vh); vg.addColorStop(0, '#3b4a63'); vg.addColorStop(1, '#1f2737');
+            c.fillStyle = vg; roundRect(c, vx, vy, vw, vh, 6); c.fill();
+            c.save(); roundRect(c, vx, vy, vw, vh, 6); c.clip();
+            const play = G.on, t = now / 1000;
+            // 兩個人在講話（播的時候會動）
+            const bob = play ? Math.sin(t * 4) * 1.5 : 0;
+            c.fillStyle = '#e9c6a5'; c.beginPath(); c.arc(vx + vw * 0.33, vy + 36 + bob, 11, 0, TAU); c.fill();
+            c.fillStyle = '#1d1918'; c.beginPath(); c.arc(vx + vw * 0.33, vy + 32 + bob, 12, Math.PI, TAU); c.fill();
+            c.fillStyle = '#d9b48f'; c.beginPath(); c.arc(vx + vw * 0.68, vy + 38 - bob, 11, 0, TAU); c.fill();
+            c.fillStyle = '#5a3d2b'; c.beginPath(); c.arc(vx + vw * 0.68, vy + 34 - bob, 12, Math.PI, TAU); c.fill();
+            c.fillStyle = '#7b5c8c'; c.fillRect(vx + vw * 0.33 - 15, vy + 50 + bob, 30, 40);
+            c.fillStyle = '#4c6b8a'; c.fillRect(vx + vw * 0.68 - 15, vy + 52 - bob, 30, 40);
+            if (play && G.clock - G.subAt > 2.2) { G.sub = pick(SUBS); G.subAt = G.clock; }
+            c.fillStyle = 'rgba(0,0,0,.45)'; c.fillRect(vx, vy + vh - 18, vw, 18);
+            c.fillStyle = '#fff'; c.font = `500 10px ${SANS}`; c.textAlign = 'center'; c.fillText(G.sub, vx + vw / 2, vy + vh - 9);
+            if (!play) {
+                c.fillStyle = 'rgba(0,0,0,.5)'; c.fillRect(vx, vy, vw, vh);
+                // 轉圈圈
+                for (let i = 0; i < 8; i++) {
+                    const a = i / 8 * TAU + now / 120 * 0.4;
+                    c.fillStyle = `rgba(255,255,255,${0.15 + 0.85 * ((i + Math.floor(now / 110)) % 8) / 8})`;
+                    c.beginPath(); c.arc(vx + vw / 2 + Math.cos(a) * 11, vy + 32 + Math.sin(a) * 11, 2, 0, TAU); c.fill();
+                }
+                c.fillStyle = '#ddd'; c.font = `400 9px ${SANS}`; c.fillText('緩衝中…', vx + vw / 2, vy + 56);
+            }
+            c.restore();
+            // 劇名、第幾集、進度
+            c.fillStyle = '#f2f2f2'; c.font = `500 10px ${SERIF}`; c.textAlign = 'left';
+            c.fillText(`《${G.drama}》`, sx - 4, y + 128);
+            c.fillStyle = '#9aa0a6'; c.font = `400 9px ${SANS}`; c.fillText(`第 ${G.ep + 1} 集・追完 ${G.ep} 集`, sx, y + 143);
+            c.fillStyle = '#3a3f46'; roundRect(c, sx, y + 152, sw, 5, 2.5); c.fill();
+            c.fillStyle = G.on ? K.wifi : '#7d838a'; roundRect(c, sx, y + 152, Math.max(5, sw * G.epProg), 5, 2.5); c.fill();
+            c.textAlign = 'right'; c.fillStyle = '#9aa0a6'; c.fillText(`${Math.floor(G.epProg * 100)}%`, sx + sw, y + 143);
+        }
+
+        function drawHud(c, now) {
+            const left = Math.max(0, ROUND - G.clock);
+            c.fillStyle = 'rgba(255,255,255,.82)';
+            roundRect(c, 8, 34, 74, 30, 15); c.fill(); roundRect(c, W - 112, 34, 104, 30, 15); c.fill();
+            c.fillStyle = left <= 10 && G.started ? K.shu : K.ink;
+            c.font = `500 15px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+            c.fillText(`${Math.ceil(left)} 秒`, 45, 50);
+            const live = liveMoney();
+            c.fillStyle = live < 0 ? K.shu : K.ink; c.fillText((live < 0 ? '−' : '') + Wallet.fmt(Math.abs(live)), W - 60, 50);
+            // 被抓幾次：三格，抓到一次蓋一個朱印
+            for (let i = 0; i < STRIKES; i++) {
+                const x = 152 + i * 28, y = 49, hit = i < G.strikes;
+                c.strokeStyle = hit ? K.shu : 'rgba(59,52,49,.25)'; c.lineWidth = 1.5;
+                c.strokeRect(x - 10, y - 10, 20, 20);
+                if (hit) { c.fillStyle = K.shu; c.fillRect(x - 8, y - 8, 16, 16); c.fillStyle = '#fff'; c.font = `700 11px ${SERIF}`; c.fillText('抓', x, y + 1); }
+            }
+            if (!G.started) {
+                c.fillStyle = 'rgba(30,26,22,.6)'; roundRect(c, 40, 176, 280, 64, 10); c.fill();
+                c.fillStyle = '#fff'; c.font = `500 15px ${SERIF}`; c.fillText('按住，開始偷連 28 樓', 180, 198);
+                c.font = `400 11px ${SANS}`; c.fillText('茱莉鴨說「嗯？」就要準備放開', 180, 222);
+            }
+        }
+
+        function drawFx(c, now) {
+            // 被抓到：閃一下紅、蓋一個大「抓」
+            const f = G.clock - G.flash;
+            if (G.started && f < 0.35) { c.fillStyle = `rgba(179,58,47,${0.28 * (1 - f / 0.35)})`; c.fillRect(0, 0, W, H); }
+            const s = G.clock - G.stampAt;
+            if (s >= 0 && s < 1.6) {
+                const k = clamp(s / 0.18, 0, 1), sc = lerp(2.2, 1, ease(k));
+                c.save(); c.translate(96, 150); c.rotate(-0.18); c.scale(sc, sc); c.globalAlpha = Math.min(1, (1.6 - s) / 0.4) * 0.92;
+                c.strokeStyle = K.shu; c.lineWidth = 4; c.strokeRect(-34, -34, 68, 68); c.lineWidth = 1.5; c.strokeRect(-40, -40, 80, 80);
+                c.fillStyle = K.shu; c.font = `700 46px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('抓', 0, 3);
+                c.font = `600 10px ${SANS}`; c.fillText(`第 ${G.strikes} 次`, 0, 52);
+                c.restore();
+            }
+            for (let i = floats.length - 1; i >= 0; i--) {
+                const fl = floats[i], t = (now - fl.born) / fl.life;
+                if (t > 1) { floats.splice(i, 1); continue; }
+                c.globalAlpha = 1 - t * t; c.fillStyle = fl.color; c.font = `600 ${fl.big ? 17 : 13}px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+                c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = 3; c.strokeText(fl.text, fl.x, fl.y - 26 * t); c.fillText(fl.text, fl.x, fl.y - 26 * t);
+                c.globalAlpha = 1;
+            }
+        }
+        const floatText = (x, y, text, color = K.shu, big = false, life = 1000) => floats.push({ x, y, text, color, big, born: performance.now(), life });
+
+        function poseNow(now) {
+            const k = W8.dur ? clamp((G.clock - W8.t0) / W8.dur, 0, 1) : 0;
+            switch (W8.state) {
+                case 'busy': return { arms: 'stir' };
+                case 'tell': return { arms: 'rest', lift: 3 * Math.sin(Math.PI * k) };
+                case 'fake': return W8.kind === 'stretch' ? { arms: 'up', k, lift: 3 * Math.sin(Math.PI * k) } : { arms: W8.kind };
+                case 'scold': return { arms: 'rest', lift: 2 };
+                default: return { arms: 'rest' };
+            }
+        }
+
+        // ===== 6. 每一格的規則 =====
+        function liveMoney() {
+            return Math.floor(G.wifiMs / 1000 * RATE) + G.ep * EP_PAY + G.earn.fine;
+        }
+        function setOn(want) {
+            if (!G || G.ended) return;
+            const on = want && !G.lock && W8.state !== 'scold';
+            if (on === G.on) return;
+            G.on = on;
+            if (on) { G.onSince = G.clock; G.connects++; sfx.on(); } else sfx.off();
+            renderHold();
+        }
+        function update(dt) {
+            if (!G || G.ended) return;
+            if (!G.started) return;
+            G.clock += dt;
+            if (G.clock >= ROUND) { G.clock = ROUND; endRound(); return; }
+            const left = ROUND - G.clock;
+            if (Math.ceil(left) <= 5 && Math.ceil(left) !== G.lastTick) { G.lastTick = Math.ceil(left); sfx.tick(); }
+            updateWatcher();
+            if (G.ended) return;
+            if (G.on) {
+                G.wifiMs += dt * 1000;
+                G.epProg += dt / EP_SEC;
+            } else {
+                G.epProg += dt / EP_SEC * SLOW;
+            }
+            if (G.epProg >= 1) {
+                G.epProg -= 1; G.ep++;
+                sfx.ep();
+                floatText(180, 300, `追完第 ${G.ep} 集 +${Wallet.fmt(EP_PAY)}`, K.green, true, 1400);
+            }
+        }
+
+        // ===== 7. 手指：按住就連 28 樓，放開切回 4G =====
+        function press(e) {
+            if (!G || G.ended) return;
+            audio();
+            e.preventDefault();
+            try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) { }
+            holds.add(e.pointerId);
+            if (!G.started) { G.started = true; G.clock = 0; W8.t0 = 0; W8.dur = 3.6; hint('茱莉鴨說「嗯？」、停下來，就是要轉頭了。'); note('連上 28 樓了。'); }
+            setOn(true);
+        }
+        function lift(e) {
+            holds.delete(e.pointerId);
+            if (!holds.size && !keyHeld) { if (G.lock) { G.lock = false; renderHold(); } setOn(false); }
+        }
+        [cv, $('hold')].forEach(el => {
+            el.addEventListener('pointerdown', press);
+            el.addEventListener('pointerup', lift);
+            el.addEventListener('pointercancel', lift);
+            el.addEventListener('lostpointercapture', lift);
+            el.addEventListener('contextmenu', e => e.preventDefault());
+        });
+        // 電腦可以按住空白鍵
+        document.addEventListener('keydown', e => {
+            if (e.code !== 'Space' || e.repeat || !G || G.ended || !$('result').classList.contains('hidden')) return;
+            e.preventDefault(); keyHeld = true;
+            press({ preventDefault() { }, currentTarget: cv, pointerId: 'key' });
+        });
+        document.addEventListener('keyup', e => {
+            if (e.code !== 'Space') return;
+            keyHeld = false; lift({ pointerId: 'key' });
+        });
+        // 切到別的 App：手指一定離開了，當作放開
+        document.addEventListener('visibilitychange', () => { if (document.hidden) { holds.clear(); keyHeld = false; if (G) { G.lock = false; setOn(false); } } });
+
+        function renderHold() {
+            const b = $('hold');
+            b.classList.toggle('is-on', !!(G && G.on));
+            b.classList.toggle('is-lock', !!(G && G.lock));
+            b.disabled = !G || G.ended;
+            b.textContent = !G || G.ended ? '收工了' : G.lock ? '先放開' : G.on ? '連線中・28F' : '按住・偷連';
+        }
+
+        // ===== 8. 主迴圈 =====
+        function frame(now) {
+            const dt = Math.min(0.05, (now - lastNow) / 1000); lastNow = now;
+            update(dt);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, W, H);
+            if (G) {
+                drawRoom(ctx, now);
+                drawJulie(ctx, now, 214, 252, W8.turn, poseNow(now));
+                drawCounter(ctx, now);
+                drawWaves(ctx, now);
+                // 對話框：說完一陣子就收
+                if (W8.bubble && G.clock - W8.bubbleAt < (W8.state === 'scold' ? 1.6 : 1.1)) bubble(ctx, W8.bubble, 214, 96, W8.state === 'scold' ? K.shu : K.ink);
+                drawPhone(ctx, now);
+                drawFx(ctx, now);
+                drawHud(ctx, now);
+            }
+            requestAnimationFrame(frame);
+        }
+
+        // ===== 9. 收工 =====
+        function gradeOf(pay) { return GRADES.find(g => pay >= g.min); }
+        let sheetFile = null;
+        function bill() {
+            const secs = Math.round(G.wifiMs / 1000);
+            G.earn.wifi = Math.floor(G.wifiMs / 1000 * RATE);
+            G.earn.ep = G.ep * EP_PAY;
+            G.earn.perfect = !G.strikes && secs >= 10 ? PERFECT : 0;
+            // [名稱, 數量, 單位, 金額, 怎麼算]；金額加起來等於合計
+            return [
+                ['蹭網', secs, '秒', G.earn.wifi, `每秒省 ${Wallet.fmt(RATE)} 流量費`],
+                ['追完', G.ep, '集', G.earn.ep, `《${G.drama}》每集 ${Wallet.fmt(EP_PAY)}`],
+                ['完美蹭網', G.earn.perfect ? 1 : 0, '次', G.earn.perfect, '一次都沒被抓'],
+                ['網路使用費', G.strikes, '次', G.earn.fine, `被抓一次賠 28 樓 ${Wallet.fmt(FINE)}`],
+            ].filter(r => r[1]);
+        }
+        async function endRound() {
+            if (G.ended) return;
+            G.ended = true; G.on = false; holds.clear(); keyHeld = false;
+            renderHold();
+            sfx.bell();
+            const rows = bill();
+            const sales = G.earn.wifi + G.earn.ep + G.earn.perfect + G.earn.fine;
+            const pay = Math.max(100, sales);
+            const grade = gradeOf(pay);
+            G.pay = { sales, pay };
+            note(G.strikes >= STRIKES ? '被抓三次，收工。' : '時間到，收工。');
+            hint('');
+            Wallet.earn(pay, 'wifi');
+            recordRound(pay, grade);
+            $('syncNote').textContent = '';
+            uploadRounds().then(showSyncNote);
+
+            $('score').textContent = Wallet.fmt(pay);
+            $('gradeLine').textContent = `${grade.mark}・${grade.line}`;
+            const money = v => (v < 0 ? '−' : v > 0 ? '+' : '') + Wallet.fmt(Math.abs(v));
+            $('bill').innerHTML = rows.length ? rows.map(([k, v, u, m, how]) => `<li><span>${k} <span class="text-wabi-dark">${v} ${u}</span><span class="block text-[10px] text-stone-400">${esc(how)}</span></span><span class="${m < 0 ? 'text-wabi-shu' : 'text-wabi-dark'} self-center">${money(m)}</span></li>`).join('')
+                : '<li><span>一秒都沒蹭到</span><span></span></li>';
+            $('paySales').textContent = (sales < 0 ? '−' : '') + Wallet.fmt(Math.abs(sales));
+            $('payMinRow').classList.toggle('hidden', pay === sales); $('payMin').textContent = Wallet.fmt(pay);
+            $('payWallet').textContent = Wallet.fmt(Wallet.money);
+            $('payAcct').innerHTML = Line.loggedIn ? `存在 ${esc((Line.profile || {}).name || 'LINE')} 的 LINE 帳號` : '錢只存在這支手機。<button type="button" data-login class="min-h-[32px] underline underline-offset-4 text-wabi-dark">用 LINE 登入</button>，換手機也在';
+            renderBest();
+            try {
+                const blob = await makeSheet(pay, grade, rows);
+                sheetFile = new File([blob], `dongbuli-cengwang-${Date.now()}.png`, { type: 'image/png' });
+                $('sheetImg').src = URL.createObjectURL(blob);
+            } catch (e) { }
+            const canShare = !!(sheetFile && navigator.canShare && navigator.canShare({ files: [sheetFile] }));
+            $('shareBtn').textContent = canShare ? '分享蹭網日報' : '下載蹭網日報';
+            setTimeout(() => {
+                $('result').classList.remove('hidden');
+                $('result').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+            }, 900);
+        }
+
+        async function makeSheet(pay, grade, rows) {
+            const lines = rows.map(([k, v, u, m]) => [`${k} ${v} ${u}`, (m < 0 ? '−' : '') + Wallet.fmt(Math.abs(m))]);
+            const allText = lines.flat().join('') + '蹭網日報二十七樓房間茱莉鴨沒發現合計共被抓次追劇《》' + G.drama + grade.mark + grade.line + '0123456789$,−・';
+            try { await Promise.race([Promise.all([document.fonts.load(`600 40px ${SERIF}`, allText), document.fonts.load(`400 40px ${SANS}`, allText)]), new Promise(res => setTimeout(res, 2500))]); } catch (e) { }
+            const c = document.createElement('canvas'); c.width = 1080; c.height = 1350;
+            const x = c.getContext('2d');
+            const text = (str, px, py, font, color, align = 'center') => { x.font = font; x.fillStyle = color; x.textAlign = align; x.fillText(str, px, py); };
+            x.fillStyle = '#fcfaf8'; x.fillRect(0, 0, c.width, c.height);
+            x.strokeStyle = '#8e8070'; x.lineWidth = 2; x.strokeRect(40, 40, 1000, 1270); x.lineWidth = 1; x.strokeRect(54, 54, 972, 1242);
+            text('D O N G B U L I ・ 2 7 F ・ 2 8 F _ 家 用 _ 5 G', 540, 130, `400 26px ${SANS}`, '#8e8070');
+            text('蹭網日報', 540, 220, `600 76px ${SERIF}`, '#2c2c2c');
+            x.fillStyle = '#8e8070'; x.fillRect(500, 250, 80, 2);
+            // 插圖：茱莉鴨面無表情地看著你
+            x.save(); x.beginPath(); x.arc(860, 400, 120, 0, TAU); x.fillStyle = '#efe7da'; x.fill(); x.clip();
+            drawJulie(x, performance.now(), 860, 590, 1, { arms: 'rest' }, 2.3); x.restore();
+            x.strokeStyle = '#8e8070'; x.lineWidth = 2; x.beginPath(); x.arc(860, 400, 120, 0, TAU); x.stroke();
+            text(G.strikes ? `被抓 ${G.strikes} 次` : '茱莉鴨沒發現', 860, 560, `400 28px ${SERIF}`, G.strikes ? '#b33a2f' : '#8e8070');
+            text(`追劇《${G.drama}》`, 150, 320, `400 30px ${SERIF}`, '#8e8070', 'left');
+            let y = 400;
+            (lines.length ? lines : [['一秒都沒蹭到', '']]).forEach(([k, v]) => {
+                text(k, 150, y, `400 34px ${SERIF}`, '#4a4a4a', 'left');
+                text(v, 640, y, `400 34px ${SANS}`, v.startsWith('−') ? '#b33a2f' : '#2c2c2c', 'right');
+                x.strokeStyle = '#e4ddd2'; x.lineWidth = 1; x.beginPath(); x.moveTo(150, y + 22); x.lineTo(640, y + 22); x.stroke();
+                y += 78;
+            });
+            y = Math.max(y + 40, 860);
+            text(`合計 ${(G.pay.sales < 0 ? '−' : '') + Wallet.fmt(Math.abs(G.pay.sales))}`, 150, y + 10, `400 30px ${SANS}`, '#8e8070', 'left');
+            text(`共 ${Wallet.fmt(pay)}`, 150, y + 110, `600 60px ${SERIF}`, '#2c2c2c', 'left');
+            text(grade.line, 150, y + 170, `400 30px ${SERIF}`, '#8e8070', 'left');
+            x.save(); x.translate(850, y + 90); x.rotate(-0.12); x.globalAlpha = 0.9;
+            x.strokeStyle = '#b33a2f'; x.lineWidth = 7; x.strokeRect(-85, -85, 170, 170); x.lineWidth = 2.5; x.strokeRect(-100, -100, 200, 200);
+            x.textBaseline = 'middle'; text(grade.mark, 0, 6, `700 120px ${SERIF}`, '#b33a2f');
+            x.restore();
+            const d = new Date();
+            text(`${d.getFullYear()}・${d.getMonth() + 1}・${d.getDate()}`, 540, 1270, `400 24px ${SANS}`, '#8e8070');
+            return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(), 'image/png'));
+        }
+        async function shareSheet() {
+            if (!sheetFile) return;
+            if (navigator.canShare && navigator.canShare({ files: [sheetFile] })) {
+                try { await navigator.share({ files: [sheetFile], title: '丼步喱・絆 蹭網日報', text: `我在二十七樓偷連 28 樓的 Wi-Fi，省了 ${$('score').textContent}` }); } catch (e) { }
+                return;
+            }
+            const a = document.createElement('a'); a.href = URL.createObjectURL(sheetFile); a.download = sheetFile.name; a.click();
+        }
+
+        // ===== 10. 紀錄：這支手機的統計，也送到後端（Wifis 分頁）；後端還沒部署就先排隊，之後補送 =====
+        const loadStats = () => {
+            let st = null;
+            try { st = JSON.parse(localStorage.getItem(STATS_KEY)); } catch (e) { }
+            st = st || { rounds: 0, best: 0, paid: 0, secs: 0, eps: 0, caught: 0, dodged: 0, perfect: 0 };
+            st.recent = st.recent || [];
+            return st;
+        };
+        function recordRound(pay, grade) {
+            const st = loadStats();
+            st.rounds++; st.paid += pay; st.best = Math.max(st.best, pay);
+            st.secs += Math.round(G.wifiMs / 1000); st.eps += G.ep; st.caught += G.strikes; st.dodged += G.dodged; if (G.earn.perfect) st.perfect++;
+            st.recent.unshift({
+                at: new Date().toISOString(), ms: Math.round(G.clock * 1000),
+                total: pay, sales: G.pay.sales, grade: grade.mark, wifi_ms: Math.round(G.wifiMs), episodes: G.ep, drama: G.drama,
+                strikes: G.strikes, looks: G.looks, dodged: G.dodged, fakes: G.fakes, connects: G.connects, perfect: !!G.earn.perfect,
+                login: !!(window.Line && Line.loggedIn),
+            });
+            st.recent = st.recent.slice(0, 50);
+            try { localStorage.setItem(STATS_KEY, JSON.stringify(st)); } catch (e) { }
+            try { if (pay > Number(localStorage.getItem(BEST_KEY) || 0)) localStorage.setItem(BEST_KEY, String(pay)); } catch (e) { }
+        }
+        function renderBest() {
+            let best = 0;
+            try { best = Number(localStorage.getItem(BEST_KEY) || 0); } catch (e) { }
+            $('best').innerHTML = best ? `最好一輪<br>${Wallet.fmt(best)}` : '';
+        }
+
+        const API_URL = (window.Line && Line.API_URL) || "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
+        function deviceId() {
+            let id = '';
+            try { id = localStorage.getItem('dongbuli-device') || ''; } catch (e) { }
+            if (!id) {
+                id = window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'd-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+                try { localStorage.setItem('dongbuli-device', id); } catch (e) { }
+            }
+            return id;
+        }
+        let uploading = null;
+        function uploadRounds() {
+            if (!uploading) uploading = doUpload().finally(() => { uploading = null; });
+            return uploading;
+        }
+        async function doUpload() {
+            const st = loadStats();
+            const todo = st.recent.filter(r => !st.synced || r.at > st.synced).reverse().slice(0, 20);
+            if (!todo.length) return { ok: true, saved: 0 };
+            try {
+                let session = '';
+                try { session = localStorage.getItem('dongbuli-session') || ''; } catch (e) { }
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'wifiLog', device: deviceId(), session, recs: todo }) });
+                const r = await res.json();
+                if (r.result !== 'success') return { ok: false, error: r.error || r.result || '後端沒回成功' };
+                const now = loadStats();
+                now.synced = todo[todo.length - 1].at;
+                try { localStorage.setItem(STATS_KEY, JSON.stringify(now)); } catch (e) { }
+                if (todo.length === 20) setTimeout(uploadRounds, 1500);
+                return { ok: true, saved: r.saved };
+            } catch (e) {
+                return { ok: false, error: '連不到後端' };
+            }
+        }
+        function showSyncNote(r) {
+            const el = $('syncNote');
+            if (r.ok) el.textContent = '這一輪的紀錄存到雲端了';
+            else if (/不認得的請求/.test(r.error)) el.textContent = '紀錄先存在這支手機：後端還沒部署新版本，部署好下次打開會自己補送';
+            else el.textContent = `紀錄先存在這支手機（${r.error}），下次會補送`;
+        }
+
+        $('shareBtn').addEventListener('click', shareSheet);
+        $('againBtn').addEventListener('click', () => { newRound(); $('stage').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' }); });
+        $('payAcct').addEventListener('click', e => { if (e.target.closest('[data-login]')) Line.login(); });
+        Wallet.on(type => { if (type === 'login') showToast('登入了，省下的錢存進 LINE 帳號'); });
+
+        newRound();
+        requestAnimationFrame(frame);
+        setTimeout(uploadRounds, 2500);  // 補送上次沒送成功的
+    </script>
+</body>
+
+</html>

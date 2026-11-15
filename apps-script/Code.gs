@@ -53,6 +53,8 @@ var CLEAN_LOGS_PER_HOUR = 60;    // 一支手機每小時最多送幾次打掃�
 var CLEAN_ROWS_PER_HOUR = 2000;  // 全站每小時最多存幾間
 var FARM_LOGS_PER_HOUR = 60;     // 一支手機每小時最多送幾次菜園紀錄
 var FARM_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾輪
+var WIFI_LOGS_PER_HOUR = 60;     // 一支手機每小時最多送幾次蹭網紀錄
+var WIFI_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾輪
 
 // doPost 用於接收資料：訂房、留言、後台改狀態
 // 要排隊的動作：會「先讀再寫、讀到的決定寫什麼」的（撞期、領第幾張票、紅包還剩幾份、改狀態）。
@@ -97,6 +99,7 @@ function route(type, input) {
     if (type === 'washLog') return washLog(input);
     if (type === 'cleanLog') return cleanLog(input);
     if (type === 'farmLog') return farmLog(input);
+    if (type === 'wifiLog') return wifiLog(input);
     if (type === 'gongdeLog') return gongdeLog(input);
     if (type === 'leaderboard') return leaderboard(input);
     if (type === 'policyList') return policyList(input);
@@ -1146,7 +1149,7 @@ function washLog(input) {
 // 花錢：Players 的 spent（全部花掉的）拆成洗頭店升級（shop.spent）、捐香油錢（gongde.donated）、點燈（gongde.lit），剩下的算刮刮樂。
 // 公開：回 LINE 名字和大頭貼，不回 line_id；有帶 session 的話把自己那列標 me。算好的榜存 CacheService 5 分鐘。
 
-var BOARD_CACHE_KEY = 'board:v3', BOARD_CACHE_SEC = 300;
+var BOARD_CACHE_KEY = 'board:v4', BOARD_CACHE_SEC = 300;
 
 function boardBest(sheetName, totalCol, msCol) {
   var best = {}, sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
@@ -1176,6 +1179,8 @@ function buildBoard() {
     var x = part('xitou', washBest), c = part('clean', cleanBest);
     var fe = earned.farm || {};  // 菜園：最高的一輪就是 earned 的 best（一輪賣多少錢）
     var fm = { n: Number(fe.times) || 0, money: Number(fe.total) || 0, best: fe.best ? Number(fe.best) : null, ms: 0 };
+    var we = earned.wifi || {};  // 蹭網：跟菜園一樣，最高的一輪是 earned 的 best
+    var wf = { n: Number(we.times) || 0, money: Number(we.total) || 0, best: we.best ? Number(we.best) : null, ms: 0 };
     var gd = {}, shop = {};
     try { gd = JSON.parse(rows[i][8] || '{}') || {}; } catch (e) { }
     try { shop = JSON.parse(rows[i][9] || '{}') || {}; } catch (e) { }
@@ -1183,8 +1188,8 @@ function buildBoard() {
     var sp = { total: num(rows[i][5]), shop: num(shop.spent), donate: num(gd.donated), lamp: num(gd.lit) };
     sp.scratch = Math.max(0, sp.total - sp.shop - sp.donate - sp.lamp);
     sp.won = num((earned.scratch || {}).total) + num((earned.caishen || {}).total);  // 刮中的（含財神加碼）
-    if (!x.n && !c.n && !fm.n && x.best == null && c.best == null && !sp.total) continue;
-    out.push({ id: id, name: String(rows[i][2] || '旅人').slice(0, 20), picture: /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c, farm: fm, spend: sp });
+    if (!x.n && !c.n && !fm.n && !wf.n && x.best == null && c.best == null && !sp.total) continue;
+    out.push({ id: id, name: String(rows[i][2] || '旅人').slice(0, 20), picture: /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c, farm: fm, wifi: wf, spend: sp });
   }
   return { at: new Date().toISOString(), players: out };
 }
@@ -1200,7 +1205,7 @@ function leaderboard(input) {
   return {
     result: 'success', at: board.at,
     players: board.players.map(function (p) {
-      return { name: p.name, picture: p.picture, xitou: p.xitou, clean: p.clean, farm: p.farm, spend: p.spend, me: !!me && p.id === me };
+      return { name: p.name, picture: p.picture, xitou: p.xitou, clean: p.clean, farm: p.farm, wifi: p.wifi, spend: p.spend, me: !!me && p.id === me };
     })
   };
 }
@@ -1439,6 +1444,72 @@ function farmLog(input) {
   return { result: 'success', saved: rows.length, skipped: skipped };
 }
 
+
+// --- 蹭・網（cengwang.html）：每一輪的紀錄 ---
+// 跟菜園紀錄一樣：公開、appendRow 不排隊、不寄信不回資料；session 對就記 line_id。
+var WIFI_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'total', 'sales', 'wifi_ms', 'episodes', 'drama', 'strikes',
+  'looks', 'dodged', 'fakes', 'connects', 'perfect', 'grade', 'ms', 'login'];
+
+function wifisSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Wifis');
+  if (!sheet) {
+    sheet = ss.insertSheet('Wifis');
+    sheet.appendRow(WIFI_HEADERS);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function wifiRow(r, now, lineId, device) {
+  if (!r || typeof r !== 'object') return null;
+  var at = new Date(r.at);
+  if (isNaN(at.getTime()) || at.getTime() > now.getTime() + 86400000 || at.getTime() < now.getTime() - 90 * 86400000) return null;
+  var n = function (v) { return washNum(v, 0, 999); };
+  return [
+    now, at, lineId || '', device,
+    washNum(r.total, 0, 100000), washNum(r.sales, -10000, 100000), washNum(r.wifi_ms, 0, 3600000), n(r.episodes), washText(r.drama, 20),
+    n(r.strikes), n(r.looks), n(r.dodged), n(r.fakes), n(r.connects), !!r.perfect, washText(r.grade, 2), washNum(r.ms, 0, 3600000), !!r.login
+  ];
+}
+
+// 在編輯器選這個按「執行」：先把 Wifis 分頁建出來
+function setupWifis() {
+  var sheet = wifisSheet();
+  Logger.log('Wifis 分頁好了，目前有 ' + (sheet.getLastRow() - 1) + ' 輪。網頁要能存，還要「部署 → 管理部署作業 → 編輯 → 版本選新版本 → 部署」。');
+}
+
+function wifiLog(input) {
+  var device = String(input.device || '').replace(/[^A-Za-z0-9-]/g, '').slice(0, 40);
+  if (device.length < 8) return { result: 'error', error: '沒有裝置代號' };
+  var recs = Array.isArray(input.recs) ? input.recs.slice(0, 20) : [];
+  if (!recs.length) return { result: 'success', saved: 0 };
+
+  var cache = CacheService.getScriptCache();
+  var hour = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var devKey = 'wifiLog:' + device + ':' + hour, allKey = 'wifiRows:' + hour;
+  var devCount = Number(cache.get(devKey) || 0), allCount = Number(cache.get(allKey) || 0);
+  if (devCount >= WIFI_LOGS_PER_HOUR) return { result: 'error', error: '這小時送太多次了' };
+  if (allCount + recs.length > WIFI_ROWS_PER_HOUR) return { result: 'error', error: '這小時全站蹭太多輪了' };
+  cache.put(devKey, String(devCount + 1), 3600);
+
+  var lineId = input.session ? sessionUser(input.session) : null;
+  var now = new Date(), rows = [], skipped = 0;
+  recs.forEach(function (r) {
+    var row = wifiRow(r, now, lineId, device);
+    if (!row) { skipped++; return; }
+    var dupKey = 'wifi:' + device + ':' + row[1].getTime();
+    if (cache.get(dupKey)) { skipped++; return; }
+    cache.put(dupKey, '1', 6 * 3600);
+    rows.push(row);
+  });
+  if (rows.length) {
+    var sheet = wifisSheet();
+    rows.forEach(function (row) { sheet.appendRow(row); });
+    cache.put(allKey, String(allCount + rows.length), 3600);
+  }
+  return { result: 'success', saved: rows.length, skipped: skipped };
+}
 
 // --- 房務・淨：每一間房的打掃紀錄 ---
 // 跟洗頭紀錄一樣：打掃完網頁送上來，一列一間，存在 Cleans 分頁。不寄信、不回資料，只擋格式和數量。
