@@ -1372,7 +1372,7 @@ function setupPolicies() {
 // 跟洗頭、打掃紀錄一樣：拔完網頁送上來，一列一輪，存在 Farms 分頁。不寄信、不回資料。
 
 var FARM_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'total', 'sales', 'bonus', 'grade',
-  'small', 'mid', 'big', 'giant', 'heart', 'snapped', 'bent', 'sweet', 'ticket', 'mole', 'wiggles', 'helpers', 'ms', 'login'];
+  'small', 'mid', 'big', 'giant', 'heart', 'snapped', 'bent', 'sweet', 'ticket', 'mole', 'wiggles', 'helpers', 'ms', 'login', 'mole_free'];
 
 function farmsSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -1381,6 +1381,9 @@ function farmsSheet() {
     sheet = ss.insertSheet('Farms');
     sheet.appendRow(FARM_HEADERS);
     sheet.setFrozenRows(1);
+  } else if (sheet.getLastColumn() < FARM_HEADERS.length) {
+    // 舊分頁後來加了欄位（W mole_free）：把標題補上
+    sheet.getRange(1, 1, 1, FARM_HEADERS.length).setValues([FARM_HEADERS]);
   }
   return sheet;
 }
@@ -1394,7 +1397,7 @@ function farmRow(r, now, lineId, device) {
     now, at, lineId || '', device,
     washNum(r.total, 0, 100000), washNum(r.sales, -10000, 100000), washNum(r.bonus, 0, 10000), washText(r.grade, 2),
     n(r.small), n(r.mid), n(r.big), n(r.giant), n(r.heart), n(r.snapped), n(r.bent), n(r.sweet), n(r.ticket), n(r.mole),
-    washNum(r.wiggles, 0, 100000), washNum(r.helpers, 0, 10), washNum(r.ms, 0, 3600000), !!r.login
+    washNum(r.wiggles, 0, 100000), washNum(r.helpers, 0, 10), washNum(r.ms, 0, 3600000), !!r.login, n(r.mole_free)
   ];
 }
 

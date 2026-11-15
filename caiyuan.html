@@ -156,7 +156,7 @@
                 <li>按住葉子<b class="font-normal text-wabi-dark">左右搖</b>，把土搖鬆。搖得越鬆，等一下越好拔。</li>
                 <li>手指<b class="font-normal text-wabi-dark">往上拉</b>，上面那條力道要在綠色裡。拉太猛跑進紅色，蘿蔔會歪，再不放手就斷了。</li>
                 <li>葉子越多根越大、越值錢，也越難拔：三片小的 $30、四片中的 $55、五片大的 $90。歪的打七折，斷的只剩四成。</li>
-                <li>心形的蘿蔔多賣 $80。土裡偶爾有地瓜、伊藤埋的刮刮樂；也有鼴鼠，拔到扣 $50。</li>
+                <li>心形的蘿蔔多賣 $80。土裡偶爾有地瓜、伊藤埋的刮刮樂；也有鼴鼠，拔到扣 $50。別理牠，等旁邊再長出兩根，牠會自己跑走，放過牠 +$50。</li>
                 <li>運氣好會長出<b class="font-normal text-wabi-shu">巨型蘿蔔</b>，一個人拔不動，要叫二十七樓的人來幫忙，一人收 $50 幫手費。</li>
                 <li>一根都沒斷、又拔了十根以上，農會再表揚 $200。</li>
             </ol>
@@ -225,7 +225,7 @@
         // ===== 2. 狀態 =====
         let G = null;
         let grab = null;     // 手指抓著哪一格 { i, sx, sy, x, y, lastX, dir, travel, force }
-        const floats = [], dirt = [], flyers = [];
+        const floats = [], dirt = [], flyers = [], runners = [];
         let lastNow = performance.now();
 
         function spawn(i, now) {
@@ -236,7 +236,7 @@
                 return s;
             }
             const r = Math.random();
-            if (r < 0.07) s.kind = 'mole';
+            if (r < 0.07) { s.kind = 'mole'; s.leaveAt = G.spawned + MOLE_STAY; }  // 再長出兩根別的就自己跑走
             else if (r < 0.13) s.kind = 'sweet';
             else if (r < 0.155) s.kind = 'ticket';
             else {
@@ -247,20 +247,23 @@
             return s;
         }
         const ruleOf = s => s.kind === 'carrot' ? SIZES[s.size] : OTHERS[s.kind];
+        // 鼴鼠：別的格子再長出 MOLE_STAY 根之後自己跑走，放過牠（沒拔）多給 MOLE_FREE
+        const MOLE_STAY = 2, MOLE_FREE = 50;
 
         function newRound() {
             const now = performance.now();
             G = {
                 plots: [], started: 0, ended: false, money: 0, pay: null,
                 giantAt: Math.random() < 0.35 ? rand(8, 38) : null, giantDone: false, helpers: 0, heaveAt: 0,
-                tally: { 1: 0, 2: 0, 3: 0, giant: 0, heart: 0, snapped: 0, bent: 0, sweet: 0, ticket: 0, mole: 0 },
+                tally: { 1: 0, 2: 0, 3: 0, giant: 0, heart: 0, snapped: 0, bent: 0, sweet: 0, ticket: 0, mole: 0, moleFree: 0 },
+                spawned: 0,  // 開局之後長出來幾根（鼴鼠用這個算什麼時候跑走）
                 // 每一項賺（或少賺、被扣）多少，結算明細用；加起來等於 money
-                earn: { 1: 0, 2: 0, 3: 0, giant: 0, fee: 0, heart: 0, snapped: 0, bent: 0, sweet: 0, ticket: 0, mole: 0 },
+                earn: { 1: 0, 2: 0, 3: 0, giant: 0, fee: 0, heart: 0, snapped: 0, bent: 0, sweet: 0, ticket: 0, mole: 0, moleFree: 0 },
                 wiggles: 0, helpersUsed: 0, regrow: [],
             };
             PLOTS.forEach((p, i) => { G.plots[i] = spawn(i, now); });
             grab = null;
-            floats.length = dirt.length = flyers.length = 0;
+            floats.length = dirt.length = flyers.length = runners.length = 0;
             $('result').classList.add('hidden');
             note('按住葉子，左右搖，再往上拉。');
             hint('點任何一根蘿蔔就開始計時，六十秒。');
@@ -526,6 +529,19 @@
                 c.save(); c.globalAlpha = 1 - t * t; c.translate(f.x, f.y - 40 * t); c.rotate(f.spin * t);
                 drawThing(c, f.s, 0, 0, now); c.restore();
             }
+            // 跑走的鼴鼠：從洞裡鑽出來、往旁邊跑出畫面
+            for (let i = runners.length - 1; i >= 0; i--) {
+                const r = runners[i], t = (now - r.born) / 900;
+                if (t > 1) { runners.splice(i, 1); continue; }
+                const hop = Math.abs(Math.sin(t * 18)) * 4, x = r.x + r.dir * 190 * t * t, y = r.y - Math.min(1, t * 6) * 10 - hop;
+                c.save(); c.translate(x, y); c.scale(r.dir, 1);
+                c.fillStyle = '#6d5f57'; c.beginPath(); c.ellipse(0, 0, 15, 10, 0, 0, TAU); c.fill();
+                c.beginPath(); c.ellipse(11, -2, 7, 6, 0, 0, TAU); c.fill();
+                c.fillStyle = '#e9a3a8'; c.beginPath(); c.arc(18, -2, 2.6, 0, TAU); c.fill();
+                c.fillStyle = '#222'; c.beginPath(); c.arc(13, -5, 1.3, 0, TAU); c.fill();
+                c.fillStyle = '#e9a3a8'; [-8, 6].forEach(fx => { c.beginPath(); c.ellipse(fx + Math.sin(t * 40 + fx) * 2, 9, 3, 2, 0, 0, TAU); c.fill(); });
+                c.restore();
+            }
             for (let i = floats.length - 1; i >= 0; i--) {
                 const f = floats[i], t = (now - f.born) / f.life;
                 if (t > 1) { floats.splice(i, 1); continue; }
@@ -549,7 +565,12 @@
             if (Math.ceil(ROUND - elapsed) <= 5 && Math.ceil(ROUND - elapsed) !== G.lastTick) { G.lastTick = Math.ceil(ROUND - elapsed); sfx.tick(); }
             // 長回來
             for (let k = G.regrow.length - 1; k >= 0; k--) {
-                if (now >= G.regrow[k].at) { const i = G.regrow[k].i; G.plots[i] = spawn(i, now); G.regrow.splice(k, 1); if (G.plots[i].kind === 'giant') { sfx.giant(); floatText(PLOTS[i].x + 50, PLOTS[i].y + 10, '長出巨型蘿蔔了', K.shu, true, 1600); renderActions(); } }
+                if (now >= G.regrow[k].at) {
+                    const i = G.regrow[k].i; G.plots[i] = spawn(i, now); G.regrow.splice(k, 1); G.spawned++;
+                    if (G.plots[i].kind === 'giant') { sfx.giant(); floatText(PLOTS[i].x + 50, PLOTS[i].y + 10, '長出巨型蘿蔔了', K.shu, true, 1600); renderActions(); }
+                    // 別的格子長出來了：待夠久的鼴鼠跑走
+                    G.plots.forEach((m, j) => { if (j !== i && m && m.kind === 'mole' && m.state === 'ground' && G.spawned >= m.leaveAt) moleLeaves(j, now); });
+                }
             }
             if (!grab) return;
             const s = G.plots[grab.i];
@@ -611,13 +632,24 @@
             emptyPlot(i, now, s.kind === 'giant' ? 1400 : 900);
         }
 
+        // 鼴鼠自己跑走：沒被拔就算放過牠，結算多一筆
+        function moleLeaves(i, now) {
+            const p = PLOTS[i], cx = p.x + p.w / 2, gy = groundY(p);
+            G.tally.moleFree++; G.earn.moleFree += MOLE_FREE; G.money += MOLE_FREE;
+            sfx.mole();
+            floatText(cx, gy - 34, `鼴鼠跑走了 +${Wallet.fmt(MOLE_FREE)}`, '#4f7a35', false, 1300);
+            runners.push({ x: cx, y: gy - 6, born: now, dir: cx < W / 2 ? -1 : 1, seed: G.plots[i].seed });
+            for (let k = 0; k < 8; k++) dirt.push({ x: cx + rand(-12, 12), y: gy, vx: rand(-1, 1), born: now });
+            emptyPlot(i, now);
+        }
+
         function snap(i, now) {
             const s = G.plots[i], p = PLOTS[i], cx = p.x + p.w / 2, gy = groundY(p);
             let price = 0;
             if (s.kind === 'carrot') { price = Math.round(SIZES[s.size].price * 0.4); G.tally.snapped++; }
             else if (s.kind === 'sweet') { price = 20; G.tally.snapped++; }
             else if (s.kind === 'ticket') { price = 0; floatText(cx, gy - 50, '刮刮樂撕破了', '#8e8070'); }
-            else if (s.kind === 'mole') { price = 0; floatText(cx, gy - 50, '鼴鼠跑掉了', '#8e8070'); }
+            else if (s.kind === 'mole') { price = 0; floatText(cx, gy - 50, '鼴鼠被嚇跑了', '#8e8070'); }
             G.money += price; G.earn.snapped += price;
             sfx.snap();
             floatText(cx, gy - 34, price ? `斷了 +${Wallet.fmt(price)}` : '斷了', K.shu);
@@ -759,6 +791,7 @@
                 ['地瓜', t.sweet, '條', e.sweet, `每條 ${Wallet.fmt(OTHERS.sweet.price)}`],
                 ['伊藤埋的刮刮樂', t.ticket, '張', e.ticket, `每張 ${Wallet.fmt(OTHERS.ticket.price)}`],
                 ['鼴鼠', t.mole, '隻', e.mole, `每隻扣 ${Wallet.fmt(-OTHERS.mole.price)}`],
+                ['放過鼴鼠', t.moleFree, '隻', e.moleFree, `讓牠自己跑走，每隻 +${Wallet.fmt(MOLE_FREE)}`],
             ].filter(r => r[1]);
             const money = v => (v < 0 ? '−' : v > 0 ? '+' : '') + Wallet.fmt(Math.abs(v));
             $('harvest').innerHTML = rows.length ? rows.map(([k, v, u, m, how]) => `<li><span>${k} <span class="text-wabi-dark">${each(v, u)}</span><span class="block text-[10px] text-stone-400">${how}</span></span><span class="${m < 0 ? 'text-wabi-shu' : 'text-wabi-dark'} self-center">${money(m)}</span></li>`).join('')
@@ -838,12 +871,12 @@
         function recordRound(pay, grade) {
             const st = loadStats(), t = G.tally;
             st.rounds++; st.paid += pay; st.best = Math.max(st.best, pay);
-            st.carrots += t[1] + t[2] + t[3]; st.giants += t.giant; st.snapped += t.snapped; st.moles += t.mole; st.tickets += t.ticket; st.hearts += t.heart;
+            st.carrots += t[1] + t[2] + t[3]; st.giants += t.giant; st.snapped += t.snapped; st.moles += t.mole; st.moleFree = (st.moleFree || 0) + t.moleFree; st.tickets += t.ticket; st.hearts += t.heart;
             st.recent.unshift({
                 at: new Date().toISOString(), ms: Math.round(performance.now() - G.started),
                 total: pay, sales: G.pay.sales, bonus: G.pay.bonus, grade: grade.mark,
                 small: t[1], mid: t[2], big: t[3], giant: t.giant, heart: t.heart, snapped: t.snapped, bent: t.bent,
-                sweet: t.sweet, ticket: t.ticket, mole: t.mole, wiggles: G.wiggles, helpers: G.helpersUsed,
+                sweet: t.sweet, ticket: t.ticket, mole: t.mole, mole_free: t.moleFree, wiggles: G.wiggles, helpers: G.helpersUsed,
                 login: !!(window.Line && Line.loggedIn),
             });
             st.recent = st.recent.slice(0, 50);
