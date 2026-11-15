@@ -137,7 +137,7 @@
         <section class="mt-10 px-1">
             <h2 class="text-sm tracking-[0.3em] text-wabi-dark">怎麼蹭</h2>
             <ol class="mt-3 list-decimal pl-5 space-y-1.5 text-xs font-sans tracking-wide text-stone-500 leading-relaxed">
-                <li><b class="font-normal text-wabi-dark">按住</b>畫面或下面的按鈕，就是偷連 28 樓的 Wi-Fi：劇順順播，每秒省 $10 流量費。第一下按住開始計時，六十秒。</li>
+                <li><b class="font-normal text-wabi-dark">按住</b>畫面或下面的按鈕，就是偷連 28 樓的 Wi-Fi：劇順順播，每秒省 $25 流量費。第一下按住開始計時，六十秒。</li>
                 <li><b class="font-normal text-wabi-dark">連著不放越久，網速越快</b>：一秒半之後開始加速，最快 ×2.5，劇追得快、也多省錢。一放開就從頭算。</li>
                 <li><b class="font-normal text-wabi-dark">放開</b>就切回自己的 4G：安全，但劇一直轉圈圈，也不省錢。</li>
                 <li>茱莉鴨背對你在顧湯。她會停下來說「嗯？」，然後<b class="font-normal text-wabi-shu">轉頭查你的手機</b>。她轉過來的時候你還連著 28 樓，就是被抓到。</li>
@@ -180,7 +180,7 @@
         const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
 
         // ===== 1. 規則 =====
-        const RATE = 10;          // 連著 28 樓，每秒省的流量費
+        const RATE = 25;          // 連著 28 樓，每秒省的流量費
         const EP_SEC = 9;         // 連著 28 樓幾秒追完一集
         const EP_PAY = 80;        // 追完一集
         const FINE = 200;         // 被抓一次賠 28 樓
@@ -199,10 +199,10 @@
         const CAUGHT = ['你手機為什麼有五格？', '28 樓的密碼你哪來的？', '我家網路不夠你用嗎。', '樓上說他網路很慢。',
             '這個月 28 樓的網路費你出。', '你在看哪一集。', '再一次就停你網。', '……（把湯攪得很用力）'];
         const GRADES = [
-            { min: 1200, mark: '隱', line: '蹭網界的忍者，28 樓完全沒發現。' },
-            { min: 900, mark: '穩', line: '劇追了好幾集，湯也快好了。' },
-            { min: 600, mark: '可', line: '看了幾集，還行。' },
-            { min: 300, mark: '險', line: '茱莉鴨已經在懷疑你了。' },
+            { min: 2000, mark: '隱', line: '蹭網界的忍者，28 樓完全沒發現。' },
+            { min: 1500, mark: '穩', line: '劇追了好幾集，湯也快好了。' },
+            { min: 1000, mark: '可', line: '看了幾集，還行。' },
+            { min: 500, mark: '險', line: '茱莉鴨已經在懷疑你了。' },
             { min: -1e9, mark: '抓', line: '下次乖乖用 4G。' },
         ];
         const BEST_KEY = 'dongbuli-cengwang-best', STATS_KEY = 'dongbuli-cengwang-stats';
@@ -814,7 +814,7 @@
         function gradeOf(pay) { return GRADES.find(g => pay >= g.min); }
         let sheetFile = null;
         function bill() {
-            // 照 0.1 秒算（跟畫面上跳的錢一樣）：23.4 秒 × $10 = $234
+            // 照 0.1 秒算（跟畫面上跳的錢一樣）：23.4 秒 × $25 = $585
             const tenths = Math.floor(G.wifiMs / 100), secs = tenths / 10;
             G.earn.wifi = Math.round(tenths * RATE / 10);
             const btenths = Math.floor(G.boostMs / 100), bsecs = btenths / 10;   // 加速多下載的量，換算成秒
