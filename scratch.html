@@ -1374,7 +1374,11 @@
         // 挖完（挖到炸彈、收手、金子全挖完）：把剩下的都翻開給你看
         function endReveal() {
             actions([]);
+            const t = S.current;
             foils.filter(f => !f.optional).forEach(f => f.revealAll(45));
+            // 保險：翻完了卻沒結算（iPhone 的 IG 內建瀏覽器遇過：金子挖了、格子翻開了，下面卻沒有兌獎也沒有回彩券行），自己結算
+            setTimeout(() => { if (S.current === t && !t.redeemed) settle(); }, 45 * 16 + 1500);
+            setTimeout(() => { if (S.current === t && !t.redeemed) finishTicket(t); }, 45 * 16 + 4000);
         }
 
         Object.assign(GAMES, {
@@ -2332,29 +2336,50 @@
         }
 
         // 全部刮開了：一格一格亮起中獎的格子，再出現兌獎
+        let settling = null;  // 這一頁正在結算哪一張（不存檔：重新整理就重來）
+        const finished = new WeakSet();  // 這一頁已經出過結果的票
         function settle() {
             const t = S.current;
-            if (!t || t.settled) return;
+            if (!t) return;
+            if (t.redeemed) { showOutcome(t); afterRedeem(); return; }  // 已經兌過了，只是畫面被重畫蓋掉：把結果和按鈕補回來
+            if (settling === t) { if (finished.has(t)) finishTicket(t); return; }  // 結算完了畫面才被重畫：把兌獎鈕補回來
+            settling = t;
             t.settled = true;
             const g = GAMES[t.type], host = $('ticketHost');
             t.total = g.score(t);
             save();
             const wins = [...host.querySelectorAll('[data-win]')];
             wins.forEach((el, i) => setTimeout(() => { el.classList.add('is-win'); sfx.ding(i % 6); }, 250 + i * 160));
-            setTimeout(() => {
-                if (t.total > 0) {
-                    const note = [t.blessed ? '神明加持' : '', caiBonus(t) ? `財神加碼 ${fmt(caiBonus(t))}` : '', g.winNote ? g.winNote(t) : ''].filter(Boolean).join('・');
-                    $('playHint').innerHTML = `${note ? `<span class="win-note">${note}</span>` : ''}<span class="block text-xs font-black text-wabi-dark tracking-widest">中獎</span><span class="result-amt money block">${fmt(t.total)}</span><span class="block font-serif text-xs text-stone-500 mt-1">${capital(t.total)}</span>`;
-                    sfx.win();
-                    if (g.manual) { redeem(); afterRedeem(); }  // 自己按收手的，直接兌
-                    else actions([{ label: `兌獎 ${fmt(t.total)}`, cls: 'is-gold', onClick: () => { redeem(); afterRedeem(); } }]);
-                } else {
-                    $('playHint').innerHTML = `<span class="block text-lg font-black text-stone-400 tracking-widest">沒中</span><span class="block text-xs text-stone-500 mt-1">${g.loseLine ? g.loseLine(t) : pick(['差一點。', '下一張一定中。（沒有保證）', '槓龜。', '銀漆屑掃一掃。', '老闆說：再一張就中了。'])}</span>`;
-                    sfx.lose();
-                    redeem(true);
-                    afterRedeem();
-                }
-            }, 400 + wins.length * 160);
+            setTimeout(() => finishTicket(t), 400 + wins.length * 160);
+        }
+
+        // 結算的最後一步：寫結果、出按鈕（挖金礦、沒中的直接兌）。重複叫不會重複給錢
+        function finishTicket(t) {
+            if (S.current !== t) return;
+            const g = GAMES[t.type], again = finished.has(t);
+            finished.add(t);
+            if (!t.settled) { t.settled = true; t.total = g.score(t); save(); }
+            if (t.redeemed) { showOutcome(t); afterRedeem(); return; }
+            showOutcome(t);
+            if (t.total > 0) {
+                if (!again) sfx.win();
+                if (g.manual) { redeem(); afterRedeem(); }  // 自己按收手的，直接兌
+                else actions([{ label: `兌獎 ${fmt(t.total)}`, cls: 'is-gold', onClick: () => { redeem(); afterRedeem(); } }]);
+            } else {
+                if (!again) sfx.lose();
+                redeem(true);
+                afterRedeem();
+            }
+        }
+
+        function showOutcome(t) {
+            const g = GAMES[t.type];
+            if (t.total > 0) {
+                const note = [t.blessed ? '神明加持' : '', caiBonus(t) ? `財神加碼 ${fmt(caiBonus(t))}` : '', g.winNote ? g.winNote(t) : ''].filter(Boolean).join('・');
+                $('playHint').innerHTML = `${note ? `<span class="win-note">${note}</span>` : ''}<span class="block text-xs font-black text-wabi-dark tracking-widest">中獎</span><span class="result-amt money block">${fmt(t.total)}</span><span class="block font-serif text-xs text-stone-500 mt-1">${capital(t.total)}</span>`;
+            } else {
+                $('playHint').innerHTML = `<span class="block text-lg font-black text-stone-400 tracking-widest">沒中</span><span class="block text-xs text-stone-500 mt-1">${t.loseText || (t.loseText = g.loseLine ? g.loseLine(t) : pick(['差一點。', '下一張一定中。（沒有保證）', '槓龜。', '銀漆屑掃一掃。', '老闆說：再一張就中了。']))}</span>`;
+            }
         }
 
         // 兌獎：錢進錢包（silent：換張或回架上時自動兌，不演）
@@ -2389,6 +2414,9 @@
         }
 
         function backToShelf() {
+            const t = S.current;
+            // 挖金礦已經收手或炸掉、還沒結算就離開：照挖到的算，不會讓錢不見
+            if (t && !t.settled && GAMES[t.type].manual && (t.dead || t.cashed)) { t.settled = true; t.total = GAMES[t.type].score(t); }
             redeem(true);
             S.current = null;
             save();
