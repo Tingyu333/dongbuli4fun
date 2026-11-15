@@ -474,8 +474,8 @@
             if (view === 'back') {
                 legs();
                 torso();
-                limb(-26, shY + 6, -35, shY + 34, -32, 8);
                 const arms = pose.arms;
+                if (arms !== 'up') limb(-26, shY + 6, -35, shY + 34, -32, 8);   // 左手垂著（伸懶腰時兩手都舉起來，不能再畫一隻）
                 if (arms === 'stir') {
                     // 右手往前伸到爐台上的鍋子攪（鍋子在她前面、比她遠）
                     const ax = 60 + Math.cos(t2) * 6, ay = -78 + Math.sin(t2) * 2.5;
