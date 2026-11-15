@@ -2255,7 +2255,20 @@
             }
         });
         renderAcct();
-        document.addEventListener('visibilitychange', () => { if (!document.hidden) syncMoney(); });
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) { syncMoney(); rescueTicket(); } });
+        window.addEventListener('pageshow', () => rescueTicket());
+
+        // 手機放著不管（鎖螢幕、切去別的 App、IG／LINE 內建瀏覽器被收到背景）回來時：
+        // 結算到一半的計時器可能被系統停掉，票已經刮完／收手了就再結算一次（不會重複給錢）
+        function rescueTicket() {
+            const t = S.current;
+            if (!t || t.redeemed || $('play').classList.contains('hidden')) return;
+            const g = GAMES[t.type];
+            const over = g.manual ? (t.dead || t.cashed) : foils.length && foils.filter(f => !f.optional).every(f => f.done);
+            if (!over) return;
+            settle();
+            setTimeout(() => { if (S.current === t && !t.redeemed && !finished.has(t)) finishTicket(t); }, 1500);
+        }
 
         // ===== 6. 買、刮、對獎、兌獎 =====
         let foils = [];
