@@ -245,7 +245,7 @@
                 <li>心形的蘿蔔多賣 $80。土裡偶爾有地瓜、伊藤埋的刮刮樂；也有鼴鼠，拔到扣 $50。別理牠，等旁邊再長出兩根，牠會自己跑走，放過牠 +$50。</li>
                 <li>運氣好會長出<b class="font-normal text-wabi-shu">巨型蘿蔔</b>，一個人拔不動，要叫二十七樓的人來幫忙，一人收 $50 幫手費。</li>
                 <li>一根都沒斷、又拔了十根以上，農會再表揚 $200。</li>
-                <li>賺來的錢可以按右上的<b class="font-normal text-wabi-dark">農具</b>升級：鋤頭、手套、堆肥、灑水、菜攤、稻草人、收音機。買了會擺在頂樓，登入 LINE 換手機也在。</li>
+                <li>賺來的錢可以按右上的<b class="font-normal text-wabi-dark">農具</b>升級：鋤頭、手套、鏟子、堆肥、灑水、菜攤、稻草人、收音機。買了會擺在頂樓，登入 LINE 換手機也在。</li>
             </ol>
         </section>
     </main>
@@ -362,6 +362,8 @@
               tiers: ['', '竹柄鋤頭', '鐵鋤頭', '金鋤頭'], fx: v => `搖一下鬆的土 ×${v}` },
             { key: 'mitt', name: '工作手套', sub: '力道', prices: [4000, 12000, 35000], vals: [0.06, 0.12, 0.18],
               tiers: ['', '棉紗手套', '防滑手套', '皮手套'], fx: v => `綠色區寬 ${Math.round(v / 0.24 * 100)}%，比較不會歪、不會斷` },
+            { key: 'trowel', name: '鏟子', sub: '拔得快', prices: [5000, 15000, 45000], vals: [1.25, 1.5, 1.8],
+              tiers: ['', '塑膠鏟', '鐵鏟', '金鏟'], fx: v => `蘿蔔被拉出土的速度 ×${v}（巨型蘿蔔不算）` },
             { key: 'compost', name: '堆肥', sub: '大蘿蔔', prices: [6000, 18000, 50000],
               vals: [{ small: 0.37, mid: 0.75, heart: 0.08 }, { small: 0.3, mid: 0.7, heart: 0.1 }, { small: 0.22, mid: 0.62, heart: 0.12 }],
               tiers: ['', '廚餘堆肥', '有機肥', '黑金肥'], fx: v => `大蘿蔔 ${Math.round((1 - v.mid) * 100)}%（原本 20%），心形 ${Math.round(v.heart * 100)}%（原本 6%）` },
@@ -510,6 +512,15 @@
             if (L === 1) { c.fillStyle = '#c0392b'; c.fillRect(-9, 1, 18, 2); }
             if (L === 3) { c.strokeStyle = '#e8c252'; c.lineWidth = 1; c.beginPath(); c.moveTo(-8, 0); c.lineTo(8, 0); c.stroke(); }
         }
+        function drawTrowel(c, L) {
+            const blade = L === 1 ? '#5e9a5a' : L === 2 ? '#aab1b7' : '#e2b94a';
+            c.fillStyle = L === 1 ? '#3f6f3c' : L === 2 ? '#7a4a2a' : '#5e3a22';
+            roundRect(c, -2.5, -34, 5, 14, 2.5); c.fill();
+            c.fillStyle = '#6d7377'; c.fillRect(-1, -21, 2, 5);
+            c.fillStyle = blade; c.beginPath(); c.moveTo(-6, -16); c.quadraticCurveTo(-7, -4, 0, 2); c.quadraticCurveTo(7, -4, 6, -16); c.closePath(); c.fill();
+            c.strokeStyle = 'rgba(0,0,0,.18)'; c.lineWidth = 1; c.beginPath(); c.moveTo(0, -15); c.lineTo(0, -1); c.stroke();
+            if (L === 3) { c.fillStyle = 'rgba(255,255,255,.65)'; c.fillRect(-4, -13, 1.6, 8); }
+        }
         function drawCompost(c, L) {
             const bag = L === 1 ? '#c9b58f' : L === 2 ? '#6f8a4a' : '#2a2522';
             c.fillStyle = bag; c.beginPath(); c.moveTo(-12, 0); c.lineTo(-10, -26); c.lineTo(10, -26); c.lineTo(12, 0); c.closePath(); c.fill();
@@ -594,6 +605,7 @@
             if (lv('scarecrow')) at(26, 120, 0, () => drawScarecrow(c, lv('scarecrow'), now));
             if (lv('hoe')) at(60, 120, 0.22, () => drawHoe(c, lv('hoe')));
             if (lv('compost')) at(96, 121, 0, () => drawCompost(c, lv('compost')));
+            if (lv('trowel')) at(128, 122, -0.25, () => drawTrowel(c, lv('trowel')));
             if (lv('stall')) at(180, 111, 0, () => drawStallSign(c, lv('stall')));
             if (lv('mitt')) at(236, 112, 0.15, () => drawMitt(c, lv('mitt')));
             if (lv('sprinkler')) at(272, 121, 0, () => drawWater(c, lv('sprinkler'), now));
@@ -850,7 +862,7 @@
                 if (s.strain > 0.42) { snap(grab.i, now); return; }
             } else {
                 s.strain = Math.max(0, s.strain - dt * 0.6);
-                if (f >= lo) s.progress += dt * rule.speed * (0.35 + 0.65 * s.loosen);
+                if (f >= lo) s.progress += dt * rule.speed * (0.35 + 0.65 * s.loosen) * (val('trowel') || 1);
             }
             if (s.progress >= 1) harvest(grab.i, now);
         }
@@ -1212,6 +1224,7 @@
             c.save();
             if (u.key === 'hoe') { c.translate(22, 52); c.rotate(0.3); c.scale(0.78, 0.78); drawHoe(c, L); }
             else if (u.key === 'mitt') { c.translate(29, 42); c.scale(1.45, 1.45); drawMitt(c, L); }
+            else if (u.key === 'trowel') { c.translate(28, 46); c.scale(1.2, 1.2); drawTrowel(c, L); }
             else if (u.key === 'compost') { c.translate(28, 48); c.scale(1.4, 1.4); drawCompost(c, L); }
             else if (u.key === 'sprinkler') { c.translate(26, 46); c.scale(1.5, 1.5); drawWater(c, L, now); }
             else if (u.key === 'stall') { c.translate(28, 28); c.scale(0.78, 0.78); drawStallSign(c, L); }
