@@ -1448,7 +1448,7 @@ function farmLog(input) {
 // --- 蹭・網（cengwang.html）：每一輪的紀錄 ---
 // 跟菜園紀錄一樣：公開、appendRow 不排隊、不寄信不回資料；session 對就記 line_id。
 var WIFI_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'total', 'sales', 'wifi_ms', 'episodes', 'drama', 'strikes',
-  'looks', 'dodged', 'fakes', 'connects', 'perfect', 'grade', 'ms', 'login'];
+  'looks', 'dodged', 'fakes', 'connects', 'perfect', 'grade', 'ms', 'login', 'boost_ms', 'max_mult'];
 
 function wifisSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -1469,7 +1469,8 @@ function wifiRow(r, now, lineId, device) {
   return [
     now, at, lineId || '', device,
     washNum(r.total, 0, 100000), washNum(r.sales, -10000, 100000), washNum(r.wifi_ms, 0, 3600000), n(r.episodes), washText(r.drama, 20),
-    n(r.strikes), n(r.looks), n(r.dodged), n(r.fakes), n(r.connects), !!r.perfect, washText(r.grade, 2), washNum(r.ms, 0, 3600000), !!r.login
+    n(r.strikes), n(r.looks), n(r.dodged), n(r.fakes), n(r.connects), !!r.perfect, washText(r.grade, 2), washNum(r.ms, 0, 3600000), !!r.login,
+    washNum(r.boost_ms, 0, 3600000), Math.round(washNum((r.max_mult || 1) * 10, 10, 50)) / 10
   ];
 }
 
