@@ -24,6 +24,7 @@
 
     <link rel="stylesheet" href="assets/theme.css?v=20261115c">
     <script src="assets/theme.js?v=20261115c"></script>
+    <script src="assets/saveimg.js?v=20261115c"></script>
     <script src="assets/line.js?v=20261115c"></script>
     <script src="assets/wallet.js?v=20261115c"></script>
     <style>
@@ -2646,7 +2647,7 @@
             certFile = new File([blob], 'dongbuli-shampoo.png', { type: 'image/png' });
             $('certImg').src = URL.createObjectURL(blob);
             const canShare = navigator.canShare && navigator.canShare({ files: [certFile] });
-            $('shareBtn').textContent = canShare ? '分享洗頭證明' : '下載洗頭證明';
+            $('shareBtn').textContent = canShare ? '分享洗頭證明' : SaveImg.inApp ? '存洗頭證明圖片' : '下載洗頭證明';
             $('result').classList.remove('hidden');
             $('result').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
         }
@@ -2731,17 +2732,7 @@
         }
 
         async function shareCert() {
-            if (!certFile) return;
-            if (navigator.canShare && navigator.canShare({ files: [certFile] })) {
-                try {
-                    await navigator.share({ files: [certFile], title: '丼步喱・絆 洗頭證明', text: `我在二十七樓洗了一顆頭，爽度 ${$('score').textContent}` });
-                } catch (e) { } // 使用者取消分享
-                return;
-            }
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(certFile);
-            link.download = certFile.name;
-            link.click();
+            await SaveImg.save(certFile, { title: '丼步喱・絆 洗頭證明', text: `我在二十七樓洗了一顆頭，爽度 ${$('score').textContent}` });
         }
 
         // LINE 登入：工資存進帳號，換手機也在

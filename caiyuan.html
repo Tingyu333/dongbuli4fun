@@ -22,6 +22,7 @@
 
     <link rel="stylesheet" href="assets/theme.css?v=20261115c">
     <script src="assets/theme.js?v=20261115c"></script>
+    <script src="assets/saveimg.js?v=20261115c"></script>
     <script src="assets/line.js?v=20261115c"></script>
     <script src="assets/wallet.js?v=20261115c"></script>
     <style>
@@ -1092,7 +1093,7 @@
                 $('sheetImg').src = URL.createObjectURL(blob);
             } catch (e) { }
             const canShare = !!(sheetFile && navigator.canShare && navigator.canShare({ files: [sheetFile] }));
-            $('shareBtn').textContent = canShare ? '分享收成單' : '下載收成單';
+            $('shareBtn').textContent = canShare ? '分享收成單' : SaveImg.inApp ? '存收成單圖片' : '下載收成單';
             setTimeout(() => {
                 $('result').classList.remove('hidden');
                 $('result').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
@@ -1136,12 +1137,7 @@
             return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(), 'image/png'));
         }
         async function shareSheet() {
-            if (!sheetFile) return;
-            if (navigator.canShare && navigator.canShare({ files: [sheetFile] })) {
-                try { await navigator.share({ files: [sheetFile], title: '丼步喱・絆 菜園收成單', text: `我在二十七樓頂樓拔了一輪蘿蔔，賺 ${$('score').textContent}` }); } catch (e) { }
-                return;
-            }
-            const a = document.createElement('a'); a.href = URL.createObjectURL(sheetFile); a.download = sheetFile.name; a.click();
+            await SaveImg.save(sheetFile, { title: '丼步喱・絆 菜園收成單', text: `我在二十七樓頂樓拔了一輪蘿蔔，賺 ${$('score').textContent}` });
         }
 
         // ===== 9. 紀錄：這支手機的統計，也送到後端（Farms 分頁） =====

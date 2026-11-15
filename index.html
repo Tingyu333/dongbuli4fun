@@ -27,6 +27,7 @@
 
     <link rel="stylesheet" href="assets/theme.css?v=20261115c">
     <script src="assets/theme.js?v=20261115c"></script>
+    <script src="assets/saveimg.js?v=20261115c"></script>
     <!-- LINE 登入：從 LIFF 連結（liff.line.me/…/某頁）進來時，LINE 會先開首頁，要在這裡 init 才會轉到那一頁 -->
     <script src="assets/line.js?v=20261115c"></script>
     <style>
@@ -1239,23 +1240,13 @@
             document.getElementById('bookingTitle').innerText = '入住通知書';
             const canShare = navigator.canShare && navigator.canShare({ files: [ticketFile] });
             const multi = bookedTicket && bookedTicket.guests > 1;
-            document.getElementById('shareTicketBtn').innerText = canShare ? (multi ? '分享通知書圖片' : '分享給朋友') : '下載入住券';
+            document.getElementById('shareTicketBtn').innerText = canShare ? (multi ? '分享通知書圖片' : '分享給朋友') : SaveImg.inApp ? '存入住券圖片' : '下載入住券';
             document.getElementById('ticketPanel').classList.remove('hidden');
         }
 
         async function shareTicket() {
-            if (!ticketFile) return;
-            if (navigator.canShare && navigator.canShare({ files: [ticketFile] })) {
-                try {
-                    await navigator.share({ files: [ticketFile], title: '丼步喱・絆 入住通知書', text: '我訂好 27 樓了，誰要來？' });
-                } catch (e) { } // 使用者取消分享
-                return;
-            }
-            // 不支援分享檔案的瀏覽器（多半是電腦）就直接下載
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(ticketFile);
-            link.download = ticketFile.name;
-            link.click();
+            // 能分享就分享；LINE 這種 App 裡的瀏覽器下載沒反應，改成放大圖片讓人長按存（assets/saveimg.js）
+            await SaveImg.save(ticketFile, { title: '丼步喱・絆 入住通知書', text: '我訂好 27 樓了，誰要來？' });
         }
 
         // 4c. 發票：把票夾連結丟到群組，朋友點進去輸入名字領一張（ticket.html）
