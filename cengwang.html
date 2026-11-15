@@ -115,7 +115,7 @@
             <ul id="bill" class="bill mt-5 mx-auto max-w-[17rem] text-left font-sans text-xs tracking-widest text-stone-500"></ul>
             <div class="mt-3 mx-auto max-w-[17rem] border-y border-stone-100 py-3 font-sans text-xs tracking-widest text-stone-500">
                 <p class="flex justify-between"><span>合計</span><span id="paySales" class="text-wabi-dark"></span></p>
-                <p id="payMinRow" class="hidden flex justify-between mt-1"><span>出勤費補到</span><span id="payMin" class="text-wabi-dark"></span></p>
+                <p id="payMinRow" class="hidden flex justify-between mt-1"><span>保底出勤費<span class="block text-[10px] text-stone-400">合計不到 $100，照樣給 $100</span></span><span id="payMin" class="text-wabi-dark self-center"></span></p>
                 <p class="flex justify-between mt-2 pt-2 border-t border-stone-100"><span>錢包</span><span id="payWallet" class="text-wabi-shu text-sm"></span></p>
                 <p id="payAcct" class="mt-2 text-[10px] leading-relaxed text-stone-400"></p>
                 <p id="syncNote" class="mt-1 text-[10px] leading-relaxed text-stone-400"></p>
@@ -143,7 +143,7 @@
                 <li>茱莉鴨背對你在顧湯。她會停下來說「嗯？」，然後<b class="font-normal text-wabi-shu">轉頭查你的手機</b>。她轉過來的時候你還連著 28 樓，就是被抓到。</li>
                 <li>她也會伸懶腰、抓頭、試湯、轉到一半又轉回去。太早放開沒事，只是少賺。越後面轉得越快。</li>
                 <li>每追完一集 +$80。被抓一次賠 28 樓 $200 網路使用費，下載到一半的那集也會斷掉。<b class="font-normal text-wabi-shu">被抓三次就收工</b>。</li>
-                <li>一次都沒被抓，另外 +$200「完美蹭網」。</li>
+                <li>一次都沒被抓，另外 +$200「完美蹭網」。被抓到合計變負的，還是有 $100 保底出勤費。</li>
             </ol>
         </section>
     </main>
@@ -340,7 +340,7 @@
         // 房間：天花板（上面就是 28 樓）、牆、窗、流理台
         function drawRoom(c, now) {
             c.fillStyle = K.wall; c.fillRect(0, 0, W, 330);
-            c.fillStyle = K.wallD; for (let x = 0; x < W; x += 24) c.fillRect(x, 26, 1, 220);
+            c.fillStyle = K.wallD; for (let x = 0; x < W; x += 24) c.fillRect(x, 26, 1, 236);
             // 天花板
             c.fillStyle = K.ceil; c.fillRect(0, 0, W, 26);
             c.fillStyle = K.ceilD; c.fillRect(0, 24, W, 3);
@@ -370,7 +370,9 @@
             c.lineWidth = 1.5; c.beginPath(); c.moveTo(ckx, cky); c.lineTo(ckx + Math.sin(sec / 60 * TAU) * 10, cky - Math.cos(sec / 60 * TAU) * 10); c.stroke();
             c.lineWidth = 2; c.beginPath(); c.moveTo(ckx, cky); c.lineTo(ckx + 5, cky - 3); c.stroke();
             // 地板
-            c.fillStyle = '#c7ad8a'; c.fillRect(0, 300, W, 30);
+            c.fillStyle = '#c7ad8a'; c.fillRect(0, 262, W, 68);
+            c.fillStyle = '#b89c78'; c.fillRect(0, 262, W, 2);
+            c.fillStyle = 'rgba(0,0,0,.05)'; for (let x = -40; x < W; x += 46) { c.beginPath(); c.moveTo(x + 20, 262); c.lineTo(x - 30, 330); c.lineTo(x - 28, 330); c.lineTo(x + 22, 262); c.fill(); }
             // 你坐的沙發（前景）
             c.fillStyle = '#b9a58a'; c.fillRect(0, 330, W, H - 330);
             c.fillStyle = '#a8937a'; c.fillRect(0, 330, W, 4);
@@ -378,37 +380,38 @@
         }
 
         function drawCounter(c, now) {
-            // 流理台：茱莉鴨站在後面，只看得到腰以上
-            c.fillStyle = K.woodL; c.fillRect(140, 244, W - 140, 8);
-            c.fillStyle = K.wood; c.fillRect(146, 252, W - 146, 50);
-            c.fillStyle = K.woodD; c.fillRect(146, 252, W - 146, 3);
-            for (let x = 186; x < W; x += 60) c.fillRect(x, 258, 1.5, 40);
+            // 爐台靠著後面的牆：茱莉鴨背對你、面對爐台顧湯；她轉過來的時候爐台和湯在她背後
+            const top = 204;
+            c.fillStyle = K.woodL; c.fillRect(150, top, W - 150, 7);
+            c.fillStyle = K.wood; c.fillRect(156, top + 7, W - 156, 262 - top - 7);
+            c.fillStyle = K.woodD; c.fillRect(156, top + 7, W - 156, 3);
+            for (let x = 196; x < W; x += 56) c.fillRect(x, top + 14, 1.5, 262 - top - 18);
             // 黑鍋和熱氣
-            const px = 300, py = 244;
-            c.fillStyle = K.pot; roundRect(c, px - 30, py - 30, 60, 30, 8); c.fill();
-            c.fillStyle = K.potL; c.fillRect(px - 34, py - 30, 68, 5);
-            c.fillStyle = K.pot; roundRect(c, px - 44, py - 24, 12, 6, 3); c.fill(); roundRect(c, px + 32, py - 24, 12, 6, 3); c.fill();
+            const px = 276, py = top;
+            c.fillStyle = K.pot; roundRect(c, px - 26, py - 26, 52, 26, 7); c.fill();
+            c.fillStyle = K.potL; c.fillRect(px - 30, py - 26, 60, 4);
+            c.fillStyle = K.pot; roundRect(c, px - 39, py - 21, 11, 5, 2.5); c.fill(); roundRect(c, px + 28, py - 21, 11, 5, 2.5); c.fill();
             for (let i = 0; i < 3; i++) {
                 const t = ((now / 1600) + i / 3) % 1;
                 c.strokeStyle = `rgba(255,255,255,${0.55 * (1 - t)})`; c.lineWidth = 3; c.lineCap = 'round';
                 c.beginPath();
-                const sx = px - 14 + i * 14;
-                c.moveTo(sx, py - 34 - t * 30);
-                c.quadraticCurveTo(sx + 6 * Math.sin(t * 6 + i), py - 44 - t * 30, sx, py - 54 - t * 30);
+                const sx = px - 12 + i * 12;
+                c.moveTo(sx, py - 30 - t * 30);
+                c.quadraticCurveTo(sx + 6 * Math.sin(t * 6 + i), py - 40 - t * 30, sx, py - 50 - t * 30);
                 c.stroke();
             }
             c.lineCap = 'butt';
         }
 
-        // 茱莉鴨：齊肩黑直髮、中分細瀏海、棕色長袖、細項鍊、半睜眼面無表情
-        // 像以前 Flash 小遊戲那樣分格畫：背面、回頭（側臉）、正面三張，turn 0～1 決定用哪一張，
-        // 頭先轉、身體後轉，不做連續變形（連續變形臉會擠成一條，很怪）
+        // 茱莉鴨：齊肩黑直髮、中分細瀏海、棕色長袖、黑長褲、細項鍊、半睜眼面無表情
+        // 像以前 Flash 小遊戲那樣分格畫：背面、轉身（身體和頭一起轉三分之一）、正面三張，turn 0～1 決定用哪一張，
+        // 不做連續變形（連續變形臉會擠成一條）；也不能只轉頭（身體不動只轉頭像貓頭鷹）
+        // 座標：0 是腰，往上是負的，腳踩在 +58
         function drawJulie(c, now, cx, base, turn, pose, scale = 1) {
             const view = turn < 0.3 ? 'back' : turn < 0.72 ? 'side' : 'front';
             const t = now / 1000, lift = pose.lift || 0, nod = pose.nod || 0;
             c.save(); c.translate(cx + (pose.sway || 0), base); c.scale(scale, scale);
             const hx = (pose.headX || 0), hy = -112 - lift + nod;
-            // 一隻手：肩膀 → 手肘 → 手（袖子是衣服色、圓頭），手是一顆膚色
             const limb = (sx, sy, ex, ey, hx2, hy2) => {
                 c.strokeStyle = K.shirt; c.lineWidth = 12; c.lineCap = 'round'; c.lineJoin = 'round';
                 c.beginPath(); c.moveTo(sx, sy); c.lineTo(ex, ey); c.lineTo(hx2, hy2); c.stroke();
@@ -421,143 +424,130 @@
                 c.beginPath(); c.moveTo(x, y); c.lineTo(tx, ty); c.stroke(); c.lineCap = 'butt';
                 c.fillStyle = '#b39e78'; c.beginPath(); c.ellipse(tx, ty, 5, 3.2, 0, 0, TAU); c.fill();
             };
-            const shY = -66 - lift;   // 肩膀高度
-            // 身體：圓肩、窄一點
-            const torso = () => {
-                c.fillStyle = K.shirt;
-                c.beginPath(); c.moveTo(-40, 6); c.lineTo(-39, shY + 18); c.quadraticCurveTo(-37, shY + 1, -20, shY - 2);
-                c.lineTo(20, shY - 2); c.quadraticCurveTo(37, shY + 1, 39, shY + 18); c.lineTo(40, 6); c.closePath(); c.fill();
+            const wisp = (x0, y0, x1, y1, w = 2.2) => {
+                c.fillStyle = K.hair; c.beginPath(); c.moveTo(x0 - w, y0);
+                c.quadraticCurveTo((x0 + x1) / 2 - w * 0.6, (y0 + y1) / 2, x1, y1);
+                c.quadraticCurveTo((x0 + x1) / 2 + w * 0.6, (y0 + y1) / 2, x0 + w, y0); c.closePath(); c.fill();
             };
-            // 後腦勺那片頭髮：圓頂、直直垂到肩膀下面、髮尾有一點不齊
-            const backHair = (w = 1) => {
+            const shY = -66 - lift;
+            // 腿：黑長褲、鞋子；身體轉的時候腳也跟著站歪一點
+            const legs = (q = 0) => {
+                const step = pose.step || 0;
+                c.fillStyle = '#3b3733';
+                c.beginPath(); c.moveTo(-34, 0); c.lineTo(34, 0); c.lineTo(30, 14); c.lineTo(-30, 14); c.closePath(); c.fill();
+                [[-14 - q * 2, -step], [13 + q * 3, step]].forEach(([x, s]) => {
+                    c.fillStyle = '#3b3733'; roundRect(c, x - 9, 6, 18, 48 + s, 6); c.fill();
+                    c.fillStyle = '#26221f'; roundRect(c, x - 10 + q * 3, 51 + s, 21, 8, 4); c.fill();
+                });
+            };
+            // 上身：圓肩；q 是轉了多少（0 正對或背對，1 轉三分之一）
+            const torso = (q = 0) => {
+                const l = -40 + q * 6, r = 40 - q * 2;
+                c.fillStyle = K.shirt;
+                c.beginPath(); c.moveTo(l, 8); c.lineTo(l + 1, shY + 18); c.quadraticCurveTo(l + 3, shY + 1, l + 20, shY - 2);
+                c.lineTo(r - 20, shY - 2); c.quadraticCurveTo(r - 3, shY + 1, r - 1, shY + 18); c.lineTo(r, 8); c.closePath(); c.fill();
+                if (q) { c.fillStyle = 'rgba(0,0,0,.10)'; c.fillRect(l, shY + 4, 14, 72); }   // 轉過去那一側暗一點
+            };
+            const backHair = (w = 1, dx = 0) => {
                 c.fillStyle = K.hair;
                 c.beginPath();
-                c.moveTo(hx - 30 * w, shY + 8);
-                c.lineTo(hx - 29 * w, hy + 2);
-                c.bezierCurveTo(hx - 30 * w, hy - 43, hx + 30 * w, hy - 43, hx + 29 * w, hy + 2);
-                c.lineTo(hx + 30 * w, shY + 8);
+                c.moveTo(hx + dx - 30 * w, shY + 8);
+                c.lineTo(hx + dx - 29 * w, hy + 2);
+                c.bezierCurveTo(hx + dx - 30 * w, hy - 43, hx + dx + 30 * w, hy - 43, hx + dx + 29 * w, hy + 2);
+                c.lineTo(hx + dx + 30 * w, shY + 8);
                 const n = 7;
-                for (let i = 0; i <= n; i++) c.lineTo(hx + 30 * w - i * 60 * w / n, shY + 8 + (i % 2 ? 3.5 : 0));
+                for (let i = 0; i <= n; i++) c.lineTo(hx + dx + 30 * w - i * 60 * w / n, shY + 8 + (i % 2 ? 3.5 : 0));
                 c.closePath(); c.fill();
             };
             const eyes = (pts, angry) => pts.forEach(([x, y, s]) => {
-                // 半睜：上眼皮垂下來蓋住一半眼珠
                 c.fillStyle = '#2a2220'; c.beginPath(); c.ellipse(x, y + 1, 3.2 * s, 2.3, 0, 0, Math.PI); c.fill();
                 c.strokeStyle = '#2a2220'; c.lineWidth = 2; c.lineCap = 'round';
                 c.beginPath(); c.moveTo(x - 5 * s, y + 0.8); c.quadraticCurveTo(x, y - 1.6, x + 5 * s, y + 1.2); c.stroke();
                 c.strokeStyle = 'rgba(42,34,32,.35)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(x - 3.5 * s, y + 4.6); c.quadraticCurveTo(x, y + 5.6, x + 3.5 * s, y + 4.6); c.stroke();
                 c.strokeStyle = '#3a2f2b'; c.lineWidth = 1.3;
-                const inner = x < hx ? 1 : -1;   // 眉頭在靠鼻子那邊
+                const inner = x < hx ? 1 : -1;
                 c.beginPath(); c.moveTo(x - 5 * s, y - 7); c.lineTo(x + 5 * s, y - 7 + (angry ? inner * 2 : 0)); c.stroke();
                 c.lineCap = 'butt';
             });
             const t2 = pose.still ? 0.6 : t * 5;
-            // 一撮細瀏海：上面寬、下面尖的細長葉子形
-            const wisp = (x0, y0, x1, y1, w = 2.2) => {
-                c.fillStyle = K.hair; c.beginPath(); c.moveTo(x0 - w, y0);
-                c.quadraticCurveTo((x0 + x1) / 2 - w * 0.6, (y0 + y1) / 2, x1, y1);
-                c.quadraticCurveTo((x0 + x1) / 2 + w * 0.6, (y0 + y1) / 2, x0 + w, y0); c.closePath(); c.fill();
-            };   // 嗯？的時候攪拌的手停住
 
             if (view === 'back') {
-                // 手在身體後面的部分先畫：左手垂著放在檯面上
+                legs();
                 torso();
-                limb(-33, shY + 6, -44, shY + 34, -40, -6);
+                limb(-33, shY + 6, -44, shY + 34, -40, 8);
                 const arms = pose.arms;
                 if (arms === 'stir') {
-                    // 右手攪鍋子：手肘往外，手在鍋邊畫圈
-                    const ax = 66 + Math.cos(t2) * 6, ay = -48 + Math.sin(t2) * 2.5;
-                    limb(33, shY + 6, 50, shY + 32, ax, ay);
-                    ladle(ax, ay, ax + 10, ay + 18);
+                    // 右手往前伸到爐台上的鍋子攪（鍋子在她前面、比她遠）
+                    const ax = 60 + Math.cos(t2) * 6, ay = -78 + Math.sin(t2) * 2.5;
+                    limb(33, shY + 6, 52, shY + 22, ax, ay);
+                    ladle(ax, ay, ax + 6, ay + 16);
                 } else if (arms === 'up') {
                     const k = Math.sin(Math.PI * (pose.k || 0));
-                    limb(30, shY + 4, lerp(46, 40, k), lerp(shY + 32, shY - 34, k), lerp(44, 20, k), lerp(-12, hy - 46, k));
-                    limb(-30, shY + 4, lerp(-46, -40, k), lerp(shY + 32, shY - 34, k), lerp(-44, -20, k), lerp(-12, hy - 46, k));
+                    limb(30, shY + 4, lerp(46, 40, k), lerp(shY + 32, shY - 34, k), lerp(42, 20, k), lerp(8, hy - 46, k));
+                    limb(-30, shY + 4, lerp(-46, -40, k), lerp(shY + 32, shY - 34, k), lerp(-42, -20, k), lerp(8, hy - 46, k));
                 } else if (arms === 'scratch') {
                     const j = Math.sin(t * 28) * 2.5;
                     limb(33, shY + 6, 46, shY - 22, 18 + j, hy - 14);
                 } else if (arms === 'sip') {
-                    // 拿湯杓到嘴邊（從背面看只看得到手肘翹起來、杓子柄）
                     limb(33, shY + 6, 44, shY - 6, 18, hy + 16);
                     ladle(18, hy + 16, 32, hy + 34);
                 } else {
-                    limb(33, shY + 6, 44, shY + 34, 40, -6);
+                    limb(33, shY + 6, 44, shY + 34, 40, 8);
                 }
                 backHair();
-                // 頭髮光澤
                 c.strokeStyle = K.hairL; c.lineWidth = 1.2;
                 for (let i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(hx + i * 5, hy - 28); c.quadraticCurveTo(hx + i * 8, hy, hx + i * 9.5, shY + 4); c.stroke(); }
                 if (arms === 'scratch') { c.fillStyle = K.skin; c.beginPath(); c.ellipse(hx + 18 + Math.sin(t * 28) * 2.5, hy - 14, 6, 5, 0, 0, TAU); c.fill(); }
-                // 準備轉頭：耳朵和一點臉頰從頭髮邊露出來
                 if (pose.peek) {
                     c.fillStyle = K.skin; c.beginPath(); c.ellipse(hx + 28, hy + 6, 3.5, 7, 0.15, 0, TAU); c.fill();
                     c.fillStyle = K.hair; c.beginPath(); c.ellipse(hx + 26, hy - 2, 4, 6, 0, 0, TAU); c.fill();
                 }
-            } else if (view === 'side') {
-                // 回頭：身體還是背對你，頭轉過來看（側臉在右邊）
-                torso();
-                limb(-33, shY + 6, -44, shY + 34, -40, -6);
-                limb(33, shY + 6, 44, shY + 34, 40, -6);
-                backHair();
-                const fx = hx + 10;
-                c.fillStyle = K.skin;
-                c.beginPath(); c.ellipse(fx, hy + 3, 18, 25, 0, 0, TAU); c.fill();
-                // 鼻子尖、下巴
-                c.beginPath(); c.moveTo(fx + 16, hy - 2); c.quadraticCurveTo(fx + 23, hy + 9, fx + 16, hy + 12); c.fill();
-                eyes([[fx + 2, hy + 3, 0.75], [fx + 14, hy + 3, 0.5]]);
-                c.fillStyle = K.lip; c.beginPath(); c.ellipse(fx + 10, hy + 18, 3.5, 1.7, 0, 0, TAU); c.fill();
-                // 前面那片頭髮蓋住靠我們這邊的臉
-                c.fillStyle = K.hair;
-                c.beginPath(); c.moveTo(fx - 2, hy - 30); c.quadraticCurveTo(fx - 16, hy - 16, fx - 12, hy + 6);
-                c.quadraticCurveTo(fx - 10, hy + 22, fx - 16, shY + 8); c.lineTo(hx - 30, shY + 8); c.lineTo(hx - 29, hy); c.closePath(); c.fill();
-                wisp(fx + 2, hy - 26, fx + 4, hy - 5, 2.6);
-                wisp(fx + 9, hy - 24, fx + 12, hy - 7, 2.6);
             } else {
-                // 正面：後面的頭髮先畫（從臉兩側垂到肩膀）
-                backHair(1.04);
-                torso();
-                // 脖子、圓領、細項鍊
-                c.fillStyle = K.skinD; c.fillRect(hx - 7, hy + 18, 14, shY - hy - 14);
-                c.fillStyle = K.skin; c.beginPath(); c.ellipse(hx, shY - 1, 14, 6, 0, 0, Math.PI); c.fill();
+                // 正面（q = 0）和轉身到一半（q = 1）：頭和身體一起轉，臉、領口、腳都偏向右邊
+                const q = view === 'side' ? 1 : 0, fx = hx + 9 * q, nx = hx + 6 * q;
+                legs(q);
+                backHair(1.04 - 0.06 * q, 3 * q);
+                torso(q);
+                c.fillStyle = K.skinD; c.fillRect(nx - 7, hy + 18, 14, shY - hy - 14);
+                c.fillStyle = K.skin; c.beginPath(); c.ellipse(nx, shY - 1, 14 - 3 * q, 6, 0, 0, Math.PI); c.fill();
                 c.strokeStyle = '#d8c08a'; c.lineWidth = 1;
-                c.beginPath(); c.moveTo(hx - 11, shY - 6); c.quadraticCurveTo(hx, shY + 12, hx + 11, shY - 6); c.stroke();
-                c.fillStyle = '#efe1b4'; c.beginPath(); c.arc(hx, shY + 7, 1.8, 0, TAU); c.fill();
-                if (pose.arms === 'point') {
-                    // 拿湯杓指著你
-                    limb(-33, shY + 6, -44, shY + 34, -40, -6);
-                    // 手舉到肩膀旁邊，杓子朝上指著你，一抖一抖
+                c.beginPath(); c.moveTo(nx - 11 + 2 * q, shY - 6); c.quadraticCurveTo(nx, shY + 12, nx + 11 - 3 * q, shY - 6); c.stroke();
+                c.fillStyle = '#efe1b4'; c.beginPath(); c.arc(nx, shY + 7, 1.8, 0, TAU); c.fill();
+                if (pose.arms === 'point' && !q) {
+                    // 拿湯杓指著你，一抖一抖
                     const wob = Math.sin(t * 9) * 2;
+                    limb(-33, shY + 6, -44, shY + 34, -40, 8);
                     limb(33, shY + 6, 50, shY + 24, 50, shY - 8);
                     ladle(50, shY - 8, 58 + wob, shY - 38);
                 } else {
-                    limb(-33, shY + 6, -44, shY + 34, -40, -6);
-                    limb(33, shY + 6, 44, shY + 34, 40, -6);
-                    ladle(40, -6, 48, -26);
+                    limb(-33 + 6 * q, shY + 6, -44 + 6 * q, shY + 34, -40 + 8 * q, 8);
+                    limb(33, shY + 6, 44, shY + 34, 40, 8);
+                    ladle(40, 8, 46, 30);
                 }
-                // 臉
+                // 臉：轉身時遠的那半邊（右邊）窄一點，鼻子尖朝右
+                const wl = 22, wr = 22 - 7 * q;
                 c.fillStyle = K.skin;
-                c.beginPath(); c.moveTo(hx - 22, hy - 4); c.bezierCurveTo(hx - 23, hy + 16, hx - 10, hy + 29, hx, hy + 29);
-                c.bezierCurveTo(hx + 10, hy + 29, hx + 23, hy + 16, hx + 22, hy - 4); c.bezierCurveTo(hx + 22, hy - 30, hx - 22, hy - 30, hx - 22, hy - 4); c.fill();
-                eyes([[hx - 9, hy + 3, 1], [hx + 9, hy + 3, 1]], pose.angry);
-                // 鼻子、嘴巴（小小的、平平的）
-                c.strokeStyle = K.skinD; c.lineWidth = 1.2; c.beginPath(); c.moveTo(hx + 0.5, hy + 7); c.lineTo(hx - 1.5, hy + 13); c.lineTo(hx + 1.5, hy + 13.6); c.stroke();
-                c.fillStyle = K.lip; c.beginPath(); c.ellipse(hx, hy + 19.5, 5, 1.9, 0, 0, TAU); c.fill();
-                c.strokeStyle = '#a9706a'; c.lineWidth = 1; c.beginPath(); c.moveTo(hx - 5.5, hy + 19.8); c.quadraticCurveTo(hx, hy + 18.8, hx + 5.5, hy + 20.2); c.stroke();
+                c.beginPath(); c.moveTo(fx - wl, hy - 4); c.bezierCurveTo(fx - wl - 1, hy + 16, fx - 10, hy + 29, fx + 2 * q, hy + 29);
+                c.bezierCurveTo(fx + 10 - 2 * q, hy + 29, fx + wr + 1, hy + 16, fx + wr, hy - 4); c.bezierCurveTo(fx + wr, hy - 30, fx - wl, hy - 30, fx - wl, hy - 4); c.fill();
+                eyes(q ? [[fx - 7, hy + 3, 0.95], [fx + 9, hy + 3, 0.65]] : [[fx - 9, hy + 3, 1], [fx + 9, hy + 3, 1]], pose.angry);
+                c.strokeStyle = K.skinD; c.lineWidth = 1.2; c.beginPath(); c.moveTo(fx + 0.5 + 3 * q, hy + 7); c.lineTo(fx - 1.5 + 5 * q, hy + 13); c.lineTo(fx + 1.5 + 5 * q, hy + 13.6); c.stroke();
+                c.fillStyle = K.lip; c.beginPath(); c.ellipse(fx + 3 * q, hy + 19.5, 5 - 1.2 * q, 1.9, 0, 0, TAU); c.fill();
+                c.strokeStyle = '#a9706a'; c.lineWidth = 1; c.beginPath(); c.moveTo(fx + 3 * q - 5.5, hy + 19.8); c.quadraticCurveTo(fx + 3 * q, hy + 18.8, fx + 3 * q + 5.5 - q, hy + 20.2); c.stroke();
                 // 前面的頭髮：中分，兩片垂在臉旁邊到肩膀
                 c.fillStyle = K.hair;
                 [-1, 1].forEach(s => {
-                    c.beginPath(); c.moveTo(hx, hy - 30);
-                    c.bezierCurveTo(hx + s * 18, hy - 32, hx + s * 30, hy - 18, hx + s * 30, hy + 2);
-                    c.lineTo(hx + s * 31, shY + 8); c.lineTo(hx + s * 19, shY + 4);
-                    c.quadraticCurveTo(hx + s * 21, hy + 16, hx + s * 20, hy - 2);
-                    c.quadraticCurveTo(hx + s * 16, hy - 16, hx + s * 3, hy - 24);
+                    const k = s > 0 ? 1 - 0.3 * q : 1;
+                    c.beginPath(); c.moveTo(fx, hy - 30);
+                    c.bezierCurveTo(fx + s * 18 * k, hy - 32, fx + s * 30 * k, hy - 18, fx + s * 30 * k, hy + 2);
+                    c.lineTo(fx + s * 31 * k, shY + 8); c.lineTo(fx + s * 19 * k, shY + 4);
+                    c.quadraticCurveTo(fx + s * 21 * k, hy + 16, fx + s * 20 * k, hy - 2);
+                    c.quadraticCurveTo(fx + s * 16 * k, hy - 16, fx + s * 3, hy - 24);
                     c.closePath(); c.fill();
                 });
-                // 細細的瀏海垂到眉毛
-                // 中分，兩邊各兩撮細瀏海垂到眉毛，中間露出額頭
                 [-1, 1].forEach(s => {
-                    wisp(hx + s * 4, hy - 28, hx + s * 6, hy - 5, 2.6);
-                    wisp(hx + s * 10, hy - 27, hx + s * 13, hy - 7, 3);
+                    const k = s > 0 ? 1 - 0.3 * q : 1;
+                    wisp(fx + s * 4, hy - 28, fx + s * 6, hy - 5, 2.6);
+                    wisp(fx + s * 10 * k, hy - 27, fx + s * 13 * k, hy - 7, 3);
                 });
             }
             c.restore();
@@ -666,7 +656,7 @@
             c.font = `500 15px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle';
             c.fillText(`${Math.ceil(left)} 秒`, 45, 50);
             const live = liveMoney();
-            c.fillStyle = live < 0 ? K.shu : K.ink; c.fillText((live < 0 ? '−' : '') + Wallet.fmt(Math.abs(live)), W - 60, 50);
+            c.fillStyle = live < 0 ? K.shu : G.on ? K.green : K.ink; c.fillText((live < 0 ? '−' : '') + Wallet.fmt(Math.abs(live)), W - 60, 50);  // 連著的時候綠色、一直跳
             // 被抓幾次：三格，抓到一次蓋一個朱印
             for (let i = 0; i < STRIKES; i++) {
                 const x = 152 + i * 28, y = 49, hit = i < G.strikes;
@@ -707,19 +697,19 @@
         function poseNow(now) {
             const k = W8.dur ? clamp((G.clock - W8.t0) / W8.dur, 0, 1) : 0, t = now / 1000;
             switch (W8.state) {
-                case 'busy': return { arms: 'stir', sway: Math.sin(t * 5) * 1.2 };
+                case 'busy': return { arms: 'stir', sway: Math.sin(t * 5) * 1.6, step: Math.sin(t * 2.5) * 1 };  // 攪湯的時候身體跟著晃
                 // 嗯？：手停住、肩膀聳一下、頭抬起來，耳朵從頭髮邊露出來
                 case 'tell': return { arms: 'stir', still: true, lift: 3 * Math.sin(Math.PI * Math.min(1, k * 2)), nod: -2, peek: true };
-                case 'half': return { arms: 'rest', peek: true };
+                case 'half': return { arms: 'rest', step: 2 };
                 case 'fake': return W8.kind === 'stretch' ? { arms: 'up', k, lift: 3 * Math.sin(Math.PI * k), nod: 2 * Math.sin(Math.PI * k) } : W8.kind === 'sip' ? { arms: 'sip', nod: -3 } : { arms: W8.kind };
-                case 'scold': return { arms: 'point', angry: true, lift: 1 };
+                case 'scold': return { arms: 'point', angry: true, lift: 1, step: 2 };
                 default: return { arms: 'rest' };
             }
         }
 
         // ===== 6. 每一格的規則 =====
         function liveMoney() {
-            return (Math.floor(G.wifiMs / 1000) + Math.floor(G.boostMs / 1000)) * RATE + G.ep * EP_PAY + G.earn.fine;   // 照整秒算，明細才對得起來
+            return Math.round((Math.floor(G.wifiMs / 100) + Math.floor(G.boostMs / 100)) * RATE / 10) + G.ep * EP_PAY + G.earn.fine;   // 照 0.1 秒算：錢跳得快，明細也對得起來
         }
         function setOn(want) {
             if (!G || G.ended) return;
@@ -808,11 +798,11 @@
             ctx.clearRect(0, 0, W, H);
             if (G) {
                 drawRoom(ctx, now);
-                drawJulie(ctx, now, 214, 252, W8.turn, poseNow(now));
                 drawCounter(ctx, now);
+                drawJulie(ctx, now, 210, 238, W8.turn, poseNow(now), 0.9);
                 drawWaves(ctx, now);
                 // 對話框：說完一陣子就收
-                if (W8.bubble && G.clock - W8.bubbleAt < (W8.state === 'scold' ? 1.6 : 1.1)) bubble(ctx, W8.bubble, 214, 96, W8.state === 'scold' ? K.shu : K.ink);
+                if (W8.bubble && G.clock - W8.bubbleAt < (W8.state === 'scold' ? 1.6 : 1.1)) bubble(ctx, W8.bubble, 210, 100, W8.state === 'scold' ? K.shu : K.ink);
                 drawPhone(ctx, now);
                 drawFx(ctx, now);
                 drawHud(ctx, now);
@@ -824,10 +814,11 @@
         function gradeOf(pay) { return GRADES.find(g => pay >= g.min); }
         let sheetFile = null;
         function bill() {
-            const secs = Math.floor(G.wifiMs / 1000);   // 整秒，秒數 × $12 剛好等於金額
-            G.earn.wifi = secs * RATE;
-            const bsecs = Math.floor(G.boostMs / 1000);   // 加速多下載的量，換算成秒
-            G.earn.boost = bsecs * RATE;
+            // 照 0.1 秒算（跟畫面上跳的錢一樣）：23.4 秒 × $10 = $234
+            const tenths = Math.floor(G.wifiMs / 100), secs = tenths / 10;
+            G.earn.wifi = Math.round(tenths * RATE / 10);
+            const btenths = Math.floor(G.boostMs / 100), bsecs = btenths / 10;   // 加速多下載的量，換算成秒
+            G.earn.boost = Math.round(btenths * RATE / 10);
             G.earn.ep = G.ep * EP_PAY;
             G.earn.perfect = !G.strikes && secs >= 10 ? PERFECT : 0;
             // [名稱, 數量, 單位, 金額, 怎麼算]；金額加起來等於合計
@@ -881,7 +872,7 @@
 
         async function makeSheet(pay, grade, rows) {
             const lines = rows.map(([k, v, u, m]) => [`${k} ${v} ${u}`, (m < 0 ? '−' : '') + Wallet.fmt(Math.abs(m))]);
-            const allText = lines.flat().join('') + '蹭網日報二十七樓房間茱莉鴨沒發現合計共被抓次追劇《》出勤費補到' + G.drama + grade.mark + grade.line + '0123456789$,−・';
+            const allText = lines.flat().join('') + '蹭網日報二十七樓房間茱莉鴨沒發現合計共被抓次追劇《》保底出勤費給不到.' + G.drama + grade.mark + grade.line + '0123456789$,−・';
             try { await Promise.race([Promise.all([document.fonts.load(`600 40px ${SERIF}`, allText), document.fonts.load(`400 40px ${SANS}`, allText)]), new Promise(res => setTimeout(res, 2500))]); } catch (e) { }
             const c = document.createElement('canvas'); c.width = 1080; c.height = 1350;
             const x = c.getContext('2d');
@@ -906,7 +897,7 @@
             });
             y = Math.max(y + 40, 860);
             text(`合計 ${(G.pay.sales < 0 ? '−' : '') + Wallet.fmt(Math.abs(G.pay.sales))}`, 150, y + 10, `400 30px ${SANS}`, '#8e8070', 'left');
-            if (pay !== G.pay.sales) text(`出勤費補到 ${Wallet.fmt(pay)}`, 150, y + 52, `400 30px ${SANS}`, '#8e8070', 'left');
+            if (pay !== G.pay.sales) text(`合計不到 $100，保底出勤費給 ${Wallet.fmt(pay)}`, 150, y + 52, `400 30px ${SANS}`, '#8e8070', 'left');
             text(`共 ${Wallet.fmt(pay)}`, 150, y + 130, `600 60px ${SERIF}`, '#2c2c2c', 'left');
             text(grade.line, 150, y + 190, `400 30px ${SERIF}`, '#8e8070', 'left');
             x.save(); x.translate(850, y + 100); x.rotate(-0.12); x.globalAlpha = 0.9;
@@ -937,7 +928,7 @@
         function recordRound(pay, grade) {
             const st = loadStats();
             st.rounds++; st.paid += pay; st.best = Math.max(st.best, pay);
-            st.secs += Math.floor(G.wifiMs / 1000); st.eps += G.ep; st.caught += G.strikes; st.dodged += G.dodged; if (G.earn.perfect) st.perfect++;
+            st.secs += Math.round(G.wifiMs / 1000); st.eps += G.ep; st.caught += G.strikes; st.dodged += G.dodged; if (G.earn.perfect) st.perfect++;
             st.recent.unshift({
                 at: new Date().toISOString(), ms: Math.round(G.clock * 1000),
                 total: pay, sales: G.pay.sales, grade: grade.mark, wifi_ms: Math.round(G.wifiMs), boost_ms: Math.round(G.boostMs), max_mult: Math.round(G.maxMult * 10) / 10, episodes: G.ep, drama: G.drama,
