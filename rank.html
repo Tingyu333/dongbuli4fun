@@ -67,8 +67,9 @@
             color: rgb(var(--wabi-bg));
         }
 
-        /* 最上面兩本榜：打工・榜、花錢・榜 */
-        .book { display: flex; justify-content: center; gap: 2rem; }
+        /* 最上面三本榜：打工・榜、花錢・榜、無盡・榜 */
+        .book { display: flex; justify-content: center; gap: 1.1rem; }
+        @media (min-width: 400px) { .book { gap: 1.75rem; } }
         .book button {
             min-height: 44px; padding: 0 0.25rem;
             font-family: 'Noto Serif TC', serif; font-size: 1rem; letter-spacing: 0.3em;
@@ -267,6 +268,7 @@
         <div class="book mb-4" role="group" aria-label="哪一本榜">
             <button type="button" data-book="work" aria-pressed="true">打工・榜</button>
             <button type="button" data-book="spend" aria-pressed="false">花錢・榜</button>
+            <button type="button" data-book="endless" aria-pressed="false">無盡・榜</button>
         </div>
 
         <section class="bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-4 pt-5 pb-3">
@@ -275,7 +277,6 @@
                 <button type="button" data-metric="money" aria-pressed="true">賺最多</button>
                 <button type="button" data-metric="best" aria-pressed="false">最高分</button>
                 <button type="button" data-metric="count" aria-pressed="false">做最多</button>
-                <button type="button" data-metric="alive" aria-pressed="false" class="hidden">撐最久</button>
                 <button type="button" data-metric="served" aria-pressed="false" class="hidden">出餐最多</button>
                 <button type="button" data-metric="combo" aria-pressed="false" class="hidden">最長連撈</button>
             </div>
@@ -288,6 +289,16 @@
                 <button type="button" data-dept="zaocan" aria-pressed="false">早餐部</button>
                 <button type="button" data-dept="ship" aria-pressed="false">貨運部</button>
             </div>
+            </div>
+            <div id="endCtl" class="hidden">
+                <div class="seg" role="group" aria-label="哪個部門">
+                    <button type="button" data-edept="wifi" aria-pressed="true">蹭網部</button>
+                    <button type="button" data-edept="ship" aria-pressed="false">貨運部</button>
+                </div>
+                <div class="seg mt-2" role="group" aria-label="比什麼">
+                    <button type="button" data-emetric="far" aria-pressed="true">撐最久</button>
+                    <button type="button" data-emetric="money" aria-pressed="false">一輪省最多</button>
+                </div>
             </div>
             <div id="spendCtl" class="hidden">
                 <div class="seg" role="group" aria-label="花在哪">
@@ -345,13 +356,40 @@
         const SCORE = { xitou: '爽度', clean: '乾淨度' };
 
         const badPic = new Set();  // 載不到的大頭貼，下次直接用字
-        let players = null, at = '', book = 'work', metric = 'money', dept = 'all', cat = 'all', loading = false, failed = '';
-        try { const s = JSON.parse(sessionStorage.getItem('dongbuli-rank-tab') || '{}'); if (s.book) book = s.book; if (s.metric) metric = s.metric; if (s.dept) dept = s.dept; if (s.cat) cat = s.cat; } catch (e) { }
+        let players = null, at = '', book = 'work', metric = 'money', dept = 'all', cat = 'all', edept = 'wifi', emetric = 'far', loading = false, failed = '';
+        try { const s = JSON.parse(sessionStorage.getItem('dongbuli-rank-tab') || '{}'); if (s.book) book = s.book; if (s.metric) metric = s.metric; if (s.dept) dept = s.dept; if (s.cat) cat = s.cat; if (s.edept) edept = s.edept; if (s.emetric) emetric = s.emetric; } catch (e) { }
+        if (metric === 'alive') { book = 'endless'; edept = 'wifi'; emetric = 'far'; metric = 'best'; }  // 以前「撐最久」在打工・榜，現在搬到無盡・榜
+        if (!['work', 'spend', 'endless'].includes(book)) book = 'work';
+        if (!['wifi', 'ship'].includes(edept)) edept = 'wifi';
+        if (!['far', 'money'].includes(emetric)) emetric = 'far';
         if (location.hash === '#spend') book = 'spend'; else if (location.hash === '#work') book = 'work';
+        else if (location.hash === '#endless') book = 'endless';
+        else if (location.hash === '#endless-ship') { book = 'endless'; edept = 'ship'; }
+        else if (location.hash === '#endless-wifi') { book = 'endless'; edept = 'wifi'; }
         const BOOKS = {
             work: { title: '打工・榜', tag: '誰在二十七樓最勤勞，<br>牆上寫得清清楚楚。', go: [['xitou.html', '去坐洗部'], ['fangwu.html', '去房務部'], ['caiyuan.html', '去菜園部'], ['cengwang.html', '去蹭網部'], ['zaocan.html', '去早餐部'], ['huoyun.html', '去貨運部']], join: '打工' },
             spend: { title: '花錢・榜', tag: '錢不是賺來的，<br>是花出去才算數。', go: [['scratch.html', '去彩券行'], ['gongde.html', '去功德箱'], ['zaocan.html', '去早餐店']], join: '花錢' },
+            endless: { title: '無盡・榜', tag: '沒有時間限制，<br>撐得越久，名字寫得越大。', go: [['cengwang.html', '去蹭網部'], ['huoyun.html', '去貨運部']], join: '玩無盡模式' },
         };
+        // 無盡・榜：每個部門兩個分頁怎麼叫、小字寫什麼
+        const ENDLESS = {
+            wifi: { far: '撐最久', money: '一輪省最多', notes: { far: '蹭網無盡模式：比一輪裡真的連著 28 樓多久（放開、發呆的時間不算）。', money: '蹭網無盡模式：比一輪省最多少錢。' } },
+            ship: { far: '航最遠', money: '一趟賺最多', notes: { far: '貨運無盡模式：比一趟開多遠（海里），一樣遠比運費多。', money: '貨運無盡模式：比一趟賺最多少錢。' } },
+        };
+        const ZN = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+        const zn = z => z <= 10 ? ZN[z] : String(z);
+        const nmi = d => `${(d / 100).toFixed(2)} 海里`;
+        const mss = ms => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+        function endlessEntry(p) {
+            const d = (p[edept] || {}).endless;
+            if (!d) return null;
+            if (edept === 'wifi') {
+                if (emetric === 'far') { const a = d.alive; return a && a.ms ? { v: a.ms, main: clock(a.ms), sub: `連著 28 樓・撐了 ${mss(a.all)}・第 ${a.season} 季・省 ${fmt(a.total)}` } : null; }
+                const m = d.money; return m && m.total ? { v: m.total, main: fmt(m.total), sub: `撐了 ${mss(m.ms)}・第 ${m.season} 季` } : null;
+            }
+            if (emetric === 'far') { const f = d.far; return f && f.dist ? { v: f.dist, tie: -f.total, main: nmi(f.dist), sub: `第${zn(f.zone)}海域・${mss(f.ms)}・運費 ${fmt(f.total)}` } : null; }
+            const m = d.money; return m && m.total ? { v: m.total, main: fmt(m.total), sub: `${nmi(m.dist)}・第${zn(m.zone)}海域・${mss(m.ms)}` } : null;
+        }
         // 花錢榜：每一類多少錢、小字寫什麼
         const CATS = {
             all: { note: '花掉的錢加起來：刮刮樂、捐香油錢、點燈、升級洗頭店、菜園和早餐店。', empty: '還沒有人花錢。<br>錢放著不會變多。' },
@@ -381,6 +419,7 @@
         // 每個人在這個榜的成績：{ v 排名用的數字, tie 同分再比（越小越前面）, main 大字, sub 小字 }，沒成績回 null
         function entry(p) {
             if (book === 'spend') return spendEntry(p);
+            if (book === 'endless') return endlessEntry(p);
             const x = p.xitou || {}, c = p.clean || {}, fm = p.farm || {}, wf = p.wifi || {}, zc = p.zaocan || {}, sh = p.ship || {};
             const UNIT = { xitou: ['洗', '顆頭', '顆'], clean: ['掃', '間', '間'], farm: ['拔', '輪', '輪'], wifi: ['蹭', '輪', '輪'], zaocan: ['煎', '天', '天'], ship: ['運', '趟', '趟'] };
             if (metric === 'money') {
@@ -393,14 +432,9 @@
                 const d = p[dept] || {};
                 return d.n ? { v: d.n, main: `${d.n} ${UNIT[dept][2]}`, sub: `賺 ${fmt(d.money)}` } : null;
             }
-            // 蹭網無盡模式撐最久（只有蹭網部有這個分頁）
-            if (metric === 'alive') {
-                const a = wf.alive;
-                return a && a.ms ? { v: a.ms, main: clock(a.ms), sub: `連著 28 樓・${a.all ? `那輪撐了 ${clock(a.all)}・` : ''}第 ${a.season} 季・省 ${fmt(a.total)}` } : null;
-            }
             // 菜園的最高分是一輪賣最多少錢（跟爽度、乾淨度不同單位，不放進「全部」）
             if (dept === 'farm') return fm.best != null && fm.best ? { v: fm.best, main: fmt(fm.best), sub: '一輪賣最多' } : null;
-            if (dept === 'wifi') return wf.best != null && wf.best ? { v: wf.best, main: fmt(wf.best), sub: '一輪省最多' } : null;
+            if (dept === 'wifi') return wf.best != null && wf.best ? { v: wf.best, main: fmt(wf.best), sub: '一般模式一輪省最多' } : null;
             // 早餐店：出餐最多的一天（只有早餐部有這個分頁）；最高分是一天賺最多
             if (metric === 'served') {
                 const sv = zc.served;
@@ -412,7 +446,7 @@
                 const cb = sh.combo;
                 return cb && cb.n ? { v: cb.n, tie: -cb.total, main: `${cb.n} 連撈`, sub: `那趟撈了 ${cb.picked} 份・運費 ${fmt(cb.total)}` } : null;
             }
-            if (dept === 'ship') return sh.best != null && sh.best ? { v: sh.best, main: fmt(sh.best), sub: '一趟賺最多' } : null;
+            if (dept === 'ship') return sh.best != null && sh.best ? { v: sh.best, main: fmt(sh.best), sub: '一般模式一趟賺最多' } : null;
             // 最高分：同分比快
             const pickDept = dept === 'all'
                 ? ['xitou', 'clean'].filter(k => p[k] && p[k].best != null).sort((a, b) => p[b].best - p[a].best || (p[a].ms || 9e9) - (p[b].ms || 9e9))[0]
@@ -424,32 +458,34 @@
 
         const clock = ms => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)} 分 ${String(s % 60).padStart(2, '0')} 秒`; };
         function renderBoard() {
-            // 「撐最久」只有蹭網部有、「出餐最多」只有早餐部有；換到別的部門就回「最高分」
-            if (metric === 'alive' && dept !== 'wifi') metric = 'best';
+            // 「出餐最多」只有早餐部有、「最長連撈」只有貨運部有；換到別的部門就回「最高分」
             if (metric === 'served' && dept !== 'zaocan') metric = 'best';
             if (metric === 'combo' && dept !== 'ship') metric = 'best';
-            document.querySelector('[data-metric="alive"]').classList.toggle('hidden', dept !== 'wifi');
             document.querySelector('[data-metric="served"]').classList.toggle('hidden', dept !== 'zaocan');
             document.querySelector('[data-metric="combo"]').classList.toggle('hidden', dept !== 'ship');
             document.querySelectorAll('[data-metric]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.metric === metric)));
             document.querySelectorAll('[data-dept]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.dept === dept)));
             document.querySelectorAll('[data-cat]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cat === cat)));
+            document.querySelectorAll('[data-edept]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.edept === edept)));
+            document.querySelectorAll('[data-emetric]').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.emetric === emetric)); b.textContent = ENDLESS[edept][b.dataset.emetric]; });
             document.querySelectorAll('[data-book]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.book === book)));
             const B = BOOKS[book];
             $('title').textContent = B.title; $('tagline').innerHTML = B.tag;
-            $('workCtl').classList.toggle('hidden', book !== 'work'); $('spendCtl').classList.toggle('hidden', book !== 'spend');
+            $('workCtl').classList.toggle('hidden', book !== 'work'); $('spendCtl').classList.toggle('hidden', book !== 'spend'); $('endCtl').classList.toggle('hidden', book !== 'endless');
             [$('go1'), $('go2'), $('go3'), $('go4'), $('go5'), $('go6')].forEach((a, i) => {
                 const g = B.go[i]; a.classList.toggle('hidden', !g);
                 a.classList.toggle('col-span-2', B.go.length !== 3 && B.go.length % 2 === 1 && i === B.go.length - 1);  // 單數顆：最後一顆佔一整排
                 if (g) { a.href = g[0]; a.textContent = g[1]; }
             });
             $('goBox').className = `mt-6 grid ${B.go.length === 3 ? 'grid-cols-3' : 'grid-cols-2'} gap-2`;  // 三顆排一排，其他兩顆一排
-            // 後端還是舊版：回來的人身上沒有 wifi.alive 這個欄位（新版沒成績是 null）
-            const aliveOld = metric === 'alive' && players && players.length && players.every(p => !p.wifi || !('alive' in p.wifi));
+            // 後端還是舊版：回來的人身上沒有 endless 這個欄位（新版沒成績是 null）
+            const endOld = book === 'endless' && players && players.length && players.every(p => !p[edept] || !('endless' in p[edept]));
             const zcOld = dept === 'zaocan' && players && players.length && players.every(p => !('zaocan' in p));
             const shipOld = dept === 'ship' && players && players.length && players.every(p => !('ship' in p));
-            $('boardNote').textContent = book === 'spend' ? CATS[cat].note : shipOld ? '後端還是舊版，看不到貨運部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'combo' ? '貨運一趟裡最長的連撈（連續撈到好東西、中間沒撈到垃圾也沒撞到），一樣長比運費多。要用 LINE 登入，剛靠港最多一分鐘才會上榜。' : zcOld ? '後端還是舊版，看不到早餐部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'served' ? '早餐店一天出餐最多幾位客人，同樣多比誰氣走的少。要用 LINE 登入，剛打烊最多一分鐘才會上榜。' : metric === 'alive' ? (aliveOld ? '後端還是舊版，看不到撐最久：要把 Code.gs 貼上去、重新部署（新版本）。' : '蹭網無盡模式：比一輪裡真的連著 28 樓多久（放開、發呆的時間不算），要用 LINE 登入。剛玩完最多一分鐘才會上榜。') : metric === 'best'
-                ? (dept === 'farm' ? '菜園比的是一輪賣最多少錢（單位跟坐洗、房務不同，「全部」那頁不算菜園）。' : dept === 'zaocan' ? '早餐店比的是一天賺最多少錢（單位跟坐洗、房務不同，「全部」那頁不算早餐店）。' : dept === 'ship' ? '貨運比的是一趟賺最多少錢（單位跟坐洗、房務不同，「全部」那頁不算貨運）。' : dept === 'wifi' ? '蹭網比的是一輪省最多少錢，含無盡模式（單位跟坐洗、房務不同，「全部」那頁不算蹭網）。' : '一場的最高分（爽度、乾淨度都是滿分 100），同分比誰快。從洗完、打掃完存到雲端開始算。')
+            $('boardNote').textContent = book === 'spend' ? CATS[cat].note
+                : book === 'endless' ? (endOld ? '後端還是舊版，看不到無盡・榜：要把 Code.gs 貼上去、重新部署（新版本）。' : ENDLESS[edept].notes[emetric] + '要用 LINE 登入，剛玩完最多一分鐘才會上榜。')
+                : shipOld ? '後端還是舊版，看不到貨運部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'combo' ? '貨運一般模式一趟裡最長的連撈（連續撈到好東西、中間沒撈到垃圾也沒撞到），一樣長比運費多。要用 LINE 登入，剛靠港最多一分鐘才會上榜。' : zcOld ? '後端還是舊版，看不到早餐部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'served' ? '早餐店一天出餐最多幾位客人，同樣多比誰氣走的少。要用 LINE 登入，剛打烊最多一分鐘才會上榜。' : metric === 'best'
+                ? (dept === 'farm' ? '菜園比的是一輪賣最多少錢（單位跟坐洗、房務不同，「全部」那頁不算菜園）。' : dept === 'zaocan' ? '早餐店比的是一天賺最多少錢（單位跟坐洗、房務不同，「全部」那頁不算早餐店）。' : dept === 'ship' ? '貨運比的是一般模式一趟賺最多少錢（無盡模式在「無盡・榜」；單位跟坐洗、房務不同，「全部」那頁不算貨運）。' : dept === 'wifi' ? '蹭網比的是一般模式一輪省最多少錢（無盡模式在「無盡・榜」；單位跟坐洗、房務不同，「全部」那頁不算蹭網）。' : '一場的最高分（爽度、乾淨度都是滿分 100），同分比誰快。從洗完、打掃完存到雲端開始算。')
                 : metric === 'money' ? '打工賺的錢加起來（工資、小費、失物招領、加成都算）。' : '洗幾顆頭、打掃幾間、拔幾輪、蹭幾輪、開幾天早餐店、跑幾趟貨運。';
             const box = $('board');
             if (!players) {
@@ -480,11 +516,11 @@
                         <span class="flex items-baseline text-sm text-wabi-dark tracking-wider"><span class="truncate min-w-0 ${place ? 'gname' : ''}">${esc(r.p.name)}</span>${r.p.me ? '<span class="me-tag shrink-0">我</span>' : ''}</span>
                         <span class="block text-[11px] font-sans tracking-wide leading-snug text-stone-400">${esc(r.e.sub)}</span>
                     </span>
-                    <span class="shrink-0 font-sans ${place ? 'gval' : 'text-wabi-dark'} ${book === 'work' && metric === 'best' ? 'text-xl font-light' : 'text-sm'}">${esc(r.e.main)}</span>
+                    <span class="shrink-0 font-sans ${place ? 'gval' : 'text-wabi-dark'} ${book === 'work' && metric === 'best' ? 'text-xl font-light' : book === 'endless' ? 'text-base' : 'text-sm'}">${esc(r.e.main)}</span>
                 </div>`;
             }).join('') : `<p class="py-10 text-center text-xs font-sans tracking-wider text-stone-400 leading-relaxed">${
                 book === 'spend' ? (players.length && !players.some(p => p.spend) ? '花錢・榜要等後端重新部署「新版本」才有。' : CATS[cat].empty)
-                : metric === 'alive' ? (players.length && players.every(p => !p.wifi || !('alive' in p.wifi)) ? '撐最久要等後端重新部署「新版本」才有。' : '還沒有人玩過無盡模式。<br>第一名在等你。')
+                : book === 'endless' ? (players.length && players.every(p => !p[edept] || !('endless' in p[edept])) ? '無盡・榜要等後端重新部署「新版本」才有。' : `${DEPT[edept]}還沒有人玩過無盡模式。<br>第一名在等你。`)
                 : dept === 'zaocan' && players.length && players.every(p => !('zaocan' in p)) ? '早餐部要等後端重新部署「新版本」才有。'
                 : dept === 'ship' && players.length && players.every(p => !('ship' in p)) ? '貨運部要等後端重新部署「新版本」才有。'
                 : `${DEPT[dept] || '二十七樓'}還沒有人上榜。<br>第一名在等你。`}</p>`;
@@ -493,7 +529,7 @@
                 const s = document.createElement('span'); s.className = 'avatar'; s.textContent = img.dataset.initial; img.replaceWith(s);
             }, { once: true }));
             if (Line.loggedIn && list.length && !mine) {
-                box.insertAdjacentHTML('beforeend', `<p class="pt-3 text-center text-[11px] font-sans tracking-wider text-stone-400">你還沒上這個榜：${book === 'spend' ? '去花一點錢' : '去打一次工'}，一分鐘內就會出現。</p>`);
+                box.insertAdjacentHTML('beforeend', `<p class="pt-3 text-center text-[11px] font-sans tracking-wider text-stone-400">你還沒上這個榜：${book === 'spend' ? '去花一點錢' : book === 'endless' ? '去玩一次無盡模式' : '去打一次工'}，一分鐘內就會出現。</p>`);
             }
             const d = at ? new Date(at) : null;
             $('boardAt').textContent = d && !isNaN(d) ? `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')} 寫的榜` : '';
@@ -531,11 +567,13 @@
         document.querySelectorAll('[data-metric]').forEach(b => b.addEventListener('click', () => { metric = b.dataset.metric; save(); renderBoard(); }));
         document.querySelectorAll('[data-dept]').forEach(b => b.addEventListener('click', () => { dept = b.dataset.dept; save(); renderBoard(); }));
         document.querySelectorAll('[data-cat]').forEach(b => b.addEventListener('click', () => { cat = b.dataset.cat; save(); renderBoard(); }));
+        document.querySelectorAll('[data-edept]').forEach(b => b.addEventListener('click', () => { edept = b.dataset.edept; save(); renderBoard(); }));
+        document.querySelectorAll('[data-emetric]').forEach(b => b.addEventListener('click', () => { emetric = b.dataset.emetric; save(); renderBoard(); }));
         document.querySelectorAll('[data-book]').forEach(b => b.addEventListener('click', () => {
             book = b.dataset.book; save(); renderBoard();
             try { history.replaceState(null, '', '#' + book); } catch (e) { }
         }));
-        function save() { try { sessionStorage.setItem('dongbuli-rank-tab', JSON.stringify({ book, metric, dept, cat })); } catch (e) { } }
+        function save() { try { sessionStorage.setItem('dongbuli-rank-tab', JSON.stringify({ book, metric, dept, cat, edept, emetric })); } catch (e) { } }
         $('board').addEventListener('click', e => { if (e.target.closest('[data-retry]')) load(); });
         $('join').addEventListener('click', e => { if (e.target.closest('[data-login]')) Line.login(); });
         Wallet.on(type => {

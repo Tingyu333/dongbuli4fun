@@ -144,7 +144,7 @@
                     class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">再蹭一輪</button>
                 <a href="scratch.html"
                     class="block w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">拿省下的流量費去彩券行</a>
-                <a href="rank.html"
+                <a id="rankLink" href="rank.html#work"
                     class="block w-full py-3 text-stone-500 underline underline-offset-4 tracking-[0.2em] font-sans text-xs">看打工排行榜</a>
             </div>
         </section>
@@ -1094,6 +1094,8 @@
 
             $('score').textContent = Wallet.fmt(pay);
             $('aliveLine').classList.toggle('hidden', !G.endless);
+            $('rankLink').href = G.endless ? 'rank.html#endless-wifi' : 'rank.html#work';
+            $('rankLink').textContent = G.endless ? '看無盡・榜' : '看打工排行榜';
             if (G.endless) $('aliveLine').textContent = `無盡模式・撐了 ${mmss(G.clock)}（連著 28 樓 ${mmss(G.wifiMs / 1000)}）・第 ${G.season} 季${G.recovered ? `・補回 ${G.recovered} 格` : ''}`;
             $('gradeLine').textContent = `${grade.mark}・${grade.line}`;
             const money = v => (v < 0 ? '−' : v > 0 ? '+' : '') + Wallet.fmt(Math.abs(v));

@@ -77,6 +77,14 @@
         }
         .shop-buy:disabled { background: transparent; color: rgb(var(--wabi-accent)); border-color: rgb(var(--wabi-sub)); }
 
+        /* 一般／無盡 */
+        .modes { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid rgb(var(--wabi-sub)); border-radius: 9999px; padding: 3px; }
+        .modes button { min-height: 40px; border-radius: 9999px; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: 0.15em; color: rgb(var(--wabi-accent)); line-height: 1.25; touch-action: manipulation; }
+        .modes button small { display: block; font-size: 9px; letter-spacing: 0.08em; opacity: .8; }
+        .modes button[aria-pressed="true"] { background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); }
+        .modes button:disabled { opacity: .45; }
+        .act-quit { width: 100%; min-height: 44px; margin-top: 0.6rem; border: 1px solid rgb(var(--wabi-sub)); border-radius: 9999px; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: 0.2em; color: rgb(var(--wabi-dark)); touch-action: manipulation; }
+
         .bill li {
             display: flex;
             justify-content: space-between;
@@ -113,7 +121,10 @@
             <button id="shopBtn" type="button" class="shop-btn absolute right-0 top-0" aria-haspopup="dialog">船廠<b id="shopLv"></b></button>
             <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">CHANGLUO LINE</span>
             <h1 class="text-3xl font-light text-wabi-dark tracking-widest">貨運・航</h1>
-            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">長蘿貨運的長蘿號，把頂樓菜園的蘿蔔運出去。</p>
+            <div id="modes" class="modes mt-3 mx-auto max-w-[17rem]" role="group" aria-label="模式">
+                <button type="button" data-mode="normal" aria-pressed="true">一般<small>六十秒</small></button>
+                <button type="button" data-mode="endless" aria-pressed="false">無盡<small>船破光才靠港</small></button>
+            </div>
         </div>
 
         <section id="stage"
@@ -129,11 +140,14 @@
                 <button type="button" data-steer="1" aria-label="往右換一條航道">右 →</button>
             </div>
             <p id="hint" class="mt-3 min-h-[2.6rem] text-xs text-center text-stone-500 font-sans tracking-widest leading-relaxed [text-wrap:balance]" aria-live="polite"></p>
+            <!-- 無盡模式出航中：放在提示那一行的位置（提示這時候是空的），版面不會變高 -->
+            <button id="quit" type="button" class="act-quit hidden">靠港，領運費</button>
         </section>
 
         <!-- 靠港 -->
         <section id="result" class="hidden mt-10 text-center scroll-mt-24">
             <span id="resultTag" class="text-xs font-sans tracking-widest text-wabi-accent">靠港了</span>
+            <p id="farLine" class="hidden mt-1 text-xs font-sans tracking-widest text-wabi-shu"></p>
             <p class="mt-2 text-wabi-dark"><span id="score" class="text-5xl font-light">$0</span></p>
             <p id="gradeLine" class="mt-1 text-sm text-stone-500 tracking-widest"></p>
             <p id="cargoLine" class="mt-1 text-xs font-sans tracking-widest text-stone-400"></p>
@@ -156,7 +170,7 @@
                     class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">拿運費去船廠升級</button>
                 <a href="scratch.html"
                     class="block w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">拿運費去彩券行</a>
-                <a href="rank.html#work"
+                <a id="rankLink" href="rank.html#work"
                     class="block w-full py-3 text-stone-500 underline underline-offset-4 tracking-[0.2em] font-sans text-xs">看打工排行榜</a>
             </div>
         </section>
@@ -171,6 +185,7 @@
                 <li>連續撈到好東西，運費一路往上加：連撈 5 個 ×1.2、10 個 ×1.5、20 個 ×2。撈到垃圾、撞到東西就從頭算。</li>
                 <li><b class="font-normal text-wabi-dark">茱莉鴨</b>在游泳：不要撞到她，從隔壁航道經過她會點頭（+$80，撞到她要賠 $80）。<b class="font-normal text-wabi-dark">海鷗</b>會飛過來叼蘿蔔、坐在木盆裡的<b class="font-normal text-wabi-dark">浣熊</b>會跳上船偷貨：<b class="font-normal text-wabi-dark">點牠一下</b>就嚇跑了（趕走浣熊 +$50）。</li>
                 <li>六十秒靠港。偶爾會起霧，或者吹順風。</li>
+                <li><b class="font-normal text-wabi-dark">無盡模式</b>：不計時，船身破光才靠港，也可以隨時按「靠港，領運費」收工；比的是<b class="font-normal text-wabi-dark">航程</b>（海里），上「無盡・榜」。每 30 秒換一個海域，一區比一區難：外海有<b class="font-normal text-wabi-dark">漩渦</b>（經過會被吸到隔壁航道）、颱風區有<b class="font-normal text-wabi-dark">側風</b>（看到箭頭就準備修回來）、鯨魚灣的<b class="font-normal text-wabi-shu">鯨魚</b>一次佔兩條航道（先冒水柱）、浣熊海盜成群結隊、夜航只看得到船頭燈照的那段；第七海域以後貨輪不再先警告。第三、第五海域會漂來<b class="font-normal text-wabi-dark">補給港浮標</b>，撈到補回一格船身。運費算法跟一般模式一樣，船廠的升級照用。</li>
                 <li>賺來的運費可以按上面的<b class="font-normal text-wabi-dark">船廠</b>升級長蘿號：雷達、鐵甲、吸塵網、冷藏貨艙、汽笛。登入 LINE 換手機也在。</li>
             </ol>
         </section>
@@ -236,12 +251,17 @@
             bottle: { name: '伊藤的漂流瓶', unit: '瓶', val: 0, good: true, w: () => 2.5, hw: 12, hh: 16 },
             dog: { name: '落水的狗', unit: '隻', val: 150, good: true, w: () => 1, hw: 18, hh: 18 },
             duck: { name: '茱莉鴨', duck: true, w: p => p > 0.1 ? 1.2 : 0, hw: 17, hh: 18 },
-            pet: { name: '寶特瓶', unit: '個', val: -30, bad: true, w: () => 9, hw: 10, hh: 16 },
-            bag: { name: '塑膠袋', unit: '個', val: -30, bad: true, w: () => 7, hw: 15, hh: 15 },
-            router: { name: '28 樓的舊路由器', unit: '台', val: -100, bad: true, w: p => p > 0.15 ? 2 : 0, hw: 16, hh: 12 },
-            reef: { name: '暗礁', hazard: true, w: p => p < 0.05 ? 0 : 3 + 5 * p, hw: 22, hh: 18 },
+            // 垃圾：無盡模式越後面的海域越多（junk(z)）
+            pet: { name: '寶特瓶', unit: '個', val: -30, bad: true, w: (p, z) => 9 * junk(z), hw: 10, hh: 16 },
+            bag: { name: '塑膠袋', unit: '個', val: -30, bad: true, w: (p, z) => 7 * junk(z), hw: 15, hh: 15 },
+            router: { name: '28 樓的舊路由器', unit: '台', val: -100, bad: true, w: (p, z) => p > 0.15 ? 2 * junk(z) : 0, hw: 16, hh: 12 },
+            reef: { name: '暗礁', hazard: true, w: (p, z) => p < 0.05 ? 0 : 3 + 5 * Math.min(p, 1.4) + (z >= 7 ? Math.min(6, (z - 6) * 1.5) : 0), hw: 22, hh: 18 },
+            // 無盡模式才有：外海起的漩渦（不撞船，把船吸到隔壁航道）、補給港浮標（補一格船身，照時間放，不靠權重）
+            whirl: { name: '漩渦', whirl: true, w: (p, z) => z >= 2 ? 2.2 : 0, hw: 20, hh: 18 },
+            buoy: { name: '補給港浮標', buoy: true, w: () => 0, hw: 18, hh: 20 },
             raccoon: { name: '偷東西的浣熊', thief: true, w: p => p > 0.16 ? 1.3 : 0, hw: 20, hh: 20 },
         };
+        function junk(z) { return z > 1 ? 1 + 0.15 * Math.min(z - 1, 8) : 1; }
         const GOODS = ['small', 'big', 'crate', 'gold', 'bottle', 'dog'];
         const CARGO = ['small', 'big', 'crate', 'gold'];  // 海鷗、浣熊偷的是這些
         // 等第照拿到多少錢；破三格提早靠港是「沉」
@@ -277,6 +297,44 @@
             hurry: ['快靠港了。'],
         };
         const BEST_KEY = 'dongbuli-huoyun-best', STATS_KEY = 'dongbuli-huoyun-stats';
+        const MODE_KEY = 'dongbuli-huoyun-mode', FAR_KEY = 'dongbuli-huoyun-far';
+
+        // ===== 1a. 無盡模式：不計時，破光才靠港；每 30 秒換一個海域，一區多一招 =====
+        const ZONE_SEC = 30, ENDLESS_RAMP = 100, PROG_MAX = 1.6;  // 難度：100 秒才到一般模式最後的難度，之後慢慢再難到 1.6
+        const PX_PER_NM = 12000;                                   // 船開 12000 px 算一海里（大約 40 秒）
+        const ZONES = [
+            { name: '近海', line: '近海，跟平常一樣。' },
+            { name: '外海', line: '外海有漩渦，經過會被吸到隔壁航道。' },
+            { name: '颱風區', line: '颱風區！側風會把船吹偏，馬上修回來。' },
+            { name: '鯨魚灣', line: '鯨魚灣，看到水柱就閃，鯨魚一次佔兩條航道。' },
+            { name: '浣熊海盜', line: '浣熊海盜的地盤，牠們成群結隊來。' },
+            { name: '夜航', line: '天黑了，只看得到船頭燈照的那段。' },
+            { name: '無人海域', line: '沒有補給了，貨輪也不打招呼。' },
+        ];
+        const ZONE_NUM = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+        const zoneInfo = z => ZONES[Math.min(z, ZONES.length) - 1];
+        const zoneNum = z => z <= 10 ? ZONE_NUM[z] : String(z);
+        const BUOY_ZONES = [3, 5];  // 這兩個海域會漂來補給港浮標（沒撈到隔幾秒再漂一個；第七海域以後沒有）
+        // 無盡模式的等第照開到第幾個海域
+        const FAR_GRADES = [
+            { min: 7, mark: '遠', line: '開到無人海域，船長沒話說' },
+            { min: 5, mark: '航', line: '浣熊海盜都見過了' },
+            { min: 3, mark: '可', line: '颱風區撐過來了' },
+            { min: -Infinity, mark: '近', line: '近海繞一圈就回來了' },
+        ];
+        const CAP2 = {
+            whirl: ['漩渦！', '被吸過去了，看路。'],
+            gust: ['側風來了，抓穩！', '被吹偏了，修回來！'],
+            whale: ['水柱！鯨魚要浮上來了。'],
+            whaleHit: ['撞到鯨魚了……牠沒事，我們有事。'],
+            fleet: ['浣熊海盜船隊來了，一隻一隻點！'],
+            buoy: ['補給港浮標，撈起來可以補船。'],
+            buoyGot: ['補好了，再撐一下。'],
+            snap: ['貨輪沒打招呼就衝過來了！'],
+            quit: ['靠港了，見好就收。'],
+        };
+        let mode = 'normal';
+        try { if (localStorage.getItem(MODE_KEY) === 'endless') mode = 'endless'; } catch (e) { }
 
         // ===== 1b. 船隻升級 =====
         // 存在共用錢包的 shop（跟坐洗部、菜園、早餐店同一份，key 不重複），登入 LINE 就跟著帳號走。等級只升不降，shop.spent 是幾家店加起來的。
@@ -311,24 +369,54 @@
         let G = null, lastNow = performance.now(), seq = 0;
         function newRound() {
             shop = loadShop();
+            const endless = mode === 'endless';
             G = {
                 started: false, ended: false, clock: 0, lane: 1, bx: laneX(1), tilt: 0, hull: hullMax(), hullMax: hullMax(), sank: false,
                 items: [], nextSpawn: 0.3, floats: [], warns: [], gull: null, combo: 0, lastCargo: null, wave: 0,
-                events: planEvents(), gullAt: [], endAt: 0,
+                events: endless ? [] : planEvents(), gullAt: [], endAt: 0,
+                endless, quit: false, zone: 0, dist: 0, zoneAt: 0, spouts: [], gust: null, nextGust: 0, nextWhale: 0, nextFleet: 0, buoys: 0, nextBuoy: 0,
                 earn: { cargo: {}, hold: 0, combo: 0, ito: 0, dog: 0, nod: 0, bounty: 0, duckHit: 0, gull: 0, raccoon: 0, trash: {}, repair: 0 },
                 tally: {
                     picked: 0, lanes: 0, maxCombo: 0, bottles: 0, itoWins: 0, dogs: 0, nods: 0, duckHits: 0,
                     trash: 0, reefs: 0, ships: 0, gulls: 0, gullShoo: 0, gullSteals: 0,
                     raccoons: 0, raccoonShoo: 0, raccoonSteals: 0, stolen: 0, kinds: {}, holdN: 0, autoShoo: 0,
+                    whirls: 0, gusts: 0, whales: 0, whaleHits: 0, fleets: 0, buoys: 0, snaps: 0,
                 },
             };
             G.gullAt = G.events.filter(e => e.kind === 'gull').map(e => e.at);
             G.shipAt = 9 + rand(0, 4);
             document.documentElement.classList.remove('hy-open');
             note('船長：' + pick(CAP.start));
-            hint('在畫面上<b class="font-normal text-wabi-dark">左右滑</b>（或點左右兩邊、按下面的按鈕）換航道，第一下就開船。');
+            hint(endless ? '無盡模式：船破光才靠港，也可以隨時自己靠港。每 30 秒換一個海域，一區比一區難。'
+                : '在畫面上<b class="font-normal text-wabi-dark">左右滑</b>（或點左右兩邊、按下面的按鈕）換航道，第一下就開船。');
             $('result').classList.add('hidden');
             renderBest();
+            renderModes();
+        }
+        function renderModes() {
+            const busy = G && G.started && !G.ended;
+            document.querySelectorAll('[data-mode]').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.mode === mode)); b.disabled = busy; });
+            // 無盡模式出航中：靠港鈕放在提示那一行
+            const q = !!(G && G.endless && busy);
+            $('quit').classList.toggle('hidden', !q);
+            $('hint').classList.toggle('hidden', q);
+        }
+        // 進到新的海域：說一聲、排這一區的事件
+        function enterZone(z) {
+            G.zone = z; G.zoneAt = performance.now();
+            const t0 = (z - 1) * ZONE_SEC;
+            if (z > 1) { note('船長：' + zoneInfo(z).line); sfx.horn(); }
+            G.gullAt.push(t0 + rand(4, 24));                    // 每一區一隻海鷗
+            if (z >= 2 && Math.random() < 0.55) {              // 一半機會起霧或順風
+                const k = Math.random() < 0.5 ? 'fog' : 'wind';
+                G.events.push({ kind: k, at: t0 + rand(6, 18), dur: k === 'fog' ? 8 : 6 });
+            }
+            if (z === 6) G.events.push({ kind: 'night', at: t0, dur: ZONE_SEC });           // 夜航：一整區都是黑的
+            if (z >= 7 && Math.random() < 0.6) G.events.push({ kind: 'night', at: t0 + rand(4, 16), dur: 10 });  // 之後偶爾天黑
+            if (BUOY_ZONES.includes(z)) { G.buoys++; G.nextBuoy = t0 + rand(5, 10); }
+            if (z === 3) G.nextGust = t0 + 2.5;
+            if (z === 4) G.nextWhale = t0 + 2.5;
+            if (z === 5) G.nextFleet = t0 + 3;
         }
         // 每一趟隨機一兩個事件：起霧、順風、海鷗（海鷗會來兩次）
         function planEvents() {
@@ -350,8 +438,11 @@
             if (!e) return 0;
             return clamp(Math.min(G.clock - e.at + 1, e.at + e.dur + 1 - G.clock), 0, 1);
         };
-        const prog = () => clamp(G.clock / ROUND, 0, 1);
-        const speed = () => (165 + 125 * prog()) * (eventOn('wind') ? 1.35 : 1);
+        const prog = () => G.endless ? clamp(G.clock / ENDLESS_RAMP, 0, PROG_MAX) : clamp(G.clock / ROUND, 0, 1);
+        const speed = () => { const p = prog(); return (165 + 125 * Math.min(p, 1) + 45 * Math.max(0, p - 1)) * (eventOn('wind') ? 1.35 : 1); };
+        const spawnGap = () => lerp(SPAWN[0], SPAWN[1], Math.min(prog(), 1));  // 無盡模式後面東西不會更多（只是更快、垃圾更多），每分鐘賺的不比一般模式多
+        const nm = () => G.dist / PX_PER_NM;
+        const nmText = v => (Math.floor(v * 100) / 100).toFixed(2);
         const curLane = () => clamp(Math.round(G.bx / LANE_W - 0.5), 0, LANES - 1);
 
         function start() {
@@ -359,11 +450,12 @@
             G.started = true;
             document.documentElement.classList.add('hy-open');
             hint('');
-            renderBest();
+            if (G.endless) enterZone(1);
+            renderBest(); renderModes();
             audio(); sfx.horn();
         }
         function steer(dir) {
-            if (!G || G.ended) return;
+            if (!G || G.ended || G.quit) return;
             start();
             const to = clamp(G.lane + dir, 0, LANES - 1);
             if (to === G.lane) { G.tilt = dir * 0.12; return; }
@@ -377,13 +469,16 @@
             const s = new Set();
             G.items.forEach(it => { if (!it.done && (ITEMS[it.kind] || {}).hazard && it.y < top) s.add(it.lane); if (it.kind === 'ship' && it.y < top + 60) s.add(it.lane); });
             G.warns.forEach(w => s.add(w.lane));
+            G.items.forEach(it => { if (it.kind === 'whale' && it.y < top + 60) { s.add(it.lane); s.add(it.lane + 1); } });
+            G.spouts.forEach(sp => { s.add(sp.lane); s.add(sp.lane + 1); });
             return s;
         }
         function spawnItem() {
-            const p = prog(), ent = Object.entries(ITEMS).map(([k, d]) => [k, d.w(p)]).filter(e => e[1] > 0);
+            const p = prog(), z = G.endless ? G.zone : 0, ent = Object.entries(ITEMS).map(([k, d]) => [k, d.w(p, z)]).filter(e => e[1] > 0);
             let r = Math.random() * ent.reduce((s, e) => s + e[1], 0), kind = ent[0][0];
             for (const [k, w] of ent) { r -= w; if (r <= 0) { kind = k; break; } }
-            const shipLanes = new Set(G.warns.map(w => w.lane).concat(G.items.filter(it => it.kind === 'ship' && it.y < 120).map(it => it.lane)));
+            const shipLanes = new Set(G.warns.map(w => w.lane).concat(G.items.filter(it => it.kind === 'ship' && it.y < 120).map(it => it.lane),
+                G.spouts.flatMap(sp => [sp.lane, sp.lane + 1]), G.items.filter(it => it.kind === 'whale' && it.y < 60).flatMap(it => [it.lane, it.lane + 1])));
             let lanes = [0, 1, 2, 3].filter(l => !shipLanes.has(l));
             // 上面那段已經有兩條航道堵住了，就不再放暗礁（一定留路給你走）
             if (ITEMS[kind].hazard && blockedLanes(110).size >= 2) kind = Math.random() < 0.5 ? 'small' : 'pet';
@@ -397,10 +492,61 @@
             if (kind === 'raccoon') { G.tally.raccoons++; note('船長：' + pick(CAP.raccoon)); }
         }
         // 對向來的貨輪：先在航道上面閃 1.1 秒紅色警告，再整艘開下來
+        // 無盡模式第七海域以後不警告直接開下來（有二級雷達還是提早 0.9 秒）
         function warnShip() {
-            const lane = pick([0, 1, 2, 3].filter(l => !G.warns.some(w => w.lane === l)));
-            G.warns.push({ lane, until: G.clock + (lv('radar') >= 2 ? 1.8 : 1.1) });
-            note('船長：' + pick(CAP.ship)); sfx.warn();
+            const lane = pick([0, 1, 2, 3].filter(l => !G.warns.some(w => w.lane === l) && !G.spouts.some(s => s.lane === l || s.lane + 1 === l)));
+            if (lane == null) return;
+            const snap = G.endless && G.zone >= 7;
+            const t = snap ? (lv('radar') >= 2 ? 0.9 : 0) : lv('radar') >= 2 ? 1.8 : 1.1;
+            if (t <= 0) {
+                G.items.push({ id: ++seq, kind: 'ship', lane, x: laneX(lane), y: -80, spd: 1.25, seed: 0, done: false });
+                G.tally.snaps++; note('船長：' + pick(CAP2.snap)); sfx.warn();
+                return;
+            }
+            G.warns.push({ lane, until: G.clock + t });
+            note('船長：' + pick(snap ? CAP2.snap : CAP.ship)); sfx.warn();
+        }
+        // 這條航道現在被推進去會不會馬上撞到（貨輪、鯨魚、暗礁就在前面或旁邊）：側風、漩渦只往安全的那邊推
+        function laneDanger(l) {
+            if (l < 0 || l >= LANES) return true;
+            return G.items.some(it => {
+                const covers = it.kind === 'whale' ? (it.lane === l || it.lane + 1 === l) : it.lane === l;
+                if (!covers || it.done && it.kind !== 'ship' && it.kind !== 'whale') return false;
+                if (it.kind === 'ship') return it.y + 66 > BOAT_Y - 260 && it.y - 66 < BOAT_Y + 40;
+                if (it.kind === 'whale') return it.y + 30 > BOAT_Y - 200 && it.y - 30 < BOAT_Y + 34;
+                return (ITEMS[it.kind] || {}).hazard && it.y > BOAT_Y - 150 && it.y < BOAT_Y + 24;
+            }) || G.warns.some(w => w.lane === l && w.until - G.clock < 0.5);
+        }
+        function safeSide() {
+            const ok = [-1, 1].filter(d => !laneDanger(G.lane + d));
+            return ok.length ? pick(ok) : 0;
+        }
+        // 鯨魚：先在兩條航道上面冒水柱 1 秒，再浮上來，一次佔兩條（lane 是左邊那條）
+        function spoutWhale() {
+            const blocked = blockedLanes(150);
+            const ok = [0, 1, 2].filter(l => { const u = new Set(blocked); u.add(l); u.add(l + 1); return u.size <= 3 && !G.spouts.some(s => Math.abs(s.lane - l) < 2); });
+            if (!ok.length) return false;
+            G.spouts.push({ lane: pick(ok), until: G.clock + 1, at: G.clock });
+            G.tally.whales++; note('船長：' + pick(CAP2.whale)); sfx.spout();
+            return true;
+        }
+        // 浣熊海盜船隊：一次漂來兩三隻
+        function spawnFleet() {
+            const busy = new Set(G.warns.map(w => w.lane).concat(G.spouts.flatMap(s => [s.lane, s.lane + 1])));
+            const lanes = [0, 1, 2, 3].filter(l => !busy.has(l)).sort(() => Math.random() - 0.5).slice(0, Math.random() < 0.5 ? 2 : 3);
+            if (lanes.length < 2) return;
+            lanes.forEach((lane, i) => G.items.push({ id: ++seq, kind: 'raccoon', lane, x: laneX(lane), y: -30 - i * 42, spd: 0.85, seed: Math.random() * 100, done: false }));
+            G.tally.raccoons += lanes.length; G.tally.fleets++;
+            note('船長：' + pick(CAP2.fleet));
+        }
+        function spawnBuoy() {
+            const busy = blockedLanes(120);
+            const lanes = [0, 1, 2, 3].filter(l => !busy.has(l) && !G.items.some(it => !it.done && it.lane === l && it.y < 30));
+            if (!lanes.length) return false;
+            const lane = pick(lanes);
+            G.items.push({ id: ++seq, kind: 'buoy', lane, x: laneX(lane), y: -30, spd: 1, seed: Math.random() * 100, done: false });
+            note('船長：' + pick(CAP2.buoy));
+            return true;
         }
 
         // ===== 4. 撞到、撈到 =====
@@ -445,10 +591,11 @@
         function crash(it, what) {
             const t = G.tally;
             G.hull--; G.earn.repair -= repairCost(); breakCombo();
-            if (what === 'ship') t.ships++; else t.reefs++;
+            if (what === 'ship') t.ships++; else if (what === 'whale') { t.whaleHits++; note('船長：' + pick(CAP2.whaleHit)); } else t.reefs++;
             G.shakeAt = performance.now();
             float(G.bx, BOAT_Y - 40, `船身破了 −${fmt(repairCost())}`, '#ff8a7a', true);
-            note('船長：' + pick(CAP.hit)); sfx.crash();
+            if (what !== 'whale') note('船長：' + pick(CAP.hit));
+            sfx.crash();
             if (G.hull <= 0) { G.sank = true; G.endAt = G.clock + 0.8; note('船長：船身撐不住，先靠港修理。'); }
         }
         function steal(by) {
@@ -465,7 +612,20 @@
         function touch(it) {
             const d = ITEMS[it.kind] || {};
             it.done = true;
-            if (it.kind === 'ship') { it.done = false; it.hitOnce = true; crash(it, 'ship'); return; }
+            if (it.kind === 'ship' || it.kind === 'whale') { it.done = false; it.hitOnce = true; crash(it, it.kind); return; }
+            if (d.whirl) {  // 漩渦：把船吸到隔壁航道（不扣錢、連撈不斷）
+                const side = safeSide();
+                it.spunAt = G.clock;
+                if (!side) { G.tilt = 0.4; float(G.bx, BOAT_Y - 52, '轉了一圈', '#ffffff'); sfx.whirl(); return; }
+                G.lane += side; G.tilt = side * 0.55; G.tally.whirls++;
+                float(G.bx, BOAT_Y - 52, '被漩渦吸過去了', '#ffffff'); note('船長：' + pick(CAP2.whirl)); sfx.whirl();
+                return;
+            }
+            if (d.buoy) {   // 補給港浮標：補回一格船身
+                it.gone = true; G.hull = Math.min(G.hullMax, G.hull + 1); G.tally.buoys++;
+                float(G.bx, BOAT_Y - 56, '船身補好一格', '#ffe08a', true); note('船長：' + pick(CAP2.buoyGot)); sfx.win();
+                return;
+            }
             if (d.good) { it.gone = true; goodCatch(it); }
             else if (d.bad) { it.gone = true; badCatch(it); }
             else if (d.hazard) { it.crashed = true; crash(it, 'reef'); }
@@ -533,6 +693,9 @@
             gull: () => { tone(1500, 0.2, 0.04, 'triangle', 0, 0.7); tone(1400, 0.2, 0.04, 'triangle', 0.22, 0.7); },
             bell: () => { tone(1046, 0.6, 0.1, 'sine'); tone(1568, 0.8, 0.05, 'sine', 0.02); },
             tick: () => tone(1200, 0.03, 0.04, 'square'),
+            whirl: () => { tone(500, 0.5, 0.06, 'sine', 0, 0.4); noise(0.4, 0.05, 700, 0.6); },
+            gust: () => noise(0.7, 0.08, 500, 0.5),
+            spout: () => { noise(0.6, 0.07, 1800, 0.7); tone(70, 0.6, 0.08, 'sine'); },
         };
 
         // ===== 6. 畫 =====
@@ -653,7 +816,7 @@
             const x = it.x, y = it.y, k = it.kind;
             const bob = Math.sin(now / 350 + it.seed) * 1.5;
             // 水面上的影子／波紋
-            if (k !== 'ship') { c.fillStyle = 'rgba(255,255,255,0.18)'; c.beginPath(); c.ellipse(x, y + 12, 18, 5, 0, 0, TAU); c.fill(); }
+            if (k !== 'ship' && k !== 'whale' && k !== 'whirl') { c.fillStyle = 'rgba(255,255,255,0.18)'; c.beginPath(); c.ellipse(x, y + 12, 18, 5, 0, 0, TAU); c.fill(); }
             if (k === 'small') drawCarrot(c, x, y + bob, 0.95, false, now);
             else if (k === 'big') drawCarrot(c, x, y + bob, 1.35, false, now);
             else if (k === 'gold') {
@@ -727,6 +890,113 @@
                 c.restore();
             } else if (k === 'raccoon') drawRaccoonTub(c, x, y + bob, it, now);
             else if (k === 'ship') drawFreighter(c, x, y);
+            else if (k === 'whale') drawWhale(c, x, y, it, now);
+            else if (k === 'whirl') {  // 漩渦：一圈一圈轉進去
+                c.save(); c.translate(x, y); c.scale(1, 0.62);
+                const spin = now / 260 + it.seed;
+                for (let i = 0; i < 4; i++) {
+                    c.strokeStyle = `rgba(255,255,255,${0.75 - i * 0.15})`; c.lineWidth = 2.2 - i * 0.3;
+                    c.beginPath(); c.arc(0, 0, 30 - i * 7, spin + i, spin + i + Math.PI * 1.3); c.stroke();
+                }
+                c.fillStyle = night() ? 'rgba(0,10,20,0.55)' : 'rgba(10,50,80,0.45)'; c.beginPath(); c.arc(0, 0, 7, 0, TAU); c.fill();
+                c.restore();
+            } else if (k === 'buoy') {  // 補給港浮標：紅白相間，上面一支旗子寫「補」
+                c.save(); c.translate(x, y + bob);
+                c.strokeStyle = 'rgba(255,255,255,0.6)'; c.lineWidth = 1.5; c.beginPath(); c.ellipse(0, 12, 22, 7, 0, 0, TAU); c.stroke();
+                c.fillStyle = '#e8463a'; c.beginPath(); c.ellipse(0, 6, 15, 11, 0, 0, TAU); c.fill();
+                c.fillStyle = '#ffffff'; c.fillRect(-15, 3, 30, 5);
+                c.fillStyle = '#5c4a3a'; c.fillRect(-1, -24, 2, 26);
+                c.fillStyle = '#fff6e6'; c.beginPath(); c.moveTo(1, -24); c.lineTo(18, -19); c.lineTo(1, -12); c.closePath(); c.fill();
+                c.fillStyle = '#b33a2f'; c.font = `700 8px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('補', 7, -18);
+                if (!reduceMotion) { c.strokeStyle = `rgba(255,224,138,${0.5 + 0.4 * Math.sin(now / 160)})`; c.lineWidth = 2; c.beginPath(); c.arc(0, 0, 28, 0, TAU); c.stroke(); }
+                c.restore();
+            }
+        }
+        // 鯨魚：從上面往下看，橫躺著佔兩條航道（實物、顏色固定）
+        function drawWhale(c, x, y, it, now) {
+            c.save(); c.translate(x, y);
+            const flip = it.seed > 50 ? -1 : 1; c.scale(flip, 1);
+            const sw = Math.sin(now / 300 + it.seed) * 0.08;
+            c.strokeStyle = 'rgba(255,255,255,0.55)'; c.lineWidth = 2;
+            c.beginPath(); c.ellipse(0, 4, 92, 34, 0, 0, TAU); c.stroke();
+            // 尾鰭
+            c.save(); c.translate(-72, 2); c.rotate(sw);
+            c.fillStyle = '#3d5a70'; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-14, -22, -30, -24); c.quadraticCurveTo(-20, -6, -26, 0); c.quadraticCurveTo(-20, 6, -30, 24); c.quadraticCurveTo(-14, 22, 0, 0); c.fill();
+            c.restore();
+            const g = c.createLinearGradient(0, -28, 0, 28);
+            g.addColorStop(0, '#4f7088'); g.addColorStop(0.6, '#3d5a70'); g.addColorStop(1, '#2f4658');
+            c.fillStyle = g; c.beginPath(); c.moveTo(-76, 2); c.quadraticCurveTo(-40, -30, 30, -26); c.quadraticCurveTo(84, -20, 82, 4); c.quadraticCurveTo(80, 26, 30, 26); c.quadraticCurveTo(-40, 28, -76, 2); c.fill();
+            c.fillStyle = 'rgba(220,235,245,0.75)'; c.beginPath(); c.moveTo(-40, 14); c.quadraticCurveTo(20, 30, 70, 14); c.quadraticCurveTo(20, 20, -40, 14); c.fill();
+            // 胸鰭、眼睛、噴氣孔
+            c.fillStyle = '#34505f'; c.beginPath(); c.ellipse(28, 24, 16, 6, 0.5, 0, TAU); c.ellipse(28, -22, 16, 6, -0.5, 0, TAU); c.fill();
+            c.fillStyle = '#ffffff'; c.beginPath(); c.arc(58, -6, 3.2, 0, TAU); c.fill();
+            c.fillStyle = '#1a2630'; c.beginPath(); c.arc(58.6, -5.6, 1.8, 0, TAU); c.fill();
+            c.fillStyle = '#2a3f4e'; c.beginPath(); c.ellipse(40, -2, 4, 2, 0, 0, TAU); c.fill();
+            // 偶爾噴一下
+            const t = (now / 1000 + it.seed) % 3;
+            if (t < 0.6 && !reduceMotion) { c.fillStyle = `rgba(255,255,255,${0.8 * (1 - t / 0.6)})`; for (let i = 0; i < 5; i++) { c.beginPath(); c.arc(40 + (i - 2) * 5, -6 - t * 40 - (i % 2) * 6, 3 + t * 6, 0, TAU); c.fill(); } }
+            c.restore();
+        }
+        // 鯨魚要浮上來：兩條航道上面一直冒水柱
+        function drawSpouts(c, now) {
+            G.spouts.forEach(sp => {
+                const x = LANE_W * (sp.lane + 1), k = (G.clock - sp.at);
+                c.fillStyle = 'rgba(40,90,130,0.35)'; c.beginPath(); c.ellipse(x, 52, 80, 18, 0, 0, TAU); c.fill();
+                for (let i = 0; i < 9; i++) {
+                    const ph = (k * 2.4 + i / 9) % 1, dx = (i - 4) * 6;
+                    c.fillStyle = `rgba(255,255,255,${0.85 * (1 - ph)})`;
+                    c.beginPath(); c.arc(x + dx * (1 + ph), 50 - ph * 46, 3 + ph * 5, 0, TAU); c.fill();
+                }
+                if (Math.floor(now / 160) % 2 === 0) { c.fillStyle = '#ffffff'; c.font = `600 9px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 3; c.strokeStyle = 'rgba(10,30,45,0.6)'; c.strokeText('鯨魚要浮上來了', x, 86); c.fillText('鯨魚要浮上來了', x, 86); }
+            });
+        }
+        // 側風：畫面上一排箭頭，往哪邊吹
+        function drawGust(c, now) {
+            const gs = G.gust;
+            if (!gs) return;
+            const blink = Math.floor(now / 120) % 2;
+            c.fillStyle = `rgba(255,255,255,${blink ? 0.95 : 0.55})`; c.font = `700 26px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+            c.lineWidth = 3; c.strokeStyle = 'rgba(10,30,45,0.5)';
+            const ar = gs.dir > 0 ? '→' : '←', off = ((now / 6) % 40) * gs.dir;
+            [180, 260, 330].forEach((y, i) => { for (let xx = -40; xx < W + 40; xx += 80) { const px = xx + off + (i % 2) * 40; c.strokeText(ar, px, y); c.fillText(ar, px, y); } });
+            c.font = `700 13px ${SANS}`; c.strokeText(`側風 ${gs.dir > 0 ? '往右' : '往左'}吹`, W / 2, 140); c.fillText(`側風 ${gs.dir > 0 ? '往右' : '往左'}吹`, W / 2, 140);
+        }
+        // 颱風區：斜斜的雨
+        function drawRain(c, now) {
+            c.fillStyle = 'rgba(20,35,50,0.18)'; c.fillRect(0, 0, W, H);
+            c.strokeStyle = 'rgba(220,235,245,0.4)'; c.lineWidth = 1;
+            for (let i = 0; i < 40; i++) { const y = ((now / 1.4 + i * 37) % (H + 40)) - 20, x = ((i * 89 + now / 4) % (W + 60)) - 30; c.beginPath(); c.moveTo(x, y); c.lineTo(x - 8, y + 18); c.stroke(); }
+        }
+        // 夜航：整片黑，只有船頭燈照得到前面一段（雷達照得遠一點）
+        const nightCv = document.createElement('canvas'); nightCv.width = cv.width; nightCv.height = cv.height;
+        const nightCtx = nightCv.getContext('2d');
+        function drawNight(c, lvl) {
+            if (!lvl) return;
+            const n = nightCtx;
+            n.setTransform(dpr, 0, 0, dpr, 0, 0); n.globalCompositeOperation = 'source-over'; n.clearRect(0, 0, W, H);
+            n.fillStyle = `rgba(3,8,16,${0.95 * lvl})`; n.fillRect(0, 0, W, H);
+            n.globalCompositeOperation = 'destination-out';
+            const reach = 190 + (lv('radar') >= 2 ? 110 : lv('radar') ? 60 : 0), x0 = G.bx, y0 = BOAT_Y - 44;
+            const g = n.createLinearGradient(0, y0, 0, y0 - reach);
+            g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(0.7, 'rgba(0,0,0,0.9)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+            n.fillStyle = g; n.beginPath(); n.moveTo(x0 - 16, y0); n.lineTo(x0 - 95, y0 - reach); n.lineTo(x0 + 95, y0 - reach); n.lineTo(x0 + 16, y0); n.closePath(); n.fill();
+            const rg = n.createRadialGradient(x0, BOAT_Y, 20, x0, BOAT_Y, 90);
+            rg.addColorStop(0, 'rgba(0,0,0,1)'); rg.addColorStop(1, 'rgba(0,0,0,0)'); n.fillStyle = rg; n.fillRect(x0 - 90, BOAT_Y - 90, 180, 180);
+            n.globalCompositeOperation = 'source-over';
+            c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(nightCv, 0, 0); c.restore();
+            c.fillStyle = `rgba(255,236,170,${0.1 * lvl})`; c.beginPath(); c.moveTo(x0 - 16, y0); c.lineTo(x0 - 95, y0 - reach); c.lineTo(x0 + 95, y0 - reach); c.lineTo(x0 + 16, y0); c.closePath(); c.fill();
+        }
+        // 進新的海域：中間一行大字
+        function drawZoneBanner(c, now) {
+            if (!G.endless || !G.zoneAt) return;
+            const k = (now - G.zoneAt) / 2200;
+            if (k > 1) return;
+            c.globalAlpha = k < 0.15 ? k / 0.15 : k > 0.75 ? (1 - k) / 0.25 : 1;
+            c.fillStyle = 'rgba(10,30,45,0.55)'; rr(c, 50, 186, 260, 70, 8); c.fill();
+            c.fillStyle = '#ffe08a'; c.font = `600 12px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+            c.fillText(`第${zoneNum(G.zone)}海域`, W / 2, 206);
+            c.fillStyle = '#ffffff'; c.font = `600 24px ${SERIF}`; c.fillText(zoneInfo(G.zone).name, W / 2, 234);
+            c.globalAlpha = 1;
         }
         // 偷東西的浣熊：坐在木盆裡，抱著一個空麻袋（實物、顏色固定）
         function drawRaccoonTub(c, x, y, it, now) {
@@ -835,7 +1105,8 @@
                 c.fillStyle = col || '#fff'; c.font = `600 12px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(text, x + w / 2, y + 11.5);
             };
             const sec = Math.ceil(left);
-            pill(8, 8, 56, `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`, left < 10 && G.started ? '#ffb4a8' : '#fff');
+            if (G.endless) pill(8, 8, 82, `${nmText(nm())} 海里`, '#fff');
+            else pill(8, 8, 56, `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`, left < 10 && G.started ? '#ffb4a8' : '#fff');
             const money = sumEarn();
             pill(W - 92, 8, 84, (money < 0 ? '−' : '') + fmt(Math.abs(money)), money < 0 ? '#ffb4a8' : '#ffe08a');
             // 船身三格
@@ -852,7 +1123,15 @@
                 const t = `${G.combo} 連撈${m > 1 ? ` ×${m}` : ''}`; c.strokeText(t, W / 2, 19); c.fillText(t, W / 2, 19);
             }
             const ev = eventOn('fog') ? '起霧' : eventOn('wind') ? '順風' : '';
-            if (ev) { c.fillStyle = 'rgba(255,255,255,0.9)'; c.font = `600 11px ${SANS}`; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(ev, 12, 44); }
+            let ey = 44;
+            if (G.endless && G.started) {
+                const el = Math.floor(G.clock);
+                c.fillStyle = 'rgba(255,255,255,0.92)'; c.font = `600 11px ${SANS}`; c.textAlign = 'left'; c.textBaseline = 'middle';
+                c.lineWidth = 3; c.strokeStyle = 'rgba(10,30,45,0.5)';
+                const t = `第${zoneNum(G.zone)}海域・${zoneInfo(G.zone).name}・${Math.floor(el / 60)}:${String(el % 60).padStart(2, '0')}`;
+                c.strokeText(t, 12, 44); c.fillText(t, 12, 44); ey = 62;
+            }
+            if (ev) { c.fillStyle = 'rgba(255,255,255,0.9)'; c.font = `600 11px ${SANS}`; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(ev, 12, ey); }
         }
         // 還沒開船：中間一張紙條
         function drawIntro(c, now) {
@@ -861,7 +1140,7 @@
             drawCaptain(c, 92, 232, 0.42, 'angry');
             c.fillStyle = '#2c2c2c'; c.font = `600 18px ${SERIF}`; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText('左右滑・換航道', 140, 196);
             c.fillStyle = '#8e8070'; c.font = `400 11px ${SANS}`;
-            ['撈蘿蔔，閃垃圾和暗礁', '海鷗、浣熊來偷貨：點牠', '第一下就開船，六十秒'].forEach((t, i) => c.fillText(t, 140, 226 + i * 20));
+            (G.endless ? ['無盡模式：破光才靠港', '每 30 秒換一個海域', '越開越遠，越來越難'] : ['撈蘿蔔，閃垃圾和暗礁', '海鷗、浣熊來偷貨：點牠', '第一下就開船，六十秒']).forEach((t, i) => c.fillText(t, 140, 226 + i * 20));
             const ar = Math.sin(now / 250) * 6;
             c.fillStyle = 'rgba(255,255,255,0.9)'; c.font = `700 22px ${SANS}`; c.textAlign = 'center';
             c.fillText('←', G.bx - 46 - ar, BOAT_Y); c.fillText('→', G.bx + 46 + ar, BOAT_Y);
@@ -941,17 +1220,44 @@
             G.tilt = lerp(G.tilt, 0, Math.min(1, dt * 6));
             if (!G.started || G.ended) return;
             G.clock += dt;
-            const v = speed(), p = prog();
+            const v = speed(), p = prog(), E = G.endless;
+            G.dist += v * dt;
+            if (E) { const z = 1 + Math.floor(G.clock / ZONE_SEC); if (z > G.zone) enterZone(z); }
             // 生東西
             G.nextSpawn -= dt * (eventOn('wind') ? 1.35 : 1);
-            if (G.nextSpawn <= 0 && ROUND - G.clock > 1.5) { spawnItem(); G.nextSpawn += lerp(SPAWN[0], SPAWN[1], p); }
+            if (G.nextSpawn <= 0 && (E || ROUND - G.clock > 1.5)) { spawnItem(); G.nextSpawn += spawnGap(); }
             // 對向貨輪
-            if (G.clock >= G.shipAt && ROUND - G.clock > 4) { warnShip(); G.shipAt = G.clock + rand(10, 14) - 3 * p; }
+            if (G.clock >= G.shipAt && (E || ROUND - G.clock > 4)) { warnShip(); G.shipAt = G.clock + rand(10, 14) - 3 * Math.min(p, 1) - (E && G.zone >= 7 ? 2 : 0); }
             G.warns = G.warns.filter(w => {
                 if (G.clock < w.until) return true;
                 G.items.push({ id: ++seq, kind: 'ship', lane: w.lane, x: laneX(w.lane), y: -80, spd: 1.25, seed: 0, done: false });
                 return false;
             });
+            if (E) {
+                // 鯨魚灣起：鯨魚（鯨魚灣那一區很常，之後偶爾）
+                if (G.zone >= 4 && G.clock >= G.nextWhale) { spoutWhale(); G.nextWhale = G.clock + (G.zone === 4 ? rand(4, 6) : rand(11, 16)); }
+                G.spouts = G.spouts.filter(sp => {
+                    if (G.clock < sp.until) return true;
+                    G.items.push({ id: ++seq, kind: 'whale', lane: sp.lane, x: LANE_W * (sp.lane + 1), y: -50, spd: 1, seed: Math.random() * 100, done: false });
+                    return false;
+                });
+                // 颱風區起：側風（先閃 0.9 秒箭頭，再把船吹偏一條）
+                if (G.zone >= 3 && !G.gust && G.clock >= G.nextGust) {
+                    const dir = G.lane === 0 ? 1 : G.lane === LANES - 1 ? -1 : (Math.random() < 0.5 ? -1 : 1);
+                    G.gust = { dir, at: G.clock + 0.9 }; note('船長：' + pick(CAP2.gust)); sfx.gust();
+                }
+                if (G.gust && G.clock >= G.gust.at) {
+                    const to = clamp(G.lane + G.gust.dir, 0, LANES - 1);
+                    if (to !== G.lane && !laneDanger(to)) { G.lane = to; G.tilt = G.gust.dir * 0.5; G.tally.gusts++; float(G.bx, BOAT_Y - 52, '被風吹偏了', '#ffffff'); }
+                    G.gust = null; G.nextGust = G.clock + (G.zone === 3 ? rand(4.5, 6.5) : rand(11, 17));
+                }
+                // 浣熊海盜起：船隊
+                if (G.zone >= 5 && G.clock >= G.nextFleet) { spawnFleet(); G.nextFleet = G.clock + (G.zone === 5 ? rand(5, 7) : rand(14, 20)); }
+                // 補給港浮標：船身有破才漂來；沒撈到隔幾秒再漂一個（第七海域以後沒有）
+                if (G.buoys > 0 && G.zone < 7 && G.hull < G.hullMax && G.clock >= G.nextBuoy && !G.items.some(it => it.kind === 'buoy')) {
+                    if (spawnBuoy()) { G.buoys--; G.nextBuoy = G.clock + 6; }
+                }
+            }
             // 海鷗
             if (G.gullAt.length && G.clock >= G.gullAt[0] && !G.gull) {
                 G.gullAt.shift();
@@ -979,6 +1285,12 @@
                     if (!it.hitOnce && Math.abs(it.x - G.bx) < 40 && it.y + 66 > BOAT_Y - 44 && it.y - 66 < BOAT_Y + 36) touch(it);
                     return;
                 }
+                if (it.kind === 'whale') {
+                    if (!it.hitOnce && Math.abs(it.x - G.bx) < 80 && it.y + 30 > BOAT_Y - 44 && it.y - 30 < BOAT_Y + 30) touch(it);
+                    return;
+                }
+                // 補給浮標沒撈到漂走了：等一下再漂一個
+                if (it.kind === 'buoy' && !it.done && it.y > H + 20) { it.done = true; G.buoys++; }
                 const d = ITEMS[it.kind];
                 // 自動汽笛：浣熊靠近就嚇跑
                 if (it.kind === 'raccoon' && !it.done && lv('horn') >= 2 && it.y > BOAT_Y - 150) {
@@ -994,9 +1306,9 @@
             });
             G.items = G.items.filter(it => !it.gone && it.y < H + 120);
             const left = ROUND - G.clock;
-            if (left < 10 && left + dt >= 10) note('船長：' + pick(CAP.hurry));
-            if (left < 5 && Math.floor(left) !== lastTick) { lastTick = Math.floor(left); sfx.tick(); }
-            if (G.sank ? G.clock >= G.endAt : G.clock >= ROUND) endRound();
+            if (!E && left < 10 && left + dt >= 10) note('船長：' + pick(CAP.hurry));
+            if (!E && left < 5 && Math.floor(left) !== lastTick) { lastTick = Math.floor(left); sfx.tick(); }
+            if (G.sank ? G.clock >= G.endAt : !E && G.clock >= ROUND) endRound();
         }
 
         // ===== 8. 手指 =====
@@ -1053,15 +1365,20 @@
                 ctx.save(); if (shake) ctx.translate(rand(-shake, shake), rand(-shake, shake));
                 drawSea(ctx, now);
                 drawWind(ctx, G.started ? eventLevel('wind') : 0, now);
-                G.items.filter(it => it.kind === 'ship' || it.kind === 'reef').forEach(it => drawItem(ctx, it, now));
-                G.items.filter(it => it.kind !== 'ship' && it.kind !== 'reef').forEach(it => drawItem(ctx, it, now));
+                const under = k => k === 'ship' || k === 'reef' || k === 'whirl' || k === 'whale';
+                G.items.filter(it => under(it.kind)).forEach(it => drawItem(ctx, it, now));
+                G.items.filter(it => !under(it.kind)).forEach(it => drawItem(ctx, it, now));
+                if (G.endless && G.zone === 3 && G.started) drawRain(ctx, now);
                 drawFog(ctx, G.started ? eventLevel('fog') * (lv('radar') ? val('radar') : 1) : 0, now);
+                if (G.endless && G.started) drawNight(ctx, eventLevel('night'));
                 drawWarns(ctx, now);
+                if (G.endless) { drawSpouts(ctx, now); drawGust(ctx, now); }
                 drawBoat(ctx, G.bx, BOAT_Y, G.tilt, now, G.hull, G.hullMax);
                 if (G.gull) drawGull(ctx, G.gull, now);
                 drawFloats(ctx, now);
                 ctx.restore();
                 drawHud(ctx, now);
+                drawZoneBanner(ctx, now);
                 if (!G.started) drawIntro(ctx, now);
                 // 霧、順風開始的那一刻說一聲
                 ['fog', 'wind'].forEach(k => { const ev = G.events.find(e => e.kind === k); if (ev && !ev.said && G.started && G.clock >= ev.at) { ev.said = true; note('船長：' + pick(CAP[k])); } });
@@ -1070,7 +1387,7 @@
         }
 
         // ===== 10. 靠港 =====
-        function gradeOf(pay) { return G.sank ? SANK : GRADES.find(g => pay >= g.min); }
+        function gradeOf(pay) { return G.endless ? FAR_GRADES.find(g => G.zone >= g.min) : G.sank ? SANK : GRADES.find(g => pay >= g.min); }
         let sheetFile = null;
         function bill() {
             const e = G.earn, t = G.tally;
@@ -1087,7 +1404,7 @@
                 ['被海鷗叼走', t.gullSteals, '次', e.gull, '叼走剛撈到的那一份'],
                 ['被浣熊偷走', t.raccoonSteals, '次', e.raccoon, '跳上船偷走兩份的錢，最多 $300'],
                 ...['pet', 'bag', 'router'].filter(k => e.trash[k]).map(k => [ITEMS[k].name, e.trash[k].n, ITEMS[k].unit, e.trash[k].m, `清潔費每${ITEMS[k].unit} ${fmt(-Math.round(ITEMS[k].val * (lv('sweep') ? val('sweep') : 1)))}${lv('sweep') ? `（${SHOP_BY.sweep.tiers[lv('sweep')]}）` : ''}`]),
-                ['船身維修費', t.reefs + t.ships, '次', e.repair, `撞到暗礁 ${t.reefs} 次、貨輪 ${t.ships} 次，每次 ${fmt(repairCost())}`],
+                ['船身維修費', t.reefs + t.ships + t.whaleHits, '次', e.repair, `撞到暗礁 ${t.reefs} 次、貨輪 ${t.ships} 次${t.whaleHits ? `、鯨魚 ${t.whaleHits} 次` : ''}，每次 ${fmt(repairCost())}`],
             ].filter(r => r[1] && r[3]));
         }
         async function endRound() {
@@ -1100,14 +1417,19 @@
             const pay = Math.max(100, sales);
             const grade = gradeOf(pay);
             G.pay = { sales, pay };
-            note(G.sank ? '船長：船身撐不住，提早靠港。' : '船長：靠港了，卸貨。');
+            note(G.endless ? (G.sank ? `船長：船身撐不住了，開到第${zoneNum(G.zone)}海域。` : '船長：' + pick(CAP2.quit)) : G.sank ? '船長：船身撐不住，提早靠港。' : '船長：靠港了，卸貨。');
             hint('');
+            renderModes();
             Wallet.earn(pay, 'ship');
             recordRound(pay, grade);
             $('syncNote').textContent = '';
             uploadRounds().then(showSyncNote);
 
-            $('resultTag').textContent = G.sank ? '提早靠港' : '靠港了';
+            $('resultTag').textContent = G.endless ? '無盡模式・靠港了' : G.sank ? '提早靠港' : '靠港了';
+            $('farLine').classList.toggle('hidden', !G.endless);
+            if (G.endless) $('farLine').textContent = farText();
+            $('rankLink').href = G.endless ? 'rank.html#endless-ship' : 'rank.html#work';
+            $('rankLink').textContent = G.endless ? '看無盡・榜' : '看打工排行榜';
             $('score').textContent = fmt(pay);
             $('gradeLine').textContent = `${grade.mark}・${grade.line}`;
             $('cargoLine').textContent = `撈了 ${G.tally.picked} 份・最長連撈 ${G.tally.maxCombo}${G.tally.trash ? `・垃圾 ${G.tally.trash} 個` : ''}`;
@@ -1132,10 +1454,12 @@
             }, 900);
         }
 
+        const mmss = sec => { sec = Math.floor(sec); return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`; };
+        const farText = () => `航程 ${nmText(nm())} 海里・第${zoneNum(G.zone)}海域${zoneInfo(G.zone).name}・開了 ${mmss(G.clock)}${G.tally.buoys ? `・補給 ${G.tally.buoys} 次` : ''}`;
         async function makeSheet(pay, grade, rows) {
             const st = loadStats(), voyage = String(st.rounds).padStart(4, '0');
             const lines = rows.map(([k, v, u, m]) => [`${k} ${v} ${u}`, (m < 0 ? '−' : '') + fmt(Math.abs(m))]);
-            const allText = lines.flat().join('') + '長蘿貨運提單船名號航次第起運港二十七樓頂樓菜園目的大橋頭碼頭貨物明細船長說簽撈了份最連撈合計共保底出勤費給不到貨艙是空的提早靠港' + grade.mark + grade.line + '0123456789$,−・';
+            const allText = lines.flat().join('') + '長蘿貨運提單船名號航次第起運港二十七樓頂樓菜園目的大橋頭碼頭貨物明細船長說簽撈了份最連撈合計共保底出勤費給不到貨艙是空的提早靠港無盡模式航程海里域開補給次' + ZONES.map(z => z.name).join('') + ZONE_NUM.join('') + grade.mark + grade.line + '0123456789$,−・.:';
             try { await Promise.race([Promise.all([document.fonts.load(`600 40px ${SERIF}`, allText), document.fonts.load(`400 40px ${SANS}`, allText)]), new Promise(res => setTimeout(res, 2500))]); } catch (e) { }
             const c = document.createElement('canvas'); c.width = 1080; c.height = 1350;
             const x = c.getContext('2d');
@@ -1147,16 +1471,20 @@
             x.fillStyle = '#8e8070'; x.fillRect(500, 250, 80, 2);
             // 船長頭像
             x.save(); x.beginPath(); x.arc(860, 410, 125, 0, TAU); x.fillStyle = '#e4eef2'; x.fill(); x.clip();
-            drawCaptain(x, 860, 420, 1.05, G.sank ? 'angry' : pay >= 2200 ? 'happy' : 'angry'); x.restore();
+            drawCaptain(x, 860, 420, 1.05, G.endless ? (G.zone >= 5 ? 'happy' : 'angry') : G.sank ? 'angry' : pay >= 2200 ? 'happy' : 'angry'); x.restore();
             x.strokeStyle = '#8e8070'; x.lineWidth = 2; x.beginPath(); x.arc(860, 410, 125, 0, TAU); x.stroke();
             text('船長', 860, 568, `400 26px ${SERIF}`, '#8e8070');
             // 提單欄位
             const field = (k, v, y) => { text(k, 150, y, `400 24px ${SANS}`, '#8e8070', 'left'); text(v, 290, y, `400 28px ${SERIF}`, '#2c2c2c', 'left'); };
             field('船名', '長蘿號', 320); field('航次', `第 ${voyage} 航`, 366); field('起運港', '二十七樓頂樓菜園', 412); field('目的港', '大橋頭碼頭', 458);
             x.strokeStyle = '#e4ddd2'; x.lineWidth = 1; x.beginPath(); x.moveTo(150, 490); x.lineTo(690, 490); x.stroke();
-            text(`撈了 ${G.tally.picked} 份・最長連撈 ${G.tally.maxCombo}`, 150, 540, `400 28px ${SERIF}`, '#8e8070', 'left');
-            const n = Math.max(1, lines.length), step = n > 9 ? Math.floor(400 / n) : 46, size = n > 9 ? 24 : 28;
             let y = 600;
+            if (G.endless) {
+                text(`無盡模式・航程 ${nmText(nm())} 海里`, 150, 540, `600 30px ${SERIF}`, '#b33a2f', 'left');
+                text(`第${zoneNum(G.zone)}海域${zoneInfo(G.zone).name}・開了 ${mmss(G.clock)}・撈了 ${G.tally.picked} 份`, 150, 584, `400 26px ${SERIF}`, '#8e8070', 'left');
+                y = 640;
+            } else text(`撈了 ${G.tally.picked} 份・最長連撈 ${G.tally.maxCombo}`, 150, 540, `400 28px ${SERIF}`, '#8e8070', 'left');
+            const n = Math.max(1, lines.length), room = G.endless ? 360 : 400, step = n > (G.endless ? 8 : 9) ? Math.floor(room / n) : 46, size = n > (G.endless ? 8 : 9) ? 24 : 28;
             (lines.length ? lines : [['貨艙是空的', '']]).forEach(([k, v]) => {
                 text(k, 150, y, `400 ${size}px ${SERIF}`, '#4a4a4a', 'left');
                 text(v, 690, y, `400 ${size}px ${SANS}`, v.startsWith('−') ? '#b33a2f' : '#2c2c2c', 'right');
@@ -1177,7 +1505,7 @@
             return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(), 'image/png'));
         }
         async function shareSheet() {
-            await SaveImg.save(sheetFile, { title: '丼步喱・絆 貨運提單', text: `我開長蘿號跑了一趟，運費 ${$('score').textContent}` });
+            await SaveImg.save(sheetFile, { title: '丼步喱・絆 貨運提單', text: G && G.endless ? `我開長蘿號跑無盡模式，${farText()}，運費 ${$('score').textContent}` : `我開長蘿號跑了一趟，運費 ${$('score').textContent}` });
         }
 
         // ===== 11. 紀錄：這支手機的統計，也送到後端（Ships 分頁）；後端還沒部署就先排隊，之後補送 =====
@@ -1196,7 +1524,9 @@
             Object.entries(t.kinds).forEach(([k, v]) => { st.kinds[k] = (st.kinds[k] || 0) + v; });
             const ev = G.events.map(x => x.kind);
             st.recent.unshift({
-                at: new Date().toISOString(), ms: Math.round(G.clock * 1000), len: ROUND,
+                at: new Date().toISOString(), ms: Math.round(G.clock * 1000), len: G.endless ? Math.round(G.clock) : ROUND,
+                mode: G.endless ? 'endless' : 'normal', zone: G.endless ? G.zone : 0, dist: G.endless ? Math.floor(nm() * 100) : 0,
+                whirls: t.whirls, gusts: t.gusts, whale_hits: t.whaleHits, buoys: t.buoys,
                 total: pay, sales: G.pay.sales, grade: grade.mark, sank: G.sank, hull: G.hull,
                 picked: t.picked, max_combo: t.maxCombo, combo_bonus: e.combo,
                 small: t.kinds.small || 0, big: t.kinds.big || 0, crate: t.kinds.crate || 0, gold: t.kinds.gold || 0,
@@ -1209,14 +1539,17 @@
             });
             st.recent = st.recent.slice(0, 50);
             try { localStorage.setItem(STATS_KEY, JSON.stringify(st)); } catch (err) { }
-            try { if (pay > Number(localStorage.getItem(BEST_KEY) || 0)) localStorage.setItem(BEST_KEY, String(pay)); } catch (err) { }
+            try {
+                if (G.endless) { const d = Math.floor(nm() * 100); if (d > Number(localStorage.getItem(FAR_KEY) || 0)) localStorage.setItem(FAR_KEY, String(d)); }
+                else if (pay > Number(localStorage.getItem(BEST_KEY) || 0)) localStorage.setItem(BEST_KEY, String(pay));
+            } catch (err) { }
         }
         // 右上角：出航中寫撈了幾份；沒出航寫最好的一趟
         function renderBest() {
             if (G && G.started && !G.ended) { $('best').innerHTML = '出航中<br>&nbsp;'; return; }
-            let best = 0;
-            try { best = Number(localStorage.getItem(BEST_KEY) || 0); } catch (e) { }
-            $('best').innerHTML = best ? `最好一趟<br>${fmt(best)}` : '&nbsp;<br>&nbsp;';
+            let best = 0, far = 0;
+            try { best = Number(localStorage.getItem(BEST_KEY) || 0); far = Number(localStorage.getItem(FAR_KEY) || 0); } catch (e) { }
+            $('best').innerHTML = mode === 'endless' ? (far ? `航最遠<br>${(far / 100).toFixed(2)} 海里` : '&nbsp;<br>&nbsp;') : best ? `最好一趟<br>${fmt(best)}` : '&nbsp;<br>&nbsp;';
         }
 
         const API_URL = (window.Line && Line.API_URL) || "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
@@ -1261,6 +1594,13 @@
         }
 
         $('shareBtn').addEventListener('click', shareSheet);
+        document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => {
+            if (G && G.started && !G.ended) return;
+            mode = b.dataset.mode;
+            try { localStorage.setItem(MODE_KEY, mode); } catch (e) { }
+            newRound();
+        }));
+        $('quit').addEventListener('click', () => { if (G && G.endless && G.started && !G.ended && !G.sank) endRound(); });
         $('againBtn').addEventListener('click', () => { newRound(); $('stage').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' }); });
         $('payAcct').addEventListener('click', e => { if (e.target.closest('[data-login]')) Line.login(); });
         // ===== 12. 船隻升級面板 =====

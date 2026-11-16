@@ -1238,7 +1238,7 @@ function washLog(input) {
 // 花錢：Players 的 spent（全部花掉的）拆成店面升級（shop.spent，洗頭店＋菜園農具＋早餐店）、捐香油錢（gongde.donated）、點燈（gongde.lit），剩下的算刮刮樂。
 // 公開：回 LINE 名字和大頭貼，不回 line_id；有帶 session 的話把自己那列標 me。算好的榜存 CacheService 5 分鐘。
 
-var BOARD_CACHE_KEY = 'board:v9', BOARD_CACHE_SEC = 60;  // 只讀新的列以後重算很快，一分鐘算一次（以前五分鐘）
+var BOARD_CACHE_KEY = 'board:v10', BOARD_CACHE_SEC = 60;  // 只讀新的列以後重算很快，一分鐘算一次（以前五分鐘）
 
 // 每張紀錄表怎麼併成「每個人最好的一場」：cols 讀幾欄，merge(best, row) 把一列併進去（best 用 line_id 當 key）
 // 單場最高分（Washes G total／AE ms、Cleans F total／AA ms）：分數高的贏，同分比快
@@ -1251,24 +1251,39 @@ function mergeTopScore(totalCol, msCol) {
   };
 }
 var BOARD_SOURCES = {
-  // 貨運：每個 line_id 最長的連撈（K max_combo），一樣長比運費多（E total）
-  Ships: { cols: 11, merge: function (best, r) {
-    var id = String(r[2] || ''), n = Number(r[10]) || 0, total = Number(r[4]) || 0;
-    if (!id || !n) return;
-    var b = best[id];
-    if (!b || n > b.n || (n === b.n && total > b.total)) best[id] = { n: n, total: total, picked: Number(r[9]) || 0 };
+  // 貨運：一般模式最長的連撈（K max_combo，一樣長比運費多 E total）和一趟最多賺多少；
+  // 無盡模式（AO mode = endless）航最遠（AQ dist，百分之一海里，同樣遠比運費）和一趟最多賺多少
+  Ships: { cols: 43, merge: function (best, r) {
+    var id = String(r[2] || '');
+    if (!id) return;
+    var total = Number(r[4]) || 0, n = Number(r[10]) || 0;
+    var b = best[id] || (best[id] = { normal: null, combo: null, money: null, far: null });
+    if (r[40] !== 'endless') {
+      if (b.normal == null || total > b.normal) b.normal = total;
+      if (n && (!b.combo || n > b.combo.n || (n === b.combo.n && total > b.combo.total))) b.combo = { n: n, total: total, picked: Number(r[9]) || 0 };
+      return;
+    }
+    var dist = Number(r[42]) || 0, zone = Number(r[41]) || 1, ms = Number(r[37]) || 0;
+    if (!b.far || dist > b.far.dist || (dist === b.far.dist && total > b.far.total)) b.far = { dist: dist, zone: zone, total: total, ms: ms };
+    if (!b.money || total > b.money.total) b.money = { total: total, ms: ms, zone: zone, dist: dist };
   } },
   Washes: { cols: 31, merge: mergeTopScore(6, 30) },
   Cleans: { cols: 27, merge: mergeTopScore(5, 26) },
-  // 蹭網無盡模式：每個 line_id 撐最久的一輪（G wifi_ms、Q ms、U mode、V season）
+  // 蹭網：一般模式一輪最多省多少（E total）；無盡模式撐最久的一輪和一輪最多省多少（G wifi_ms、Q ms、U mode、V season）
   // 部署新版之前送上來的那幾輪沒有 U、V（舊版沒存），不過一般模式最多 60 秒，超過 61 秒的一定是無盡模式，季數用秒數算
-  // 比的是真的連著 28 樓的時間（G wifi_ms），放著掛機的時間不算；all 是那輪總共撐多久
+  // 撐最久比的是真的連著 28 樓的時間（G wifi_ms），放著掛機的時間不算；all 是那輪總共撐多久
   Wifis: { cols: 22, merge: function (best, r) {
-    var id = String(r[2] || ''), ms = Number(r[16]) || 0, mode = r[20] || '';
-    if (!id || !ms) return;
-    if (mode !== 'endless' && !(mode === '' && ms > 61000)) return;
+    var id = String(r[2] || ''), ms = Number(r[16]) || 0, mode = r[20] || '', total = Number(r[4]) || 0;
+    if (!id) return;
+    var b = best[id] || (best[id] = { normal: null, alive: null, money: null });
+    if (mode !== 'endless' && !(mode === '' && ms > 61000)) {
+      if (b.normal == null || total > b.normal) b.normal = total;
+      return;
+    }
+    if (!ms) return;
     var season = Number(r[21]) || Math.floor(ms / 30000) + 1, wifi = Number(r[6]) || 0;
-    if (!best[id] || wifi > best[id].ms) best[id] = { ms: wifi, all: ms, season: season, total: Number(r[4]) || 0 };
+    if (!b.alive || wifi > b.alive.ms) b.alive = { ms: wifi, all: ms, season: season, total: total };
+    if (!b.money || total > b.money.total) b.money = { total: total, ms: ms, season: season };
   } },
   // 早餐店：每個 line_id 出餐最多的一天（I served），同樣多比氣走少（J）、再比賺多（E）
   Zaocans: { cols: 11, merge: function (best, r) {
@@ -1283,7 +1298,7 @@ var BOARD_SOURCES = {
 // 以前每次算榜都把紀錄表從頭讀到尾，表越大越慢。現在每個人最好的成績記在 Board 分頁（每張表一格 JSON：{ row 讀到第幾列, best }），
 // 下次只讀 row 後面新增的列、跟記下的比。紀錄被 archiveLogs() 搬走也沒關係：成績已經記在 Board，搬走幾列 row 就減幾。
 // 改了 merge 的規則要重算：把 BOARD_STATE_VERSION 加一（會從頭讀一次；已經封存走的紀錄就不算了，要小心）。
-var BOARD_STATE_VERSION = 2;  // 2：多了 Ships（欄位位置變了，從頭讀一次）
+var BOARD_STATE_VERSION = 3;  // 2：多了 Ships（欄位位置變了，從頭讀一次）；3：一般模式、無盡模式分開記（無盡・榜）
 var BOARD_STATE_COLS = ['Washes', 'Cleans', 'Wifis', 'Zaocans', 'Ships'];
 function boardStateSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -1385,7 +1400,7 @@ function archiveLogs(days) {
 
 function buildBoard() {
   var st = loadBoardState();
-  var washBest = boardScan(st, 'Washes'), cleanBest = boardScan(st, 'Cleans'), alive = boardScan(st, 'Wifis'), served = boardScan(st, 'Zaocans'), combos = boardScan(st, 'Ships');
+  var washBest = boardScan(st, 'Washes'), cleanBest = boardScan(st, 'Cleans'), wifis = boardScan(st, 'Wifis'), served = boardScan(st, 'Zaocans'), ships = boardScan(st, 'Ships');
   try { saveBoardState(st); } catch (e) { console.warn('Board 分頁存不進去：' + e); }
   var rows = playersSheet().getDataRange().getValues(), out = [];
   for (var i = 1; i < rows.length; i++) {
@@ -1400,12 +1415,14 @@ function buildBoard() {
     var x = part('xitou', washBest), c = part('clean', cleanBest);
     var fe = earned.farm || {};  // 菜園：最高的一輪就是 earned 的 best（一輪賣多少錢）
     var fm = { n: Number(fe.times) || 0, money: Number(fe.total) || 0, best: fe.best ? Number(fe.best) : null, ms: 0 };
-    var we = earned.wifi || {};  // 蹭網：跟菜園一樣，最高的一輪是 earned 的 best
-    var wf = { n: Number(we.times) || 0, money: Number(we.total) || 0, best: we.best ? Number(we.best) : null, ms: 0, alive: alive[id] || null };
+    var we = earned.wifi || {}, wb = wifis[id] || {};  // 蹭網：最高分只算一般模式（從 Wifis 算）；無盡模式另外放 endless（無盡・榜）
+    var wf = { n: Number(we.times) || 0, money: Number(we.total) || 0, best: wb.normal || null, ms: 0, alive: wb.alive || null,
+      endless: { money: wb.money || null, alive: wb.alive || null } };
     var ze = earned.zaocan || {};  // 早餐店：最高的一天是 earned 的 best；served 是出餐最多的一天
     var zc = { n: Number(ze.times) || 0, money: Number(ze.total) || 0, best: ze.best ? Number(ze.best) : null, ms: 0, served: served[id] || null };
-    var se = earned.ship || {};  // 貨運：最高的一趟是 earned 的 best；combo 是最長的連撈
-    var sh = { n: Number(se.times) || 0, money: Number(se.total) || 0, best: se.best ? Number(se.best) : null, ms: 0, combo: combos[id] || null };
+    var se = earned.ship || {}, sb = ships[id] || {};  // 貨運：最高分、最長連撈只算一般模式；無盡模式航最遠、一趟最多放 endless
+    var sh = { n: Number(se.times) || 0, money: Number(se.total) || 0, best: sb.normal || null, ms: 0, combo: sb.combo || null,
+      endless: { money: sb.money || null, far: sb.far || null } };
     var gd = {}, shop = {};
     try { gd = JSON.parse(rows[i][8] || '{}') || {}; } catch (e) { }
     try { shop = JSON.parse(rows[i][9] || '{}') || {}; } catch (e) { }
@@ -1834,7 +1851,8 @@ function zaocanLog(input) {
 var SHIP_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'total', 'sales', 'grade', 'sank', 'hull',
   'picked', 'max_combo', 'combo_bonus', 'small', 'big', 'crate', 'gold', 'bottles', 'ito_wins', 'dogs', 'ducks', 'duck_hits',
   'trash', 'pet', 'bag', 'router', 'reefs', 'ships', 'gulls', 'gull_shoo', 'gull_steals',
-  'raccoons', 'raccoon_shoo', 'raccoon_steals', 'stolen', 'lanes', 'events', 'shop', 'ms', 'len', 'login'];
+  'raccoons', 'raccoon_shoo', 'raccoon_steals', 'stolen', 'lanes', 'events', 'shop', 'ms', 'len', 'login',
+  'mode', 'zone', 'dist', 'whirls', 'gusts', 'whale_hits', 'buoys'];
 
 function shipsSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -1859,12 +1877,14 @@ function shipRow(r, now, lineId, device) {
   var events = String(r.events || '').split(',').filter(function (e) { return /^[a-z]{1,8}$/.test(e); }).slice(0, 6).join(',');
   return [
     now, at, lineId || '', device,
-    washNum(r.total, 0, 100000), washNum(r.sales, -10000, 100000), washText(r.grade, 2), !!r.sank, washNum(r.hull, 0, 3),
+    washNum(r.total, 0, 1000000), washNum(r.sales, -100000, 1000000), washText(r.grade, 2), !!r.sank, washNum(r.hull, 0, 9),
     n(r.picked), n(r.max_combo), washNum(r.combo_bonus, 0, 100000), n(r.small), n(r.big), n(r.crate), n(r.gold),
     n(r.bottles), n(r.ito_wins), n(r.dogs), n(r.ducks), n(r.duck_hits),
     n(r.trash), n(r.pet), n(r.bag), n(r.router), n(r.reefs), n(r.ships), n(r.gulls), n(r.gull_shoo), n(r.gull_steals),
     n(r.raccoons), n(r.raccoon_shoo), n(r.raccoon_steals), washNum(r.stolen, 0, 100000), n(r.lanes), events, JSON.stringify(shop),
-    washNum(r.ms, 0, 3600000), washNum(r.len, 0, 3600), !!r.login
+    washNum(r.ms, 0, 7200000), washNum(r.len, 0, 7200), !!r.login,
+    r.mode === 'endless' ? 'endless' : 'normal', washNum(r.zone, 0, 999), washNum(r.dist, 0, 10000000),
+    n(r.whirls), n(r.gusts), n(r.whale_hits), n(r.buoys)
   ];
 }
 
