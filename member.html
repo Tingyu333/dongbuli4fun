@@ -22,11 +22,11 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/theme.css?v=20261116b">
-    <script src="assets/theme.js?v=20261116b"></script>
-    <script src="assets/line.js?v=20261116b"></script>
-    <script src="assets/wallet.js?v=20261116b"></script>
-    <script src="assets/gongde.js?v=20261116b"></script>
+    <link rel="stylesheet" href="assets/theme.css?v=20261116c">
+    <script src="assets/theme.js?v=20261116c"></script>
+    <script src="assets/line.js?v=20261116c"></script>
+    <script src="assets/wallet.js?v=20261116c"></script>
+    <script src="assets/gongde.js?v=20261116c"></script>
     <style>
         .line-btn {
             min-height: 44px;
@@ -92,7 +92,7 @@
         }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261116b">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261116c">
 </head>
 
 <body
@@ -171,6 +171,14 @@
                     <span class="flex-1 min-w-0">
                     <span class="block text-wabi-dark tracking-widest">蹭・網</span>
                     <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">偷連 28 樓的 Wi-Fi 追劇，茱莉鴨轉頭前放開</span>
+                    </span>
+                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                </a>
+                <a href="zaocan.html" class="game">
+                    <span class="game-mark">煎</span>
+                    <span class="flex-1 min-w-0">
+                    <span class="block text-wabi-dark tracking-widest">早餐・煎</span>
+                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">大橋頭麥克早餐店，煎蛋捲蛋餅倒冰奶，七十五秒</span>
                     </span>
                     <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
                 </a>
@@ -254,8 +262,9 @@
             insure: e => `滿期 ${e.times} 張，利息 ${fmt(e.total)}`,
             farm: e => `拔了 ${e.times} 輪，賺 ${fmt(e.total)}（最多一輪 ${fmt(e.best)}）`,
             wifi: e => `蹭了 ${e.times} 輪，省 ${fmt(e.total)}（最多一輪 ${fmt(e.best)}）`,
+            zaocan: e => `開了 ${e.times} 天店，賺 ${fmt(e.total)}（最多一天 ${fmt(e.best)}）`,
         };
-        const LABELS = { xitou: '坐洗部', clean: '房務部', scratch: '彩券行', bonus: '主人紅包', caishen: '財神燈', insure: '丼步喱人壽', farm: '菜園部', wifi: '蹭網部' };
+        const LABELS = { xitou: '坐洗部', clean: '房務部', scratch: '彩券行', bonus: '主人紅包', caishen: '財神燈', insure: '丼步喱人壽', farm: '菜園部', wifi: '蹭網部', zaocan: '早餐店' };
 
         function renderWho() {
             const box = $('who');

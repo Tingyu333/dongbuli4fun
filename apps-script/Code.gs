@@ -55,6 +55,8 @@ var FARM_LOGS_PER_HOUR = 60;     // 一支手機每小時最多送幾次菜園�
 var FARM_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾輪
 var WIFI_LOGS_PER_HOUR = 60;     // 一支手機每小時最多送幾次蹭網紀錄
 var WIFI_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾輪
+var ZAOCAN_LOGS_PER_HOUR = 60;   // 一支手機每小時最多送幾次早餐店紀錄
+var ZAOCAN_ROWS_PER_HOUR = 2000; // 全站每小時最多存幾天（一輪 75 秒算一天）
 
 // doPost 用於接收資料：訂房、留言、後台改狀態
 // 要排隊的動作：會「先讀再寫、讀到的決定寫什麼」的（撞期、領第幾張票、紅包還剩幾份、改狀態）。
@@ -100,6 +102,7 @@ function route(type, input) {
     if (type === 'cleanLog') return cleanLog(input);
     if (type === 'farmLog') return farmLog(input);
     if (type === 'wifiLog') return wifiLog(input);
+    if (type === 'zaocanLog') return zaocanLog(input);
     if (type === 'gongdeLog') return gongdeLog(input);
     if (type === 'leaderboard') return leaderboard(input);
     if (type === 'policyList') return policyList(input);
@@ -1544,6 +1547,94 @@ function wifiLog(input) {
   });
   if (rows.length) {
     var sheet = wifisSheet();
+    rows.forEach(function (row) { sheet.appendRow(row); });
+    cache.put(allKey, String(allCount + rows.length), 3600);
+  }
+  return { result: 'success', saved: rows.length, skipped: skipped };
+}
+
+// --- 早餐・煎（zaocan.html）：每一輪（開店一天）的紀錄 ---
+// 跟蹭網紀錄一樣：公開、appendRow 不排隊、不寄信不回資料；session 對就記 line_id。
+// 欄位收齊一點，之後排行榜（最多錢、出餐最多、最快出餐、零氣走…）都從這裡算。
+var ZAOCAN_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'total', 'sales', 'grade',
+  'customers', 'served', 'angry', 'items', 'tips', 'ito', 'quality', 'burnt', 'spilled', 'wrong', 'trashed',
+  'rolls_nice', 'rolls_messy', 'drinks_perfect', 'drinks_short', 'eggs_half', 'eggs_full', 'flips',
+  'fastest_ms', 'avg_wait_ms', 'ex', 'ito_wins', 'specials', 'menu', 'shop', 'ms', 'len', 'login'];
+var ZAOCAN_MENU = ['egg', 'bacon', 'cake', 'roll', 'noodle', 'milk', 'tea'];
+var ZAOCAN_SPECIALS = ['duck', 'ito', 'ex', 'dog'];
+
+function zaocansSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Zaocans');
+  if (!sheet) {
+    sheet = ss.insertSheet('Zaocans');
+    sheet.appendRow(ZAOCAN_HEADERS);
+    sheet.setFrozenRows(1);
+  } else if (sheet.getLastColumn() < ZAOCAN_HEADERS.length) {
+    sheet.getRange(1, 1, 1, ZAOCAN_HEADERS.length).setValues([ZAOCAN_HEADERS]);
+  }
+  return sheet;
+}
+
+// 只收認得的 key、數字限範圍，存成 JSON（menu：每種賣幾份；shop：之後的升級等級）
+function zaocanCounts(obj, keys, max) {
+  var out = {};
+  if (!obj || typeof obj !== 'object') return '{}';
+  keys.forEach(function (k) { var v = washNum(obj[k], 0, max); if (v) out[k] = v; });
+  return JSON.stringify(out);
+}
+
+function zaocanRow(r, now, lineId, device) {
+  if (!r || typeof r !== 'object') return null;
+  var at = new Date(r.at);
+  if (isNaN(at.getTime()) || at.getTime() > now.getTime() + 86400000 || at.getTime() < now.getTime() - 90 * 86400000) return null;
+  var n = function (v) { return washNum(v, 0, 999); };
+  var shop = {};
+  if (r.shop && typeof r.shop === 'object') Object.keys(r.shop).slice(0, 20).forEach(function (k) { if (/^[a-z]{1,12}$/.test(k)) shop[k] = washNum(r.shop[k], 0, 10); });
+  return [
+    now, at, lineId || '', device,
+    washNum(r.total, 0, 100000), washNum(r.sales, -10000, 100000), washText(r.grade, 2),
+    n(r.customers), n(r.served), n(r.angry), n(r.items), washNum(r.tips, 0, 100000), washNum(r.ito, 0, 100000), washNum(r.quality, 0, 100000),
+    n(r.burnt), n(r.spilled), n(r.wrong), n(r.trashed),
+    n(r.rolls_nice), n(r.rolls_messy), n(r.drinks_perfect), n(r.drinks_short), n(r.eggs_half), n(r.eggs_full), n(r.flips),
+    washNum(r.fastest_ms, 0, 600000), washNum(r.avg_wait_ms, 0, 600000), n(r.ex), n(r.ito_wins),
+    zaocanCounts(r.specials, ZAOCAN_SPECIALS, 99), zaocanCounts(r.menu, ZAOCAN_MENU, 999), JSON.stringify(shop),
+    washNum(r.ms, 0, 3600000), washNum(r.len, 0, 3600), !!r.login
+  ];
+}
+
+// 在編輯器選這個按「執行」：先把 Zaocans 分頁建出來
+function setupZaocans() {
+  var sheet = zaocansSheet();
+  Logger.log('Zaocans 分頁好了，目前有 ' + (sheet.getLastRow() - 1) + ' 天。網頁要能存，還要「部署 → 管理部署作業 → 編輯 → 版本選新版本 → 部署」。');
+}
+
+function zaocanLog(input) {
+  var device = String(input.device || '').replace(/[^A-Za-z0-9-]/g, '').slice(0, 40);
+  if (device.length < 8) return { result: 'error', error: '沒有裝置代號' };
+  var recs = Array.isArray(input.recs) ? input.recs.slice(0, 20) : [];
+  if (!recs.length) return { result: 'success', saved: 0 };
+
+  var cache = CacheService.getScriptCache();
+  var hour = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var devKey = 'zaocanLog:' + device + ':' + hour, allKey = 'zaocanRows:' + hour;
+  var devCount = Number(cache.get(devKey) || 0), allCount = Number(cache.get(allKey) || 0);
+  if (devCount >= ZAOCAN_LOGS_PER_HOUR) return { result: 'error', error: '這小時送太多次了' };
+  if (allCount + recs.length > ZAOCAN_ROWS_PER_HOUR) return { result: 'error', error: '這小時全站開太多次店了' };
+  cache.put(devKey, String(devCount + 1), 3600);
+
+  var lineId = input.session ? sessionUser(input.session) : null;
+  var now = new Date(), rows = [], skipped = 0;
+  recs.forEach(function (r) {
+    var row = zaocanRow(r, now, lineId, device);
+    if (!row) { skipped++; return; }
+    var dupKey = 'zaocan:' + device + ':' + row[1].getTime();
+    if (cache.get(dupKey)) { skipped++; return; }
+    cache.put(dupKey, '1', 6 * 3600);
+    rows.push(row);
+  });
+  if (rows.length) {
+    var sheet = zaocansSheet();
     rows.forEach(function (row) { sheet.appendRow(row); });
     cache.put(allKey, String(allCount + rows.length), 3600);
   }
