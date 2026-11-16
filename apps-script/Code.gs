@@ -1237,52 +1237,144 @@ function washLog(input) {
 
 var BOARD_CACHE_KEY = 'board:v8', BOARD_CACHE_SEC = 300;
 
-function boardBest(sheetName, totalCol, msCol) {
-  var best = {}, sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
-  if (!sheet || sheet.getLastRow() < 2) return best;
-  var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, msCol + 1).getValues();
-  rows.forEach(function (r) {
+// 每張紀錄表怎麼併成「每個人最好的一場」：cols 讀幾欄，merge(best, row) 把一列併進去（best 用 line_id 當 key）
+// 單場最高分（Washes G total／AE ms、Cleans F total／AA ms）：分數高的贏，同分比快
+function mergeTopScore(totalCol, msCol) {
+  return function (best, r) {
     var id = String(r[2] || ''), total = Number(r[totalCol]), ms = Number(r[msCol]) || 0;
     if (!id || r[totalCol] === '' || !isFinite(total)) return;
     var b = best[id];
     if (!b || total > b.score || (total === b.score && ms && (!b.ms || ms < b.ms))) best[id] = { score: total, ms: ms };
-  });
-  return best;
+  };
 }
-
-// 蹭網無盡模式：每個 line_id 撐最久的一輪（Wifis 的 G wifi_ms、Q ms、U mode、V season）
-// 部署新版之前送上來的那幾輪沒有 U、V（舊版沒存），不過一般模式最多 60 秒，超過 61 秒的一定是無盡模式，季數用秒數算
-function boardAlive() {
-  var best = {}, sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Wifis');
-  if (!sheet || sheet.getLastRow() < 2) return best;
-  var cols = Math.min(22, Math.max(17, sheet.getLastColumn()));
-  sheet.getRange(2, 1, sheet.getLastRow() - 1, cols).getValues().forEach(function (r) {
+var BOARD_SOURCES = {
+  Washes: { cols: 31, merge: mergeTopScore(6, 30) },
+  Cleans: { cols: 27, merge: mergeTopScore(5, 26) },
+  // 蹭網無盡模式：每個 line_id 撐最久的一輪（G wifi_ms、Q ms、U mode、V season）
+  // 部署新版之前送上來的那幾輪沒有 U、V（舊版沒存），不過一般模式最多 60 秒，超過 61 秒的一定是無盡模式，季數用秒數算
+  // 比的是真的連著 28 樓的時間（G wifi_ms），放著掛機的時間不算；all 是那輪總共撐多久
+  Wifis: { cols: 22, merge: function (best, r) {
     var id = String(r[2] || ''), ms = Number(r[16]) || 0, mode = r[20] || '';
     if (!id || !ms) return;
     if (mode !== 'endless' && !(mode === '' && ms > 61000)) return;
-    var season = Number(r[21]) || Math.floor(ms / 30000) + 1;
-    // 比的是真的連著 28 樓的時間（G wifi_ms），放著掛機的時間不算；all 是那輪總共撐多久
-    var wifi = Number(r[6]) || 0;
+    var season = Number(r[21]) || Math.floor(ms / 30000) + 1, wifi = Number(r[6]) || 0;
     if (!best[id] || wifi > best[id].ms) best[id] = { ms: wifi, all: ms, season: season, total: Number(r[4]) || 0 };
-  });
-  return best;
-}
-
-// 早餐店：每個 line_id 出餐最多的一天（Zaocans 的 I served），同樣多比氣走少、再比賺多
-function boardServed() {
-  var best = {}, sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Zaocans');
-  if (!sheet || sheet.getLastRow() < 2) return best;
-  sheet.getRange(2, 1, sheet.getLastRow() - 1, 11).getValues().forEach(function (r) {
+  } },
+  // 早餐店：每個 line_id 出餐最多的一天（I served），同樣多比氣走少（J）、再比賺多（E）
+  Zaocans: { cols: 11, merge: function (best, r) {
     var id = String(r[2] || ''), served = Number(r[8]) || 0, angry = Number(r[9]) || 0, total = Number(r[4]) || 0;
     if (!id || !served) return;
     var b = best[id];
     if (!b || served > b.n || (served === b.n && (angry < b.angry || (angry === b.angry && total > b.total)))) best[id] = { n: served, items: Number(r[10]) || 0, angry: angry, total: total };
+  } },
+};
+
+// --- 排行榜只讀新的列 ---
+// 以前每次算榜都把紀錄表從頭讀到尾，表越大越慢。現在每個人最好的成績記在 Board 分頁（每張表一格 JSON：{ row 讀到第幾列, best }），
+// 下次只讀 row 後面新增的列、跟記下的比。紀錄被 archiveLogs() 搬走也沒關係：成績已經記在 Board，搬走幾列 row 就減幾。
+// 改了 merge 的規則要重算：把 BOARD_STATE_VERSION 加一（會從頭讀一次；已經封存走的紀錄就不算了，要小心）。
+var BOARD_STATE_VERSION = 1;
+var BOARD_STATE_COLS = ['Washes', 'Cleans', 'Wifis', 'Zaocans'];
+function boardStateSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Board');
+  if (!sheet) {
+    sheet = ss.insertSheet('Board');
+    sheet.appendRow(BOARD_STATE_COLS.concat(['version', 'epoch']));
+  }
+  return sheet;
+}
+// epoch：archiveLogs() 每搬一次加一。算榜算到一半剛好有人封存，存回去之前看 epoch 變了就不存（不然列數會對不上）
+function loadBoardState() {
+  var n = BOARD_STATE_COLS.length, vals = boardStateSheet().getRange(2, 1, 1, n + 2).getValues()[0];
+  var st = { epoch: Number(vals[n + 1]) || 0 };
+  if (Number(vals[n]) !== BOARD_STATE_VERSION) return st;  // 版本不對：從頭讀
+  BOARD_STATE_COLS.forEach(function (name, i) {
+    try { var v = JSON.parse(vals[i] || 'null'); if (v && typeof v.row === 'number' && v.best) st[name] = v; } catch (e) { }
   });
-  return best;
+  return st;
+}
+function writeBoardState(st) {
+  var row = BOARD_STATE_COLS.map(function (name) { return JSON.stringify(st[name] || { row: 1, best: {} }); });
+  if (row.some(function (v) { return v.length > 49000; })) return false;  // 一格最多五萬字，放不下就不存（下次照樣從頭讀，只是慢）
+  boardStateSheet().getRange(2, 1, 1, row.length + 2).setValues([row.concat([BOARD_STATE_VERSION, st.epoch || 0])]);
+  return true;
+}
+// 算榜後存回去：排隊，存之前確認沒有人剛封存過
+function saveBoardState(st) {
+  return withLock(function () {
+    var n = BOARD_STATE_COLS.length, now = Number(boardStateSheet().getRange(2, n + 2).getValue()) || 0;
+    if (now !== (st.epoch || 0)) return false;
+    return writeBoardState(st);
+  });
+}
+// 把一張紀錄表新增的列併進 state[name]，回傳 best
+function boardScan(st, name) {
+  var src = BOARD_SOURCES[name], sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
+  var cur = st[name] || { row: 1, best: {} };
+  if (!sheet) { st[name] = cur; return cur.best; }
+  var last = sheet.getLastRow();
+  if (last < cur.row) cur.row = last;  // 有人直接在 Sheet 刪了列：記下的成績留著，從現在最後一列接著讀
+  if (last > cur.row) {
+    sheet.getRange(cur.row + 1, 1, last - cur.row, src.cols).getValues().forEach(function (r) { src.merge(cur.best, r); });
+    cur.row = last;
+  }
+  st[name] = cur;
+  return cur.best;
+}
+
+// --- 紀錄表太大的時候 ---
+// 一份試算表最多 1,000 萬格。在編輯器執行 logSize() 看現在用了多少；
+// 執行 archiveLogs() 把 90 天以前的紀錄搬到新的一份試算表（檔名「丼步喱紀錄封存 日期」，在你的雲端硬碟），這份裡的刪掉。
+// 排行榜的最好成績先記進 Board 再搬，所以搬走的那幾場還是算數。第一次執行會跳出授權（要能建新的試算表）。
+var CELL_LIMIT = 10000000;
+var ARCHIVE_SHEETS = ['Washes', 'Cleans', 'Farms', 'Wifis', 'Zaocans', 'Gongde'];
+function logSize() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet(), total = 0, lines = [];
+  ss.getSheets().forEach(function (sh) {
+    var cells = sh.getMaxRows() * sh.getMaxColumns();
+    total += cells;
+    lines.push(sh.getName() + '：' + (sh.getLastRow() - 1) + ' 列（佔 ' + cells + ' 格）');
+  });
+  Logger.log(lines.join('\n') + '\n合計 ' + total + ' 格，上限 ' + CELL_LIMIT + ' 格，用了 ' + Math.round(total / CELL_LIMIT * 1000) / 10 + '%。');
+  return total;
+}
+function archiveLogs(days) {
+  days = typeof days === 'number' && days > 0 ? days : 90;
+  var cutoff = Date.now() - days * 864e5, ss = SpreadsheetApp.getActiveSpreadsheet();
+  var out = withLock(function () {
+    var st = loadBoardState();
+    BOARD_STATE_COLS.forEach(function (name) { boardScan(st, name); });  // 先把成績記進 Board（讀到現在最後一列）
+    var archive = null, moved = [];
+    ARCHIVE_SHEETS.forEach(function (name) {
+      var sheet = ss.getSheetByName(name);
+      if (!sheet || sheet.getLastRow() < 2) return;
+      // 紀錄是照時間往下加的：從第 2 列往下數，數到第一列不夠舊的
+      var times = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues(), k = 0;
+      while (k < times.length && Object.prototype.toString.call(times[k][0]) === '[object Date]' && times[k][0].getTime() < cutoff) k++;
+      if (!k) return;
+      var cols = sheet.getLastColumn(), rows = sheet.getRange(2, 1, k, cols).getValues();
+      if (!archive) archive = SpreadsheetApp.create('丼步喱紀錄封存 ' + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd'));
+      var dest = archive.insertSheet(name);
+      dest.getRange(1, 1, 1, cols).setValues(sheet.getRange(1, 1, 1, cols).getValues());
+      dest.getRange(2, 1, k, cols).setValues(rows);
+      sheet.deleteRows(2, k);
+      if (st[name]) st[name].row = Math.max(1, st[name].row - k);
+      moved.push(name + ' ' + k + ' 列');
+    });
+    st.epoch = (st.epoch || 0) + 1;
+    writeBoardState(st);
+    return { moved: moved, url: archive ? archive.getUrl() : '' };
+  });
+  if (out.result) { Logger.log(out.error); return; }
+  Logger.log(out.moved.length ? '搬了：' + out.moved.join('、') + '。封存檔：' + out.url : days + ' 天以前的紀錄一列都沒有，不用搬。');
+  logSize();
 }
 
 function buildBoard() {
-  var washBest = boardBest('Washes', 6, 30), cleanBest = boardBest('Cleans', 5, 26), alive = boardAlive(), served = boardServed();
+  var st = loadBoardState();
+  var washBest = boardScan(st, 'Washes'), cleanBest = boardScan(st, 'Cleans'), alive = boardScan(st, 'Wifis'), served = boardScan(st, 'Zaocans');
+  try { saveBoardState(st); } catch (e) { console.warn('Board 分頁存不進去：' + e); }
   var rows = playersSheet().getDataRange().getValues(), out = [];
   for (var i = 1; i < rows.length; i++) {
     var id = String(rows[i][1] || '');
