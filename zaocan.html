@@ -316,7 +316,7 @@
             const special = !!who;
             if (!who) who = pick(PEOPLE);
             const items = makeOrder(who, p);
-            const patience = (12 + 6 * items.length) * who.mult * (1 - 0.18 * p) * rand(0.92, 1.08);
+            const patience = (18 + 8 * items.length) * who.mult * (1 - 0.12 * p) * rand(0.92, 1.08);
             G.custs[i] = {
                 who, special, items, patience, left: patience, state: 'wait', since: G.clock, goneAt: 0,
                 look: { skin: pick(['#f0cfae', '#e6bd98', '#d8a77f', '#c48f68']), hair: pick(['#1f1a18', '#3b2a20', '#5a3d2b', '#8a8580']), shirt: pick(['#6d8fb0', '#b0605a', '#7a9a6a', '#c9a24a', '#8b7aa8', '#5f6b75']), style: pick(['short', 'long', 'bun', 'cap']) },
