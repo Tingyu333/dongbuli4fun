@@ -1165,7 +1165,7 @@ function washLog(input) {
 // 花錢：Players 的 spent（全部花掉的）拆成店面升級（shop.spent，洗頭店＋菜園農具）、捐香油錢（gongde.donated）、點燈（gongde.lit），剩下的算刮刮樂。
 // 公開：回 LINE 名字和大頭貼，不回 line_id；有帶 session 的話把自己那列標 me。算好的榜存 CacheService 5 分鐘。
 
-var BOARD_CACHE_KEY = 'board:v6', BOARD_CACHE_SEC = 300;
+var BOARD_CACHE_KEY = 'board:v7', BOARD_CACHE_SEC = 300;
 
 function boardBest(sheetName, totalCol, msCol) {
   var best = {}, sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
@@ -1180,7 +1180,7 @@ function boardBest(sheetName, totalCol, msCol) {
   return best;
 }
 
-// 蹭網無盡模式：每個 line_id 撐最久的一輪（Wifis 的 Q ms、U mode、V season）
+// 蹭網無盡模式：每個 line_id 撐最久的一輪（Wifis 的 G wifi_ms、Q ms、U mode、V season）
 // 部署新版之前送上來的那幾輪沒有 U、V（舊版沒存），不過一般模式最多 60 秒，超過 61 秒的一定是無盡模式，季數用秒數算
 function boardAlive() {
   var best = {}, sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Wifis');
@@ -1191,7 +1191,9 @@ function boardAlive() {
     if (!id || !ms) return;
     if (mode !== 'endless' && !(mode === '' && ms > 61000)) return;
     var season = Number(r[21]) || Math.floor(ms / 30000) + 1;
-    if (!best[id] || ms > best[id].ms) best[id] = { ms: ms, season: season, total: Number(r[4]) || 0 };
+    // 比的是真的連著 28 樓的時間（G wifi_ms），放著掛機的時間不算；all 是那輪總共撐多久
+    var wifi = Number(r[6]) || 0;
+    if (!best[id] || wifi > best[id].ms) best[id] = { ms: wifi, all: ms, season: season, total: Number(r[4]) || 0 };
   });
   return best;
 }

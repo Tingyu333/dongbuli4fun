@@ -166,7 +166,8 @@
                 <li>每撐 30 秒算一季，茱莉鴨越來越難搞：「嗯？」越來越短、假動作越來越多。</li>
                 <li>第二季起她會<b class="font-normal text-wabi-dark">滑手機</b>（安全，但滑完可能馬上回頭）；第三季起會<b class="font-normal text-wabi-dark">瞄窗戶的倒影</b>，不轉頭也看得到你；第四季起 28 樓會<b class="font-normal text-wabi-dark">重開路由器</b>，幾秒連不上。</li>
                 <li>一整季都沒被抓，茱莉鴨心情好，<b class="font-normal text-wabi-dark">補回一格「抓」</b>。第七季（三分鐘）起她不裝了：不出聲直接轉頭，也不再補回。</li>
-                <li>撐多久會記在打工榜的蹭網部「撐最久」。</li>
+                <li><b class="font-normal text-wabi-shu">連續 15 秒沒連 28 樓就收工</b>（茱莉鴨會發現你在發呆），不能放著掛機。</li>
+                <li>打工榜蹭網部的「撐最久」比的是<b class="font-normal text-wabi-dark">真的連著 28 樓的時間</b>，放開切回 4G 的時間不算。</li>
             </ol>
         </section>
     </main>
@@ -233,6 +234,7 @@
         const MODE_KEY = 'dongbuli-cengwang-mode', ALIVE_KEY = 'dongbuli-cengwang-alive';
         const SEASON = 30, ENDLESS_RAMP = 75, PROG_MAX = 2;
         const PHONE_AT = 2, GLANCE_AT = 3, ROUTER_AT = 4;   // 第幾季開始出現：滑手機、瞄窗戶倒影、路由器重開
+        const IDLE_WARN = 8, IDLE_LIMIT = 15;   // 無盡模式：連續這麼多秒沒連 28 樓，先警告、再收工（不然放著不動可以一直「撐」下去）
         const SNAP_AT = 7;   // 第七季（3 分鐘）起：沒有預警直接轉頭，越後面越常；也不再補回「抓」——再厲害也會收工
         const GLASS_CAUGHT = ['窗戶有倒影，我看到了。', '你以為我沒在看？', '玻璃很乾淨喔。', '倒影裡有五格。'];
         const mmss = sec => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
@@ -249,7 +251,7 @@
 
         function newRound() {
             G = {
-                endless: mode === 'endless', caught: 0, season: 1, lastStrikeAt: -1, recovered: 0, routerUntil: -1, nextRouter: 0, phones: 0, glances: 0, routers: 0,
+                endless: mode === 'endless', caught: 0, season: 1, lastOnAt: 0, idleEnd: false, lastStrikeAt: -1, recovered: 0, routerUntil: -1, nextRouter: 0, phones: 0, glances: 0, routers: 0,
                 started: false, ended: false, clock: 0, on: false, lock: false, onSince: 0,
                 wifiMs: 0, boostMs: 0, mult: 1, maxMult: 1, tier: 1, ep: 0, epProg: 0, strikes: 0, drama: pick(DRAMAS), sub: pick(SUBS), subAt: 0,
                 looks: 0, dodged: 0, fakes: 0, connects: 0, flash: 0, stampAt: -9, pay: null,
@@ -857,6 +859,11 @@
                 c.strokeRect(x - 10, y - 10, 20, 20);
                 if (hit) { c.fillStyle = K.shu; c.fillRect(x - 8, y - 8, 16, 16); c.fillStyle = '#fff'; c.font = `700 11px ${SERIF}`; c.fillText('抓', x, y + 1); }
             }
+            if (G.endless && G.started && !G.ended && !G.on && G.clock - G.lastOnAt >= IDLE_WARN) {
+                const left = Math.max(0, Math.ceil(IDLE_LIMIT - (G.clock - G.lastOnAt)));
+                c.fillStyle = 'rgba(179,58,47,.9)'; roundRect(c, 90, 74, 180, 26, 13); c.fill();
+                c.fillStyle = '#fff'; c.font = `500 12px ${SANS}`; c.fillText(`發呆中・${left} 秒後收工`, 180, 87);
+            }
             if (!G.started) {
                 c.fillStyle = 'rgba(30,26,22,.6)'; roundRect(c, 40, 176, 280, 64, 10); c.fill();
                 c.fillStyle = '#fff'; c.font = `500 15px ${SERIF}`; c.fillText(G.endless ? '按住，開始無盡蹭網' : '按住，開始偷連 28 樓', 180, 198);
@@ -914,6 +921,12 @@
             if (on) { G.onSince = G.clock; G.connects++; sfx.on(); } else sfx.off();
             renderHold();
         }
+        function idleEnd() {
+            G.idleEnd = true;
+            goto('look', 9); W8.turn = 1;
+            say('你在發呆嗎？收工了。');
+            endRound();
+        }
         function routerDown() { return !!(G && G.clock < G.routerUntil); }
         function newSeason() {
             G.season++;
@@ -946,6 +959,15 @@
             }
             updateWatcher();
             if (G.ended) return;
+            // 無盡模式：一直沒連 28 樓（發呆、掛機）→ 茱莉鴨走過來請你收工
+            if (G.endless) {
+                if (G.on) { G.lastOnAt = G.clock; G.idleWarned = false; }
+                else {
+                    const idle = G.clock - G.lastOnAt;
+                    if (idle >= IDLE_WARN && !G.idleWarned) { G.idleWarned = true; hint(`再 ${IDLE_LIMIT - IDLE_WARN} 秒沒連 28 樓，茱莉鴨就請你收工。`); sfx.hmm(); }
+                    if (idle >= IDLE_LIMIT) { idleEnd(); return; }
+                }
+            }
             if (G.on && routerDown()) {
                 G.onSince = G.clock; G.mult = 1; G.tier = 1;   // 斷線：網速從頭算
                 G.epProg += dt / EP_SEC * SLOW;
@@ -1062,7 +1084,7 @@
             const pay = Math.max(100, sales);
             const grade = gradeOf(pay);
             G.pay = { sales, pay };
-            note(G.strikes >= STRIKES ? (G.endless ? `三格抓滿，收工（總共被抓 ${G.caught} 次）。` : '被抓三次，收工。') : G.endless ? '自己收工了。' : '時間到，收工。');
+            note(G.idleEnd ? '發呆太久，茱莉鴨請你收工了。' : G.strikes >= STRIKES ? (G.endless ? `三格抓滿，收工（總共被抓 ${G.caught} 次）。` : '被抓三次，收工。') : G.endless ? '自己收工了。' : '時間到，收工。');
             hint('');
             renderModes();
             Wallet.earn(pay, 'wifi');
@@ -1072,7 +1094,7 @@
 
             $('score').textContent = Wallet.fmt(pay);
             $('aliveLine').classList.toggle('hidden', !G.endless);
-            if (G.endless) $('aliveLine').textContent = `無盡模式・撐了 ${mmss(G.clock)}・第 ${G.season} 季${G.recovered ? `・補回 ${G.recovered} 格` : ''}`;
+            if (G.endless) $('aliveLine').textContent = `無盡模式・撐了 ${mmss(G.clock)}（連著 28 樓 ${mmss(G.wifiMs / 1000)}）・第 ${G.season} 季${G.recovered ? `・補回 ${G.recovered} 格` : ''}`;
             $('gradeLine').textContent = `${grade.mark}・${grade.line}`;
             const money = v => (v < 0 ? '−' : v > 0 ? '+' : '') + Wallet.fmt(Math.abs(v));
             $('bill').innerHTML = rows.length ? rows.map(([k, v, u, m, how]) => `<li><span>${k} <span class="text-wabi-dark">${v} ${u}</span><span class="block text-[10px] text-stone-400">${esc(how)}</span></span><span class="${m < 0 ? 'text-wabi-shu' : 'text-wabi-dark'} self-center">${money(m)}</span></li>`).join('')
@@ -1097,7 +1119,7 @@
 
         async function makeSheet(pay, grade, rows) {
             const lines = rows.map(([k, v, u, m]) => [`${k} ${v} ${u}`, (m < 0 ? '−' : '') + Wallet.fmt(Math.abs(m))]);
-            const allText = lines.flat().join('') + '蹭網日報二十七樓房間茱莉鴨沒發現合計共被抓次追劇《》保底出勤費給不到.無盡模式撐了第季:' + G.drama + grade.mark + grade.line + '0123456789$,−・';
+            const allText = lines.flat().join('') + '蹭網日報二十七樓房間茱莉鴨沒發現合計共被抓次追劇《》保底出勤費給不到.無盡模式撐了第季:連線著樓（）' + G.drama + grade.mark + grade.line + '0123456789$,−・';
             try { await Promise.race([Promise.all([document.fonts.load(`600 40px ${SERIF}`, allText), document.fonts.load(`400 40px ${SANS}`, allText)]), new Promise(res => setTimeout(res, 2500))]); } catch (e) { }
             const c = document.createElement('canvas'); c.width = 1080; c.height = 1350;
             const x = c.getContext('2d');
@@ -1113,7 +1135,7 @@
             x.strokeStyle = '#8e8070'; x.lineWidth = 2; x.beginPath(); x.arc(860, 400, 120, 0, TAU); x.stroke();
             text(G.caught ? `被抓 ${G.caught} 次` : '茱莉鴨沒發現', 860, 560, `400 28px ${SERIF}`, G.caught ? '#b33a2f' : '#8e8070');
             text(`追劇《${G.drama}》`, 150, 320, `400 30px ${SERIF}`, '#8e8070', 'left');
-            if (G.endless) text(`無盡模式・撐了 ${mmss(G.clock)}・第 ${G.season} 季`, 150, 362, `400 26px ${SANS}`, '#b33a2f', 'left');
+            if (G.endless) text(`無盡模式・撐了 ${mmss(G.clock)}（連線 ${mmss(G.wifiMs / 1000)}）・第 ${G.season} 季`, 150, 362, `400 24px ${SANS}`, '#b33a2f', 'left');
             let y = 400;
             (lines.length ? lines : [['一秒都沒蹭到', '']]).forEach(([k, v]) => {
                 text(k, 150, y, `400 34px ${SERIF}`, '#4a4a4a', 'left');
@@ -1155,19 +1177,20 @@
                 total: pay, sales: G.pay.sales, grade: grade.mark, wifi_ms: Math.round(G.wifiMs), boost_ms: Math.round(G.boostMs), max_mult: Math.round(G.maxMult * 10) / 10, episodes: G.ep, drama: G.drama,
                 strikes: G.caught, looks: G.looks, dodged: G.dodged, fakes: G.fakes, connects: G.connects, perfect: !!G.earn.perfect,
                 login: !!(window.Line && Line.loggedIn),
-                mode: G.endless ? 'endless' : 'normal', season: G.endless ? G.season : 0, recovered: G.recovered, phones: G.phones, glances: G.glances, routers: G.routers,
+                mode: G.endless ? 'endless' : 'normal', season: G.endless ? G.season : 0, recovered: G.recovered, phones: G.phones, glances: G.glances, routers: G.routers, idle_end: !!G.idleEnd,
             });
             st.recent = st.recent.slice(0, 50);
             try { localStorage.setItem(STATS_KEY, JSON.stringify(st)); } catch (e) { }
             try {
-                if (G.endless) { const ms = Math.round(G.clock * 1000); if (ms > Number(localStorage.getItem(ALIVE_KEY) || 0)) localStorage.setItem(ALIVE_KEY, String(ms)); }
+                // 撐最久比的是真的連著 28 樓的時間（發呆、掛機不算），跟排行榜一樣
+                if (G.endless) { const ms = Math.round(G.wifiMs); if (ms > Number(localStorage.getItem(ALIVE_KEY) || 0)) localStorage.setItem(ALIVE_KEY, String(ms)); }
                 else if (pay > Number(localStorage.getItem(BEST_KEY) || 0)) localStorage.setItem(BEST_KEY, String(pay));
             } catch (e) { }
         }
         function renderBest() {
             let best = 0, alive = 0;
             try { best = Number(localStorage.getItem(BEST_KEY) || 0); alive = Number(localStorage.getItem(ALIVE_KEY) || 0); } catch (e) { }
-            $('best').innerHTML = mode === 'endless' ? (alive ? `撐最久<br>${mmss(alive / 1000)}` : '') : best ? `最好一輪<br>${Wallet.fmt(best)}` : '';
+            $('best').innerHTML = mode === 'endless' ? (alive ? `撐最久<br>連線 ${mmss(alive / 1000)}` : '') : best ? `最好一輪<br>${Wallet.fmt(best)}` : '';
         }
 
         const API_URL = (window.Line && Line.API_URL) || "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
