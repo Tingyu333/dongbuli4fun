@@ -64,6 +64,9 @@
         .pour.is-on { transform: scale(.95); filter: brightness(1.15); }
         .pour:disabled { opacity: .4; }
 
+        /* 開店中把左下角的晝夜鈕收起來：它會蓋住「大冰奶」按鈕的左邊，按了倒不出來 */
+        html.zc-open .theme-toggle { opacity: 0; pointer-events: none; transition: opacity .2s; }
+
         .bill li {
             display: flex;
             justify-content: space-between;
@@ -110,16 +113,16 @@
             </div>
             <canvas id="cv" class="mt-2" aria-label="早餐店：上面是櫃台的客人和他們想吃的東西，中間是保溫台，下面是煎台和飲料機"></canvas>
             <div id="foods" class="foods mt-2">
-                <button type="button" class="food" data-food="egg">荷包蛋<small>$35</small></button>
-                <button type="button" class="food" data-food="bacon">培根<small>$40</small></button>
-                <button type="button" class="food" data-food="cake">蘿蔔糕<small>$45</small></button>
-                <button type="button" class="food" data-food="roll">蛋餅<small>$60</small></button>
-                <button type="button" class="food" data-food="noodle">鐵板麵<small>$70</small></button>
+                <button type="button" class="food" data-food="egg">荷包蛋<small>$50</small></button>
+                <button type="button" class="food" data-food="bacon">培根<small>$55</small></button>
+                <button type="button" class="food" data-food="cake">蘿蔔糕<small>$65</small></button>
+                <button type="button" class="food" data-food="roll">蛋餅<small>$85</small></button>
+                <button type="button" class="food" data-food="noodle">鐵板麵<small>$100</small></button>
             </div>
             <div class="pours">
-                <button type="button" class="pour" data-pour="milk">大冰奶<small>按住倒・$40</small></button>
-                <button type="button" class="pour" data-pour="tea">大冰紅<small>按住倒・$30</small></button>
-                <button type="button" class="pour" data-pour="soy">豆漿紅茶<small>按住倒・$35</small></button>
+                <button type="button" class="pour" data-pour="milk">大冰奶<small>按住倒・$55</small></button>
+                <button type="button" class="pour" data-pour="tea">大冰紅<small>按住倒・$45</small></button>
+                <button type="button" class="pour" data-pour="soy">豆漿紅茶<small>按住倒・$50</small></button>
             </div>
             <p id="hint" class="mt-3 min-h-[2.6rem] text-xs text-center text-stone-500 font-sans tracking-widest leading-relaxed [text-wrap:balance]" aria-live="polite"></p>
         </section>
@@ -161,7 +164,7 @@
                 <li><b class="font-normal text-wabi-dark">蛋餅</b>好了以後要<b class="font-normal text-wabi-dark">用手指橫著滑一下捲起來</b>：不快不慢、直直滑過去捲得漂亮，太快會捲歪；用點的也會捲，但一定歪。</li>
                 <li><b class="font-normal text-wabi-dark">飲料</b>按住按鈕倒，放開就停。倒到兩條線中間「剛好」最好；太少可以再按著補；超過杯口就滿出來，整杯倒掉。</li>
                 <li>做好的東西在<b class="font-normal text-wabi-dark">保溫台</b>：點一下就送給點了它的客人（好幾位都點了，就再點要給的客人），也可以直接拖過去。用不到的拖去垃圾桶。</li>
-                <li>客人點的都送齊了才付錢：照菜單價，送得快多給小費（最多四成），蛋餅捲得漂亮、飲料倒剛好每份 +$15。焦掉的扣 $15、打翻的扣 $10、氣走一位扣 $80。</li>
+                <li>客人點的都送齊了才付錢：照菜單價，送得快多給小費（最多四成），蛋餅捲得漂亮、飲料倒剛好每份 +$20。焦掉的扣 $15、打翻的扣 $10、氣走一位扣 $80。</li>
                 <li>七十五秒打烊。偶爾會有熟面孔來買早餐。</li>
             </ol>
         </section>
@@ -200,14 +203,14 @@
         // ===== 1. 菜單與規則 =====
         // t1：第一面幾秒熟、t2：翻面後幾秒熟；熟度到 BURN 就焦。鐵板麵不用翻（只有 t1）
         const MENU = {
-            egg: { name: '荷包蛋', price: 35, t1: 2.4, t2: 2.2, flip: true },
-            bacon: { name: '培根', price: 40, t1: 1.9, t2: 1.9, flip: true },
-            cake: { name: '蘿蔔糕', price: 45, t1: 3.0, t2: 2.6, flip: true },
-            roll: { name: '蛋餅', price: 60, t1: 2.6, t2: 2.0, flip: true, roll: true },
-            noodle: { name: '鐵板麵', price: 70, t1: 4.2, flip: false },
-            milk: { name: '大冰奶', price: 40, drink: true },
-            tea: { name: '大冰紅', price: 30, drink: true },
-            soy: { name: '豆漿紅茶', price: 35, drink: true },
+            egg: { name: '荷包蛋', price: 50, t1: 2.4, t2: 2.2, flip: true },
+            bacon: { name: '培根', price: 55, t1: 1.9, t2: 1.9, flip: true },
+            cake: { name: '蘿蔔糕', price: 65, t1: 3.0, t2: 2.6, flip: true },
+            roll: { name: '蛋餅', price: 85, t1: 2.6, t2: 2.0, flip: true, roll: true },
+            noodle: { name: '鐵板麵', price: 100, t1: 4.2, flip: false },
+            milk: { name: '大冰奶', price: 55, drink: true },
+            tea: { name: '大冰紅', price: 45, drink: true },
+            soy: { name: '豆漿紅茶', price: 50, drink: true },
         };
         const FOODS = ['egg', 'bacon', 'cake', 'roll', 'noodle'];
         const ORDER_KEYS = ['egg', 'roll', 'bacon', 'cake', 'noodle', 'milk', 'tea', 'soy'];
@@ -218,7 +221,7 @@
         const CUP_OK = 0.7, CUP_GOOD = 0.85, CUP_MAX = 1.02;   // 放開時：0.7 以上算一杯、0.85 以上「剛好」、超過 1.02 滿出來
         const ROLL_SPEED = [120, 700];   // 捲蛋餅：滑的速度（畫布 px／秒）在這中間才漂亮
         const TIP_MAX = 0.4;     // 送得越快小費越多：最多這一單的四成
-        const NICE = 15;         // 捲得漂亮、倒剛好，每份
+        const NICE = 20;         // 捲得漂亮、倒剛好，每份
         const BURNT = 15, SPILL = 10, ANGRY = 80;   // 焦掉、打翻、氣走一位
         const EX_BONUS = 150;    // 前夫賒帳，老闆另外給
         const EXTEND = 6;        // 點好幾樣的客人：先拿到其中一樣，願意多等幾秒（不會超過一開始的耐心）
@@ -226,10 +229,10 @@
         const ITO_WIN = 300, ITO_P = 0.35;   // 伊藤用刮刮樂付小費：35% 刮中 $300
         const WARM_N = 5;        // 保溫台放幾份
         const GRADES = [
-            { min: 2500, mark: '滿', line: '客滿，老闆請你吃雞塊。' },
-            { min: 1800, mark: '旺', line: '生意興旺，鐵板沒停過。' },
-            { min: 1200, mark: '好', line: '今天順順的。' },
-            { min: 600, mark: '慢', line: '客人等到在櫃台睡著。' },
+            { min: 3500, mark: '滿', line: '客滿，老闆請你吃雞塊。' },
+            { min: 2500, mark: '旺', line: '生意興旺，鐵板沒停過。' },
+            { min: 1700, mark: '好', line: '今天順順的。' },
+            { min: 800, mark: '慢', line: '客人等到在櫃台睡著。' },
             { min: -1e9, mark: '焦', line: '鐵板上都是焦的。' },
         ];
         const BEST_KEY = 'dongbuli-zaocan-best', STATS_KEY = 'dongbuli-zaocan-stats';
@@ -292,6 +295,7 @@
         function start() {
             if (!G || G.started || G.ended) return;
             G.started = true; G.clock = 0;
+            document.documentElement.classList.add('zc-open');
             audio();
             renderBest();
         }
@@ -1166,6 +1170,7 @@
         async function endRound() {
             if (G.ended) return;
             G.ended = true; G.sel = -1; G.drag = null;
+            document.documentElement.classList.remove('zc-open');
             if (G.cup.pour) G.cup.pour = false;
             if (pourBtn) { pourBtn.classList.remove('is-on'); pourBtn = null; }
             renderButtons();
