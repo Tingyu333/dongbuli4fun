@@ -296,6 +296,13 @@
               tiers: ['', '刷過油的鐵板', '不沾塗層', '名店鐵板'], fx: v => `比較慢焦：熟了以後多 ${Math.round((v - 1) / (BURN - 1) * 100 - 100)}% 的時間才焦` },
             { key: 'menuboard', name: '招牌', sub: '賣價', prices: [20000, 50000, 100000], vals: [0.1, 0.2, 0.3],
               tiers: ['', '木頭招牌', '燈箱招牌', '老店金字招牌'], fx: v => `每份餐點、飲料賣價多 ${Math.round(v * 100)}%` },
+            // 飲料（使用者要的）：倒得快、倒得準、倒好自己送過去
+            { key: 'spout', name: '大出水口', sub: '飲料', prices: [10000, 30000], vals: [1.0, 0.75],
+              tiers: ['', '加大出水口', '營業用出水閥'], fx: v => `倒滿一杯只要 ${v} 秒（原本 1.4 秒）` },
+            { key: 'gauge', name: '定量杯', sub: '飲料', prices: [15000, 60000], vals: [1, 2],
+              tiers: ['', '刻度杯', '自動定量機'], fx: v => v >= 2 ? '點一下就自己倒到剛好，手可以去顧鐵板（也不會滿出來）' : '「剛好」的範圍變寬，倒滿會自己停，不會滿出來' },
+            { key: 'belt', name: '飲料輸送帶', sub: '送餐', prices: [40000], vals: [1],
+              tiers: ['', '飲料輸送帶'], fx: () => '倒好的飲料直接送到點它的客人手上（好幾位點就給等最久的），不佔保溫台' },
         ];
         const SHOP_BY = Object.fromEntries(SHOP.map(u => [u.key, u]));
         function loadShop() {
@@ -309,6 +316,9 @@
         const lv = key => shop.lv[key] || 0;
         const val = key => lv(key) ? SHOP_BY[key].vals[lv(key) - 1] : 0;
         const burnAt = () => val('nonstick') || BURN;
+        const pourRate = () => 1 / (val('spout') || 1.4);                 // 每秒倒幾杯
+        const cupGood = () => lv('gauge') ? 0.75 : CUP_GOOD;              // 刻度杯：「剛好」從 0.75 開始
+        const AUTO_FILL = 0.93;                                            // 自動定量機停在這裡
 
         // 客人：一般人照職業有不同耐心；熟面孔偶爾出現
         const PEOPLE = [
@@ -362,12 +372,12 @@
                 custs: [null, null, null], spawnAt: [0, 4, 9],
                 grill: GRILL.map(() => null), warm: [], sel: -1,
                 cup: { key: null, fill: 0, pour: false, ready: false, q: null, spillAt: -9 },
-                drag: null, smoke: [],
+                drag: null, smoke: [], belts: [],
                 earn: { sales: {}, menu: 0, tip: 0, ito: 0, quality: 0, exDebt: 0, exBonus: 0, burnt: 0, spilled: 0, angry: 0 },
                 tally: {
                     customers: 0, served: 0, angry: 0, items: 0, wrong: 0, burnt: 0, spilled: 0, trashed: 0,
                     rollsNice: 0, rollsMessy: 0, drinksPerfect: 0, drinksShort: 0, eggsHalf: 0, eggsFull: 0,
-                    waits: [], fastest: 0, specials: {}, exN: 0, itoN: 0, itoWins: 0, niceN: 0, flips: 0, extends: 0, autoFlips: 0, menuN: 0,
+                    waits: [], fastest: 0, specials: {}, exN: 0, itoN: 0, itoWins: 0, niceN: 0, flips: 0, extends: 0, autoFlips: 0, menuN: 0, beltSent: 0,
                 },
             };
             spawn(0);   // 第一位客人先站著（開始之前不會等到生氣）
@@ -544,16 +554,17 @@
             const c = G.cup;
             if (c.ready || G.clock - c.spillAt < 0.7) return false;
             if (c.key && c.key !== key && c.fill > 0) { hint(`杯子裡是${MENU[c.key].name}，先倒完它。`); return false; }
+            if (c.pour && c.auto) return false;  // 自動定量機正在倒
             start();
-            c.key = key; c.pour = true;
+            c.key = key; c.pour = true; c.auto = lv('gauge') >= 2;
             return true;
         }
         function pourStop() {
             const c = G && G.cup;
             if (!c || !c.pour) return;
-            c.pour = false;
+            c.pour = false; c.auto = false;
             if (c.fill >= CUP_OK) {
-                c.ready = true; c.q = c.fill >= CUP_GOOD ? 'perfect' : 'short';
+                c.ready = true; c.q = c.fill >= cupGood() ? 'perfect' : 'short';
                 if (c.q === 'perfect') G.tally.drinksPerfect++; else G.tally.drinksShort++;
                 floatText(CUP.x, CUP.y - 60, c.q === 'perfect' ? '剛好' : '少了一點', c.q === 'perfect' ? K.green : K.amber);
                 sfx.take();
@@ -908,13 +919,14 @@
                 c.strokeStyle = '#7a7e84'; c.lineWidth = 1.2; rr(c, x - 14, 264, 28, 46, 5); c.stroke();
                 c.fillStyle = '#fffdf8'; c.font = `600 8px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle';
                 name.split('').length > 2 ? (c.fillText(name.slice(0, 2), x, 286), c.fillText(name.slice(2), x, 296)) : c.fillText(name, x, 291);
-                c.fillStyle = '#5c6066'; c.fillRect(x - 3, 310, 6, 10);
+                const sp = lv('spout');  // 大出水口：出水口變粗、營業用的是亮的不鏽鋼
+                c.fillStyle = sp >= 2 ? '#c9ced3' : '#5c6066'; c.fillRect(x - 3 - sp, 310, 6 + sp * 2, 10 + sp);
             });
             const cup = G.cup;
             // 倒的那一條
             if (cup.pour && cup.key) {
                 const sx = JUGS.find(j => j[0] === cup.key)[1];
-                c.strokeStyle = DRINK_COL(cup.key); c.lineWidth = 3.5;
+                c.strokeStyle = DRINK_COL(cup.key); c.lineWidth = 3.5 + lv('spout') * 1.5;
                 c.beginPath(); c.moveTo(sx, 320); c.quadraticCurveTo(sx, 334, CUP.x, 342); c.lineTo(CUP.x, CUP.y + 30 - 60 * clamp(cup.fill, 0, 1)); c.stroke();
             }
             // 杯子（大）：兩條線中間是「剛好」
@@ -931,9 +943,13 @@
             c.strokeStyle = '#6f747a'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(CUP.x - hw, top); c.lineTo(CUP.x + hw, top); c.lineTo(CUP.x + bw, bot); c.lineTo(CUP.x - bw, bot); c.closePath(); c.stroke();
             const ly = v => bot - (bot - top) * v;
             c.strokeStyle = K.green; c.lineWidth = 1.5; c.setLineDash([3, 2]);
-            [CUP_GOOD, 1].forEach(v => { c.beginPath(); c.moveTo(CUP.x - hw - 4, ly(v)); c.lineTo(CUP.x + hw + 4, ly(v)); c.stroke(); });
+            [cupGood(), 1].forEach(v => { c.beginPath(); c.moveTo(CUP.x - hw - 4, ly(v)); c.lineTo(CUP.x + hw + 4, ly(v)); c.stroke(); });
             c.setLineDash([]);
-            c.fillStyle = K.green; c.font = `500 8px ${SANS}`; c.textAlign = 'left'; c.fillText('剛好', CUP.x + hw - 2, ly((CUP_GOOD + 1) / 2) + 0.5);
+            c.fillStyle = K.green; c.font = `500 8px ${SANS}`; c.textAlign = 'left'; c.fillText('剛好', CUP.x + hw - 2, ly((cupGood() + 1) / 2) + 0.5);
+            if (lv('gauge')) {  // 刻度杯：杯身一排刻度
+                c.strokeStyle = 'rgba(60,60,60,0.45)'; c.lineWidth = 1;
+                for (let v = 0.1; v < 1; v += 0.1) { const yy = ly(v), w = Math.abs(v - 0.5) < 0.01 ? 7 : 4; c.beginPath(); c.moveTo(CUP.x + lerp(bw, hw, v) - w, yy); c.lineTo(CUP.x + lerp(bw, hw, v), yy); c.stroke(); }
+            }
             c.strokeStyle = 'rgba(80,80,80,0.5)'; c.beginPath(); c.moveTo(CUP.x - hw, ly(CUP_OK)); c.lineTo(CUP.x - hw + 8, ly(CUP_OK)); c.stroke();
             if (cup.ready) tag(c, cup.q === 'perfect' ? '剛好・等保溫台空位' : '等保溫台空位', CUP.x, top - 10, K.ink);
             // 打翻：一灘
@@ -942,7 +958,21 @@
                 c.fillStyle = DRINK_COL(cup.spilledKey); c.beginPath(); c.ellipse(CUP.x, bot + 4, 40, 6, 0, 0, TAU); c.fill();
                 c.globalAlpha = 1;
             }
-            c.fillStyle = 'rgba(40,40,40,0.55)'; c.font = `500 8px ${SANS}`; c.textAlign = 'center'; c.fillText('按住下面的按鈕倒', 304, 432);
+            c.fillStyle = 'rgba(40,40,40,0.55)'; c.font = `500 8px ${SANS}`; c.textAlign = 'center'; c.fillText(lv('gauge') >= 2 ? '點下面的按鈕倒' : '按住下面的按鈕倒', 304, 432);
+            // 自動定量機：機器上一顆燈，倒的時候閃
+            if (lv('gauge') >= 2) { c.fillStyle = cup.pour && Math.floor(now / 200) % 2 ? '#7cf29a' : '#2f6b3d'; c.beginPath(); c.arc(346, 330, 3.5, 0, TAU); c.fill(); c.fillStyle = 'rgba(40,40,40,0.6)'; c.font = `500 7px ${SANS}`; c.textAlign = 'right'; c.fillText('定量', 340, 333); }
+            // 飲料輸送帶：機器左邊一條帶子，送出去的杯子沿著往上跑到客人那邊
+            if (lv('belt')) {
+                c.fillStyle = '#4a4d52'; rr(c, 252, 340, 10, 92, 3); c.fill();
+                c.fillStyle = '#8f9399'; for (let yy = 344 + (now / 40) % 8; yy < 430; yy += 8) c.fillRect(254, yy, 6, 2);
+            }
+            G.belts = G.belts.filter(b => now - b.t0 < 650);
+            G.belts.forEach(b => {
+                const k = (now - b.t0) / 650, ex = SLOT_X[b.i], ey = 228;
+                const bx = k < 0.4 ? lerp(CUP.x, 257, k / 0.4) : lerp(257, ex, (k - 0.4) / 0.6), by = k < 0.4 ? lerp(CUP.y, 330, k / 0.4) : lerp(330, ey, (k - 0.4) / 0.6);
+                c.fillStyle = DRINK_COL(b.key); c.beginPath(); c.moveTo(bx - 7, by - 9); c.lineTo(bx + 7, by - 9); c.lineTo(bx + 5, by + 9); c.lineTo(bx - 5, by + 9); c.closePath(); c.fill();
+                c.strokeStyle = '#ffffff'; c.lineWidth = 1.2; c.stroke();
+            });
         }
 
         // 客人：站在櫃台後面，頭上是想吃的東西，櫃台上是還願意等多久
@@ -1150,11 +1180,28 @@
             });
             const c = G.cup;
             if (c.pour) {
-                c.fill += dt * POUR;
+                c.fill += dt * pourRate();
                 if (Math.random() < dt * 8) sfx.pour();
-                if (c.fill > CUP_MAX) spill();
+                if (c.auto && c.fill >= AUTO_FILL) { c.fill = AUTO_FILL; pourStop(); renderButtons(); }    // 自動定量機：倒到剛好自己停
+                else if (lv('gauge') && c.fill >= 1) { c.fill = 1; pourStop(); renderButtons(); }         // 刻度杯：滿了自己停
+                else if (c.fill > CUP_MAX) spill();
             }
-            if (c.ready && G.warm.length < WARM_N) {
+            // 飲料輸送帶：倒好就送給點它的客人（好幾位點就給等最久的），不佔保溫台
+            if (c.ready && lv('belt')) {
+                const it = { key: c.key, q: c.q };
+                const who = G.custs.map((cu, i) => cu && cu.state === 'wait' && need(cu, it) >= 0 ? i : -1).filter(i => i >= 0)
+                    .sort((a, b) => G.custs[a].left - G.custs[b].left);
+                if (who.length) {
+                    const i = who[0];
+                    G.warm.push({ ...it, at: G.clock });
+                    G.belts.push({ key: c.key, i, t0: performance.now() });
+                    G.cup = { key: null, fill: 0, pour: false, ready: false, q: null, spillAt: -9 };
+                    G.tally.beltSent++;
+                    deliver(G.warm.length - 1, i);
+                    renderButtons(); autoHint();
+                }
+            }
+            if (c.ready && G.cup === c && G.warm.length < WARM_N) {
                 G.warm.push({ key: c.key, q: c.q, at: G.clock });
                 G.cup = { key: null, fill: 0, pour: false, ready: false, q: null, spillAt: -9 };
                 renderButtons(); autoHint();
@@ -1218,7 +1265,7 @@
             else if (h.kind === 'warm') tapWarm(h.j);
             else if (h.kind === 'cust') tapCust(h.i);
             else if (h.kind === 'trash') { if (G.sel >= 0) trashWarm(G.sel); else hint('先點保溫台上要丟的東西，再點垃圾桶（或直接拖過來）。'); }
-            else if (h.kind === 'drink') hint('飲料用下面的按鈕倒：按住倒，放開停。');
+            else if (h.kind === 'drink') hint(lv('gauge') >= 2 ? '飲料點一下下面的按鈕，機器會自己倒到剛好。' : '飲料用下面的按鈕倒：按住倒，放開停。');
         }
         cv.addEventListener('pointerup', e => endPtr(e, false));
         cv.addEventListener('pointercancel', e => endPtr(e, true));
@@ -1230,7 +1277,10 @@
             b.addEventListener('pointerdown', e => {
                 e.preventDefault(); audio();
                 try { b.setPointerCapture(e.pointerId); } catch (err) { }
-                if (pourStart(b.dataset.pour)) { pourBtn = b; b.classList.add('is-on'); }
+                if (pourStart(b.dataset.pour)) {
+                    if (G.cup.auto) { renderButtons(); return; }  // 自動定量機：點一下就好，不用按著
+                    pourBtn = b; b.classList.add('is-on');
+                }
             });
             const up = () => { if (pourBtn === b) { pourBtn = null; b.classList.remove('is-on'); pourStop(); renderButtons(); } };
             b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('lostpointercapture', up);
@@ -1244,6 +1294,9 @@
             document.querySelectorAll('[data-pour]').forEach(b => {
                 const c = G && G.cup;
                 b.disabled = off || !!(c && c.key && c.fill > 0 && c.key !== b.dataset.pour && !c.ready);
+                if (lv('gauge') >= 2) b.classList.toggle('is-on', !!(c && c.pour && c.auto && c.key === b.dataset.pour));
+                const sm = b.querySelector('small');
+                if (sm) sm.textContent = `${lv('gauge') >= 2 ? '點一下' : '按住倒'}・${fmt(MENU[b.dataset.pour].price)}`;
             });
         }
 
@@ -1540,6 +1593,27 @@
             } else if (u.key === 'menuboard') {
                 c.save(); c.translate(28, 28); c.scale(0.3, 0.3); drawSign(c, 0, 0, L, 0); c.restore();
                 c.fillStyle = K.ink; c.font = `600 10px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(`+${Math.round(u.vals[L - 1] * 100)}%`, 28, 44);
+            } else if (u.key === 'spout' || u.key === 'gauge') {
+                // 出水口、杯子
+                c.fillStyle = '#8f9399'; rr(c, 14, 4, 28, 14, 3); c.fill();
+                const sw = u.key === 'spout' ? 4 + L * 2 : 4;
+                c.fillStyle = u.key === 'spout' && L >= 2 ? '#c9ced3' : '#5c6066'; c.fillRect(28 - sw / 2, 18, sw, 6);
+                c.strokeStyle = K.milk; c.lineWidth = u.key === 'spout' ? 2 + L * 1.5 : 2.5; c.beginPath(); c.moveTo(28, 24); c.lineTo(28, 36); c.stroke();
+                c.fillStyle = 'rgba(255,255,255,0.6)'; c.beginPath(); c.moveTo(16, 30); c.lineTo(40, 30); c.lineTo(36, 54); c.lineTo(20, 54); c.closePath(); c.fill();
+                c.fillStyle = K.milk; c.beginPath(); c.moveTo(18, 40); c.lineTo(38, 40); c.lineTo(36, 54); c.lineTo(20, 54); c.closePath(); c.fill();
+                c.strokeStyle = '#6f747a'; c.lineWidth = 1; c.beginPath(); c.moveTo(16, 30); c.lineTo(40, 30); c.lineTo(36, 54); c.lineTo(20, 54); c.closePath(); c.stroke();
+                if (u.key === 'gauge') {
+                    c.strokeStyle = K.green; c.setLineDash([2, 2]); c.beginPath(); c.moveTo(14, 36); c.lineTo(42, 36); c.stroke(); c.setLineDash([]);
+                    c.strokeStyle = 'rgba(60,60,60,0.6)'; for (let y = 34; y < 54; y += 4) { c.beginPath(); c.moveTo(34, y); c.lineTo(38, y); c.stroke(); }
+                    if (L >= 2) { c.fillStyle = '#7cf29a'; c.beginPath(); c.arc(46, 10, 4, 0, TAU); c.fill(); }
+                }
+                if (u.key === 'spout') { c.fillStyle = K.ink; c.font = `600 8px ${SANS}`; c.textAlign = 'right'; c.textBaseline = 'middle'; c.fillText(`${u.vals[L - 1]}s`, 55, 50); }
+            } else if (u.key === 'belt') {
+                c.fillStyle = '#4a4d52'; c.save(); c.translate(28, 32); c.rotate(-0.5); rr(c, -24, -5, 48, 10, 4); c.fill();
+                c.fillStyle = '#8f9399'; for (let x = -20; x < 22; x += 7) c.fillRect(x, -3, 2, 6);
+                c.fillStyle = K.milk; c.beginPath(); c.moveTo(4, -18); c.lineTo(16, -18); c.lineTo(14, -6); c.lineTo(6, -6); c.closePath(); c.fill();
+                c.restore();
+                c.strokeStyle = K.green; c.lineWidth = 1.5; c.beginPath(); c.moveTo(40, 12); c.lineTo(50, 6); c.moveTo(50, 6); c.lineTo(44, 6); c.moveTo(50, 6); c.lineTo(50, 12); c.stroke();
             }
         }
         function renderShop() {
