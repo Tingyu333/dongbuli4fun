@@ -1165,7 +1165,7 @@ function washLog(input) {
 // 花錢：Players 的 spent（全部花掉的）拆成店面升級（shop.spent，洗頭店＋菜園農具）、捐香油錢（gongde.donated）、點燈（gongde.lit），剩下的算刮刮樂。
 // 公開：回 LINE 名字和大頭貼，不回 line_id；有帶 session 的話把自己那列標 me。算好的榜存 CacheService 5 分鐘。
 
-var BOARD_CACHE_KEY = 'board:v5', BOARD_CACHE_SEC = 300;
+var BOARD_CACHE_KEY = 'board:v6', BOARD_CACHE_SEC = 300;
 
 function boardBest(sheetName, totalCol, msCol) {
   var best = {}, sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
@@ -1181,13 +1181,17 @@ function boardBest(sheetName, totalCol, msCol) {
 }
 
 // 蹭網無盡模式：每個 line_id 撐最久的一輪（Wifis 的 Q ms、U mode、V season）
+// 部署新版之前送上來的那幾輪沒有 U、V（舊版沒存），不過一般模式最多 60 秒，超過 61 秒的一定是無盡模式，季數用秒數算
 function boardAlive() {
   var best = {}, sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Wifis');
-  if (!sheet || sheet.getLastRow() < 2 || sheet.getLastColumn() < 22) return best;
-  sheet.getRange(2, 1, sheet.getLastRow() - 1, 22).getValues().forEach(function (r) {
-    var id = String(r[2] || ''), ms = Number(r[16]) || 0;
-    if (!id || r[20] !== 'endless' || !ms) return;
-    if (!best[id] || ms > best[id].ms) best[id] = { ms: ms, season: Number(r[21]) || 1, total: Number(r[4]) || 0 };
+  if (!sheet || sheet.getLastRow() < 2) return best;
+  var cols = Math.min(22, Math.max(17, sheet.getLastColumn()));
+  sheet.getRange(2, 1, sheet.getLastRow() - 1, cols).getValues().forEach(function (r) {
+    var id = String(r[2] || ''), ms = Number(r[16]) || 0, mode = r[20] || '';
+    if (!id || !ms) return;
+    if (mode !== 'endless' && !(mode === '' && ms > 61000)) return;
+    var season = Number(r[21]) || Math.floor(ms / 30000) + 1;
+    if (!best[id] || ms > best[id].ms) best[id] = { ms: ms, season: season, total: Number(r[4]) || 0 };
   });
   return best;
 }

@@ -413,7 +413,9 @@
             $('workCtl').classList.toggle('hidden', book !== 'work'); $('spendCtl').classList.toggle('hidden', book !== 'spend');
             [$('go1'), $('go2'), $('go3'), $('go4')].forEach((a, i) => { const g = B.go[i]; a.classList.toggle('hidden', !g); if (g) { a.href = g[0]; a.textContent = g[1]; } });
             $('goBox').className = `mt-6 grid ${B.go.length === 4 ? 'grid-cols-2' : 'grid-cols-3'} gap-2`;  // 四顆排兩排，三顆排一排
-            $('boardNote').textContent = book === 'spend' ? CATS[cat].note : metric === 'alive' ? '蹭網無盡模式撐最久的一輪（被抓三次或自己收工都算）。從存到雲端開始算。' : metric === 'best'
+            // 後端還是舊版：回來的人身上沒有 wifi.alive 這個欄位（新版沒成績是 null）
+            const aliveOld = metric === 'alive' && players && players.length && players.every(p => !p.wifi || !('alive' in p.wifi));
+            $('boardNote').textContent = book === 'spend' ? CATS[cat].note : metric === 'alive' ? (aliveOld ? '後端還是舊版，看不到撐最久：要把 Code.gs 貼上去、重新部署（新版本）。' : '蹭網無盡模式撐最久的一輪（被抓三次或自己收工都算），要用 LINE 登入。剛玩完最多五分鐘才會上榜。') : metric === 'best'
                 ? (dept === 'farm' ? '菜園比的是一輪賣最多少錢（單位跟坐洗、房務不同，「全部」那頁不算菜園）。' : dept === 'wifi' ? '蹭網比的是一輪省最多少錢，含無盡模式（單位跟坐洗、房務不同，「全部」那頁不算蹭網）。' : '一場的最高分（爽度、乾淨度都是滿分 100），同分比誰快。從洗完、打掃完存到雲端開始算。')
                 : metric === 'money' ? '打工賺的錢加起來（工資、小費、失物招領、加成都算）。' : '洗幾顆頭、打掃幾間、拔幾輪、蹭幾輪。';
             const box = $('board');
@@ -449,6 +451,7 @@
                 </div>`;
             }).join('') : `<p class="py-10 text-center text-xs font-sans tracking-wider text-stone-400 leading-relaxed">${
                 book === 'spend' ? (players.length && !players.some(p => p.spend) ? '花錢・榜要等後端重新部署「新版本」才有。' : CATS[cat].empty)
+                : metric === 'alive' ? (players.length && players.every(p => !p.wifi || !('alive' in p.wifi)) ? '撐最久要等後端重新部署「新版本」才有。' : '還沒有人玩過無盡模式。<br>第一名在等你。')
                 : `${DEPT[dept] || '二十七樓'}還沒有人上榜。<br>第一名在等你。`}</p>`;
             box.querySelectorAll('img.avatar').forEach(img => img.addEventListener('error', () => {
                 badPic.add(img.getAttribute('src'));
