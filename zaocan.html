@@ -1339,9 +1339,9 @@
             }, 900);
         }
 
-        // 日報上的老闆頭像：使用者給的浣熊素描（assets/zaocan-boss.jpg）；圖載不到就畫雞塊
+        // 日報上的老闆頭像：使用者給的浣熊素描，戴上畫的廚師帽（assets/zaocan-boss.jpg）；圖載不到就畫雞塊
         const BOSS_IMG = new Image();
-        BOSS_IMG.src = 'assets/zaocan-boss.jpg?v=1';
+        BOSS_IMG.src = 'assets/zaocan-boss.jpg?v=2';
         function bossReady() {
             if (BOSS_IMG.complete) return Promise.resolve(BOSS_IMG.naturalWidth > 0);
             return new Promise(res => {
@@ -1386,7 +1386,7 @@
             x.fillStyle = '#8e8070'; x.fillRect(500, 250, 80, 2);
             // 老闆頭像
             x.save(); x.beginPath(); x.arc(860, 400, 120, 0, TAU); x.fillStyle = hasBoss ? '#ffffff' : '#f1e6d2'; x.fill(); x.clip();
-            if (hasBoss) x.drawImage(BOSS_IMG, 860 - 132, 400 - 124, 264, 264);
+            if (hasBoss) x.drawImage(BOSS_IMG, 50, 14, 360, 360, 860 - 128, 400 - 124, 256, 256);  // 原圖 460×460：浣熊戴廚師帽，裁掉兩邊的白
             else drawNugget(x, 860, 430, 1.9);
             x.restore();
             x.strokeStyle = '#8e8070'; x.lineWidth = 2; x.beginPath(); x.arc(860, 400, 120, 0, TAU); x.stroke();
