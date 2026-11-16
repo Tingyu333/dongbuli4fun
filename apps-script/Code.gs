@@ -1253,9 +1253,9 @@ function leaderboard(input) {
 // 投保扣的錢不算 spent（錢只是鎖起來）；領滿期金時利息記在 earned.insure；解約少拿的部分不算 spent。
 
 var POLICY_PLANS = {
-  d3: { name: '三日・安', days: 3, rate: 0.03 },
-  d5: { name: '五日・穩', days: 5, rate: 0.06 },
-  d7: { name: '七日・久', days: 7, rate: 0.10 }
+  d3: { name: '三日・安', days: 3, rate: 0.10 },
+  d5: { name: '五日・穩', days: 5, rate: 0.25 },
+  d7: { name: '七日・久', days: 7, rate: 0.40 }
 };
 var POLICY_MIN = 10000, POLICY_MAX = 100000, POLICY_ACTIVE_MAX = 3, POLICY_SURRENDER_BASE = 0.7, POLICY_OPS_PER_HOUR = 120;
 var POLICY_HEADERS = ['created', 'id', 'line_id', 'plan', 'amount', 'rate', 'start', 'end', 'status', 'closed', 'payout'];
