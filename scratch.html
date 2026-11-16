@@ -2339,6 +2339,7 @@
                 },
             }]);
             $('wallet').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+            setTimeout(() => loadH2C().catch(() => { }), 1500);  // 分享要用的照相程式，先載起來
             requestAnimationFrame(() => {
                 foils = [...host.querySelectorAll('[data-zone]')].map(zone => makeFoil(zone,
                     el => {
@@ -2436,10 +2437,47 @@
         const canShareFiles = (() => { try { return !!(navigator.canShare && navigator.canShare({ files: [new File([''], 'x.png', { type: 'image/png' })] })); } catch (e) { return false; } })();
         const shareLabel = () => canShareFiles ? '分享這張' : SaveImg.inApp ? '存這張圖片' : '下載這張';
         function ticketCard(t) {
-            if (!cards.has(t)) cards.set(t, drawTicketCard(t).catch(() => null));
+            if (!cards.has(t)) {
+                const el = document.querySelector('#ticketHost .tk');  // 先抓住這張票的畫面：使用者可能馬上按「再買一張」
+                cards.set(t, snapTicket(t, el).then(snap => drawTicketCard(t, snap)).catch(() => drawTicketCard(t, null)).catch(() => null));
+            }
             return cards.get(t);
         }
-        async function drawTicketCard(t) {
+        // 把刮完的票照下來（html2canvas，第一次打開票才載，載不到就只畫兌獎單）
+        const H2C_URL = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        let h2cP = null;
+        function loadH2C() {
+            if (window.html2canvas) return Promise.resolve(window.html2canvas);
+            if (!h2cP) h2cP = new Promise((res, rej) => {
+                const sc = document.createElement('script');
+                sc.src = H2C_URL; sc.async = true;
+                sc.onload = () => window.html2canvas ? res(window.html2canvas) : rej(new Error('no html2canvas'));
+                sc.onerror = () => { h2cP = null; rej(new Error('load failed')); };
+                document.head.appendChild(sc);
+                setTimeout(() => rej(new Error('timeout')), 10000);
+            });
+            return h2cP;
+        }
+        async function snapTicket(t, el) {
+            if (!el) return null;
+            const h2c = await loadH2C();
+            if (!el.isConnected || S.current !== t) return null;  // 畫面已經換成別張了
+            const scale = Math.min(3, 1000 / Math.max(1, el.offsetWidth));
+            const hi = GAMES[t.type].hi;
+            return await h2c(el, {
+                scale, backgroundColor: null, logging: false, useCORS: true,
+                // html2canvas 畫不好 inset 的 box-shadow（會變成一圈粗框、內容往左擠）：照相的那份換成一般的框線
+                onclone: doc => {
+                    const k = doc.querySelector('#ticketHost .tk');
+                    if (!k) return;
+                    k.style.boxShadow = 'none';
+                    k.style.border = `3px solid ${hi}`;
+                    k.style.padding = 'calc(0.9rem - 3px) calc(0.8rem - 3px) calc(0.8rem - 3px)';
+                },
+            });
+        }
+        async function drawTicketCard(t, snap) {
+            if (snap && snap.width > 10 && snap.height > 10) return drawSnapCard(t, snap);
             const g = GAMES[t.type], win = t.total > 0, big = win && t.total >= g.price * 10;
             const SANS = '"Noto Sans TC", sans-serif', SERIF = '"Noto Serif TC", serif';
             const note = win ? [t.blessed ? '神明加持' : '', caiBonus(t) ? `財神加碼 ${fmt(caiBonus(t))}` : '', g.winNote ? g.winNote(t) : ''].filter(Boolean).join('・') : '';
@@ -2503,6 +2541,72 @@
             x.restore();
             // 最下面
             T('丼步喱・絆　遊戲幣，不是真的彩券', 540, 1262, `700 28px ${SANS}`, 'rgba(255,255,255,0.8)');
+            const blob = await new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(), 'image/png'));
+            return new File([blob], `dongbuli-scratch-${t.code || Date.now()}.png`, { type: 'image/png' });
+        }
+        // 有照到票：上面是刮完的票、下面一張兌獎單（中多少、大寫金額、章、票號、時間）
+        async function drawSnapCard(t, snap) {
+            const g = GAMES[t.type], win = t.total > 0, big = win && t.total >= g.price * 10;
+            const SANS = '"Noto Sans TC", sans-serif', SERIF = '"Noto Serif TC", serif';
+            const note = win ? [t.blessed ? '神明加持' : '', caiBonus(t) ? `財神加碼 ${fmt(caiBonus(t))}` : '', g.winNote ? g.winNote(t) : ''].filter(Boolean).join('・') : '';
+            const loseText = t.loseText || '槓龜。';
+            const who = window.Line && Line.loggedIn && Line.profile && Line.profile.name ? String(Line.profile.name).slice(0, 16) : '';
+            const d = new Date();
+            const when = `${d.getFullYear()}・${d.getMonth() + 1}・${d.getDate()}　${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+            const text = '二十七樓彩券行中獎沒中恭喜大獎票號兌獎得主遊戲幣不是真的丼步喱絆兌槓龜' + note + loseText + capital(t.total || 0) + (who || '') + '0123456789$,・:';
+            try { await Promise.race([Promise.all([document.fonts.load(`900 40px ${SANS}`, text), document.fonts.load(`700 40px ${SERIF}`, text)]), new Promise(r => setTimeout(r, 2000))]); } catch (e) { }
+            // 票照片縮到寬 900、最高 1000
+            let tw = 900, th = snap.height * 900 / snap.width;
+            if (th > 1000) { tw *= 1000 / th; th = 1000; }
+            const W = 1080, top = big ? 210 : 150, panelY = top + th + 46, panelH = 400, H = panelY + panelH + 110;
+            const c = document.createElement('canvas'); c.width = W; c.height = Math.round(H);
+            const x = c.getContext('2d');
+            const T = (str, px, py, font, color, align = 'center') => { x.font = font; x.fillStyle = color; x.textAlign = align; x.textBaseline = 'alphabetic'; x.fillText(str, px, py); };
+            const fit = (str, max, size, weight, fam) => { let s = size; x.font = `${weight} ${s}px ${fam}`; while (s > 20 && x.measureText(str).width > max) { s -= 4; x.font = `${weight} ${s}px ${fam}`; } return `${weight} ${s}px ${fam}`; };
+            const rr = (X, Y, w, h, r) => { x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); };
+            // 底：深色桌面＋票的顏色放射光
+            let gr = x.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, g.c2); gr.addColorStop(1, '#1a1412');
+            x.fillStyle = gr; x.fillRect(0, 0, W, H);
+            x.save(); x.translate(W / 2, top + th / 2); x.globalAlpha = win ? 0.18 : 0.06; x.fillStyle = g.hi;
+            for (let i = 0; i < 24; i++) { x.rotate(Math.PI / 12); x.beginPath(); x.moveTo(0, 0); x.lineTo(-70, -1400); x.lineTo(70, -1400); x.closePath(); x.fill(); }
+            x.restore();
+            T('二 十 七 樓 彩 券 行', W / 2, 86, `700 32px ${SANS}`, 'rgba(255,255,255,0.88)');
+            if (big) {
+                x.fillStyle = g.hi; x.beginPath(); x.moveTo(90, 112); x.lineTo(990, 112); x.lineTo(965, 150); x.lineTo(990, 188); x.lineTo(90, 188); x.lineTo(115, 150); x.closePath(); x.fill();
+                T('恭 喜 中 大 獎', W / 2, 168, `900 50px ${SANS}`, '#7a2a00');
+            }
+            // 票（微微歪一點，像放在桌上）
+            x.save(); x.translate(W / 2, top + th / 2); x.rotate(-0.012);
+            x.shadowColor = 'rgba(0,0,0,0.45)'; x.shadowBlur = 36; x.shadowOffsetY = 18;
+            x.drawImage(snap, -tw / 2, -th / 2, tw, th);
+            x.restore();
+            // 兌獎單
+            x.save(); x.shadowColor = 'rgba(0,0,0,0.35)'; x.shadowBlur = 24; x.shadowOffsetY = 10;
+            rr(90, panelY, 900, panelH, 24); x.fillStyle = '#fffdf6'; x.fill(); x.restore();
+            x.strokeStyle = g.c1; x.lineWidth = 5; rr(110, panelY + 20, 860, panelH - 40, 14); x.stroke();
+            if (win) {
+                T('中獎', 170, panelY + 100, `900 44px ${SANS}`, '#2c2c2c', 'left');
+                const amt = fmt(t.total), font = fit(amt, 560, 130, 900, SANS);
+                x.font = font; x.lineJoin = 'round'; x.lineWidth = 12; x.strokeStyle = g.hi; x.textAlign = 'left'; x.strokeText(amt, 165, panelY + 230);
+                T(amt, 165, panelY + 230, font, '#c0261d', 'left');
+                T(capital(t.total), 170, panelY + 285, fit(capital(t.total), 540, 36, 700, SERIF), '#4a4a4a', 'left');
+                if (note) { x.font = `900 26px ${SANS}`; const w = x.measureText(note).width + 44; rr(380, panelY + 66, w, 46, 23); x.fillStyle = g.c1; x.fill(); T(note, 380 + w / 2, panelY + 98, `900 26px ${SANS}`, '#ffffff'); }
+            } else {
+                T('沒中', 170, panelY + 200, `900 140px ${SANS}`, '#b9b3a8', 'left');
+                T(loseText, 170, panelY + 275, fit(loseText, 560, 36, 700, SERIF), '#6b6b6b', 'left');
+            }
+            const info = [t.code ? `票號 ${t.code}` : '', `兌獎 ${when}`, who ? `得主 ${who}` : ''].filter(Boolean);
+            T(info.join('　'), 170, panelY + 340, fit(info.join('　'), 580, 24, 700, SANS), '#8a6d3b', 'left');
+            // 章
+            x.save(); x.translate(835, panelY + panelH / 2); x.rotate(-0.18); x.globalAlpha = 0.9;
+            const col = win ? '#c0261d' : '#8d8d8d';
+            x.strokeStyle = col; x.lineWidth = 8; x.beginPath(); x.arc(0, 0, 100, 0, Math.PI * 2); x.stroke();
+            x.lineWidth = 3; x.beginPath(); x.arc(0, 0, 84, 0, Math.PI * 2); x.stroke();
+            x.textBaseline = 'middle'; x.fillStyle = col; x.textAlign = 'center';
+            if (win) { x.font = `900 108px ${SERIF}`; x.fillText('兌', 0, 8); }
+            else { x.font = `900 60px ${SERIF}`; x.fillText('槓', 0, -28); x.fillText('龜', 0, 36); }
+            x.restore();
+            T('丼步喱・絆　遊戲幣，不是真的彩券', W / 2, H - 46, `700 28px ${SANS}`, 'rgba(255,255,255,0.75)');
             const blob = await new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(), 'image/png'));
             return new File([blob], `dongbuli-scratch-${t.code || Date.now()}.png`, { type: 'image/png' });
         }
