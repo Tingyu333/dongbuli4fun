@@ -26,6 +26,7 @@
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261116d"></script>
     <script src="assets/gongde.js?v=20261116d"></script>
+    <script src="assets/saveimg.js?v=20261116d"></script>
     <style>
         /* 這頁走彩券行的熱鬧風格，不跟網站的侘寂風；彩券是紙本，顏色固定 */
         .shop {
@@ -2425,7 +2426,91 @@
             if (S.queue.length) list.push({ label: `下一張（還有 ${S.queue.length} 張）`, cls: 'is-main', onClick: next });
             else list.push({ label: S.money >= g.price ? `再買一張 ${fmt(g.price)}` : '錢不夠了', cls: 'is-main', disabled: S.money < g.price, onClick: () => buy(t.type, 1) });
             list.push({ label: '回彩券行', onClick: backToShelf });
+            list.push({ label: shareLabel(), onClick: btn => shareTicket(t, btn) });
             actions(list);
+            ticketCard(t);  // 先畫好：iPhone 的分享選單要在按下去的那一刻叫，等太久會叫不出來
+        }
+
+        // ===== 6b. 分享這張：畫一張「兌獎單」圖片（票的顏色、中多少、大寫金額、本號、日期、兌／槓龜章） =====
+        const cards = new WeakMap();  // 票 → 畫好的圖（Promise<File>），只在這一頁
+        const canShareFiles = (() => { try { return !!(navigator.canShare && navigator.canShare({ files: [new File([''], 'x.png', { type: 'image/png' })] })); } catch (e) { return false; } })();
+        const shareLabel = () => canShareFiles ? '分享這張' : SaveImg.inApp ? '存這張圖片' : '下載這張';
+        function ticketCard(t) {
+            if (!cards.has(t)) cards.set(t, drawTicketCard(t).catch(() => null));
+            return cards.get(t);
+        }
+        async function drawTicketCard(t) {
+            const g = GAMES[t.type], win = t.total > 0, big = win && t.total >= g.price * 10;
+            const SANS = '"Noto Sans TC", sans-serif', SERIF = '"Noto Serif TC", serif';
+            const note = win ? [t.blessed ? '神明加持' : '', caiBonus(t) ? `財神加碼 ${fmt(caiBonus(t))}` : '', g.winNote ? g.winNote(t) : ''].filter(Boolean).join('・') : '';
+            const loseText = t.loseText || '槓龜。';
+            const who = window.Line && Line.loggedIn && Line.profile && Line.profile.name ? String(Line.profile.name).slice(0, 16) : '';
+            const d = new Date(t.at || Date.now());
+            const when = `${d.getFullYear()}・${d.getMonth() + 1}・${d.getDate()}　${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+            const no = t.num ? `第 ${String(t.book).padStart(4, '0')} 本・${String(t.num).padStart(2, '0')} 號` : '';
+            const text = g.name + '二十七樓彩券行兌獎單中獎沒中恭喜大獎票價本號票號兌獎得主遊戲幣不是真的丼步喱絆兌槓龜' + note + loseText + capital(t.total || 0) + (who || '') + '0123456789$,・:';
+            try { await Promise.race([Promise.all([document.fonts.load(`900 40px ${SANS}`, text), document.fonts.load(`700 40px ${SERIF}`, text)]), new Promise(r => setTimeout(r, 2000))]); } catch (e) { }
+            const c = document.createElement('canvas'); c.width = 1080; c.height = 1350;
+            const x = c.getContext('2d');
+            const T = (str, px, py, font, color, align = 'center') => { x.font = font; x.fillStyle = color; x.textAlign = align; x.textBaseline = 'alphabetic'; x.fillText(str, px, py); };
+            const fit = (str, max, size, weight, fam) => { let s = size; x.font = `${weight} ${s}px ${fam}`; while (s > 20 && x.measureText(str).width > max) { s -= 4; x.font = `${weight} ${s}px ${fam}`; } return `${weight} ${s}px ${fam}`; };
+            const rr = (X, Y, w, h, r) => { x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); };
+            // 底：票的顏色、放射光
+            let gr = x.createLinearGradient(0, 0, 0, 1350); gr.addColorStop(0, g.c1); gr.addColorStop(1, g.c2);
+            x.fillStyle = gr; x.fillRect(0, 0, 1080, 1350);
+            x.save(); x.translate(540, 560); x.globalAlpha = win ? 0.16 : 0.07; x.fillStyle = g.hi;
+            for (let i = 0; i < 24; i++) { x.rotate(Math.PI / 12); x.beginPath(); x.moveTo(0, 0); x.lineTo(-60, -1100); x.lineTo(60, -1100); x.closePath(); x.fill(); }
+            x.restore();
+            // 上面：店名、票名
+            T('二 十 七 樓 彩 券 行', 540, 100, `700 30px ${SANS}`, 'rgba(255,255,255,0.85)');
+            x.save(); x.shadowColor = 'rgba(0,0,0,0.35)'; x.shadowOffsetY = 6; x.shadowBlur = 0;
+            T(g.name, 540, 196, fit(g.name, 900, 92, 900, SANS), '#ffffff'); x.restore();
+            // 紙
+            x.save(); x.shadowColor = 'rgba(0,0,0,0.3)'; x.shadowBlur = 30; x.shadowOffsetY = 14;
+            rr(80, 250, 920, 930, 28); x.fillStyle = '#fffdf6'; x.fill(); x.restore();
+            x.strokeStyle = g.c1; x.lineWidth = 6; rr(104, 274, 872, 882, 18); x.stroke();
+            x.lineWidth = 2; rr(118, 288, 844, 854, 12); x.stroke();
+            if (big) {  // 大獎：上面一條緞帶
+                x.fillStyle = g.hi; x.beginPath(); x.moveTo(60, 300); x.lineTo(1020, 300); x.lineTo(995, 345); x.lineTo(1020, 390); x.lineTo(60, 390); x.lineTo(85, 345); x.closePath(); x.fill();
+                T('恭 喜 中 大 獎', 540, 366, `900 50px ${SANS}`, '#7a2a00');
+            }
+            const top = big ? 330 : 340;  // 大獎：緞帶代替「兌獎單」三個字，金額往上挪，下面的加持標籤才不會壓到票的資料
+            if (!big) T('兌獎單', 540, top + 40, `700 40px ${SERIF}`, '#8a6d3b');
+            if (win) {
+                T('中獎', 540, top + 130, `900 52px ${SANS}`, '#2c2c2c');
+                const amt = fmt(t.total), font = fit(amt, 820, 170, 900, SANS);
+                x.font = font; x.lineJoin = 'round'; x.lineWidth = 14; x.strokeStyle = g.hi; x.textAlign = 'center'; x.strokeText(amt, 540, top + 320);
+                T(amt, 540, top + 320, font, '#c0261d');
+                T(capital(t.total), 540, top + 390, fit(capital(t.total), 800, 40, 700, SERIF), '#4a4a4a');
+                if (note) { x.font = `900 30px ${SANS}`; const w = x.measureText(note).width + 60; rr(540 - w / 2, top + 420, w, 56, 28); x.fillStyle = g.c1; x.fill(); T(note, 540, top + 459, `900 30px ${SANS}`, '#ffffff'); }
+            } else {
+                T('沒中', 540, top + 260, `900 170px ${SANS}`, '#b9b3a8');
+                T(loseText, 540, top + 350, fit(loseText, 800, 42, 700, SERIF), '#6b6b6b');
+            }
+            // 虛線、票的資料
+            const y0 = 880;
+            x.setLineDash([14, 12]); x.strokeStyle = '#d6cbb5'; x.lineWidth = 3; x.beginPath(); x.moveTo(150, y0 - 50); x.lineTo(930, y0 - 50); x.stroke(); x.setLineDash([]);
+            const rows = [['票價', fmt(g.price)], no ? ['本號', no] : null, ['票號', t.code], ['兌獎', when], who ? ['得主', who] : null].filter(Boolean);
+            rows.forEach(([k, v], i) => { const y = y0 + i * 52; T(k, 160, y, `700 28px ${SANS}`, '#8a6d3b', 'left'); T(v, 290, y, fit(v, 430, 32, 700, SANS), '#2c2c2c', 'left'); });
+            // 章：中獎蓋紅色「兌」，沒中蓋灰色「槓龜」
+            x.save(); x.translate(820, 990); x.rotate(-0.18); x.globalAlpha = 0.9;
+            const col = win ? '#c0261d' : '#8d8d8d';
+            x.strokeStyle = col; x.lineWidth = 9; x.beginPath(); x.arc(0, 0, 112, 0, Math.PI * 2); x.stroke();
+            x.lineWidth = 3; x.beginPath(); x.arc(0, 0, 94, 0, Math.PI * 2); x.stroke();
+            x.textBaseline = 'middle';
+            if (win) { x.font = `900 120px ${SERIF}`; x.fillStyle = col; x.textAlign = 'center'; x.fillText('兌', 0, 8); }
+            else { x.font = `900 66px ${SERIF}`; x.fillStyle = col; x.textAlign = 'center'; x.fillText('槓', 0, -30); x.fillText('龜', 0, 40); }
+            x.restore();
+            // 最下面
+            T('丼步喱・絆　遊戲幣，不是真的彩券', 540, 1262, `700 28px ${SANS}`, 'rgba(255,255,255,0.8)');
+            const blob = await new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(), 'image/png'));
+            return new File([blob], `dongbuli-scratch-${t.code || Date.now()}.png`, { type: 'image/png' });
+        }
+        async function shareTicket(t, btn) {
+            const file = await ticketCard(t);
+            if (!file) { showToast('圖片畫不出來，截圖也可以'); return; }
+            const g = GAMES[t.type];
+            await SaveImg.save(file, { title: '丼步喱・絆 二十七樓彩券行', text: t.total > 0 ? `我在二十七樓彩券行刮「${g.name}」中了 ${fmt(t.total)}！` : `我在二十七樓彩券行刮「${g.name}」槓龜了。` });
         }
 
         function backToShelf() {
