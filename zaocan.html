@@ -154,7 +154,7 @@
         <section class="mt-10 px-1">
             <h2 class="text-sm tracking-[0.3em] text-wabi-dark">怎麼煎</h2>
             <ol class="mt-3 list-decimal pl-5 space-y-1.5 text-xs font-sans tracking-wide text-stone-500 leading-relaxed">
-                <li>客人頭上的泡泡就是他<b class="font-normal text-wabi-dark">想吃的東西</b>，下面那條是他還願意等多久。等到紅色、見底，客人就氣走了。</li>
+                <li>客人頭上的泡泡就是他<b class="font-normal text-wabi-dark">想吃的東西</b>，下面那條是他還願意等多久。等到紅色、見底，客人就氣走了。點好幾樣的客人，<b class="font-normal text-wabi-dark">先送到其中一樣就願意多等 6 秒</b>。</li>
                 <li>點下面的食材放上<b class="font-normal text-wabi-dark">煎台</b>（四個位子）。下面的條走到白線出現「翻」，點一下翻面；再走到白線出現「好」，點一下夾到保溫台。拖太久會<b class="font-normal text-wabi-shu">焦</b>，焦了點一下丟掉。</li>
                 <li><b class="font-normal text-wabi-dark">荷包蛋</b>翻面後先到「半熟」再到「全熟」，泡泡上寫哪一種就給哪一種。<b class="font-normal text-wabi-dark">鐵板麵</b>不用翻。</li>
                 <li><b class="font-normal text-wabi-dark">蛋餅</b>好了以後要<b class="font-normal text-wabi-dark">用手指橫著滑一下捲起來</b>：不快不慢、直直滑過去捲得漂亮，太快會捲歪；用點的也會捲，但一定歪。</li>
@@ -220,6 +220,8 @@
         const NICE = 15;         // 捲得漂亮、倒剛好，每份
         const BURNT = 15, SPILL = 10, ANGRY = 80;   // 焦掉、打翻、氣走一位
         const EX_BONUS = 150;    // 前夫賒帳，老闆另外給
+        const EXTEND = 6;        // 點好幾樣的客人：先拿到其中一樣，願意多等幾秒（不會超過一開始的耐心）
+        const WAIT_LINES = ['好，還有呢？', '先吃這個', '嗯，繼續', '剩下的快喔', '不錯，下一個'];
         const ITO_WIN = 300, ITO_P = 0.35;   // 伊藤用刮刮樂付小費：35% 刮中 $300
         const WARM_N = 5;        // 保溫台放幾份
         const GRADES = [
@@ -275,7 +277,7 @@
                 tally: {
                     customers: 0, served: 0, angry: 0, items: 0, wrong: 0, burnt: 0, spilled: 0, trashed: 0,
                     rollsNice: 0, rollsMessy: 0, drinksPerfect: 0, drinksShort: 0, eggsHalf: 0, eggsFull: 0,
-                    waits: [], fastest: 0, specials: {}, exN: 0, itoN: 0, itoWins: 0, niceN: 0, flips: 0,
+                    waits: [], fastest: 0, specials: {}, exN: 0, itoN: 0, itoWins: 0, niceN: 0, flips: 0, extends: 0,
                 },
             };
             spawn(0);   // 第一位客人先站著（開始之前不會等到生氣）
@@ -504,6 +506,13 @@
             G.warm.splice(j, 1);
             sfx.give();
             if (cu.items.every(o => o.done)) serve(i);
+            else {
+                // 先拿到一樣：心情好一點，願意多等
+                const add = Math.min(EXTEND, cu.patience - cu.left);
+                cu.left += add; G.tally.extends++;
+                if (add >= 1) floatText(SLOT_X[i], 150, `多等 ${Math.round(add)} 秒`, K.green);
+                if (Math.random() < 0.5) custSay(cu, pick(WAIT_LINES));
+            }
             autoHint();
         }
         function trashWarm(j) {
