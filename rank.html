@@ -22,10 +22,10 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/theme.css?v=20261115c">
-    <script src="assets/theme.js?v=20261115c"></script>
-    <script src="assets/line.js?v=20261115c"></script>
-    <script src="assets/wallet.js?v=20261115c"></script>
+    <link rel="stylesheet" href="assets/theme.css?v=20261116a">
+    <script src="assets/theme.js?v=20261116a"></script>
+    <script src="assets/line.js?v=20261116a"></script>
+    <script src="assets/wallet.js?v=20261116a"></script>
     <style>
         .line-btn {
             min-height: 44px;
@@ -227,7 +227,7 @@
         }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261115c">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261116a">
 </head>
 
 <body
@@ -270,6 +270,7 @@
                 <button type="button" data-metric="money" aria-pressed="true">賺最多</button>
                 <button type="button" data-metric="best" aria-pressed="false">最高分</button>
                 <button type="button" data-metric="count" aria-pressed="false">做最多</button>
+                <button type="button" data-metric="alive" aria-pressed="false" class="hidden">撐最久</button>
             </div>
             <div class="seg is-small mt-2" role="group" aria-label="哪個部門">
                 <button type="button" data-dept="all" aria-pressed="true">全部</button>
@@ -381,6 +382,11 @@
                 const d = p[dept] || {};
                 return d.n ? { v: d.n, main: `${d.n} ${UNIT[dept][2]}`, sub: `賺 ${fmt(d.money)}` } : null;
             }
+            // 蹭網無盡模式撐最久（只有蹭網部有這個分頁）
+            if (metric === 'alive') {
+                const a = wf.alive;
+                return a && a.ms ? { v: a.ms, main: clock(a.ms), sub: `撐到第 ${a.season} 季・省 ${fmt(a.total)}` } : null;
+            }
             // 菜園的最高分是一輪賣最多少錢（跟爽度、乾淨度不同單位，不放進「全部」）
             if (dept === 'farm') return fm.best != null && fm.best ? { v: fm.best, main: fmt(fm.best), sub: '一輪賣最多' } : null;
             if (dept === 'wifi') return wf.best != null && wf.best ? { v: wf.best, main: fmt(wf.best), sub: '一輪省最多' } : null;
@@ -393,7 +399,11 @@
             return { v: d.best, tie: d.ms || 9e9, main: `${d.best}`, sub: [dept === 'all' ? `${DEPT[pickDept]}${SCORE[pickDept]}` : SCORE[pickDept], secs(d.ms)].filter(Boolean).join('・') };
         }
 
+        const clock = ms => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)} 分 ${String(s % 60).padStart(2, '0')} 秒`; };
         function renderBoard() {
+            // 「撐最久」只有蹭網部有；換到別的部門就回「最高分」
+            if (metric === 'alive' && dept !== 'wifi') metric = 'best';
+            document.querySelector('[data-metric="alive"]').classList.toggle('hidden', dept !== 'wifi');
             document.querySelectorAll('[data-metric]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.metric === metric)));
             document.querySelectorAll('[data-dept]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.dept === dept)));
             document.querySelectorAll('[data-cat]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cat === cat)));
@@ -403,8 +413,8 @@
             $('workCtl').classList.toggle('hidden', book !== 'work'); $('spendCtl').classList.toggle('hidden', book !== 'spend');
             [$('go1'), $('go2'), $('go3'), $('go4')].forEach((a, i) => { const g = B.go[i]; a.classList.toggle('hidden', !g); if (g) { a.href = g[0]; a.textContent = g[1]; } });
             $('goBox').className = `mt-6 grid ${B.go.length === 4 ? 'grid-cols-2' : 'grid-cols-3'} gap-2`;  // 四顆排兩排，三顆排一排
-            $('boardNote').textContent = book === 'spend' ? CATS[cat].note : metric === 'best'
-                ? (dept === 'farm' ? '菜園比的是一輪賣最多少錢（單位跟坐洗、房務不同，「全部」那頁不算菜園）。' : dept === 'wifi' ? '蹭網比的是一輪省最多少錢（單位跟坐洗、房務不同，「全部」那頁不算蹭網）。' : '一場的最高分（爽度、乾淨度都是滿分 100），同分比誰快。從洗完、打掃完存到雲端開始算。')
+            $('boardNote').textContent = book === 'spend' ? CATS[cat].note : metric === 'alive' ? '蹭網無盡模式撐最久的一輪（被抓三次或自己收工都算）。從存到雲端開始算。' : metric === 'best'
+                ? (dept === 'farm' ? '菜園比的是一輪賣最多少錢（單位跟坐洗、房務不同，「全部」那頁不算菜園）。' : dept === 'wifi' ? '蹭網比的是一輪省最多少錢，含無盡模式（單位跟坐洗、房務不同，「全部」那頁不算蹭網）。' : '一場的最高分（爽度、乾淨度都是滿分 100），同分比誰快。從洗完、打掃完存到雲端開始算。')
                 : metric === 'money' ? '打工賺的錢加起來（工資、小費、失物招領、加成都算）。' : '洗幾顆頭、打掃幾間、拔幾輪、蹭幾輪。';
             const box = $('board');
             if (!players) {

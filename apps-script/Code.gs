@@ -1165,7 +1165,7 @@ function washLog(input) {
 // 花錢：Players 的 spent（全部花掉的）拆成店面升級（shop.spent，洗頭店＋菜園農具）、捐香油錢（gongde.donated）、點燈（gongde.lit），剩下的算刮刮樂。
 // 公開：回 LINE 名字和大頭貼，不回 line_id；有帶 session 的話把自己那列標 me。算好的榜存 CacheService 5 分鐘。
 
-var BOARD_CACHE_KEY = 'board:v4', BOARD_CACHE_SEC = 300;
+var BOARD_CACHE_KEY = 'board:v5', BOARD_CACHE_SEC = 300;
 
 function boardBest(sheetName, totalCol, msCol) {
   var best = {}, sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
@@ -1180,8 +1180,20 @@ function boardBest(sheetName, totalCol, msCol) {
   return best;
 }
 
+// 蹭網無盡模式：每個 line_id 撐最久的一輪（Wifis 的 Q ms、U mode、V season）
+function boardAlive() {
+  var best = {}, sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Wifis');
+  if (!sheet || sheet.getLastRow() < 2 || sheet.getLastColumn() < 22) return best;
+  sheet.getRange(2, 1, sheet.getLastRow() - 1, 22).getValues().forEach(function (r) {
+    var id = String(r[2] || ''), ms = Number(r[16]) || 0;
+    if (!id || r[20] !== 'endless' || !ms) return;
+    if (!best[id] || ms > best[id].ms) best[id] = { ms: ms, season: Number(r[21]) || 1, total: Number(r[4]) || 0 };
+  });
+  return best;
+}
+
 function buildBoard() {
-  var washBest = boardBest('Washes', 6, 30), cleanBest = boardBest('Cleans', 5, 26);
+  var washBest = boardBest('Washes', 6, 30), cleanBest = boardBest('Cleans', 5, 26), alive = boardAlive();
   var rows = playersSheet().getDataRange().getValues(), out = [];
   for (var i = 1; i < rows.length; i++) {
     var id = String(rows[i][1] || '');
@@ -1196,7 +1208,7 @@ function buildBoard() {
     var fe = earned.farm || {};  // 菜園：最高的一輪就是 earned 的 best（一輪賣多少錢）
     var fm = { n: Number(fe.times) || 0, money: Number(fe.total) || 0, best: fe.best ? Number(fe.best) : null, ms: 0 };
     var we = earned.wifi || {};  // 蹭網：跟菜園一樣，最高的一輪是 earned 的 best
-    var wf = { n: Number(we.times) || 0, money: Number(we.total) || 0, best: we.best ? Number(we.best) : null, ms: 0 };
+    var wf = { n: Number(we.times) || 0, money: Number(we.total) || 0, best: we.best ? Number(we.best) : null, ms: 0, alive: alive[id] || null };
     var gd = {}, shop = {};
     try { gd = JSON.parse(rows[i][8] || '{}') || {}; } catch (e) { }
     try { shop = JSON.parse(rows[i][9] || '{}') || {}; } catch (e) { }
@@ -1464,7 +1476,7 @@ function farmLog(input) {
 // --- 蹭・網（cengwang.html）：每一輪的紀錄 ---
 // 跟菜園紀錄一樣：公開、appendRow 不排隊、不寄信不回資料；session 對就記 line_id。
 var WIFI_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'total', 'sales', 'wifi_ms', 'episodes', 'drama', 'strikes',
-  'looks', 'dodged', 'fakes', 'connects', 'perfect', 'grade', 'ms', 'login', 'boost_ms', 'max_mult'];
+  'looks', 'dodged', 'fakes', 'connects', 'perfect', 'grade', 'ms', 'login', 'boost_ms', 'max_mult', 'mode', 'season'];
 
 function wifisSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -1473,6 +1485,9 @@ function wifisSheet() {
     sheet = ss.insertSheet('Wifis');
     sheet.appendRow(WIFI_HEADERS);
     sheet.setFrozenRows(1);
+  } else if (sheet.getLastColumn() < WIFI_HEADERS.length) {
+    // 舊分頁後來加了欄位（U mode、V season）：把標題補上
+    sheet.getRange(1, 1, 1, WIFI_HEADERS.length).setValues([WIFI_HEADERS]);
   }
   return sheet;
 }
@@ -1486,7 +1501,8 @@ function wifiRow(r, now, lineId, device) {
     now, at, lineId || '', device,
     washNum(r.total, 0, 100000), washNum(r.sales, -10000, 100000), washNum(r.wifi_ms, 0, 3600000), n(r.episodes), washText(r.drama, 20),
     n(r.strikes), n(r.looks), n(r.dodged), n(r.fakes), n(r.connects), !!r.perfect, washText(r.grade, 2), washNum(r.ms, 0, 3600000), !!r.login,
-    washNum(r.boost_ms, 0, 3600000), Math.round(washNum((r.max_mult || 1) * 10, 10, 50)) / 10
+    washNum(r.boost_ms, 0, 3600000), Math.round(washNum((r.max_mult || 1) * 10, 10, 50)) / 10,
+    r.mode === 'endless' ? 'endless' : 'normal', n(r.season)
   ];
 }
 
