@@ -102,7 +102,8 @@
 
         <section id="stage"
             class="stage bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-3 pt-4 pb-4">
-            <div class="flex items-baseline justify-between px-1">
+            <!-- 固定兩行高：老闆的話、出餐數變長變短，畫布才不會上下跳（手指會點偏） -->
+            <div class="flex items-start justify-between gap-2 px-1 min-h-[2.9rem]">
                 <p id="note" class="text-sm text-wabi-dark tracking-wider leading-relaxed">開店了。</p>
                 <span id="best" class="shrink-0 text-right text-[10px] leading-relaxed font-sans tracking-widest text-stone-400"></span>
             </div>
@@ -156,7 +157,7 @@
                 <li>客人頭上的泡泡就是他<b class="font-normal text-wabi-dark">想吃的東西</b>，下面那條是他還願意等多久。等到紅色、見底，客人就氣走了。</li>
                 <li>點下面的食材放上<b class="font-normal text-wabi-dark">煎台</b>（四個位子）。下面的條走到白線出現「翻」，點一下翻面；再走到白線出現「好」，點一下夾到保溫台。拖太久會<b class="font-normal text-wabi-shu">焦</b>，焦了點一下丟掉。</li>
                 <li><b class="font-normal text-wabi-dark">荷包蛋</b>翻面後先到「半熟」再到「全熟」，泡泡上寫哪一種就給哪一種。<b class="font-normal text-wabi-dark">鐵板麵</b>不用翻。</li>
-                <li><b class="font-normal text-wabi-dark">蛋餅</b>好了以後要<b class="font-normal text-wabi-dark">用手指橫著滑一下捲起來</b>：不快不慢、直直滑過去捲得漂亮，太快會捲歪。</li>
+                <li><b class="font-normal text-wabi-dark">蛋餅</b>好了以後要<b class="font-normal text-wabi-dark">用手指橫著滑一下捲起來</b>：不快不慢、直直滑過去捲得漂亮，太快會捲歪；用點的也會捲，但一定歪。</li>
                 <li><b class="font-normal text-wabi-dark">飲料</b>按住按鈕倒，放開就停。倒到兩條線中間「剛好」最好；太少可以再按著補；超過杯口就滿出來，整杯倒掉。</li>
                 <li>做好的東西在<b class="font-normal text-wabi-dark">保溫台</b>：點一下就送給點了它的客人（好幾位都點了，就再點要給的客人），也可以直接拖過去。用不到的拖去垃圾桶。</li>
                 <li>客人點的都送齊了才付錢：照菜單價，送得快多給小費（最多四成），蛋餅捲得漂亮、飲料倒剛好每份 +$15。焦掉的扣 $15、打翻的扣 $10、氣走一位扣 $80。</li>
@@ -409,7 +410,15 @@
                 return take(i, { v: d < 1 ? 'half' : 'full' });
             }
             if (d < 1) { it.shake = G.clock; sfx.nope(); return; }
-            if (m.roll) { it.nudge = G.clock; hint('蛋餅要<b class="font-normal text-wabi-dark">用手指橫著滑一下</b>才會捲起來。'); return; }
+            // 蛋餅：用點的也會捲（不然一直點不起來會焦掉），只是捲歪；用滑的才捲得漂亮
+            if (m.roll) {
+                if (take(i, { q: 'messy' })) {
+                    G.tally.rollsMessy++;
+                    floatText(GRILL[i].x, GRILL[i].y - 24, '捲歪了・用滑的才漂亮', K.amber);
+                    sfx.roll(false);
+                }
+                return;
+            }
             take(i, {});
         }
         // 捲蛋餅：在蛋餅上橫著滑一下
@@ -426,7 +435,7 @@
         }
         function take(i, extra) {
             const it = G.grill[i];
-            if (G.warm.length >= WARM_N) { hint('保溫台滿了，先把東西送出去。'); it.shake = G.clock; sfx.nope(); return false; }
+            if (G.warm.length >= WARM_N) { hint('保溫台滿了，先把東西送出去，或丟掉用不到的。'); it.shake = G.clock; G.fullAt = G.clock; floatText(GRILL[i].x, GRILL[i].y - 24, '保溫台滿了', K.shu); sfx.nope(); return false; }
             const w = { key: it.key, ...extra, at: G.clock };
             if (it.key === 'egg') { if (w.v === 'half') G.tally.eggsHalf++; else G.tally.eggsFull++; }
             G.warm.push(w);
@@ -940,6 +949,7 @@
                 const lab = it.v ? (it.v === 'half' ? '半熟' : '全熟') : it.q === 'nice' ? '漂亮' : it.q === 'messy' ? '捲歪' : it.q === 'perfect' ? '剛好' : it.q === 'short' ? '少一點' : '';
                 if (lab) tag(c, lab, x, WARM_Y + 15, it.q === 'messy' || it.q === 'short' ? '#a06a10' : it.v === 'half' ? '#c27a00' : K.ink);
             }
+            if (G.clock - (G.fullAt ?? -9) < 1) { c.strokeStyle = `rgba(179,58,47,${1 - (G.clock - G.fullAt)})`; c.lineWidth = 3; rr(c, 6, 198, 286, 52, 6); c.stroke(); }
             // 垃圾桶
             c.fillStyle = '#7d8187'; rr(c, TRASH.x - 15, TRASH.y - 14, 30, 34, 4); c.fill();
             c.fillStyle = '#5f6369'; rr(c, TRASH.x - 18, TRASH.y - 19, 36, 7, 3); c.fill();
@@ -1288,7 +1298,7 @@
             if (G && G.started && !G.ended) { $('best').innerHTML = `出餐 ${G.tally.served}<br>氣走 <span class="${G.tally.angry ? 'text-wabi-shu' : ''}">${G.tally.angry}</span>`; return; }
             let best = 0;
             try { best = Number(localStorage.getItem(BEST_KEY) || 0); } catch (e) { }
-            $('best').innerHTML = best ? `最好一天<br>${fmt(best)}` : '';
+            $('best').innerHTML = best ? `最好一天<br>${fmt(best)}` : '&nbsp;<br>&nbsp;';
         }
 
         const API_URL = (window.Line && Line.API_URL) || "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
