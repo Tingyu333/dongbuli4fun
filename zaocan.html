@@ -1339,7 +1339,18 @@
             }, 900);
         }
 
-        // 老闆：一塊會說話的雞塊（日報上的頭像）
+        // 日報上的老闆頭像：使用者給的浣熊素描（assets/zaocan-boss.jpg）；圖載不到就畫雞塊
+        const BOSS_IMG = new Image();
+        BOSS_IMG.src = 'assets/zaocan-boss.jpg?v=1';
+        function bossReady() {
+            if (BOSS_IMG.complete) return Promise.resolve(BOSS_IMG.naturalWidth > 0);
+            return new Promise(res => {
+                BOSS_IMG.addEventListener('load', () => res(true), { once: true });
+                BOSS_IMG.addEventListener('error', () => res(false), { once: true });
+                setTimeout(() => res(BOSS_IMG.naturalWidth > 0), 2500);
+            });
+        }
+        // 老闆：一塊會說話的雞塊（浣熊圖載不到時的備用頭像）
         function drawNugget(x, cx, cy, s) {
             x.save(); x.translate(cx, cy); x.scale(s, s);
             x.fillStyle = '#e9a640';
@@ -1364,6 +1375,7 @@
             const lines = rows.map(([k, v, u, m]) => [`${k} ${v} ${u}`, (m < 0 ? '−' : '') + fmt(Math.abs(m))]);
             const allText = lines.flat().join('') + '早餐店日報大橋頭麥克老闆說出餐位份氣走合計共保底出勤費給不到沒有賣出去' + grade.mark + grade.line + '0123456789$,−・';
             try { await Promise.race([Promise.all([document.fonts.load(`600 40px ${SERIF}`, allText), document.fonts.load(`400 40px ${SANS}`, allText)]), new Promise(res => setTimeout(res, 2500))]); } catch (e) { }
+            const hasBoss = await bossReady();
             const c = document.createElement('canvas'); c.width = 1080; c.height = 1350;
             const x = c.getContext('2d');
             const text = (str, px, py, font, color, align = 'center') => { x.font = font; x.fillStyle = color; x.textAlign = align; x.fillText(str, px, py); };
@@ -1373,8 +1385,10 @@
             text('早餐店日報', 540, 220, `600 76px ${SERIF}`, '#2c2c2c');
             x.fillStyle = '#8e8070'; x.fillRect(500, 250, 80, 2);
             // 老闆頭像
-            x.save(); x.beginPath(); x.arc(860, 400, 120, 0, TAU); x.fillStyle = '#f1e6d2'; x.fill(); x.clip();
-            drawNugget(x, 860, 430, 1.9); x.restore();
+            x.save(); x.beginPath(); x.arc(860, 400, 120, 0, TAU); x.fillStyle = hasBoss ? '#ffffff' : '#f1e6d2'; x.fill(); x.clip();
+            if (hasBoss) x.drawImage(BOSS_IMG, 860 - 132, 400 - 124, 264, 264);
+            else drawNugget(x, 860, 430, 1.9);
+            x.restore();
             x.strokeStyle = '#8e8070'; x.lineWidth = 2; x.beginPath(); x.arc(860, 400, 120, 0, TAU); x.stroke();
             text(G.tally.angry ? `老闆說：跑了 ${G.tally.angry} 位` : '老闆說：讚', 860, 560, `400 28px ${SERIF}`, G.tally.angry ? '#b33a2f' : '#8e8070');
             text(`出餐 ${G.tally.served} 位・${G.tally.items} 份`, 150, 320, `400 30px ${SERIF}`, '#8e8070', 'left');
