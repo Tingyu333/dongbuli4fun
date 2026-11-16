@@ -813,7 +813,7 @@ function playersSheet() {
 function cleanShop(s) {
   s = s && typeof s === 'object' ? s : {};
   var lv = {}, raw = s.lv && typeof s.lv === 'object' && !Array.isArray(s.lv) ? s.lv : {}, keys = Object.keys(raw);
-  if (keys.length > 20) return null;
+  if (keys.length > 40) return null;  // 三家店合起來 20 項，留空間給之後的店
   for (var i = 0; i < keys.length; i++) {
     var n = cleanMoney(raw[keys[i]] || 0, 0, 10);
     if (!/^[a-z]{1,16}$/.test(keys[i]) || n === null) return null;
@@ -1165,10 +1165,10 @@ function washLog(input) {
 
 // --- 排行榜（rank.html：打工・榜、花錢・榜）---
 // 只有用 LINE 登入過的玩家：賺多少、做幾次從 Players 的 earned 讀，單場最高分從 Washes／Cleans 讀（同分比快）。
-// 花錢：Players 的 spent（全部花掉的）拆成店面升級（shop.spent，洗頭店＋菜園農具）、捐香油錢（gongde.donated）、點燈（gongde.lit），剩下的算刮刮樂。
+// 花錢：Players 的 spent（全部花掉的）拆成店面升級（shop.spent，洗頭店＋菜園農具＋早餐店）、捐香油錢（gongde.donated）、點燈（gongde.lit），剩下的算刮刮樂。
 // 公開：回 LINE 名字和大頭貼，不回 line_id；有帶 session 的話把自己那列標 me。算好的榜存 CacheService 5 分鐘。
 
-var BOARD_CACHE_KEY = 'board:v7', BOARD_CACHE_SEC = 300;
+var BOARD_CACHE_KEY = 'board:v8', BOARD_CACHE_SEC = 300;
 
 function boardBest(sheetName, totalCol, msCol) {
   var best = {}, sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
@@ -1201,8 +1201,21 @@ function boardAlive() {
   return best;
 }
 
+// 早餐店：每個 line_id 出餐最多的一天（Zaocans 的 I served），同樣多比氣走少、再比賺多
+function boardServed() {
+  var best = {}, sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Zaocans');
+  if (!sheet || sheet.getLastRow() < 2) return best;
+  sheet.getRange(2, 1, sheet.getLastRow() - 1, 11).getValues().forEach(function (r) {
+    var id = String(r[2] || ''), served = Number(r[8]) || 0, angry = Number(r[9]) || 0, total = Number(r[4]) || 0;
+    if (!id || !served) return;
+    var b = best[id];
+    if (!b || served > b.n || (served === b.n && (angry < b.angry || (angry === b.angry && total > b.total)))) best[id] = { n: served, items: Number(r[10]) || 0, angry: angry, total: total };
+  });
+  return best;
+}
+
 function buildBoard() {
-  var washBest = boardBest('Washes', 6, 30), cleanBest = boardBest('Cleans', 5, 26), alive = boardAlive();
+  var washBest = boardBest('Washes', 6, 30), cleanBest = boardBest('Cleans', 5, 26), alive = boardAlive(), served = boardServed();
   var rows = playersSheet().getDataRange().getValues(), out = [];
   for (var i = 1; i < rows.length; i++) {
     var id = String(rows[i][1] || '');
@@ -1218,6 +1231,8 @@ function buildBoard() {
     var fm = { n: Number(fe.times) || 0, money: Number(fe.total) || 0, best: fe.best ? Number(fe.best) : null, ms: 0 };
     var we = earned.wifi || {};  // 蹭網：跟菜園一樣，最高的一輪是 earned 的 best
     var wf = { n: Number(we.times) || 0, money: Number(we.total) || 0, best: we.best ? Number(we.best) : null, ms: 0, alive: alive[id] || null };
+    var ze = earned.zaocan || {};  // 早餐店：最高的一天是 earned 的 best；served 是出餐最多的一天
+    var zc = { n: Number(ze.times) || 0, money: Number(ze.total) || 0, best: ze.best ? Number(ze.best) : null, ms: 0, served: served[id] || null };
     var gd = {}, shop = {};
     try { gd = JSON.parse(rows[i][8] || '{}') || {}; } catch (e) { }
     try { shop = JSON.parse(rows[i][9] || '{}') || {}; } catch (e) { }
@@ -1225,8 +1240,8 @@ function buildBoard() {
     var sp = { total: num(rows[i][5]), shop: num(shop.spent), donate: num(gd.donated), lamp: num(gd.lit) };
     sp.scratch = Math.max(0, sp.total - sp.shop - sp.donate - sp.lamp);
     sp.won = num((earned.scratch || {}).total) + num((earned.caishen || {}).total);  // 刮中的（含財神加碼）
-    if (!x.n && !c.n && !fm.n && !wf.n && x.best == null && c.best == null && !sp.total) continue;
-    out.push({ id: id, name: String(rows[i][2] || '旅人').slice(0, 20), picture: /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c, farm: fm, wifi: wf, spend: sp });
+    if (!x.n && !c.n && !fm.n && !wf.n && !zc.n && x.best == null && c.best == null && !sp.total) continue;
+    out.push({ id: id, name: String(rows[i][2] || '旅人').slice(0, 20), picture: /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c, farm: fm, wifi: wf, zaocan: zc, spend: sp });
   }
   return { at: new Date().toISOString(), players: out };
 }
@@ -1242,7 +1257,7 @@ function leaderboard(input) {
   return {
     result: 'success', at: board.at,
     players: board.players.map(function (p) {
-      return { name: p.name, picture: p.picture, xitou: p.xitou, clean: p.clean, farm: p.farm, wifi: p.wifi, spend: p.spend, me: !!me && p.id === me };
+      return { name: p.name, picture: p.picture, xitou: p.xitou, clean: p.clean, farm: p.farm, wifi: p.wifi, zaocan: p.zaocan, spend: p.spend, me: !!me && p.id === me };
     })
   };
 }

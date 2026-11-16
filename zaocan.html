@@ -67,6 +67,30 @@
         /* 開店中把左下角的晝夜鈕收起來：它會蓋住「大冰奶」按鈕的左邊，按了倒不出來 */
         html.zc-open .theme-toggle { opacity: 0; pointer-events: none; transition: opacity .2s; }
 
+        /* 店面升級（跟菜園的農具店同一套樣子） */
+        .shop-btn {
+            display: inline-flex; align-items: center; height: 1.9rem; padding: 0 0.75rem;
+            border: 1px solid rgb(var(--wabi-accent) / 0.5); border-radius: 9999px;
+            font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.15em; color: rgb(var(--wabi-dark));
+            white-space: nowrap; touch-action: manipulation;
+        }
+        .shop-btn b { margin-left: 0.3rem; font-weight: 400; color: rgb(var(--wabi-shu)); }
+        #shop { background: rgba(0, 0, 0, 0); transition: background 0.22s; }
+        #shop.on { background: rgba(0, 0, 0, 0.45); }
+        #shop .shop-sheet { transform: translateY(100%); transition: transform 0.22s ease-out; }
+        #shop.on .shop-sheet { transform: none; }
+        @media (prefers-reduced-motion: reduce) { #shop, #shop .shop-sheet { transition: none; } }
+        .shop-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 0; border-bottom: 1px solid rgb(var(--wabi-sub) / 0.6); }
+        .shop-icon { flex: none; width: 56px; height: 56px; border-radius: 6px; background: rgb(var(--wabi-sub) / 0.35); }
+        .shop-dots i { display: inline-block; width: 6px; height: 6px; margin-left: 3px; border-radius: 50%; border: 1px solid rgb(var(--wabi-accent)); }
+        .shop-dots i.on { background: rgb(var(--wabi-shu)); border-color: rgb(var(--wabi-shu)); }
+        .shop-buy {
+            flex: none; min-width: 5.6rem; min-height: 44px; padding: 0 0.6rem;
+            border: 1px solid rgb(var(--wabi-dark)); background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg));
+            font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.1em; line-height: 1.3; touch-action: manipulation;
+        }
+        .shop-buy:disabled { background: transparent; color: rgb(var(--wabi-accent)); border-color: rgb(var(--wabi-sub)); }
+
         .bill li {
             display: flex;
             justify-content: space-between;
@@ -98,7 +122,9 @@
 
     <main class="flex-grow max-w-md mx-auto pt-24 md:pt-32 pb-16 px-5 w-full">
 
-        <div class="text-center mb-6">
+        <div class="text-center mb-6 relative">
+            <!-- 店面升級：放在標題右上角，不多佔一行（不然手機上倒飲料的按鈕會被擠到畫面外） -->
+            <button id="shopBtn" type="button" class="shop-btn absolute right-0 top-0" aria-haspopup="dialog">店面<b id="shopLv"></b></button>
             <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">BREAKFAST</span>
             <h1 class="text-3xl font-light text-wabi-dark tracking-widest">早餐・煎</h1>
             <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">大橋頭麥克早餐店，老闆在後面炸雞塊。</p>
@@ -148,9 +174,11 @@
                     class="w-full bg-wabi-dark text-wabi-bg py-4 px-8 tracking-[0.2em] font-sans text-xs shadow-lg">分享早餐店日報</button>
                 <button id="againBtn" type="button"
                     class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">再開一次店</button>
+                <button id="shopBtn2" type="button"
+                    class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">拿薪水升級店面</button>
                 <a href="scratch.html"
                     class="block w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">拿薪水去彩券行</a>
-                <a href="rank.html"
+                <a href="rank.html#work"
                     class="block w-full py-3 text-stone-500 underline underline-offset-4 tracking-[0.2em] font-sans text-xs">看打工排行榜</a>
             </div>
         </section>
@@ -166,9 +194,27 @@
                 <li>做好的東西在<b class="font-normal text-wabi-dark">保溫台</b>：點一下就送給點了它的客人（好幾位都點了，就再點要給的客人），也可以直接拖過去。用不到的拖去垃圾桶。</li>
                 <li>客人點的都送齊了才付錢：照菜單價，送得快多給小費（最多四成），蛋餅捲得漂亮、飲料倒剛好每份 +$20。焦掉的扣 $15、打翻的扣 $10、氣走一位扣 $80。</li>
                 <li>七十五秒打烊。偶爾會有熟面孔來買早餐。</li>
+                <li>賺來的錢可以按上面的<b class="font-normal text-wabi-dark">店面</b>升級：多開爐口、保溫燈、自動翻面鏟、不沾鐵板、新招牌。登入 LINE 換手機也在。</li>
             </ol>
         </section>
     </main>
+
+    <!-- 店面升級 -->
+    <div id="shop" class="hidden fixed inset-0 z-[80] flex items-end justify-center" role="dialog" aria-modal="true" aria-label="早餐店升級">
+        <div class="shop-sheet w-full max-w-md bg-wabi-bg rounded-t-xl">
+            <div class="px-5 pt-5 pb-2 flex items-baseline justify-between border-b border-stone-200">
+                <div>
+                    <p class="text-lg text-wabi-dark tracking-widest">店面・升</p>
+                    <p class="mt-1 text-[10px] font-sans tracking-widest text-stone-400">老闆說：設備錢你出，賺的也是你的</p>
+                </div>
+                <p class="text-xs font-sans tracking-widest text-stone-500">錢包 <b id="shopMoney" class="font-normal text-wabi-shu"></b></p>
+            </div>
+            <div id="shopList" class="px-5 max-h-[60vh] overflow-y-auto overscroll-contain"></div>
+            <div class="px-5 py-4">
+                <button type="button" data-shop-close class="w-full py-3 border border-stone-300 text-wabi-dark tracking-[0.2em] font-sans text-xs">回去開店</button>
+            </div>
+        </div>
+    </div>
 
     <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
         <p>&copy; 2026 DONGBULI · 早餐・煎</p>
@@ -227,7 +273,7 @@
         const EXTEND = 6;        // 點好幾樣的客人：先拿到其中一樣，願意多等幾秒（不會超過一開始的耐心）
         const WAIT_LINES = ['好，還有呢？', '先吃這個', '嗯，繼續', '剩下的快喔', '不錯，下一個'];
         const ITO_WIN = 300, ITO_P = 0.35;   // 伊藤用刮刮樂付小費：35% 刮中 $300
-        const WARM_N = 5;        // 保溫台放幾份
+        let WARM_N = 5;          // 保溫台放幾份（保溫燈升級會變多，applyShop()）
         const GRADES = [
             { min: 3500, mark: '滿', line: '客滿，老闆請你吃雞塊。' },
             { min: 2500, mark: '旺', line: '生意興旺，鐵板沒停過。' },
@@ -236,6 +282,33 @@
             { min: -1e9, mark: '焦', line: '鐵板上都是焦的。' },
         ];
         const BEST_KEY = 'dongbuli-zaocan-best', STATS_KEY = 'dongbuli-zaocan-stats';
+
+        // ===== 1b. 店面升級 =====
+        // 存在共用錢包的 shop（跟坐洗部、菜園同一份，key 不重複），登入 LINE 就跟著帳號走。等級只升不降，shop.spent 是三家店加起來的。
+        const SHOP = [
+            { key: 'burner', name: '爐口', sub: '煎台', prices: [30000, 90000], vals: [1, 2],
+              tiers: ['', '第五個爐口', '第六個爐口'], fx: v => `煎台 ${4 + v} 個位子（原本 4 個）` },
+            { key: 'heatlamp', name: '保溫燈', sub: '保溫台', prices: [15000, 45000], vals: [1, 2],
+              tiers: ['', '一盞保溫燈', '兩盞保溫燈'], fx: v => `保溫台放 ${5 + v} 份（原本 5 份）` },
+            { key: 'flipper', name: '自動翻面鏟', sub: '翻面', prices: [60000], vals: [1],
+              tiers: ['', '自動翻面鏟'], fx: () => '第一面熟了自動翻面，只要顧夾起來' },
+            { key: 'nonstick', name: '不沾鐵板', sub: '焦', prices: [10000, 30000, 80000], vals: [2.0, 2.3, 2.7],
+              tiers: ['', '刷過油的鐵板', '不沾塗層', '名店鐵板'], fx: v => `比較慢焦：熟了以後多 ${Math.round((v - 1) / (BURN - 1) * 100 - 100)}% 的時間才焦` },
+            { key: 'menuboard', name: '招牌', sub: '賣價', prices: [20000, 50000, 100000], vals: [0.1, 0.2, 0.3],
+              tiers: ['', '木頭招牌', '燈箱招牌', '老店金字招牌'], fx: v => `每份餐點、飲料賣價多 ${Math.round(v * 100)}%` },
+        ];
+        const SHOP_BY = Object.fromEntries(SHOP.map(u => [u.key, u]));
+        function loadShop() {
+            let d = null;
+            try { d = Wallet.shop; } catch (e) { }
+            d = d && typeof d === 'object' ? { lv: { ...(d.lv || {}) }, spent: Number(d.spent) || 0 } : { lv: {}, spent: 0 };
+            SHOP.forEach(u => { d.lv[u.key] = clamp(Math.floor(Number(d.lv[u.key]) || 0), 0, u.prices.length); });
+            return d;
+        }
+        let shop = loadShop();
+        const lv = key => shop.lv[key] || 0;
+        const val = key => lv(key) ? SHOP_BY[key].vals[lv(key) - 1] : 0;
+        const burnAt = () => val('nonstick') || BURN;
 
         // 客人：一般人照職業有不同耐心；熟面孔偶爾出現
         const PEOPLE = [
@@ -262,8 +335,20 @@
 
         // ===== 2. 狀態 =====
         const SLOT_X = [60, 180, 300];
-        const GRILL = [{ x: 66, y: 302 }, { x: 186, y: 302 }, { x: 66, y: 392 }, { x: 186, y: 392 }];
-        const WARM_Y = 224, warmX = i => 34 + i * 54, TRASH = { x: 328, y: 224 };
+        // 煎台：四個位子兩排兩列；爐口升級後變三列（第五、第六個在右邊那列）
+        const GRILL4 = [{ x: 66, y: 302 }, { x: 186, y: 302 }, { x: 66, y: 392 }, { x: 186, y: 392 }];
+        const GRILL6 = [{ x: 46, y: 302 }, { x: 126, y: 302 }, { x: 46, y: 392 }, { x: 126, y: 392 }, { x: 206, y: 302 }, { x: 206, y: 392 }];
+        let GRILL = GRILL4;
+        const wide = () => GRILL.length > 4;
+        const WARM_Y = 224, TRASH = { x: 328, y: 224 };
+        const warmGap = () => WARM_N >= 7 ? 41 : WARM_N === 6 ? 47 : 54;
+        const warmX = i => (WARM_N >= 7 ? 27 : WARM_N === 6 ? 30 : 34) + i * warmGap();
+        function applyShop() {
+            shop = loadShop();
+            const n = 4 + val('burner');
+            GRILL = n <= 4 ? GRILL4 : GRILL6.slice(0, n);
+            WARM_N = 5 + val('heatlamp');
+        }
         const CUP = { x: 304, y: 384 };
         const JUGS = [['milk', 272, '奶茶'], ['tea', 304, '紅茶'], ['soy', 336, '豆漿紅茶']];
         let G = null;
@@ -271,17 +356,18 @@
         let lastNow = performance.now();
 
         function newRound() {
+            applyShop();
             G = {
                 started: false, ended: false, clock: 0, pay: null,
                 custs: [null, null, null], spawnAt: [0, 4, 9],
-                grill: [null, null, null, null], warm: [], sel: -1,
+                grill: GRILL.map(() => null), warm: [], sel: -1,
                 cup: { key: null, fill: 0, pour: false, ready: false, q: null, spillAt: -9 },
                 drag: null, smoke: [],
-                earn: { sales: {}, tip: 0, ito: 0, quality: 0, exDebt: 0, exBonus: 0, burnt: 0, spilled: 0, angry: 0 },
+                earn: { sales: {}, menu: 0, tip: 0, ito: 0, quality: 0, exDebt: 0, exBonus: 0, burnt: 0, spilled: 0, angry: 0 },
                 tally: {
                     customers: 0, served: 0, angry: 0, items: 0, wrong: 0, burnt: 0, spilled: 0, trashed: 0,
                     rollsNice: 0, rollsMessy: 0, drinksPerfect: 0, drinksShort: 0, eggsHalf: 0, eggsFull: 0,
-                    waits: [], fastest: 0, specials: {}, exN: 0, itoN: 0, itoWins: 0, niceN: 0, flips: 0, extends: 0,
+                    waits: [], fastest: 0, specials: {}, exN: 0, itoN: 0, itoWins: 0, niceN: 0, flips: 0, extends: 0, autoFlips: 0, menuN: 0,
                 },
             };
             spawn(0);   // 第一位客人先站著（開始之前不會等到生氣）
@@ -302,7 +388,7 @@
         const prog = () => clamp(G.clock / ROUND, 0, 1);
         const sumEarn = () => {
             const e = G.earn;
-            return Object.values(e.sales).reduce((s, v) => s + v.m, 0) + e.tip + e.ito + e.quality + e.exDebt + e.exBonus + e.burnt + e.spilled + e.angry;
+            return Object.values(e.sales).reduce((s, v) => s + v.m, 0) + e.menu + e.tip + e.ito + e.quality + e.exDebt + e.exBonus + e.burnt + e.spilled + e.angry;
         };
 
         // ===== 3. 客人 =====
@@ -341,9 +427,11 @@
         function serve(i) {
             const cu = G.custs[i], e = G.earn, t = G.tally;
             let sum = 0;
+            const up = val('menuboard');
             cu.items.forEach(o => {
                 const m = MENU[o.key];
                 sum += m.price;
+                if (up) { const add = Math.round(m.price * up); sum += add; e.menu += add; t.menuN++; }
                 e.sales[o.key] = e.sales[o.key] || { n: 0, m: 0 };
                 e.sales[o.key].n++; e.sales[o.key].m += m.price;
                 if (o.q === 'nice' || o.q === 'perfect') { e.quality += NICE; t.niceN++; }
@@ -705,10 +793,28 @@
             c.strokeStyle = K.tile; c.lineWidth = 1;
             for (let yy = 30; yy < 196; yy += 18) { c.beginPath(); c.moveTo(0, yy); c.lineTo(W, yy); c.stroke(); }
             for (let yy = 30, r = 0; yy < 196; yy += 18, r++) for (let xx = (r % 2) * 18; xx < W; xx += 36) { c.beginPath(); c.moveTo(xx, yy); c.lineTo(xx, yy + 18); c.stroke(); }
-            // 招牌
-            c.fillStyle = '#b33a2f'; rr(c, 92, 2, 176, 22, 3); c.fill();
-            c.fillStyle = '#fff6e6'; c.font = `600 12px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle';
-            c.fillText('大橋頭麥克早餐', 180, 13.5);
+            // 招牌（招牌升級會換）
+            drawSign(c, 180, 13.5, lv('menuboard'), now);
+        }
+        function drawSign(c, cx, cy, level, now) {
+            const w = 176, h = 22, x0 = cx - w / 2, y0 = cy - h / 2 - 0.5;
+            const bg = ['#b33a2f', '#8a5a34', '#fffaf0', '#1e1b1a'][level], fg = ['#fff6e6', '#fff1d6', '#b33a2f', '#e8c35a'][level];
+            if (level === 2) { c.save(); c.shadowColor = 'rgba(255,230,160,0.9)'; c.shadowBlur = 8; }
+            c.fillStyle = bg; rr(c, x0, y0, w, h, 3); c.fill();
+            if (level === 2) c.restore();
+            if (level === 1) { c.strokeStyle = 'rgba(60,35,15,0.35)'; c.lineWidth = 1; [7, 14].forEach(dy => { c.beginPath(); c.moveTo(x0 + 4, y0 + dy); c.lineTo(x0 + w - 4, y0 + dy); c.stroke(); }); }
+            if (level === 2) { c.strokeStyle = '#b33a2f'; c.lineWidth = 1.5; rr(c, x0 + 0.75, y0 + 0.75, w - 1.5, h - 1.5, 3); c.stroke(); }
+            if (level === 3) { c.strokeStyle = '#c9a23c'; c.lineWidth = 1.5; rr(c, x0 + 2, y0 + 2, w - 4, h - 4, 2); c.stroke(); }
+            c.fillStyle = fg; c.font = `600 12px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+            c.fillText(level === 3 ? '大橋頭麥克早餐・老店' : '大橋頭麥克早餐', cx, cy);
+            // 金字招牌：一道光掃過
+            if (level === 3 && !reduceMotion) {
+                const k = ((now || 0) / 2600) % 1, sx = x0 - 30 + (w + 60) * k;
+                c.save(); rr(c, x0, y0, w, h, 3); c.clip();
+                const g = c.createLinearGradient(sx - 14, 0, sx + 14, 0);
+                g.addColorStop(0, 'rgba(255,240,200,0)'); g.addColorStop(0.5, 'rgba(255,240,200,0.35)'); g.addColorStop(1, 'rgba(255,240,200,0)');
+                c.fillStyle = g; c.fillRect(sx - 14, y0, 28, h); c.restore();
+            }
         }
         function drawCounter(c) {
             // 櫃台（客人站在後面）
@@ -721,7 +827,14 @@
             s.addColorStop(0, K.steelL); s.addColorStop(1, K.steel);
             c.fillStyle = s; c.fillRect(0, 196, W, 56);
             c.strokeStyle = K.steelD; c.lineWidth = 1; c.beginPath(); c.moveTo(0, 196.5); c.lineTo(W, 196.5); c.moveTo(0, 251.5); c.lineTo(W, 251.5); c.stroke();
-            c.fillStyle = 'rgba(80,80,90,0.5)'; c.font = `500 8px ${SANS}`; c.textAlign = 'left'; c.textBaseline = 'alphabetic'; c.fillText('保溫台', 6, 206);
+            // 保溫燈：台子上一片暖黃，台邊一條燈管
+            if (lv('heatlamp')) {
+                const gl = c.createLinearGradient(0, 196, 0, 252);
+                gl.addColorStop(0, `rgba(255,170,70,${0.16 + 0.08 * lv('heatlamp')})`); gl.addColorStop(1, 'rgba(255,170,70,0)');
+                c.fillStyle = gl; c.fillRect(0, 197, 300, 55);
+                c.fillStyle = '#ffb347'; c.fillRect(4, 197, 292, 2);
+            }
+            c.fillStyle = 'rgba(80,80,90,0.5)'; c.font = `500 8px ${SANS}`; c.textAlign = 'left'; c.textBaseline = 'alphabetic'; if (WARM_N <= 5) c.fillText('保溫台', 6, 206);   // 位子變多會被蓋住，就不寫了（燈的顏色看得出來）
         }
         function drawGrill(c, now) {
             // 鐵板
@@ -731,10 +844,19 @@
             c.fillStyle = g; rr(c, 9, 259, 234, 174, 4); c.fill();
             c.strokeStyle = 'rgba(255,255,255,0.06)'; c.lineWidth = 1;
             for (let xx = 20; xx < 240; xx += 14) { c.beginPath(); c.moveTo(xx, 262); c.lineTo(xx - 12, 430); c.stroke(); }
-            c.fillStyle = 'rgba(255,255,255,0.35)'; c.font = `500 8px ${SANS}`; c.textAlign = 'left'; c.fillText('鐵板', 14, 270);
+            // 不沾鐵板：表面多一層亮光
+            if (lv('nonstick')) { c.fillStyle = `rgba(150,180,210,${0.05 + 0.04 * lv('nonstick')})`; rr(c, 9, 259, 234, 174, 4); c.fill(); }
+            c.fillStyle = 'rgba(255,255,255,0.35)'; c.font = `500 8px ${SANS}`; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+            c.fillText(['鐵板', '鐵板・刷油', '鐵板・不沾', '名店鐵板'][lv('nonstick')] + (lv('flipper') ? '・自動翻面' : ''), 14, 270);
+            // 爐口還沒開滿：右下角那格寫「升級加爐口」
+            if (GRILL.length === 5) {
+                const q = GRILL6[5];
+                c.strokeStyle = 'rgba(255,255,255,0.12)'; c.setLineDash([2, 5]); c.beginPath(); c.ellipse(q.x, q.y - 4, 36, 30, 0, 0, TAU); c.stroke(); c.setLineDash([]);
+                c.fillStyle = 'rgba(255,255,255,0.28)'; c.textAlign = 'center'; c.fillText('還沒開', q.x, q.y);
+            }
             GRILL.forEach((p, i) => {
                 // 每一格淡淡的圈
-                c.strokeStyle = 'rgba(255,255,255,0.08)'; c.setLineDash([3, 4]); c.beginPath(); c.ellipse(p.x, p.y - 4, 44, 30, 0, 0, TAU); c.stroke(); c.setLineDash([]);
+                c.strokeStyle = 'rgba(255,255,255,0.08)'; c.setLineDash([3, 4]); c.beginPath(); c.ellipse(p.x, p.y - 4, wide() ? 36 : 44, 30, 0, 0, TAU); c.stroke(); c.setLineDash([]);
                 const it = G.grill[i];
                 if (!it) return;
                 const m = MENU[it.key], d = doneness(it);
@@ -743,26 +865,26 @@
                 if (G.clock - it.nudge < 0.6) ox = Math.sin((G.clock - it.nudge) * 20) * 6;
                 // 油花、熱氣
                 if (!reduceMotion && Math.random() < 0.25) G.smoke.push({ x: p.x + rand(-20, 20), y: p.y - 8, vy: rand(12, 22), life: 0.9, at: G.clock, dark: it.burnt || d > 1.35 });
-                drawFood(c, it.key, p.x + ox, p.y - 6, 58, { d, side: it.side, burnt: it.burnt, onGrill: true });
+                drawFood(c, it.key, p.x + ox, p.y - 6, wide() ? 50 : 58, { d, side: it.side, burnt: it.burnt, onGrill: true });
                 // 熟度條：白線＝可以翻／可以夾，紅＝焦
-                const bx = p.x - 40, by = p.y + 30, bw = 80;
+                const bw = wide() ? 64 : 80, bx = p.x - bw / 2, by = p.y + 30;
                 c.fillStyle = 'rgba(0,0,0,0.45)'; rr(c, bx - 2, by - 3, bw + 4, 8, 4); c.fill();
-                const full = BURN * 1.0;
+                const full = burnAt(), warn = full - 0.3;
                 const frac = clamp(d / full, 0, 1);
                 const zoneA = (it.key === 'egg' && it.side === 2 ? HALF : 1) / full;
                 c.fillStyle = 'rgba(255,255,255,0.15)'; c.fillRect(bx, by - 1, bw, 4);
                 if (it.key === 'egg' && it.side === 2) { c.fillStyle = 'rgba(250,200,60,0.55)'; c.fillRect(bx + bw * HALF / full, by - 1, bw * (1 - HALF) / full, 4); }
-                c.fillStyle = 'rgba(80,180,110,0.6)'; c.fillRect(bx + bw / full, by - 1, bw * (BURN - 1) / full, 4);
+                c.fillStyle = 'rgba(80,180,110,0.6)'; c.fillRect(bx + bw / full, by - 1, bw * (full - 1) / full, 4);
                 c.fillStyle = it.burnt ? K.shu : d >= 1 ? '#7fe0a0' : d >= zoneA ? '#ffd860' : '#ffffff';
                 c.fillRect(bx, by - 1, bw * frac, 4);
                 c.fillStyle = '#fff'; c.fillRect(bx + bw * zoneA - 0.5, by - 3, 1.5, 8);
                 // 說明：翻、好、半熟、滑一下捲、焦
                 let label = '', col = K.ink;
                 if (it.burnt) { label = '焦了・點掉'; col = K.shu; }
-                else if (it.side === 1 && m.flip) { if (d >= 1) { label = d > 1.4 ? '快翻！' : '翻'; col = d > 1.4 ? K.shu : K.ink; } }
-                else if (it.key === 'egg') { if (d >= 1) label = d > 1.4 ? '全熟・快夾' : '全熟'; else if (d >= HALF) label = '半熟'; if (d > 1.4) col = K.shu; }
-                else if (m.roll) { if (d >= 1) { label = d > 1.4 ? '快捲！' : '← 滑一下捲 →'; if (d > 1.4) col = K.shu; } }
-                else if (d >= 1) { label = d > 1.4 ? '快夾！' : '好'; if (d > 1.4) col = K.shu; }
+                else if (it.side === 1 && m.flip) { if (d >= 1) { label = d > warn ? '快翻！' : '翻'; col = d > warn ? K.shu : K.ink; } }
+                else if (it.key === 'egg') { if (d >= 1) label = d > warn ? '全熟・快夾' : '全熟'; else if (d >= HALF) label = '半熟'; if (d > warn) col = K.shu; }
+                else if (m.roll) { if (d >= 1) { label = d > warn ? '快捲！' : (wide() ? '←滑一下捲→' : '← 滑一下捲 →'); if (d > warn) col = K.shu; } }
+                else if (d >= 1) { label = d > warn ? '快夾！' : '好'; if (d > warn) col = K.shu; }
                 if (label) tag(c, label, p.x, p.y - 38, col);
             });
             // 熱氣
@@ -952,14 +1074,15 @@
             c.fillText(text, x, y + 0.5);
         }
         function drawWarm(c, now) {
+            const hw = Math.min(24, warmGap() / 2 - 2);
             for (let j = 0; j < WARM_N; j++) {
                 const x = warmX(j);
-                c.fillStyle = 'rgba(255,255,255,0.45)'; rr(c, x - 24, WARM_Y - 22, 48, 44, 6); c.fill();
-                c.strokeStyle = 'rgba(120,125,130,0.4)'; c.lineWidth = 1; rr(c, x - 24, WARM_Y - 22, 48, 44, 6); c.stroke();
+                c.fillStyle = 'rgba(255,255,255,0.45)'; rr(c, x - hw, WARM_Y - 22, hw * 2, 44, 6); c.fill();
+                c.strokeStyle = 'rgba(120,125,130,0.4)'; c.lineWidth = 1; rr(c, x - hw, WARM_Y - 22, hw * 2, 44, 6); c.stroke();
                 const it = G.warm[j];
                 if (!it || (G.drag && G.drag.active && G.drag.j === j)) continue;
-                if (G.sel === j) { c.strokeStyle = K.green; c.lineWidth = 2.5; rr(c, x - 24, WARM_Y - 22, 48, 44, 6); c.stroke(); }
-                drawFood(c, it.key, x, WARM_Y - 3, 32, { v: it.v, rolled: true, q: it.q });
+                if (G.sel === j) { c.strokeStyle = K.green; c.lineWidth = 2.5; rr(c, x - hw, WARM_Y - 22, hw * 2, 44, 6); c.stroke(); }
+                drawFood(c, it.key, x, WARM_Y - 3, hw < 20 ? 28 : 32, { v: it.v, rolled: true, q: it.q });
                 const lab = it.v ? (it.v === 'half' ? '半熟' : '全熟') : it.q === 'nice' ? '漂亮' : it.q === 'messy' ? '捲歪' : it.q === 'perfect' ? '剛好' : it.q === 'short' ? '少一點' : '';
                 if (lab) tag(c, lab, x, WARM_Y + 15, it.q === 'messy' || it.q === 'short' ? '#a06a10' : it.v === 'half' ? '#c27a00' : K.ink);
             }
@@ -1019,7 +1142,11 @@
             G.grill.forEach(it => {
                 if (!it) return;
                 it.t += dt;
-                if (!it.burnt && doneness(it) >= BURN) { it.burnt = true; sfx.burn(); note('老闆：' + pick(BOSS.burnt)); }
+                if (!it.burnt && doneness(it) >= burnAt()) { it.burnt = true; sfx.burn(); note('老闆：' + pick(BOSS.burnt)); }
+                // 自動翻面鏟：第一面熟了自己翻
+                else if (!it.burnt && it.side === 1 && MENU[it.key].flip && lv('flipper') && doneness(it) >= 1.08) {
+                    it.side = 2; it.t = 0; G.tally.flips++; G.tally.autoFlips++; sfx.flip();
+                }
             });
             const c = G.cup;
             if (c.pour) {
@@ -1054,10 +1181,10 @@
             if (p.y < 196) { const i = Math.floor(p.x / 120); return { kind: 'cust', i: clamp(i, 0, 2) }; }
             if (p.y < 252) {
                 if (Math.abs(p.x - TRASH.x) < 24) return { kind: 'trash' };
-                for (let j = 0; j < WARM_N; j++) if (Math.abs(p.x - warmX(j)) < 27) return { kind: 'warm', j };
+                for (let j = 0; j < WARM_N; j++) if (Math.abs(p.x - warmX(j)) < warmGap() / 2) return { kind: 'warm', j };
                 return { kind: 'none' };
             }
-            if (p.x < 248) { for (let i = 0; i < 4; i++) if (Math.abs(p.x - GRILL[i].x) < 60 && Math.abs(p.y - GRILL[i].y) < 46) return { kind: 'grill', i }; return { kind: 'none' }; }
+            if (p.x < 248) { const hx = wide() ? 40 : 60; for (let i = 0; i < GRILL.length; i++) if (Math.abs(p.x - GRILL[i].x) < hx && Math.abs(p.y - GRILL[i].y) < 46) return { kind: 'grill', i }; return { kind: 'none' }; }
             return { kind: 'drink' };
         }
         let ptr = null;
@@ -1157,6 +1284,7 @@
             const rows = Object.keys(MENU).filter(k => e.sales[k]).map(k => [MENU[k].name, e.sales[k].n, MENU[k].drink ? '杯' : '份', e.sales[k].m, `每${MENU[k].drink ? '杯' : '份'} ${fmt(MENU[k].price)}`]);
             // [名稱, 數量, 單位, 金額, 怎麼算]；金額加起來等於合計
             return rows.concat([
+                ['招牌加價', t.menuN, '份', e.menu, `${SHOP_BY.menuboard.tiers[lv('menuboard')]}，每份賣價多 ${Math.round(val('menuboard') * 100)}%`],
                 ['小費', t.served - t.exN - t.itoN, '位', e.tip, '送得越快給越多，最多這一單的四成'],
                 ['伊藤的刮刮樂', t.itoWins, '張', e.ito, `伊藤用刮刮樂付小費，刮中 ${fmt(ITO_WIN)}`],
                 ['做得漂亮', t.niceN, '份', e.quality, `蛋餅捲得漂亮、飲料倒剛好，每份 ${fmt(NICE)}`],
@@ -1301,7 +1429,7 @@
                 rolls_nice: t.rollsNice, rolls_messy: t.rollsMessy, drinks_perfect: t.drinksPerfect, drinks_short: t.drinksShort,
                 eggs_half: t.eggsHalf, eggs_full: t.eggsFull, flips: t.flips,
                 fastest_ms: t.fastest, avg_wait_ms: avg, ex: t.exN, ito_wins: t.itoWins,
-                specials: t.specials, menu, shop: {},
+                specials: t.specials, menu, shop: Object.fromEntries(SHOP.map(u => [u.key, lv(u.key)]).filter(x => x[1])),
                 login: !!(window.Line && Line.loggedIn),
             });
             st.recent = st.recent.slice(0, 50);
@@ -1360,7 +1488,115 @@
         $('shareBtn').addEventListener('click', shareSheet);
         $('againBtn').addEventListener('click', () => { newRound(); $('stage').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' }); });
         $('payAcct').addEventListener('click', e => { if (e.target.closest('[data-login]')) Line.login(); });
-        Wallet.on(type => { if (type === 'login') showToast('登入了，薪水存進 LINE 帳號'); });
+        // ===== 12. 店面升級面板 =====
+        const playing = () => G && G.started && !G.ended;
+        function shopIcon(cv, u, level) {
+            const r = Math.min(window.devicePixelRatio || 1, 3), px = 56;
+            cv.width = px * r; cv.height = px * r;
+            const c = cv.getContext('2d'); c.scale(r, r);
+            const L = Math.max(1, level);
+            if (u.key === 'burner') {
+                c.fillStyle = K.plate; rr(c, 6, 10, 44, 36, 4); c.fill();
+                const n = 4 + L, cols = n > 4 ? 3 : 2;
+                for (let i = 0; i < 6; i++) {
+                    const cx = 6 + 44 / cols * (i % cols + 0.5), cy = 10 + 36 / 2 * (Math.floor(i / cols) + 0.5);
+                    if (i >= n || cx > 50) continue;
+                    c.strokeStyle = i >= 4 ? '#ffb347' : 'rgba(255,255,255,0.35)'; c.lineWidth = 1.5; c.beginPath(); c.arc(cx, cy, 5, 0, TAU); c.stroke();
+                }
+            } else if (u.key === 'heatlamp') {
+                const g = c.createRadialGradient(28, 34, 2, 28, 34, 24); g.addColorStop(0, `rgba(255,170,70,${0.4 + 0.2 * L})`); g.addColorStop(1, 'rgba(255,170,70,0)');
+                c.fillStyle = g; c.fillRect(0, 0, 56, 56);
+                c.fillStyle = '#8f9399'; c.beginPath(); c.moveTo(16, 24); c.lineTo(40, 24); c.lineTo(34, 14); c.lineTo(22, 14); c.closePath(); c.fill();
+                c.fillStyle = '#ffb347'; c.beginPath(); c.arc(28, 26, 5, 0, Math.PI); c.fill();
+                c.strokeStyle = '#8f9399'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(28, 14); c.lineTo(28, 4); c.stroke();
+                c.fillStyle = K.steel; c.fillRect(8, 42, 40, 6);
+            } else if (u.key === 'flipper') {
+                c.save(); c.translate(28, 30); c.rotate(-0.6);
+                c.fillStyle = K.steelL; rr(c, -9, -16, 18, 16, 2); c.fill(); c.strokeStyle = K.steelD; c.lineWidth = 1; c.stroke();
+                c.strokeStyle = 'rgba(0,0,0,0.25)'; [-4, 0, 4].forEach(dx => { c.beginPath(); c.moveTo(dx, -13); c.lineTo(dx, -4); c.stroke(); });
+                c.fillStyle = K.steelD; c.fillRect(-1.5, 0, 3, 8); c.fillStyle = K.woodD; rr(c, -3, 8, 6, 14, 2); c.fill();
+                c.restore();
+                c.strokeStyle = K.amber; c.lineWidth = 1.5; c.beginPath(); c.arc(40, 16, 6, -2.4, 1.2); c.stroke();
+            } else if (u.key === 'nonstick') {
+                const col = ['#3a3b3e', '#3a3b3e', '#3f4954', '#2e3540'][L];
+                c.fillStyle = col; c.beginPath(); c.ellipse(26, 30, 18, 14, 0, 0, TAU); c.fill();
+                c.fillStyle = `rgba(170,200,230,${0.1 + 0.08 * L})`; c.beginPath(); c.ellipse(22, 26, 9, 5, -0.4, 0, TAU); c.fill();
+                c.fillStyle = K.woodD; rr(c, 42, 27, 12, 5, 2); c.fill();
+                drawFood(c, 'egg', 26, 30, 18, { d: 1, side: 2 });
+            } else if (u.key === 'menuboard') {
+                c.save(); c.translate(28, 28); c.scale(0.3, 0.3); drawSign(c, 0, 0, L, 0); c.restore();
+                c.fillStyle = K.ink; c.font = `600 10px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(`+${Math.round(u.vals[L - 1] * 100)}%`, 28, 44);
+            }
+        }
+        function renderShop() {
+            $('shopMoney').textContent = fmt(Wallet.money);
+            $('shopList').innerHTML = SHOP.map(u => {
+                const now = lv(u.key), max = u.prices.length, next = now < max ? now + 1 : null;
+                const price = next ? u.prices[now] : 0;
+                const dots = Array.from({ length: max }, (_, i) => `<i class="${i < now ? 'on' : ''}"></i>`).join('');
+                const tier = next ? `${u.tiers[now] ? u.tiers[now] + ' → ' : ''}${u.tiers[next]}` : u.tiers[now];
+                return `<div class="shop-row">
+                    <canvas class="shop-icon" data-icon="${u.key}" data-lv="${next || now}"></canvas>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm text-wabi-dark tracking-widest">${u.name}<span class="ml-1 text-[10px] font-sans text-stone-400">${u.sub}</span><span class="shop-dots ml-1">${dots}</span></p>
+                        <p class="mt-0.5 text-[10px] font-sans tracking-wider text-stone-400">${tier}</p>
+                        <p class="mt-1 text-[11px] font-sans leading-relaxed text-stone-600">${now ? '現在：' + u.fx(u.vals[now - 1]) : ''}${next ? `${now ? '<br>' : ''}升級：${u.fx(u.vals[next - 1])}` : '<br>已經是最高級'}</p>
+                    </div>
+                    <button type="button" class="shop-buy" data-buy="${u.key}" ${!next || Wallet.money < price ? 'disabled' : ''}>${next ? `${now ? '升級' : '買'}<br>${fmt(price)}` : '滿級'}</button>
+                </div>`;
+            }).join('');
+            $('shopList').querySelectorAll('[data-icon]').forEach(cv => shopIcon(cv, SHOP_BY[cv.dataset.icon], Number(cv.dataset.lv)));
+        }
+        function renderShopLv() {
+            const total = SHOP.reduce((t, u) => t + lv(u.key), 0);
+            $('shopLv').textContent = total ? total : '';
+            $('shopBtn').setAttribute('aria-label', total ? `店面，升級了 ${total} 次` : '店面升級');
+        }
+        function openShop() {
+            if (playing()) { showToast('打烊再去升級店面'); return; }
+            shop = loadShop();
+            renderShop();
+            const el = $('shop');
+            el.classList.remove('hidden');
+            requestAnimationFrame(() => el.classList.add('on'));
+        }
+        function closeShop() {
+            const el = $('shop');
+            el.classList.remove('on');
+            setTimeout(() => el.classList.add('hidden'), reduceMotion ? 0 : 220);
+        }
+        function buyUpgrade(key) {
+            if (playing()) return;
+            shop = loadShop();  // 用錢包裡最新的（坐洗部、菜園可能也買過東西，spent 要接著加）
+            const u = SHOP_BY[key], now = lv(key);
+            if (now >= u.prices.length) return;
+            const price = u.prices[now];
+            if (!Wallet.spend(price)) { showToast('錢包不夠，先多開幾天店'); return; }
+            shop.lv[key] = now + 1;
+            shop.spent += price;
+            Wallet.setShop(shop);
+            audio(); sfx.serve();
+            showToast(`${u.name}升級了：${u.tiers[now + 1]}`);
+            // 還沒開始的這一輪也照新的算（爐口、保溫台的位子）
+            if (G && !G.started && !G.ended) { applyShop(); G.grill = GRILL.map(() => null); }
+            else shop = loadShop();
+            renderShop(); renderShopLv();
+        }
+        $('shopBtn').addEventListener('click', openShop);
+        $('shopBtn2').addEventListener('click', openShop);
+        $('shop').addEventListener('click', e => {
+            const b = e.target.closest('[data-buy]');
+            if (b && !b.disabled) { buyUpgrade(b.dataset.buy); return; }
+            if (e.target.closest('[data-shop-close]') || e.target.id === 'shop') closeShop();
+        });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('shop').classList.contains('hidden')) closeShop(); });
+        Wallet.on(type => {
+            if (type === 'login') showToast('登入了，薪水存進 LINE 帳號');
+            // 別支手機升級過、登入登出：重新讀（開店中不換，下一輪才算）
+            if (!playing()) { if (G && !G.started && !G.ended) { applyShop(); G.grill = GRILL.map(() => null); } else shop = loadShop(); }
+            renderShopLv();
+            if (!$('shop').classList.contains('hidden')) renderShop();
+        });
 
         // 食材按鈕上的小圖：跟煎台、泡泡用同一支 drawFood() 畫
         document.querySelectorAll('[data-food]').forEach(b => {
@@ -1372,6 +1608,7 @@
         });
 
         newRound();
+        renderShopLv();
         requestAnimationFrame(frame);
         setTimeout(uploadRounds, 2500);  // 補送上次沒送成功的
     </script>
