@@ -5,6 +5,8 @@
 //   這張本來沒中（張張有獎的是抽到最小獎），有 q 的機會「神明再抽一次」，只重抽一次。
 //   q = 位階的永久加持（每種刮刮樂各自設上限，加持後回收率最多 98%，不會越捐越賺）
 //     + 光明燈（燈油夠這張的票價就 +50%；燈油只給一般刮刮樂用，張張有獎和挖金礦不點燈）
+//       光明燈的燈油只有「第一次抽到沒中」的票才扣（中了的票神明沒出手，不收錢）。
+//       這樣不管哪種刮刮樂，點 $1 都換回大約 0.75 × 回收率（$0.53～0.72），中獎率高的票也不吃虧
 //   挖金礦靠自己挖，神明不管。
 // 其他燈（LAMPS，各自有燈油，存在 Wallet.gongde.oils）：
 //   財神燈：刮刮樂中獎多兩成（財神加碼，兌獎時另外給），燈油照票價扣，張張有獎也算
@@ -27,8 +29,8 @@
     // 點燈：一盞 price 換 amount 的燈油；unit 是燈油的單位（money：照多少錢的刮刮樂；次、顆）
     // packs：一次點幾盞（點越多盞不會比較便宜，只是方便）
     const LAMPS = [
-        { key: 'guangming', name: '光明燈', word: '光明', price: 1000, amount: 2000, unit: 'money', where: '彩券行', color: '#f7b733',
-          fx: '沒中的刮刮樂，一半機會神明再抽一次', left: n => `燈油 ${fmtMoney(n)}，照得到 ${fmtMoney(n)} 的刮刮樂` },
+        { key: 'guangming', name: '光明燈', word: '光明', price: 1000, amount: 1500, unit: 'money', where: '彩券行', color: '#f7b733',
+          fx: '沒中的刮刮樂，一半機會神明再抽一次（沒中的票才扣燈油）', left: n => `燈油 ${fmtMoney(n)}，照得到 ${fmtMoney(n)} 的刮刮樂` },
         { key: 'caishen', name: '財神燈', word: '財神', price: 1000, amount: 3000, unit: 'money', where: '彩券行', color: '#e0a526',
           fx: '刮刮樂中獎多兩成（財神加碼），張張有獎的也算', left: n => `燈油 ${fmtMoney(n)}，照得到 ${fmtMoney(n)} 的刮刮樂` },
         { key: 'taisui', name: '太歲燈', word: '太歲', price: 600, amount: 1, unit: '次', where: '挖金礦', color: '#c0392b',
@@ -50,7 +52,7 @@
     }
 
     // 某一種刮刮樂現在的加持。o 是彩券行 odds() 算出來的 { win, ret, rows }，price 是票價
-    // 回傳 { q 重抽機會, tierQ, lampQ, win, ret（加持後）, allWin, oilUse（這張會用掉多少燈油） }
+    // 回傳 { q 重抽機會, tierQ, lampQ, win, ret（加持後）, allWin, oilUse（這張沒中的話會用掉多少燈油） }
     function blessing(o, price, g) {
         g = g || (window.Wallet ? Wallet.gongde : { donated: 0, oil: 0 });
         const t = tierOf(g.donated);

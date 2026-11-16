@@ -1078,6 +1078,7 @@
             let v = draw(table);
             if (BLESS && !BLESS.done) {
                 BLESS.done = true;
+                if (v <= BLESS.minV) BLESS.lost = true;  // 第一次抽到沒中：光明燈的燈油這時候才扣
                 if (v <= BLESS.minV && Math.random() < BLESS.q) {
                     const again = draw(table);
                     if (again > v) BLESS.blessed = true;
@@ -1730,8 +1731,9 @@
             let t = null;
             const b = blessOf(g);
             if (b.q > 0) BLESS = { q: b.q, minV: b.allWin ? Math.min(...g.table.map(x => x[0])) : 0, done: false, blessed: false };
-            if (b.oilUse) Wallet.useOil(b.oilUse);  // 光明燈照這張，燈油照票價扣
-            try { while (!t) t = g.gen(); } finally { t && BLESS && (t.blessed = BLESS.blessed); BLESS = null; }
+            let lost = false;
+            try { while (!t) t = g.gen(); } finally { t && BLESS && (t.blessed = BLESS.blessed); lost = !!(BLESS && BLESS.lost); BLESS = null; }
+            if (b.oilUse && lost) Wallet.useOil(b.oilUse);  // 光明燈：第一次抽到沒中才扣燈油（照票價）
             if (b.caiUse) t.cai = Gongde.CAI * Wallet.useOil(b.caiUse, 'caishen') / g.price;  // 財神燈：中獎多兩成
             if (g.manual && Wallet.useOil(1, 'taisui')) t.shield = true;                         // 太歲燈：挖到炸彈擋一次
             S.serial++;
@@ -2009,7 +2011,7 @@
             if (!b.q) return `<div class="bless-box"><b>神明加持</b>：還沒有。<a href="gongde.html" class="font-bold underline underline-offset-4">去功德箱</a>捐香油錢，${b.allWin ? '抽到最小獎時' : '沒中的票'}神明會幫你再抽一次。</div>`;
             const parts = [];
             if (b.tierQ) parts.push(`${tier.name}永久加持 ${pct(b.tierQ)}${b.tierQ < tier.q - 1e-9 ? '（這種刮刮樂有上限，加持後回收率最多 98%）' : ''}`);
-            if (b.lampQ) parts.push(`光明燈 ${pct(b.lampQ)}（這張會用掉燈油 ${fmt(b.oilUse)}）`);
+            if (b.lampQ) parts.push(`光明燈 ${pct(b.lampQ)}（這張沒中才會用掉燈油 ${fmt(b.oilUse)}）`);
             return `<div class="bless-box"><b>神明加持</b>：${b.allWin ? '抽到最小獎時' : '沒中的票'}有 <b>${pct(b.q)}</b> 的機會神明再抽一次。<br>${parts.join('<br>')}${caiLine}
                 <div class="mt-2 grid grid-cols-2 gap-2 text-center">
                     <div>中獎率<br><b class="text-sm">${pct(o.win)} → ${pct(b.win)}</b></div>

@@ -465,7 +465,7 @@
                             <p class="text-[11px] font-sans tracking-wider leading-relaxed ${left ? 'text-wabi-shu' : 'text-stone-400'}">${left ? '亮著・' + l.left(left) : '沒點'}</p>
                         </div>
                     </div>
-                    <p class="mt-2 text-xs font-sans tracking-wider text-stone-500 leading-relaxed">${l.fx}。一盞 ${fmt(l.price)}，${l.unit === 'money' ? `照 ${fmt(l.amount)} 的刮刮樂（照票價扣）` : `用 ${l.amount} ${l.unit}`}。</p>
+                    <p class="mt-2 text-xs font-sans tracking-wider text-stone-500 leading-relaxed">${l.fx}。一盞 ${fmt(l.price)}，${l.unit === 'money' ? `照 ${fmt(l.amount)} 的刮刮樂（${l.key === 'guangming' ? '沒中的票才扣，照票價' : '照票價扣'}）` : `用 ${l.amount} ${l.unit}`}。</p>
                     <div class="mt-3 grid grid-cols-3 gap-2">
                         ${Gongde.PACKS.map(n => `<button type="button" class="lamp-buy" data-lamp="${l.key}" data-n="${n}" ${w.money < l.price * n ? 'disabled' : ''}><b>點 ${n} 盞</b>${fmt(l.price * n)}</button>`).join('')}
                     </div>
