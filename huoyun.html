@@ -185,7 +185,7 @@
                 <li>連續撈到好東西，運費一路往上加：連撈 5 個 ×1.2、10 個 ×1.5、20 個 ×2。撈到垃圾、撞到東西就從頭算。</li>
                 <li><b class="font-normal text-wabi-dark">茱莉鴨</b>在游泳：不要撞到她，從隔壁航道經過她會點頭（+$80，撞到她要賠 $80）。<b class="font-normal text-wabi-dark">海鷗</b>會飛過來叼蘿蔔、坐在木盆裡的<b class="font-normal text-wabi-dark">浣熊</b>會跳上船偷貨：<b class="font-normal text-wabi-dark">點牠一下</b>就嚇跑了（趕走浣熊 +$50）。</li>
                 <li>六十秒靠港。偶爾會起霧，或者吹順風。</li>
-                <li><b class="font-normal text-wabi-dark">無盡模式</b>：不計時，船身破光才靠港，也可以隨時按「靠港，領運費」收工；比的是<b class="font-normal text-wabi-dark">航程</b>（海里），上「無盡・榜」。每 30 秒換一個海域，一區比一區難：外海有<b class="font-normal text-wabi-dark">漩渦</b>（經過會被吸到隔壁航道）、颱風區有<b class="font-normal text-wabi-dark">側風</b>（看到箭頭就準備修回來）、鯨魚灣的<b class="font-normal text-wabi-shu">鯨魚</b>一次佔兩條航道（先冒水柱）、浣熊海盜成群結隊、夜航只看得到船頭燈照的那段；第七海域以後貨輪不再先警告。第三、第五海域會漂來<b class="font-normal text-wabi-dark">補給港浮標</b>，撈到補回一格船身。運費算法跟一般模式一樣，船廠的升級照用。</li>
+                <li><b class="font-normal text-wabi-dark">無盡模式</b>：不計時，船身破光才靠港，也可以隨時按「靠港，領運費」收工；比的是<b class="font-normal text-wabi-dark">航程</b>（海里），上「無盡・榜」。每 30 秒換一個海域，一區比一區難：外海有<b class="font-normal text-wabi-dark">漩渦</b>（經過會被吸到隔壁航道）、颱風區有<b class="font-normal text-wabi-dark">側風</b>（看到箭頭就準備修回來）、鯨魚灣的<b class="font-normal text-wabi-shu">鯨魚</b>一次佔兩條航道（先冒水柱）、浣熊海盜成群結隊、夜航只看得到船頭燈照的那段；第七海域「無人海域」以後貨輪不再先警告，船也會越開越快（每分鐘快 0.5 倍，最快 2.5 倍）。第三、第五海域會漂來<b class="font-normal text-wabi-dark">補給港浮標</b>，撈到補回一格船身。運費算法跟一般模式一樣，船廠的升級照用。</li>
                 <li>賺來的運費可以按上面的<b class="font-normal text-wabi-dark">船廠</b>升級長蘿號：雷達、鐵甲、吸塵網、冷藏貨艙、汽笛。登入 LINE 換手機也在。</li>
             </ol>
         </section>
@@ -301,6 +301,9 @@
 
         // ===== 1a. 無盡模式：不計時，破光才靠港；每 30 秒換一個海域，一區多一招 =====
         const ZONE_SEC = 30, ENDLESS_RAMP = 100, PROG_MAX = 1.6;  // 難度：100 秒才到一般模式最後的難度，之後慢慢再難到 1.6
+        // 到了無人海域（第七海域起）船越開越快：每 60 秒快 0.5 倍，最快 RUSH_MAX 倍（再快東西一格會跳太遠、撞不到）
+        const RUSH_ZONE = 7, RUSH_PER_SEC = 0.5 / 60, RUSH_MAX = 2.5;
+        const rush = () => G && G.endless ? clamp(1 + Math.max(0, G.clock - (RUSH_ZONE - 1) * ZONE_SEC) * RUSH_PER_SEC, 1, RUSH_MAX) : 1;
         const PX_PER_NM = 12000;                                   // 船開 12000 px 算一海里（大約 40 秒）
         const ZONES = [
             { name: '近海', line: '近海，跟平常一樣。' },
@@ -309,7 +312,7 @@
             { name: '鯨魚灣', line: '鯨魚灣，看到水柱就閃，鯨魚一次佔兩條航道。' },
             { name: '浣熊海盜', line: '浣熊海盜的地盤，牠們成群結隊來。' },
             { name: '夜航', line: '天黑了，只看得到船頭燈照的那段。' },
-            { name: '無人海域', line: '沒有補給了，貨輪也不打招呼。' },
+            { name: '無人海域', line: '沒有補給了，貨輪也不打招呼，船還會越開越快。' },
         ];
         const ZONE_NUM = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
         const zoneInfo = z => ZONES[Math.min(z, ZONES.length) - 1];
@@ -331,6 +334,7 @@
             buoy: ['補給港浮標，撈起來可以補船。'],
             buoyGot: ['補好了，再撐一下。'],
             snap: ['貨輪沒打招呼就衝過來了！'],
+            rush: ['船速又快了，抓穩！', '引擎停不下來了！', '這已經不是貨船的速度了。', '浪打上甲板了！'],
             quit: ['靠港了，見好就收。'],
         };
         let mode = 'normal';
@@ -380,7 +384,7 @@
                     picked: 0, lanes: 0, maxCombo: 0, bottles: 0, itoWins: 0, dogs: 0, nods: 0, duckHits: 0,
                     trash: 0, reefs: 0, ships: 0, gulls: 0, gullShoo: 0, gullSteals: 0,
                     raccoons: 0, raccoonShoo: 0, raccoonSteals: 0, stolen: 0, kinds: {}, holdN: 0, autoShoo: 0,
-                    whirls: 0, gusts: 0, whales: 0, whaleHits: 0, fleets: 0, buoys: 0, snaps: 0,
+                    whirls: 0, gusts: 0, whales: 0, whaleHits: 0, fleets: 0, buoys: 0, snaps: 0, rush: 1,
                 },
             };
             G.gullAt = G.events.filter(e => e.kind === 'gull').map(e => e.at);
@@ -439,7 +443,7 @@
             return clamp(Math.min(G.clock - e.at + 1, e.at + e.dur + 1 - G.clock), 0, 1);
         };
         const prog = () => G.endless ? clamp(G.clock / ENDLESS_RAMP, 0, PROG_MAX) : clamp(G.clock / ROUND, 0, 1);
-        const speed = () => { const p = prog(); return (165 + 125 * Math.min(p, 1) + 45 * Math.max(0, p - 1)) * (eventOn('wind') ? 1.35 : 1); };
+        const speed = () => { const p = prog(); return (165 + 125 * Math.min(p, 1) + 45 * Math.max(0, p - 1)) * (eventOn('wind') ? 1.35 : 1) * rush(); };
         const spawnGap = () => lerp(SPAWN[0], SPAWN[1], Math.min(prog(), 1));  // 無盡模式後面東西不會更多（只是更快、垃圾更多），每分鐘賺的不比一般模式多
         const nm = () => G.dist / PX_PER_NM;
         const nmText = v => (Math.floor(v * 100) / 100).toFixed(2);
@@ -1131,6 +1135,10 @@
                 const t = `第${zoneNum(G.zone)}海域・${zoneInfo(G.zone).name}・${Math.floor(el / 60)}:${String(el % 60).padStart(2, '0')}`;
                 c.strokeText(t, 12, 44); c.fillText(t, 12, 44); ey = 62;
             }
+            if (G.endless && rush() > 1.001) {
+                c.fillStyle = '#ffe08a'; c.font = `700 11px ${SANS}`; c.textAlign = 'left'; c.textBaseline = 'middle'; c.lineWidth = 3; c.strokeStyle = 'rgba(10,30,45,0.5)';
+                const t = `航速 ×${rush().toFixed(2)}`; c.strokeText(t, 12, ey); c.fillText(t, 12, ey); ey += 18;
+            }
             if (ev) { c.fillStyle = 'rgba(255,255,255,0.9)'; c.font = `600 11px ${SANS}`; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(ev, 12, ey); }
         }
         // 還沒開船：中間一張紙條
@@ -1223,6 +1231,10 @@
             const v = speed(), p = prog(), E = G.endless;
             G.dist += v * dt;
             if (E) { const z = 1 + Math.floor(G.clock / ZONE_SEC); if (z > G.zone) enterZone(z); }
+            if (E && rush() > 1) {
+                const step = Math.floor((rush() - 1) / 0.25);
+                if (step > (G.rushStep || 0)) { G.rushStep = step; G.tally.rush = rush(); note('船長：' + pick(CAP2.rush)); sfx.horn(); float(W / 2, 150, `航速 ×${rush().toFixed(2).replace(/0$/, '')}`, '#ffe08a', true); }
+            }
             // 生東西
             G.nextSpawn -= dt * (eventOn('wind') ? 1.35 : 1);
             if (G.nextSpawn <= 0 && (E || ROUND - G.clock > 1.5)) { spawnItem(); G.nextSpawn += spawnGap(); }
@@ -1455,7 +1467,7 @@
         }
 
         const mmss = sec => { sec = Math.floor(sec); return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`; };
-        const farText = () => `航程 ${nmText(nm())} 海里・第${zoneNum(G.zone)}海域${zoneInfo(G.zone).name}・開了 ${mmss(G.clock)}${G.tally.buoys ? `・補給 ${G.tally.buoys} 次` : ''}`;
+        const farText = () => `航程 ${nmText(nm())} 海里・第${zoneNum(G.zone)}海域${zoneInfo(G.zone).name}・開了 ${mmss(G.clock)}${G.tally.buoys ? `・補給 ${G.tally.buoys} 次` : ''}${rush() > 1.001 ? `・最快航速 ×${rush().toFixed(2)}` : ''}`;
         async function makeSheet(pay, grade, rows) {
             const st = loadStats(), voyage = String(st.rounds).padStart(4, '0');
             const lines = rows.map(([k, v, u, m]) => [`${k} ${v} ${u}`, (m < 0 ? '−' : '') + fmt(Math.abs(m))]);
@@ -1526,7 +1538,7 @@
             st.recent.unshift({
                 at: new Date().toISOString(), ms: Math.round(G.clock * 1000), len: G.endless ? Math.round(G.clock) : ROUND,
                 mode: G.endless ? 'endless' : 'normal', zone: G.endless ? G.zone : 0, dist: G.endless ? Math.floor(nm() * 100) : 0,
-                whirls: t.whirls, gusts: t.gusts, whale_hits: t.whaleHits, buoys: t.buoys,
+                whirls: t.whirls, gusts: t.gusts, whale_hits: t.whaleHits, buoys: t.buoys, rush: G.endless ? Math.round(rush() * 100) / 100 : 1,
                 total: pay, sales: G.pay.sales, grade: grade.mark, sank: G.sank, hull: G.hull,
                 picked: t.picked, max_combo: t.maxCombo, combo_bonus: e.combo,
                 small: t.kinds.small || 0, big: t.kinds.big || 0, crate: t.kinds.crate || 0, gold: t.kinds.gold || 0,
