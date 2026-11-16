@@ -895,10 +895,78 @@ function authorizeLine() {
   Logger.log('連得到 LINE（這次用假的 token，回 400 是正常的）：' + res.getResponseCode());
 }
 
+// --- 登入通行證：存在 Sessions 分頁 ---
+// 以前存在指令碼屬性 sess:<uuid>，可是指令碼屬性總共只能放 500 KB（大約 6,700 張），只有登出才會刪，滿了所有人都登入不了。
+// Sessions：A created、B session、C line_id、D last_used（最多六小時記一次）。查的時候先看 CacheService（六小時），沒有才翻分頁。
+// 舊的 sess: 屬性照樣認得（還沒搬的人不會被登出）；在編輯器執行 migrateSessions() 一次搬完，搬完指令碼屬性就空出來了。
+var SESSION_CACHE_SEC = 21600;
+function sessionsSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Sessions');
+  if (!sheet) {
+    sheet = ss.insertSheet('Sessions');
+    sheet.appendRow(['created', 'session', 'line_id', 'last_used']);
+    sheet.setFrozenRows(1);
+    sheet.getRange(1, 2, 1000, 2).setNumberFormat('@');  // 通行證、LINE 代號當文字存，不要被 Sheet 猜成數字或日期
+  }
+  return sheet;
+}
+function findSessionRow(sheet, session) {
+  var n = sheet.getLastRow() - 1;
+  if (n < 1) return 0;
+  var ids = sheet.getRange(2, 2, n, 1).getValues();
+  for (var i = ids.length - 1; i >= 0; i--) if (String(ids[i][0]) === session) return i + 2;  // 新的在下面，從下面找
+  return 0;
+}
 function sessionUser(session) {
   session = String(session || '');
   if (!/^[0-9a-f-]{20,60}$/i.test(session)) return null;
-  return PropertiesService.getScriptProperties().getProperty('sess:' + session);
+  var cache = CacheService.getScriptCache(), key = 'sess:' + session, hit = cache.get(key);
+  if (hit) return hit === '-' ? null : hit;
+  var sheet = sessionsSheet(), row = findSessionRow(sheet, session), id = null;
+  if (row) {
+    id = String(sheet.getRange(row, 3).getValue() || '') || null;
+    if (id) sheet.getRange(row, 4).setValue(new Date());
+  } else {
+    id = PropertiesService.getScriptProperties().getProperty(key);  // 還沒搬的舊通行證
+  }
+  cache.put(key, id || '-', id ? SESSION_CACHE_SEC : 300);
+  return id;
+}
+function newSession(lineId) {
+  var session = Utilities.getUuid(), now = new Date();
+  sessionsSheet().appendRow([now, session, lineId, now]);
+  CacheService.getScriptCache().put('sess:' + session, lineId, SESSION_CACHE_SEC);
+  return session;
+}
+function dropSession(session) {
+  session = String(session || '');
+  if (!/^[0-9a-f-]{20,60}$/i.test(session)) return;
+  var sheet = sessionsSheet(), row = findSessionRow(sheet, session);
+  if (row) sheet.deleteRow(row);
+  PropertiesService.getScriptProperties().deleteProperty('sess:' + session);
+  CacheService.getScriptCache().put('sess:' + session, '-', 300);
+}
+
+// 在編輯器選這個按「執行」：把指令碼屬性裡的舊通行證（sess:…）全部搬到 Sessions 分頁，搬完刪掉。可以重複執行。
+function migrateSessions() {
+  var props = PropertiesService.getScriptProperties(), all = props.getProperties(), sheet = sessionsSheet();
+  var have = {}, n = sheet.getLastRow() - 1;
+  if (n > 0) sheet.getRange(2, 2, n, 1).getValues().forEach(function (r) { have[String(r[0])] = true; });
+  var rows = [], keys = Object.keys(all).filter(function (k) { return k.indexOf('sess:') === 0; }), bytes = 0;
+  Object.keys(all).forEach(function (k) { bytes += k.length + String(all[k]).length; });
+  keys.forEach(function (k) {
+    var session = k.slice(5);
+    if (!have[session] && all[k]) rows.push([new Date(), session, all[k], '']);
+  });
+  if (rows.length) {
+    var start = sheet.getLastRow() + 1;
+    sheet.getRange(start, 2, rows.length, 2).setNumberFormat('@');
+    sheet.getRange(start, 1, rows.length, 4).setValues(rows);
+  }
+  keys.forEach(function (k) { props.deleteProperty(k); });
+  Logger.log('指令碼屬性原本用了大約 ' + Math.round(bytes / 1024) + ' KB（上限 500 KB），裡面有 ' + keys.length + ' 張舊通行證。' +
+    '搬了 ' + rows.length + ' 張到 Sessions 分頁，指令碼屬性裡的都刪掉了。Sessions 分頁現在有 ' + (sheet.getLastRow() - 1) + ' 張。');
 }
 
 // 網頁送來的錢包數字：都要是合理範圍的整數，不對就整包不收
@@ -989,8 +1057,7 @@ function lineLogin(input) {
   if (!p) return { result: 'error', error: '帳號開不起來，再試一次' };
   if (p.result) return p;  // 排不到隊
 
-  var session = Utilities.getUuid();
-  PropertiesService.getScriptProperties().setProperty('sess:' + session, who.sub);
+  var session = newSession(who.sub);
   var player = walletView(p);
   player.name = who.name;
   player.picture = who.picture;
@@ -999,7 +1066,7 @@ function lineLogin(input) {
 }
 
 function lineLogout(input) {
-  if (sessionUser(input.session)) PropertiesService.getScriptProperties().deleteProperty('sess:' + input.session);
+  if (sessionUser(input.session)) dropSession(input.session);
   return { result: 'success' };
 }
 
