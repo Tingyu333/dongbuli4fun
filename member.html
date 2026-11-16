@@ -182,6 +182,14 @@
                     </span>
                     <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
                 </a>
+                <a href="huoyun.html" class="game">
+                    <span class="game-mark">航</span>
+                    <span class="flex-1 min-w-0">
+                    <span class="block text-wabi-dark tracking-widest">貨運・航</span>
+                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">長蘿貨運的蘿蔔船，四條航道撈蘿蔔、閃暗礁，六十秒</span>
+                    </span>
+                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                </a>
             </div>
             <div class="game-group">
                 <h3 class="group-h"><span class="group-no">貳</span><span class="group-name">錢的去處</span><span class="group-desc">花掉，或存起來</span></h3>
@@ -263,8 +271,9 @@
             farm: e => `拔了 ${e.times} 輪，賺 ${fmt(e.total)}（最多一輪 ${fmt(e.best)}）`,
             wifi: e => `蹭了 ${e.times} 輪，省 ${fmt(e.total)}（最多一輪 ${fmt(e.best)}）`,
             zaocan: e => `開了 ${e.times} 天店，賺 ${fmt(e.total)}（最多一天 ${fmt(e.best)}）`,
+            ship: e => `出航 ${e.times} 趟，賺 ${fmt(e.total)}（最多一趟 ${fmt(e.best)}）`,
         };
-        const LABELS = { xitou: '坐洗部', clean: '房務部', scratch: '彩券行', bonus: '主人紅包', caishen: '財神燈', insure: '丼步喱人壽', farm: '菜園部', wifi: '蹭網部', zaocan: '早餐店' };
+        const LABELS = { xitou: '坐洗部', clean: '房務部', scratch: '彩券行', bonus: '主人紅包', caishen: '財神燈', insure: '丼步喱人壽', farm: '菜園部', wifi: '蹭網部', zaocan: '早餐店', ship: '長蘿貨運' };
 
         function renderWho() {
             const box = $('who');

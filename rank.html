@@ -77,11 +77,16 @@
         }
         .book button[aria-pressed="true"] { color: rgb(var(--wabi-dark)); border-bottom-color: rgb(var(--wabi-shu)); }
 
+        /* 部門：七個一排擠不下，排成兩排（一排四個） */
+        .seg.is-small { display: grid; grid-template-columns: repeat(4, 1fr); }
         .seg.is-small button {
             min-height: 36px;
             font-size: 0.72rem;
-            letter-spacing: 0;  /* 六個部門擠一排 */
+            letter-spacing: 0.05em;
+            border-left: 0;
         }
+        .seg.is-small button:not(:nth-child(4n+1)) { border-left: 1px solid rgb(var(--wabi-sub)); }
+        .seg.is-small button:nth-child(n+5) { border-top: 1px solid rgb(var(--wabi-sub)); }
 
         /* 一列一個人 */
         .row {
@@ -272,6 +277,7 @@
                 <button type="button" data-metric="count" aria-pressed="false">做最多</button>
                 <button type="button" data-metric="alive" aria-pressed="false" class="hidden">撐最久</button>
                 <button type="button" data-metric="served" aria-pressed="false" class="hidden">出餐最多</button>
+                <button type="button" data-metric="combo" aria-pressed="false" class="hidden">最長連撈</button>
             </div>
             <div class="seg is-small mt-2" role="group" aria-label="哪個部門">
                 <button type="button" data-dept="all" aria-pressed="true">全部</button>
@@ -280,6 +286,7 @@
                 <button type="button" data-dept="farm" aria-pressed="false">菜園部</button>
                 <button type="button" data-dept="wifi" aria-pressed="false">蹭網部</button>
                 <button type="button" data-dept="zaocan" aria-pressed="false">早餐部</button>
+                <button type="button" data-dept="ship" aria-pressed="false">貨運部</button>
             </div>
             </div>
             <div id="spendCtl" class="hidden">
@@ -304,6 +311,7 @@
             <a id="go3" href="caiyuan.html" class="block py-4 border border-stone-300 text-center text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">去菜園部</a>
             <a id="go4" href="cengwang.html" class="block py-4 border border-stone-300 text-center text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">去蹭網部</a>
             <a id="go5" href="zaocan.html" class="block py-4 border border-stone-300 text-center text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">去早餐部</a>
+            <a id="go6" href="huoyun.html" class="block py-4 border border-stone-300 text-center text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">去貨運部</a>
         </div>
 
         <p class="mt-10 text-[11px] font-sans tracking-widest text-stone-400 leading-relaxed text-center">
@@ -324,7 +332,7 @@
         const fmt = n => '$' + Number(n || 0).toLocaleString('en-US');
         const secs = ms => ms ? `${(ms / 1000).toFixed(1)} 秒` : '';
         const TOP = ['壹', '貳', '參'];
-        const DEPT = { xitou: '坐洗部', clean: '房務部', farm: '菜園部', wifi: '蹭網部', zaocan: '早餐部' };
+        const DEPT = { xitou: '坐洗部', clean: '房務部', farm: '菜園部', wifi: '蹭網部', zaocan: '早餐部', ship: '貨運部' };
         // 第一名頭上的王冠（金色，畫在大頭貼上面）
         const CROWN = '<svg class="crown" viewBox="0 0 26 18" aria-hidden="true"><defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3b0"/><stop offset=".5" stop-color="#e8c252"/><stop offset="1" stop-color="#a77b0c"/></linearGradient></defs><path d="M2 16 L1 5 L7.5 10 L13 1.5 L18.5 10 L25 5 L24 16 Z" fill="url(#cg)" stroke="#8a6408" stroke-width="1" stroke-linejoin="round"/><circle cx="13" cy="11" r="1.8" fill="#b33a2f"/><circle cx="1" cy="5" r="1.3" fill="#e8c252"/><circle cx="25" cy="5" r="1.3" fill="#e8c252"/><circle cx="13" cy="1.5" r="1.3" fill="#e8c252"/></svg>';
         // 金粉：第一名七顆、第二名四顆、第三名三顆，位置隨機，避開最左邊的名次章
@@ -341,7 +349,7 @@
         try { const s = JSON.parse(sessionStorage.getItem('dongbuli-rank-tab') || '{}'); if (s.book) book = s.book; if (s.metric) metric = s.metric; if (s.dept) dept = s.dept; if (s.cat) cat = s.cat; } catch (e) { }
         if (location.hash === '#spend') book = 'spend'; else if (location.hash === '#work') book = 'work';
         const BOOKS = {
-            work: { title: '打工・榜', tag: '誰在二十七樓最勤勞，<br>牆上寫得清清楚楚。', go: [['xitou.html', '去坐洗部'], ['fangwu.html', '去房務部'], ['caiyuan.html', '去菜園部'], ['cengwang.html', '去蹭網部'], ['zaocan.html', '去早餐部']], join: '打工' },
+            work: { title: '打工・榜', tag: '誰在二十七樓最勤勞，<br>牆上寫得清清楚楚。', go: [['xitou.html', '去坐洗部'], ['fangwu.html', '去房務部'], ['caiyuan.html', '去菜園部'], ['cengwang.html', '去蹭網部'], ['zaocan.html', '去早餐部'], ['huoyun.html', '去貨運部']], join: '打工' },
             spend: { title: '花錢・榜', tag: '錢不是賺來的，<br>是花出去才算數。', go: [['scratch.html', '去彩券行'], ['gongde.html', '去功德箱'], ['zaocan.html', '去早餐店']], join: '花錢' },
         };
         // 花錢榜：每一類多少錢、小字寫什麼
@@ -373,15 +381,15 @@
         // 每個人在這個榜的成績：{ v 排名用的數字, tie 同分再比（越小越前面）, main 大字, sub 小字 }，沒成績回 null
         function entry(p) {
             if (book === 'spend') return spendEntry(p);
-            const x = p.xitou || {}, c = p.clean || {}, fm = p.farm || {}, wf = p.wifi || {}, zc = p.zaocan || {};
-            const UNIT = { xitou: ['洗', '顆頭', '顆'], clean: ['掃', '間', '間'], farm: ['拔', '輪', '輪'], wifi: ['蹭', '輪', '輪'], zaocan: ['煎', '天', '天'] };
+            const x = p.xitou || {}, c = p.clean || {}, fm = p.farm || {}, wf = p.wifi || {}, zc = p.zaocan || {}, sh = p.ship || {};
+            const UNIT = { xitou: ['洗', '顆頭', '顆'], clean: ['掃', '間', '間'], farm: ['拔', '輪', '輪'], wifi: ['蹭', '輪', '輪'], zaocan: ['煎', '天', '天'], ship: ['運', '趟', '趟'] };
             if (metric === 'money') {
-                if (dept === 'all') { const v = (x.money || 0) + (c.money || 0) + (fm.money || 0) + (wf.money || 0) + (zc.money || 0); return v ? { v, main: fmt(v), sub: [x.money ? `洗 ${fmt(x.money)}` : '', c.money ? `掃 ${fmt(c.money)}` : '', fm.money ? `拔 ${fmt(fm.money)}` : '', wf.money ? `蹭 ${fmt(wf.money)}` : '', zc.money ? `煎 ${fmt(zc.money)}` : ''].filter(Boolean).join('・') } : null; }
+                if (dept === 'all') { const v = (x.money || 0) + (c.money || 0) + (fm.money || 0) + (wf.money || 0) + (zc.money || 0) + (sh.money || 0); return v ? { v, main: fmt(v), sub: [x.money ? `洗 ${fmt(x.money)}` : '', c.money ? `掃 ${fmt(c.money)}` : '', fm.money ? `拔 ${fmt(fm.money)}` : '', wf.money ? `蹭 ${fmt(wf.money)}` : '', zc.money ? `煎 ${fmt(zc.money)}` : '', sh.money ? `運 ${fmt(sh.money)}` : ''].filter(Boolean).join('・') } : null; }
                 const d = p[dept] || {};
-                return d.money ? { v: d.money, main: fmt(d.money), sub: dept === 'xitou' ? `洗了 ${d.n} 顆頭` : dept === 'clean' ? `打掃了 ${d.n} 間` : dept === 'wifi' ? `蹭了 ${d.n} 輪` : dept === 'zaocan' ? `開了 ${d.n} 天店` : `拔了 ${d.n} 輪` } : null;
+                return d.money ? { v: d.money, main: fmt(d.money), sub: dept === 'xitou' ? `洗了 ${d.n} 顆頭` : dept === 'clean' ? `打掃了 ${d.n} 間` : dept === 'wifi' ? `蹭了 ${d.n} 輪` : dept === 'zaocan' ? `開了 ${d.n} 天店` : dept === 'ship' ? `出航 ${d.n} 趟` : `拔了 ${d.n} 輪` } : null;
             }
             if (metric === 'count') {
-                if (dept === 'all') { const v = (x.n || 0) + (c.n || 0) + (fm.n || 0) + (wf.n || 0) + (zc.n || 0); return v ? { v, main: `${v} 次`, sub: [x.n ? `洗 ${x.n} 顆頭` : '', c.n ? `掃 ${c.n} 間` : '', fm.n ? `拔 ${fm.n} 輪` : '', wf.n ? `蹭 ${wf.n} 輪` : '', zc.n ? `煎 ${zc.n} 天` : ''].filter(Boolean).join('・') } : null; }
+                if (dept === 'all') { const v = (x.n || 0) + (c.n || 0) + (fm.n || 0) + (wf.n || 0) + (zc.n || 0) + (sh.n || 0); return v ? { v, main: `${v} 次`, sub: [x.n ? `洗 ${x.n} 顆頭` : '', c.n ? `掃 ${c.n} 間` : '', fm.n ? `拔 ${fm.n} 輪` : '', wf.n ? `蹭 ${wf.n} 輪` : '', zc.n ? `煎 ${zc.n} 天` : '', sh.n ? `運 ${sh.n} 趟` : ''].filter(Boolean).join('・') } : null; }
                 const d = p[dept] || {};
                 return d.n ? { v: d.n, main: `${d.n} ${UNIT[dept][2]}`, sub: `賺 ${fmt(d.money)}` } : null;
             }
@@ -399,6 +407,12 @@
                 return sv && sv.n ? { v: sv.n, tie: sv.angry, main: `${sv.n} 位`, sub: `賣 ${sv.items} 份・${sv.angry ? `氣走 ${sv.angry} 位・` : ''}那天 ${fmt(sv.total)}` } : null;
             }
             if (dept === 'zaocan') return zc.best != null && zc.best ? { v: zc.best, main: fmt(zc.best), sub: '一天賺最多' } : null;
+            // 貨運：最長連撈（只有貨運部有這個分頁），一樣長比運費；最高分是一趟賺最多
+            if (metric === 'combo') {
+                const cb = sh.combo;
+                return cb && cb.n ? { v: cb.n, tie: -cb.total, main: `${cb.n} 連撈`, sub: `那趟撈了 ${cb.picked} 份・運費 ${fmt(cb.total)}` } : null;
+            }
+            if (dept === 'ship') return sh.best != null && sh.best ? { v: sh.best, main: fmt(sh.best), sub: '一趟賺最多' } : null;
             // 最高分：同分比快
             const pickDept = dept === 'all'
                 ? ['xitou', 'clean'].filter(k => p[k] && p[k].best != null).sort((a, b) => p[b].best - p[a].best || (p[a].ms || 9e9) - (p[b].ms || 9e9))[0]
@@ -413,8 +427,10 @@
             // 「撐最久」只有蹭網部有、「出餐最多」只有早餐部有；換到別的部門就回「最高分」
             if (metric === 'alive' && dept !== 'wifi') metric = 'best';
             if (metric === 'served' && dept !== 'zaocan') metric = 'best';
+            if (metric === 'combo' && dept !== 'ship') metric = 'best';
             document.querySelector('[data-metric="alive"]').classList.toggle('hidden', dept !== 'wifi');
             document.querySelector('[data-metric="served"]').classList.toggle('hidden', dept !== 'zaocan');
+            document.querySelector('[data-metric="combo"]').classList.toggle('hidden', dept !== 'ship');
             document.querySelectorAll('[data-metric]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.metric === metric)));
             document.querySelectorAll('[data-dept]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.dept === dept)));
             document.querySelectorAll('[data-cat]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cat === cat)));
@@ -422,18 +438,19 @@
             const B = BOOKS[book];
             $('title').textContent = B.title; $('tagline').innerHTML = B.tag;
             $('workCtl').classList.toggle('hidden', book !== 'work'); $('spendCtl').classList.toggle('hidden', book !== 'spend');
-            [$('go1'), $('go2'), $('go3'), $('go4'), $('go5')].forEach((a, i) => {
+            [$('go1'), $('go2'), $('go3'), $('go4'), $('go5'), $('go6')].forEach((a, i) => {
                 const g = B.go[i]; a.classList.toggle('hidden', !g);
-                a.classList.toggle('col-span-2', B.go.length === 5 && i === 4);  // 五顆：兩顆兩顆，最後一顆佔一整排
+                a.classList.toggle('col-span-2', B.go.length !== 3 && B.go.length % 2 === 1 && i === B.go.length - 1);  // 單數顆：最後一顆佔一整排
                 if (g) { a.href = g[0]; a.textContent = g[1]; }
             });
             $('goBox').className = `mt-6 grid ${B.go.length === 3 ? 'grid-cols-3' : 'grid-cols-2'} gap-2`;  // 三顆排一排，其他兩顆一排
             // 後端還是舊版：回來的人身上沒有 wifi.alive 這個欄位（新版沒成績是 null）
             const aliveOld = metric === 'alive' && players && players.length && players.every(p => !p.wifi || !('alive' in p.wifi));
             const zcOld = dept === 'zaocan' && players && players.length && players.every(p => !('zaocan' in p));
-            $('boardNote').textContent = book === 'spend' ? CATS[cat].note : zcOld ? '後端還是舊版，看不到早餐部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'served' ? '早餐店一天出餐最多幾位客人，同樣多比誰氣走的少。要用 LINE 登入，剛打烊最多五分鐘才會上榜。' : metric === 'alive' ? (aliveOld ? '後端還是舊版，看不到撐最久：要把 Code.gs 貼上去、重新部署（新版本）。' : '蹭網無盡模式：比一輪裡真的連著 28 樓多久（放開、發呆的時間不算），要用 LINE 登入。剛玩完最多五分鐘才會上榜。') : metric === 'best'
-                ? (dept === 'farm' ? '菜園比的是一輪賣最多少錢（單位跟坐洗、房務不同，「全部」那頁不算菜園）。' : dept === 'zaocan' ? '早餐店比的是一天賺最多少錢（單位跟坐洗、房務不同，「全部」那頁不算早餐店）。' : dept === 'wifi' ? '蹭網比的是一輪省最多少錢，含無盡模式（單位跟坐洗、房務不同，「全部」那頁不算蹭網）。' : '一場的最高分（爽度、乾淨度都是滿分 100），同分比誰快。從洗完、打掃完存到雲端開始算。')
-                : metric === 'money' ? '打工賺的錢加起來（工資、小費、失物招領、加成都算）。' : '洗幾顆頭、打掃幾間、拔幾輪、蹭幾輪、開幾天早餐店。';
+            const shipOld = dept === 'ship' && players && players.length && players.every(p => !('ship' in p));
+            $('boardNote').textContent = book === 'spend' ? CATS[cat].note : shipOld ? '後端還是舊版，看不到貨運部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'combo' ? '貨運一趟裡最長的連撈（連續撈到好東西、中間沒撈到垃圾也沒撞到），一樣長比運費多。要用 LINE 登入，剛靠港最多五分鐘才會上榜。' : zcOld ? '後端還是舊版，看不到早餐部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'served' ? '早餐店一天出餐最多幾位客人，同樣多比誰氣走的少。要用 LINE 登入，剛打烊最多五分鐘才會上榜。' : metric === 'alive' ? (aliveOld ? '後端還是舊版，看不到撐最久：要把 Code.gs 貼上去、重新部署（新版本）。' : '蹭網無盡模式：比一輪裡真的連著 28 樓多久（放開、發呆的時間不算），要用 LINE 登入。剛玩完最多五分鐘才會上榜。') : metric === 'best'
+                ? (dept === 'farm' ? '菜園比的是一輪賣最多少錢（單位跟坐洗、房務不同，「全部」那頁不算菜園）。' : dept === 'zaocan' ? '早餐店比的是一天賺最多少錢（單位跟坐洗、房務不同，「全部」那頁不算早餐店）。' : dept === 'ship' ? '貨運比的是一趟賺最多少錢（單位跟坐洗、房務不同，「全部」那頁不算貨運）。' : dept === 'wifi' ? '蹭網比的是一輪省最多少錢，含無盡模式（單位跟坐洗、房務不同，「全部」那頁不算蹭網）。' : '一場的最高分（爽度、乾淨度都是滿分 100），同分比誰快。從洗完、打掃完存到雲端開始算。')
+                : metric === 'money' ? '打工賺的錢加起來（工資、小費、失物招領、加成都算）。' : '洗幾顆頭、打掃幾間、拔幾輪、蹭幾輪、開幾天早餐店、跑幾趟貨運。';
             const box = $('board');
             if (!players) {
                 box.innerHTML = failed
@@ -469,6 +486,7 @@
                 book === 'spend' ? (players.length && !players.some(p => p.spend) ? '花錢・榜要等後端重新部署「新版本」才有。' : CATS[cat].empty)
                 : metric === 'alive' ? (players.length && players.every(p => !p.wifi || !('alive' in p.wifi)) ? '撐最久要等後端重新部署「新版本」才有。' : '還沒有人玩過無盡模式。<br>第一名在等你。')
                 : dept === 'zaocan' && players.length && players.every(p => !('zaocan' in p)) ? '早餐部要等後端重新部署「新版本」才有。'
+                : dept === 'ship' && players.length && players.every(p => !('ship' in p)) ? '貨運部要等後端重新部署「新版本」才有。'
                 : `${DEPT[dept] || '二十七樓'}還沒有人上榜。<br>第一名在等你。`}</p>`;
             box.querySelectorAll('img.avatar').forEach(img => img.addEventListener('error', () => {
                 badPic.add(img.getAttribute('src'));
