@@ -53,6 +53,30 @@
         /* 出航中把左下角的晝夜鈕收起來：它會蓋住「左」那顆按鈕 */
         html.hy-open .theme-toggle { opacity: 0; pointer-events: none; transition: opacity .2s; }
 
+        /* 船隻升級（跟早餐店、菜園同一套樣子） */
+        .shop-btn {
+            display: inline-flex; align-items: center; height: 1.9rem; padding: 0 0.75rem;
+            border: 1px solid rgb(var(--wabi-accent) / 0.5); border-radius: 9999px;
+            font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.15em; color: rgb(var(--wabi-dark));
+            white-space: nowrap; touch-action: manipulation;
+        }
+        .shop-btn b { margin-left: 0.3rem; font-weight: 400; color: rgb(var(--wabi-shu)); }
+        #shop { background: rgba(0, 0, 0, 0); transition: background 0.22s; }
+        #shop.on { background: rgba(0, 0, 0, 0.45); }
+        #shop .shop-sheet { transform: translateY(100%); transition: transform 0.22s ease-out; }
+        #shop.on .shop-sheet { transform: none; }
+        @media (prefers-reduced-motion: reduce) { #shop, #shop .shop-sheet { transition: none; } }
+        .shop-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 0; border-bottom: 1px solid rgb(var(--wabi-sub) / 0.6); }
+        .shop-icon { flex: none; width: 56px; height: 56px; border-radius: 6px; background: rgb(var(--wabi-sub) / 0.35); }
+        .shop-dots i { display: inline-block; width: 6px; height: 6px; margin-left: 3px; border-radius: 50%; border: 1px solid rgb(var(--wabi-accent)); }
+        .shop-dots i.on { background: rgb(var(--wabi-shu)); border-color: rgb(var(--wabi-shu)); }
+        .shop-buy {
+            flex: none; min-width: 5.6rem; min-height: 44px; padding: 0 0.6rem;
+            border: 1px solid rgb(var(--wabi-dark)); background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg));
+            font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.1em; line-height: 1.3; touch-action: manipulation;
+        }
+        .shop-buy:disabled { background: transparent; color: rgb(var(--wabi-accent)); border-color: rgb(var(--wabi-sub)); }
+
         .bill li {
             display: flex;
             justify-content: space-between;
@@ -84,7 +108,9 @@
 
     <main class="flex-grow max-w-md mx-auto pt-24 md:pt-32 pb-16 px-5 w-full">
 
-        <div class="text-center mb-6">
+        <div class="text-center mb-6 relative">
+            <!-- 船隻升級：放在標題右上角，不多佔一行（不然手機上「左」「右」按鈕會被擠到畫面外） -->
+            <button id="shopBtn" type="button" class="shop-btn absolute right-0 top-0" aria-haspopup="dialog">船廠<b id="shopLv"></b></button>
             <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">CHANGLUO LINE</span>
             <h1 class="text-3xl font-light text-wabi-dark tracking-widest">貨運・航</h1>
             <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">長蘿貨運的長蘿號，把頂樓菜園的蘿蔔運出去。</p>
@@ -126,6 +152,8 @@
                     class="w-full bg-wabi-dark text-wabi-bg py-4 px-8 tracking-[0.2em] font-sans text-xs shadow-lg">分享貨運提單</button>
                 <button id="againBtn" type="button"
                     class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">再出航一次</button>
+                <button id="shopBtn2" type="button"
+                    class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">拿運費去船廠升級</button>
                 <a href="scratch.html"
                     class="block w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">拿運費去彩券行</a>
                 <a href="rank.html#work"
@@ -143,9 +171,27 @@
                 <li>連續撈到好東西，運費一路往上加：連撈 5 個 ×1.2、10 個 ×1.5、20 個 ×2。撈到垃圾、撞到東西就從頭算。</li>
                 <li><b class="font-normal text-wabi-dark">茱莉鴨</b>在游泳：不要撞到她，從隔壁航道經過她會點頭（+$80，撞到她要賠 $80）。<b class="font-normal text-wabi-dark">海鷗</b>會飛過來叼蘿蔔、坐在木盆裡的<b class="font-normal text-wabi-dark">浣熊</b>會跳上船偷貨：<b class="font-normal text-wabi-dark">點牠一下</b>就嚇跑了（趕走浣熊 +$50）。</li>
                 <li>六十秒靠港。偶爾會起霧，或者吹順風。</li>
+                <li>賺來的運費可以按上面的<b class="font-normal text-wabi-dark">船廠</b>升級長蘿號：雷達、鐵甲、吸塵網、冷藏貨艙、汽笛。登入 LINE 換手機也在。</li>
             </ol>
         </section>
     </main>
+
+    <!-- 船隻升級 -->
+    <div id="shop" class="hidden fixed inset-0 z-[80] flex items-end justify-center" role="dialog" aria-modal="true" aria-label="長蘿號升級">
+        <div class="shop-sheet w-full max-w-md bg-wabi-bg rounded-t-xl">
+            <div class="px-5 pt-5 pb-2 flex items-baseline justify-between border-b border-stone-200">
+                <div>
+                    <p class="text-lg text-wabi-dark tracking-widest">船廠・修</p>
+                    <p class="mt-1 text-[10px] font-sans tracking-widest text-stone-400">船長說：船是公司的，零件錢你出</p>
+                </div>
+                <p class="text-xs font-sans tracking-widest text-stone-500">錢包 <b id="shopMoney" class="font-normal text-wabi-shu"></b></p>
+            </div>
+            <div id="shopList" class="px-5 max-h-[60vh] overflow-y-auto overscroll-contain"></div>
+            <div class="px-5 py-4">
+                <button type="button" data-shop-close class="w-full py-3 border border-stone-300 text-wabi-dark tracking-[0.2em] font-sans text-xs">回去開船</button>
+            </div>
+        </div>
+    </div>
 
     <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
         <p>&copy; 2026 DONGBULI · 貨運・航</p>
@@ -232,18 +278,48 @@
         };
         const BEST_KEY = 'dongbuli-huoyun-best', STATS_KEY = 'dongbuli-huoyun-stats';
 
+        // ===== 1b. 船隻升級 =====
+        // 存在共用錢包的 shop（跟坐洗部、菜園、早餐店同一份，key 不重複），登入 LINE 就跟著帳號走。等級只升不降，shop.spent 是幾家店加起來的。
+        const SHOP = [
+            { key: 'radar', name: '雷達', sub: '霧', prices: [30000, 70000], vals: [0.35, 0.15],
+              tiers: ['', '雷達', '雷達＋瞭望員'], fx: (v, l) => l >= 2 ? '霧幾乎看不到，對向貨輪提早 1.8 秒警告（原本 1.1 秒）' : '起霧時看得清楚很多' },
+            { key: 'armor', name: '鐵甲', sub: '船身', prices: [20000, 60000, 120000], vals: [{ hull: 3, repair: 60 }, { hull: 4, repair: 60 }, { hull: 5, repair: 40 }],
+              tiers: ['', '包鐵皮', '雙層鐵甲', '破冰船身'], fx: v => `船身 ${v.hull} 格、撞到一次維修費 $${v.repair}（原本 3 格、$100）` },
+            { key: 'sweep', name: '吸塵網', sub: '垃圾', prices: [10000, 30000, 80000], vals: [0.65, 0.3, 0],
+              tiers: ['', '撈網', '細目撈網', '自動分類網'], fx: v => v ? `垃圾清潔費只付 ${Math.round(v * 100)}%` : '垃圾清潔費全免，撈到垃圾連撈也不會斷' },
+            { key: 'hold', name: '冷藏貨艙', sub: '蘿蔔', prices: [20000, 50000, 100000], vals: [0.1, 0.2, 0.3],
+              tiers: ['', '保冷箱', '冷藏貨艙', '冷凍貨櫃'], fx: v => `蘿蔔、整箱、金蘿蔔賣價多 ${Math.round(v * 100)}%` },
+            { key: 'horn', name: '汽笛', sub: '小偷', prices: [15000, 60000], vals: [1, 2],
+              tiers: ['', '汽笛', '自動汽笛'], fx: v => v >= 2 ? '海鷗、浣熊靠近就自動鳴笛嚇跑（浣熊賞金照拿）' : '海鷗多等 1.5 秒才叼、浣熊賞金 $100' },
+        ];
+        const SHOP_BY = Object.fromEntries(SHOP.map(u => [u.key, u]));
+        function loadShop() {
+            let d = null;
+            try { d = Wallet.shop; } catch (e) { }
+            d = d && typeof d === 'object' ? { lv: { ...(d.lv || {}) }, spent: Number(d.spent) || 0 } : { lv: {}, spent: 0 };
+            SHOP.forEach(u => { d.lv[u.key] = clamp(Math.floor(Number(d.lv[u.key]) || 0), 0, u.prices.length); });
+            return d;
+        }
+        let shop = loadShop();
+        const lv = key => shop.lv[key] || 0;
+        const val = key => lv(key) ? SHOP_BY[key].vals[lv(key) - 1] : 0;
+        const repairCost = () => lv('armor') ? val('armor').repair : REPAIR;
+        const hullMax = () => lv('armor') ? val('armor').hull : HULL;
+        const bounty = () => lv('horn') ? 100 : BOUNTY;
+
         // ===== 2. 狀態 =====
         let G = null, lastNow = performance.now(), seq = 0;
         function newRound() {
+            shop = loadShop();
             G = {
-                started: false, ended: false, clock: 0, lane: 1, bx: laneX(1), tilt: 0, hull: HULL, sank: false,
+                started: false, ended: false, clock: 0, lane: 1, bx: laneX(1), tilt: 0, hull: hullMax(), hullMax: hullMax(), sank: false,
                 items: [], nextSpawn: 0.3, floats: [], warns: [], gull: null, combo: 0, lastCargo: null, wave: 0,
                 events: planEvents(), gullAt: [], endAt: 0,
-                earn: { cargo: {}, combo: 0, ito: 0, dog: 0, nod: 0, bounty: 0, duckHit: 0, gull: 0, raccoon: 0, trash: {}, repair: 0 },
+                earn: { cargo: {}, hold: 0, combo: 0, ito: 0, dog: 0, nod: 0, bounty: 0, duckHit: 0, gull: 0, raccoon: 0, trash: {}, repair: 0 },
                 tally: {
                     picked: 0, lanes: 0, maxCombo: 0, bottles: 0, itoWins: 0, dogs: 0, nods: 0, duckHits: 0,
                     trash: 0, reefs: 0, ships: 0, gulls: 0, gullShoo: 0, gullSteals: 0,
-                    raccoons: 0, raccoonShoo: 0, raccoonSteals: 0, stolen: 0, kinds: {},
+                    raccoons: 0, raccoonShoo: 0, raccoonSteals: 0, stolen: 0, kinds: {}, holdN: 0, autoShoo: 0,
                 },
             };
             G.gullAt = G.events.filter(e => e.kind === 'gull').map(e => e.at);
@@ -323,7 +399,7 @@
         // 對向來的貨輪：先在航道上面閃 1.1 秒紅色警告，再整艘開下來
         function warnShip() {
             const lane = pick([0, 1, 2, 3].filter(l => !G.warns.some(w => w.lane === l)));
-            G.warns.push({ lane, until: G.clock + 1.1 });
+            G.warns.push({ lane, until: G.clock + (lv('radar') >= 2 ? 1.8 : 1.1) });
             note('船長：' + pick(CAP.ship)); sfx.warn();
         }
 
@@ -337,20 +413,22 @@
             const d = ITEMS[it.kind], e = G.earn, t = G.tally;
             t.picked++; t.kinds[it.kind] = (t.kinds[it.kind] || 0) + 1;
             G.combo++; t.maxCombo = Math.max(t.maxCombo, G.combo);
-            let val = d.val, label = '';
+            let amt = d.val, label = '';
             if (it.kind === 'bottle') {
                 t.bottles++;
-                if (Math.random() < ITO_P) { val = ITO_WIN; e.ito += val; t.itoWins++; label = '伊藤刮中'; note('船長：' + pick(CAP.itoWin)); sfx.win(); }
+                if (Math.random() < ITO_P) { amt = ITO_WIN; e.ito += amt; t.itoWins++; label = '伊藤刮中'; note('船長：' + pick(CAP.itoWin)); sfx.win(); }
                 else { label = '沒中'; note('船長：' + pick(CAP.itoLose)); }
-            } else if (it.kind === 'dog') { t.dogs++; e.dog += val; note('船長：' + pick(CAP.dog)); sfx.bark(); }
+            } else if (it.kind === 'dog') { t.dogs++; e.dog += amt; note('船長：' + pick(CAP.dog)); sfx.bark(); }
             else {
-                addCargo(it.kind, val); G.lastCargo = it.kind;
+                const up = val('hold');
+                addCargo(it.kind, amt); G.lastCargo = it.kind;
+                if (up) { const add = Math.round(amt * up); amt += add; G.earn.hold += add; t.holdN++; }
                 if (it.kind === 'gold') { note('船長：' + pick(CAP.gold)); sfx.win(); }
                 else if (Math.random() < 0.25) note('船長：' + pick(CAP.good));
             }
-            const mult = comboMult(G.combo), bonus = Math.round(val * (mult - 1));
+            const mult = comboMult(G.combo), bonus = Math.round(amt * (mult - 1));
             if (bonus) e.combo += bonus;
-            float(it.x, it.y - 18, label ? (val ? `${label} +${fmt(val + bonus)}` : label) : `+${fmt(val + bonus)}`, it.kind === 'gold' || val >= 300 ? '#f6c544' : '#ffffff', it.kind === 'gold');
+            float(it.x, it.y - 18, label ? (amt ? `${label} +${fmt(amt + bonus)}` : label) : `+${fmt(amt + bonus)}`, it.kind === 'gold' || amt >= 300 ? '#f6c544' : '#ffffff', it.kind === 'gold');
             if ([5, 10, 20].includes(G.combo)) { float(G.bx, BOAT_Y - 70, `${G.combo} 連撈 ×${comboMult(G.combo)}`, '#f6c544', true); note('船長：' + pick(CAP.combo)); sfx.combo(); }
             else sfx.catch();
         }
@@ -358,17 +436,18 @@
         function badCatch(it) {
             const d = ITEMS[it.kind], e = G.earn, t = G.tally;
             t.trash++; t.kinds[it.kind] = (t.kinds[it.kind] || 0) + 1;
-            const c = e.trash[it.kind] || (e.trash[it.kind] = { n: 0, m: 0 }); c.n++; c.m += d.val;
-            breakCombo();
-            float(it.x, it.y - 18, `−${fmt(-d.val)}`, '#ff8a7a');
+            const cost = lv('sweep') ? Math.round(d.val * val('sweep')) : d.val;
+            const c = e.trash[it.kind] || (e.trash[it.kind] = { n: 0, m: 0 }); c.n++; c.m += cost;
+            if (!(lv('sweep') >= 3)) breakCombo();
+            float(it.x, it.y - 18, cost ? `−${fmt(-cost)}` : '網子收走了', cost ? '#ff8a7a' : '#ffffff');
             note('船長：' + pick(CAP.trash)); sfx.trash();
         }
         function crash(it, what) {
             const t = G.tally;
-            G.hull--; G.earn.repair -= REPAIR; breakCombo();
+            G.hull--; G.earn.repair -= repairCost(); breakCombo();
             if (what === 'ship') t.ships++; else t.reefs++;
             G.shakeAt = performance.now();
-            float(G.bx, BOAT_Y - 40, `船身破了 −${fmt(REPAIR)}`, '#ff8a7a', true);
+            float(G.bx, BOAT_Y - 40, `船身破了 −${fmt(repairCost())}`, '#ff8a7a', true);
             note('船長：' + pick(CAP.hit)); sfx.crash();
             if (G.hull <= 0) { G.sank = true; G.endAt = G.clock + 0.8; note('船長：船身撐不住，先靠港修理。'); }
         }
@@ -404,8 +483,8 @@
             }
             const r = G.items.find(it => it.kind === 'raccoon' && !it.done && Math.hypot(p.x - it.x, p.y - it.y) < 40);
             if (r) {
-                r.done = true; r.fled = G.clock; G.earn.bounty += BOUNTY; G.tally.raccoonShoo++;
-                float(r.x, r.y - 24, `嚇跑浣熊 +${fmt(BOUNTY)}`, '#f6c544'); note('船長：' + pick(CAP.raccoonShoo)); sfx.shoo();
+                r.done = true; r.fled = G.clock; G.earn.bounty += bounty(); G.tally.raccoonShoo++;
+                float(r.x, r.y - 24, `嚇跑浣熊 +${fmt(bounty())}`, '#f6c544'); note('船長：' + pick(CAP.raccoonShoo)); sfx.shoo();
                 return true;
             }
             return false;
@@ -488,7 +567,8 @@
             }
         }
         // 長蘿號：從上面往下看，一根蘿蔔，尖的那頭朝前（上），尾巴的葉子在後面飄
-        function drawBoat(c, x, y, tilt, now, hull) {
+        function drawBoat(c, x, y, tilt, now, hull, max) {
+            max = max || HULL;
             c.save(); c.translate(x, y); c.rotate(tilt);
             const sway = Math.sin(now / 300) * 0.03; c.rotate(sway);
             // 船尾的浪花
@@ -524,8 +604,40 @@
             c.fillStyle = 'rgba(255,248,235,0.9)'; c.font = `600 7px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle';
             c.fillText('長蘿', 0, -16);
             // 破掉的地方：補丁
-            for (let i = 0; i < HULL - hull; i++) { c.save(); c.translate([-14, 15, -2][i], [32, 30, -30][i]); c.rotate(0.5); c.fillStyle = '#8b6a4a'; c.fillRect(-5, -3, 10, 6); c.strokeStyle = '#3b2a1e'; c.lineWidth = 1; c.strokeRect(-5, -3, 10, 6); c.restore(); }
+            // 升級看得到：鐵甲、吸塵網、冷藏貨艙、雷達、汽笛
+            drawUpgrades(c, now);
+            for (let i = 0; i < max - hull; i++) { c.save(); c.translate([-14, 15, -2, -10, 12][i], [32, 30, -30, 8, -6][i]); c.rotate(0.5); c.fillStyle = '#8b6a4a'; c.fillRect(-5, -3, 10, 6); c.strokeStyle = '#3b2a1e'; c.lineWidth = 1; c.strokeRect(-5, -3, 10, 6); c.restore(); }
             c.restore();
+        }
+        function drawBoatShape(c) {
+            c.fillStyle = '#ef8a2f';
+            c.beginPath(); c.moveTo(0, -50); c.bezierCurveTo(14, -30, 24, 0, 24, 22); c.quadraticCurveTo(24, 42, 0, 44); c.quadraticCurveTo(-24, 42, -24, 22); c.bezierCurveTo(-24, 0, -14, -30, 0, -50); c.fill();
+        }
+        function drawUpgrades(c, now) {
+            const a = lv('armor'), sw = lv('sweep'), h = lv('hold'), r = lv('radar'), hn = lv('horn');
+            if (a) {  // 鐵甲：船身兩側一排鐵片
+                c.fillStyle = a >= 3 ? '#8e9aa6' : '#a3abb3'; c.strokeStyle = '#5d6670'; c.lineWidth = 0.8;
+                [-1, 1].forEach(k => { for (let i = 0; i < 3 + (a >= 2 ? 1 : 0); i++) { const yy = -6 + i * 11; c.beginPath(); c.rect(k * 21 - (k > 0 ? 5 : 0), yy, 5, 9); c.fill(); c.stroke(); } });
+                if (a >= 3) { c.fillStyle = '#8e9aa6'; c.beginPath(); c.moveTo(0, -52); c.lineTo(6, -40); c.lineTo(-6, -40); c.closePath(); c.fill(); }
+            }
+            if (sw) {  // 吸塵網：船頭前面一張網
+                c.strokeStyle = sw >= 3 ? 'rgba(255,230,140,0.9)' : 'rgba(255,255,255,0.8)'; c.lineWidth = 0.9;
+                c.beginPath(); c.arc(0, -40, 16, Math.PI * 1.1, Math.PI * 1.9); c.stroke();
+                for (let i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(i * 5, -42); c.lineTo(i * 6.5, -54 + Math.abs(i)); c.stroke(); }
+            }
+            if (h) {  // 冷藏貨艙：船尾疊幾個藍白保冷箱
+                for (let i = 0; i < h; i++) { c.fillStyle = i % 2 ? '#d9e9f4' : '#9cc6e4'; c.fillRect(-9 + (i % 2) * 9 - (i === 2 ? 4 : 0), 30 + (i === 2 ? -7 : 0), 9, 7); c.strokeStyle = '#4d7fa3'; c.lineWidth = 0.8; c.strokeRect(-9 + (i % 2) * 9 - (i === 2 ? 4 : 0), 30 + (i === 2 ? -7 : 0), 9, 7); }
+            }
+            if (r) {  // 雷達：船艙上一個會轉的天線
+                const ang = now / (r >= 2 ? 250 : 400);
+                c.fillStyle = '#c9ced3'; c.beginPath(); c.arc(9, 4, 4, 0, TAU); c.fill();
+                c.strokeStyle = '#3b3f44'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(9 - Math.cos(ang) * 6, 4 - Math.sin(ang) * 2); c.lineTo(9 + Math.cos(ang) * 6, 4 + Math.sin(ang) * 2); c.stroke();
+                if (r >= 2) { c.strokeStyle = `rgba(120,255,170,${0.5 - (now / 1200 % 1) * 0.5})`; c.lineWidth = 1; c.beginPath(); c.arc(9, 4, 6 + (now / 1200 % 1) * 20, 0, TAU); c.stroke(); }
+            }
+            if (hn) {  // 汽笛：船艙旁邊一支金色喇叭；剛鳴笛的時候冒白煙
+                c.fillStyle = '#e0b03a'; c.beginPath(); c.moveTo(-14, 6); c.lineTo(-20, 2); c.lineTo(-20, 12); c.closePath(); c.fill();
+                if (G && G.hornAt && now - G.hornAt < 700) { const k = (now - G.hornAt) / 700; c.fillStyle = `rgba(255,255,255,${0.8 * (1 - k)})`; c.beginPath(); c.arc(-24 - k * 12, 4 - k * 14, 4 + k * 8, 0, TAU); c.fill(); }
+            }
         }
         function drawCarrot(c, x, y, s, gold, now) {
             c.save(); c.translate(x, y); c.rotate(0.55 + Math.sin(now / 400 + x) * 0.08); c.scale(s, s);
@@ -714,7 +826,7 @@
         function sumEarn() {
             const e = G.earn;
             return Object.values(e.cargo).reduce((s, v) => s + v.m, 0) + Object.values(e.trash).reduce((s, v) => s + v.m, 0)
-                + e.combo + e.ito + e.dog + e.nod + e.bounty + e.duckHit + e.gull + e.raccoon + e.repair;
+                + e.hold + e.combo + e.ito + e.dog + e.nod + e.bounty + e.duckHit + e.gull + e.raccoon + e.repair;
         }
         function drawHud(c, now) {
             const left = Math.max(0, ROUND - G.clock);
@@ -727,8 +839,8 @@
             const money = sumEarn();
             pill(W - 92, 8, 84, (money < 0 ? '−' : '') + fmt(Math.abs(money)), money < 0 ? '#ffb4a8' : '#ffe08a');
             // 船身三格
-            for (let i = 0; i < HULL; i++) {
-                const x = W - 92 + i * 22, y = 36, ok = i < G.hull;
+            for (let i = 0; i < G.hullMax; i++) {
+                const x = W - 8 - G.hullMax * 22 + 4 + i * 22, y = 36, ok = i < G.hull;
                 c.fillStyle = ok ? 'rgba(255,250,240,0.92)' : 'rgba(10,30,45,0.45)'; rr(c, x, y, 18, 18, 3); c.fill();
                 c.strokeStyle = ok ? '#b33a2f' : 'rgba(255,255,255,0.3)'; c.lineWidth = 1.5; rr(c, x, y, 18, 18, 3); c.stroke();
                 c.fillStyle = ok ? '#b33a2f' : 'rgba(255,255,255,0.35)'; c.font = `700 10px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(ok ? '船' : '破', x + 9, y + 9.5);
@@ -844,13 +956,17 @@
             if (G.gullAt.length && G.clock >= G.gullAt[0] && !G.gull) {
                 G.gullAt.shift();
                 const side = Math.random() < 0.5 ? -1 : 1;
-                G.gull = { x: side < 0 ? -30 : W + 30, y: BOAT_Y - 150, state: 'come', hold: 2, hoverAt: 0 };
+                G.gull = { x: side < 0 ? -30 : W + 30, y: BOAT_Y - 150, state: 'come', hold: lv('horn') ? 3.5 : 2, hoverAt: 0 };
                 G.tally.gulls++; note('船長：' + pick(CAP.gull)); sfx.gull();
             }
             if (G.gull) {
                 const gl = G.gull, tx = G.bx, ty = BOAT_Y - 58;
                 if (gl.state === 'come') { gl.x = lerp(gl.x, tx, Math.min(1, dt * 3)); gl.y = lerp(gl.y, ty, Math.min(1, dt * 3)); if (Math.hypot(gl.x - tx, gl.y - ty) < 8) { gl.state = 'hover'; gl.hoverAt = G.clock; } }
-                else if (gl.state === 'hover') { gl.x = lerp(gl.x, tx, Math.min(1, dt * 8)); gl.y = ty + Math.sin(G.clock * 6) * 3; if (G.clock - gl.hoverAt > gl.hold) { steal('gull'); gl.carry = true; gl.state = 'leave'; } }
+                else if (gl.state === 'hover') {
+                    gl.x = lerp(gl.x, tx, Math.min(1, dt * 8)); gl.y = ty + Math.sin(G.clock * 6) * 3;
+                    if (lv('horn') >= 2 && G.clock - gl.hoverAt > 0.6) { gl.state = 'leave'; G.tally.gullShoo++; G.tally.autoShoo++; G.hornAt = performance.now(); float(gl.x, gl.y - 20, '嗚——', '#ffffff'); sfx.horn(); }
+                    else if (G.clock - gl.hoverAt > gl.hold) { steal('gull'); gl.carry = true; gl.state = 'leave'; }
+                }
                 else { gl.y -= dt * 260; gl.x += dt * (gl.x < W / 2 ? -120 : 120); if (gl.y < -60) G.gull = null; }
             }
             // 東西往下漂、撞到船
@@ -864,6 +980,11 @@
                     return;
                 }
                 const d = ITEMS[it.kind];
+                // 自動汽笛：浣熊靠近就嚇跑
+                if (it.kind === 'raccoon' && !it.done && lv('horn') >= 2 && it.y > BOAT_Y - 150) {
+                    it.done = true; it.fled = G.clock; G.earn.bounty += bounty(); G.tally.raccoonShoo++; G.tally.autoShoo++; G.hornAt = performance.now();
+                    float(it.x, it.y - 24, `汽笛嚇跑浣熊 +${fmt(bounty())}`, '#f6c544'); sfx.horn(); return;
+                }
                 if (it.kind === 'duck' && !it.done && prevY < BOAT_Y && it.y >= BOAT_Y && Math.abs(it.lane - lane) === 1) {
                     it.done = true; it.nodAt = G.clock; G.earn.nod += NOD; G.tally.nods++;
                     float(it.x, it.y - 26, `茱莉鴨點頭 +${fmt(NOD)}`, '#ffe08a'); note('船長：' + pick(CAP.nod)); sfx.quack();
@@ -934,9 +1055,9 @@
                 drawWind(ctx, G.started ? eventLevel('wind') : 0, now);
                 G.items.filter(it => it.kind === 'ship' || it.kind === 'reef').forEach(it => drawItem(ctx, it, now));
                 G.items.filter(it => it.kind !== 'ship' && it.kind !== 'reef').forEach(it => drawItem(ctx, it, now));
-                drawFog(ctx, G.started ? eventLevel('fog') : 0, now);
+                drawFog(ctx, G.started ? eventLevel('fog') * (lv('radar') ? val('radar') : 1) : 0, now);
                 drawWarns(ctx, now);
-                drawBoat(ctx, G.bx, BOAT_Y, G.tilt, now, G.hull);
+                drawBoat(ctx, G.bx, BOAT_Y, G.tilt, now, G.hull, G.hullMax);
                 if (G.gull) drawGull(ctx, G.gull, now);
                 drawFloats(ctx, now);
                 ctx.restore();
@@ -956,16 +1077,17 @@
             // [名稱, 數量, 單位, 金額, 怎麼算]；金額加起來等於合計
             const rows = CARGO.filter(k => e.cargo[k]).map(k => [ITEMS[k].name, e.cargo[k].n, ITEMS[k].unit, e.cargo[k].m, `每${ITEMS[k].unit} ${fmt(ITEMS[k].val)}`]);
             return rows.concat([
+                ['冷藏貨艙加價', t.holdN, '份', e.hold, `${SHOP_BY.hold.tiers[lv('hold')]}，賣價多 ${Math.round(val('hold') * 100)}%`],
                 ['連撈加成', t.maxCombo >= 5 ? '最長 ' + t.maxCombo : 0, '個', e.combo, '連撈 5 個 ×1.2、10 個 ×1.5、20 個 ×2'],
                 ['伊藤的漂流瓶', t.bottles, '瓶', e.ito, `裡面是刮刮樂，刮中 ${t.itoWins} 張，每張 ${fmt(ITO_WIN)}`],
                 ['救起落水的狗', t.dogs, '隻', e.dog, `每隻 ${fmt(ITEMS.dog.val)}`],
                 ['茱莉鴨點頭', t.nods, '次', e.nod, `從隔壁航道經過，每次 ${fmt(NOD)}`],
-                ['嚇跑浣熊', t.raccoonShoo, '隻', e.bounty, `賞金每隻 ${fmt(BOUNTY)}`],
+                ['嚇跑浣熊', t.raccoonShoo, '隻', e.bounty, `賞金每隻 ${fmt(bounty())}`],
                 ['撞到茱莉鴨', t.duckHits, '次', e.duckHit, `賠罪，每次 ${fmt(DUCK_HIT)}`],
                 ['被海鷗叼走', t.gullSteals, '次', e.gull, '叼走剛撈到的那一份'],
                 ['被浣熊偷走', t.raccoonSteals, '次', e.raccoon, '跳上船偷走兩份的錢，最多 $300'],
-                ...['pet', 'bag', 'router'].filter(k => e.trash[k]).map(k => [ITEMS[k].name, e.trash[k].n, ITEMS[k].unit, e.trash[k].m, `清潔費每${ITEMS[k].unit} ${fmt(-ITEMS[k].val)}`]),
-                ['船身維修費', t.reefs + t.ships, '次', e.repair, `撞到暗礁 ${t.reefs} 次、貨輪 ${t.ships} 次，每次 ${fmt(REPAIR)}`],
+                ...['pet', 'bag', 'router'].filter(k => e.trash[k]).map(k => [ITEMS[k].name, e.trash[k].n, ITEMS[k].unit, e.trash[k].m, `清潔費每${ITEMS[k].unit} ${fmt(-Math.round(ITEMS[k].val * (lv('sweep') ? val('sweep') : 1)))}${lv('sweep') ? `（${SHOP_BY.sweep.tiers[lv('sweep')]}）` : ''}`]),
+                ['船身維修費', t.reefs + t.ships, '次', e.repair, `撞到暗礁 ${t.reefs} 次、貨輪 ${t.ships} 次，每次 ${fmt(repairCost())}`],
             ].filter(r => r[1] && r[3]));
         }
         async function endRound() {
@@ -1082,7 +1204,7 @@
                 trash: t.trash, pet: t.kinds.pet || 0, bag: t.kinds.bag || 0, router: t.kinds.router || 0,
                 reefs: t.reefs, ships: t.ships, gulls: t.gulls, gull_shoo: t.gullShoo, gull_steals: t.gullSteals,
                 raccoons: t.raccoons, raccoon_shoo: t.raccoonShoo, raccoon_steals: t.raccoonSteals, stolen: t.stolen,
-                lanes: t.lanes, events: [...new Set(ev)].join(','), shop: {},
+                lanes: t.lanes, events: [...new Set(ev)].join(','), shop: Object.fromEntries(SHOP.map(u => [u.key, lv(u.key)]).filter(x => x[1])),
                 login: !!(window.Line && Line.loggedIn),
             });
             st.recent = st.recent.slice(0, 50);
@@ -1141,9 +1263,111 @@
         $('shareBtn').addEventListener('click', shareSheet);
         $('againBtn').addEventListener('click', () => { newRound(); $('stage').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' }); });
         $('payAcct').addEventListener('click', e => { if (e.target.closest('[data-login]')) Line.login(); });
-        Wallet.on(type => { if (type === 'login') showToast('登入了，運費存進 LINE 帳號'); });
+        // ===== 12. 船隻升級面板 =====
+        const playing = () => G && G.started && !G.ended;
+        function shopIcon(cv, u, level) {
+            const r = Math.min(window.devicePixelRatio || 1, 3), px = 56;
+            cv.width = px * r; cv.height = px * r;
+            const c = cv.getContext('2d'); c.scale(r, r);
+            const L = Math.max(1, level);
+            c.fillStyle = '#3f93bd'; c.fillRect(0, 0, 56, 56);
+            if (u.key === 'radar') {
+                c.fillStyle = '#c9ced3'; c.beginPath(); c.arc(28, 34, 9, 0, TAU); c.fill();
+                c.strokeStyle = '#3b3f44'; c.lineWidth = 3; c.beginPath(); c.moveTo(14, 30); c.lineTo(42, 38); c.stroke();
+                c.strokeStyle = 'rgba(120,255,170,0.8)'; c.lineWidth = 1.5;
+                for (let i = 0; i < L + 1; i++) { c.beginPath(); c.arc(28, 34, 14 + i * 6, -2.4, -0.7); c.stroke(); }
+            } else if (u.key === 'armor') {
+                c.save(); c.translate(28, 30); c.scale(0.55, 0.55); drawBoatShape(c); c.restore();
+                c.fillStyle = '#a3abb3'; c.strokeStyle = '#5d6670'; c.lineWidth = 1;
+                for (let i = 0; i < L + 1; i++) { [-1, 1].forEach(k => { c.beginPath(); c.rect(28 + k * 11 - (k > 0 ? 4 : 0), 26 + i * 7, 4, 6); c.fill(); c.stroke(); }); }
+            } else if (u.key === 'sweep') {
+                c.strokeStyle = L >= 3 ? '#ffe08a' : '#ffffff'; c.lineWidth = 1.2;
+                c.beginPath(); c.arc(28, 36, 18, Math.PI * 1.05, Math.PI * 1.95); c.stroke();
+                for (let i = -3; i <= 3; i++) { c.beginPath(); c.moveTo(28 + i * 5, 34); c.lineTo(28 + i * 6, 18 + Math.abs(i) * 2); c.stroke(); }
+                c.fillStyle = 'rgba(200,230,245,0.85)'; c.save(); c.translate(28, 30); c.rotate(0.9); c.fillRect(-3, -7, 6, 13); c.restore();
+            } else if (u.key === 'hold') {
+                for (let i = 0; i < L; i++) { const x = 12 + i * 11, y = 24 + (i % 2) * 6; c.fillStyle = i % 2 ? '#d9e9f4' : '#9cc6e4'; c.fillRect(x, y, 14, 12); c.strokeStyle = '#4d7fa3'; c.lineWidth = 1; c.strokeRect(x, y, 14, 12); }
+                drawCarrot(c, 44, 20, 0.7, false, 0);
+            } else if (u.key === 'horn') {
+                c.fillStyle = '#e0b03a'; c.beginPath(); c.moveTo(14, 30); c.lineTo(34, 20); c.lineTo(34, 40); c.closePath(); c.fill();
+                c.fillStyle = '#b88a22'; c.fillRect(10, 27, 6, 6);
+                c.strokeStyle = 'rgba(255,255,255,0.9)'; c.lineWidth = 1.6;
+                for (let i = 0; i < L + 1; i++) { c.beginPath(); c.arc(34, 30, 5 + i * 5, -0.8, 0.8); c.stroke(); }
+            }
+        }
+        function renderShop() {
+            $('shopMoney').textContent = fmt(Wallet.money);
+            $('shopList').innerHTML = SHOP.map(u => {
+                const now = lv(u.key), max = u.prices.length, next = now < max ? now + 1 : null;
+                const price = next ? u.prices[now] : 0;
+                const dots = Array.from({ length: max }, (_, i) => `<i class="${i < now ? 'on' : ''}"></i>`).join('');
+                const tier = next ? `${u.tiers[now] ? u.tiers[now] + ' → ' : ''}${u.tiers[next]}` : u.tiers[now];
+                return `<div class="shop-row">
+                    <canvas class="shop-icon" data-icon="${u.key}" data-lv="${next || now}"></canvas>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm text-wabi-dark tracking-widest">${u.name}<span class="ml-1 text-[10px] font-sans text-stone-400">${u.sub}</span><span class="shop-dots ml-1">${dots}</span></p>
+                        <p class="mt-0.5 text-[10px] font-sans tracking-wider text-stone-400">${tier}</p>
+                        <p class="mt-1 text-[11px] font-sans leading-relaxed text-stone-600">${now ? '現在：' + u.fx(u.vals[now - 1]) : ''}${next ? `${now ? '<br>' : ''}升級：${u.fx(u.vals[next - 1])}` : '<br>已經是最高級'}</p>
+                    </div>
+                    <button type="button" class="shop-buy" data-buy="${u.key}" ${!next || Wallet.money < price ? 'disabled' : ''}>${next ? `${now ? '升級' : '買'}<br>${fmt(price)}` : '滿級'}</button>
+                </div>`;
+            }).join('');
+            $('shopList').querySelectorAll('[data-icon]').forEach(cv => shopIcon(cv, SHOP_BY[cv.dataset.icon], Number(cv.dataset.lv)));
+        }
+        function renderShopLv() {
+            const total = SHOP.reduce((t, u) => t + lv(u.key), 0);
+            $('shopLv').textContent = total ? total : '';
+            $('shopBtn').setAttribute('aria-label', total ? `船廠，升級了 ${total} 次` : '船廠升級');
+        }
+        function openShop() {
+            if (playing()) { showToast('靠港再去船廠'); return; }
+            shop = loadShop();
+            renderShop();
+            const el = $('shop');
+            el.classList.remove('hidden');
+            requestAnimationFrame(() => el.classList.add('on'));
+        }
+        function closeShop() {
+            const el = $('shop');
+            el.classList.remove('on');
+            setTimeout(() => el.classList.add('hidden'), reduceMotion ? 0 : 220);
+        }
+        function buyUpgrade(key) {
+            if (playing()) return;
+            shop = loadShop();  // 用錢包裡最新的（別家店可能也買過東西，spent 要接著加）
+            const u = SHOP_BY[key], now = lv(key);
+            if (now >= u.prices.length) return;
+            const price = u.prices[now];
+            if (!Wallet.spend(price)) { showToast('錢包不夠，先多跑幾趟'); return; }
+            shop.lv[key] = now + 1;
+            shop.spent += price;
+            Wallet.setShop(shop);
+            audio(); sfx.combo();
+            showToast(`${u.name}升級了：${u.tiers[now + 1]}`);
+            // 還沒開船的這一趟也照新的算（船身格數）
+            shop = loadShop();
+            if (G && !G.started && !G.ended) { G.hull = G.hullMax = hullMax(); }
+            renderShop(); renderShopLv();
+        }
+        $('shopBtn').addEventListener('click', openShop);
+        $('shopBtn2').addEventListener('click', openShop);
+        $('shop').addEventListener('click', e => {
+            const b = e.target.closest('[data-buy]');
+            if (b && !b.disabled) { buyUpgrade(b.dataset.buy); return; }
+            if (e.target.closest('[data-shop-close]') || e.target.id === 'shop') closeShop();
+        });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('shop').classList.contains('hidden')) closeShop(); });
+        Wallet.on(type => {
+            if (type === 'login') showToast('登入了，運費存進 LINE 帳號');
+            // 別支手機升級過、登入登出：重新讀（出航中不換，下一趟才算）
+            if (!playing()) { shop = loadShop(); if (G && !G.started && !G.ended) { G.hull = G.hullMax = hullMax(); } }
+            renderShopLv();
+            if (!$('shop').classList.contains('hidden')) renderShop();
+        });
+
 
         newRound();
+        renderShopLv();
         requestAnimationFrame(frame);
         setTimeout(uploadRounds, 2500);  // 補送上次沒送成功的
     </script>

@@ -1238,7 +1238,7 @@ function washLog(input) {
 // 花錢：Players 的 spent（全部花掉的）拆成店面升級（shop.spent，洗頭店＋菜園農具＋早餐店）、捐香油錢（gongde.donated）、點燈（gongde.lit），剩下的算刮刮樂。
 // 公開：回 LINE 名字和大頭貼，不回 line_id；有帶 session 的話把自己那列標 me。算好的榜存 CacheService 5 分鐘。
 
-var BOARD_CACHE_KEY = 'board:v9', BOARD_CACHE_SEC = 300;
+var BOARD_CACHE_KEY = 'board:v9', BOARD_CACHE_SEC = 60;  // 只讀新的列以後重算很快，一分鐘算一次（以前五分鐘）
 
 // 每張紀錄表怎麼併成「每個人最好的一場」：cols 讀幾欄，merge(best, row) 把一列併進去（best 用 line_id 當 key）
 // 單場最高分（Washes G total／AE ms、Cleans F total／AA ms）：分數高的贏，同分比快

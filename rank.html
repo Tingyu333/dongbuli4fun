@@ -316,7 +316,7 @@
 
         <p class="mt-10 text-[11px] font-sans tracking-widest text-stone-400 leading-relaxed text-center">
             只有用 LINE 登入的人會上榜，<br>只顯示 LINE 名字和大頭貼。<br>
-            榜每五分鐘重新寫一次，<br>剛打完工、剛花完錢的等一下就上去了。
+            榜每一分鐘重新寫一次，<br>剛打完工、剛花完錢的等一下就上去了。
         </p>
     </main>
 
@@ -448,7 +448,7 @@
             const aliveOld = metric === 'alive' && players && players.length && players.every(p => !p.wifi || !('alive' in p.wifi));
             const zcOld = dept === 'zaocan' && players && players.length && players.every(p => !('zaocan' in p));
             const shipOld = dept === 'ship' && players && players.length && players.every(p => !('ship' in p));
-            $('boardNote').textContent = book === 'spend' ? CATS[cat].note : shipOld ? '後端還是舊版，看不到貨運部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'combo' ? '貨運一趟裡最長的連撈（連續撈到好東西、中間沒撈到垃圾也沒撞到），一樣長比運費多。要用 LINE 登入，剛靠港最多五分鐘才會上榜。' : zcOld ? '後端還是舊版，看不到早餐部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'served' ? '早餐店一天出餐最多幾位客人，同樣多比誰氣走的少。要用 LINE 登入，剛打烊最多五分鐘才會上榜。' : metric === 'alive' ? (aliveOld ? '後端還是舊版，看不到撐最久：要把 Code.gs 貼上去、重新部署（新版本）。' : '蹭網無盡模式：比一輪裡真的連著 28 樓多久（放開、發呆的時間不算），要用 LINE 登入。剛玩完最多五分鐘才會上榜。') : metric === 'best'
+            $('boardNote').textContent = book === 'spend' ? CATS[cat].note : shipOld ? '後端還是舊版，看不到貨運部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'combo' ? '貨運一趟裡最長的連撈（連續撈到好東西、中間沒撈到垃圾也沒撞到），一樣長比運費多。要用 LINE 登入，剛靠港最多一分鐘才會上榜。' : zcOld ? '後端還是舊版，看不到早餐部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'served' ? '早餐店一天出餐最多幾位客人，同樣多比誰氣走的少。要用 LINE 登入，剛打烊最多一分鐘才會上榜。' : metric === 'alive' ? (aliveOld ? '後端還是舊版，看不到撐最久：要把 Code.gs 貼上去、重新部署（新版本）。' : '蹭網無盡模式：比一輪裡真的連著 28 樓多久（放開、發呆的時間不算），要用 LINE 登入。剛玩完最多一分鐘才會上榜。') : metric === 'best'
                 ? (dept === 'farm' ? '菜園比的是一輪賣最多少錢（單位跟坐洗、房務不同，「全部」那頁不算菜園）。' : dept === 'zaocan' ? '早餐店比的是一天賺最多少錢（單位跟坐洗、房務不同，「全部」那頁不算早餐店）。' : dept === 'ship' ? '貨運比的是一趟賺最多少錢（單位跟坐洗、房務不同，「全部」那頁不算貨運）。' : dept === 'wifi' ? '蹭網比的是一輪省最多少錢，含無盡模式（單位跟坐洗、房務不同，「全部」那頁不算蹭網）。' : '一場的最高分（爽度、乾淨度都是滿分 100），同分比誰快。從洗完、打掃完存到雲端開始算。')
                 : metric === 'money' ? '打工賺的錢加起來（工資、小費、失物招領、加成都算）。' : '洗幾顆頭、打掃幾間、拔幾輪、蹭幾輪、開幾天早餐店、跑幾趟貨運。';
             const box = $('board');
@@ -493,7 +493,7 @@
                 const s = document.createElement('span'); s.className = 'avatar'; s.textContent = img.dataset.initial; img.replaceWith(s);
             }, { once: true }));
             if (Line.loggedIn && list.length && !mine) {
-                box.insertAdjacentHTML('beforeend', `<p class="pt-3 text-center text-[11px] font-sans tracking-wider text-stone-400">你還沒上這個榜：${book === 'spend' ? '去花一點錢' : '去打一次工'}，五分鐘內就會出現。</p>`);
+                box.insertAdjacentHTML('beforeend', `<p class="pt-3 text-center text-[11px] font-sans tracking-wider text-stone-400">你還沒上這個榜：${book === 'spend' ? '去花一點錢' : '去打一次工'}，一分鐘內就會出現。</p>`);
             }
             const d = at ? new Date(at) : null;
             $('boardAt').textContent = d && !isNaN(d) ? `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')} 寫的榜` : '';
