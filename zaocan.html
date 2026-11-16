@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>早餐・煎 | 丼步喱</title>
-    <meta name="description" content="大橋頭麥克早餐店打工：看得到客人腦袋裡想吃什麼，煎蛋、捲蛋餅、倒大冰奶，趕在客人等到生氣之前送到。七十五秒。">
+    <meta name="description" content="大橋頭麥克早餐店打工：看得到客人腦袋裡想吃什麼，煎蛋、捲蛋餅、倒大冰奶和豆漿紅茶，趕在客人等到生氣之前送到。七十五秒。">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="丼步喱・絆">
     <meta property="og:title" content="早餐・煎｜丼步喱">
-    <meta property="og:description" content="大橋頭麥克早餐店打工：看得到客人腦袋裡想吃什麼，煎蛋、捲蛋餅、倒大冰奶，趕在客人等到生氣之前送到。七十五秒。">
+    <meta property="og:description" content="大橋頭麥克早餐店打工：看得到客人腦袋裡想吃什麼，煎蛋、捲蛋餅、倒大冰奶和豆漿紅茶，趕在客人等到生氣之前送到。七十五秒。">
     <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="1200">
@@ -51,14 +51,15 @@
         .food small { display: block; font-size: 10px; color: rgb(var(--wabi-accent)); letter-spacing: 0.02em; margin-top: 2px; }
         .food:active { transform: scale(.94); background: rgb(var(--wabi-sub) / 0.5); }
         .food:disabled { opacity: .4; }
-        .pours { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+        .pours { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 6px; }
         .pour {
-            min-height: 54px; border-radius: 9999px; color: #fff; font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: 0.12em;
+            min-height: 54px; border-radius: 9999px; color: #fff; font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: 0.06em; line-height: 1.25;
             touch-action: none; -webkit-tap-highlight-color: transparent; transition: transform .08s, filter .15s;
         }
         .pour small { display: block; font-size: 10px; letter-spacing: 0.06em; opacity: .85; }
         .pour[data-pour="milk"] { background: #a8794f; box-shadow: 0 10px 22px -12px rgba(120, 80, 40, .7); }
         .pour[data-pour="tea"] { background: #9a3f1f; box-shadow: 0 10px 22px -12px rgba(140, 50, 20, .7); }
+        .pour[data-pour="soy"] { background: #9c7a52; box-shadow: 0 10px 22px -12px rgba(110, 85, 50, .7); }
         .pour.is-on { transform: scale(.95); filter: brightness(1.15); }
         .pour:disabled { opacity: .4; }
 
@@ -114,8 +115,9 @@
                 <button type="button" class="food" data-food="noodle">鐵板麵<small>$70</small></button>
             </div>
             <div class="pours">
-                <button type="button" class="pour" data-pour="milk">按住倒大冰奶<small>$40</small></button>
-                <button type="button" class="pour" data-pour="tea">按住倒大冰紅<small>$30</small></button>
+                <button type="button" class="pour" data-pour="milk">大冰奶<small>按住倒・$40</small></button>
+                <button type="button" class="pour" data-pour="tea">大冰紅<small>按住倒・$30</small></button>
+                <button type="button" class="pour" data-pour="soy">豆漿紅茶<small>按住倒・$35</small></button>
             </div>
             <p id="hint" class="mt-3 min-h-[2.6rem] text-xs text-center text-stone-500 font-sans tracking-widest leading-relaxed [text-wrap:balance]" aria-live="polite"></p>
         </section>
@@ -182,7 +184,7 @@
             wall: '#f1e6d2', wallD: '#e6d6bb', tile: '#e9dcc4', wood: '#a7774b', woodD: '#7a5332', woodL: '#c49a6c',
             steel: '#c9ccd0', steelD: '#9ea3a9', steelL: '#e3e6e9', plate: '#3a3b3e', plateL: '#56585c', plateD: '#26272a',
             ink: '#3b3431', shu: '#b33a2f', green: '#3c8a5a', amber: '#e0a12e', paper: '#fffdf8',
-            milk: '#d9b98f', tea: '#a64a1f', cup: 'rgba(255,255,255,0.55)',
+            milk: '#d9b98f', tea: '#a64a1f', soy: '#b98b5f', cup: 'rgba(255,255,255,0.55)',
         };
         const pick = list => list[Math.floor(Math.random() * list.length)];
         const rand = (lo, hi) => lo + Math.random() * (hi - lo);
@@ -203,9 +205,11 @@
             noodle: { name: '鐵板麵', price: 70, t1: 4.2, flip: false },
             milk: { name: '大冰奶', price: 40, drink: true },
             tea: { name: '大冰紅', price: 30, drink: true },
+            soy: { name: '豆漿紅茶', price: 35, drink: true },
         };
         const FOODS = ['egg', 'bacon', 'cake', 'roll', 'noodle'];
-        const ORDER_KEYS = ['egg', 'roll', 'bacon', 'cake', 'noodle', 'milk', 'tea'];
+        const ORDER_KEYS = ['egg', 'roll', 'bacon', 'cake', 'noodle', 'milk', 'tea', 'soy'];
+        const DRINK_COL = k => K[k] || K.milk;
         const BURN = 1.7;        // 熟度到 1.7 就焦（每一面都是）
         const HALF = 0.5;        // 荷包蛋翻面後：0.5～1 半熟、1 以上全熟
         const POUR = 1 / 1.4;    // 飲料：1.4 秒倒滿
@@ -254,6 +258,7 @@
         const GRILL = [{ x: 66, y: 302 }, { x: 186, y: 302 }, { x: 66, y: 392 }, { x: 186, y: 392 }];
         const WARM_Y = 224, warmX = i => 34 + i * 54, TRASH = { x: 328, y: 224 };
         const CUP = { x: 304, y: 384 };
+        const JUGS = [['milk', 272, '奶茶'], ['tea', 304, '紅茶'], ['soy', 336, '豆漿紅茶']];
         let G = null;
         const floats = [];
         let lastNow = performance.now();
@@ -300,7 +305,7 @@
             const food = () => { let r = Math.random() * Object.values(W8).reduce((a, b) => a + b, 0); for (const k in W8) { if (r < W8[k]) return k; r -= W8[k]; } return 'egg'; };
             let n = 1 + (Math.random() < 0.4 + 0.35 * p ? 1 : 0) + (Math.random() < 0.08 + 0.3 * p ? 1 : 0);
             const items = Array.from({ length: n }, () => { const k = food(); return k === 'egg' ? { key: k, v: Math.random() < 0.5 ? 'half' : 'full' } : { key: k }; });
-            if (Math.random() < 0.55) items.push({ key: Math.random() < 0.6 ? 'milk' : 'tea' });
+            if (Math.random() < 0.55) { const r = Math.random(); items.push({ key: r < 0.45 ? 'milk' : r < 0.72 ? 'tea' : 'soy' }); }
             return items;
         }
         function spawn(i) {
@@ -648,14 +653,16 @@
                     if (!o.onGrill) { c.fillStyle = '#fffaf0'; c.beginPath(); c.arc(9, -4, 5, 0, TAU); c.fill(); c.fillStyle = '#f5b82a'; c.beginPath(); c.arc(9, -4, 2.4, 0, TAU); c.fill(); }
                     break;
                 }
-                case 'milk': case 'tea': {
+                case 'milk': case 'tea': case 'soy': {
                     // 外帶杯＋吸管
                     c.fillStyle = 'rgba(255,255,255,0.6)'; c.beginPath(); c.moveTo(-11, -14); c.lineTo(11, -14); c.lineTo(8, 17); c.lineTo(-8, 17); c.closePath(); c.fill();
-                    c.fillStyle = key === 'milk' ? K.milk : K.tea; c.beginPath(); c.moveTo(-10.4, -8); c.lineTo(10.4, -8); c.lineTo(8, 17); c.lineTo(-8, 17); c.closePath(); c.fill();
+                    c.fillStyle = DRINK_COL(key); c.beginPath(); c.moveTo(-10.4, -8); c.lineTo(10.4, -8); c.lineTo(8, 17); c.lineTo(-8, 17); c.closePath(); c.fill();
                     c.fillStyle = 'rgba(255,255,255,0.75)'; c.fillRect(-7, -5, 3, 6); c.fillRect(3, 2, 3, 5);
                     c.strokeStyle = '#8a8580'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(-11, -14); c.lineTo(11, -14); c.lineTo(8, 17); c.lineTo(-8, 17); c.closePath(); c.stroke();
                     c.fillStyle = '#efe9df'; rr(c, -12.5, -17, 25, 4, 1.5); c.fill(); c.stroke();
-                    c.strokeStyle = key === 'milk' ? '#b33a2f' : '#2f6fa8'; c.lineWidth = 3; c.lineCap = 'round'; c.beginPath(); c.moveTo(3, -16); c.lineTo(7, -25); c.stroke();
+                    c.strokeStyle = key === 'milk' ? '#b33a2f' : key === 'soy' ? '#3c8a5a' : '#2f6fa8'; c.lineWidth = 3; c.lineCap = 'round'; c.beginPath(); c.moveTo(3, -16); c.lineTo(7, -25); c.stroke();
+                    // 奶茶、豆漿紅茶顏色很像：杯子上印一個字
+                    if (key !== 'tea') { c.font = `700 14px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 3; c.strokeStyle = 'rgba(80,50,20,0.55)'; c.strokeText(key === 'soy' ? '豆' : '奶', 0, 5); c.fillStyle = '#fffdf8'; c.fillText(key === 'soy' ? '豆' : '奶', 0, 5); }
                     break;
                 }
             }
@@ -747,21 +754,22 @@
             c.restore();
         }
         function drawDrinks(c, now) {
-            // 飲料機：兩桶（奶茶、紅茶），下面放杯子
+            // 飲料機：三桶（奶茶、紅茶、豆漿紅茶），下面放杯子
             c.fillStyle = '#8f9399'; rr(c, 252, 254, 104, 184, 6); c.fill();
             c.fillStyle = '#b6babf'; rr(c, 256, 258, 96, 176, 4); c.fill();
-            [['milk', 280, '奶茶'], ['tea', 328, '紅茶']].forEach(([key, x, name]) => {
-                c.fillStyle = 'rgba(255,255,255,0.55)'; rr(c, x - 18, 264, 36, 46, 5); c.fill();
-                c.fillStyle = key === 'milk' ? K.milk : K.tea; rr(c, x - 16, 274, 32, 34, 4); c.fill();
-                c.strokeStyle = '#7a7e84'; c.lineWidth = 1.2; rr(c, x - 18, 264, 36, 46, 5); c.stroke();
-                c.fillStyle = '#fffdf8'; c.font = `600 9px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(name, x, 291);
+            JUGS.forEach(([key, x, name]) => {
+                c.fillStyle = 'rgba(255,255,255,0.55)'; rr(c, x - 14, 264, 28, 46, 5); c.fill();
+                c.fillStyle = DRINK_COL(key); rr(c, x - 12, 274, 24, 34, 4); c.fill();
+                c.strokeStyle = '#7a7e84'; c.lineWidth = 1.2; rr(c, x - 14, 264, 28, 46, 5); c.stroke();
+                c.fillStyle = '#fffdf8'; c.font = `600 8px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+                name.split('').length > 2 ? (c.fillText(name.slice(0, 2), x, 286), c.fillText(name.slice(2), x, 296)) : c.fillText(name, x, 291);
                 c.fillStyle = '#5c6066'; c.fillRect(x - 3, 310, 6, 10);
             });
             const cup = G.cup;
             // 倒的那一條
             if (cup.pour && cup.key) {
-                const sx = cup.key === 'milk' ? 280 : 328;
-                c.strokeStyle = cup.key === 'milk' ? K.milk : K.tea; c.lineWidth = 3.5;
+                const sx = JUGS.find(j => j[0] === cup.key)[1];
+                c.strokeStyle = DRINK_COL(cup.key); c.lineWidth = 3.5;
                 c.beginPath(); c.moveTo(sx, 320); c.quadraticCurveTo(sx, 334, CUP.x, 342); c.lineTo(CUP.x, CUP.y + 30 - 60 * clamp(cup.fill, 0, 1)); c.stroke();
             }
             // 杯子（大）：兩條線中間是「剛好」
@@ -771,7 +779,7 @@
             if (fill > 0 && cup.key) {
                 const fy = bot - (bot - top) * Math.min(1, fill);
                 const fw = lerp(bw, hw, Math.min(1, fill));
-                c.fillStyle = cup.key === 'milk' ? K.milk : K.tea;
+                c.fillStyle = DRINK_COL(cup.key);
                 c.beginPath(); c.moveTo(CUP.x - fw, fy); c.lineTo(CUP.x + fw, fy); c.lineTo(CUP.x + bw, bot); c.lineTo(CUP.x - bw, bot); c.closePath(); c.fill();
                 c.fillStyle = 'rgba(255,255,255,0.7)'; c.fillRect(CUP.x - 8, bot - 18, 5, 7); c.fillRect(CUP.x + 3, bot - 10, 5, 6);
             }
@@ -786,7 +794,7 @@
             // 打翻：一灘
             if (G.clock - cup.spillAt < 1.2) {
                 c.globalAlpha = 1 - (G.clock - cup.spillAt) / 1.2;
-                c.fillStyle = cup.spilledKey === 'tea' ? K.tea : K.milk; c.beginPath(); c.ellipse(CUP.x, bot + 4, 40, 6, 0, 0, TAU); c.fill();
+                c.fillStyle = DRINK_COL(cup.spilledKey); c.beginPath(); c.ellipse(CUP.x, bot + 4, 40, 6, 0, 0, TAU); c.fill();
                 c.globalAlpha = 1;
             }
             c.fillStyle = 'rgba(40,40,40,0.55)'; c.font = `500 8px ${SANS}`; c.textAlign = 'center'; c.fillText('按住下面的按鈕倒', 304, 432);

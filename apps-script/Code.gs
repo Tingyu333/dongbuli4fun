@@ -1560,7 +1560,7 @@ var ZAOCAN_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'total', 'sales', 
   'customers', 'served', 'angry', 'items', 'tips', 'ito', 'quality', 'burnt', 'spilled', 'wrong', 'trashed',
   'rolls_nice', 'rolls_messy', 'drinks_perfect', 'drinks_short', 'eggs_half', 'eggs_full', 'flips',
   'fastest_ms', 'avg_wait_ms', 'ex', 'ito_wins', 'specials', 'menu', 'shop', 'ms', 'len', 'login'];
-var ZAOCAN_MENU = ['egg', 'bacon', 'cake', 'roll', 'noodle', 'milk', 'tea'];
+var ZAOCAN_MENU = ['egg', 'bacon', 'cake', 'roll', 'noodle', 'milk', 'tea', 'soy'];
 var ZAOCAN_SPECIALS = ['duck', 'ito', 'ex', 'dog'];
 
 function zaocansSheet() {
