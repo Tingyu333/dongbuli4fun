@@ -44,10 +44,11 @@
         /* 食材按鈕、倒飲料的按鈕 */
         .foods { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
         .food {
-            min-height: 52px; border: 1px solid rgb(var(--wabi-sub)); border-radius: 6px; background: rgb(var(--wabi-bg));
+            min-height: 52px; padding: 5px 0 6px; border: 1px solid rgb(var(--wabi-sub)); border-radius: 6px; background: rgb(var(--wabi-bg));
             font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: 0.04em; color: rgb(var(--wabi-dark)); line-height: 1.2;
             touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform .08s, background-color .15s;
         }
+        .food .ico { display: block; width: 30px; height: 30px; margin: 0 auto 3px; pointer-events: none; }
         .food small { display: block; font-size: 10px; color: rgb(var(--wabi-accent)); letter-spacing: 0.02em; margin-top: 2px; }
         .food:active { transform: scale(.94); background: rgb(var(--wabi-sub) / 0.5); }
         .food:disabled { opacity: .4; }
@@ -1355,6 +1356,15 @@
         $('againBtn').addEventListener('click', () => { newRound(); $('stage').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' }); });
         $('payAcct').addEventListener('click', e => { if (e.target.closest('[data-login]')) Line.login(); });
         Wallet.on(type => { if (type === 'login') showToast('登入了，薪水存進 LINE 帳號'); });
+
+        // 食材按鈕上的小圖：跟煎台、泡泡用同一支 drawFood() 畫
+        document.querySelectorAll('[data-food]').forEach(b => {
+            const c = document.createElement('canvas'), px = 30, r = Math.min(window.devicePixelRatio || 1, 3);
+            c.className = 'ico'; c.width = px * r; c.height = px * r; c.setAttribute('aria-hidden', 'true');
+            const x = c.getContext('2d'); x.scale(r, r);
+            drawFood(x, b.dataset.food, px / 2, px / 2 + 1, 28, { rolled: true, v: 'half' });
+            b.prepend(c);
+        });
 
         newRound();
         requestAnimationFrame(frame);
