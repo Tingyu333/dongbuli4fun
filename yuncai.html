@@ -24,6 +24,7 @@
     <script src="assets/theme.js?v=20261116d"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261116d"></script>
+    <script src="assets/saveimg.js?v=20261116d"></script>
     <style>
         .num { font-family: 'Noto Sans TC', sans-serif; font-variant-numeric: tabular-nums; }
 
@@ -78,6 +79,10 @@
         .opt:disabled:active { transform: none; }
         .six-h { display: grid; grid-template-columns: 1fr 1fr 1fr; font-family: 'Noto Sans TC', sans-serif; font-size: .52rem; letter-spacing: .1em; color: var(--faint); margin-top: .35rem; }
         .myb { margin-top: .6rem; padding-top: .45rem; border-top: 1px dashed var(--rule); font-family: 'Noto Sans TC', sans-serif; font-size: .66rem; letter-spacing: .05em; line-height: 1.8; }
+        .bet-row { display: flex; align-items: center; gap: .1rem; }
+        .bet-row .bt { flex: 1; min-width: 0; }
+        .share-btn { flex-shrink: 0; min-height: 30px; padding: 0 .55rem; margin-left: .4rem; border: 1px solid var(--rule); background: rgba(255, 255, 255, .6); font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; letter-spacing: .12em; color: var(--court); touch-action: manipulation; }
+        .slip .share-btn { margin-top: .4rem; margin-left: 0; }
         .myb .st { display: inline-block; min-width: 1.3rem; text-align: center; font-size: .56rem; padding: 0 .2rem; margin-right: .3rem; border: 1px solid currentColor; border-radius: 2px; }
         .won { color: var(--shu); }
         .lost { color: #8a8580; }
@@ -355,7 +360,7 @@
             const box = $('slips');
             box.innerHTML = slips.map(b => {
                 const m = matchOf(b.match), what = m ? pickName(m, b.kind, b.pick) : b.pick, vs = m ? `${short(m.home)} vs ${short(m.away)}` : '';
-                if (b.status === 'won') return `<section class="paper slip"><p>${esc(vs)}<br>押<b>${esc(what)}</b> ${fmt(b.amount)}，押中了，拿回 <b class="num">${fmt(b.payout)}</b>。</p><div class="seal">中</div></section>`;
+                if (b.status === 'won') return `<section class="paper slip"><p>${esc(vs)}<br>押<b>${esc(what)}</b> ${fmt(b.amount)}，押中了，拿回 <b class="num">${fmt(b.payout)}</b>。<br><button type="button" class="share-btn" data-share="${esc(b.id)}">${SHARE_WORD}這張中獎單</button></p><div class="seal">中</div></section>`;
                 if (b.status === 'refund') return `<section class="paper slip"><p>${esc(vs)}<br>這場不算了（延賽或沒有結果），押的 ${fmt(b.amount)} 退回錢包。</p><div class="seal grey">退</div></section>`;
                 return `<section class="paper slip"><p>${esc(vs)}<br>押<b>${esc(what)}</b> ${fmt(b.amount)}，結果是 ${esc(b.result)}。下一場再來。</p><div class="seal grey">槓</div></section>`;
             }).join('');
@@ -389,6 +394,12 @@
             return `<button type="button" class="opt${mine.length ? ' mine' : ''}${hit ? ' hit' : ''}" ${m.open ? `data-bet="${esc(m.id)}|${kind}|${pick}"` : 'disabled'}>
                 <span class="k">${label}</span><span class="o">${xo(o.odds)}</span><span class="p">彩池 ${fmt(o.pool)}</span></button>`;
         }
+        // 我押的一注：狀態章、押什麼、多少、拿回多少，右邊「分享」投注單
+        function betRow(b) {
+            const m = matchOf(b.match) || { home: '主隊', away: '客隊' };
+            const st = b.status === 'won' ? ['won', '中'] : b.status === 'lost' ? ['lost', '槓'] : b.status === 'refund' ? ['lost', '退'] : ['', '押'];
+            return `<p class="bet-row"><span class="st ${st[0]}">${st[1]}</span><span class="bt">${esc(pickName(m, b.kind, b.pick))} <span class="num">${fmt(b.amount)}</span>${b.status === 'won' ? ` → <b class="num won">${fmt(b.payout)}</b>` : ''}</span><button type="button" class="share-btn" data-share="${esc(b.id)}">${SHARE_WORD}</button></p>`;
+        }
         function ticket(m) {
             const [l, soon] = left(m), done = !!m.result && m.result !== 'void';
             const mine = myBets(m.id), on = expanded.has(m.id), staked = mine.filter(b => b.status !== 'refund').reduce((t, b) => t + b.amount, 0);
@@ -407,7 +418,7 @@
                 <div class="opts six">${SCORES.home.map(s => optBtn(m, 'score', s, s, done)).join('')}</div>
                 <div class="six-h"><span>${esc(short(m.away))}贏</span><span></span><span></span></div>
                 <div class="opts six">${SCORES.away.map(s => optBtn(m, 'score', s, s, done)).join('')}</div>
-                ${mine.length ? `<div class="myb">${mine.map(b => `<p><span class="st ${b.status === 'won' ? 'won' : b.status === 'lost' ? 'lost' : ''}">${b.status === 'won' ? '中' : b.status === 'lost' ? '槓' : b.status === 'refund' ? '退' : '押'}</span>${esc(pickName(m, b.kind, b.pick))} <span class="num">${fmt(b.amount)}</span>${b.status === 'won' ? ` → 拿回 <b class="num won">${fmt(b.payout)}</b>` : ''}</p>`).join('')}</div>` : ''}
+                ${mine.length ? `<div class="myb">${mine.map(betRow).join('')}</div>` : ''}
                 </div>
             </section>`;
         }
@@ -418,7 +429,7 @@
             return `<section class="paper past"><div class="row1"><span class="d">${esc(when(m))}</span>
                 <span class="${done && hw ? 'w' : ''}">${esc(short(m.home))}</span><span class="sc num">${done ? esc(m.result) : m.result === 'void' ? '不算' : '等比分'}</span><span class="${done && !hw ? 'w' : ''}">${esc(short(m.away))}</span>
                 ${mine.length ? `<span class="ml-auto font-sans text-[10px] ${won ? 'won' : 'lost'}">${won ? '拿回 ' + fmt(won) : lost ? '槓龜' : mine.every(b => b.status === 'refund') ? '退錢' : '還沒開獎'}</span>` : ''}</div>
-                ${mine.length ? `<div class="myb">${mine.map(b => `<p><span class="st ${b.status === 'won' ? 'won' : 'lost'}">${b.status === 'won' ? '中' : b.status === 'lost' ? '槓' : b.status === 'refund' ? '退' : '押'}</span>${esc(pickName(m, b.kind, b.pick))} <span class="num">${fmt(b.amount)}</span>${b.status === 'won' ? ` → <b class="num won">${fmt(b.payout)}</b>` : ''}</p>`).join('')}</div>` : ''}</section>`;
+                ${mine.length ? `<div class="myb">${mine.map(betRow).join('')}</div>` : ''}</section>`;
         }
         const folded = { past: true };
         const expanded = new Set();   // 這週的小卡點開了哪幾張（點開才看得到下注的格子）
@@ -497,6 +508,76 @@
             st.classList.remove('go'); void st.offsetWidth; st.classList.add('go');
         }
         // 送出投注中的蓋板：彩券機一直吐單，下面的字一句一句換
+        // ---- 分享投注單（畫一張 1080×1350 的紙本投注單；按下去那一刻同步畫好，iPhone 的分享選單才叫得出來） ----
+        const SERIF = '"Noto Serif TC", serif', SANS = '"Noto Sans TC", sans-serif';
+        const SHARE_WORD = (() => { try { const f = new File([new Uint8Array(1)], 'x.png', { type: 'image/png' }); return SaveImg.canShare(f) ? '分享' : SaveImg.inApp ? '存圖' : '下載'; } catch (e) { return '分享'; } })();
+        function slipCanvas(b) {
+            const m = matchOf(b.match) || { home: '主隊', away: '客隊', no: '', start: b.at, time: '', venue: '', win: null, score: null };
+            const c = document.createElement('canvas'); c.width = 1080; c.height = 1350;
+            const x = c.getContext('2d'), INK = '#3b342e', FAINT = '#8c7f6c', RULE = '#d9cdb4', SHU = '#b33a2f', COURT = '#2f5d8a';
+            const text = (t, px, py, font, color, align = 'center') => { x.font = font; x.fillStyle = color; x.textAlign = align; x.textBaseline = 'alphabetic'; x.fillText(t, px, py); };
+            x.fillStyle = '#efe7d6'; x.fillRect(0, 0, 1080, 1350);
+            x.save(); x.shadowColor = 'rgba(0,0,0,.18)'; x.shadowBlur = 40; x.shadowOffsetY = 14; x.fillStyle = '#fbf7ec'; x.fillRect(110, 70, 860, 1210); x.restore();
+            x.strokeStyle = RULE; x.lineWidth = 2; x.strokeRect(126, 86, 828, 1178);
+            // 上下鋸齒
+            x.fillStyle = '#efe7d6';
+            for (let i = 0; i < 28; i++) { const px = 110 + i * 30.7; x.beginPath(); x.moveTo(px, 70); x.lineTo(px + 15.4, 84); x.lineTo(px + 30.7, 70); x.fill(); x.beginPath(); x.moveTo(px, 1280); x.lineTo(px + 15.4, 1266); x.lineTo(px + 30.7, 1280); x.fill(); }
+            text('二十七樓運動', 540, 190, `700 64px ${SERIF}`, INK);
+            text('投 注 單 ・ B E T   S L I P', 540, 240, `400 24px ${SANS}`, FAINT);
+            x.fillStyle = INK; x.fillRect(190, 270, 700, 3);
+            const d = tpe(m.start || b.at);
+            text(`${m.no ? 'GAME ' + m.no + '・' : ''}${d.getUTCMonth() + 1}/${d.getUTCDate()}（${WEEK[d.getUTCDay()]}）${m.time || ''}`, 540, 330, `500 30px ${SANS}`, COURT);
+            if (m.venue) text(m.venue, 540, 372, `400 24px ${SANS}`, FAINT);
+            const fit = (t, max, size) => { let s2 = size; x.font = `700 ${s2}px ${SERIF}`; while (x.measureText(t).width > max && s2 > 30) { s2 -= 2; x.font = `700 ${s2}px ${SERIF}`; } return s2; };
+            let fs = fit(m.home, 290, 54); text(m.home, 485, 470, `700 ${fs}px ${SERIF}`, INK, 'right');
+            text('VS', 540, 465, `500 28px ${SANS}`, FAINT);
+            fs = fit(m.away, 290, 54); text(m.away, 595, 470, `700 ${fs}px ${SERIF}`, INK, 'left');
+            text('主隊', 485, 510, `400 22px ${SANS}`, FAINT, 'right'); text('客隊', 595, 510, `400 22px ${SANS}`, FAINT, 'left');
+            // 押什麼
+            x.strokeStyle = INK; x.lineWidth = 3; x.strokeRect(190, 560, 700, 270);
+            text(b.kind === 'win' ? '押 誰 贏' : '押 局 數 比 分', 540, 615, `400 26px ${SANS}`, FAINT);
+            const what = pickName(m, b.kind, b.pick);
+            fs = 64; x.font = `700 ${fs}px ${SERIF}`; while (x.measureText(what).width > 640 && fs > 36) { fs -= 2; x.font = `700 ${fs}px ${SERIF}`; }
+            text(what, 540, 705, `700 ${fs}px ${SERIF}`, INK);
+            text(fmt(b.amount), 540, 795, `500 56px ${SANS}`, SHU);
+            // 結果／目前倍數
+            const pool = m[b.kind] && m[b.kind].opts && m[b.kind].opts[b.pick];
+            const line = b.status === 'won' ? `押中了・結果 ${b.result}・拿回 ${fmt(b.payout)}` : b.status === 'lost' ? `結果 ${b.result}・槓龜` : b.status === 'refund' ? '這場不算・押的錢退回' : pool ? `目前 ${xo(pool.odds)}・開賽前倍數還會變` : '等開賽';
+            text(line, 540, 900, `500 32px ${SANS}`, b.status === 'won' ? SHU : INK);
+            // 單號、時間、押注人
+            const at = tpe(b.at || Date.now()), two = n => String(n).padStart(2, '0');
+            const who = (Line.profile && Line.profile.name) || '旅人';
+            [['單號', b.id], ['投注時間', `${at.getUTCFullYear()}/${two(at.getUTCMonth() + 1)}/${two(at.getUTCDate())} ${two(at.getUTCHours())}:${two(at.getUTCMinutes())}`], ['押注人', who]].forEach(([k, v], i) => {
+                const y = 980 + i * 48;
+                text(k, 220, y, `400 24px ${SANS}`, FAINT, 'left'); text(v, 860, y, `500 26px ${SANS}`, INK, 'right');
+                x.strokeStyle = RULE; x.lineWidth = 1; x.setLineDash([6, 6]); x.beginPath(); x.moveTo(220, y + 16); x.lineTo(860, y + 16); x.stroke(); x.setLineDash([]);
+            });
+            // 條碼（照單號算，每張不一樣）
+            let h = 7; for (const ch of String(b.id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+            x.fillStyle = INK; let bx = 300;
+            while (bx < 780) { h = (h * 1103515245 + 12345) >>> 0; const w = 2 + (h >>> 28) % 4; x.fillRect(bx, 1150, w, 60); bx += w + 2 + (h >>> 24) % 4; }
+            text('遊戲幣，不是真的運動彩券・丼步喱・絆', 540, 1245, `400 20px ${SANS}`, FAINT);
+            // 章
+            const stamp = b.status === 'won' ? ['中', SHU] : b.status === 'lost' ? ['槓', '#8a8580'] : b.status === 'refund' ? ['退', '#8a8580'] : ['投注', SHU];
+            x.save(); x.translate(852, 196); x.rotate(0.14); x.globalAlpha = 0.88;
+            x.strokeStyle = stamp[1]; x.lineWidth = 5; x.strokeRect(-62, -62, 124, 124); x.lineWidth = 2; x.strokeRect(-72, -72, 144, 144);
+            text(stamp[0], 0, stamp[0].length > 1 ? 16 : 27, `700 ${stamp[0].length > 1 ? 44 : 76}px ${SERIF}`, stamp[1]);
+            x.restore();
+            return c;
+        }
+        function canvasFile(c, name) {
+            const url = c.toDataURL('image/png'), bin = atob(url.split(',')[1]), arr = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+            return new File([arr], name, { type: 'image/png' });
+        }
+        function shareBet(id) {
+            const b = M && M.bets.find(x => x.id === id);
+            if (!b) return;
+            const m = matchOf(b.match), what = m ? pickName(m, b.kind, b.pick) : b.pick;
+            const file = canvasFile(slipCanvas(b), `dongbuli-bet-${b.id}.png`);
+            const msg = b.status === 'won' ? `我在二十七樓運動押中了 ${what}，拿回 ${fmt(b.payout)}` : `我在二十七樓運動押了 ${what} ${fmt(b.amount)}`;
+            SaveImg.save(file, { title: '二十七樓運動 投注單', text: msg });
+        }
         const BUSY_LINES = ['送出投注中…', '彩券機印單中…', '蘋果鴨在數你的錢…', '青江菜船長幫你蓋章…', '伊藤說這場他有預感…', '彩池櫃台收件中…', '茱莉鴨在確認網路…'];
         let busyTimer = 0;
         function showBusy(on, what, a) {
@@ -519,7 +600,7 @@
                 if (r.quote) take(r.quote, r.mine);
                 if (r.wallet) Wallet.adopt(r.wallet);
                 showBusy(false);
-                if (r.result === 'success') { closeSheet(); bigStamp('投注', `${what}・${fmt(a)}`); showToast(`押了 ${what} ${fmt(a)}，開賽前倍數還會變`); }
+                if (r.result === 'success') { closeSheet(); bigStamp('投注', `${what}・${fmt(a)}`); showToast(`押了 ${what} ${fmt(a)}。投注單在那場的「${SHARE_WORD}」`); }
                 else if (r.result === 'unauthorized') showToast('登入過期了，再登入一次');
                 else showToast(/不認得的請求/.test(r.error || '') ? '後端還是舊版，要重新部署「新版本」' : (r.error || '投注櫃台沒回應'));
             } catch (e) { showToast('連不到後端，可能是網路不穩'); }
@@ -532,6 +613,7 @@
         document.addEventListener('click', e => {
             const t = e.target;
             if (t.closest('[data-login]')) return Line.login();
+            const sh = t.closest('[data-share]'); if (sh) return shareBet(sh.dataset.share);
             if (t.closest('[data-retry]')) { state = 'loading'; render(); return pull(); }
             const op = t.closest('[data-open]');
             if (op) { const id = op.dataset.open; expanded.has(id) ? expanded.delete(id) : expanded.add(id); return renderMatches(); }
