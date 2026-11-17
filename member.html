@@ -55,6 +55,11 @@
             opacity: 0.6;
         }
 
+        /* 監修中的遊戲：淡掉、蓋朱色小章 */
+        .game.is-closed { cursor: default; }
+        .game.is-closed .game-mark, .game.is-closed .flex-1 { opacity: 0.5; }
+        .closed-tag { flex-shrink: 0; font-size: 0.7rem; letter-spacing: 0.15em; padding: 0.1rem 0.3rem 0.1rem 0.45rem; color: rgb(var(--wabi-shu)); border: 1px solid rgb(var(--wabi-shu) / 0.7); transform: rotate(-4deg); }
+
         .game-mark {
             flex-shrink: 0;
             width: 2.75rem;
@@ -203,14 +208,15 @@
                     </span>
                     <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
                 </a>
-                <a href="tiandian.html" class="game">
+                <!-- 甜點・轉 監修中：先不能進（改好換回 <a href="tiandian.html" class="game">） -->
+                <div class="game is-closed" role="link" aria-disabled="true" onclick="showToast('甜點店監修中，過幾天再來')">
                     <span class="game-mark">甜</span>
                     <span class="flex-1 min-w-0">
                     <span class="block text-wabi-dark tracking-widest">甜點・轉</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">蘋果鴨甜點店的轉盤，三站先點好料，七十五秒</span>
+                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">蘋果鴨甜點店的轉盤，重新設計中</span>
                     </span>
-                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
-                </a>
+                    <span class="closed-tag">監修中</span>
+                </div>
             </div>
             <div class="game-group">
                 <h3 class="group-h"><span class="group-no">貳</span><span class="group-name">錢的去處</span><span class="group-desc">花掉，或存起來</span></h3>

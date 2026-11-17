@@ -57,6 +57,9 @@
         }
         .shop-buy:disabled { background: transparent; color: rgb(var(--wabi-accent)); border-color: rgb(var(--wabi-sub)); }
         .bill li { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.35rem 0; border-bottom: 1px dashed rgb(var(--wabi-sub) / 0.8); }
+        /* 監修中：整個店面蓋起來 */
+        .closed { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 2rem 1.5rem; text-align: center; background: rgb(var(--wabi-bg) / 0.86); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+        .closed-stamp { font-size: 1.9rem; letter-spacing: 0.25em; padding: 0.35rem 0.4rem 0.35rem 0.65rem; color: rgb(var(--wabi-shu)); border: 3px double rgb(var(--wabi-shu)); transform: rotate(-6deg); }
     </style>
     <link rel="stylesheet" href="assets/tailwind.css?v=20261117">
 </head>
@@ -81,7 +84,7 @@
             <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">蘋果鴨甜點店。轉盤不會等你。</p>
         </div>
 
-        <section id="stage" class="stage bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-3 pt-4 pb-4">
+        <section id="stage" class="stage relative bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-3 pt-4 pb-4">
             <!-- 固定兩行高：字數變了畫布才不會上下跳 -->
             <div class="flex items-start justify-between gap-2 px-1 min-h-[2.9rem]">
                 <p id="note" class="text-sm text-wabi-dark tracking-wider leading-relaxed">蘋果鴨：開店前先看一下右上角的「店面」。</p>
@@ -92,6 +95,12 @@
                 <button type="button" id="brakeBtn" class="tool">暫停<small></small></button>
                 <button type="button" id="rewindBtn" class="tool">倒轉<small></small></button>
                 <button type="button" id="bubbleBtn" class="tool">吐泡泡<small></small></button>
+            </div>
+            <!-- 監修中（CLOSED）：蓋住畫布，不能開店 -->
+            <div id="closed" class="closed">
+                <span class="closed-stamp">監修中</span>
+                <p class="text-sm text-wabi-dark tracking-widest leading-loose">蘋果鴨正在重新設計轉盤。<br>甜點店暫停營業，過幾天再來。</p>
+                <a href="member.html" class="mt-2 py-3 px-8 border border-stone-300 text-wabi-dark font-sans text-xs tracking-[0.2em]">回會員中心</a>
             </div>
             <p id="hint" class="mt-3 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed text-center">每一站先點好「下一盤」要放的料（料盒亮起來待命），<br>盤子經過就自動放上去。三層都對，轉到出餐就交給客人。</p>
         </section>
@@ -177,6 +186,7 @@
         };
         const TIP_MAX = 0.4, SCRAP = 25, ANGRY = 60, ITO_WIN = 300, ITO_P = 0.35;
         const PAT_BASE = 36;                 // 客人基本願意等幾秒
+        const CLOSED = true;                 // 監修中：蓋住店面、不能開店（改好再拿掉）
         const BELT = 62;                     // 轉盤每秒走幾 px（轉盤馬達會變快）
         const GAP = 104;                     // 盤子之間至少隔多遠才上下一盤
         const SLOT_COL = ['#3f7fbf', '#d0782a', '#8a56b0'];   // 三位客人的號碼顏色（盤子上同一色）
@@ -298,7 +308,7 @@
             renderTools(); renderBest();
         }
         function start() {
-            if (G.started) return;
+            if (CLOSED || G.started) return;
             G.started = true;
             document.documentElement.classList.add('td-open');
             audio(); renderTools(); renderBest();
@@ -386,6 +396,7 @@
 
         // 點料盒：待命／取消待命
         function tapBin(i, key) {
+            if (CLOSED) return showToast('甜點店監修中，過幾天再來');
             if (G.ended) return;
             if (!unlocked(key)) { showToast(`配料櫃升到 ${ING[key].unlock} 級才有${ING[key].name}`); return; }
             if (!G.started) start();
@@ -951,6 +962,7 @@
             $('shopBtn').setAttribute('aria-label', total ? `店面，升級了 ${total} 次` : '店面升級');
         }
         function openShop() {
+            if (CLOSED) return showToast('甜點店監修中，店面也先不賣');
             if (playing()) { showToast('打烊再去升級店面'); return; }
             shop = loadShop(); renderShop();
             const el = $('shop'); el.classList.remove('hidden'); requestAnimationFrame(() => el.classList.add('on'));
