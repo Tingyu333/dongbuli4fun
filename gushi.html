@@ -128,7 +128,32 @@
         #bigStamp .s.grey { border-color: #8a8580; color: #6f6a64; }
         #bigStamp.go .s { animation: stamp 1.6s ease-out forwards; }
         @keyframes stamp { 0% { opacity: 0; transform: scale(2.2) rotate(-12deg); } 15% { opacity: 1; transform: scale(1) rotate(-8deg); } 75% { opacity: 1; transform: scale(1) rotate(-8deg); } 100% { opacity: 0; transform: scale(1) rotate(-8deg); } }
-        @media (prefers-reduced-motion: reduce) { #sheet, #sheet .sh { transition: none; } .dot { animation: none; } }
+        /* 下單等後端的蓋板：上面跑馬燈報價、中間一張委託書一直被蓋「收件」（紙、看板是實物，顏色固定） */
+        #tradeBusy { position: fixed; inset: 0; z-index: 85; display: flex; align-items: center; justify-content: center; background: rgba(30, 25, 20, .74); opacity: 0; pointer-events: none; transition: opacity .18s; }
+        #tradeBusy.on { opacity: 1; pointer-events: auto; }
+        #tradeBusy .tb { width: min(19rem, 86vw); display: flex; flex-direction: column; align-items: center; }
+        #tradeBusy .tape { width: 100%; height: 2rem; overflow: hidden; border-radius: 4px; background: #15130f; border: 2px solid #3a332b; box-shadow: inset 0 0 10px rgba(0, 0, 0, .8); display: flex; align-items: center; }
+        #tradeBusy .tape-in { display: flex; white-space: nowrap; font-family: 'Noto Sans TC', sans-serif; font-variant-numeric: tabular-nums; font-size: .78rem; letter-spacing: .08em; color: #f2c14e; text-shadow: 0 0 6px rgba(242, 193, 78, .6); }
+        #tradeBusy.on .tape-in { animation: tbTape 9s linear infinite; }
+        #tradeBusy .tape-in span { padding-right: 1.4rem; }
+        #tradeBusy .tape-in .u { color: #ff6b5e; text-shadow: 0 0 6px rgba(255, 107, 94, .6); }
+        #tradeBusy .tape-in .d { color: #5fd38a; text-shadow: 0 0 6px rgba(95, 211, 138, .6); }
+        #tradeBusy .form { position: relative; margin-top: 1rem; width: 13.5rem; padding: .9rem 1rem .9rem; background: #fbf7ec; border: 1px solid #d9cdb4; color: #3b342e; box-shadow: 0 14px 30px -12px rgba(0, 0, 0, .6); transform: rotate(-2deg); }
+        #tradeBusy .form::before { content: ''; position: absolute; inset: 4px; border: 1px solid #d9cdb4; pointer-events: none; }
+        #tradeBusy.on .form { animation: tbSlide .9s cubic-bezier(.3, .8, .3, 1) both; }
+        #tradeBusy .fh { text-align: center; font-weight: 700; letter-spacing: .5em; font-size: .9rem; border-bottom: 1.5px solid #3b342e; padding-bottom: .3rem; }
+        #tradeBusy .fs { margin-top: .5rem; display: inline-block; padding: 0 .45rem; border: 1.5px solid currentColor; font-weight: 700; letter-spacing: .3em; font-size: .9rem; }
+        #tradeBusy dl { margin-top: .45rem; font-family: 'Noto Sans TC', sans-serif; font-size: .7rem; letter-spacing: .06em; }
+        #tradeBusy dl div { display: flex; justify-content: space-between; padding: .2rem 0; border-bottom: 1px dotted #d9cdb4; }
+        #tradeBusy dt { color: #8c7f6c; }
+        #tradeBusy .stamp { position: absolute; right: .8rem; top: 2.3rem; width: 3.4rem; height: 3.4rem; border: 3px solid #b33a2f; border-radius: 50%; color: #b33a2f; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .9rem; letter-spacing: .1em; opacity: 0; transform: scale(1.8) rotate(-18deg); }
+        #tradeBusy.on .stamp { animation: tbStamp 1.6s ease-in infinite .5s; }
+        #tradeBusy .tb-msg { margin-top: 1.1rem; padding: .3rem .9rem; border-radius: 999px; background: rgba(0, 0, 0, .35); font-family: 'Noto Sans TC', sans-serif; font-size: .78rem; letter-spacing: .2em; color: #fbf7ec; text-shadow: 0 1px 4px rgba(0, 0, 0, .5); min-height: 1.2em; }
+        @keyframes tbTape { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        @keyframes tbSlide { from { transform: translateY(24px) rotate(-6deg); opacity: 0; } to { transform: rotate(-2deg); opacity: 1; } }
+        @keyframes tbStamp { 0% { opacity: 0; transform: scale(1.8) rotate(-18deg); } 14% { opacity: .9; transform: scale(1) rotate(-12deg); } 70% { opacity: .9; transform: scale(1) rotate(-12deg); } 100% { opacity: 0; transform: scale(1) rotate(-12deg); } }
+
+        @media (prefers-reduced-motion: reduce) { #sheet, #sheet .sh { transition: none; } .dot { animation: none; } #tradeBusy.on .tape-in, #tradeBusy.on .form { animation: none; } #tradeBusy.on .stamp { animation: none; opacity: .9; transform: rotate(-12deg); } }
         .slip + .slip { margin-top: .9rem; }
         .slip.flat { transform: rotate(.4deg); }
         .line-btn { min-height: 44px; padding: 0 1.4rem; border-radius: 6px; background: #06c755; color: #fff; font-family: 'Noto Sans TC', sans-serif; font-weight: 500; font-size: .85rem; letter-spacing: .1em; touch-action: manipulation; }
@@ -244,6 +269,18 @@
                 </div>
                 <button type="button" id="sLogin" data-login class="line-btn w-full hidden">用 LINE 登入才能買賣</button>
             </div>
+        </div>
+    </div>
+    <div id="tradeBusy" aria-live="polite">
+        <div class="tb">
+            <div class="tape" aria-hidden="true"><div class="tape-in" id="tbTape"></div></div>
+            <div class="form" aria-hidden="true">
+                <p class="fh">委託書</p>
+                <p class="fs" id="tbSide">買進</p>
+                <dl id="tbForm"></dl>
+                <div class="stamp" id="tbStamp">收件</div>
+            </div>
+            <p class="tb-msg" id="tbMsg"></p>
         </div>
     </div>
     <div id="bigStamp" aria-hidden="true"><div class="s"><b>成交</b><span></span></div></div>
@@ -514,9 +551,33 @@
         }
 
         // 買賣、取消：先把錢包還沒送的送完，再請後端直接改帳號
-        async function act(body) {
+        // ---- 下單等後端的蓋板 ----
+        const BUSY_LINES = {
+            buy: ['委託書送進號子…', '營業員在撥電話…', '交易所撮合中…', '伊藤在旁邊探頭看你買什麼…', '蘋果鴨在數你的錢…', '跟晚報對一下…', '茱莉鴨說網路有點慢…'],
+            sell: ['委託書送進號子…', '營業員在找買家…', '交易所撮合中…', '雞塊老闆說他考慮一下…', '蘋果鴨在數你的錢…', '跟晚報對一下…', '茱莉鴨說網路有點慢…'],
+            cancel: ['抽回委託書…', '營業員在翻單子…', '交易所確認中…', '把蓋好的章擦掉…'],
+        };
+        let busyTimer = 0, busySince = 0;
+        function showBusy(on, w) {
+            const el = $('tradeBusy');
+            clearInterval(busyTimer);
+            if (!on) { el.classList.remove('on'); return; }
+            const kind = w.kind, lines = BUSY_LINES[kind] || BUSY_LINES.buy, side = w.side || (kind === 'sell' ? 'sell' : 'buy');
+            const tape = (Q ? Q.stocks : []).map(x => { const c = chg(x); return `<span class="${c > 0 ? 'u' : c < 0 ? 'd' : ''}">${x.code} ${esc(x.name)} ${pf(x.price)} ${arrow(c)}${Math.abs(c * 100).toFixed(1)}%</span>`; }).join('');
+            $('tbTape').innerHTML = tape + tape;   // 兩份接起來，跑一半剛好接上
+            $('tbSide').textContent = kind === 'cancel' ? '取消委託' : side === 'sell' ? '賣出' : '買進';
+            $('tbSide').style.color = kind === 'cancel' ? '#6f6a64' : side === 'sell' ? DOWN : UP;
+            $('tbForm').innerHTML = w.s ? `<div><dt>股票</dt><dd>${w.s.code} ${lbl(w.s.name)}</dd></div><div><dt>股數</dt><dd class="num">${w.n} 股</dd></div><div><dt>價格</dt><dd class="num">${w.limit ? (side === 'sell' ? '跌停 ' : '漲停 ') : '現價 '}${pf(w.price)}</dd></div>` : '';
+            $('tbStamp').textContent = kind === 'cancel' ? '撤回' : '收件';
+            let i = 0; $('tbMsg').textContent = lines[0];
+            busyTimer = setInterval(() => { i = (i % (lines.length - 1)) + 1; $('tbMsg').textContent = lines[i]; }, 1300);
+            busySince = Date.now();
+            el.classList.add('on');
+        }
+        async function act(body, w) {
             if (busy) return null;
             busy = true; render();
+            if (w) showBusy(true, w);
             try {
                 await Wallet.settle();
                 const r = await Line.call(body);
@@ -527,13 +588,18 @@
                 else if (r.result === 'unauthorized') showToast('登入過期了，再登入一次');
                 else showToast(/不認得的請求/.test(r.error || '') ? '後端還是舊版，要重新部署「新版本」' : (r.error || '號子沒回應'));
             } catch (e) { showToast('連不到後端，可能是網路不穩'); }
-            finally { busy = false; render(); }
+            finally {
+                // 後端太快的話也讓委託書停一下（不然閃一下就不見）
+                if (w) { const left = 700 - (Date.now() - busySince); if (left > 0) await new Promise(res => setTimeout(res, left)); showBusy(false); }
+                busy = false; render();
+            }
             return null;
         }
         async function trade(side) {
             const s = stockOf(cur), n = qty();
             if (!s || !n) return;
-            const r = await act({ type: 'stockTrade', code: s.code, side, n, slot: Q.slot });
+            const limit = side === 'buy' ? s.state === 'up' : s.state === 'down';
+            const r = await act({ type: 'stockTrade', code: s.code, side, n, slot: Q.slot }, { kind: side, s, n, price: s.price, limit });
             if (!r) return;
             if (r.done === 'queued') { bigStamp('委託', `排隊中・${r.n} 股`, true); showToast(`${s.name} ${side === 'sell' ? '跌停賣單' : '漲停買單'}掛好了，打開才成交`); }
             else if (side === 'buy') { bigStamp('成交', `${r.n} 股・${pf(r.price)}`); showToast(`買進 ${s.name} ${r.n} 股，付了 ${fmt(r.amount + r.fee)}`); }
@@ -561,7 +627,8 @@
             if (t.closest('#sell')) return trade('sell');
             const cancel = t.closest('[data-cancel]');
             if (cancel) {
-                const r = await act({ type: 'stockCancel', id: cancel.dataset.cancel });
+                const o = M && M.orders.find(x => x.id === cancel.dataset.cancel), os = o && stockOf(o.code);
+                const r = await act({ type: 'stockCancel', id: cancel.dataset.cancel }, { kind: 'cancel', side: o && o.side, s: os, n: o ? o.n : 0, price: o ? o.price : 0, limit: true });
                 if (r) { bigStamp('取消', `${r.n} 股`, true); showToast('委託取消了'); }
             }
         });
