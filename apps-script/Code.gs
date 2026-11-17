@@ -2361,7 +2361,7 @@ function sportSync(now, force, locked) {
         props.deleteProperty('sportError');
       } catch (e) {
         props.setProperty('sportError', String(e && e.message || e).slice(0, 200));
-        console.warn('運彩爬賽程失敗：' + e);
+        console.warn('運動・押爬賽程失敗：' + e);
       }
     };
     if (locked) work(); else withLock(work);
@@ -2519,7 +2519,7 @@ function setupSport() {
   sportBetsSheet();
   var now = Date.now(), list = withLock(function () { return sportSync(now, true, true); });
   var err = PropertiesService.getScriptProperties().getProperty('sportError');
-  Logger.log(err ? '爬賽程失敗：' + err : '運彩開張：SportMatches 有 ' + (list.length || 0) + ' 場。網頁要能用，還要「部署 → 管理部署作業 → 編輯 → 新版本」。');
+  Logger.log(err ? '爬賽程失敗：' + err : '運動・押開張：SportMatches 有 ' + (list.length || 0) + ' 場。網頁要能用，還要「部署 → 管理部署作業 → 編輯 → 新版本」。');
 }
 // 官網爬不到比分的時候手動開獎：sportSetResult('17013', 3, 1)（主隊 3、客隊 1），比賽 id 看 SportMatches 的 A 欄
 function sportSetResult(id, homeSets, awaySets) {
