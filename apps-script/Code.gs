@@ -827,7 +827,7 @@ function playersSheet() {
 function cleanShop(s) {
   s = s && typeof s === 'object' ? s : {};
   var lv = {}, raw = s.lv && typeof s.lv === 'object' && !Array.isArray(s.lv) ? s.lv : {}, keys = Object.keys(raw);
-  if (keys.length > 40) return null;  // 三家店合起來 20 項，留空間給之後的店
+  if (keys.length > 80) return null;  // 六家店合起來 40 項（2026-11-17 從 40 調到 80），留空間給之後的店
   for (var i = 0; i < keys.length; i++) {
     var n = cleanMoney(raw[keys[i]] || 0, 0, 10);
     if (!/^[a-z]{1,16}$/.test(keys[i]) || n === null) return null;
@@ -2634,7 +2634,8 @@ function farmLog(input) {
 // --- 蹭・網（cengwang.html）：每一輪的紀錄 ---
 // 跟菜園紀錄一樣：公開、appendRow 不排隊、不寄信不回資料；session 對就記 line_id。
 var WIFI_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'total', 'sales', 'wifi_ms', 'episodes', 'drama', 'strikes',
-  'looks', 'dodged', 'fakes', 'connects', 'perfect', 'grade', 'ms', 'login', 'boost_ms', 'max_mult', 'mode', 'season'];
+  'looks', 'dodged', 'fakes', 'connects', 'perfect', 'grade', 'ms', 'login', 'boost_ms', 'max_mult', 'mode', 'season',
+  'recovered', 'phones', 'glances', 'routers', 'idle_end', 'shop', 'breads', 'antenna', 'fine'];
 
 function wifisSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -2644,7 +2645,7 @@ function wifisSheet() {
     sheet.appendRow(WIFI_HEADERS);
     sheet.setFrozenRows(1);
   } else if (sheet.getLastColumn() < WIFI_HEADERS.length) {
-    // 舊分頁後來加了欄位（U mode、V season）：把標題補上
+    // 舊分頁後來加了欄位（U mode、V season，W～AE 無盡模式的細節和道具）：把標題補上
     sheet.getRange(1, 1, 1, WIFI_HEADERS.length).setValues([WIFI_HEADERS]);
   }
   return sheet;
@@ -2655,12 +2656,16 @@ function wifiRow(r, now, lineId, device) {
   var at = new Date(r.at);
   if (isNaN(at.getTime()) || at.getTime() > now.getTime() + 86400000 || at.getTime() < now.getTime() - 90 * 86400000) return null;
   var n = function (v) { return washNum(v, 0, 999); };
+  var shop = {};
+  if (r.shop && typeof r.shop === 'object') Object.keys(r.shop).slice(0, 20).forEach(function (k) { if (/^[a-z]{1,16}$/.test(k)) shop[k] = washNum(r.shop[k], 0, 10); });
   return [
     now, at, lineId || '', device,
     washNum(r.total, 0, 100000), washNum(r.sales, -10000, 100000), washNum(r.wifi_ms, 0, 3600000), n(r.episodes), washText(r.drama, 20),
     n(r.strikes), n(r.looks), n(r.dodged), n(r.fakes), n(r.connects), !!r.perfect, washText(r.grade, 2), washNum(r.ms, 0, 3600000), !!r.login,
     washNum(r.boost_ms, 0, 3600000), Math.round(washNum((r.max_mult || 1) * 10, 10, 50)) / 10,
-    r.mode === 'endless' ? 'endless' : 'normal', n(r.season)
+    r.mode === 'endless' ? 'endless' : 'normal', n(r.season),
+    n(r.recovered), n(r.phones), n(r.glances), n(r.routers), !!r.idle_end,
+    JSON.stringify(shop), n(r.breads), washNum(r.antenna, 0, 100000), washNum(r.fine, -100000, 0)
   ];
 }
 

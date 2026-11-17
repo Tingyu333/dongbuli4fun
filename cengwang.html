@@ -68,6 +68,30 @@
         .modes button:disabled { opacity: .45; }
         .act-quit { width: 100%; min-height: 44px; margin-top: 0.6rem; border: 1px solid rgb(var(--wabi-sub)); border-radius: 9999px; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: 0.2em; color: rgb(var(--wabi-dark)); touch-action: manipulation; }
 
+        /* 蹭網道具（跟船廠、早餐店同一套樣子） */
+        .shop-btn {
+            display: inline-flex; align-items: center; height: 1.9rem; padding: 0 0.75rem;
+            border: 1px solid rgb(var(--wabi-accent) / 0.5); border-radius: 9999px;
+            font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.15em; color: rgb(var(--wabi-dark));
+            white-space: nowrap; touch-action: manipulation;
+        }
+        .shop-btn b { margin-left: 0.3rem; font-weight: 400; color: rgb(var(--wabi-shu)); }
+        #shop { background: rgba(0, 0, 0, 0); transition: background 0.22s; }
+        #shop.on { background: rgba(0, 0, 0, 0.45); }
+        #shop .shop-sheet { transform: translateY(100%); transition: transform 0.22s ease-out; }
+        #shop.on .shop-sheet { transform: none; }
+        @media (prefers-reduced-motion: reduce) { #shop, #shop .shop-sheet { transition: none; } }
+        .shop-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 0; border-bottom: 1px solid rgb(var(--wabi-sub) / 0.6); }
+        .shop-icon { flex: none; width: 56px; height: 56px; border-radius: 6px; background: rgb(var(--wabi-sub) / 0.35); }
+        .shop-dots i { display: inline-block; width: 6px; height: 6px; margin-left: 3px; border-radius: 50%; border: 1px solid rgb(var(--wabi-accent)); }
+        .shop-dots i.on { background: rgb(var(--wabi-shu)); border-color: rgb(var(--wabi-shu)); }
+        .shop-buy {
+            flex: none; min-width: 5.6rem; min-height: 44px; padding: 0 0.6rem;
+            border: 1px solid rgb(var(--wabi-dark)); background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg));
+            font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.1em; line-height: 1.3; touch-action: manipulation;
+        }
+        .shop-buy:disabled { background: transparent; color: rgb(var(--wabi-accent)); border-color: rgb(var(--wabi-sub)); }
+
         .bill li {
             display: flex;
             justify-content: space-between;
@@ -99,7 +123,9 @@
 
     <main class="flex-grow max-w-md mx-auto pt-24 md:pt-32 pb-16 px-6 w-full">
 
-        <div class="text-center mb-6">
+        <div class="text-center mb-6 relative">
+            <!-- 蹭網道具：放在標題右上角，不多佔一行 -->
+            <button id="shopBtn" type="button" class="shop-btn absolute right-0 top-0" aria-haspopup="dialog">道具<b id="shopLv"></b></button>
             <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">FREE WI-FI</span>
             <h1 class="text-3xl font-light text-wabi-dark tracking-widest">蹭・網</h1>
             <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">樓上的 Wi-Fi 有五格，茱莉鴨在顧湯。</p>
@@ -142,6 +168,8 @@
                     class="w-full bg-wabi-dark text-wabi-bg py-4 px-8 tracking-[0.2em] font-sans text-xs shadow-lg">分享蹭網日報</button>
                 <button id="againBtn" type="button"
                     class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">再蹭一輪</button>
+                <button id="shopBtn2" type="button"
+                    class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">拿省下的錢買道具</button>
                 <a href="scratch.html"
                     class="block w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">拿省下的流量費去彩券行</a>
                 <a id="rankLink" href="rank.html#work"
@@ -159,6 +187,7 @@
                 <li>她也會伸懶腰、抓頭、試湯、轉到一半又轉回去。太早放開沒事，只是少賺。越後面轉得越快。</li>
                 <li>每追完一集 +$80。被抓一次賠 28 樓 $200 網路使用費，下載到一半的那集也會斷掉。<b class="font-normal text-wabi-shu">被抓三次就收工</b>。</li>
                 <li>一次都沒被抓，另外 +$200「完美蹭網」。被抓到合計變負的，還是有 $100 保底出勤費。</li>
+                <li>省下的錢可以按上面的<b class="font-normal text-wabi-dark">道具</b>買東西：手機殼小鏡子、高增益天線、Wi-Fi 延伸器、4G 吃到飽、電鍋、麵包。一般和無盡模式都用得到，登入 LINE 換手機也在。</li>
             </ol>
             <h2 class="mt-8 text-sm tracking-[0.3em] text-wabi-dark">無盡模式</h2>
             <ol class="mt-3 list-decimal pl-5 space-y-1.5 text-xs font-sans tracking-wide text-stone-500 leading-relaxed">
@@ -171,6 +200,23 @@
             </ol>
         </section>
     </main>
+
+    <!-- 蹭網道具 -->
+    <div id="shop" class="hidden fixed inset-0 z-[80] flex items-end justify-center" role="dialog" aria-modal="true" aria-label="蹭網道具">
+        <div class="shop-sheet w-full max-w-md bg-wabi-bg rounded-t-xl">
+            <div class="px-5 pt-5 pb-2 flex items-baseline justify-between border-b border-stone-200">
+                <div>
+                    <p class="text-lg text-wabi-dark tracking-widest">道具・備</p>
+                    <p class="mt-1 text-[10px] font-sans tracking-widest text-stone-400">巷口雜貨店：天線、電鍋、麵包都有賣</p>
+                </div>
+                <p class="text-xs font-sans tracking-widest text-stone-500">錢包 <b id="shopMoney" class="font-normal text-wabi-shu"></b></p>
+            </div>
+            <div id="shopList" class="px-5 max-h-[60vh] overflow-y-auto overscroll-contain"></div>
+            <div class="px-5 py-4">
+                <button type="button" data-shop-close class="w-full py-3 border border-stone-300 text-wabi-dark tracking-[0.2em] font-sans text-xs">回去蹭網</button>
+            </div>
+        </div>
+    </div>
 
     <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
         <p>&copy; 2026 DONGBULI · 蹭・網</p>
@@ -213,7 +259,8 @@
         const SLOW = 0.06;        // 4G 的下載速度（相對）
         // 連著不放越久網速越快：前 1.5 秒 ×1，之後每秒 +0.3，最快 ×BOOST_MAX；放開或被抓就從頭算
         const BOOST_MAX = 2.5;
-        const boostOf = streak => 1 + clamp((streak - 1.5) * 0.3, 0, BOOST_MAX - 1);
+        const boostMax = () => lv('extender') ? val('extender').max : BOOST_MAX;
+        const boostOf = streak => 1 + clamp((streak - 1.5) * (lv('extender') ? val('extender').ramp : 0.3), 0, boostMax() - 1);
         const DRAMAS = ['二十七樓的秘密', '樓上的密碼', '五格訊號', '前夫回來了', '雞塊的逆襲', '偷連 Wi-Fi 的女人',
             '二十八樓的鄰居', '頂樓菜園物語', '刮刮樂人生', '伊藤的明牌', '坐洗部的狗', '湯快煮好了'];
         const SUBS = ['你為什麼有五格？', '密碼是生日吧。', '我們分手吧。', '這碗湯太鹹了。', '樓上的燈還亮著。', '你騙我。',
@@ -241,6 +288,38 @@
         let mode = 'normal';
         try { if (localStorage.getItem(MODE_KEY) === 'endless') mode = 'endless'; } catch (e) { }
 
+        // ===== 1b. 蹭網道具 =====
+        // 存在共用錢包的 shop（跟坐洗部、菜園、早餐店、貨運、甜點店同一份，key 不重複），登入 LINE 就跟著帳號走。等級只升不降，shop.spent 是幾家店加起來的。
+        // 一般和無盡模式都用得到（使用者要的）。
+        const SHOP = [
+            { key: 'mirror', name: '手機殼小鏡子', sub: '偵查', prices: [20000, 50000], vals: [{ tell: 0.08 }, { tell: 0.15 }],
+              tiers: ['', '小圓鏡', '廣角鏡'], fx: v => `鏡子照得到她：「嗯？」到轉頭多 ${v.tell} 秒可以放開（她不出聲直接轉頭還是來不及）` },
+            { key: 'antenna', name: '高增益天線', sub: '收益', prices: [20000, 50000, 90000], vals: [0.1, 0.2, 0.3],
+              tiers: ['', '天線', '指向天線', '碟型天線'], fx: v => `蹭網和網速加成多 ${Math.round(v * 100)}%` },
+            { key: 'extender', name: 'Wi-Fi 延伸器', sub: '網速', prices: [30000, 70000], vals: [{ max: 3, ramp: 0.4 }, { max: 3.5, ramp: 0.5 }],
+              tiers: ['', '延伸器', 'Mesh 延伸器'], fx: v => `網速最快 ×${v.max}（原本 ×2.5），加速也比較快` },
+            { key: 'unlimited', name: '4G 吃到飽', sub: '保護', prices: [15000, 40000], vals: [{ fine: 140, slow: 0.15 }, { fine: 80, slow: 0.3 }],
+              tiers: ['', '吃到飽', '吃到飽＋5G'], fx: v => `被抓一次只賠 $${v.fine}（原本 $200）；放開時劇也追得比較快` },
+            { key: 'cooker', name: '電鍋', sub: '拖時間', prices: [20000, 50000], vals: [1.15, 1.3],
+              tiers: ['', '電鍋', '十人份電鍋'], fx: v => `茱莉鴨要顧電鍋，每次忙的時間長 ${Math.round((v - 1) * 100)}%` },
+            { key: 'bread', name: '麵包', sub: '收買', prices: [40000, 100000], vals: [1, 2],
+              tiers: ['', '一片吐司', '一袋吐司邊'], fx: v => `一輪 ${v} 片：被抓的那一刻自動丟麵包，她去吃，不算抓、不扣錢` },
+        ];
+        const SHOP_BY = Object.fromEntries(SHOP.map(u => [u.key, u]));
+        function loadShop() {
+            let d = null;
+            try { d = Wallet.shop; } catch (e) { }
+            d = d && typeof d === 'object' ? { lv: { ...(d.lv || {}) }, spent: Number(d.spent) || 0 } : { lv: {}, spent: 0 };
+            SHOP.forEach(u => { d.lv[u.key] = clamp(Math.floor(Number(d.lv[u.key]) || 0), 0, u.prices.length); });
+            return d;
+        }
+        let shop = loadShop();
+        const lv = key => shop.lv[key] || 0;
+        const val = key => lv(key) ? SHOP_BY[key].vals[lv(key) - 1] : 0;
+        const fineNow = () => lv('unlimited') ? val('unlimited').fine : FINE;
+        const slowNow = () => lv('unlimited') ? val('unlimited').slow : SLOW;
+        const mirrorTell = () => lv('mirror') ? val('mirror').tell : 0;
+
         // ===== 2. 狀態 =====
         // G.clock 是遊戲時間（秒），只在畫面上跑的時候往前走，所以切到背景不會偷跑
         let G = null;
@@ -250,12 +329,14 @@
         let lastNow = performance.now();
 
         function newRound() {
+            shop = loadShop();
             G = {
                 endless: mode === 'endless', caught: 0, season: 1, lastOnAt: 0, idleEnd: false, lastStrikeAt: -1, recovered: 0, routerUntil: -1, nextRouter: 0, phones: 0, glances: 0, routers: 0,
                 started: false, ended: false, clock: 0, on: false, lock: false, onSince: 0,
                 wifiMs: 0, boostMs: 0, mult: 1, maxMult: 1, tier: 1, ep: 0, epProg: 0, strikes: 0, drama: pick(DRAMAS), sub: pick(SUBS), subAt: 0,
                 looks: 0, dodged: 0, fakes: 0, connects: 0, flash: 0, stampAt: -9, pay: null,
-                earn: { wifi: 0, boost: 0, ep: 0, perfect: 0, fine: 0 },
+                earn: { wifi: 0, boost: 0, antenna: 0, ep: 0, perfect: 0, fine: 0 },
+                breads: lv('bread') ? val('bread') : 0, breadUsed: 0, breadAt: -9, mirrorFlash: 0,
             };
             W8 = { state: 'busy', t0: 0, dur: 3.6, kind: '', bubble: '', bubbleAt: -9, turn: 0 };
             holds.clear(); keyHeld = false;
@@ -298,13 +379,13 @@
                 else { goto('fake', kind === 'stretch' ? 1.3 : 1.1, kind); if (kind === 'stretch') { say('啊～'); sfx.yawn(); } if (kind === 'sip') say('（試一口）'); }
             } else if (G.clock > 20 && Math.random() < Math.min(0.4, lerp(0, 0.3, p))) {
                 // 後半場偶爾「！」一聲就轉：反應要快
-                goto('tell', rand(0.24, 0.32), 'real'); say('！'); sfx.hmm();
+                goto('tell', rand(0.24, 0.32) + mirrorTell(), 'real'); say('！'); sfx.hmm();
             } else {
                 goto('tell', tellDur(), 'real'); say(pick(TELLS)); sfx.hmm();
             }
         }
-        const tellDur = () => Math.max(0.22, lerp(0.85, 0.42, prog()) * rand(0.9, 1.15));
-        const busyDur = () => { const p = prog(); return rand(Math.max(0.7, lerp(2.6, 1.0, p)), Math.max(1.5, lerp(4.6, 2.2, p))); };
+        const tellDur = () => Math.max(0.22, lerp(0.85, 0.42, prog()) * rand(0.9, 1.15)) + mirrorTell();   // 小鏡子：早一點看到她要轉
+        const busyDur = () => { const p = prog(); return rand(Math.max(0.7, lerp(2.6, 1.0, p)), Math.max(1.5, lerp(4.6, 2.2, p))) * (lv('cooker') ? val('cooker') : 1); };   // 電鍋：她要顧比較久
 
         function updateWatcher() {
             const k = W8.dur ? clamp((G.clock - W8.t0) / W8.dur, 0, 1) : 1, done = G.clock - W8.t0 >= W8.dur;
@@ -322,6 +403,8 @@
                 case 'glance': W8.turn = 0; G.glassCheck = true; check(); G.glassCheck = false; if (W8.state === 'glance' && done) { if (!G.caughtThisLook) { G.dodged++; say('……沒事'); } G.caughtThisLook = false; goto('busy', busyDur()); } break;
                 case 'turn': W8.turn = ease(k); if (k > 0.85) check(); if (W8.state === 'turn' && done) { goto('look', rand(0.7, 1.5)); G.looks++; } break;
                 case 'look': W8.turn = 1; check(); if (W8.state === 'look' && done) { if (!G.caughtThisLook) { G.dodged++; say(pick(LOOK_OK)); } G.caughtThisLook = false; goto('back', 0.3); } break;
+                // 吃麵包：她低頭啄，看不到你
+                case 'eat': W8.turn = 1; if (done) { say('……好吃'); G.caughtThisLook = false; goto('back', 0.3); } break;
                 case 'scold': W8.turn = 1; if (done) { G.caughtThisLook = false; if (G.strikes >= STRIKES) { endRound(); return; } goto('back', 0.3); } break;
                 case 'back': W8.turn = 1 - ease(k); if (done) goto('busy', Math.random() < lerp(0.05, 0.3, prog()) ? 0.4 : busyDur()); break;  // 越後面越常轉回去馬上又轉頭
             }
@@ -329,8 +412,16 @@
         // 她看過來的時候，你還連著 28 樓：抓到
         function check() {
             if (!G.on || G.ended || routerDown()) return;   // 路由器在重開：其實連不上 28 樓，抓不到
+            // 麵包：被抓的那一刻自動丟出去，她去吃，這次不算
+            if (G.breadUsed < G.breads) {
+                G.breadUsed++; G.breadAt = G.clock; G.caughtThisLook = true;
+                goto('eat', 1.6); say('……麵包？'); sfx.bread();
+                floatText(180, 296, `丟麵包！（剩 ${G.breads - G.breadUsed} 片）`, K.green, true, 1400);
+                note('丟了麵包，她去吃了。');
+                return;
+            }
             G.strikes++; G.caught++; G.caughtThisLook = true;   // strikes 是現在幾格（無盡模式會補回），caught 是總共被抓幾次（算錢用）
-            G.earn.fine -= FINE;
+            G.earn.fine -= fineNow();
             G.epProg = 0;  // 下載到一半的那集斷了
             G.on = false; G.lock = true;
             G.flash = G.clock; G.stampAt = G.clock;
@@ -338,7 +429,7 @@
             sfx.caught();
             say(pick(G.glassCheck ? GLASS_CAUGHT : CAUGHT));
             goto('scold', 1.6);
-            floatText(180, 296, `被抓到了 −${Wallet.fmt(FINE)}`, K.shu, true, 1500);
+            floatText(180, 296, `被抓到了 −${Wallet.fmt(fineNow())}`, K.shu, true, 1500);
             if (navigator.vibrate) try { navigator.vibrate([60, 40, 120]); } catch (e) { }
             note(G.strikes >= STRIKES ? '第三次了，收工。' : `被抓到了（${G.strikes}／${STRIKES}）。` + (G.endless ? '撐過一整季沒被抓，可以補回一格。' : ''));
             hint(G.strikes >= STRIKES ? '' : '先放開手指，再按住才會重新連上。');
@@ -387,6 +478,8 @@
             glint: () => tone(2400, 0.18, 0.04, 'sine', 0, 1.4),
             season: () => { [784, 988, 1175].forEach((f, i) => tone(f, 0.18, 0.07, 'triangle', i * 0.09)); },
             router: () => { tone(330, 0.25, 0.08, 'square', 0, 0.5); },
+            bread: () => { noise(0.08, 0.12, 2400); [523, 659, 784].forEach((f, i) => tone(f, 0.12, 0.07, 'triangle', 0.08 + i * 0.07)); },
+            buy: () => { [784, 988, 1319].forEach((f, i) => tone(f, 0.14, 0.07, 'triangle', i * 0.08)); },
         };
 
         // ===== 5. 畫 =====
@@ -436,6 +529,7 @@
                 c.restore(); c.globalAlpha = 1;
             }
             c.fillStyle = K.woodL; c.fillRect(70, 52, 3, 120); c.fillRect(24, 110, 96, 3);
+            drawGear(c, now);
             // 牆上的時鐘
             const ckx = 152, cky = 112;
             c.fillStyle = '#fbf8f2'; c.beginPath(); c.arc(ckx, cky, 13, 0, TAU); c.fill();
@@ -451,6 +545,88 @@
             c.fillStyle = '#b9a58a'; c.fillRect(0, 330, W, H - 330);
             c.fillStyle = '#a8937a'; c.fillRect(0, 330, W, 4);
             c.fillStyle = 'rgba(255,255,255,.08)'; for (let x = 0; x < W; x += 40) c.fillRect(x, 338, 20, H - 338);
+        }
+
+        // 買了的道具畫在房間裡（實物，顏色固定）
+        function drawAntenna(c, x, y, L, s = 1) {
+            c.save(); c.translate(x, y); c.scale(s, s);
+            c.fillStyle = '#3b3431'; roundRect(c, -9, -6, 18, 7, 2); c.fill();
+            if (L >= 3) {
+                // 碟型天線
+                c.strokeStyle = '#8a8f96'; c.lineWidth = 2; c.beginPath(); c.moveTo(0, -6); c.lineTo(0, -16); c.stroke();
+                c.save(); c.translate(0, -22); c.rotate(-0.6);
+                c.fillStyle = '#e9ecef'; c.beginPath(); c.ellipse(0, 0, 13, 6, 0, 0, TAU); c.fill();
+                c.strokeStyle = '#8a8f96'; c.lineWidth = 1; c.stroke();
+                c.strokeStyle = '#5d6670'; c.beginPath(); c.moveTo(0, 0); c.lineTo(0, -9); c.stroke();
+                c.restore();
+            } else {
+                c.strokeStyle = '#3b3431'; c.lineWidth = 2; c.lineCap = 'round';
+                c.beginPath(); c.moveTo(-3, -6); c.lineTo(-7, -30); c.stroke();
+                c.beginPath(); c.moveTo(3, -6); c.lineTo(9, -30); c.stroke();
+                if (L >= 2) { c.lineWidth = 1.2; for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(4 + i * 1.5, -12 - i * 5); c.lineTo(12 + i * 1.5, -14 - i * 5); c.stroke(); } }
+                c.lineCap = 'butt';
+            }
+            c.fillStyle = '#3ad07a'; c.beginPath(); c.arc(5, -2.5, 1.3, 0, TAU); c.fill();
+            c.restore();
+        }
+        function drawExtender(c, x, y, L, now, on) {
+            c.fillStyle = '#f6f2ea'; roundRect(c, x - 5, y - 2, 10, 15, 2); c.fill();   // 插座
+            c.strokeStyle = '#bdb3a2'; c.lineWidth = 1; roundRect(c, x - 5, y - 2, 10, 15, 2); c.stroke();
+            c.fillStyle = '#ffffff'; roundRect(c, x - 9, y - 8, 18, 22, 4); c.fill();
+            c.strokeStyle = '#c9c1b2'; roundRect(c, x - 9, y - 8, 18, 22, 4); c.stroke();
+            if (L >= 2) { c.strokeStyle = '#3b3431'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(x - 7, y - 8); c.lineTo(x - 11, y - 20); c.moveTo(x + 7, y - 8); c.lineTo(x + 11, y - 20); c.stroke(); }
+            const blink = on ? Math.sin(now / 110) > 0 : true;
+            c.fillStyle = blink ? '#3ad07a' : '#1d6b3c'; c.beginPath(); c.arc(x, y + 8, 1.8, 0, TAU); c.fill();
+            c.strokeStyle = '#4fbf7a'; c.lineWidth = 1;
+            for (let i = 0; i < 2; i++) { c.beginPath(); c.arc(x, y + 1, 2.5 + i * 2.5, Math.PI * 1.2, Math.PI * 1.8); c.stroke(); }
+        }
+        function drawCooker(c, x, y, L, now, s = 1) {
+            c.save(); c.translate(x, y); c.scale(s, s);
+            const w = L >= 2 ? 34 : 28, h = L >= 2 ? 26 : 22;
+            const g = c.createLinearGradient(-w / 2, 0, w / 2, 0); g.addColorStop(0, '#a9d3b5'); g.addColorStop(0.45, '#cfe8d6'); g.addColorStop(1, '#86b897');
+            c.fillStyle = g; roundRect(c, -w / 2, -h, w, h, 5); c.fill();
+            c.fillStyle = '#e9efe9'; c.beginPath(); c.ellipse(0, -h, w / 2 + 1, 5, 0, 0, TAU); c.fill();
+            c.fillStyle = '#5d6670'; roundRect(c, -4, -h - 7, 8, 4, 2); c.fill();
+            c.fillStyle = '#e8e2d5'; roundRect(c, -w / 2 + 4, -h * 0.45, 10, 6, 1.5); c.fill();
+            c.fillStyle = '#d63a2f'; c.beginPath(); c.arc(-w / 2 + 9, -h * 0.45 + 3, 1.6, 0, TAU); c.fill();
+            c.fillStyle = '#3b3431'; c.font = `600 7px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('電鍋', 5, -h * 0.4);
+            if (now !== null) for (let i = 0; i < 2; i++) {
+                const t = ((now / 1300) + i / 2) % 1;
+                c.strokeStyle = `rgba(255,255,255,${0.6 * (1 - t)})`; c.lineWidth = 2; c.lineCap = 'round';
+                c.beginPath(); c.moveTo(i * 4 - 2, -h - 8 - t * 18); c.quadraticCurveTo(i * 4 + 2, -h - 14 - t * 18, i * 4 - 2, -h - 20 - t * 18); c.stroke(); c.lineCap = 'butt';
+            }
+            c.restore();
+        }
+        function drawBreadBag(c, x, y, left, total, s = 1) {
+            c.save(); c.translate(x, y); c.scale(s, s);
+            c.fillStyle = 'rgba(255,255,255,.75)'; roundRect(c, -15, -22, 30, 26, 5); c.fill();
+            c.strokeStyle = '#bdb3a2'; c.lineWidth = 1; roundRect(c, -15, -22, 30, 26, 5); c.stroke();
+            for (let i = 0; i < total; i++) {
+                const has = i < left, bx = total > 1 ? -6 + i * 12 : 0;
+                c.globalAlpha = has ? 1 : 0.25;
+                c.fillStyle = '#d9a35f'; roundRect(c, bx - 6, -17, 12, 15, 4); c.fill();
+                c.fillStyle = '#f4dcb0'; roundRect(c, bx - 4, -14, 8, 10, 3); c.fill();
+                c.globalAlpha = 1;
+            }
+            c.fillStyle = '#b33a2f'; c.fillRect(-15, -8, 30, 3);
+            c.restore();
+        }
+        function drawGear(c, now) {
+            if (!G) return;
+            if (lv('antenna')) drawAntenna(c, 108, 178, lv('antenna'));
+            if (lv('extender')) drawExtender(c, 138, 230, lv('extender'), now, G.on);
+        }
+        function drawFloorGear(c, now) {
+            if (!G) return;
+            if (G.breads) drawBreadBag(c, 34, 322, G.breads - G.breadUsed, G.breads);
+            // 丟出去的麵包：飛到她腳邊，啄完就不見
+            const b = G.clock - G.breadAt;
+            if (b >= 0 && b < 1.9) {
+                const k = clamp(b / 0.35, 0, 1), x = lerp(150, 214, k), y = lerp(330, 294, k) - Math.sin(Math.PI * k) * 40;
+                const bite = clamp((b - 0.4) / 1.4, 0, 1);
+                c.fillStyle = '#d9a35f'; c.beginPath(); c.ellipse(x, y, 9 * (1 - bite * 0.8), 6 * (1 - bite * 0.8), 0.3, 0, TAU); c.fill();
+                c.fillStyle = '#e8c48a'; [[-12, 4], [10, 6], [-4, 9], [14, -2]].forEach(([dx, dy], i) => { if (bite > i * 0.2) { c.beginPath(); c.arc(x + dx, y + dy, 1.6, 0, TAU); c.fill(); } });
+            }
         }
 
         function drawCounter(c, now) {
@@ -475,6 +651,7 @@
                 c.stroke();
             }
             c.lineCap = 'butt';
+            if (G && lv('cooker')) drawCooker(c, 338, top, lv('cooker'), now);
         }
 
         // 茱莉鴨：白色圓胖的鴨子、橘色嘴和腳、脖子綁藍色蝴蝶結、半睜眼的死魚眼（使用者給的圖）
@@ -787,7 +964,7 @@
                 c.font = `500 9px ${SANS}`; c.fillText('28F_家用_5G', sx + sw - 20, y + 20);
 
             } else {
-                c.fillStyle = '#9aa0a6'; c.font = `600 10px ${SANS}`; c.fillText('4G', sx + sw - 18, y + 20);
+                c.fillStyle = lv('unlimited') ? '#c9b26a' : '#9aa0a6'; c.font = `600 10px ${SANS}`; c.fillText(lv('unlimited') ? '4G 吃到飽' : '4G', sx + sw - 18, y + 20);
                 [4, 7, 10, 13].forEach((hh, i) => { c.fillStyle = i < 1 ? '#e8e8e8' : '#4a4f55'; c.fillRect(sx + sw - 14 + i * 3.5, y + 24 - hh, 2.4, hh); });
             }
             // 影片
@@ -823,7 +1000,7 @@
                     c.fillStyle = `rgba(255,255,255,${0.15 + 0.85 * ((i + Math.floor(now / 110)) % 8) / 8})`;
                     c.beginPath(); c.arc(vx + vw / 2 + Math.cos(a) * 11, vy + 32 + Math.sin(a) * 11, 2, 0, TAU); c.fill();
                 }
-                c.fillStyle = '#ddd'; c.font = `400 9px ${SANS}`; c.fillText(G.on && routerDown() ? '28 樓在重開路由器…' : '緩衝中…', vx + vw / 2, vy + 56);
+                c.fillStyle = '#ddd'; c.font = `400 9px ${SANS}`; c.fillText(G.on && routerDown() ? '28 樓在重開路由器…' : lv('unlimited') ? '吃到飽慢慢載…' : '緩衝中…', vx + vw / 2, vy + 56);
             }
             c.restore();
             // 劇名、第幾集、進度
@@ -833,6 +1010,29 @@
             c.fillStyle = '#3a3f46'; roundRect(c, sx, y + 152, sw, 5, 2.5); c.fill();
             c.fillStyle = G.on ? (G.mult >= 2 ? '#7ff0a8' : K.wifi) : '#7d838a'; roundRect(c, sx, y + 152, Math.max(5, sw * G.epProg), 5, 2.5); c.fill();
             c.textAlign = 'right'; c.fillStyle = '#9aa0a6'; c.fillText(`${Math.floor(G.epProg * 100)}%`, sx + sw, y + 143);
+            if (lv('mirror')) drawMirror(c, x + w + 2, y - 4, lv('mirror'), now);
+        }
+        // 手機殼上的小鏡子：照得到身後的茱莉鴨；她要轉頭時鏡框先閃
+        function drawMirror(c, mx, my, L, now, icon = false) {
+            const r = L >= 2 ? 15 : 12;
+            const danger = !icon && W8 && (W8.state === 'tell' || W8.state === 'turn' || W8.state === 'look' || W8.state === 'glance');
+            const warn = !icon && W8 && W8.state === 'tell';
+            c.save();
+            c.fillStyle = '#c9b48c'; c.beginPath(); c.arc(mx, my, r + 3, 0, TAU); c.fill();
+            c.beginPath(); c.arc(mx, my, r, 0, TAU); c.clip();
+            const g = c.createLinearGradient(mx - r, my - r, mx + r, my + r); g.addColorStop(0, '#e6eef2'); g.addColorStop(1, '#b8c6cf');
+            c.fillStyle = g; c.fillRect(mx - r, my - r, r * 2, r * 2);
+            // 鏡子裡的她：背對是白色圓背，轉過來看得到橘嘴
+            const facing = !icon && W8 && W8.turn > 0.3;
+            c.fillStyle = '#fbf8f1'; c.beginPath(); c.ellipse(mx, my + r * 0.55, r * 0.62, r * 0.55, 0, 0, TAU); c.fill();
+            c.beginPath(); c.arc(mx, my - r * 0.12, r * 0.32, 0, TAU); c.fill();
+            if (facing) { c.fillStyle = '#f3a73a'; c.beginPath(); c.ellipse(mx, my - r * 0.02, r * 0.16, r * 0.09, 0, 0, TAU); c.fill(); }
+            c.fillStyle = 'rgba(255,255,255,.55)'; c.beginPath(); c.moveTo(mx - r, my - r * 0.2); c.lineTo(mx - r * 0.2, my - r); c.lineTo(mx + r * 0.1, my - r); c.lineTo(mx - r, my + r * 0.1); c.fill();
+            c.restore();
+            if (danger) {
+                const on = warn ? Math.sin(now / 55) > -0.2 : true;
+                if (on) { c.strokeStyle = warn ? '#f2b33a' : K.shu; c.lineWidth = 3; c.beginPath(); c.arc(mx, my, r + 4, 0, TAU); c.stroke(); }
+            }
         }
 
         function drawHud(c, now) {
@@ -904,6 +1104,7 @@
                 case 'fake': return W8.kind === 'stretch' ? { arms: 'up', k, lift: 3 * Math.sin(Math.PI * k), nod: 2 * Math.sin(Math.PI * k) } : W8.kind === 'sip' ? { arms: 'sip', nod: -3 } : { arms: W8.kind };
                 case 'scold': return { arms: 'point', angry: true, lift: 1, step: 2 };
                 case 'phone': return { arms: 'sip', nod: 4, step: 1 };          // 低頭滑手機
+                case 'eat': return { arms: 'rest', nod: 5 + 4 * Math.abs(Math.sin(t * 11)), step: 1 };   // 低頭啄麵包
                 case 'glance': return { arms: 'stir', still: true, peek: true, nod: -1 };
                 default: return { arms: 'rest' };
             }
@@ -911,7 +1112,8 @@
 
         // ===== 6. 每一格的規則 =====
         function liveMoney() {
-            return Math.round((Math.floor(G.wifiMs / 100) + Math.floor(G.boostMs / 100)) * RATE / 10) + G.ep * EP_PAY + G.earn.fine;   // 照 0.1 秒算：錢跳得快，明細也對得起來
+            const base = Math.round(Math.floor(G.wifiMs / 100) * RATE / 10) + Math.round(Math.floor(G.boostMs / 100) * RATE / 10);   // 照 0.1 秒算：錢跳得快，明細也對得起來
+            return base + Math.round(base * (lv('antenna') ? val('antenna') : 0)) + G.ep * EP_PAY + G.earn.fine;
         }
         function setOn(want) {
             if (!G || G.ended) return;
@@ -970,7 +1172,7 @@
             }
             if (G.on && routerDown()) {
                 G.onSince = G.clock; G.mult = 1; G.tier = 1;   // 斷線：網速從頭算
-                G.epProg += dt / EP_SEC * SLOW;
+                G.epProg += dt / EP_SEC * slowNow();
             } else if (G.on) {
                 const m = boostOf(G.clock - G.onSince);
                 G.mult = m; G.maxMult = Math.max(G.maxMult, m);
@@ -978,11 +1180,11 @@
                 G.boostMs += dt * 1000 * (m - 1);   // 加速多出來的部分，另外算「網速加成」
                 G.epProg += dt / EP_SEC * m;
                 // 跨過 ×1.5、×2、×2.5 的時候提示一下
-                const tier = m >= 2.5 ? 2.5 : m >= 2 ? 2 : m >= 1.5 ? 1.5 : 1;
+                const tier = [3.5, 3, 2.5, 2, 1.5].find(x => m >= x - 1e-9) || 1;
                 if (tier > G.tier) { G.tier = tier; floatText(180, 316, `網速 ×${tier}`, K.green, false, 900); sfx.speed(tier); }
             } else {
                 G.mult = 1; G.tier = 1;
-                G.epProg += dt / EP_SEC * SLOW;
+                G.epProg += dt / EP_SEC * slowNow();
             }
             if (G.epProg >= 1) {
                 G.epProg -= 1; G.ep++;
@@ -1014,7 +1216,7 @@
         });
         // 電腦可以按住空白鍵
         document.addEventListener('keydown', e => {
-            if (e.code !== 'Space' || e.repeat || !G || G.ended || !$('result').classList.contains('hidden')) return;
+            if (e.code !== 'Space' || e.repeat || !G || G.ended || !$('result').classList.contains('hidden') || !$('shop').classList.contains('hidden')) return;
             e.preventDefault(); keyHeld = true;
             press({ preventDefault() { }, currentTarget: cv, pointerId: 'key' });
         });
@@ -1044,6 +1246,7 @@
                 drawRoom(ctx, now);
                 drawCounter(ctx, now);
                 drawJulie(ctx, now, 210, 238, W8.turn, poseNow(now), 0.9);
+                drawFloorGear(ctx, now);
                 drawWaves(ctx, now);
                 // 對話框：說完一陣子就收
                 if (W8.bubble && G.clock - W8.bubbleAt < (W8.state === 'scold' ? 1.6 : 1.1)) bubble(ctx, W8.bubble, 210, 100, W8.state === 'scold' ? K.shu : K.ink);
@@ -1063,15 +1266,18 @@
             G.earn.wifi = Math.round(tenths * RATE / 10);
             const btenths = Math.floor(G.boostMs / 100), bsecs = btenths / 10;   // 加速多下載的量，換算成秒
             G.earn.boost = Math.round(btenths * RATE / 10);
+            G.earn.antenna = Math.round((G.earn.wifi + G.earn.boost) * (lv('antenna') ? val('antenna') : 0));
             G.earn.ep = G.ep * EP_PAY;
             G.earn.perfect = !G.endless && !G.strikes && secs >= 10 ? PERFECT : 0;   // 無盡模式沒有完美蹭網
             // [名稱, 數量, 單位, 金額, 怎麼算]；金額加起來等於合計
             return [
                 ['蹭網', secs, '秒', G.earn.wifi, `每秒省 ${Wallet.fmt(RATE)} 流量費`],
-                ['網速加成', bsecs, '秒', G.earn.boost, `連著越久越快（最快 ×${BOOST_MAX}），多下載的換算成秒`],
+                ['網速加成', bsecs, '秒', G.earn.boost, `連著越久越快（最快 ×${boostMax()}${lv('extender') ? `，${SHOP_BY.extender.tiers[lv('extender')]}` : ''}），多下載的換算成秒`],
+                ['天線加成', G.earn.antenna ? secs + bsecs : 0, '秒', G.earn.antenna, `${SHOP_BY.antenna.tiers[lv('antenna')] || '天線'}：蹭網和網速加成多 ${Math.round((val('antenna') || 0) * 100)}%`],
                 ['追完', G.ep, '集', G.earn.ep, `《${G.drama}》每集 ${Wallet.fmt(EP_PAY)}`],
                 ['完美蹭網', G.earn.perfect ? 1 : 0, '次', G.earn.perfect, '一次都沒被抓'],
-                ['網路使用費', G.caught, '次', G.earn.fine, `被抓一次賠 28 樓 ${Wallet.fmt(FINE)}`],
+                ['網路使用費', G.caught, '次', G.earn.fine, `被抓一次賠 28 樓 ${Wallet.fmt(fineNow())}${lv('unlimited') ? `（${SHOP_BY.unlimited.tiers[lv('unlimited')]}）` : ''}`],
+                ['麵包', G.breadUsed, '片', 0, '被抓的時候丟麵包，茱莉鴨去吃了：不算抓、不扣錢'],
             ].filter(r => r[1]);
         }
         async function endRound() {
@@ -1080,7 +1286,7 @@
             renderHold();
             sfx.bell();
             const rows = bill();
-            const sales = G.earn.wifi + G.earn.boost + G.earn.ep + G.earn.perfect + G.earn.fine;
+            const sales = G.earn.wifi + G.earn.boost + G.earn.antenna + G.earn.ep + G.earn.perfect + G.earn.fine;
             const pay = Math.max(100, sales);
             const grade = gradeOf(pay);
             G.pay = { sales, pay };
@@ -1121,7 +1327,7 @@
 
         async function makeSheet(pay, grade, rows) {
             const lines = rows.map(([k, v, u, m]) => [`${k} ${v} ${u}`, (m < 0 ? '−' : '') + Wallet.fmt(Math.abs(m))]);
-            const allText = lines.flat().join('') + '蹭網日報二十七樓房間茱莉鴨沒發現合計共被抓次追劇《》保底出勤費給不到.無盡模式撐了第季:連線著樓（）' + G.drama + grade.mark + grade.line + '0123456789$,−・';
+            const allText = lines.flat().join('') + '蹭網日報二十七樓房間茱莉鴨沒發現合計共被抓次追劇《》保底出勤費給不到.天線加成麵包片無盡模式撐了第季:連線著樓（）' + G.drama + grade.mark + grade.line + '0123456789$,−・';
             try { await Promise.race([Promise.all([document.fonts.load(`600 40px ${SERIF}`, allText), document.fonts.load(`400 40px ${SANS}`, allText)]), new Promise(res => setTimeout(res, 2500))]); } catch (e) { }
             const c = document.createElement('canvas'); c.width = 1080; c.height = 1350;
             const x = c.getContext('2d');
@@ -1180,6 +1386,7 @@
                 strikes: G.caught, looks: G.looks, dodged: G.dodged, fakes: G.fakes, connects: G.connects, perfect: !!G.earn.perfect,
                 login: !!(window.Line && Line.loggedIn),
                 mode: G.endless ? 'endless' : 'normal', season: G.endless ? G.season : 0, recovered: G.recovered, phones: G.phones, glances: G.glances, routers: G.routers, idle_end: !!G.idleEnd,
+                shop: Object.fromEntries(SHOP.map(u => [u.key, lv(u.key)]).filter(x => x[1])), breads: G.breadUsed, antenna: G.earn.antenna, fine: G.earn.fine,
             });
             st.recent = st.recent.slice(0, 50);
             try { localStorage.setItem(STATS_KEY, JSON.stringify(st)); } catch (e) { }
@@ -1246,9 +1453,108 @@
         $('quit').addEventListener('click', () => { if (G && G.endless && G.started && !G.ended) { holds.clear(); keyHeld = false; G.on = false; endRound(); } });
         $('againBtn').addEventListener('click', () => { newRound(); $('stage').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' }); });
         $('payAcct').addEventListener('click', e => { if (e.target.closest('[data-login]')) Line.login(); });
-        Wallet.on(type => { if (type === 'login') showToast('登入了，省下的錢存進 LINE 帳號'); });
+
+        // ===== 11. 蹭網道具面板 =====
+        const playing = () => G && G.started && !G.ended;
+        function shopIcon(cv, u, level) {
+            const r = Math.min(window.devicePixelRatio || 1, 3), px = 56;
+            cv.width = px * r; cv.height = px * r;
+            const c = cv.getContext('2d'); c.scale(r, r);
+            const L = Math.max(1, level);
+            c.fillStyle = K.wall; c.fillRect(0, 0, 56, 56);
+            if (u.key === 'mirror') {
+                c.fillStyle = K.phone; roundRect(c, 10, 14, 30, 42, 6); c.fill();
+                c.fillStyle = K.screen; roundRect(c, 13, 17, 24, 36, 4); c.fill();
+                drawMirror(c, 38, 18, L, 0, true);
+            } else if (u.key === 'antenna') {
+                drawAntenna(c, 28, 48, L, 1.2);
+                c.strokeStyle = K.wifi; c.lineWidth = 1.5;
+                for (let i = 0; i < L; i++) { c.beginPath(); c.arc(44, 12, 4 + i * 4, Math.PI * 0.6, Math.PI * 1.1); c.stroke(); }
+            } else if (u.key === 'extender') {
+                c.save(); c.translate(28, 28); c.scale(1.5, 1.5); drawExtender(c, 0, -2, L, 0, false); c.restore();
+                c.fillStyle = K.green; c.font = `700 10px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(`×${SHOP_BY.extender.vals[L - 1].max}`, 28, 50);
+            } else if (u.key === 'unlimited') {
+                c.fillStyle = K.phone; roundRect(c, 12, 8, 32, 44, 6); c.fill();
+                c.fillStyle = K.screen; roundRect(c, 15, 11, 26, 38, 4); c.fill();
+                c.fillStyle = '#c9b26a'; c.font = `700 11px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(L >= 2 ? '5G' : '4G', 28, 24);
+                c.font = `600 8px ${SANS}`; c.fillText('吃到飽', 28, 38);
+            } else if (u.key === 'cooker') {
+                drawCooker(c, 28, 50, L, null, 1.1);
+            } else if (u.key === 'bread') {
+                drawBreadBag(c, 28, 42, L, L, 1.3);
+            }
+        }
+        function renderShop() {
+            $('shopMoney').textContent = Wallet.fmt(Wallet.money);
+            $('shopList').innerHTML = SHOP.map(u => {
+                const now = lv(u.key), max = u.prices.length, next = now < max ? now + 1 : null;
+                const price = next ? u.prices[now] : 0;
+                const dots = Array.from({ length: max }, (_, i) => `<i class="${i < now ? 'on' : ''}"></i>`).join('');
+                const tier = next ? `${u.tiers[now] ? u.tiers[now] + ' → ' : ''}${u.tiers[next]}` : u.tiers[now];
+                return `<div class="shop-row">
+                    <canvas class="shop-icon" data-icon="${u.key}" data-lv="${next || now}"></canvas>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm text-wabi-dark tracking-widest">${u.name}<span class="ml-1 text-[10px] font-sans text-stone-400">${u.sub}</span><span class="shop-dots ml-1">${dots}</span></p>
+                        <p class="mt-0.5 text-[10px] font-sans tracking-wider text-stone-400">${tier}</p>
+                        <p class="mt-1 text-[11px] font-sans leading-relaxed text-stone-600">${now ? '現在：' + u.fx(u.vals[now - 1]) : ''}${next ? `${now ? '<br>' : ''}升級：${u.fx(u.vals[next - 1])}` : '<br>已經是最高級'}</p>
+                    </div>
+                    <button type="button" class="shop-buy" data-buy="${u.key}" ${!next || Wallet.money < price ? 'disabled' : ''}>${next ? `${now ? '升級' : '買'}<br>${Wallet.fmt(price)}` : '滿級'}</button>
+                </div>`;
+            }).join('');
+            $('shopList').querySelectorAll('[data-icon]').forEach(cv => shopIcon(cv, SHOP_BY[cv.dataset.icon], Number(cv.dataset.lv)));
+        }
+        function renderShopLv() {
+            const total = SHOP.reduce((t, u) => t + lv(u.key), 0);
+            $('shopLv').textContent = total ? total : '';
+            $('shopBtn').setAttribute('aria-label', total ? `蹭網道具，買了 ${total} 樣` : '蹭網道具');
+        }
+        function openShop() {
+            if (playing()) { showToast('收工再去買道具'); return; }
+            shop = loadShop();
+            renderShop();
+            const el = $('shop');
+            el.classList.remove('hidden');
+            requestAnimationFrame(() => el.classList.add('on'));
+        }
+        function closeShop() {
+            const el = $('shop');
+            el.classList.remove('on');
+            setTimeout(() => el.classList.add('hidden'), reduceMotion ? 0 : 220);
+        }
+        function buyUpgrade(key) {
+            if (playing()) return;
+            shop = loadShop();  // 用錢包裡最新的（別家店可能也買過東西，spent 要接著加）
+            const u = SHOP_BY[key], now = lv(key);
+            if (now >= u.prices.length) return;
+            const price = u.prices[now];
+            if (!Wallet.spend(price)) { showToast('錢包不夠，先多蹭幾輪'); return; }
+            shop.lv[key] = now + 1;
+            shop.spent += price;
+            Wallet.setShop(shop);
+            audio(); sfx.buy();
+            showToast(`買了${u.name}：${u.tiers[now + 1]}`);
+            shop = loadShop();
+            if (G && !G.started && !G.ended) newRound();   // 還沒開始的這一輪也照新的算（麵包幾片、房間裡的道具）
+            renderShop(); renderShopLv();
+        }
+        $('shopBtn').addEventListener('click', openShop);
+        $('shopBtn2').addEventListener('click', openShop);
+        $('shop').addEventListener('click', e => {
+            const b = e.target.closest('[data-buy]');
+            if (b && !b.disabled) { buyUpgrade(b.dataset.buy); return; }
+            if (e.target.closest('[data-shop-close]') || e.target.id === 'shop') closeShop();
+        });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('shop').classList.contains('hidden')) closeShop(); });
+        Wallet.on(type => {
+            if (type === 'login') showToast('登入了，省下的錢存進 LINE 帳號');
+            // 別支手機買過、登入登出：重新讀（蹭到一半不換，下一輪才算）
+            if (!playing()) { shop = loadShop(); if (G && !G.started && !G.ended) G.breads = lv('bread') ? val('bread') : 0; }
+            renderShopLv();
+            if (!$('shop').classList.contains('hidden')) renderShop();
+        });
 
         newRound();
+        renderShopLv();
         requestAnimationFrame(frame);
         setTimeout(uploadRounds, 2500);  // 補送上次沒送成功的
     </script>
