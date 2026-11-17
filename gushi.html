@@ -187,7 +187,7 @@
         <!-- 規則 -->
         <section class="mt-8 text-[11px] font-sans tracking-wider leading-relaxed text-stone-500 space-y-1 px-1">
             <p>・每天 9:00 到 24:00 整點跳價，每晚 21:00 出晚報。</p>
-            <p>・一天最多漲跌 10%（漲停、跌停）。</p>
+            <p>・一天最多漲跌 10%。漲停的時候買不到，跌停的時候賣不掉。</p>
             <p>・買、賣各收 1% 手續費。今天買的要等明天 9:00 開盤後才能賣。</p>
             <p>・半夜也可以買賣，用 24:00 的收盤價成交。</p>
             <p>・一檔最多買 $50 萬、全部最多 $200 萬，超過只能賣。</p>
@@ -325,10 +325,10 @@
             const q = Math.max(0, parseInt($('q').value) || 0), v = q * cur.px, fee = Math.ceil(v * 0.01);
             $('sCost').innerHTML = `${q} 股 × ${pf(cur.px)} ＝ ${fmt(v)}<br>買進付 <b class="text-wabi-dark">${fmt(v + fee)}</b>（含手續費 ${fmt(fee)}）・賣出拿回 ${fmt(v - fee)}`;
             const h = HOLD[cur.code];
-            $('sell').disabled = !h || q > h.n - h.today;
+            $('sell').disabled = !h || q > h.n - h.today || cur.limit === 'down';
             $('buy').disabled = cur.limit === 'up';
             $('buy').textContent = cur.limit === 'up' ? '漲停・買不到' : '買進';
-            $('sell').textContent = cur.limit === 'down' ? '跌停・照賣' : '賣出';
+            $('sell').textContent = cur.limit === 'down' ? '跌停・賣不掉' : '賣出';
         }
         function openSheet(i) {
             cur = STOCKS[i];
