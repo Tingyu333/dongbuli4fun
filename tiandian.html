@@ -178,11 +178,11 @@
 
         // 料：layer b 底、m 餡、t 飾；unlock 是配料櫃要幾級
         const ING = {
-            cookie: { layer: 'b', name: '餅乾', price: 55 }, cake: { layer: 'b', name: '蛋糕', price: 80 }, bread: { layer: 'b', name: '麵包', price: 65 },
-            choco: { layer: 'm', name: '巧克力', price: 45 }, cream: { layer: 'm', name: '鮮奶油', price: 35 },
-            pudding: { layer: 'm', name: '布丁', price: 70, unlock: 1 }, fruit: { layer: 'm', name: '水果', price: 80, unlock: 2 },
-            sprinkle: { layer: 't', name: '巧克力米', price: 20 }, whip: { layer: 't', name: '鮮奶油', price: 25 },
-            sauce: { layer: 't', name: '巧克力醬', price: 35, unlock: 1 }, berry: { layer: 't', name: '草莓', price: 50, unlock: 2 },
+            cookie: { layer: 'b', name: '餅乾', price: 65 }, cake: { layer: 'b', name: '蛋糕', price: 90 }, bread: { layer: 'b', name: '麵包', price: 75 },
+            choco: { layer: 'm', name: '巧克力', price: 50 }, cream: { layer: 'm', name: '鮮奶油', price: 40 },
+            pudding: { layer: 'm', name: '布丁', price: 80, unlock: 1 }, fruit: { layer: 'm', name: '水果', price: 90, unlock: 2 },
+            sprinkle: { layer: 't', name: '巧克力米', price: 25 }, whip: { layer: 't', name: '鮮奶油', price: 30 },
+            sauce: { layer: 't', name: '巧克力醬', price: 40, unlock: 1 }, berry: { layer: 't', name: '草莓', price: 55, unlock: 2 },
         };
         const TIP_MAX = 0.4, SCRAP = 25, ANGRY = 60, ITO_WIN = 300, ITO_P = 0.35;
         const PAT_BASE = 26;                 // 客人基本願意等幾秒
@@ -458,7 +458,7 @@
             G.custs.forEach((cu, i) => {
                 if (!cu) { if (G.clock >= G.nextAt[i]) spawnCust(i); return; }
                 if (cu.state === 'wait') { if (G.pauseLeft <= 0) cu.left -= dt; if (cu.left <= 0) angry(cu); }
-                else if (G.clock >= cu.leaveAt) { G.custs[i] = null; G.nextAt[i] = G.clock + rnd(0.8, 2.4); }
+                else if (G.clock >= cu.leaveAt) { G.custs[i] = null; G.nextAt[i] = G.clock + rnd(0.5, 1.6); }
             });
             // 出盤：排著的（按過出盤、轉盤還有一盤）等轉盤空了自己出
             G.trayFlash = Math.max(0, G.trayFlash - dt);
