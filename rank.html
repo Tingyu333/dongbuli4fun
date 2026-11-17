@@ -26,6 +26,7 @@
     <script src="assets/theme.js?v=20261116d"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261116d"></script>
+    <script src="assets/avatar.js?v=20261117"></script>
     <style>
         .line-btn {
             min-height: 44px;
@@ -504,7 +505,9 @@
             if (mine && !shown.includes(mine)) shown.push(mine);
             box.innerHTML = shown.length ? shown.map((r, i) => {
                 const place = r.rank <= 3 ? r.rank : 0;
-                const pic0 = r.p.picture && !badPic.has(r.p.picture)
+                const pic0 = r.p.avatar && window.Avatar && Avatar.has(r.p.avatar)
+                    ? `<img class="avatar" src="${Avatar.url(r.p.avatar)}" alt="">`
+                    : r.p.picture && !badPic.has(r.p.picture)
                     ? `<img class="avatar" src="${esc(r.p.picture)}" alt="" referrerpolicy="no-referrer" loading="lazy" data-initial="${esc((r.p.name || '旅')[0])}">`
                     : `<span class="avatar" aria-hidden="true">${esc((r.p.name || '旅')[0])}</span>`;
                 const pic = place ? `<span class="halo">${pic0}${place === 1 ? CROWN : ''}</span>` : pic0;

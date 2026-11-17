@@ -101,6 +101,7 @@ function route(type, input) {
     if (type === 'bonusClaim') return bonusClaim(input);
     if (type === 'lineLogin') return lineLogin(input);
     if (type === 'lineLogout') return lineLogout(input);
+    if (type === 'profile') return profileSet(input);
     if (type === 'walletSync') return walletSync(input);
     if (type === 'washLog') return washLog(input);
     if (type === 'cleanLog') return cleanLog(input);
@@ -1071,8 +1072,48 @@ function lineLogin(input) {
   var player = walletView(p);
   player.name = who.name;
   player.picture = who.picture;
+  var pf = playerProfile(p.row);
+  player.nick = pf.nick; player.avatar = pf.avatar;
   player.isNew = isNew;
   return { result: 'success', session: session, player: player };
+}
+
+// --- 暱稱、指定頭像（Players 的 M nick、N avatar）---
+// LINE 的名字、大頭貼（C、D）不動，登入時照樣更新；有暱稱或指定頭像就優先顯示它（排行榜），沒有才用 LINE 的。
+// 頭像只能從網站的角色挑（AVATAR_KEYS，網頁 assets/avatar.js 畫），不收上傳的圖。
+var AVATAR_KEYS = ['julie', 'appleduck', 'raccoon', 'captain', 'cat', 'dog', 'mole', 'nugget'];
+var PROFILE_OPS_PER_HOUR = 60;
+function playerProfile(row) {
+  var v = playersSheet().getRange(row, 13, 1, 2).getValues()[0];
+  var nick = String(v[0] || '').replace(/^'/, '').trim().slice(0, 12), avatar = String(v[1] || '');
+  return { nick: nick, avatar: AVATAR_KEYS.indexOf(avatar) >= 0 ? avatar : '' };
+}
+// { type: 'profile', session, nick?, avatar? }：有帶的欄位才改（空字串＝清掉、改回用 LINE 的），沒帶就只是讀
+function profileSet(input) {
+  var lineId = sessionUser(input.session);
+  if (!lineId) return { result: 'unauthorized' };
+  var cache = CacheService.getScriptCache(), key = 'profile:' + lineId + ':' + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var n = Number(cache.get(key) || 0);
+  if (n >= PROFILE_OPS_PER_HOUR) return { result: 'error', error: '這小時改太多次了，晚點再來' };
+  cache.put(key, String(n + 1), 3600);
+  var p = findPlayer(lineId);
+  if (!p) return { result: 'unauthorized' };
+  var sheet = playersSheet();
+  if (input.nick !== undefined || input.avatar !== undefined) {
+    var head = sheet.getRange(1, 13, 1, 2).getValues()[0];
+    if (!head[0] || !head[1]) sheet.getRange(1, 13, 1, 2).setValues([['nick', 'avatar']]);
+  }
+  if (input.nick !== undefined) {
+    var nick = String(input.nick == null ? '' : input.nick).replace(/[\r\n\t]/g, ' ').trim().slice(0, 12);
+    sheet.getRange(p.row, 13).setValue(nick ? asText(nick) : '');
+  }
+  if (input.avatar !== undefined) {
+    var av = String(input.avatar || '');
+    if (av && AVATAR_KEYS.indexOf(av) < 0) return { result: 'error', error: '沒有這個頭像' };
+    sheet.getRange(p.row, 14).setValue(av);
+  }
+  var pf = playerProfile(p.row);
+  return { result: 'success', profile: { name: p.name, picture: p.picture, nick: pf.nick, avatar: pf.avatar } };
 }
 
 function lineLogout(input) {
@@ -1245,7 +1286,7 @@ function washLog(input) {
 // 花錢：Players 的 spent（全部花掉的）拆成店面升級（shop.spent，洗頭店＋菜園農具＋早餐店）、捐香油錢（gongde.donated）、點燈（gongde.lit），剩下的算刮刮樂。
 // 公開：回 LINE 名字和大頭貼，不回 line_id；有帶 session 的話把自己那列標 me。算好的榜存 CacheService 5 分鐘。
 
-var BOARD_CACHE_KEY = 'board:v10', BOARD_CACHE_SEC = 60;  // 只讀新的列以後重算很快，一分鐘算一次（以前五分鐘）
+var BOARD_CACHE_KEY = 'board:v11', BOARD_CACHE_SEC = 60;  // 只讀新的列以後重算很快，一分鐘算一次（以前五分鐘）
 
 // 每張紀錄表怎麼併成「每個人最好的一場」：cols 讀幾欄，merge(best, row) 把一列併進去（best 用 line_id 當 key）
 // 單場最高分（Washes G total／AE ms、Cleans F total／AA ms）：分數高的贏，同分比快
@@ -1438,7 +1479,11 @@ function buildBoard() {
     sp.scratch = Math.max(0, sp.total - sp.shop - sp.donate - sp.lamp);
     sp.won = num((earned.scratch || {}).total) + num((earned.caishen || {}).total);  // 刮中的（含財神加碼）
     if (!x.n && !c.n && !fm.n && !wf.n && !zc.n && !sh.n && x.best == null && c.best == null && !sp.total) continue;
-    out.push({ id: id, name: String(rows[i][2] || '旅人').slice(0, 20), picture: /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c, farm: fm, wifi: wf, zaocan: zc, ship: sh, spend: sp });
+    // 有暱稱、指定頭像就用它，沒有才用 LINE 的
+    var nick = String(rows[i][12] || '').replace(/^'/, '').trim().slice(0, 12), avatar = String(rows[i][13] || '');
+    if (AVATAR_KEYS.indexOf(avatar) < 0) avatar = '';
+    out.push({ id: id, name: nick || String(rows[i][2] || '旅人').slice(0, 20), avatar: avatar,
+      picture: !avatar && /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c, farm: fm, wifi: wf, zaocan: zc, ship: sh, spend: sp });
   }
   return { at: new Date().toISOString(), players: out };
 }
@@ -1454,7 +1499,7 @@ function leaderboard(input) {
   return {
     result: 'success', at: board.at,
     players: board.players.map(function (p) {
-      return { name: p.name, picture: p.picture, xitou: p.xitou, clean: p.clean, farm: p.farm, wifi: p.wifi, zaocan: p.zaocan, ship: p.ship, spend: p.spend, me: !!me && p.id === me };
+      return { name: p.name, picture: p.picture, avatar: p.avatar || '', xitou: p.xitou, clean: p.clean, farm: p.farm, wifi: p.wifi, zaocan: p.zaocan, ship: p.ship, spend: p.spend, me: !!me && p.id === me };
     })
   };
 }

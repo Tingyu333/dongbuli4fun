@@ -27,6 +27,7 @@
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261116d"></script>
     <script src="assets/gongde.js?v=20261116d"></script>
+    <script src="assets/avatar.js?v=20261117"></script>
     <style>
         .line-btn {
             min-height: 44px;
@@ -90,6 +91,18 @@
             border-color: rgb(var(--wabi-shu));
             color: rgb(var(--wabi-shu));
         }
+        /* 改暱稱、頭像 */
+        #prof { background: rgba(0, 0, 0, 0); transition: background 0.22s; }
+        #prof.on { background: rgba(0, 0, 0, 0.45); }
+        #prof .prof-sheet { transform: translateY(100%); transition: transform 0.22s ease-out; }
+        #prof.on .prof-sheet { transform: none; }
+        @media (prefers-reduced-motion: reduce) { #prof, #prof .prof-sheet { transition: none; } }
+        .av-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .av-opt { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 2px 6px; border: 1px solid rgb(var(--wabi-sub)); border-radius: 8px;
+            font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.05em; color: rgb(var(--wabi-text)); touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        .av-opt img, .av-opt .av-none { width: 52px; height: 52px; border-radius: 9999px; }
+        .av-opt .av-none { display: flex; align-items: center; justify-content: center; border: 1px solid rgb(var(--wabi-sub)); color: rgb(var(--wabi-accent)); }
+        .av-opt.on { border-color: rgb(var(--wabi-shu)); box-shadow: 0 0 0 1px rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
     <link rel="stylesheet" href="assets/tailwind.css?v=20261117">
@@ -271,6 +284,27 @@
         <p>&copy; 2026 DONGBULI · 會員・我</p>
     </footer>
 
+    <!-- 改暱稱、頭像：有設就優先顯示（排行榜），沒設用 LINE 的 -->
+    <div id="prof" class="hidden fixed inset-0 z-[80] flex items-end justify-center" role="dialog" aria-modal="true" aria-label="改暱稱和頭像">
+        <div class="prof-sheet w-full max-w-md bg-wabi-bg rounded-t-xl max-h-[92vh] overflow-y-auto overscroll-contain">
+            <div class="px-5 pt-5 pb-3 border-b border-stone-200">
+                <p class="text-lg text-wabi-dark tracking-widest">名字・換</p>
+                <p class="mt-1 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">排行榜上別人看到的名字和頭像。沒設定就用 LINE 的。</p>
+            </div>
+            <div class="px-5 pt-4">
+                <label for="nickInput" class="text-xs font-sans tracking-widest text-stone-500">暱稱（12 個字以內）</label>
+                <input id="nickInput" maxlength="12" autocomplete="off" class="mt-1 w-full bg-transparent border-b border-stone-300 py-2 text-wabi-dark tracking-widest outline-none focus:border-wabi-dark">
+                <p class="mt-1 text-[10px] font-sans tracking-wider text-stone-400">空白就用 LINE 名字</p>
+                <p class="mt-5 text-xs font-sans tracking-widest text-stone-500">頭像</p>
+                <div id="avGrid" class="av-grid mt-2"></div>
+            </div>
+            <div class="px-5 py-5 grid grid-cols-2 gap-3">
+                <button type="button" data-prof-close class="py-3 border border-stone-300 text-wabi-dark tracking-[0.2em] font-sans text-xs">算了</button>
+                <button type="button" id="profSave" class="py-3 bg-wabi-dark text-wabi-bg tracking-[0.2em] font-sans text-xs">存起來</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const $ = id => document.getElementById(id);
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -295,16 +329,18 @@
         function renderWho() {
             const box = $('who');
             if (Line.loggedIn) {
-                const p = Line.profile || {};
+                const p = Line.profile || {}, me = loadMe();
+                const pic = me.avatar && Avatar.has(me.avatar) ? Avatar.url(me.avatar) : p.picture;
                 box.innerHTML = `
                     <div class="flex items-center gap-4">
-                        ${p.picture ? `<img src="${esc(p.picture)}" alt="" referrerpolicy="no-referrer" class="w-14 h-14 rounded-full shrink-0 border border-stone-100">` : '<span class="w-14 h-14 rounded-full shrink-0 border border-stone-200 flex items-center justify-center text-wabi-accent">我</span>'}
+                        ${pic ? `<img src="${esc(pic)}" alt="" referrerpolicy="no-referrer" class="w-14 h-14 rounded-full shrink-0 border border-stone-100">` : '<span class="w-14 h-14 rounded-full shrink-0 border border-stone-200 flex items-center justify-center text-wabi-accent">我</span>'}
                         <div class="min-w-0 flex-1">
-                            <p class="text-lg text-wabi-dark tracking-widest truncate">${esc(p.name || '旅人')}</p>
-                            <p class="text-[11px] font-sans tracking-widest text-stone-400">用 LINE 登入中</p>
+                            <p class="text-lg text-wabi-dark tracking-widest truncate">${esc(me.nick || p.name || '旅人')}</p>
+                            <p class="text-[11px] font-sans tracking-widest text-stone-400 truncate">${me.nick ? `LINE 名字：${esc(p.name || '')}` : '用 LINE 登入中'}</p>
                         </div>
                         <button type="button" data-logout class="shrink-0 min-h-[44px] px-2 text-xs font-sans tracking-widest text-stone-400 underline underline-offset-4">登出</button>
-                    </div>`;
+                    </div>
+                    <button type="button" data-prof class="mt-4 w-full min-h-[44px] border border-stone-300 text-wabi-dark tracking-[0.2em] font-sans text-xs">改暱稱、頭像</button>`;
             } else {
                 box.innerHTML = `
                     <p class="text-lg text-wabi-dark tracking-widest">還沒登入</p>
@@ -340,12 +376,53 @@
             renderWallet();
         }
 
+        // ---- 暱稱、頭像（存在後端 Players 的 M、N 欄；這支手機記一份在 dongbuli-me，打開頁面再跟後端對一次）----
+        function loadMe() { try { return JSON.parse(localStorage.getItem('dongbuli-me') || 'null') || {}; } catch (e) { return {}; } }
+        function saveMe(m) { try { localStorage.setItem('dongbuli-me', JSON.stringify({ nick: m.nick || '', avatar: m.avatar || '' })); } catch (e) { } }
+        async function pullMe() {
+            if (!Line.loggedIn) return;
+            try { const r = await Line.call({ type: 'profile' }); if (r.result === 'success') { saveMe(r.profile); renderWho(); } } catch (e) { }
+        }
+        let pickAv = '';
+        function renderAvGrid() {
+            const p = Line.profile || {};
+            const line = p.picture ? `<img src="${esc(p.picture)}" alt="" referrerpolicy="no-referrer">` : '<span class="av-none">我</span>';
+            $('avGrid').innerHTML = `<button type="button" class="av-opt${pickAv ? '' : ' on'}" data-av="">${line}LINE 頭貼</button>` +
+                Avatar.LIST.map(a => `<button type="button" class="av-opt${pickAv === a.key ? ' on' : ''}" data-av="${a.key}"><img src="${Avatar.url(a.key)}" alt="">${esc(a.name)}</button>`).join('');
+        }
+        function openProf() {
+            const me = loadMe(), p = Line.profile || {};
+            pickAv = me.avatar || '';
+            $('nickInput').value = me.nick || ''; $('nickInput').placeholder = p.name || '旅人';
+            renderAvGrid();
+            const el = $('prof'); el.classList.remove('hidden'); requestAnimationFrame(() => el.classList.add('on'));
+        }
+        function closeProf() { const el = $('prof'); el.classList.remove('on'); setTimeout(() => el.classList.add('hidden'), 220); }
+        $('prof').addEventListener('click', e => {
+            const b = e.target.closest('[data-av]');
+            if (b) { pickAv = b.dataset.av; renderAvGrid(); return; }
+            if (e.target.id === 'prof' || e.target.closest('[data-prof-close]')) closeProf();
+        });
+        $('profSave').addEventListener('click', async () => {
+            const btn = $('profSave'); btn.disabled = true; btn.textContent = '存…';
+            try {
+                const r = await Line.call({ type: 'profile', nick: $('nickInput').value.trim(), avatar: pickAv });
+                if (r.result === 'success') { saveMe(r.profile); closeProf(); renderWho(); showToast('改好了，排行榜一分鐘內會換'); }
+                else if (r.result === 'unauthorized') showToast('登入過期了，再登入一次');
+                else showToast(/不認得的請求/.test(r.error || '') ? '後端還是舊版，要重新部署「新版本」' : (r.error || '存不進去'));
+            } catch (e) { showToast('連不到後端，可能是網路不穩'); }
+            btn.disabled = false; btn.textContent = '存起來';
+        });
+
         $('who').addEventListener('click', e => {
+            if (e.target.closest('[data-prof]')) return openProf();
             if (e.target.closest('[data-login]')) Line.login();
             if (e.target.closest('[data-logout]') && confirm('登出以後，這支手機會換回登入前的錢包。帳號裡的錢不會不見，下次登入就回來。')) Line.logout();
         });
 
         Wallet.on((type, d) => {
+            if (type === 'logout') { try { localStorage.removeItem('dongbuli-me'); } catch (e) { } }
+            if (type === 'login') pullMe();
             render();
             if (type === 'login') showToast(d.isNew ? `登入了，這支手機的 ${fmt(d.left)} 存進帳號了` : `歡迎回來，${d.name}`);
             if (type === 'logout') showToast(d && d.expired ? '登入過期了，再登入一次' : '登出了');
@@ -354,6 +431,7 @@
         window.addEventListener('pageshow', render);
         document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
         render();
+        Line.ready.then(pullMe, () => { });
     </script>
 </body>
 
