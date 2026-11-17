@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>甜點・轉 | 丼步喱</title>
-    <!-- 設計稿：浣熊大王提案的甜點店流水線。畫面是假的、不能玩 -->
+    <!-- 設計稿：浣熊大王提案的甜點店流水線，店名泡泡鴨甜點舖（使用者寫的是「泡泡鴨🍎甜點舖」，蘋果用畫的，網站不放 emoji）。畫面是假的、不能玩 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
@@ -61,12 +61,12 @@
             <button id="shopBtn" type="button" class="shop-btn absolute right-0 top-0">店面</button>
             <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">DESSERT</span>
             <h1 class="text-3xl font-light text-wabi-dark tracking-widest">甜點・轉</h1>
-            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">浣熊大王甜點舖。轉盤不會等你。</p>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">泡泡鴨<svg viewBox="0 0 20 20" width="13" height="13" style="display:inline-block;vertical-align:-1px;margin:0 1px" aria-label="蘋果"><path d="M10 6c-2-1.6-6.5-1.4-6.5 3.6 0 3.8 2.6 7.4 4.4 7.4 1 0 1.4-.5 2.1-.5s1.1.5 2.1.5c1.8 0 4.4-3.6 4.4-7.4 0-5-4.5-5.2-6.5-3.6z" fill="#c8372f"/><path d="M10 6c0-2 1-3.5 2.5-4" stroke="#6b4a2a" stroke-width="1.4" fill="none" stroke-linecap="round"/><path d="M10.6 4.6c1.6-1.4 3.6-1 4.2-.4-.8 1.2-2.6 1.6-4.2.4z" fill="#4c9a3f"/></svg>甜點舖。轉盤不會等你。</p>
         </div>
 
         <section class="stage bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-3 pt-4 pb-4">
             <div class="flex items-start justify-between gap-2 px-1 min-h-[2.9rem]">
-                <p class="text-sm text-wabi-dark tracking-wider leading-relaxed">浣熊大王：茱莉鴨要的是布丁，不是巧克力。</p>
+                <p class="text-sm text-wabi-dark tracking-wider leading-relaxed">泡泡鴨：茱莉鴨要的是布丁，不是巧克力。</p>
                 <span class="shrink-0 text-right text-[10px] leading-relaxed font-sans tracking-widest text-stone-400">出餐 4<br>氣走 0</span>
             </div>
             <canvas id="cv" class="mt-2" aria-label="甜點店：上面是客人和想吃的甜點，下面是轉盤，經過三站各放一種料"></canvas>
@@ -87,7 +87,7 @@
             <div class="px-5 pt-5 pb-2 flex items-baseline justify-between border-b border-stone-200">
                 <div>
                     <p class="text-lg text-wabi-dark tracking-widest">店面・升</p>
-                    <p class="mt-1 text-[10px] font-sans tracking-widest text-stone-400">浣熊大王說：設備錢你出，甜點我先試吃</p>
+                    <p class="mt-1 text-[10px] font-sans tracking-widest text-stone-400">泡泡鴨說：設備錢你出，甜點我先試吃</p>
                 </div>
                 <p class="text-xs font-sans tracking-widest text-stone-500">錢包 <b class="font-normal text-wabi-shu">$86,400</b></p>
             </div>
@@ -142,6 +142,13 @@
             else if (kind === 'berry') { strawberry(0, -3, 4.5); }
             else { ctx.fillStyle = '#fffaf2'; ctx.strokeStyle = '#e8dccb'; ctx.beginPath(); ctx.moveTo(-6, 2); ctx.quadraticCurveTo(-7, -4, 0, -9); ctx.quadraticCurveTo(7, -4, 6, 2); ctx.closePath(); ctx.fill(); ctx.stroke(); }
             ctx.restore();
+        }
+        function apple(x, y, r) {
+            ctx.fillStyle = '#c8372f'; ctx.beginPath(); ctx.moveTo(x, y - r * .55);
+            ctx.bezierCurveTo(x - r * .4, y - r * 1.05, x - r * 1.1, y - r * .8, x - r, y); ctx.bezierCurveTo(x - r * .9, y + r * .9, x - r * .3, y + r * 1.05, x, y + r * .85);
+            ctx.bezierCurveTo(x + r * .3, y + r * 1.05, x + r * .9, y + r * .9, x + r, y); ctx.bezierCurveTo(x + r * 1.1, y - r * .8, x + r * .4, y - r * 1.05, x, y - r * .55); ctx.fill();
+            ctx.strokeStyle = '#4a3020'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, y - r * .55); ctx.lineTo(x + r * .2, y - r * 1.15); ctx.stroke();
+            ctx.fillStyle = '#5aa04a'; ctx.beginPath(); ctx.ellipse(x + r * .55, y - r * 1, r * .45, r * .2, -.4, 0, 7); ctx.fill();
         }
         function dessert(d, x, y, s = 1) {
             if (d.b) base(d.b, x, y, s);
@@ -284,8 +291,10 @@
             for (let y = 196; y < H; y += 28) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
             for (let x = 0; x < W; x += 28) { ctx.beginPath(); ctx.moveTo(x, 176); ctx.lineTo(x, H); ctx.stroke(); }
             // 最上面：時間、招牌、錢
-            ctx.fillStyle = '#7a5a3e'; rr(110, 6, 140, 22, 4); ctx.fill();
-            ctx.fillStyle = '#fbe9c8'; ctx.font = '600 11px "Noto Serif TC", serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('浣熊大王甜點舖', 180, 17.5);
+            ctx.fillStyle = '#7a5a3e'; rr(104, 6, 152, 22, 4); ctx.fill();
+            ctx.fillStyle = '#fbe9c8'; ctx.font = '600 11px "Noto Serif TC", serif'; ctx.textBaseline = 'middle';
+            ctx.textAlign = 'right'; ctx.fillText('泡泡鴨', 166, 17.5); ctx.textAlign = 'left'; ctx.fillText('甜點舖', 185, 17.5);
+            apple(175.5, 17.5, 6.5);
             ctx.font = '500 13px "Noto Sans TC", sans-serif'; ctx.fillStyle = '#4a4038'; ctx.textAlign = 'left'; ctx.fillText('0:42', 10, 17);
             ctx.textAlign = 'right'; ctx.fillStyle = '#b33a2f'; ctx.fillText('$1,240', 350, 17);
             CUSTOMERS.forEach(c => { face(c); bubble(c); });
