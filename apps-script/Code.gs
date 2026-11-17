@@ -2919,7 +2919,7 @@ function zaocanLog(input) {
 // 跟早餐店紀錄一樣：公開、appendRow 不排隊、不寄信不回資料；session 對就記 line_id。
 var DESSERT_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'total', 'sales', 'grade',
   'customers', 'served', 'angry', 'scrapped', 'wrong', 'missed', 'tips', 'ito', 'bubbles', 'pauses', 'rewinds', 'staff',
-  'fastest_ms', 'avg_wait_ms', 'specials', 'menu', 'shop', 'ms', 'len', 'login', 'ito_wins'];
+  'fastest_ms', 'avg_wait_ms', 'specials', 'menu', 'shop', 'ms', 'len', 'login', 'ito_wins', 'overlap'];
 var DESSERT_MENU = ['cookie', 'cake', 'bread', 'choco', 'cream', 'pudding', 'fruit', 'sprinkle', 'whip', 'sauce', 'berry'];
 var DESSERT_SPECIALS = ['duck', 'ito', 'dog'];
 
@@ -2950,7 +2950,7 @@ function dessertRow(r, now, lineId, device) {
     washNum(r.tips, 0, 100000), washNum(r.ito, 0, 100000), n(r.bubbles), n(r.pauses), n(r.rewinds), n(r.staff),
     washNum(r.fastest_ms, 0, 600000), washNum(r.avg_wait_ms, 0, 600000),
     zaocanCounts(r.specials, DESSERT_SPECIALS, 99), zaocanCounts(r.menu, DESSERT_MENU, 999), JSON.stringify(shop),
-    washNum(r.ms, 0, 3600000), washNum(r.len, 0, 3600), !!r.login, n(r.ito_wins)
+    washNum(r.ms, 0, 3600000), washNum(r.len, 0, 3600), !!r.login, n(r.ito_wins), n(r.overlap)
   ];
 }
 

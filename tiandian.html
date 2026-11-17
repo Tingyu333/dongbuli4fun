@@ -21,7 +21,7 @@
         /* 整塊都是要點的地方：不能捲動、長按不能跳系統選單、不能選字 */
         .stage { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         #cv { display: block; width: 100%; aspect-ratio: 360 / 560; touch-action: none; border-radius: 4px; }
-        .tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .tools { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
         .tool {
             min-height: 50px; border: 1px solid rgb(var(--wabi-sub)); border-radius: 6px; background: rgb(var(--wabi-bg));
             font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: 0.08em; color: rgb(var(--wabi-dark)); line-height: 1.25;
@@ -94,7 +94,6 @@
             <canvas id="cv" class="mt-2" aria-label="甜點店：上面是客人和想吃的甜點，下面是轉盤，經過底、餡、飾三站，每一站先點好下一份要放的料"></canvas>
             <div class="tools mt-2">
                 <button type="button" id="brakeBtn" class="tool">暫停<small></small></button>
-                <button type="button" id="rewindBtn" class="tool">倒轉<small></small></button>
                 <button type="button" id="bubbleBtn" class="tool">吐泡泡<small></small></button>
             </div>
             <!-- 監修中（CLOSED）：蓋住畫布，不能開店 -->
@@ -133,13 +132,13 @@
             <h2 class="text-sm tracking-[0.3em] text-wabi-dark">怎麼做</h2>
             <ol class="mt-3 list-decimal pl-5 space-y-1.5 text-xs font-sans tracking-wide text-stone-500 leading-relaxed">
                 <li>客人坐下就點一份甜點，頭上的泡泡寫著三層要什麼，左上角的<b class="font-normal text-wabi-dark">彩色號碼</b>就是他那一盤；下面那條是他還願意等多久。</li>
-                <li>轉盤上<b class="font-normal text-wabi-dark">一次一盤</b>。泡泡框成朱色、寫「下一盤」的就是輪到的客人（照來的順序）。</li>
+                <li>轉盤上<b class="font-normal text-wabi-dark">一次一盤</b>（店面買了「翻桌」可以同時跑兩、三盤）。泡泡框成朱色、寫「下一盤」的就是輪到的客人（照來的順序）。</li>
                 <li><b class="font-normal text-wabi-dark">先點好料再出盤</b>：底、餡、飾三排料盒各點一個（料盒亮起來寫「選好」，再點一次取消），右上角的出盤卡會畫出三層的樣子；選齊了點「出盤」，盤子就上轉盤。</li>
                 <li>盤子經過底、餡、飾三站，把你選的一層一層放上去。轉盤上還有盤子時也可以出盤：盤子先在出盤口<b class="font-normal text-wabi-dark">排隊</b>（客人泡泡上寫「排隊」），料盒馬上清空，可以接著選再下一位的；轉盤空了，排隊的照順序自己上去。</li>
-                <li><b class="font-normal text-wabi-shu">選錯料</b>：經過那一站就直接報廢，扣材料費 $25，客人重新排到最後面。買了倒轉把手，可以在出錯前把那盤退回出盤口改料。</li>
+                <li><b class="font-normal text-wabi-shu">選錯料</b>：經過那一站就直接報廢，扣材料費 $25，客人重新排到最後面。</li>
                 <li>三層都放對、轉到出餐，就交給客人：照料的價錢付錢，等得越短小費越多（最多四成）。氣走一位扣 $60。</li>
                 <li>七十五秒打烊。熟面孔也會來：茱莉鴨、伊藤、坐洗部的狗。</li>
-                <li>賺的錢可以按上面的<b class="font-normal text-wabi-dark">店面</b>升級：配料櫃、轉盤馬達、煞車、倒轉把手、店員、泡泡鴨。登入 LINE 換手機也在。</li>
+                <li>賺的錢可以按上面的<b class="font-normal text-wabi-dark">店面</b>升級：配料櫃、轉盤馬達、煞車、翻桌、店員、泡泡鴨。登入 LINE 換手機也在。</li>
             </ol>
         </section>
     </main>
@@ -191,8 +190,9 @@
         // 監修中：true 會蓋住店面、不能開店；網址加 ?preview 可以先試玩（2026-11-17 上線，改成 false）
         const MAINTENANCE = false;
         const CLOSED = MAINTENANCE && !/[?&]preview\b/.test(location.search);
-        const BELT = 280;                    // 轉盤每秒走幾 px（轉盤馬達會變快）；一次一盤，出盤到出餐 835 px 約 3 秒（使用者指定）
+        const BELT = 280;                    // 轉盤每秒走幾 px（轉盤馬達會變快）；一次一盤（買了翻桌兩、三盤），出盤到出餐 835 px 約 3 秒（使用者指定）
         const NEXT_GAP = 0.3;                // 上一盤離開轉盤後，隔幾秒才能出下一盤
+        const PLATE_SPACE = 200;  // 「翻桌」買了可以同時跑好幾盤：前一盤走多遠（px），下一盤才能上
         const TRAY = { x: 334, y: 240, w: 48, h: 118 };  // 右上角的「出盤」卡：上面畫三層選好的樣子，下面是朱色「出盤」大按鈕（整張都可以點）
         const SLOT_COL = ['#3f7fbf', '#d0782a', '#8a56b0'];   // 三位客人的號碼顏色（盤子上同一色）
         const GRADES = [
@@ -212,10 +212,10 @@
               tiers: ['', '二手馬達', '新馬達', '工業馬達'], fx: v => `轉盤快 ${Math.round(v * 100 - 100)}%：出餐更快，手也要更快` },
             { key: 'brake', name: '煞車', sub: '暫停', prices: [15000, 40000], vals: [{ n: 2, s: 3 }, { n: 3, s: 5 }],
               tiers: ['', '手煞車', '腳踏煞車'], fx: v => `「暫停」鈕：整家店停 ${v.s} 秒（轉盤停、客人也不扣耐心），一輪 ${v.n} 次` },
-            { key: 'rewind', name: '倒轉把手', sub: '補漏', prices: [40000], vals: [3],
-              tiers: ['', '倒轉把手'], fx: v => `「倒轉」鈕：轉盤上那盤退回出盤口，料放回料盒讓你改（不扣材料費），一輪 ${v} 次` },
-            { key: 'staff', name: '店員', sub: '人手', prices: [60000, 120000], vals: [1, 2],
-              tiers: ['', '工讀生', '兩個工讀生'], fx: v => v >= 2 ? '「底」和「餡」你沒選的話，出盤時店員幫你放對的' : '「底」你沒選的話，出盤時店員幫你放對的' },
+            { key: 'turnover', name: '翻桌', sub: '翻桌率', prices: [40000, 100000], vals: [{ cap: 2, fast: false }, { cap: 3, fast: true }],
+              tiers: ['', '第二個盤架', '三個盤架＋門口排隊'], fx: v => `轉盤上同時跑 ${v.cap} 盤，點好就上，不用等前一盤${v.fast ? '；你手上沒單的時候，門口排隊的客人馬上坐下' : ''}` },
+            { key: 'staff', name: '店員', sub: '人手', prices: [60000], vals: [1],
+              tiers: ['', '工讀生'], fx: () => '「底」你沒選的話，出盤時店員幫你放對的' },
             { key: 'bubbleduck', name: '泡泡鴨', sub: '客人', prices: [20000, 80000], vals: [1, 2],
               tiers: ['', '泡泡鴨', '馬達泡泡鴨'], fx: v => v >= 2 ? '每 12 秒自己吐一次泡泡：每位客人多等 6 秒' : '「吐泡泡」鈕：客人看了開心，每位多等 6 秒（14 秒才能再吐一次）' },
         ];
@@ -224,6 +224,8 @@
             let d = null;
             try { d = Wallet.shop; } catch (e) { }
             d = d && typeof d === 'object' ? { lv: { ...(d.lv || {}) }, spent: Number(d.spent) || 0 } : { lv: {}, spent: 0 };
+            // 倒轉把手（2026-11-17 拿掉）買過的，換成一級翻桌（一樣 $4 萬）
+            if (Number(d.lv.rewind) > 0 && !Number(d.lv.turnover)) { d.lv.turnover = 1; try { Wallet.setShop(d); } catch (e) { } }
             SHOP.forEach(u => { d.lv[u.key] = clamp(Math.floor(Number(d.lv[u.key]) || 0), 0, u.prices.length); });
             return d;
         }
@@ -232,6 +234,8 @@
         const val = key => lv(key) ? SHOP_BY[key].vals[lv(key) - 1] : 0;
         const unlocked = k => (ING[k].unlock || 0) <= lv('cabinet');
         const speed = () => BELT * (val('motor') || 1);
+        const beltCap = () => lv('turnover') ? val('turnover').cap : 1;
+        const fastSeat = () => !!(lv('turnover') && val('turnover').fast);
         const BUBBLE_ADD = 6, BUBBLE_CD = 14, BUBBLE_AUTO = 12;
 
         // 客人
@@ -300,11 +304,11 @@
         function newRound() {
             shop = loadShop();
             G = {
-                started: false, ended: false, clock: 0, custs: [null, null, null], nextAt: [0.2, 3, 6.5], plates: [], ready: [], plateId: 0, nextPlateAt: 0, trayFlash: 0,
-                armed: [null, null, null], pauseLeft: 0, brakes: val('brake') ? val('brake').n : 0, rewinds: val('rewind') || 0,
+                started: false, ended: false, clock: 0, custs: [null, null, null], nextAt: [0.2, 3, 6.5], freeAt: [0, 0, 0], plates: [], ready: [], plateId: 0, nextPlateAt: 0, trayFlash: 0,
+                armed: [null, null, null], pauseLeft: 0, brakes: val('brake') ? val('brake').n : 0,
                 bubbleCd: 0, bubbleAuto: BUBBLE_AUTO, bubbles: [], floats: [], flash: [0, 0, 0],
                 earn: { sales: 0, tip: 0, ito: 0, scrap: 0, angry: 0 },
-                tally: { customers: 0, served: 0, angry: 0, scrapped: 0, wrong: 0, missed: 0, bubbles: 0, pauses: 0, rewinds: 0, staff: 0, itoWins: 0, itoServed: 0, fastest: 0, waits: [], specials: {}, menu: {} },
+                tally: { customers: 0, served: 0, angry: 0, scrapped: 0, wrong: 0, missed: 0, bubbles: 0, pauses: 0, overlap: 0, staff: 0, itoWins: 0, itoServed: 0, fastest: 0, waits: [], specials: {}, menu: {} },
                 pay: null,
             };
             spawnCust(0);   // 開店前先坐一位客人（開店前不會等到生氣）
@@ -337,7 +341,7 @@
         // 還沒上轉盤的客人，照先來後到；排第一個的就是下一盤（報廢重做的排到最後面）
         const queue = () => G.custs.filter(cu => cu && cu.state === 'wait' && !cu.plate).sort((a, b) => a.queueAt - b.queueAt);
         // 出盤時這一層放什麼：你選的；沒選的話，店員負責的層幫你放對的
-        const staffCovers = i => i < 2 && lv('staff') >= i + 1;
+        const staffCovers = i => i === 0 && lv('staff') >= 1;
         function trayPick(i, cu) { return G.armed[i] || (staffCovers(i) && cu ? cu.order[STATIONS[i].layer] : null); }
         function custSay(cu, text) { cu.say = text; cu.sayAt = G.clock; }
         const price = o => ING[o.b].price + ING[o.m].price + ING[o.t].price;
@@ -396,13 +400,13 @@
             G.tally.waits.push(wait);
             if (!G.tally.fastest || wait < G.tally.fastest) G.tally.fastest = wait;
             G.tally.served++;
-            cu.state = 'happy'; cu.leaveAt = G.clock + 0.9; cu.plate = null;
+            cu.state = 'happy'; cu.leaveDur = fastSeat() ? 0.45 : 0.9; cu.leaveAt = G.clock + cu.leaveDur; cu.plate = null;
             floatText(SLOT_X[cu.slot], 92, '+' + fmt(gain), '#2f7a3f', true);
             note('蘋果鴨：' + pick(BOSS.served));
             sfx.serve(); bump();
         }
         function angry(cu) {
-            cu.state = 'angry'; cu.leaveAt = G.clock + 1.1;
+            cu.state = 'angry'; cu.leaveDur = 1.1; cu.leaveAt = G.clock + 1.1;
             custSay(cu, pick(SAY.angry));
             G.earn.angry -= ANGRY; G.tally.angry++;
             if (cu.plate) { G.plates = G.plates.filter(x => x !== cu.plate); G.ready = G.ready.filter(x => x !== cu.plate); cu.plate = null; }
@@ -425,16 +429,6 @@
             G.brakes--; G.pauseLeft = val('brake').s; G.tally.pauses++;
             note('蘋果鴨：整家店停一下，看清楚再點。'); sfx.arm(); renderTools();
         }
-        function useRewind() {
-            if (!lv('rewind') || !G.started || G.ended || G.rewinds <= 0) return;
-            const p = G.plates[0];
-            if (!p) { showToast('轉盤上沒有盤子'); return; }
-            const [x, y] = pointAt(p.s); floatText(x, y - 26, '倒轉', BLUE);
-            G.plates = []; p.cu.plate = null; p.cu.queueAt = -1;   // 排回第一個
-            G.armed = p.pick.slice(); G.nextPlateAt = G.clock;   // 料盒裡原本選到一半的換成這盤的
-            G.rewinds--; G.tally.rewinds++;
-            note(`蘋果鴨：${p.cu.slot + 1} 號那盤退回來了，料放回料盒，改好再出。`); sfx.rewind(); renderTools();
-        }
         function blowBubbles(auto) {
             if (!lv('bubbleduck') || !G.started || G.ended) return;
             if (!auto && G.bubbleCd > 0) return;
@@ -456,14 +450,21 @@
             if (lv('bubbleduck') >= 2) { G.bubbleAuto -= dt; if (G.bubbleAuto <= 0) { G.bubbleAuto = BUBBLE_AUTO; blowBubbles(true); } }
             // 客人
             G.custs.forEach((cu, i) => {
-                if (!cu) { if (G.clock >= G.nextAt[i]) spawnCust(i); return; }
+                // 翻桌二級：手上沒單可做（每位都出盤了）就叫門口排隊的馬上坐下，不用等
+                if (!cu) { if (G.clock >= G.nextAt[i] || (fastSeat() && G.started && !queue().length && G.clock >= G.freeAt[i] + 0.2)) spawnCust(i); return; }
                 if (cu.state === 'wait') { if (G.pauseLeft <= 0) cu.left -= dt; if (cu.left <= 0) angry(cu); }
-                else if (G.clock >= cu.leaveAt) { G.custs[i] = null; G.nextAt[i] = G.clock + rnd(0.5, 1.6); }
+                else if (G.clock >= cu.leaveAt) { G.custs[i] = null; G.freeAt[i] = G.clock; G.nextAt[i] = G.clock + rnd(0.5, 1.6); }
             });
-            // 出盤口排隊的，轉盤空了（隔 NEXT_GAP）照順序上轉盤
+            // 出盤口排隊的，轉盤空了（隔 NEXT_GAP）照順序上轉盤；買了翻桌，前一盤走了 PLATE_SPACE 就能再上一盤
             G.trayFlash = Math.max(0, G.trayFlash - dt);
+            if (G.ready.length && G.plates.length < beltCap()) {
+                const tail = G.plates.length ? Math.min(...G.plates.map(p => p.s)) : null;
+                if (tail === null ? G.clock >= G.nextPlateAt : tail >= PLATE_SPACE) {
+                    const p = G.ready.shift(); p.s = 0; G.plates.push(p);
+                    if (tail !== null) G.tally.overlap++;
+                }
+            }
             if (G.plates.length) G.nextPlateAt = G.clock + NEXT_GAP;
-            else if (G.ready.length && G.clock >= G.nextPlateAt) { const p = G.ready.shift(); p.s = 0; G.plates.push(p); }
             // 轉盤
             if (G.pauseLeft > 0) { G.pauseLeft = Math.max(0, G.pauseLeft - dt); if (!G.pauseLeft) renderTools(); }
             else {
@@ -498,7 +499,6 @@
             wrong: () => { tone(180, 0.22, 0.12, 'square', 0, 0.7); tone(140, 0.25, 0.08, 'square', 0.08, 0.7); },
             serve: () => { tone(880, 0.1, 0.1); tone(1320, 0.16, 0.1, 'sine', 0.08); },
             bubble: () => { for (let k = 0; k < 5; k++) tone(500 + k * 140, 0.08, 0.06, 'sine', k * 0.05, 1.8); },
-            rewind: () => tone(700, 0.3, 0.08, 'sawtooth', 0, 0.4),
             bell: () => { tone(988, 0.5, 0.1); tone(1318, 0.7, 0.08, 'sine', 0.12); },
         };
         function bump() { try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) { } }
@@ -592,7 +592,7 @@
             if (mood === 'worried') { c.fillStyle = '#7fb6e6'; c.beginPath(); c.ellipse(x + 16, y - 6, 2.5, 4, 0, 0, TAU); c.fill(); }
         }
         function drawCustomer(c, cu, now) {
-            const x = SLOT_X[cu.slot], y = 118, fade = cu.state !== 'wait' ? clamp((cu.leaveAt - G.clock) / 0.9, 0, 1) : 1;
+            const x = SLOT_X[cu.slot], y = 118, fade = cu.state !== 'wait' ? clamp((cu.leaveAt - G.clock) / Math.min(0.9, cu.leaveDur || 0.9), 0, 1) : 1;
             c.save(); c.globalAlpha = fade;
             drawFace(c, cu, x, y);
             // 想法泡泡：要的甜點、三層的字（放好的變淡打勾）、號碼
@@ -653,7 +653,7 @@
             c.fillStyle = active ? '#fff' : '#b33a2f'; c.font = `700 11px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(st.name, lx, ly + 1);
             // 選好的料畫在圓台右上角；店員負責的站蓋「員」
             if (G.armed[i]) { c.fillStyle = '#fff6dc'; c.strokeStyle = '#b33a2f'; c.lineWidth = 1.5; c.beginPath(); c.arc(st.x + 28, st.y - 28, 12, 0, TAU); c.fill(); c.stroke(); drawIng(c, G.armed[i], st.x + 28, st.y - 26, 0.5); }
-            else if (i < 2 && lv('staff') >= i + 1) { c.fillStyle = '#eef3fb'; c.strokeStyle = BLUE; c.lineWidth = 1.2; c.beginPath(); c.arc(st.x + 28, st.y - 28, 10, 0, TAU); c.fill(); c.stroke(); c.fillStyle = BLUE; c.font = `600 10px ${SERIF}`; c.fillText('員', st.x + 28, st.y - 27.5); }
+            else if (staffCovers(i)) { c.fillStyle = '#eef3fb'; c.strokeStyle = BLUE; c.lineWidth = 1.2; c.beginPath(); c.arc(st.x + 28, st.y - 28, 10, 0, TAU); c.fill(); c.stroke(); c.fillStyle = BLUE; c.font = `600 10px ${SERIF}`; c.fillText('員', st.x + 28, st.y - 27.5); }
         }
         function drawBin(c, i, [x, y, key]) {
             const w = 50, h = 52, open = unlocked(key), armed = G.armed[i] === key;
@@ -783,7 +783,6 @@
             if (!G.started) start();
         });
         $('brakeBtn').addEventListener('click', () => { if (!lv('brake')) return showToast('店面買「煞車」才能暫停'); useBrake(); });
-        $('rewindBtn').addEventListener('click', () => { if (!lv('rewind')) return showToast('店面買「倒轉把手」才能倒轉'); useRewind(); });
         $('bubbleBtn').addEventListener('click', () => {
             if (!lv('bubbleduck')) return showToast('店面買「泡泡鴨」才能吐泡泡');
             if (lv('bubbleduck') >= 2) return showToast('馬達泡泡鴨會自己定時吐');
@@ -793,7 +792,6 @@
         function renderTools() {
             const set = (id, locked, on, sub, dis) => { const b = $(id); b.classList.toggle('locked', locked); b.classList.toggle('is-on', !!on); b.querySelector('small').textContent = sub; b.disabled = !!dis; };
             set('brakeBtn', !lv('brake'), G && G.pauseLeft > 0, lv('brake') ? `剩 ${G ? G.brakes : 0} 次・${val('brake').s} 秒` : '店面升級', lv('brake') && G && G.started && (!G.brakes || G.ended));
-            set('rewindBtn', !lv('rewind'), false, lv('rewind') ? `剩 ${G ? G.rewinds : 0} 次` : '店面升級', lv('rewind') && G && G.started && (!G.rewinds || G.ended));
             const bl = lv('bubbleduck');
             set('bubbleBtn', !bl, false, !bl ? '店面升級' : bl >= 2 ? '馬達：自動' : G && G.bubbleCd > 0 ? `${Math.ceil(G.bubbleCd)} 秒後` : '客人多等 6 秒', bl === 1 && G && G.started && (G.bubbleCd > 0 || G.ended));
         }
@@ -918,7 +916,7 @@
                 at: new Date().toISOString(), ms: Math.round(G.clock * 1000), len: ROUND,
                 total: pay, sales: G.pay.sales, grade: grade.mark,
                 customers: t.customers, served: t.served, angry: t.angry, scrapped: t.scrapped, wrong: t.wrong, missed: t.missed,
-                tips: e.tip, ito: e.ito, bubbles: t.bubbles, pauses: t.pauses, rewinds: t.rewinds, staff: t.staff,
+                tips: e.tip, ito: e.ito, bubbles: t.bubbles, pauses: t.pauses, overlap: t.overlap, staff: t.staff,
                 fastest_ms: t.fastest, avg_wait_ms: avg, ito_wins: t.itoWins, specials: t.specials, menu: t.menu,
                 shop: Object.fromEntries(SHOP.map(u => [u.key, lv(u.key)]).filter(x => x[1])),
                 login: !!(window.Line && Line.loggedIn),
@@ -978,8 +976,14 @@
             if (k === 'cabinet') { c.fillStyle = '#d9e4ea'; rr(c, 10, 8, 36, 40, 4); c.fill(); c.strokeStyle = '#8a9aa4'; c.lineWidth = 1.5; c.stroke(); c.beginPath(); c.moveTo(10, 28); c.lineTo(46, 28); c.stroke(); drawMain(c, level >= 2 ? 'fruit' : 'pudding', 28, 24, 0.7); drawTop(c, level >= 2 ? 'berry' : 'sauce', 28, 42, 0.8); }
             else if (k === 'motor') { c.save(); c.translate(28, 28); c.fillStyle = '#8b7d70'; for (let i = 0; i < 8; i++) { c.rotate(TAU / 8); c.fillRect(-3, -20, 6, 8); } c.beginPath(); c.arc(0, 0, 14, 0, TAU); c.fill(); c.fillStyle = '#f3ead9'; c.beginPath(); c.arc(0, 0, 5, 0, TAU); c.fill(); c.restore(); }
             else if (k === 'brake') { c.fillStyle = '#b33a2f'; c.beginPath(); for (let i = 0; i < 8; i++) { const a = Math.PI / 8 + i * TAU / 8; c.lineTo(28 + 18 * Math.cos(a), 28 + 18 * Math.sin(a)); } c.closePath(); c.fill(); c.fillStyle = '#fff'; c.font = `700 12px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('停', 28, 29); }
-            else if (k === 'rewind') { c.strokeStyle = BLUE; c.lineWidth = 3; c.beginPath(); c.arc(28, 28, 15, -0.3, Math.PI * 1.4); c.stroke(); c.fillStyle = BLUE; c.beginPath(); c.moveTo(42, 14); c.lineTo(44, 26); c.lineTo(33, 22); c.fill(); }
-            else if (k === 'staff') { c.fillStyle = '#5a7fa8'; rr(c, 16, 32, 24, 18, 8); c.fill(); c.fillStyle = '#f3d0ad'; c.beginPath(); c.arc(28, 24, 10, 0, TAU); c.fill(); c.fillStyle = '#fffaf2'; c.fillRect(19, 12, 18, 5); if (level >= 2) { c.fillStyle = '#d48a3a'; rr(c, 34, 36, 18, 14, 6); c.fill(); c.fillStyle = '#f0c9a4'; c.beginPath(); c.arc(43, 30, 7, 0, TAU); c.fill(); } }
+            else if (k === 'turnover') {
+                // 一段轉盤上排著兩（三）個盤子，盤上一塊小蛋糕
+                c.strokeStyle = '#8b7d70'; c.lineWidth = 7; c.lineCap = 'round'; c.beginPath(); c.moveTo(6, 44); c.quadraticCurveTo(28, 30, 50, 40); c.stroke();
+                const at = level >= 2 ? [[13, 36], [28, 30], [43, 34]] : [[18, 34], [38, 32]];
+                at.forEach(([x, y], i) => { c.fillStyle = '#fffdf8'; c.beginPath(); c.ellipse(x, y, 8, 3, 0, 0, TAU); c.fill(); c.strokeStyle = 'rgba(0,0,0,.18)'; c.lineWidth = 1; c.stroke(); c.fillStyle = ['#e8c48a', '#f3e2c4', '#d9a066'][i]; rr(c, x - 5, y - 9, 10, 7, 2); c.fill(); c.fillStyle = '#c94a3a'; c.beginPath(); c.arc(x, y - 10, 2, 0, TAU); c.fill(); });
+                c.fillStyle = SLOT_COL[0]; c.font = `700 9px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(level >= 2 ? '×3' : '×2', 44, 14);
+            }
+            else if (k === 'staff') { c.fillStyle = '#5a7fa8'; rr(c, 16, 32, 24, 18, 8); c.fill(); c.fillStyle = '#f3d0ad'; c.beginPath(); c.arc(28, 24, 10, 0, TAU); c.fill(); c.fillStyle = '#fffaf2'; c.fillRect(19, 12, 18, 5); }
             else { drawLogo(c, 26, 32, 0.38, BLUE, '#ffffff', 3.4); c.strokeStyle = 'rgba(80,140,220,.8)'; c.lineWidth = 1; [[44, 14, 4], [48, 24, 3], [40, 8, 2.5]].forEach(([a, b, rad]) => { c.beginPath(); c.arc(a, b, rad, 0, TAU); c.stroke(); }); if (level >= 2) { c.fillStyle = BLUE; c.font = `600 8px ${SANS}`; c.textAlign = 'center'; c.fillText('馬達', 26, 53); } }
         }
         function renderShop() {
