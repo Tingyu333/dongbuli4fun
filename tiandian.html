@@ -102,7 +102,7 @@
                 <p class="text-sm text-wabi-dark tracking-widest leading-loose">蘋果鴨正在重新設計轉盤。<br>甜點店暫停營業，過幾天再來。</p>
                 <a href="member.html" class="mt-2 py-3 px-8 border border-stone-300 text-wabi-dark font-sans text-xs tracking-[0.2em]">回會員中心</a>
             </div>
-            <p id="hint" class="mt-3 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed text-center">看朱框「下一盤」的客人要什麼，三排料盒各點一個，<br>再點右下角藍色「出餐」。盤子經過三站一層一層放上去。</p>
+            <p id="hint" class="mt-3 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed text-center">看朱框「下一盤」的客人要什麼，三排料盒各點一個，<br>再點右上角「出盤」。盤子經過三站一層一層放上去。</p>
         </section>
 
         <section id="result" class="hidden mt-10 text-center scroll-mt-24">
@@ -132,8 +132,8 @@
             <ol class="mt-3 list-decimal pl-5 space-y-1.5 text-xs font-sans tracking-wide text-stone-500 leading-relaxed">
                 <li>客人坐下就點一份甜點，頭上的泡泡寫著三層要什麼，左上角的<b class="font-normal text-wabi-dark">彩色號碼</b>就是他那一盤；下面那條是他還願意等多久。</li>
                 <li>轉盤上<b class="font-normal text-wabi-dark">一次一盤</b>。泡泡框成朱色、寫「下一盤」的就是輪到的客人（照來的順序）。</li>
-                <li><b class="font-normal text-wabi-dark">先點好料再出盤</b>：底、餡、飾三排料盒各點一個（料盒亮起來寫「選好」，再點一次取消），右上角的小卡會畫出三層的樣子；選齊了右下角的藍色<b class="font-normal text-wabi-dark">「出餐」</b>會亮，點下去盤子就上轉盤。</li>
-                <li>盤子經過底、餡、飾三站，把你選的一層一層放上去。轉盤上還有盤子時也可以按出餐：盤子先<b class="font-normal text-wabi-dark">排隊</b>（客人泡泡上寫「排隊」），料盒馬上清空，可以接著選再下一位的；轉盤空了，排隊的照順序自己上去。</li>
+                <li><b class="font-normal text-wabi-dark">先點好料再出盤</b>：底、餡、飾三排料盒各點一個（料盒亮起來寫「選好」，再點一次取消），右上角的出盤卡會畫出三層的樣子；選齊了點「出盤」，盤子就上轉盤。</li>
+                <li>盤子經過底、餡、飾三站，把你選的一層一層放上去。轉盤上還有盤子時也可以出盤：盤子先在出盤口<b class="font-normal text-wabi-dark">排隊</b>（客人泡泡上寫「排隊」），料盒馬上清空，可以接著選再下一位的；轉盤空了，排隊的照順序自己上去。</li>
                 <li><b class="font-normal text-wabi-shu">選錯料</b>：經過那一站就直接報廢，扣材料費 $25，客人重新排到最後面。買了倒轉把手，可以在出錯前把那盤退回出盤口改料。</li>
                 <li>三層都放對、轉到出餐，就交給客人：照料的價錢付錢，等得越短小費越多（最多四成）。氣走一位扣 $60。</li>
                 <li>七十五秒打烊。熟面孔也會來：茱莉鴨、伊藤、坐洗部的狗。</li>
@@ -190,8 +190,7 @@
         const CLOSED = !/[?&]preview\b/.test(location.search);
         const BELT = 160;                    // 轉盤每秒走幾 px（轉盤馬達會變快）；轉盤上一次一盤，所以走得快
         const NEXT_GAP = 0.3;                // 上一盤離開轉盤後，隔幾秒才能出下一盤
-        const TRAY = { x: 334, y: 220, w: 48, h: 76 };   // 右上角的預覽卡：給幾號、三層選好的樣子、出餐口排隊幾盤
-        const SEND = { x: 327, y: 518, w: 60, h: 58 };   // 右下角唯一的「出餐」按鈕（以前出盤、出餐口分兩個，使用者要合併）
+        const TRAY = { x: 334, y: 240, w: 48, h: 118 };  // 右上角的「出盤」卡：上面畫三層選好的樣子，下面是朱色「出盤」大按鈕（整張都可以點）
         const SLOT_COL = ['#3f7fbf', '#d0782a', '#8a56b0'];   // 三位客人的號碼顏色（盤子上同一色）
         const GRADES = [
             { min: 2600, mark: '甜', line: '整條轉盤都在冒甜味' },
@@ -246,7 +245,7 @@
             { kind: 'dog', name: '坐洗部的狗', p: 0.05, mult: 0.75 },
         ];
         const BOSS = {
-            start: ['開店囉。三層料點好，按右下角出餐。', '今天也要甜甜的。'],
+            start: ['開店囉。三層料點好，按右上角出盤。', '今天也要甜甜的。'],
             wrong: ['放錯了，那一盤報廢。', '這不是客人點的啦。', '材料費從你薪水扣喔。'],
             miss: ['漏放了！', '那一盤少一層。'],
             served: ['好吃好吃。', '客人笑了。', '下一位。', '這盤漂亮。'],
@@ -674,33 +673,29 @@
                 c.fillStyle = '#fff'; c.font = `600 8.5px ${SANS}`; c.textBaseline = 'middle'; c.fillText('選好', x, y - h / 2 - 3);
             }
         }
-        // 右上角的預覽卡：下一位是誰、三層選好的樣子、排隊幾盤（只看，不能點）
-        function trayState() {
-            const cu = G.started ? queue()[0] : null, picks = STATIONS.map((st, i) => trayPick(i, cu));
-            return { cu, picks, ready: !!cu && picks.every(Boolean) };
-        }
-        function drawTray(c) {
-            const { x, y, w, h } = TRAY, { cu, picks, ready } = trayState(), top = y - h / 2;
+        // 右上角的出盤卡：下一位是誰、三層選好的樣子；選齊了變朱色「出盤」，排著等轉盤寫「排隊」
+        function drawTray(c, now) {
+            const { x, y, w, h } = TRAY, cu = G.started ? queue()[0] : null, top = y - h / 2;
+            const picks = STATIONS.map((st, i) => trayPick(i, cu));
+            const ready = cu && picks.every(Boolean), pulse = ready ? 0.5 + 0.5 * Math.sin(now / 150) : 0;
+            // 卡片：選好的三層
             c.fillStyle = 'rgba(0,0,0,.12)'; rr(c, x - w / 2 + 1, top + 2, w, h, 8); c.fill();
             c.fillStyle = G.trayFlash ? '#ffe1d9' : '#fffdf8'; rr(c, x - w / 2, top, w, h, 8); c.fill();
-            c.strokeStyle = ready ? BLUE : '#cbbfae'; c.lineWidth = ready ? 2 : 1; c.stroke();
-            c.fillStyle = '#ffffff'; c.strokeStyle = '#d8cfc2'; c.lineWidth = 1; c.beginPath(); c.ellipse(x, top + 54, 18, 5, 0, 0, TAU); c.fill(); c.stroke();
-            drawDessert(c, { b: picks[0], m: picks[1], t: picks[2] }, x, top + 50, 0.75);
-            if (!picks.some(Boolean)) { c.fillStyle = '#9a9187'; c.font = `500 8.5px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('三層', x, top + 26); c.fillText('選好', x, top + 37); }
+            c.strokeStyle = ready ? '#b33a2f' : '#cbbfae'; c.lineWidth = ready ? 2 : 1; c.stroke();
+            c.fillStyle = '#ffffff'; c.strokeStyle = '#d8cfc2'; c.lineWidth = 1; c.beginPath(); c.ellipse(x, top + 52, 18, 5, 0, 0, TAU); c.fill(); c.stroke();
+            drawDessert(c, { b: picks[0], m: picks[1], t: picks[2] }, x, top + 48, 0.75);
+            if (!picks.some(Boolean)) { c.fillStyle = '#9a9187'; c.font = `500 8.5px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('三層', x, top + 24); c.fillText('選好', x, top + 35); }
             if (cu) { c.fillStyle = '#6b6158'; c.font = `500 8.5px ${SANS}`; c.textAlign = 'right'; c.textBaseline = 'middle'; c.fillText('給', x + 9, top + 10); badge(c, cu.slot, x + 17, top + 10, 6.5); }
-            if (G.ready.length) { c.fillStyle = '#6b6158'; c.font = `500 8.5px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(`排隊 ${G.ready.length} 盤`, x, top + h - 8); }
-        }
-        // 右下角的「出餐」大按鈕：三層選齊了亮藍色、會發光；沒選齊是灰的、寫還差幾層
-        function drawSend(c, now) {
-            const { x, y, w, h } = SEND, { cu, picks, ready } = trayState(), on = ready || !G.started;
-            const pulse = ready ? 0.5 + 0.5 * Math.sin(now / 150) : 0, l = x - w / 2, t = y - h / 2;
-            if (ready) { c.fillStyle = `rgba(47,77,176,${0.15 + 0.25 * pulse})`; rr(c, l - 4, t - 4, w + 8, h + 8, 10); c.fill(); }
-            c.fillStyle = on ? '#22388a' : '#a39a8e'; rr(c, l, t + 3, w, h, 7); c.fill();
-            c.fillStyle = on ? BLUE : '#c9c0b4'; rr(c, l, t, w, h - 2, 7); c.fill();
+            // 出盤口排隊幾盤
+            if (G.ready.length) { c.fillStyle = '#6b6158'; c.font = `500 8.5px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(`排隊 ${G.ready.length} 盤`, x, top + 66); }
+            // 大按鈕
+            const by = top + 74, bh = h - 78;
+            if (ready) { c.fillStyle = `rgba(179,58,47,${0.18 + 0.22 * pulse})`; rr(c, x - w / 2 - 3, by - 3, w + 6, bh + 6, 9); c.fill(); }
+            c.fillStyle = ready ? '#8f2a21' : '#bdb3a6'; rr(c, x - w / 2 + 3, by + 3, w - 6, bh - 2, 6); c.fill();
+            c.fillStyle = ready ? '#b33a2f' : '#d8d0c5'; rr(c, x - w / 2 + 3, by, w - 6, bh - 3, 6); c.fill();
             c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle';
-            c.font = `700 16px ${SERIF}`; c.fillText('出餐', x, y - 7);
-            c.font = `500 9px ${SANS}`;
-            c.fillText(!G.started ? '→ 客人' : !cu ? (G.ready.length ? '等轉盤' : '沒客人') : ready ? `給 ${cu.slot + 1} 號` : `還差 ${picks.filter(k => !k).length} 層`, x, y + 13);
+            if (ready) { c.font = `700 15px ${SERIF}`; c.fillText('出', x, by + 12); c.fillText('盤', x, by + 28); }
+            else { c.font = `600 10px ${SANS}`; c.fillText(!cu ? (G.ready.length ? '等轉盤' : '沒客人') : `還差 ${picks.filter(k => !k).length}`, x, by + bh / 2 - 2); }
         }
         function drawPlate(c, p) {
             const [x, y] = pointAt(p.s);
@@ -745,9 +740,13 @@
             drawBelt(c, beltOff);
             STATIONS.forEach((st, i) => drawStation(c, st, i, G.plates.some(p => Math.abs(p.s - st.s) < 30)));
             STATIONS.forEach((st, i) => st.bins.forEach(b => drawBin(c, i, b)));
-            drawTray(c);
+            // 出餐口：白色牌子（只是終點，不能點；要按的只有右上角朱色「出盤」）
+            c.fillStyle = 'rgba(0,0,0,.12)'; rr(c, 301, 498, 54, 50, 6); c.fill();
+            c.fillStyle = '#ffffff'; rr(c, 300, 496, 54, 50, 6); c.fill(); c.strokeStyle = '#cbbfae'; c.lineWidth = 1; c.stroke();
+            c.fillStyle = '#4a4038'; c.font = `600 13px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('出餐', 327, 514);
+            c.fillStyle = '#8b7d70'; c.font = `500 9px ${SANS}`; c.fillText('→ 客人', 327, 531);
+            drawTray(c, now);
             G.plates.forEach(p => drawPlate(c, p));
-            drawSend(c, now);
             if (lv('bubbleduck')) {
                 drawLogo(c, DUCK.x, DUCK.y, 0.3, BLUE, '#ffffff', 3.4);
                 c.font = `600 8px ${SANS}`; c.textAlign = 'center';
@@ -776,7 +775,7 @@
             for (let i = 0; i < STATIONS.length; i++) for (const [x, y, key] of STATIONS[i].bins) {
                 if (Math.abs(p.x - x) <= 27 && Math.abs(p.y - y) <= 28) { tapBin(i, key); return; }
             }
-            if (G.started && Math.abs(p.x - SEND.x) <= SEND.w / 2 + 5 && Math.abs(p.y - SEND.y) <= SEND.h / 2 + 5) { sendPlate(); return; }
+            if (G.started && Math.abs(p.x - TRAY.x) <= TRAY.w / 2 + 5 && Math.abs(p.y - TRAY.y) <= TRAY.h / 2 + 4) { sendPlate(); return; }
             if (lv('bubbleduck') && G.started && Math.hypot(p.x - DUCK.x, p.y - DUCK.y) < 28) { blowBubbles(false); return; }
             if (!G.started) start();
         });
