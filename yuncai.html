@@ -40,6 +40,20 @@
         .tk-head b { font-weight: 500; color: var(--court); letter-spacing: .15em; }
         .tk-head .left { margin-left: auto; white-space: nowrap; }
         .tk-head .left.soon { color: var(--shu); }
+        .day + .day { margin-top: 1.4rem; }
+        .day-h { display: flex; align-items: baseline; gap: .6rem; margin: 0 .2rem .5rem; padding-bottom: .3rem; border-bottom: 1px solid rgb(var(--wabi-sub)); }
+        .day-h b { font-weight: 500; font-size: .85rem; letter-spacing: .15em; color: rgb(var(--wabi-dark)); }
+        .day-h span { margin-left: auto; font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; letter-spacing: .1em; color: rgb(var(--wabi-accent)); }
+        .day .tk + .tk { margin-top: .7rem; }
+        .sched .sched-day { display: block; padding: .6rem 0 .1rem; border-bottom: 0; font-weight: 600; font-size: .78rem; letter-spacing: .12em; }
+        .sched .sched-day + p { border-top: 0; }
+        .tk-top { cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        .tk .vs { border-bottom: 0; padding-bottom: .2rem; }
+        .tk.on .vs { border-bottom: 1.5px solid var(--ink); padding-bottom: .6rem; }
+        .tk-more { display: flex; align-items: baseline; justify-content: flex-end; gap: .5rem; margin-top: .35rem; font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; letter-spacing: .12em; color: var(--faint); }
+        .tk-more span.won { margin-right: auto; letter-spacing: .05em; }
+        .tk-more i { font-style: normal; font-size: .85rem; color: var(--court); }
+        .tk.on .tk-more { margin: .1rem 0 -.2rem; }
         .tk-sub { margin-top: .1rem; font-family: 'Noto Sans TC', sans-serif; font-size: .62rem; letter-spacing: .08em; color: var(--ink); }
         .vs { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .4rem; margin-top: .55rem; padding-bottom: .6rem; border-bottom: 1.5px solid var(--ink); }
         .vs .tm { font-size: 1rem; letter-spacing: .1em; line-height: 1.3; font-weight: 600; }
@@ -98,7 +112,7 @@
         .sched { padding: .4rem .9rem; }
         .sched p { display: flex; align-items: baseline; gap: .5rem; padding: .55rem 0; border-bottom: 1px dashed var(--rule); font-size: .8rem; letter-spacing: .05em; }
         .sched p:last-child { border-bottom: 0; }
-        .sched .d { flex-shrink: 0; width: 5.6rem; font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; color: var(--faint); letter-spacing: .02em; }
+        .sched .d { flex-shrink: 0; width: 2.8rem; font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; color: var(--faint); letter-spacing: .02em; }
         .sched .x { font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; color: var(--faint); }
         .h2 span { margin-left: auto; font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; letter-spacing: .1em; color: rgb(var(--wabi-accent)); }
 
@@ -346,11 +360,15 @@
         }
         function ticket(m) {
             const [l, soon] = left(m), done = !!m.result && m.result !== 'void';
-            const mine = myBets(m.id);
-            return `<section class="paper tk${m.open ? '' : ' old'}">
+            const mine = myBets(m.id), on = expanded.has(m.id), staked = mine.filter(b => b.status !== 'refund').reduce((t, b) => t + b.amount, 0);
+            return `<section class="paper tk${m.open ? '' : ' old'}${on ? ' on' : ''}">
+                <div class="tk-top" data-open="${esc(m.id)}" role="button" tabindex="0" aria-expanded="${on}">
                 <header class="tk-head"><b>${m.no ? 'GAME ' + esc(m.no) : 'TPVL'}</b><span class="left${soon && m.open ? ' soon' : ''}">${m.open ? l : done ? '開獎了' : m.result === 'void' ? '不算了' : '比賽中・等比分'}</span></header>
-                <p class="tk-sub">${esc(when(m))}${m.venue ? '・' + esc(m.venue) : ''}</p>
+                <p class="tk-sub">${esc(m.time || '')}${m.venue ? '・' + esc(m.venue) : ''}</p>
                 <div class="vs"><p class="tm">${esc(m.home)}<small>主隊</small></p>${done ? `<p class="sc">${esc(m.result)}</p>` : '<p class="x">VS</p>'}<p class="tm r">${esc(m.away)}<small>客隊</small></p></div>
+                <p class="tk-more">${staked ? `<span class="won">你押了 ${fmt(staked)}</span>` : ''}<span>${on ? '收起來' : m.open ? '點開下注' : '點開看彩池'}</span><i>${on ? '－' : '＋'}</i></p>
+                </div>
+                <div class="tk-body${on ? '' : ' hidden'}">
                 <p class="sec">押誰贏<span>彩池 ${fmt(m.win.total)}</span></p>
                 <div class="opts two">${optBtn(m, 'win', 'home', esc(short(m.home)) + ' 贏', done)}${optBtn(m, 'win', 'away', esc(short(m.away)) + ' 贏', done)}</div>
                 <p class="sec">押局數比分<span>彩池 ${fmt(m.score.total)}</span></p>
@@ -359,6 +377,7 @@
                 <div class="six-h"><span>${esc(short(m.away))}贏</span><span></span><span></span></div>
                 <div class="opts six">${SCORES.away.map(s => optBtn(m, 'score', s, s, done)).join('')}</div>
                 ${mine.length ? `<div class="myb">${mine.map(b => `<p><span class="st ${b.status === 'won' ? 'won' : b.status === 'lost' ? 'lost' : ''}">${b.status === 'won' ? '中' : b.status === 'lost' ? '槓' : b.status === 'refund' ? '退' : '押'}</span>${esc(pickName(m, b.kind, b.pick))} <span class="num">${fmt(b.amount)}</span>${b.status === 'won' ? ` → 拿回 <b class="num won">${fmt(b.payout)}</b>` : ''}</p>`).join('')}</div>` : ''}
+                </div>
             </section>`;
         }
         function pastRow(m) {
@@ -371,8 +390,20 @@
                 ${mine.length ? `<div class="myb">${mine.map(b => `<p><span class="st ${b.status === 'won' ? 'won' : 'lost'}">${b.status === 'won' ? '中' : b.status === 'lost' ? '槓' : b.status === 'refund' ? '退' : '押'}</span>${esc(pickName(m, b.kind, b.pick))} <span class="num">${fmt(b.amount)}</span>${b.status === 'won' ? ` → <b class="num won">${fmt(b.payout)}</b>` : ''}</p>`).join('')}</div>` : ''}</section>`;
         }
         const folded = { past: true };
+        const expanded = new Set();   // 這週的小卡點開了哪幾張（點開才看得到下注的格子）
         function schedRow(m) {
-            return `<p><span class="d">${esc(when(m))}</span><span>${esc(short(m.home))}</span><span class="x">vs</span><span>${esc(short(m.away))}</span></p>`;
+            return `<p><span class="d">${esc(m.time || '')}</span><span>${esc(short(m.home))}</span><span class="x">vs</span><span>${esc(short(m.away))}</span></p>`;
+        }
+        // 照台灣日期分天：[{ key, label, list }]
+        function byDay(list) {
+            const out = [];
+            list.forEach(m => {
+                const d = tpe(m.start), key = d.toISOString().slice(0, 10);
+                let g = out[out.length - 1];
+                if (!g || g.key !== key) out.push(g = { key, label: `${d.getUTCMonth() + 1}/${d.getUTCDate()}（${WEEK[d.getUTCDay()]}）`, list: [] });
+                g.list.push(m);
+            });
+            return out;
         }
         function renderMatches() {
             const open = $('open');
@@ -382,8 +413,8 @@
             const week = Q.matches.filter(m => m.start < end && (m.open || (!m.result && m.start <= now())));
             const later = Q.matches.filter(m => m.start >= end && !m.result);
             const past = Q.matches.filter(m => m.result).reverse();
-            open.innerHTML = week.length ? week.map(ticket).join('') : `<p class="empty paper">這週沒有比賽可以押。<br>${later.length ? '下週的比賽週一開放下注。' : 'TPVL 放假，彩池也放假。'}</p>`;
-            $('later').innerHTML = later.map(schedRow).join('');
+            open.innerHTML = week.length ? byDay(week).map(g => `<div class="day"><p class="day-h"><b>${g.label}</b><span>${g.list.length} 場</span></p>${g.list.map(ticket).join('')}</div>`).join('') : `<p class="empty paper">這週沒有比賽可以押。<br>${later.length ? '下週的比賽週一開放下注。' : 'TPVL 放假，彩池也放假。'}</p>`;
+            $('later').innerHTML = byDay(later).map(g => `<p class="sched-day">${g.label}</p>${g.list.map(schedRow).join('')}`).join('');
             $('laterBox').classList.toggle('hidden', !later.length);
             $('pastN').textContent = past.length ? `最近七天・${past.length} 場` : '';
             $('past').innerHTML = past.map(pastRow).join('');
@@ -458,6 +489,8 @@
             const t = e.target;
             if (t.closest('[data-login]')) return Line.login();
             if (t.closest('[data-retry]')) { state = 'loading'; render(); return pull(); }
+            const op = t.closest('[data-open]');
+            if (op) { const id = op.dataset.open; expanded.has(id) ? expanded.delete(id) : expanded.add(id); return renderMatches(); }
             const f = t.closest('[data-fold]');
             if (f) { folded[f.dataset.fold] = !folded[f.dataset.fold]; return renderMatches(); }
             const b = t.closest('[data-bet]');
