@@ -5,13 +5,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>股市・炒 | 丼步喱</title>
-    <!-- 設計稿：資料都是假的，還沒接後端 -->
+    <!-- 分享到 LINE、FB 時的預覽（標題、介紹、圖片）。圖片要用完整網址 -->
+    <meta name="description" content="二十七樓證券交易所：七檔股票、每晚的晚報（大約七成準確）、漲停買不到、跌停賣不掉。">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="丼步喱・絆">
+    <meta property="og:title" content="股市・炒｜二十七樓證券交易所">
+    <meta property="og:description" content="二十七樓證券交易所：七檔股票、每晚的晚報（大約七成準確）、漲停買不到、跌停賣不掉。">
+    <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
+    <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/gushi.html">
+    <meta name="twitter:card" content="summary">
     <script src="https://cdn.tailwindcss.com"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="assets/theme.css?v=20261116d">
     <script src="assets/theme.js?v=20261116d"></script>
+    <script src="assets/line.js?v=20261116d"></script>
+    <script src="assets/wallet.js?v=20261116d"></script>
     <style>
         .num { font-family: 'Noto Sans TC', sans-serif; font-variant-numeric: tabular-nums; }
 
@@ -113,11 +125,22 @@
         #bigStamp .s { width: 9rem; height: 9rem; border: 5px solid #b33a2f; color: #b33a2f; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(251, 247, 236, .85); font-weight: 700; opacity: 0; transform: scale(2.2) rotate(-12deg); }
         #bigStamp .s b { font-size: 2.8rem; letter-spacing: .1em; line-height: 1.1; }
         #bigStamp .s span { font-size: .75rem; letter-spacing: .1em; font-family: 'Noto Sans TC', sans-serif; }
+        #bigStamp .s.grey { border-color: #8a8580; color: #6f6a64; }
         #bigStamp.go .s { animation: stamp 1.6s ease-out forwards; }
         @keyframes stamp { 0% { opacity: 0; transform: scale(2.2) rotate(-12deg); } 15% { opacity: 1; transform: scale(1) rotate(-8deg); } 75% { opacity: 1; transform: scale(1) rotate(-8deg); } 100% { opacity: 0; transform: scale(1) rotate(-8deg); } }
         @media (prefers-reduced-motion: reduce) { #sheet, #sheet .sh { transition: none; } .dot { animation: none; } }
+        .slip + .slip { margin-top: .9rem; }
+        .slip.flat { transform: rotate(.4deg); }
+        .line-btn { min-height: 44px; padding: 0 1.4rem; border-radius: 6px; background: #06c755; color: #fff; font-family: 'Noto Sans TC', sans-serif; font-weight: 500; font-size: .85rem; letter-spacing: .1em; touch-action: manipulation; }
+        .ev-tag { margin-top: .5rem; font-family: 'Noto Sans TC', sans-serif; font-size: .62rem; letter-spacing: .15em; color: var(--faint); }
+        .ev-tag b { font-weight: 500; padding: 0 .3rem; border: 1px solid currentColor; margin-left: .25rem; }
+        .ord { display: flex; align-items: center; gap: .6rem; padding: .55rem .15rem; border-bottom: 1px dashed var(--rule); font-size: .74rem; }
+        .ord:last-child { border-bottom: 0; }
+        .ord button { margin-left: auto; flex-shrink: 0; min-height: 32px; padding: 0 .7rem; border: 1px solid var(--rule); font-family: 'Noto Sans TC', sans-serif; font-size: .66rem; letter-spacing: .1em; color: var(--ink); }
+        .empty { padding: 1.4rem .2rem 1rem; text-align: center; font-size: .75rem; color: var(--faint); letter-spacing: .1em; line-height: 1.8; }
+        .warn { color: rgb(var(--wabi-shu)); }
     </style>
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261116d">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261117">
 </head>
 
 <body
@@ -141,57 +164,41 @@
             <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-3">STOCK</span>
             <h1 class="text-3xl font-light text-wabi-dark tracking-widest">股市・炒</h1>
             <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">漲停的時候你沒買，<br>跌停的時候你都在。</p>
-            <p class="mt-4 text-[11px] font-sans tracking-[0.2em] text-stone-500"><span class="dot"></span>開盤中・下一次跳價 16:00</p>
+            <p id="status" class="mt-4 text-[11px] font-sans tracking-[0.2em] text-stone-500">讀取行情中…</p>
         </div>
 
-        <!-- 開頁先跳：昨晚押的結果 -->
-        <section class="paper slip mb-6">
-            <p>昨晚買的<b>長蘿貨運</b>，今天 <b class="up num">▲6.2%</b>。<br><span style="color:var(--faint);font-size:.72rem">晚報說中了。這次。</span></p>
-            <div class="seal">中</div>
-        </section>
+        <!-- 紙條：昨晚押的結果、委託成交或取消 -->
+        <div id="slips" class="mb-6 hidden"></div>
 
-        <!-- 錢 -->
-        <section class="bg-white border border-stone-100 rounded-sm py-3 mb-6">
-            <dl class="acct">
-                <div><dt>現金</dt><dd class="num">$48,230</dd></div>
-                <div><dt>股票市值</dt><dd id="mv" class="num"></dd></div>
-                <div><dt>還沒賣的損益</dt><dd id="upl" class="num"></dd></div>
-            </dl>
-        </section>
+        <!-- 錢／登入 -->
+        <section id="acct" class="mb-6"></section>
 
         <!-- 晚報 -->
-        <section class="paper evening mb-6">
-            <header class="ev-head"><b>二十七樓晚報</b><span class="num">11 月 16 日・21:00</span></header>
-            <h2 class="ev-title">長蘿號傳出加開夜航<br>船長：「誰說的？」</h2>
-            <p class="ev-body">碼頭工人透露，長蘿號昨晚在無人海域多跑了兩趟。青江菜船長對此不願多談，只是一直叉腰。另據可靠消息，San Farm 的鼴鼠又出沒了，農會表示無可奉告。</p>
-            <p class="ev-foot">本報消息大約七成準確。投資一定有風險，看報紙更有。</p>
-        </section>
+        <section id="news" class="paper evening mb-6 hidden"></section>
 
         <!-- 行情表 -->
         <section class="paper board">
-            <header class="board-head"><b>行情表</b><span class="num">11/17 15:00 更新</span></header>
+            <header class="board-head"><b>行情表</b><span id="boardAt" class="num"></span></header>
             <div class="cols cols-h"><span>股票</span><span>今日</span><span style="text-align:right">股價</span><span style="text-align:right">漲跌</span></div>
-            <div id="rows"></div>
+            <div id="rows"><p class="empty">讀取中…</p></div>
         </section>
         <p class="mt-2 text-[10px] font-sans tracking-widest text-stone-400 text-center">點一檔看走勢、買賣</p>
 
         <!-- 對帳單 -->
-        <section class="paper stmt mt-8">
-            <header class="board-head"><b>持股對帳單</b><span>戶名 旅人</span></header>
-            <table>
-                <thead><tr><th>股票</th><th>股數</th><th>均價</th><th>現價</th><th>損益</th></tr></thead>
-                <tbody id="stmt"></tbody>
-            </table>
+        <section id="stmtBox" class="paper stmt mt-8 hidden">
+            <header class="board-head"><b>持股對帳單</b><span id="stmtName"></span></header>
+            <div id="stmt"></div>
+            <div id="orders"></div>
         </section>
 
         <!-- 規則 -->
         <section class="mt-8 text-[11px] font-sans tracking-wider leading-relaxed text-stone-500 space-y-1 px-1">
-            <p>・每天 9:00 到 24:00 整點跳價，每晚 21:00 出晚報。</p>
-            <p>・一天最多漲跌 10%。漲停的時候買不到，跌停的時候賣不掉。</p>
+            <p>・每天 9:00 開盤，10:00 到 24:00 整點跳價，每晚 21:00 出明天的晚報。</p>
+            <p>・一天最多漲跌 10%。漲停的時候買不到，跌停的時候賣不掉，可以掛單排隊，打開了才用漲停／跌停價成交，收盤前沒排到就取消。</p>
             <p>・買、賣各收 1% 手續費。今天買的要等明天 9:00 開盤後才能賣。</p>
             <p>・半夜也可以買賣，用 24:00 的收盤價成交。</p>
-            <p>・一檔最多買 $50 萬、全部最多 $200 萬，超過只能賣。</p>
-            <p>・要用 LINE 登入才能買賣，沒登入只能看盤。</p>
+            <p>・一檔最多買 $50 萬、全部最多 $200 萬（照成本算），超過只能賣。</p>
+            <p>・要用 LINE 登入才能買賣，沒登入只能看盤。賺賠不算進打工榜和花錢榜。</p>
             <p class="pt-2 text-stone-400">遊戲幣，不是真的股票。二十七樓證券交易所不對晚報的任何內容負責。</p>
         </section>
     </main>
@@ -201,7 +208,7 @@
     </footer>
 
     <!-- 底部面板：一檔的走勢、買賣 -->
-    <div id="sheet" role="dialog" aria-modal="true">
+    <div id="sheet" role="dialog" aria-modal="true" aria-labelledby="sName">
         <div class="sh">
             <div class="px-5 pt-5 pb-3 border-b border-stone-200">
                 <div class="flex items-baseline gap-2">
@@ -218,143 +225,352 @@
             <div class="px-5 pt-3">
                 <div class="flex items-center">
                     <div class="tabs"><button type="button" data-range="day" class="on">今日</button><button type="button" data-range="month">30 日</button></div>
-                    <p id="sRange" class="ml-auto pl-3 text-[10px] font-sans tracking-widest text-stone-400"></p>
+                    <p id="sRange" class="ml-auto pl-3 text-[10px] font-sans tracking-widest text-stone-400 text-right"></p>
                 </div>
                 <canvas id="chart" class="mt-2 w-full" style="height:150px"></canvas>
                 <p id="sHold" class="mt-2 text-xs font-sans tracking-wider text-stone-600"></p>
                 <p id="sLock" class="lock font-sans"></p>
             </div>
-            <div class="px-5 pt-3">
-                <div class="qty"><button type="button" data-step="-1">−</button><input id="q" class="num" inputmode="numeric" value="100"><button type="button" data-step="1">＋</button></div>
-                <div class="chips mt-3"><button type="button" data-set="10">10 股</button><button type="button" data-set="100">100 股</button><button type="button" data-set="half">一半</button><button type="button" data-set="max">最多</button></div>
+            <div id="sTrade" class="px-5 pt-3">
+                <div class="qty"><button type="button" data-step="-1" aria-label="少一股">−</button><input id="q" class="num" inputmode="numeric" value="100" aria-label="股數"><button type="button" data-step="1" aria-label="多一股">＋</button></div>
+                <div class="chips mt-3"><button type="button" data-set="100">100 股</button><button type="button" data-set="1000">1000 股</button><button type="button" data-set="maxbuy">最多可買</button><button type="button" data-set="allsell">全部可賣</button></div>
                 <p id="sCost" class="mt-3 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed"></p>
             </div>
-            <div class="px-5 pt-3 pb-6 grid grid-cols-2 gap-3">
-                <button type="button" id="buy" class="btn btn-buy">買進</button>
-                <button type="button" id="sell" class="btn btn-sell">賣出</button>
+            <div class="px-5 pt-3 pb-6">
+                <div id="sBtns" class="grid grid-cols-2 gap-3">
+                    <button type="button" id="buy" class="btn btn-buy">買進</button>
+                    <button type="button" id="sell" class="btn btn-sell">賣出</button>
+                </div>
+                <button type="button" id="sLogin" data-login class="line-btn w-full hidden">用 LINE 登入才能買賣</button>
             </div>
         </div>
     </div>
     <div id="bigStamp" aria-hidden="true"><div class="s"><b>成交</b><span></span></div></div>
 
     <script>
-        // ===== 設計稿用的假資料 =====
-        const STOCKS = [
-            { code: '2701', name: '長蘿貨運', full: '長蘿貨運股份有限公司', desc: '青江菜船長的蘿蔔船。看天吃飯，颱風天特別刺激。', base: 128, seed: 3, ch: 6.2 },
-            { code: '2702', name: '麥克早餐', full: '大橋頭麥克早餐', desc: '老闆是雞塊。早上生意最好，晚上沒人理。', base: 64.5, seed: 7, ch: 1.4 },
-            { code: '2703', name: '丼步喱人壽', full: '丼步喱人壽保險', desc: '最無聊的一檔，也最不會讓你睡不著。', base: 210, seed: 11, ch: -0.5 },
-            { code: '2704', name: '伊藤彩券', full: '伊藤彩券經銷', desc: '伊藤開晴的明牌筆記本公司化。', base: 45.2, seed: 17, ch: 10, limit: 'up' },
-            { code: '2705', name: '茱莉鴨電信', full: '茱莉鴨電信', desc: '二十七樓的網路。最恨人家蹭網，轉頭比股價還快。', base: 88, seed: 19, ch: 0 },
-            { code: '2706', name: '雅雅沙龍', full: '雅雅沙龍', desc: '坐洗部的洗頭店。泡泡捏得越高，股價也跟著翹。', base: 156, seed: 23, ch: 3.1 },
-            { code: '2707', name: 'San Farm', full: 'San Farm', desc: '二十七樓頂樓菜園。拔太大力會斷，追高也是。', base: 37.4, seed: 29, ch: -10, limit: 'down' },
-        ];
-        const HOLD = { '2701': { n: 150, avg: 119.4, today: 50 }, '2704': { n: 300, avg: 41.0, today: 0 }, '2707': { n: 200, avg: 44.6, today: 0 } };
-
-        function rng(s) { return () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; }
-        STOCKS.forEach(s => {
-            const r = rng(s.seed * 99991);
-            const prev = s.base / (1 + s.ch / 100);
-            s.prev = prev; s.px = s.base;
-            // 30 日收盤
-            const m = [prev]; for (let i = 0; i < 29; i++) m.unshift(m[0] / (1 + (r() - 0.5) * 0.12));
-            s.month = [...m, s.px];
-            // 今日 9:00～15:00 整點（7 格），在昨收和今收之間晃
-            s.day = Array.from({ length: 7 }, (_, i) => { const t = i / 6; return prev + (s.px - prev) * t + (i && i < 6 ? (r() - 0.5) * prev * 0.025 : 0); });
-            s.day[0] = prev;
-        });
-
-        const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
-        const pf = n => n >= 100 ? n.toFixed(1) : n.toFixed(2);
+        const API_URL = "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
+        const INFO = {
+            '2701': { full: '長蘿貨運股份有限公司', desc: '青江菜船長的蘿蔔船。看天吃飯，颱風天特別刺激。' },
+            '2702': { full: '大橋頭麥克早餐', desc: '老闆是雞塊。早上生意最好，晚上沒人理。' },
+            '2703': { full: '丼步喱人壽保險', desc: '最無聊的一檔，也最不會讓你睡不著。' },
+            '2704': { full: '伊藤彩券經銷', desc: '伊藤開晴的明牌筆記本公司化。' },
+            '2705': { full: '茱莉鴨電信', desc: '二十七樓的網路。最恨人家蹭網，轉頭比股價還快。' },
+            '2706': { full: '雅雅沙龍', desc: '坐洗部的洗頭店。泡泡捏得越高，股價也跟著翹。' },
+            '2707': { full: 'San Farm', desc: '二十七樓頂樓菜園。拔太大力會斷，追高也是。' },
+        };
+        const UP = '#b33a2f', DOWN = '#3d7a55';
+        const $ = id => document.getElementById(id);
+        const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const fmt = n => (n < 0 ? '−' : '') + '$' + Math.abs(Math.round(n)).toLocaleString('en-US');
+        const sfmt = n => (n > 0 ? '+' : n < 0 ? '−' : '') + '$' + Math.abs(Math.round(n)).toLocaleString('en-US');
+        const pf = p => p >= 1000 ? Math.round(p).toLocaleString('en-US') : p.toFixed(2);
         const tone = c => c > 0 ? 'up' : c < 0 ? 'down' : 'flat';
+        const toneColor = c => c > 0 ? UP : c < 0 ? DOWN : '';
         const arrow = c => c > 0 ? '▲' : c < 0 ? '▼' : '';
+        const tpe = ms => new Date(ms + 8 * 3600000);
+        const hhmm = ms => { const d = tpe(ms), h = d.getUTCHours(); return (h === 0 ? 24 : h) + ':00'; };
+        const lbl = name => /^[A-Za-z]/.test(name) ? `<span style="letter-spacing:.02em">${esc(name)}</span>` : esc(name);
+
+        let Q = null, M = null, state = 'loading', errMsg = '', range = 'day', cur = null, busy = false, offset = 0, timer = 0;
+        let notes = [];
+        const now = () => Date.now() + offset;
+        const stockOf = code => Q && Q.stocks.find(s => s.code === code);
+        const holdOf = code => M && M.hold.find(h => h.code === code);
+        const chg = s => s.prev ? s.price / s.prev - 1 : 0;
+
+        // ---- 跟後端拿資料 ----
+        async function pub() {
+            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'stockQuote' }) });
+            return res.json();
+        }
+        function take(q, m) {
+            Q = q; if (m !== undefined) M = m;
+            offset = q.now - Date.now();
+            if (m && m.notes && m.notes.length) notes = notes.concat(m.notes);
+            if (m) try { localStorage.setItem('dongbuli-gushi', JSON.stringify({ pl: m.pl, fee: m.fee, n: m.hold.length })); } catch (e) { }
+            state = 'ready';
+            clearTimeout(timer);
+            timer = setTimeout(pull, Math.max(5000, q.next - now() + 4000));   // 下一次跳價後幾秒再問
+        }
+        async function pull() {
+            try {
+                let r = null;
+                if (Line.loggedIn) {
+                    r = await Line.call({ type: 'stockMine' });
+                    if (r.result === 'success') { take(r.quote, r.mine); Wallet.adopt(r.wallet); }
+                }
+                if (!r || r.result !== 'success') {
+                    if (r && r.result !== 'unauthorized' && /不認得的請求/.test(r.error || '')) { state = 'old'; return render(); }
+                    const p = await pub();
+                    if (p.result === 'success') take(p, Line.loggedIn ? M : null);
+                    else if (/不認得的請求/.test(p.error || '')) state = 'old';
+                    else { state = 'error'; errMsg = p.error || p.result; }
+                }
+            } catch (e) { if (!Q) { state = 'error'; errMsg = '連不到後端，可能是網路不穩'; } }
+            render();
+        }
+
+        // ---- 畫面 ----
+        function renderStatus() {
+            const el = $('status');
+            if (state === 'old') { el.textContent = '股市還沒開張（後端要重新部署新版本）'; return; }
+            if (state === 'error') { el.innerHTML = `讀不到行情・<button type="button" data-retry class="underline underline-offset-2">再試一次</button>`; return; }
+            if (!Q) { el.textContent = '讀取行情中…'; return; }
+            el.innerHTML = Q.open ? `<span class="dot"></span>開盤中・下一次跳價 ${hhmm(Q.next)}`
+                : `已收盤・照收盤價買賣・${hhmm(Q.next)} 跳第一次價`;
+        }
+
+        function renderSlips() {
+            const box = $('slips'), out = [];
+            const n2 = code => (stockOf(code) || {}).name || code;
+            notes.forEach(n => {
+                if (n.kind === 'fill' && n.side === 'sell') {
+                    const loss = n.pl < 0;
+                    out.push(`<section class="paper slip"><p>排到了：<b>${lbl(n2(n.code))}</b> 跌停打開，賣出 ${n.n} 股，成交價 ${pf(n.price)}。<br><span style="color:var(--faint);font-size:.72rem">${loss ? '賠了 ' + fmt(-n.pl) + '，至少逃出來了。' : '賺了 ' + fmt(n.pl) + '。'}</span></p><div class="seal${loss ? ' grey' : ''}">${loss ? '賠' : '成'}</div></section>`);
+                } else if (n.kind === 'fill') {
+                    out.push(`<section class="paper slip"><p>排到了：<b>${lbl(n2(n.code))}</b> 漲停打開，買進 ${n.n} 股，成交價 ${pf(n.price)}。<br><span style="color:var(--faint);font-size:.72rem">明天 9:00 開盤後才能賣。</span></p><div class="seal">成</div></section>`);
+                } else {
+                    out.push(`<section class="paper slip flat"><p><b>${lbl(n2(n.code))}</b> 的${n.side === 'sell' ? '跌停賣單' : '漲停買單'}（${n.n} 股）收盤前沒排到，委託取消了。<br><span style="color:var(--faint);font-size:.72rem">${n.side === 'buy' ? '預留的錢退回錢包了。' : '股票還在你手上。'}</span></p><div class="seal grey">消</div></section>`);
+                }
+            });
+            // 今天上新聞那檔，你手上有的話：晚報目前說中了沒
+            const nn = Q && Q.newsNow, h = nn && holdOf(nn.code), s = nn && stockOf(nn.code);
+            if (h && s) {
+                const c = chg(s), claimUp = nn.claim === 'up', hit = c !== 0 && (c > 0) === claimUp;
+                out.push(`<section class="paper slip"><p>晚報說<b>${lbl(s.name)}</b>會${claimUp ? '漲' : '跌'}，你有 ${h.n} 股，今天目前 <b class="num ${tone(c)}">${arrow(c)}${Math.abs(c * 100).toFixed(1)}%</b>。<br><span style="color:var(--faint);font-size:.72rem">${c === 0 ? '還看不出來。' : hit ? '晚報說中了。目前。' : '晚報騙了你。目前。'}</span></p><div class="seal${c !== 0 && hit ? '' : ' grey'}">${c === 0 ? '平' : hit ? '中' : '騙'}</div></section>`);
+            }
+            box.innerHTML = out.join('');
+            box.classList.toggle('hidden', !out.length);
+        }
+
+        function renderAcct() {
+            const box = $('acct');
+            if (!Line.loggedIn) {
+                box.innerHTML = `<div class="border border-dashed border-stone-300 rounded-sm p-5">
+                    <h2 class="text-sm tracking-[0.3em] text-wabi-dark">開戶需實名認證</h2>
+                    <p class="mt-2 text-xs font-sans tracking-wider text-stone-500 leading-relaxed">沒登入可以看盤、看晚報。要買賣得用 LINE 登入，股票跟著帳號走，換手機也在。</p>
+                    ${Line.available ? '<button type="button" data-login class="line-btn mt-4 w-full">用 LINE 登入</button>' : '<p class="mt-3 text-[11px] font-sans tracking-wider text-stone-400">LINE 登入載不起來，只能看盤。</p>'}</div>`;
+                return;
+            }
+            const hold = M ? M.hold : [];
+            const mv = hold.reduce((t, h) => t + h.n * ((stockOf(h.code) || {}).price || 0), 0);
+            const upl = hold.reduce((t, h) => t + h.n * ((stockOf(h.code) || {}).price || 0) - h.cost, 0);
+            box.innerHTML = `<div class="bg-white border border-stone-100 rounded-sm py-3"><dl class="acct">
+                <div><dt>現金</dt><dd class="num">${fmt(Wallet.money)}</dd></div>
+                <div><dt>股票市值</dt><dd class="num">${M ? fmt(mv) : '…'}</dd></div>
+                <div><dt>還沒賣的損益</dt><dd class="num" style="color:${toneColor(upl)}">${M ? sfmt(upl) : '…'}</dd></div>
+            </dl></div>
+            ${M ? `<p class="mt-2 px-1 text-[10px] font-sans tracking-widest text-stone-400 text-center">已實現損益 <span style="color:${toneColor(M.pl)}">${sfmt(M.pl)}</span>・付過手續費 ${fmt(M.fee)}</p>` : ''}`;
+        }
+
+        function renderNews() {
+            const box = $('news'), n = Q && Q.news;
+            box.classList.toggle('hidden', !n);
+            if (!n) return;
+            const pub = tpe(Date.parse(n.published)), about = n.day.slice(5).replace('-', '/');
+            box.innerHTML = `<header class="ev-head"><b>二十七樓晚報</b><span class="num">${pub.getUTCMonth() + 1} 月 ${pub.getUTCDate()} 日・21:00</span></header>
+                <p class="ev-tag">說的是 ${esc(about)}・本報判斷<b style="color:${n.claim === 'up' ? UP : DOWN}">${n.claim === 'up' ? '利多' : '利空'}</b></p>
+                <h2 class="ev-title" style="margin-top:.25rem">${esc(n.title)}</h2>
+                <p class="ev-body">${esc(n.source)}。${esc(n.reply)}</p>
+                <p class="ev-foot">${esc(n.foot)}</p>`;
+        }
 
         function spark(cv, s) {
             const d = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+            if (!w) return;
             cv.width = w * d; cv.height = h * d; const x = cv.getContext('2d'); x.scale(d, d);
-            const a = s.day, lo = s.prev * 0.9, hi = s.prev * 1.1;
-            const Y = v => h - 2 - (v - lo) / (hi - lo) * (h - 4);
+            const lo = s.prev * 0.9, hi = s.prev * 1.1, Y = v => h - 2 - (v - lo) / (hi - lo) * (h - 4);
             x.strokeStyle = '#d9cdb4'; x.setLineDash([2, 2]); x.beginPath(); x.moveTo(0, Y(s.prev)); x.lineTo(w, Y(s.prev)); x.stroke(); x.setLineDash([]);
-            x.strokeStyle = s.ch > 0 ? '#b33a2f' : s.ch < 0 ? '#3d7a55' : '#8c7f6c'; x.lineWidth = 1.4; x.beginPath();
-            a.forEach((v, i) => { const px = i / 15 * w; i ? x.lineTo(px, Y(v)) : x.moveTo(px, Y(v)); }); x.stroke();
+            x.strokeStyle = toneColor(chg(s)) || '#8c7f6c'; x.lineWidth = 1.4; x.beginPath();
+            s.day.forEach((v, i) => { const px = i / 15 * w; i ? x.lineTo(px, Y(v)) : x.moveTo(px, Y(v)); });
+            if (s.day.length === 1) x.lineTo(2, Y(s.day[0]));
+            x.stroke();
         }
 
-        document.getElementById('rows').innerHTML = STOCKS.map((s, i) => `
-            <button type="button" class="row cols" data-i="${i}">
-                <span class="nm">${/^[A-Za-z]/.test(s.name) ? `<span style="letter-spacing:.02em">${s.name}</span>` : s.name}${HOLD[s.code] ? '<span class="mine">持</span>' : ''}<span class="cd">${s.code}</span></span>
-                <canvas></canvas>
-                <span class="px num ${tone(s.ch)}">${pf(s.px)}</span>
-                <span class="ch num ${tone(s.ch)}">${arrow(s.ch)}${Math.abs(s.ch).toFixed(1)}%<br>${s.limit ? `<span class="limit">${s.limit === 'up' ? '漲停' : '跌停'}</span>` : `<span style="font-size:.6rem">${s.ch ? (s.ch > 0 ? '+' : '−') + pf(Math.abs(s.px - s.prev)) : '平盤'}</span>`}</span>
-            </button>`).join('');
-        document.querySelectorAll('.row').forEach(b => spark(b.querySelector('canvas'), STOCKS[b.dataset.i]));
+        function renderBoard() {
+            const box = $('rows');
+            if (state === 'old') { box.innerHTML = '<p class="empty">股市還沒開張。<br>後端要貼上新版 Code.gs、重新部署「新版本」。</p>'; return; }
+            if (!Q) { box.innerHTML = state === 'error' ? `<p class="empty">讀不到行情（${esc(errMsg)}）。</p>` : '<p class="empty">讀取中…</p>'; return; }
+            $('boardAt').textContent = Q.label.slice(5).replace('-', '/') + ' 更新';
+            box.innerHTML = Q.stocks.map(s => {
+                const c = chg(s), diff = s.price - s.prev;
+                const tag = s.state ? `<span class="limit">${s.state === 'up' ? '漲停' : '跌停'}</span>` : `<span style="font-size:.6rem">${c ? (diff > 0 ? '+' : '−') + pf(Math.abs(diff)) : '平盤'}</span>`;
+                return `<button type="button" class="row cols" data-code="${s.code}">
+                    <span class="nm">${lbl(s.name)}${holdOf(s.code) ? '<span class="mine">持</span>' : ''}<span class="cd">${s.code}</span></span>
+                    <canvas></canvas>
+                    <span class="px num ${tone(c)}">${pf(s.price)}</span>
+                    <span class="ch num ${tone(c)}">${arrow(c)}${Math.abs(c * 100).toFixed(1)}%<br>${tag}</span>
+                </button>`;
+            }).join('');
+            box.querySelectorAll('.row').forEach(b => spark(b.querySelector('canvas'), stockOf(b.dataset.code)));
+        }
 
-        let tot = 0;
-        document.getElementById('stmt').innerHTML = STOCKS.filter(s => HOLD[s.code]).map(s => {
-            const h = HOLD[s.code], pl = (s.px - h.avg) * h.n; tot += pl;
-            return `<tr><td>${s.name}${h.today ? `<small>${h.today} 股明天才能賣</small>` : ''}</td><td class="num">${h.n}</td><td class="num">${pf(h.avg)}</td><td class="num ${tone(s.ch)}">${pf(s.px)}</td><td class="num ${tone(pl)}">${pl > 0 ? '+' : pl < 0 ? '−' : ''}${fmt(Math.abs(pl))}</td></tr>`;
-        }).join('') + `<tr class="sum"><td>合計</td><td></td><td></td><td></td><td class="num ${tone(tot)}">${tot > 0 ? '+' : '−'}${fmt(Math.abs(tot))}</td></tr>`;
+        function renderStmt() {
+            const box = $('stmtBox');
+            box.classList.toggle('hidden', !Line.loggedIn || !M || !Q);
+            if (!Line.loggedIn || !M || !Q) return;
+            $('stmtName').textContent = '戶名 ' + ((Line.profile && Line.profile.name) || '旅人');
+            if (!M.hold.length) $('stmt').innerHTML = '<p class="empty">還沒有持股。<br>點行情表上的一檔開始。</p>';
+            else {
+                let tot = 0;
+                $('stmt').innerHTML = `<table><thead><tr><th>股票</th><th>股數</th><th>均價</th><th>現價</th><th>損益</th></tr></thead><tbody>` +
+                    M.hold.map(h => {
+                        const s = stockOf(h.code) || { price: 0, prev: 0, name: h.code }, pl = h.n * s.price - h.cost; tot += pl;
+                        const sub = [h.locked ? `${h.locked} 股明天 9:00 後才能賣` : '', h.queued ? `${h.queued} 股掛賣中` : ''].filter(Boolean).join('・');
+                        return `<tr><td>${lbl(s.name)}${sub ? `<small>${sub}</small>` : ''}</td><td class="num">${h.n}</td><td class="num">${pf(h.avg)}</td><td class="num ${tone(chg(s))}">${pf(s.price)}</td><td class="num ${tone(pl)}">${sfmt(pl)}</td></tr>`;
+                    }).join('') + `<tr class="sum"><td>合計</td><td></td><td></td><td></td><td class="num ${tone(tot)}">${sfmt(tot)}</td></tr></tbody></table>`;
+            }
+            $('orders').innerHTML = M.orders.length ? `<p class="cols-h" style="margin-top:.8rem">委託中（收盤前沒排到就取消）</p>` + M.orders.map(o => {
+                const s = stockOf(o.code) || { name: o.code };
+                return `<div class="ord"><span>${lbl(s.name)}・掛${o.side === 'sell' ? '賣' : '買'} <span class="num">${o.n}</span> 股 @ <span class="num">${pf(o.price)}</span></span><button type="button" data-cancel="${esc(o.id)}" ${busy ? 'disabled' : ''}>取消</button></div>`;
+            }).join('') : '';
+        }
 
-        const mv = STOCKS.filter(s => HOLD[s.code]).reduce((t, s) => t + HOLD[s.code].n * s.px, 0);
-        document.getElementById('mv').textContent = fmt(mv);
-        document.getElementById('upl').textContent = (tot >= 0 ? '+' : '−') + fmt(Math.abs(tot));
-        document.getElementById('upl').style.color = tot > 0 ? '#b33a2f' : tot < 0 ? '#3d7a55' : '';
-
-        // ===== 底部面板 =====
-        const $ = id => document.getElementById(id);
-        let cur = null, range = 'day';
+        // ---- 底部面板 ----
         function chart() {
+            const s = stockOf(cur); if (!s) return;
             const cv = $('chart'), d = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+            if (!w) return;
             cv.width = w * d; cv.height = h * d; const x = cv.getContext('2d'); x.scale(d, d);
-            const s = cur, a = range === 'day' ? s.day : s.month, n = range === 'day' ? 15 : a.length - 1;
-            const lo0 = range === 'day' ? s.prev * 0.9 : Math.min(...a) * 0.97, hi0 = range === 'day' ? s.prev * 1.1 : Math.max(...a) * 1.03;
-            const L = 34, B = h - 16, T = 6, Y = v => B - (v - lo0) / (hi0 - lo0) * (B - T), X = i => L + i / n * (w - L - 4);
+            const day = range === 'day', a = day ? s.day : s.month, n = day ? 15 : Math.max(1, a.length - 1);
+            const lo0 = day ? s.down : Math.min(...a) * 0.97, hi0 = day ? s.up : Math.max(...a) * 1.03;
+            const L = 38, B = h - 16, T = 6, Y = v => B - (v - lo0) / (hi0 - lo0 || 1) * (B - T), X = i => L + i / n * (w - L - 4);
             const ink = themeColor('--wabi-accent'), sub = themeColor('--wabi-sub');
             x.font = '10px "Noto Sans TC", sans-serif'; x.fillStyle = ink; x.textAlign = 'right';
             [hi0, (hi0 + lo0) / 2, lo0].forEach(v => { x.fillText(pf(v), L - 5, Y(v) + 3); x.strokeStyle = sub; x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w, Y(v)); x.stroke(); });
             x.textAlign = 'center';
-            (range === 'day' ? [[0, '9'], [3, '12'], [6, '15'], [9, '18'], [12, '21'], [15, '24']] : [[0, '30 天前'], [15, '15 天前'], [30, '今天']]).forEach(([i, t]) => x.fillText(t, Math.min(Math.max(X(i), L + 14), w - 18), h - 3));
-            if (range === 'day') { x.setLineDash([3, 3]); x.strokeStyle = ink; x.beginPath(); x.moveTo(L, Y(s.prev)); x.lineTo(w, Y(s.prev)); x.stroke(); x.setLineDash([]); x.fillText('昨收', w - 14, Y(s.prev) - 4); }
-            const col = s.ch > 0 ? '#b33a2f' : s.ch < 0 ? '#3d7a55' : ink;
-            const g = x.createLinearGradient(0, T, 0, B); g.addColorStop(0, col + '33'); g.addColorStop(1, col + '00');
-            x.beginPath(); a.forEach((v, i) => i ? x.lineTo(X(i), Y(v)) : x.moveTo(X(i), Y(v)));
-            x.lineTo(X(a.length - 1), B); x.lineTo(X(0), B); x.closePath(); x.fillStyle = g; x.fill();
-            x.beginPath(); a.forEach((v, i) => i ? x.lineTo(X(i), Y(v)) : x.moveTo(X(i), Y(v))); x.strokeStyle = col; x.lineWidth = 1.8; x.stroke();
+            (day ? [[0, '9'], [3, '12'], [6, '15'], [9, '18'], [12, '21'], [15, '24']] : [[0, `${a.length - 1} 天前`], [Math.floor(n / 2), ''], [n, '今天']]).forEach(([i, t]) => t && x.fillText(t, Math.min(Math.max(X(i), L + 16), w - 18), h - 3));
+            if (day) { x.setLineDash([3, 3]); x.strokeStyle = ink; x.beginPath(); x.moveTo(L, Y(s.prev)); x.lineTo(w, Y(s.prev)); x.stroke(); x.setLineDash([]); x.fillText('昨收', w - 14, Y(s.prev) - 4); }
+            const col = toneColor(chg(s)) || ink;
+            if (a.length > 1) {
+                const g = x.createLinearGradient(0, T, 0, B); g.addColorStop(0, col + '33'); g.addColorStop(1, col + '00');
+                x.beginPath(); a.forEach((v, i) => i ? x.lineTo(X(i), Y(v)) : x.moveTo(X(i), Y(v)));
+                x.lineTo(X(a.length - 1), B); x.lineTo(X(0), B); x.closePath(); x.fillStyle = col.startsWith('#') ? g : 'transparent'; x.fill();
+                x.beginPath(); a.forEach((v, i) => i ? x.lineTo(X(i), Y(v)) : x.moveTo(X(i), Y(v))); x.strokeStyle = col; x.lineWidth = 1.8; x.stroke();
+            }
             x.beginPath(); x.arc(X(a.length - 1), Y(a[a.length - 1]), 3.5, 0, 7); x.fillStyle = col; x.fill();
-            $('sRange').textContent = range === 'day' ? '下一次跳價 16:00' : `30 日最高 ${pf(Math.max(...a))}・最低 ${pf(Math.min(...a))}`;
+            $('sRange').textContent = day ? `漲停 ${pf(s.up)}・跌停 ${pf(s.down)}` : `30 日最高 ${pf(Math.max(...a))}・最低 ${pf(Math.min(...a))}`;
         }
-        function cost() {
-            const q = Math.max(0, parseInt($('q').value) || 0), v = q * cur.px, fee = Math.ceil(v * 0.01);
-            $('sCost').innerHTML = `${q} 股 × ${pf(cur.px)} ＝ ${fmt(v)}<br>買進付 <b class="text-wabi-dark">${fmt(v + fee)}</b>（含手續費 ${fmt(fee)}）・賣出拿回 ${fmt(v - fee)}`;
-            const h = HOLD[cur.code];
-            $('sell').disabled = !h || q > h.n - h.today || cur.limit === 'down';
-            $('buy').disabled = cur.limit === 'up';
-            $('buy').textContent = cur.limit === 'up' ? '漲停・買不到' : '買進';
-            $('sell').textContent = cur.limit === 'down' ? '跌停・賣不掉' : '賣出';
+        const qty = () => Math.max(0, Math.floor(Number($('q').value) || 0));
+        function room(s) {   // 這一檔還能買多少錢（錢包、一檔上限、全部上限）
+            const h = holdOf(s.code), one = (h ? h.cost : 0) + (M ? M.orders.filter(o => o.code === s.code && o.side === 'buy').reduce((t, o) => t + Math.round(o.price * o.n * 1.01), 0) : 0);
+            return Math.min(Wallet.money, Q.rules.capOne - one, Q.rules.capAll - (M ? M.cost : 0));
         }
-        function openSheet(i) {
-            cur = STOCKS[i];
-            $('sName').textContent = cur.full; $('sCode').textContent = cur.code; $('sDesc').textContent = cur.desc;
-            $('sPx').textContent = pf(cur.px); $('sPx').style.color = cur.ch > 0 ? '#b33a2f' : cur.ch < 0 ? '#3d7a55' : '';
-            $('sCh').innerHTML = `<span style="color:${cur.ch > 0 ? '#b33a2f' : cur.ch < 0 ? '#3d7a55' : ''}">${arrow(cur.ch)} ${cur.ch ? pf(Math.abs(cur.px - cur.prev)) : '平盤'}（${Math.abs(cur.ch).toFixed(1)}%）</span>${cur.limit ? `<span class="ml-2 text-[10px] tracking-widest border px-1" style="color:${cur.limit === 'up' ? '#b33a2f' : '#3d7a55'}">${cur.limit === 'up' ? '漲停' : '跌停'}</span>` : ''}`;
-            const h = HOLD[cur.code];
-            $('sHold').textContent = h ? `持有 ${h.n} 股・均價 ${pf(h.avg)}・市值 ${fmt(h.n * cur.px)}` : '還沒有這一檔。';
-            $('sLock').textContent = h && h.today ? `今天買的 ${h.today} 股明天才能賣，現在可以賣 ${h.n - h.today} 股。` : '';
-            $('sheet').classList.add('on'); requestAnimationFrame(chart); cost();
+        const cost = (p, n) => { const a = Math.round(p * n); return { amount: a, fee: Math.ceil(a * Q.rules.fee) }; };
+        function maxBuy(s) {
+            const lim = room(s); let n = Math.max(0, Math.floor(lim / (s.price * (1 + Q.rules.fee))));
+            while (n > 0) { const c = cost(s.price, n); if (c.amount + c.fee <= lim) break; n--; }
+            return n;
         }
-        document.querySelectorAll('.row').forEach(b => b.addEventListener('click', () => openSheet(+b.dataset.i)));
-        $('sheet').addEventListener('click', e => { if (e.target.id === 'sheet' || e.target.closest('[data-close]')) $('sheet').classList.remove('on'); });
-        document.querySelectorAll('[data-range]').forEach(b => b.addEventListener('click', () => { range = b.dataset.range; document.querySelectorAll('[data-range]').forEach(x => x.classList.toggle('on', x === b)); chart(); }));
-        document.querySelectorAll('[data-step]').forEach(b => b.addEventListener('click', () => { $('q').value = Math.max(1, (parseInt($('q').value) || 0) + +b.dataset.step); cost(); }));
-        document.querySelectorAll('[data-set]').forEach(b => b.addEventListener('click', () => {
-            const h = HOLD[cur.code], m = b.dataset.set;
-            $('q').value = m === 'max' ? Math.floor(48230 / (cur.px * 1.01)) : m === 'half' ? Math.max(1, Math.floor(((h ? h.n - h.today : 0) || 0) / 2)) : m; cost();
-        }));
-        $('q').addEventListener('input', cost);
-        $('buy').addEventListener('click', () => {
-            const st = $('bigStamp'); st.querySelector('span').textContent = `${$('q').value} 股・${pf(cur.px)}`;
+        function renderSheet() {
+            const s = stockOf(cur); if (!s) return;
+            const info = INFO[s.code] || { full: s.name, desc: '' }, c = chg(s), h = holdOf(s.code), logged = Line.loggedIn && M;
+            $('sName').innerHTML = lbl(info.full); $('sCode').textContent = s.code; $('sDesc').textContent = info.desc;
+            $('sPx').textContent = pf(s.price); $('sPx').style.color = toneColor(c);
+            $('sCh').innerHTML = `<span style="color:${toneColor(c)}">${arrow(c)} ${c ? pf(Math.abs(s.price - s.prev)) : '平盤'}（${Math.abs(c * 100).toFixed(1)}%）</span>${s.state ? `<span class="ml-2 text-[10px] tracking-widest border px-1" style="color:${s.state === 'up' ? UP : DOWN}">${s.state === 'up' ? '漲停' : '跌停'}</span>` : ''}`;
+            $('sHold').textContent = !logged ? '' : h ? `持有 ${h.n} 股・均價 ${pf(h.avg)}・市值 ${fmt(h.n * s.price)}` : '還沒有這一檔。';
+            $('sLock').textContent = h && (h.locked || h.queued) ? `${h.locked ? `今天買的 ${h.locked} 股明天 9:00 開盤後才能賣` : ''}${h.locked && h.queued ? '，' : ''}${h.queued ? `${h.queued} 股正在掛賣` : ''}，現在可以賣 ${h.sellable} 股。` : '';
+            $('sTrade').classList.toggle('hidden', !logged);
+            $('sBtns').classList.toggle('hidden', !logged);
+            $('sLogin').classList.toggle('hidden', !!logged);
+            if (!Line.available && !Line.loggedIn) $('sLogin').classList.add('hidden');
+            if (!logged) return;
+            const n = qty(), amt = cost(s.price, n), lim = room(s), sellable = h ? h.sellable : 0;
+            const lines = [`${n} 股 × ${pf(s.price)} ＝ ${fmt(amt.amount)}`, `買進付 <b class="text-wabi-dark">${fmt(amt.amount + amt.fee)}</b>（含手續費 ${fmt(amt.fee)}）・賣出拿回 ${fmt(amt.amount - amt.fee)}`];
+            if (s.state === 'up') lines.push('<span class="warn">漲停中：買單會排隊，先扣錢；漲停打開才用漲停價成交，收盤前沒排到就退錢。</span>');
+            if (s.state === 'down') lines.push('<span class="warn">跌停中：賣單會排隊；跌停打開才用跌停價成交，收盤前沒排到就取消。</span>');
+            if (n && amt.amount + amt.fee > lim) lines.push(`<span class="warn">${amt.amount + amt.fee > Wallet.money ? '錢包不夠' : '超過持股上限（一檔 $50 萬、全部 $200 萬）'}，最多可買 ${maxBuy(s)} 股。</span>`);
+            $('sCost').innerHTML = lines.join('<br>');
+            $('buy').textContent = busy ? '…' : s.state === 'up' ? '掛漲停買單' : '買進';
+            $('sell').textContent = busy ? '…' : s.state === 'down' ? '掛跌停賣單' : '賣出';
+            $('buy').disabled = busy || !n || amt.amount + amt.fee > lim;
+            $('sell').disabled = busy || !n || n > sellable;
+        }
+        function openSheet(code) {
+            cur = code; range = 'day';
+            document.querySelectorAll('[data-range]').forEach(x => x.classList.toggle('on', x.dataset.range === 'day'));
+            const h = holdOf(code); $('q').value = 100;
+            $('sheet').classList.add('on'); renderSheet(); requestAnimationFrame(chart);
+        }
+        function closeSheet() { $('sheet').classList.remove('on'); cur = null; }
+
+        function render() {
+            renderStatus(); renderSlips(); renderAcct(); renderNews(); renderBoard(); renderStmt();
+            if (cur) { renderSheet(); chart(); }
+        }
+
+        function bigStamp(text, sub, grey) {
+            const st = $('bigStamp'), s = st.querySelector('.s');
+            s.querySelector('b').textContent = text; s.querySelector('span').textContent = sub; s.classList.toggle('grey', !!grey);
             st.classList.remove('go'); void st.offsetWidth; st.classList.add('go');
-            showToast(`買進 ${cur.name} ${$('q').value} 股（設計稿，沒有真的買）`);
+        }
+
+        // 買賣、取消：先把錢包還沒送的送完，再請後端直接改帳號
+        async function act(body) {
+            if (busy) return null;
+            busy = true; render();
+            try {
+                await Wallet.settle();
+                const r = await Line.call(body);
+                if (r.quote) take(r.quote, r.mine);
+                if (r.wallet) Wallet.adopt(r.wallet);
+                if (r.result === 'success') return r;
+                if (r.result === 'moved') showToast('價格剛跳了，看一下新的價格再下單');
+                else if (r.result === 'unauthorized') showToast('登入過期了，再登入一次');
+                else showToast(/不認得的請求/.test(r.error || '') ? '後端還是舊版，要重新部署「新版本」' : (r.error || '號子沒回應'));
+            } catch (e) { showToast('連不到後端，可能是網路不穩'); }
+            finally { busy = false; render(); }
+            return null;
+        }
+        async function trade(side) {
+            const s = stockOf(cur), n = qty();
+            if (!s || !n) return;
+            const r = await act({ type: 'stockTrade', code: s.code, side, n, slot: Q.slot });
+            if (!r) return;
+            if (r.done === 'queued') { bigStamp('委託', `排隊中・${r.n} 股`, true); showToast(`${s.name} ${side === 'sell' ? '跌停賣單' : '漲停買單'}掛好了，打開才成交`); }
+            else if (side === 'buy') { bigStamp('成交', `${r.n} 股・${pf(r.price)}`); showToast(`買進 ${s.name} ${r.n} 股，付了 ${fmt(r.amount + r.fee)}`); }
+            else if (r.pl < 0) { bigStamp('認賠', `賠 ${fmt(-r.pl)}`, true); showToast(`賣出 ${s.name} ${r.n} 股，賠了 ${fmt(-r.pl)}`); }
+            else { bigStamp('成交', `賺 ${fmt(r.pl)}`); showToast(`賣出 ${s.name} ${r.n} 股，賺了 ${fmt(r.pl)}`); }
+        }
+
+        // ---- 事件 ----
+        document.addEventListener('click', async e => {
+            const t = e.target;
+            if (t.closest('[data-login]')) return Line.login();
+            if (t.closest('[data-retry]')) { state = 'loading'; render(); return pull(); }
+            const row = t.closest('.row[data-code]'); if (row) return openSheet(row.dataset.code);
+            if (t.id === 'sheet' || t.closest('[data-close]')) return closeSheet();
+            const rg = t.closest('[data-range]');
+            if (rg) { range = rg.dataset.range; document.querySelectorAll('[data-range]').forEach(x => x.classList.toggle('on', x === rg)); return chart(); }
+            const step = t.closest('[data-step]'); if (step) { $('q').value = Math.max(1, qty() + Number(step.dataset.step)); return renderSheet(); }
+            const set = t.closest('[data-set]');
+            if (set) {
+                const s = stockOf(cur), h = holdOf(cur), m = set.dataset.set;
+                $('q').value = m === 'maxbuy' ? maxBuy(s) : m === 'allsell' ? (h ? h.sellable : 0) : m;
+                return renderSheet();
+            }
+            if (t.closest('#buy')) return trade('buy');
+            if (t.closest('#sell')) return trade('sell');
+            const cancel = t.closest('[data-cancel]');
+            if (cancel) {
+                const r = await act({ type: 'stockCancel', id: cancel.dataset.cancel });
+                if (r) { bigStamp('取消', `${r.n} 股`, true); showToast('委託取消了'); }
+            }
         });
-        $('sell').addEventListener('click', () => showToast('設計稿：賣出時，賠錢會蓋灰色「認賠」章'));
+        $('q').addEventListener('input', renderSheet);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && cur) closeSheet(); });
+        Wallet.on(type => {
+            if (type === 'login') { setTimeout(pull, 1500); render(); }
+            else if (type === 'logout') { M = null; notes = []; try { localStorage.removeItem('dongbuli-gushi'); } catch (e) { } render(); }
+            else { renderAcct(); if (cur) renderSheet(); }
+        });
+        // 回到這個分頁：過了跳價時間就重新拿
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && (!Q || now() >= Q.next)) pull(); });
+        window.addEventListener('pageshow', e => { if (e.persisted) pull(); });
+        window.addEventListener('resize', () => { if (Q) { renderBoard(); if (cur) chart(); } });
+
+        render();
+        Line.ready.then(pull, pull);
     </script>
 </body>
 

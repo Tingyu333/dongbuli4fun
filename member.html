@@ -92,7 +92,7 @@
         }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261116d">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261117">
 </head>
 
 <body
@@ -198,6 +198,14 @@
                     <span class="flex-1 min-w-0">
                     <span class="block text-wabi-dark tracking-widest">二十七樓彩券行</span>
                     <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">拿工資刮刮樂，十種，頭獎 2000 萬</span>
+                    </span>
+                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                </a>
+                <a href="gushi.html" class="game">
+                    <span class="game-mark">股</span>
+                    <span class="flex-1 min-w-0">
+                    <span class="block text-wabi-dark tracking-widest">股市・炒</span>
+                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">七檔股票，每晚出晚報，大約七成準</span>
                     </span>
                     <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
                 </a>
@@ -310,6 +318,10 @@
             if (scratchSpent) parts.push([scratchSpent, '刮刮樂']);
             if (w.spent) rows.push(`<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">花掉</dt><dd class="flex-1">${fmt(w.spent)}${parts.length > 1 ? `（${parts.map(x => `${x[1]} ${fmt(x[0])}`).join('、')}）` : parts.length ? `（都拿去${parts[0][1]}了）` : ''}</dd></div>`);
             if (gd.donated || Gongde.lit(gd).length) rows.push(`<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">功德</dt><dd class="flex-1">${tier.name}${tier.q ? `，永久加持 ${Math.round(tier.q * 100)}%` : ''}${Gongde.lit(gd).map(l => `，${l.name} ${l.unit === 'money' ? fmt(l.oilLeft) : l.oilLeft + ' ' + l.unit}`).join('')}</dd></div>`);
+            // 股市：損益不算進錢包的帳，股市頁最後一次看到的存在這支手機
+            let gs = null;
+            try { gs = Line.loggedIn ? JSON.parse(localStorage.getItem('dongbuli-gushi') || 'null') : null; } catch (e) { }
+            if (gs && (gs.pl || gs.fee || gs.n)) rows.push(`<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">股市</dt><dd class="flex-1">${gs.pl > 0 ? '賺' : gs.pl < 0 ? '賠' : '打平'} ${fmt(Math.abs(gs.pl))}（已賣掉的），付過手續費 ${fmt(gs.fee)}${gs.n ? `，手上 ${gs.n} 檔` : ''}</dd></div>`);
             $('tierTag').textContent = gd.donated ? tier.name : '';
             $('ledger').innerHTML = rows.length ? rows.join('') : '<p class="text-stone-400">還沒賺過錢。先去坐洗部洗一顆頭。</p>';
         }

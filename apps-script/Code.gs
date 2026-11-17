@@ -65,7 +65,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 以前每個 POST 都排同一個隊，所有人一個一個來，洗頭、刮刮樂的人一多後台就擠不進來。
 // 現在只有這些整個排隊；錢包同步、LINE 登入只在寫 Players 那一下排隊（withLock）；
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
-var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1 };
+var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockMine: 1, stockTrade: 1, stockCancel: 1 };
 
 function withLock(fn) {
   var lock = LockService.getScriptLock();
@@ -112,6 +112,10 @@ function route(type, input) {
     if (type === 'policyBuy') return policyBuy(input);
     if (type === 'policyClaim') return policyClaim(input);
     if (type === 'policyCancel') return policyCancel(input);
+    if (type === 'stockQuote') return stockQuote(input);
+    if (type === 'stockMine') return stockMine(input);
+    if (type === 'stockTrade') return stockTrade(input);
+    if (type === 'stockCancel') return stockCancel(input);
 
     // 以下只有後台能用，要帶登入拿到的通行證
     if (type === 'updateStatus' || type === 'adminList' || type === 'bonusCreate' || type === 'bonusList' || type === 'bonusClose') {
@@ -1612,6 +1616,534 @@ function policyCancel(input) {
 function setupPolicies() {
   var sheet = policiesSheet();
   Logger.log('Policies 分頁好了，目前有 ' + (sheet.getLastRow() - 1) + ' 張保單。網頁要能投保，還要「部署 → 管理部署作業 → 編輯 → 版本選新版本 → 部署」。');
+}
+
+// --- 股市・炒（gushi.html）：二十七樓證券交易所 ---
+// 價格不用排程：每一格（每天 9:00～24:00 的整點）的漲跌用祕密鑰匙（指令碼屬性 STOCK_SEED，沒有就自己產生一把）
+// 加上「股票代號、日期、幾點」算 HMAC，換成 0～1 的數字。同一把鑰匙、同一格，算出來永遠一樣；沒有鑰匙算不出明天。
+// 算過的每一格存在 Prices 分頁（A 第幾格、B 時間、C～I 七檔的價格），下一格接著上一格算，改了規則也不會改到過去。
+// 整點過後第一個來看行情的人（排隊）把新的格子補上，順便處理排隊的委託單（跌停掛賣、漲停掛買，打開才成交）。
+// 晚報：每天 21:00 出明天的。明天哪一檔上新聞、真正往哪走、走多少、晚報說真話還是說反話，都用同一把鑰匙事先算好；
+// 句子從 NewsLines 分頁抽（使用者自己匯入，A code、B name、C dir、D kind、E text、F on），抽好的存進 News，之後不再變。
+// 持股、委託、損益存在 Players 的 L 欄（JSON）。手續費、損益都不算 spent、不算 earned（花錢榜、打工榜不受影響）。
+
+var STOCKS = [
+  { code: '2701', name: '長蘿貨運', base: 128 },
+  { code: '2702', name: '麥克早餐', base: 64.5 },
+  { code: '2703', name: '丼步喱人壽', base: 210 },
+  { code: '2704', name: '伊藤彩券', base: 45.2 },
+  { code: '2705', name: '茱莉鴨電信', base: 88 },
+  { code: '2706', name: '雅雅沙龍', base: 156 },
+  { code: '2707', name: 'San Farm', base: 37.4 }
+];
+var STOCK_OPEN = 9, STOCK_SLOTS = 16;            // 一天 16 格：9:00（＝昨收）、10:00～24:00 跳 15 次
+var STOCK_NEWS_HOUR = 21;                         // 每晚幾點出明天的晚報
+var STOCK_LIMIT = 0.10;                           // 漲跌停
+var STOCK_NOISE = 0.012;                          // 每小時亂晃 ±1.2%
+var STOCK_NEWS_SIZE = [0.03, 0.05];               // 上新聞那檔隔天整天往真正方向推多少
+var STOCK_TRUTH = 0.73;                           // 晚報說真話的機率（加上亂晃蓋過推力，整體說中大約七成）
+var STOCK_DRIFT = 0.006;                          // 沒上新聞的每天也有一點點方向（±0.6%）
+var STOCK_REVERT = 0.004;                         // 每小時往起始價拉回：偏離 50% 就拉 0.2%
+var STOCK_SHOCK = 0.10, STOCK_SHOCK_SIZE = [0.09, 0.16];  // 沒有晚報預告的突發大漲大跌：每天 10% 機會挑一檔（不是上新聞那檔）
+var STOCK_FEE = 0.01;                             // 買、賣各 1%（零頭進位）
+var STOCK_CAP_ONE = 500000, STOCK_CAP_ALL = 2000000;  // 持股成本上限：一檔、全部（含掛單預留的錢）
+var STOCK_HISTORY_DAYS = 30;                      // 第一次開市假裝上市幾天了
+var STOCK_OPS_PER_HOUR = 300;
+var STOCK_TRADE_HEADERS = ['timestamp', 'line_id', 'code', 'side', 'shares', 'price', 'amount', 'fee', 'pl', 'kind', 'money'];
+
+// 晚報句子 NewsLines 是空的時候用（正式句子在使用者自己的 Sheet，不放公開的程式碼）
+var STOCK_FALLBACK = {
+  title: {
+    '2701': ['長蘿號傳出加開夜航', '長蘿號又撞上浣熊的木盆'], '2702': ['大冰奶第二杯半價，隊伍排到大橋頭', '雞塊老闆被拍到在別家吃早餐'],
+    '2703': ['法說會釋利多：宣告利率不降反升', '傳出現金增資計畫，股東皺眉'], '2704': ['伊藤宣布：「這週的明牌，我拿命押了。」', '伊藤承認明牌筆記是擲杯擲出來的'],
+    '2705': ['28 樓路由器又重開，全棟改用茱莉鴨網路', '茱莉鴨顧湯太專心，被蹭了整整一季'], '2706': ['店貓登上雜誌封面，預約排到下個月', '客人投訴泡泡流到眼睛'],
+    '2707': ['巨型蘿蔔出土，農會到場拍照', '鼴鼠在菜園開了分店']
+  },
+  source: ['鄰居阿伯在電梯裡說的'], reply: ['公司不願回應，只回了一張貼圖。'], foot: ['本報消息大約七成準確。投資一定有風險，看報紙更有。']
+};
+
+function stockNow() { return new Date(); }
+
+// 台灣時間：第幾天（從 1970-01-01 算）、幾點
+function stockClock(ms) {
+  var t = ms + 8 * 3600000;
+  return { day: Math.floor(t / 86400000), hour: Math.floor((t % 86400000) / 3600000) };
+}
+function stockDayStr(day) { return new Date(day * 86400000).toISOString().slice(0, 10); }
+function stockDayMs(day, hour) { return day * 86400000 + (hour - 8) * 3600000; }  // 台灣 day 的 hour 點是 UTC 幾毫秒
+// 現在是第幾格：0:00～9:00 還是昨天收盤那格（24 點）
+function stockSlotAt(ms) {
+  var c = stockClock(ms);
+  return c.hour < STOCK_OPEN ? (c.day - 1) * STOCK_SLOTS + STOCK_SLOTS - 1 : c.day * STOCK_SLOTS + (c.hour - STOCK_OPEN);
+}
+function stockSlotDay(idx) { return Math.floor(idx / STOCK_SLOTS); }
+function stockSlotHour(idx) { return idx % STOCK_SLOTS + STOCK_OPEN; }
+function stockSlotLabel(idx) { var h = stockSlotHour(idx); return stockDayStr(stockSlotDay(idx)) + ' ' + (h < 10 ? '0' : '') + h + ':00'; }
+// 下一次跳價：0:00～10:00 是 10:00，其他是下一個整點
+function stockNextJump(ms) {
+  var c = stockClock(ms);
+  if (c.hour < STOCK_OPEN + 1) return stockDayMs(c.day, STOCK_OPEN + 1);
+  return stockDayMs(c.day, c.hour + 1);
+}
+// 下一次 9:00 開盤（今天買的要等到這時候才能賣）
+function stockNextOpen(ms) {
+  var c = stockClock(ms);
+  return stockDayMs(c.hour < STOCK_OPEN ? c.day : c.day + 1, STOCK_OPEN);
+}
+
+function stockSeed() {
+  var props = PropertiesService.getScriptProperties(), s = props.getProperty('STOCK_SEED');
+  if (!s) { s = Utilities.getUuid() + Utilities.getUuid(); props.setProperty('STOCK_SEED', s); }
+  return s;
+}
+// 果汁機：一樣的材料一定打出一樣的 0～1，沒有鑰匙猜不到
+function stockRand(seed, text) {
+  var b = Utilities.computeHmacSha256Signature(text, seed);
+  return (((b[0] & 255) * 16777216) + ((b[1] & 255) << 16 >>> 0) + ((b[2] & 255) << 8) + (b[3] & 255)) / 4294967296;
+}
+
+// 台股的升降單位
+function stockTick(p) { return p < 10 ? 0.01 : p < 50 ? 0.05 : p < 100 ? 0.1 : p < 500 ? 0.5 : p < 1000 ? 1 : 5; }
+function stockFix(p) { return Math.round(p * 100) / 100; }
+function stockRound(p) { var t = stockTick(p); return stockFix(Math.round(p / t) * t); }
+function stockLimits(prev) {
+  var up = prev * (1 + STOCK_LIMIT), dn = prev * (1 - STOCK_LIMIT);
+  var tu = stockTick(up), td = stockTick(dn);
+  return { up: stockFix(Math.floor(up / tu + 1e-9) * tu), down: stockFix(Math.ceil(dn / td - 1e-9) * td) };
+}
+
+// 第 day 天的新聞：哪一檔、真正往哪走、走多少、晚報說真話嗎（晚報說的方向 claim）
+function stockNewsPlan(seed, day) {
+  var d = stockDayStr(day);
+  var idx = Math.min(STOCKS.length - 1, Math.floor(stockRand(seed, 'news|' + d) * STOCKS.length));
+  var up = stockRand(seed, 'dir|' + d) < 0.5;
+  var size = STOCK_NEWS_SIZE[0] + stockRand(seed, 'size|' + d) * (STOCK_NEWS_SIZE[1] - STOCK_NEWS_SIZE[0]);
+  var truth = stockRand(seed, 'truth|' + d) < STOCK_TRUTH;
+  return { day: day, code: STOCKS[idx].code, up: up, size: size, truth: truth, claimUp: truth ? up : !up };
+}
+
+// 這一天每檔每小時的推力
+function stockShock(seed, day, newsCode) {
+  var d = stockDayStr(day);
+  if (stockRand(seed, 'shock|' + d) >= STOCK_SHOCK) return null;
+  var others = STOCKS.filter(function (s) { return s.code !== newsCode; });
+  var s = others[Math.min(others.length - 1, Math.floor(stockRand(seed, 'shockwho|' + d) * others.length))];
+  var size = STOCK_SHOCK_SIZE[0] + stockRand(seed, 'shocksize|' + d) * (STOCK_SHOCK_SIZE[1] - STOCK_SHOCK_SIZE[0]);
+  return { code: s.code, move: stockRand(seed, 'shockdir|' + d) < 0.5 ? size : -size };
+}
+
+function stockDrifts(seed, day) {
+  var plan = stockNewsPlan(seed, day), shock = stockShock(seed, day, plan.code), d = stockDayStr(day), out = {};
+  STOCKS.forEach(function (s) {
+    var daily = s.code === plan.code ? (plan.up ? plan.size : -plan.size)
+      : shock && shock.code === s.code ? shock.move
+      : (stockRand(seed, 'drift|' + s.code + '|' + d) - 0.5) * 2 * STOCK_DRIFT;
+    out[s.code] = daily / (STOCK_SLOTS - 1);
+  });
+  return out;
+}
+
+// 從 prev 那一格的價格算出 idx 這一格（idx 不是 9 點那格）
+function stockStep(seed, s, idx, price, prevClose, drift) {
+  var d = stockDayStr(stockSlotDay(idx)), h = stockSlotHour(idx);
+  var noise = (stockRand(seed, s.code + '|' + d + '|' + h) - 0.5) * 2 * STOCK_NOISE;
+  var revert = STOCK_REVERT * (s.base - price) / s.base;
+  var lim = stockLimits(prevClose);
+  var next = stockRound(price * (1 + drift + revert + noise));
+  return Math.max(lim.down, Math.min(lim.up, next));
+}
+
+function stockSheet(name, headers) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(name);
+  if (!sheet) {
+    sheet = ss.insertSheet(name);
+    sheet.appendRow(headers);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+function pricesSheet() { return stockSheet('Prices', ['slot', 'time'].concat(STOCKS.map(function (s) { return s.code + ' ' + s.name; }))); }
+function newsSheet() { return stockSheet('News', ['day', 'published', 'code', 'claim', 'real', 'size', 'truth', 'title', 'source', 'reply', 'foot']); }
+function tradesSheet() { return stockSheet('Trades', STOCK_TRADE_HEADERS); }
+function newsLinesSheet() { return stockSheet('NewsLines', ['code', 'name', 'dir', 'kind', 'text', 'on']); }
+
+// Prices 最後 n 列：[{ idx, p: { code: price } }]
+function stockRows(n) {
+  var sheet = pricesSheet(), last = sheet.getLastRow();
+  if (last < 2) return [];
+  var from = Math.max(2, last - n + 1);
+  return sheet.getRange(from, 1, last - from + 1, 2 + STOCKS.length).getValues().map(function (r) {
+    var p = {};
+    STOCKS.forEach(function (s, i) { p[s.code] = Number(r[2 + i]); });
+    return { idx: Number(r[0]), p: p };
+  }).filter(function (r) { return isFinite(r.idx) && r.idx > 0; });
+}
+
+// 把 Prices 補到現在這一格（要在排隊裡叫）。回傳新補的格子
+function stockSync(nowMs) {
+  var seed = stockSeed(), sheet = pricesSheet(), cur = stockSlotAt(nowMs);
+  var tail = stockRows(STOCK_SLOTS + 1), last = tail[tail.length - 1];
+  var rows = [], made = [];
+  var price = {}, prevClose = {}, idx;
+  if (!last) {
+    // 第一次開市：假裝 30 天前上市，從起始價開始
+    idx = (stockClock(nowMs).day - STOCK_HISTORY_DAYS) * STOCK_SLOTS;
+    STOCKS.forEach(function (s) { price[s.code] = s.base; prevClose[s.code] = s.base; });
+    rows.push([idx, stockSlotLabel(idx)].concat(STOCKS.map(function (s) { return s.base; })));
+    made.push({ idx: idx, p: Object.assign({}, price) });
+  } else {
+    idx = last.idx;
+    price = Object.assign({}, last.p);
+    var open = tail.filter(function (r) { return r.idx === stockSlotDay(idx) * STOCK_SLOTS; })[0];
+    STOCKS.forEach(function (s) { prevClose[s.code] = open ? open.p[s.code] : price[s.code]; });
+  }
+  if (idx > cur) return [];
+  var drifts = null, driftDay = -1;
+  for (var i = idx + 1; i <= cur; i++) {
+    var day = stockSlotDay(i);
+    if (i % STOCK_SLOTS === 0) {
+      STOCKS.forEach(function (s) { prevClose[s.code] = price[s.code]; });  // 9:00 開盤＝昨收，不跳
+    } else {
+      if (driftDay !== day) { drifts = stockDrifts(seed, day); driftDay = day; }
+      STOCKS.forEach(function (s) { price[s.code] = stockStep(seed, s, i, price[s.code], prevClose[s.code], drifts[s.code]); });
+    }
+    rows.push([i, stockSlotLabel(i)].concat(STOCKS.map(function (s) { return price[s.code]; })));
+    made.push({ idx: i, p: Object.assign({}, price), prev: Object.assign({}, prevClose) });
+  }
+  if (rows.length) sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
+  if (made.length) stockSettleOrders(made);
+  return made;
+}
+
+// --- 晚報 ---
+function stockNewsLines() {
+  var sheet = newsLinesSheet(), last = sheet.getLastRow();
+  if (last < 2) return [];
+  return sheet.getRange(2, 1, last - 1, 6).getValues().map(function (r) {
+    return { code: String(r[0]).trim(), dir: String(r[2]).trim(), kind: String(r[3]).trim(), text: String(r[4]).trim(), on: String(r[5]).trim() };
+  }).filter(function (x) { return x.text && x.on !== '0'; });
+}
+function stockPick(seed, list, key) { return list.length ? list[Math.min(list.length - 1, Math.floor(stockRand(seed, key) * list.length))] : ''; }
+
+function stockReadNews() {
+  var rows = newsSheet().getDataRange().getValues(), out = {};
+  for (var i = 1; i < rows.length; i++) {
+    var day = Number(rows[i][0]);
+    if (!isFinite(day) || day <= 0) continue;
+    out[day] = { day: day, published: rows[i][1] instanceof Date ? rows[i][1].toISOString() : String(rows[i][1]), code: String(rows[i][2]), claim: String(rows[i][3]),
+      real: String(rows[i][4]), title: String(rows[i][7]), source: String(rows[i][8]), reply: String(rows[i][9]), foot: String(rows[i][10]) };
+  }
+  return out;
+}
+
+// 第 day 天的晚報（前一天 21:00 出），還沒有就抽句子存起來（要在排隊裡叫）
+function stockMakeNews(day, have) {
+  if (have[day]) return have[day];
+  var seed = stockSeed(), plan = stockNewsPlan(seed, day), d = stockDayStr(day), claim = plan.claimUp ? 'up' : 'down';
+  var lines = stockNewsLines();
+  var titles = lines.filter(function (x) { return x.kind === 'title' && x.code === plan.code && x.dir === claim; }).map(function (x) { return x.text; });
+  if (!titles.length) titles = [STOCK_FALLBACK.title[plan.code][plan.claimUp ? 0 : 1]];
+  var pickKind = function (kind) {
+    var list = lines.filter(function (x) { return x.kind === kind && (x.code === 'all' || x.code === plan.code); }).map(function (x) { return x.text; });
+    return list.length ? list : STOCK_FALLBACK[kind];
+  };
+  var rec = {
+    day: day, published: new Date(stockDayMs(day - 1, STOCK_NEWS_HOUR)).toISOString(), code: plan.code, claim: claim, real: plan.up ? 'up' : 'down',
+    title: stockPick(seed, titles, 'nt|' + d), source: stockPick(seed, pickKind('source'), 'ns|' + d),
+    reply: stockPick(seed, pickKind('reply'), 'nr|' + d), foot: stockPick(seed, pickKind('foot'), 'nf|' + d)
+  };
+  newsSheet().appendRow([day, new Date(stockDayMs(day - 1, STOCK_NEWS_HOUR)), plan.code, claim, rec.real, Math.round(plan.size * 1000) / 10, plan.truth ? 'true' : 'false',
+    asText(rec.title), asText(rec.source), asText(rec.reply), asText(rec.foot)]);
+  have[day] = rec;
+  return rec;
+}
+
+// 現在看得到的晚報：21:00 以後是明天的，之前是今天的（昨晚出的）
+function stockNewsDay(ms) { var c = stockClock(ms); return c.hour >= STOCK_NEWS_HOUR ? c.day + 1 : c.day; }
+function stockPublicNews(rec) {
+  return rec ? { day: stockDayStr(rec.day), published: rec.published, code: rec.code, claim: rec.claim, title: rec.title, source: rec.source, reply: rec.reply, foot: rec.foot } : null;
+}
+
+// 補價格、補晚報。需要寫才排隊
+function stockEnsure(nowMs, locked) {
+  var cur = stockSlotAt(nowMs), newsDay = stockNewsDay(nowMs);
+  var cache = CacheService.getScriptCache(), key = 'stockok:' + cur + ':' + newsDay;
+  if (cache.get(key)) return;
+  var work = function () {
+    stockSync(nowMs);
+    var have = stockReadNews();
+    stockMakeNews(newsDay, have);
+    stockMakeNews(stockSlotDay(cur), have);
+    cache.put(key, '1', 3600);
+  };
+  if (locked) return work();
+  var tail = stockRows(1), news = stockReadNews();
+  if (tail.length && tail[0].idx >= cur && news[newsDay] && news[stockSlotDay(cur)]) { cache.put(key, '1', 3600); return; }
+  var r = withLock(function () { work(); return null; });
+  if (r && r.result === 'error') throw new Error(r.error);
+}
+
+// 公開的行情（不用登入）。存快取 3 分鐘
+function stockQuoteData(nowMs) {
+  var cur = stockSlotAt(nowMs), newsDay = stockNewsDay(nowMs), today = stockSlotDay(cur);
+  var cache = CacheService.getScriptCache(), key = 'stockq:' + cur + ':' + newsDay, hit = cache.get(key);
+  if (hit) return JSON.parse(hit);
+  var rows = stockRows(STOCK_SLOTS * (STOCK_HISTORY_DAYS + 1) + 1).filter(function (r) { return r.idx <= cur; });
+  var dayRows = rows.filter(function (r) { return stockSlotDay(r.idx) === today; });
+  var closes = rows.filter(function (r) { return r.idx % STOCK_SLOTS === STOCK_SLOTS - 1 && stockSlotDay(r.idx) < today; }).slice(-STOCK_HISTORY_DAYS);
+  var news = stockReadNews();
+  var stocks = STOCKS.map(function (s) {
+    var prev = dayRows.length ? dayRows[0].p[s.code] : s.base, price = rows.length ? rows[rows.length - 1].p[s.code] : s.base, lim = stockLimits(prev);
+    return {
+      code: s.code, name: s.name, price: price, prev: prev, up: lim.up, down: lim.down,
+      state: price >= lim.up ? 'up' : price <= lim.down ? 'down' : '',
+      day: dayRows.map(function (r) { return r.p[s.code]; }),
+      month: closes.map(function (r) { return r.p[s.code]; }).concat([price])
+    };
+  });
+  var c = stockClock(nowMs);
+  var out = {
+    now: nowMs, slot: cur, label: stockSlotLabel(cur), day: stockDayStr(today), open: c.hour >= STOCK_OPEN, next: stockNextJump(nowMs),
+    stocks: stocks, news: stockPublicNews(news[newsDay]), newsNow: stockPublicNews(news[today]),
+    rules: { fee: STOCK_FEE, capOne: STOCK_CAP_ONE, capAll: STOCK_CAP_ALL, limit: STOCK_LIMIT, newsHour: STOCK_NEWS_HOUR }
+  };
+  cache.put(key, JSON.stringify(out), 180);
+  return out;
+}
+
+function stockQuote(input) {
+  var now = stockNow().getTime();
+  stockEnsure(now, false);
+  var out = stockQuoteData(now);
+  out.result = 'success';
+  return out;
+}
+
+// --- 持股（Players 的 L 欄）---
+// { h: { code: { n 股數, cost 成本（含買進手續費）, lock 還不能賣的股數, until 幾點解鎖 } },
+//   o: [{ id, code, side, n, price, day, at, reserve }] 排隊的委託, pl 已實現損益, fee 手續費合計, notes: 還沒看的成交／取消通知 }
+function stockBlank() { return { h: {}, o: [], pl: 0, fee: 0, notes: [] }; }
+function stockParse(raw) {
+  var s = stockBlank();
+  try { var x = JSON.parse(raw || '{}') || {}; Object.keys(s).forEach(function (k) { if (x[k] !== undefined) s[k] = x[k]; }); } catch (e) { }
+  if (!s.h || typeof s.h !== 'object') s.h = {};
+  if (!Array.isArray(s.o)) s.o = [];
+  if (!Array.isArray(s.notes)) s.notes = [];
+  return s;
+}
+function stockLoad(p) {
+  var sheet = playersSheet();
+  if (!sheet.getRange(1, 12).getValue()) sheet.getRange(1, 12).setValue('stock');
+  p.stock = stockParse(sheet.getRange(p.row, 12).getValue());
+  return p;
+}
+function stockSave(p) {
+  writeWallet(p);
+  playersSheet().getRange(p.row, 12).setValue(JSON.stringify(p.stock));
+}
+function stockNote(st, note) { st.notes.push(note); if (st.notes.length > 10) st.notes = st.notes.slice(-10); }
+function stockLocked(h, nowMs) { return h && h.until && nowMs < h.until ? h.lock : 0; }
+function stockQueued(st, code, side) { return st.o.filter(function (o) { return o.code === code && o.side === side; }).reduce(function (t, o) { return t + o.n; }, 0); }
+function stockCostAll(st) {
+  var t = 0;
+  Object.keys(st.h).forEach(function (k) { t += st.h[k].cost; });
+  st.o.forEach(function (o) { if (o.side === 'buy') t += o.reserve; });
+  return t;
+}
+// 委託算哪一天：收盤後（0:00～9:00，現在是昨天 24:00 那格）掛的算下一個交易日
+function stockOrderDay(slot) { return stockSlotDay(slot) + (slot % STOCK_SLOTS === STOCK_SLOTS - 1 ? 1 : 0); }
+function stockAmount(price, n) { var a = Math.round(price * n); return { amount: a, fee: Math.ceil(a * STOCK_FEE) }; }
+
+function stockLog(lineId, code, side, n, price, amt, pl, kind, money) {
+  tradesSheet().appendRow([new Date(), lineId, code, side, n, price, amt.amount, amt.fee, pl, kind, money]);
+}
+
+// 買進成交：錢已經扣好（或預留好）了，這裡只加股數
+function stockAddShares(st, code, n, cost, nowMs) {
+  var h = st.h[code] || (st.h[code] = { n: 0, cost: 0, lock: 0, until: 0 });
+  if (!h.until || nowMs >= h.until) h.lock = 0;
+  h.n += n; h.cost += cost; h.lock += n; h.until = stockNextOpen(nowMs);
+}
+// 賣出成交：回傳這次的損益
+function stockRemoveShares(st, code, n, proceeds) {
+  var h = st.h[code], part = Math.round(h.cost * n / h.n), pl = proceeds - part;
+  h.n -= n; h.cost -= part;
+  if (h.lock > h.n) h.lock = h.n;
+  if (h.n <= 0) delete st.h[code];
+  st.pl += pl;
+  return pl;
+}
+
+// 新補上的格子：跌停打開就成交排隊的賣單（用跌停價），漲停打開就成交買單（用漲停價）；過了那一天還沒成交就取消
+function stockSettleOrders(made) {
+  var sheet = playersSheet(), last = sheet.getLastRow();
+  if (last < 2) return;
+  var cells = sheet.getRange(2, 12, last - 1, 1).getValues(), ids = sheet.getRange(2, 2, last - 1, 1).getValues();
+  for (var i = 0; i < cells.length; i++) {
+    if (!cells[i][0] || String(cells[i][0]).indexOf('"side"') < 0) continue;
+    var st = stockParse(cells[i][0]);
+    if (!st.o.length) continue;
+    var p = findPlayer(String(ids[i][0]));
+    if (!p) continue;
+    p.stock = st;
+    var changed = false;
+    made.forEach(function (m) {
+      var at = stockDayMs(stockSlotDay(m.idx), stockSlotHour(m.idx));
+      st.o = st.o.filter(function (o) {
+        if (stockSlotDay(m.idx) > o.day) {  // 那一天收盤了還沒成交：取消，買單把預留的錢還回去
+          if (o.side === 'buy') p.money = Math.min(WALLET_MAX, p.money + o.reserve);
+          stockNote(st, { at: at, kind: 'expire', code: o.code, side: o.side, n: o.n, price: o.price });
+          changed = true;
+          return false;
+        }
+        if (stockSlotDay(m.idx) !== o.day || m.idx % STOCK_SLOTS === 0) return true;
+        var price = m.p[o.code];
+        var opened = o.side === 'sell' ? price > o.price : price < o.price;
+        if (!opened) return true;
+        var amt = stockAmount(o.price, o.n);
+        if (o.side === 'sell') {
+          var back = amt.amount - amt.fee;
+          p.money = Math.min(WALLET_MAX, p.money + back);
+          var pl = stockRemoveShares(st, o.code, o.n, back);
+          st.fee += amt.fee;
+          stockNote(st, { at: at, kind: 'fill', code: o.code, side: 'sell', n: o.n, price: o.price, pl: pl });
+          stockLog(p.lineId, o.code, 'sell', o.n, o.price, amt, pl, 'order', p.money);
+        } else {
+          p.money = Math.min(WALLET_MAX, p.money + o.reserve - amt.amount - amt.fee);
+          stockAddShares(st, o.code, o.n, amt.amount + amt.fee, at);
+          st.fee += amt.fee;
+          stockNote(st, { at: at, kind: 'fill', code: o.code, side: 'buy', n: o.n, price: o.price });
+          stockLog(p.lineId, o.code, 'buy', o.n, o.price, amt, 0, 'order', p.money);
+        }
+        changed = true;
+        return false;
+      });
+    });
+    if (changed) stockSave(p);
+  }
+}
+
+function stockView(st, quote, nowMs) {
+  var price = {};
+  quote.stocks.forEach(function (s) { price[s.code] = s; });
+  var hold = Object.keys(st.h).map(function (code) {
+    var h = st.h[code], q = price[code] || { price: 0 }, locked = stockLocked(h, nowMs), queued = stockQueued(st, code, 'sell');
+    return { code: code, n: h.n, cost: h.cost, avg: h.n ? Math.round(h.cost / h.n * 100) / 100 : 0, value: Math.round(q.price * h.n),
+      locked: locked, until: locked ? h.until : 0, queued: queued, sellable: Math.max(0, h.n - locked - queued) };
+  });
+  return { hold: hold, orders: st.o.map(function (o) { return { id: o.id, code: o.code, side: o.side, n: o.n, price: o.price, at: o.at }; }),
+    pl: st.pl, fee: st.fee, notes: st.notes, cost: stockCostAll(st) };
+}
+
+function stockGuard(input) {
+  var lineId = sessionUser(input.session);
+  if (!lineId) return { error: { result: 'unauthorized' } };
+  var cache = CacheService.getScriptCache();
+  var key = 'stockops:' + lineId + ':' + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var n = Number(cache.get(key) || 0);
+  if (n >= STOCK_OPS_PER_HOUR) return { error: { result: 'error', error: '這小時進出號子太多次了，晚點再來' } };
+  cache.put(key, String(n + 1), 3600);
+  var p = findPlayer(lineId);
+  if (!p) return { error: { result: 'unauthorized' } };
+  return { lineId: lineId, p: p };
+}
+
+function stockReply(p, nowMs, extra) {
+  var quote = stockQuoteData(nowMs);
+  var out = { result: 'success', quote: quote, mine: stockView(p.stock, quote, nowMs), wallet: walletView(p) };
+  Object.keys(extra || {}).forEach(function (k) { out[k] = extra[k]; });
+  return out;
+}
+
+// 我的持股（要登入、排隊）。通知看過就清掉
+function stockMine(input) {
+  var g = stockGuard(input);
+  if (g.error) return g.error;
+  var now = stockNow().getTime();
+  stockEnsure(now, true);
+  var p = stockLoad(findPlayer(g.lineId));
+  var out = stockReply(p, now);
+  if (p.stock.notes.length) { p.stock.notes = []; stockSave(p); }
+  return out;
+}
+
+// 買賣：{ code, side: 'buy'|'sell', n, slot 網頁看到的是第幾格 }。漲停買、跌停賣變成排隊的委託
+function stockTrade(input) {
+  var g = stockGuard(input);
+  if (g.error) return g.error;
+  var now = stockNow().getTime();
+  stockEnsure(now, true);
+  var p = stockLoad(findPlayer(g.lineId)), st = p.stock;
+  var code = String(input.code || ''), side = String(input.side || ''), n = cleanMoney(input.n, 1, 1000000);
+  var s = STOCKS.filter(function (x) { return x.code === code; })[0];
+  if (!s) return { result: 'error', error: '沒有這檔股票' };
+  if (side !== 'buy' && side !== 'sell') return { result: 'error', error: '要買還是要賣？' };
+  if (n === null) return { result: 'error', error: '股數要是 1 以上的整數' };
+  var quote = stockQuoteData(now), q = quote.stocks.filter(function (x) { return x.code === code; })[0];
+  if (Number(input.slot) !== quote.slot) return stockReply(p, now, { result: 'moved', error: '價格剛跳了，再看一次' });
+  var amt = stockAmount(q.price, n);
+  if (side === 'buy') {
+    var held = st.h[code] ? st.h[code].cost : 0;
+    var reservedOne = st.o.filter(function (o) { return o.code === code && o.side === 'buy'; }).reduce(function (t, o) { return t + o.reserve; }, 0);
+    if (held + reservedOne + amt.amount + amt.fee > STOCK_CAP_ONE) return { result: 'error', error: '一檔最多買 $' + STOCK_CAP_ONE.toLocaleString() + '（照成本算）' };
+    if (stockCostAll(st) + amt.amount + amt.fee > STOCK_CAP_ALL) return { result: 'error', error: '全部持股最多 $' + STOCK_CAP_ALL.toLocaleString() + '，先賣一些' };
+    if (p.money < amt.amount + amt.fee) return { result: 'error', error: '錢包不夠' };
+    p.money -= amt.amount + amt.fee;
+    if (q.state === 'up') {
+      var id = 'O' + Utilities.getUuid().replace(/-/g, '').slice(0, 7).toUpperCase();
+      st.o.push({ id: id, code: code, side: 'buy', n: n, price: q.price, day: stockOrderDay(quote.slot), at: now, reserve: amt.amount + amt.fee });
+      stockSave(p);
+      return stockReply(p, now, { done: 'queued', side: 'buy', code: code, n: n, price: q.price });
+    }
+    stockAddShares(st, code, n, amt.amount + amt.fee, now);
+    st.fee += amt.fee;
+    stockSave(p);
+    stockLog(g.lineId, code, 'buy', n, q.price, amt, 0, 'market', p.money);
+    return stockReply(p, now, { done: 'filled', side: 'buy', code: code, n: n, price: q.price, amount: amt.amount, fee: amt.fee });
+  }
+  var h = st.h[code];
+  var sellable = h ? h.n - stockLocked(h, now) - stockQueued(st, code, 'sell') : 0;
+  if (!h || !h.n) return { result: 'error', error: '你沒有這一檔' };
+  if (n > sellable) return { result: 'error', error: sellable > 0 ? '現在最多只能賣 ' + sellable + ' 股' : '今天買的要等明天 9:00 開盤後才能賣' };
+  if (q.state === 'down') {
+    var oid = 'O' + Utilities.getUuid().replace(/-/g, '').slice(0, 7).toUpperCase();
+    st.o.push({ id: oid, code: code, side: 'sell', n: n, price: q.price, day: stockOrderDay(quote.slot), at: now, reserve: 0 });
+    stockSave(p);
+    return stockReply(p, now, { done: 'queued', side: 'sell', code: code, n: n, price: q.price });
+  }
+  var back = amt.amount - amt.fee;
+  p.money = Math.min(WALLET_MAX, p.money + back);
+  var pl = stockRemoveShares(st, code, n, back);
+  st.fee += amt.fee;
+  stockSave(p);
+  stockLog(g.lineId, code, 'sell', n, q.price, amt, pl, 'market', p.money);
+  return stockReply(p, now, { done: 'filled', side: 'sell', code: code, n: n, price: q.price, amount: amt.amount, fee: amt.fee, pl: pl });
+}
+
+// 取消委託：買單把預留的錢還回去
+function stockCancel(input) {
+  var g = stockGuard(input);
+  if (g.error) return g.error;
+  var now = stockNow().getTime();
+  stockEnsure(now, true);
+  var p = stockLoad(findPlayer(g.lineId)), st = p.stock, id = String(input.id || '');
+  var o = st.o.filter(function (x) { return x.id === id; })[0];
+  if (!o) return stockReply(p, now, { result: 'error', error: '這張委託已經成交或取消了' });
+  st.o = st.o.filter(function (x) { return x.id !== id; });
+  if (o.side === 'buy') p.money = Math.min(WALLET_MAX, p.money + o.reserve);
+  stockSave(p);
+  return stockReply(p, now, { done: 'cancelled', side: o.side, code: o.code, n: o.n });
+}
+
+// 在編輯器選這個按「執行」：建好 Prices（含 30 天的歷史）、News、NewsLines、Trades 分頁
+function setupStocks() {
+  stockSeed();
+  newsLinesSheet(); tradesSheet();
+  var now = stockNow().getTime();
+  var made = withLock(function () { var m = stockSync(now); var have = stockReadNews(); stockMakeNews(stockNewsDay(now), have); stockMakeNews(stockSlotDay(stockSlotAt(now)), have); return m; });
+  var n = newsLinesSheet().getLastRow() - 1;
+  Logger.log('股市開張了：Prices 補了 ' + (made.length || 0) + ' 格。NewsLines 有 ' + Math.max(0, n) + ' 句' + (n > 0 ? '' : '（是空的，晚報先用程式裡的幾句備用，記得匯入句庫）') + '。');
 }
 
 
