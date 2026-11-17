@@ -2563,7 +2563,7 @@ function sportVoid(id) {
 // 跟洗頭、打掃紀錄一樣：拔完網頁送上來，一列一輪，存在 Farms 分頁。不寄信、不回資料。
 
 var FARM_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'total', 'sales', 'bonus', 'grade',
-  'small', 'mid', 'big', 'giant', 'heart', 'snapped', 'bent', 'sweet', 'ticket', 'mole', 'wiggles', 'helpers', 'ms', 'login', 'mole_free'];
+  'small', 'mid', 'big', 'giant', 'heart', 'snapped', 'bent', 'sweet', 'ticket', 'mole', 'wiggles', 'helpers', 'ms', 'login', 'mole_free', 'len', 'shop', 'stall'];
 
 function farmsSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -2584,11 +2584,14 @@ function farmRow(r, now, lineId, device) {
   var at = new Date(r.at);
   if (isNaN(at.getTime()) || at.getTime() > now.getTime() + 86400000 || at.getTime() < now.getTime() - 90 * 86400000) return null;
   var n = function (v) { return washNum(v, 0, 999); };
+  var shop = {};
+  if (r.shop && typeof r.shop === 'object') Object.keys(r.shop).slice(0, 20).forEach(function (k) { if (/^[a-z]{1,16}$/.test(k)) shop[k] = washNum(r.shop[k], 0, 10); });
   return [
     now, at, lineId || '', device,
     washNum(r.total, 0, 100000), washNum(r.sales, -10000, 100000), washNum(r.bonus, 0, 10000), washText(r.grade, 2),
     n(r.small), n(r.mid), n(r.big), n(r.giant), n(r.heart), n(r.snapped), n(r.bent), n(r.sweet), n(r.ticket), n(r.mole),
-    washNum(r.wiggles, 0, 100000), washNum(r.helpers, 0, 10), washNum(r.ms, 0, 3600000), !!r.login, n(r.mole_free)
+    washNum(r.wiggles, 0, 100000), washNum(r.helpers, 0, 10), washNum(r.ms, 0, 3600000), !!r.login, n(r.mole_free),
+    washNum(r.len, 0, 3600), JSON.stringify(shop), washNum(r.stall, 0, 100000)
   ];
 }
 
@@ -2799,7 +2802,7 @@ function zaocanLog(input) {
 // 跟早餐店紀錄一樣：公開、appendRow 不排隊、不寄信不回資料；session 對就記 line_id。
 var DESSERT_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'total', 'sales', 'grade',
   'customers', 'served', 'angry', 'scrapped', 'wrong', 'missed', 'tips', 'ito', 'bubbles', 'pauses', 'rewinds', 'staff',
-  'fastest_ms', 'avg_wait_ms', 'specials', 'menu', 'shop', 'ms', 'len', 'login'];
+  'fastest_ms', 'avg_wait_ms', 'specials', 'menu', 'shop', 'ms', 'len', 'login', 'ito_wins'];
 var DESSERT_MENU = ['cookie', 'cake', 'bread', 'choco', 'cream', 'pudding', 'fruit', 'sprinkle', 'whip', 'sauce', 'berry'];
 var DESSERT_SPECIALS = ['duck', 'ito', 'dog'];
 
@@ -2830,7 +2833,7 @@ function dessertRow(r, now, lineId, device) {
     washNum(r.tips, 0, 100000), washNum(r.ito, 0, 100000), n(r.bubbles), n(r.pauses), n(r.rewinds), n(r.staff),
     washNum(r.fastest_ms, 0, 600000), washNum(r.avg_wait_ms, 0, 600000),
     zaocanCounts(r.specials, DESSERT_SPECIALS, 99), zaocanCounts(r.menu, DESSERT_MENU, 999), JSON.stringify(shop),
-    washNum(r.ms, 0, 3600000), washNum(r.len, 0, 3600), !!r.login
+    washNum(r.ms, 0, 3600000), washNum(r.len, 0, 3600), !!r.login, n(r.ito_wins)
   ];
 }
 
@@ -2876,7 +2879,7 @@ var SHIP_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'total', 'sales', 'g
   'picked', 'max_combo', 'combo_bonus', 'small', 'big', 'crate', 'gold', 'bottles', 'ito_wins', 'dogs', 'ducks', 'duck_hits',
   'trash', 'pet', 'bag', 'router', 'reefs', 'ships', 'gulls', 'gull_shoo', 'gull_steals',
   'raccoons', 'raccoon_shoo', 'raccoon_steals', 'stolen', 'lanes', 'events', 'shop', 'ms', 'len', 'login',
-  'mode', 'zone', 'dist', 'whirls', 'gusts', 'whale_hits', 'buoys'];
+  'mode', 'zone', 'dist', 'whirls', 'gusts', 'whale_hits', 'buoys', 'rush'];
 
 function shipsSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -2908,7 +2911,7 @@ function shipRow(r, now, lineId, device) {
     n(r.raccoons), n(r.raccoon_shoo), n(r.raccoon_steals), washNum(r.stolen, 0, 100000), n(r.lanes), events, JSON.stringify(shop),
     washNum(r.ms, 0, 7200000), washNum(r.len, 0, 7200), !!r.login,
     r.mode === 'endless' ? 'endless' : 'normal', washNum(r.zone, 0, 999), washNum(r.dist, 0, 10000000),
-    n(r.whirls), n(r.gusts), n(r.whale_hits), n(r.buoys)
+    n(r.whirls), n(r.gusts), n(r.whale_hits), n(r.buoys), Math.round(washNum((r.rush || 1) * 100, 100, 250)) / 100
   ];
 }
 
