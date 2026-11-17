@@ -67,7 +67,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 以前每個 POST 都排同一個隊，所有人一個一個來，洗頭、刮刮樂的人一多後台就擠不進來。
 // 現在只有這些整個排隊；錢包同步、LINE 登入只在寫 Players 那一下排隊（withLock）；
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
-var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockMine: 1, stockTrade: 1, stockCancel: 1 };
+var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockMine: 1, stockTrade: 1, stockCancel: 1, sportMine: 1, sportBet: 1 };
 
 function withLock(fn) {
   var lock = LockService.getScriptLock();
@@ -120,6 +120,9 @@ function route(type, input) {
     if (type === 'stockMine') return stockMine(input);
     if (type === 'stockTrade') return stockTrade(input);
     if (type === 'stockCancel') return stockCancel(input);
+    if (type === 'sportQuote') return sportQuote(input);
+    if (type === 'sportMine') return sportMine(input);
+    if (type === 'sportBet') return sportBet(input);
 
     // 以下只有後台能用，要帶登入拿到的通行證
     if (type === 'updateStatus' || type === 'adminList' || type === 'bonusCreate' || type === 'bonusList' || type === 'bonusClose') {
@@ -2208,6 +2211,324 @@ function setupStocks() {
   var made = withLock(function () { var m = stockSync(now); var have = stockReadNews(); stockMakeNews(stockNewsDay(now), have); stockMakeNews(stockSlotDay(stockSlotAt(now)), have); return m; });
   var n = newsLinesSheet().getLastRow() - 1;
   Logger.log('股市開張了：Prices 補了 ' + (made.length || 0) + ' 格。NewsLines 有 ' + Math.max(0, n) + ' 句' + (n > 0 ? '' : '（是空的，晚報先用程式裡的幾句備用，記得匯入句庫）') + '。');
+}
+
+
+// --- 運彩・押（yuncai.html）：TPVL 排球，彩池分錢 ---
+// 只押誰贏（win：home／away）和局數比分（score：3:0、3:1、3:2、2:3、1:3、0:3），每一種各自一個彩池。
+// 彩池：押中的人照押的比例分「整個彩池」；二十七樓運彩在每個選項先放 SPORT_SEED（保底，讓一個人玩也有得賺），
+// 保底那份押中了就消失（運彩不抽成）。開賽就不能押。比完自動派彩，錢直接加進 Players 的錢包（不算 earned、押的不算 spent，跟股市一樣）。
+// 賽程存在 SportMatches 分頁，不用每次都去爬官網：一天爬一次賽程；有比賽開打兩小時後還沒結果，才每 15 分鐘去看一次比分。
+// 比賽都在週末，平常幾乎不會去爬。官網改版爬不到的時候，可以在編輯器用 sportSetResult()／sportVoid() 手動開獎、退錢。
+var SPORT_SEED = 1000;
+var SPORT_MIN = 100, SPORT_MAX = 50000, SPORT_MATCH_MAX = 200000;
+var SPORT_OPS_PER_HOUR = 300;
+var SPORT_PICKS = { win: ['home', 'away'], score: ['3:0', '3:1', '3:2', '2:3', '1:3', '0:3'] };
+var SPORT_FULL_MS = 24 * 3600000;       // 賽程多久重爬一次
+var SPORT_RESULT_MS = 15 * 60000;       // 等比分的時候多久去看一次
+var SPORT_AFTER_MS = 2 * 3600000;       // 開賽多久以後開始等比分
+var SPORT_VOID_MS = 3 * 24 * 3600000;   // 開賽三天還沒結果就退錢
+var SPORT_SHOW_PAST_MS = 7 * 24 * 3600000, SPORT_SHOW_NEXT_MS = 21 * 24 * 3600000;
+var SPORT_TPVL = 'https://tpvl.tw';
+var SPORT_TEAMS = {
+  'taichung-winstreak': '臺中連莊', 'tsg-skyhawks': '台鋼天鷹', 'taipei-east-power': '臺北伊斯特',
+  'taoyuan-leopards': '桃園雲豹飛將', 'hsinchu-collie-engineers': '新竹可利工程師'
+};
+var SPORT_STATUS = { final: 'COMPLETED', completed: 'COMPLETED', scheduled: 'SCHEDULED', postponed: 'POSTPONED', live: 'LIVE', in_progress: 'LIVE', cancelled: 'CANCELLED', canceled: 'CANCELLED' };
+var SPORT_MATCH_HEADERS = ['id', 'no', 'date', 'time', 'start', 'venue', 'home', 'away', 'status', 'home_sets', 'away_sets', 'updated', 'manual'];
+var SPORT_BET_HEADERS = ['timestamp', 'id', 'line_id', 'match', 'kind', 'pick', 'amount', 'status', 'payout', 'settled', 'result'];
+
+function sportNow() { return new Date(); }
+function sportSheet(name, headers) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet(), sheet = ss.getSheetByName(name);
+  if (!sheet) { sheet = ss.insertSheet(name); sheet.appendRow(headers); sheet.setFrozenRows(1); }
+  return sheet;
+}
+function sportMatchesSheet() { return sportSheet('SportMatches', SPORT_MATCH_HEADERS); }
+function sportBetsSheet() { return sportSheet('Bets', SPORT_BET_HEADERS); }
+
+// 官網的資料藏在 self.__next_f.push([1,"..."])（Next.js 的 RSC payload），每場比賽標了 "data-field":"x","data-value":"y"
+// （跟 LINE bot 的排球指令同一套解析，參考 github.com/ichendong/tpvl-skill，MIT）
+function sportFetchTpvl() {
+  var res = UrlFetchApp.fetch(SPORT_TPVL + '/matches', { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DongBuLi)', 'Accept-Language': 'zh-TW,zh;q=0.9' } });
+  if (res.getResponseCode() !== 200) throw new Error('TPVL /matches ' + res.getResponseCode());
+  var html = res.getContentText(), parts = [], re = /self\.__next_f\.push\((\[[\s\S]*?\])\)<\/script>/g, m;
+  while ((m = re.exec(html))) { try { var arr = JSON.parse(m[1]); if (Array.isArray(arr) && typeof arr[1] === 'string') parts.push(arr[1]); } catch (e) { } }
+  var payload = parts.join('');
+  if (!payload) throw new Error('TPVL 沒有 flight payload（官網可能改版了）');
+  // "$L<id>" 是延後載入的區塊，展開兩層
+  var marks = [], dre = /(?:^|\n)([0-9a-f]+):/g, d;
+  while ((d = dre.exec(payload))) marks.push([d.index, d[1]]);
+  var defs = {};
+  for (var i = 0; i < marks.length; i++) {
+    var text = payload.slice(marks[i][0], i + 1 < marks.length ? marks[i + 1][0] : payload.length).replace(/^\n/, '');
+    defs[marks[i][1]] = text.slice(text.indexOf(':') + 1);
+  }
+  var resolve = function (t) { for (var k = 0; k < 2; k++) { var n = t.replace(/"\$L([0-9a-f]+)"/g, function (all, id) { return defs[id] !== undefined ? defs[id] : all; }); if (n === t) break; t = n; } return t; };
+  var marker = 'className":"tp-mrow"', idx = [], pos = payload.indexOf(marker);
+  while (pos !== -1) { idx.push(pos); pos = payload.indexOf(marker, pos + marker.length); }
+  var out = [], seen = {};
+  idx.forEach(function (start, j) {
+    var seg = resolve(payload.slice(start, Math.min(j + 1 < idx.length ? idx[j + 1] : payload.length, start + 8000)));
+    var f = {}, fre = /"data-field":"([a-z_0-9]+)","data-value":"([^"]*)"/g, x;
+    while ((x = fre.exec(seg))) if (!(x[1] in f)) f[x[1]] = x[2];
+    var team = function (slug) {
+      if (SPORT_TEAMS[slug]) return SPORT_TEAMS[slug];
+      var t = seg.match(new RegExp('href":"/teams/' + String(slug).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '","children":"([^"]+)"'));
+      return t ? t[1] : String(slug || '');
+    };
+    var when = sportWhen(f.start_time), status = SPORT_STATUS[f.status] || String(f.status || '').toUpperCase() || 'UNKNOWN';
+    var done = status === 'COMPLETED', hs = parseInt(f.home_sets, 10), as = parseInt(f.away_sets, 10);
+    var venue = (seg.match(/"data-field":"venue"[\s\S]*?"children":"([^"]+)"/) || [])[1] || f.venue || '';
+    var id = String(f.league_match_id || '') || (f.match_no ? f.match_no + '-' + when.date : '');
+    if (!id || !when.date || !f.home_team || seen[id]) return;
+    seen[id] = true;
+    out.push({ id: id.slice(0, 40), no: String(f.match_no || '').slice(0, 10), date: when.date, time: when.time, venue: String(venue).slice(0, 40),
+      home: team(f.home_team).slice(0, 20), away: team(f.away_team).slice(0, 20), status: status,
+      homeSets: done && !isNaN(hs) ? hs : null, awaySets: done && !isNaN(as) ? as : null });
+  });
+  if (!out.length) throw new Error('TPVL /matches 解析不到比賽（官網可能改版了）');
+  return out;
+}
+// 有帶時區就換成台灣時間，沒帶當台灣時間
+function sportWhen(start) {
+  start = String(start || '');
+  if (!start) return { date: '', time: '' };
+  if (/(Z|[+-]\d\d:?\d\d)$/.test(start) && !/\+08:?00$/.test(start)) {
+    var d = new Date(start);
+    if (!isNaN(d)) { var tw = new Date(d.getTime() + 8 * 3600000).toISOString(); return { date: tw.slice(0, 10), time: tw.slice(11, 16) }; }
+  }
+  return { date: start.slice(0, 10), time: start.length > 11 ? start.slice(11, 16) : '' };
+}
+function sportStartMs(date, time) {
+  var t = Date.parse(date + 'T' + (/^\d\d:\d\d$/.test(time || '') ? time : '00:00') + ':00+08:00');
+  return isNaN(t) ? 0 : t;
+}
+
+function sportReadMatches() {
+  var rows = sportMatchesSheet().getDataRange().getValues(), out = [];
+  for (var i = 1; i < rows.length; i++) {
+    var r = rows[i];
+    if (!r[0]) continue;
+    var dateStr = r[2] instanceof Date ? Utilities.formatDate(r[2], 'Asia/Taipei', 'yyyy-MM-dd') : String(r[2]).replace(/^'/, '');
+    out.push({ row: i + 1, id: String(r[0]), no: String(r[1] || ''), date: dateStr, time: String(r[3] || '').replace(/^'/, ''), start: Number(r[4]) || 0,
+      venue: String(r[5] || ''), home: String(r[6] || ''), away: String(r[7] || ''), status: String(r[8] || ''),
+      homeSets: r[9] === '' || r[9] == null ? null : Number(r[9]), awaySets: r[10] === '' || r[10] == null ? null : Number(r[10]), manual: !!r[12] });
+  }
+  return out;
+}
+// 爬到的賽程併進 SportMatches：新的加一列，舊的更新（手動開獎過的不動）
+function sportUpsert(list, now) {
+  var sheet = sportMatchesSheet(), have = {};
+  sportReadMatches().forEach(function (m) { have[m.id] = m; });
+  list.forEach(function (m) {
+    var start = sportStartMs(m.date, m.time);
+    var row = [m.id, m.no, "'" + m.date, "'" + (m.time || ''), start, m.venue, m.home, m.away, m.status, m.homeSets == null ? '' : m.homeSets, m.awaySets == null ? '' : m.awaySets, new Date(now)];
+    var old = have[m.id];
+    if (!old) { sheet.appendRow(row.concat([''])); return; }
+    if (old.manual) return;
+    sheet.getRange(old.row, 1, 1, row.length).setValues([row]);
+  });
+}
+// 要不要去爬：一天一次賽程；有比賽開打兩小時以後還沒結果，每 15 分鐘看一次
+function sportNeedFetch(matches, now) {
+  var props = PropertiesService.getScriptProperties();
+  var full = Number(props.getProperty('sportFullAt') || 0), tried = Number(props.getProperty('sportTriedAt') || 0);
+  if (now - tried < SPORT_RESULT_MS) return false;
+  if (now - full > SPORT_FULL_MS) return true;
+  return matches.some(function (m) { return sportWaiting(m, now); });
+}
+function sportWaiting(m, now) {
+  return !m.manual && (m.status === 'SCHEDULED' || m.status === 'LIVE' || m.status === 'UNKNOWN') && m.start && now > m.start + SPORT_AFTER_MS && now < m.start + SPORT_VOID_MS;
+}
+// 讀賽程（要爬就爬一次、有比完的就派彩）。force 是編輯器手動更新用的；locked 是已經在排隊裡（不要再排一次）
+function sportSync(now, force, locked) {
+  var matches = sportReadMatches();
+  if (force || sportNeedFetch(matches, now)) {
+    var work = function () {
+      var props = PropertiesService.getScriptProperties();
+      if (!force && !sportNeedFetch(sportReadMatches(), now)) return;  // 排隊的時候別人剛爬過
+      props.setProperty('sportTriedAt', String(now));
+      try {
+        sportUpsert(sportFetchTpvl(), now);
+        props.setProperty('sportFullAt', String(now));
+        props.deleteProperty('sportError');
+      } catch (e) {
+        props.setProperty('sportError', String(e && e.message || e).slice(0, 200));
+        console.warn('運彩爬賽程失敗：' + e);
+      }
+    };
+    if (locked) work(); else withLock(work);
+    matches = sportReadMatches();
+  }
+  sportSettle(matches, now, locked);
+  return matches;
+}
+
+// 這場比完了嗎：{ win: 'home'|'away', score: '3:1' } 或 'void'（延賽、取消、三天沒結果）或 null（還沒）
+function sportOutcome(m, now) {
+  if (m.status === 'VOID' || m.status === 'POSTPONED' || m.status === 'CANCELLED') return 'void';
+  var h = m.homeSets, a = m.awaySets;
+  if (m.status === 'COMPLETED' && h != null && a != null && ((h === 3 && a >= 0 && a <= 2) || (a === 3 && h >= 0 && h <= 2))) {
+    return { win: h > a ? 'home' : 'away', score: h + ':' + a };
+  }
+  if (m.start && now > m.start + SPORT_VOID_MS) return 'void';
+  return null;
+}
+function sportReadBets() {
+  var rows = sportBetsSheet().getDataRange().getValues(), out = [];
+  for (var i = 1; i < rows.length; i++) {
+    var r = rows[i];
+    if (!r[1]) continue;
+    out.push({ row: i + 1, at: r[0] instanceof Date ? r[0].getTime() : Number(new Date(r[0])) || 0, id: String(r[1]), lineId: String(r[2]), match: String(r[3]),
+      kind: String(r[4]), pick: String(r[5]).replace(/^'/, ''), amount: Number(r[6]) || 0, status: String(r[7] || 'open'), payout: Number(r[8]) || 0,
+      settled: r[9] instanceof Date ? r[9].getTime() : 0, result: String(r[10] || '').replace(/^'/, '') });
+  }
+  return out;
+}
+// 每一場、每一種的彩池：{ matchId: { win: { home: 押了多少, away: … }, score: {…} } }（不含保底）
+function sportPools(bets) {
+  var pools = {};
+  bets.forEach(function (b) {
+    if (b.status === 'refund' || !SPORT_PICKS[b.kind]) return;
+    var p = pools[b.match] || (pools[b.match] = { win: {}, score: {} });
+    p[b.kind][b.pick] = (p[b.kind][b.pick] || 0) + b.amount;
+  });
+  return pools;
+}
+// 派彩：比完的場次，還沒結算的注全部算掉；押中的照比例分整個彩池（含保底），零頭捨去
+function sportSettle(matches, now, locked) {
+  var byId = {}, ready = {};
+  matches.forEach(function (m) { byId[m.id] = m; });
+  var bets = sportReadBets(), open = bets.filter(function (b) { return b.status === 'open'; });
+  open.forEach(function (b) { if (!(b.match in ready)) ready[b.match] = byId[b.match] ? sportOutcome(byId[b.match], now) : null; });
+  if (!open.some(function (b) { return ready[b.match]; })) return 0;
+  var work = function () {
+    bets = sportReadBets();
+    var pools = sportPools(bets), credit = {}, sheet = sportBetsSheet(), stamp = new Date(now), n = 0;
+    bets.forEach(function (b) {
+      var o = ready[b.match];
+      if (b.status !== 'open' || !o) return;
+      var status, payout = 0, result = '';
+      if (o === 'void') { status = 'refund'; payout = b.amount; result = 'void'; }
+      else {
+        result = o.score;
+        var want = b.kind === 'win' ? o.win : o.score, pool = pools[b.match][b.kind], opts = SPORT_PICKS[b.kind];
+        var total = opts.reduce(function (t, k) { return t + (pool[k] || 0) + SPORT_SEED; }, 0), on = (pool[want] || 0) + SPORT_SEED;
+        if (b.pick === want) { status = 'won'; payout = Math.floor(b.amount * total / on); } else status = 'lost';
+      }
+      sheet.getRange(b.row, 8, 1, 4).setValues([[status, payout, stamp, "'" + result]]);
+      if (payout) credit[b.lineId] = (credit[b.lineId] || 0) + payout;
+      n++;
+    });
+    Object.keys(credit).forEach(function (id) {
+      var p = findPlayer(id);
+      if (!p) return;
+      p.money = Math.min(WALLET_MAX, p.money + credit[id]);
+      playersSheet().getRange(p.row, 5).setValue(p.money);
+    });
+    return n;
+  };
+  return locked ? work() : withLock(work);
+}
+
+function sportOdds(pool, kind) {
+  var opts = SPORT_PICKS[kind], total = opts.reduce(function (t, k) { return t + (pool[k] || 0) + SPORT_SEED; }, 0), out = {};
+  opts.forEach(function (k) { out[k] = { pool: pool[k] || 0, odds: Math.floor(total / ((pool[k] || 0) + SPORT_SEED) * 100) / 100 }; });
+  return { total: total - SPORT_SEED * opts.length, opts: out };
+}
+function sportQuoteData(matches, bets, now) {
+  var pools = sportPools(bets), props = PropertiesService.getScriptProperties();
+  var list = matches.filter(function (m) { return m.start && m.start > now - SPORT_SHOW_PAST_MS && m.start < now + SPORT_SHOW_NEXT_MS; })
+    .sort(function (a, b) { return a.start - b.start; })
+    .map(function (m) {
+      var p = pools[m.id] || { win: {}, score: {} }, o = sportOutcome(m, now);
+      return { id: m.id, no: m.no, date: m.date, time: m.time, start: m.start, venue: m.venue, home: m.home, away: m.away, status: m.status,
+        homeSets: m.homeSets, awaySets: m.awaySets, open: m.status === 'SCHEDULED' && now < m.start,
+        result: o === 'void' ? 'void' : o ? o.score : null, win: sportOdds(p.win, 'win'), score: sportOdds(p.score, 'score') };
+    });
+  return { now: now, matches: list, fetchedAt: Number(props.getProperty('sportFullAt') || 0), error: props.getProperty('sportError') || '',
+    rules: { seed: SPORT_SEED, min: SPORT_MIN, max: SPORT_MAX, matchMax: SPORT_MATCH_MAX, picks: SPORT_PICKS } };
+}
+// 行情（公開）
+function sportQuote() {
+  var now = sportNow().getTime(), matches = sportSync(now, false);
+  var out = sportQuoteData(matches, sportReadBets(), now);
+  out.result = 'success';
+  return out;
+}
+function sportGuard(input) {
+  var lineId = sessionUser(input.session);
+  if (!lineId) return { error: { result: 'unauthorized' } };
+  var cache = CacheService.getScriptCache(), key = 'sportops:' + lineId + ':' + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var n = Number(cache.get(key) || 0);
+  if (n >= SPORT_OPS_PER_HOUR) return { error: { result: 'error', error: '這小時看太多次了，晚點再來' } };
+  cache.put(key, String(n + 1), 3600);
+  return { lineId: lineId };
+}
+function sportReply(lineId, now, matches, extra) {
+  var bets = sportReadBets(), p = findPlayer(lineId);
+  if (!p) return { result: 'unauthorized' };
+  var mine = bets.filter(function (b) { return b.lineId === lineId; });
+  var out = { result: 'success', quote: sportQuoteData(matches, bets, now), wallet: walletView(p),
+    mine: { bets: mine.slice(-60).reverse().map(function (b) { return { id: b.id, match: b.match, kind: b.kind, pick: b.pick, amount: b.amount, status: b.status, payout: b.payout, at: b.at, settled: b.settled, result: b.result }; }),
+      staked: mine.reduce(function (t, b) { return t + (b.status === 'refund' ? 0 : b.amount); }, 0),
+      paid: mine.reduce(function (t, b) { return t + (b.status === 'won' ? b.payout : 0); }, 0) } };
+  Object.keys(extra || {}).forEach(function (k) { out[k] = extra[k]; });
+  return out;
+}
+// 我的彩票（要登入、排隊；順便派彩）
+function sportMine(input) {
+  var g = sportGuard(input);
+  if (g.error) return g.error;
+  var now = sportNow().getTime();
+  return sportReply(g.lineId, now, sportSync(now, false, true));
+}
+// 下注（要登入、排隊）：{ match, kind: 'win'|'score', pick, amount }
+function sportBet(input) {
+  var g = sportGuard(input);
+  if (g.error) return g.error;
+  var now = sportNow().getTime(), matches = sportSync(now, false, true);
+  var m = matches.filter(function (x) { return x.id === String(input.match || ''); })[0];
+  var kind = String(input.kind || ''), pick = String(input.pick || ''), amount = cleanMoney(input.amount, SPORT_MIN, SPORT_MAX);
+  if (!m) return { result: 'error', error: '找不到這場比賽' };
+  if (!(m.status === 'SCHEDULED' && now < m.start)) return { result: 'error', error: '這場已經開打，不能押了' };
+  if (!SPORT_PICKS[kind] || SPORT_PICKS[kind].indexOf(pick) < 0) return { result: 'error', error: '沒有這個選項' };
+  if (amount === null) return { result: 'error', error: '一注要 $' + SPORT_MIN + '～$' + SPORT_MAX.toLocaleString() + ' 的整數' };
+  var p = findPlayer(g.lineId);
+  if (!p) return { result: 'unauthorized' };
+  var already = sportReadBets().filter(function (b) { return b.lineId === g.lineId && b.match === m.id && b.status !== 'refund'; }).reduce(function (t, b) { return t + b.amount; }, 0);
+  if (already + amount > SPORT_MATCH_MAX) return { result: 'error', error: '一場最多押 $' + SPORT_MATCH_MAX.toLocaleString() + '（這場已經押了 $' + already.toLocaleString() + '）' };
+  if (p.money < amount) return { result: 'error', error: '錢包不夠' };
+  p.money -= amount;
+  playersSheet().getRange(p.row, 5).setValue(p.money);
+  var id = 'B' + Utilities.getUuid().replace(/-/g, '').slice(0, 7).toUpperCase();
+  sportBetsSheet().appendRow([new Date(now), id, g.lineId, m.id, kind, "'" + pick, amount, 'open', 0, '', '']);
+  return sportReply(g.lineId, now, matches, { done: id });
+}
+
+// 在編輯器選這個按「執行」：先把 SportMatches、Bets 分頁建好，爬一次賽程
+function setupSport() {
+  sportBetsSheet();
+  var now = Date.now(), list = withLock(function () { return sportSync(now, true, true); });
+  var err = PropertiesService.getScriptProperties().getProperty('sportError');
+  Logger.log(err ? '爬賽程失敗：' + err : '運彩開張：SportMatches 有 ' + (list.length || 0) + ' 場。網頁要能用，還要「部署 → 管理部署作業 → 編輯 → 新版本」。');
+}
+// 官網爬不到比分的時候手動開獎：sportSetResult('17013', 3, 1)（主隊 3、客隊 1），比賽 id 看 SportMatches 的 A 欄
+function sportSetResult(id, homeSets, awaySets) {
+  var m = sportReadMatches().filter(function (x) { return x.id === String(id); })[0];
+  if (!m) { Logger.log('找不到 ' + id); return; }
+  sportMatchesSheet().getRange(m.row, 9, 1, 5).setValues([['COMPLETED', homeSets, awaySets, new Date(), 'manual']]);
+  var n = sportSettle(sportReadMatches(), Date.now());
+  Logger.log(m.home + ' ' + homeSets + ':' + awaySets + ' ' + m.away + '，結算了 ' + n + ' 注。');
+}
+// 這場不算了，全部退錢：sportVoid('17013')
+function sportVoid(id) {
+  var m = sportReadMatches().filter(function (x) { return x.id === String(id); })[0];
+  if (!m) { Logger.log('找不到 ' + id); return; }
+  sportMatchesSheet().getRange(m.row, 9, 1, 5).setValues([['VOID', '', '', new Date(), 'manual']]);
+  var n = sportSettle(sportReadMatches(), Date.now());
+  Logger.log(m.home + ' vs ' + m.away + ' 不算了，退了 ' + n + ' 注。');
 }
 
 

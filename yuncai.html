@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>運彩・押 | 丼步喱</title>
+    <!-- 分享到 LINE、FB 時的預覽（標題、介紹、圖片）。圖片要用完整網址 -->
+    <meta name="description" content="二十七樓運彩：TPVL 排球押誰贏、押局數比分，彩池分錢，比完自動派彩。">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="丼步喱・絆">
+    <meta property="og:title" content="運彩・押｜二十七樓運彩">
+    <meta property="og:description" content="二十七樓運彩：TPVL 排球押誰贏、押局數比分，彩池分錢，比完自動派彩。">
+    <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
+    <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/yuncai.html">
+    <meta name="twitter:card" content="summary">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="assets/theme.css?v=20261116d">
+    <script src="assets/theme.js?v=20261116d"></script>
+    <script src="assets/line.js?v=20261116d"></script>
+    <script src="assets/wallet.js?v=20261116d"></script>
+    <style>
+        .num { font-family: 'Noto Sans TC', sans-serif; font-variant-numeric: tabular-nums; }
+
+        /* ===== 投注單（紙本、實物），顏色固定，不跟晝夜切換 ===== */
+        .paper {
+            --paper: #fbf7ec; --ink: #3b342e; --faint: #8c7f6c; --rule: #d9cdb4; --shu: #b33a2f; --court: #2f5d8a;
+            position: relative; background: var(--paper); color: var(--ink); border: 1px solid var(--rule);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, .04), 0 10px 24px -14px rgba(0, 0, 0, .25);
+        }
+        .paper::before { content: ''; position: absolute; inset: 4px; border: 1px solid var(--rule); pointer-events: none; }
+        .tk { padding: .9rem .9rem .8rem; }
+        .tk + .tk { margin-top: 1.1rem; }
+        .tk-head { display: flex; align-items: baseline; gap: .5rem; font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; letter-spacing: .1em; color: var(--faint); }
+        .tk-head b { font-weight: 500; color: var(--court); letter-spacing: .15em; }
+        .tk-head .left { margin-left: auto; white-space: nowrap; }
+        .tk-head .left.soon { color: var(--shu); }
+        .tk-sub { margin-top: .1rem; font-family: 'Noto Sans TC', sans-serif; font-size: .62rem; letter-spacing: .08em; color: var(--ink); }
+        .vs { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .4rem; margin-top: .55rem; padding-bottom: .6rem; border-bottom: 1.5px solid var(--ink); }
+        .vs .tm { font-size: 1rem; letter-spacing: .1em; line-height: 1.3; font-weight: 600; }
+        .vs .tm small { display: block; font-family: 'Noto Sans TC', sans-serif; font-weight: 400; font-size: .55rem; letter-spacing: .2em; color: var(--faint); }
+        .vs .tm.r { text-align: right; }
+        .vs .x { font-family: 'Noto Sans TC', sans-serif; font-size: .7rem; color: var(--faint); letter-spacing: .1em; }
+        .vs .sc { font-family: 'Noto Sans TC', sans-serif; font-size: 1.5rem; letter-spacing: .05em; color: var(--ink); }
+        .sec { margin-top: .6rem; font-family: 'Noto Sans TC', sans-serif; font-size: .58rem; letter-spacing: .2em; color: var(--faint); display: flex; }
+        .sec span { margin-left: auto; letter-spacing: .05em; }
+        .opts { display: grid; gap: .4rem; margin-top: .3rem; }
+        .opts.two { grid-template-columns: 1fr 1fr; }
+        .opts.six { grid-template-columns: 1fr 1fr 1fr; }
+        .opt { position: relative; min-height: 48px; padding: .35rem .3rem; border: 1px solid var(--rule); background: rgba(255, 255, 255, .55); text-align: center; line-height: 1.25; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform .1s; }
+        .opt:active { transform: scale(.97); }
+        .opt .k { display: block; font-size: .8rem; letter-spacing: .06em; color: var(--ink); }
+        .opt .o { display: block; font-family: 'Noto Sans TC', sans-serif; font-size: .78rem; color: var(--court); font-weight: 500; }
+        .opt .p { display: block; font-family: 'Noto Sans TC', sans-serif; font-size: .52rem; color: var(--faint); letter-spacing: .05em; }
+        .opt.mine { border-color: var(--shu); box-shadow: inset 0 0 0 1px var(--shu); }
+        .opt.mine::after { content: '押'; position: absolute; top: -7px; right: -5px; width: 17px; height: 17px; border-radius: 3px; background: var(--shu); color: #fff; font-size: .58rem; line-height: 17px; font-weight: 700; transform: rotate(8deg); }
+        .opt.hit { background: rgba(179, 58, 47, .08); border-color: var(--shu); }
+        .opt:disabled { cursor: default; }
+        .opt:disabled:active { transform: none; }
+        .six-h { display: grid; grid-template-columns: 1fr 1fr 1fr; font-family: 'Noto Sans TC', sans-serif; font-size: .52rem; letter-spacing: .1em; color: var(--faint); margin-top: .35rem; }
+        .myb { margin-top: .6rem; padding-top: .45rem; border-top: 1px dashed var(--rule); font-family: 'Noto Sans TC', sans-serif; font-size: .66rem; letter-spacing: .05em; line-height: 1.8; }
+        .myb .st { display: inline-block; min-width: 1.3rem; text-align: center; font-size: .56rem; padding: 0 .2rem; margin-right: .3rem; border: 1px solid currentColor; border-radius: 2px; }
+        .won { color: var(--shu); }
+        .lost { color: #8a8580; }
+        .old .vs { border-bottom-width: 1px; }
+        .past { padding: .7rem .9rem; }
+        .past + .past { margin-top: .6rem; }
+        .past .row1 { display: flex; align-items: baseline; gap: .5rem; font-size: .82rem; letter-spacing: .06em; }
+        .past .row1 .d { font-family: 'Noto Sans TC', sans-serif; font-size: .58rem; color: var(--faint); }
+        .past .row1 .sc { margin: 0 .3rem; font-family: 'Noto Sans TC', sans-serif; font-weight: 500; }
+        .past .row1 .w { font-weight: 700; }
+        .seal { flex-shrink: 0; width: 2.4rem; height: 2.4rem; border: 2px solid var(--shu); color: var(--shu); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 700; transform: rotate(8deg); }
+        .seal.grey { border-color: #8a8580; color: #8a8580; }
+        .slip { padding: .8rem 1rem; display: flex; gap: .8rem; align-items: center; transform: rotate(-.5deg); }
+        .slip + .slip { margin-top: .8rem; }
+        .slip p { font-size: .8rem; line-height: 1.7; letter-spacing: .05em; flex: 1; }
+        .empty { padding: 1.4rem .2rem 1rem; text-align: center; font-size: .75rem; color: var(--faint); letter-spacing: .1em; line-height: 1.8; }
+
+        /* 錢 */
+        .acct { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; }
+        .acct div + div { border-left: 1px solid rgb(var(--wabi-sub) / .8); }
+        .acct dt { font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; letter-spacing: .2em; color: rgb(var(--wabi-accent)); }
+        .acct dd { margin-top: .15rem; font-size: .95rem; color: rgb(var(--wabi-dark)); }
+        .line-btn { min-height: 44px; padding: 0 1.4rem; border-radius: 6px; background: #06c755; color: #fff; font-family: 'Noto Sans TC', sans-serif; font-weight: 500; font-size: .85rem; letter-spacing: .1em; touch-action: manipulation; }
+        .h2 { display: flex; align-items: baseline; gap: .6rem; margin: 2rem .2rem .7rem; }
+        .h2 b { font-weight: 400; font-size: .9rem; letter-spacing: .3em; color: rgb(var(--wabi-dark)); }
+        .h2 span { margin-left: auto; font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; letter-spacing: .1em; color: rgb(var(--wabi-accent)); }
+
+        /* 底部面板 */
+        #sheet { position: fixed; inset: 0; z-index: 80; display: flex; align-items: flex-end; justify-content: center; background: rgba(30, 25, 20, .35); opacity: 0; pointer-events: none; transition: opacity .2s; }
+        #sheet.on { opacity: 1; pointer-events: auto; }
+        #sheet .sh { width: 100%; max-width: 28rem; max-height: 92vh; overflow-y: auto; overscroll-behavior: contain; background: rgb(var(--wabi-bg)); border-radius: .75rem .75rem 0 0; transform: translateY(100%); transition: transform .22s ease-out; }
+        #sheet.on .sh { transform: none; }
+        .qty { display: flex; align-items: center; border-bottom: 1px solid rgb(var(--wabi-sub)); }
+        .qty button { width: 44px; height: 44px; font-size: 1.2rem; color: rgb(var(--wabi-dark)); touch-action: manipulation; }
+        .qty input { flex: 1; min-width: 0; text-align: center; background: transparent; font-size: 1.3rem; color: rgb(var(--wabi-dark)); outline: none; }
+        .chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: .4rem; }
+        .chips button { min-height: 36px; border: 1px solid rgb(var(--wabi-sub)); font-family: 'Noto Sans TC', sans-serif; font-size: .7rem; letter-spacing: .05em; color: rgb(var(--wabi-text)); touch-action: manipulation; }
+        .btn { min-height: 48px; font-family: 'Noto Sans TC', sans-serif; font-size: .85rem; letter-spacing: .3em; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform .1s, opacity .2s; }
+        .btn:active { transform: scale(.98); }
+        .btn:disabled { opacity: .35; }
+        .btn-bet { background: rgb(var(--wabi-shu)); color: #fff; }
+        .warn { color: rgb(var(--wabi-shu)); }
+
+        /* 投注大章 */
+        #bigStamp { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+        #bigStamp .s { width: 9rem; height: 9rem; border: 5px solid #b33a2f; color: #b33a2f; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(251, 247, 236, .85); font-weight: 700; opacity: 0; transform: scale(2.2) rotate(-12deg); }
+        #bigStamp .s b { font-size: 2.8rem; letter-spacing: .1em; line-height: 1.1; }
+        #bigStamp .s span { font-size: .75rem; letter-spacing: .1em; font-family: 'Noto Sans TC', sans-serif; }
+        #bigStamp .s.grey { border-color: #8a8580; color: #6f6a64; }
+        #bigStamp.go .s { animation: stamp 1.6s ease-out forwards; }
+        @keyframes stamp { 0% { opacity: 0; transform: scale(2.2) rotate(-12deg); } 15% { opacity: 1; transform: scale(1) rotate(-8deg); } 75% { opacity: 1; transform: scale(1) rotate(-8deg); } 100% { opacity: 0; transform: scale(1) rotate(-8deg); } }
+        @media (prefers-reduced-motion: reduce) { #sheet, #sheet .sh { transition: none; } #bigStamp.go .s { animation-duration: .01s; } }
+    </style>
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261117b">
+</head>
+
+<body
+    class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white min-h-screen flex flex-col overflow-x-hidden">
+
+    <nav
+        class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <a href="index.html"
+            class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-3 md:gap-8">
+            <a href="index.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <a href="reviews.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <a href="about.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+            <a href="member.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">會員・我</a>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-md mx-auto pt-28 md:pt-36 pb-16 px-6 w-full">
+
+        <div class="text-center mb-7">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-3">SPORTS</span>
+            <h1 class="text-3xl font-light text-wabi-dark tracking-widest">運彩・押</h1>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">球是圓的，<br>彩池是大家的。</p>
+            <p id="status" class="mt-4 text-[11px] font-sans tracking-[0.2em] text-stone-500">讀取賽程中…</p>
+        </div>
+
+        <!-- 紙條：剛開獎的 -->
+        <div id="slips" class="mb-6 hidden"></div>
+
+        <!-- 錢／登入 -->
+        <section id="acct" class="mb-2"></section>
+
+        <div class="h2"><b>可以押的</b><span>TPVL 排球・開賽就截止</span></div>
+        <div id="open"><p class="empty paper">讀取中…</p></div>
+
+        <div id="pastBox" class="hidden">
+            <div class="h2"><b>開獎了</b><span>最近七天</span></div>
+            <div id="past"></div>
+        </div>
+
+        <!-- 規則 -->
+        <section class="mt-10 text-[11px] font-sans tracking-wider leading-relaxed text-stone-500 space-y-1 px-1">
+            <p>・押 TPVL 台灣職業排球：<b class="font-normal text-wabi-dark">誰贏</b>，或<b class="font-normal text-wabi-dark">局數比分</b>（3:0、3:1、3:2，反過來也行）。</p>
+            <p>・<b class="font-normal text-wabi-dark">彩池分錢</b>：每一場的「誰贏」和「比分」各一個彩池。比完以後，押中的人照押的比例分掉整個彩池，運彩不抽成。</p>
+            <p>・二十七樓運彩在每個選項先放 $1,000 保底，所以只有你一個人押也有得賺；保底那份押中了就消失。</p>
+            <p>・上面寫的 ×倍數是「照現在的彩池」算的，開賽前別人還會押，會一直變；最後照開賽那一刻的彩池算。</p>
+            <p>・一注 $100～$5 萬，一場最多押 $20 萬。開賽就不能押，押了不能退。</p>
+            <p>・比分從 TPVL 官網抓，比完幾個小時內自動派彩，錢直接進錢包。延賽、取消、三天都沒有結果的，全部退錢。</p>
+            <p>・要用 LINE 登入才能押，沒登入只能看。押的錢、贏的錢不算進打工榜和花錢榜。</p>
+            <p class="pt-2 text-stone-400">遊戲幣，不是真的運彩。跟 TPVL 官方沒有關係，只是借比分來玩。</p>
+        </section>
+    </main>
+
+    <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
+        <p>&copy; 2026 DONGBULI · 二十七樓運彩</p>
+    </footer>
+
+    <!-- 底部面板：押一注 -->
+    <div id="sheet" role="dialog" aria-modal="true" aria-labelledby="sTitle">
+        <div class="sh">
+            <div class="px-5 pt-5 pb-3 border-b border-stone-200">
+                <div class="flex items-baseline gap-2">
+                    <p id="sTitle" class="text-lg text-wabi-dark tracking-widest"></p>
+                    <button type="button" data-close class="ml-auto text-xs font-sans tracking-widest text-stone-400 px-2 py-1">關閉</button>
+                </div>
+                <p id="sMatch" class="text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed"></p>
+                <p id="sOdds" class="mt-1 num text-xs text-wabi-dark leading-relaxed"></p>
+            </div>
+            <div class="px-5 pt-4">
+                <div class="qty"><button type="button" data-step="-1" aria-label="少押一點">−</button><input id="amt" class="num" inputmode="numeric" value="1000" aria-label="押多少"><button type="button" data-step="1" aria-label="多押一點">＋</button></div>
+                <div class="chips mt-3"><button type="button" data-set="1000">$1,000</button><button type="button" data-set="5000">$5,000</button><button type="button" data-set="20000">$2 萬</button><button type="button" data-set="max">最多</button></div>
+                <p id="sEst" class="mt-3 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed"></p>
+            </div>
+            <div class="px-5 pt-3 pb-6">
+                <button type="button" id="betBtn" class="btn btn-bet w-full">押下去</button>
+                <button type="button" id="sLogin" data-login class="line-btn w-full hidden">用 LINE 登入才能押</button>
+            </div>
+        </div>
+    </div>
+    <div id="bigStamp" aria-hidden="true"><div class="s"><b>投注</b><span></span></div></div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
+        const SEEN_KEY = 'dongbuli-yuncai-seen';
+        const SHORT = { '桃園雲豹飛將': '桃園雲豹', '新竹可利工程師': '新竹可利' };
+        const SCORES = { home: ['3:0', '3:1', '3:2'], away: ['0:3', '1:3', '2:3'] };
+        const WEEK = '日一二三四五六';
+        const $ = id => document.getElementById(id);
+        const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const fmt = n => (n < 0 ? '−' : '') + '$' + Math.abs(Math.round(n)).toLocaleString('en-US');
+        const short = name => SHORT[name] || name;
+        const tpe = ms => new Date(ms + 8 * 3600000);
+        const when = m => { const d = tpe(m.start); return `${d.getUTCMonth() + 1}/${d.getUTCDate()}（${WEEK[d.getUTCDay()]}）${m.time || ''}`; };
+        const xo = v => '×' + (Math.floor(v * 100) / 100).toFixed(2);
+
+        let Q = null, M = null, state = 'loading', errMsg = '', busy = false, offset = 0, timer = 0, cur = null, slips = [];
+        const now = () => Date.now() + offset;
+        const matchOf = id => Q && Q.matches.find(m => m.id === id);
+        const myBets = id => M ? M.bets.filter(b => b.match === id) : [];
+        const pickName = (m, kind, pick) => kind === 'win' ? `${short(pick === 'home' ? m.home : m.away)} 贏` : `${pick}（${short(Number(pick[0]) > Number(pick[2]) ? m.home : m.away)}贏）`;
+
+        // ---- 跟後端拿資料 ----
+        async function pub() {
+            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'sportQuote' }) });
+            return res.json();
+        }
+        function take(q, m) {
+            Q = q; if (m !== undefined) M = m;
+            offset = q.now - Date.now();
+            if (M) findSlips();
+            state = 'ready';
+            clearTimeout(timer);
+            const next = Q.matches.filter(x => x.open).map(x => x.start - now() + 3000).filter(x => x > 0).sort((a, b) => a - b)[0];
+            timer = setTimeout(pull, Math.min(60000, next || 60000));   // 一分鐘拿一次彩池；剛好開賽就馬上更新
+        }
+        // 上次看過以後才開獎的：做成紙條
+        function findSlips() {
+            let seen = 0;
+            try { seen = Number(localStorage.getItem(SEEN_KEY) || 0); } catch (e) { }
+            const fresh = M.bets.filter(b => b.status !== 'open' && b.settled > seen);
+            if (!seen) { const max = M.bets.reduce((t, b) => Math.max(t, b.settled || 0), 0); try { localStorage.setItem(SEEN_KEY, String(max || 1)); } catch (e) { } return; }
+            if (!fresh.length) return;
+            slips = slips.concat(fresh.filter(b => !slips.some(s => s.id === b.id)));
+            try { localStorage.setItem(SEEN_KEY, String(Math.max(seen, ...fresh.map(b => b.settled)))); } catch (e) { }
+            const won = fresh.filter(b => b.status === 'won');
+            if (won.length) bigStamp('中', `拿回 ${fmt(won.reduce((t, b) => t + b.payout, 0))}`);
+        }
+        async function pull() {
+            try {
+                let r = null;
+                if (Line.loggedIn) {
+                    r = await Line.call({ type: 'sportMine' });
+                    if (r.result === 'success') { take(r.quote, r.mine); Wallet.adopt(r.wallet); }
+                }
+                if (!r || r.result !== 'success') {
+                    if (r && r.result !== 'unauthorized' && /不認得的請求/.test(r.error || '')) { state = 'old'; return render(); }
+                    const p = await pub();
+                    if (p.result === 'success') take(p, Line.loggedIn ? M : null);
+                    else if (/不認得的請求/.test(p.error || '')) state = 'old';
+                    else { state = 'error'; errMsg = p.error || p.result; }
+                }
+            } catch (e) { if (!Q) { state = 'error'; errMsg = '連不到後端，可能是網路不穩'; } }
+            render();
+        }
+
+        // ---- 畫面 ----
+        function renderStatus() {
+            const el = $('status');
+            if (state === 'old') { el.textContent = '運彩還沒開張（後端要重新部署新版本）'; return; }
+            if (state === 'error') { el.innerHTML = `讀不到賽程・<button type="button" data-retry class="underline underline-offset-2">再試一次</button>`; return; }
+            if (!Q) { el.textContent = '讀取賽程中…'; return; }
+            const d = Q.fetchedAt ? tpe(Q.fetchedAt) : null;
+            el.textContent = Q.error && !Q.matches.length ? 'TPVL 官網暫時讀不到，晚點再來' : d ? `賽程 ${d.getUTCMonth() + 1}/${d.getUTCDate()} ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')} 更新` : '還沒有賽程';
+        }
+        function renderSlips() {
+            const box = $('slips');
+            box.innerHTML = slips.map(b => {
+                const m = matchOf(b.match), what = m ? pickName(m, b.kind, b.pick) : b.pick, vs = m ? `${short(m.home)} vs ${short(m.away)}` : '';
+                if (b.status === 'won') return `<section class="paper slip"><p>${esc(vs)}<br>押<b>${esc(what)}</b> ${fmt(b.amount)}，押中了，拿回 <b class="num">${fmt(b.payout)}</b>。</p><div class="seal">中</div></section>`;
+                if (b.status === 'refund') return `<section class="paper slip"><p>${esc(vs)}<br>這場不算了（延賽或沒有結果），押的 ${fmt(b.amount)} 退回錢包。</p><div class="seal grey">退</div></section>`;
+                return `<section class="paper slip"><p>${esc(vs)}<br>押<b>${esc(what)}</b> ${fmt(b.amount)}，結果是 ${esc(b.result)}。下一場再來。</p><div class="seal grey">槓</div></section>`;
+            }).join('');
+            box.classList.toggle('hidden', !slips.length);
+        }
+        function renderAcct() {
+            const box = $('acct');
+            if (!Line.loggedIn) {
+                box.innerHTML = `<div class="border border-dashed border-stone-300 rounded-sm p-5">
+                    <h2 class="text-sm tracking-[0.3em] text-wabi-dark">投注需實名認證</h2>
+                    <p class="mt-2 text-xs font-sans tracking-wider text-stone-500 leading-relaxed">沒登入可以看賽程和彩池。要押得用 LINE 登入，押的單跟著帳號走，比完錢直接進帳號。</p>
+                    ${Line.available ? '<button type="button" data-login class="line-btn mt-4 w-full">用 LINE 登入</button>' : '<p class="mt-3 text-[11px] font-sans tracking-wider text-stone-400">LINE 登入載不起來，只能看。</p>'}</div>`;
+                return;
+            }
+            const open = M ? M.bets.filter(b => b.status === 'open').reduce((t, b) => t + b.amount, 0) : 0;
+            box.innerHTML = `<div class="bg-white border border-stone-100 rounded-sm py-3"><dl class="acct">
+                <div><dt>錢包</dt><dd class="num">${fmt(Wallet.money)}</dd></div>
+                <div><dt>還在押</dt><dd class="num">${M ? fmt(open) : '…'}</dd></div>
+                <div><dt>押中拿回</dt><dd class="num">${M ? fmt(M.paid) : '…'}</dd></div>
+            </dl></div>`;
+        }
+        function left(m) {
+            const ms = m.start - now();
+            if (ms <= 0) return ['已開打', true];
+            const h = Math.floor(ms / 3600000), d = Math.floor(h / 24), mi = Math.floor(ms / 60000) % 60;
+            return [d >= 1 ? `還有 ${d} 天 ${h % 24} 小時截止` : h >= 1 ? `還有 ${h} 小時 ${mi} 分截止` : `還有 ${Math.max(1, mi)} 分鐘截止`, h < 3];
+        }
+        function optBtn(m, kind, pick, label, done) {
+            const o = m[kind].opts[pick], mine = myBets(m.id).filter(b => b.kind === kind && b.pick === pick);
+            const hit = done && (kind === 'win' ? (m.result && (Number(m.result[0]) > Number(m.result[2]) ? 'home' : 'away') === pick) : m.result === pick);
+            return `<button type="button" class="opt${mine.length ? ' mine' : ''}${hit ? ' hit' : ''}" ${m.open ? `data-bet="${esc(m.id)}|${kind}|${pick}"` : 'disabled'}>
+                <span class="k">${label}</span><span class="o">${xo(o.odds)}</span><span class="p">彩池 ${fmt(o.pool)}</span></button>`;
+        }
+        function ticket(m) {
+            const [l, soon] = left(m), done = !!m.result && m.result !== 'void';
+            const mine = myBets(m.id);
+            return `<section class="paper tk${m.open ? '' : ' old'}">
+                <header class="tk-head"><b>${m.no ? 'GAME ' + esc(m.no) : 'TPVL'}</b><span class="left${soon && m.open ? ' soon' : ''}">${m.open ? l : done ? '開獎了' : m.result === 'void' ? '不算了' : '比賽中・等比分'}</span></header>
+                <p class="tk-sub">${esc(when(m))}${m.venue ? '・' + esc(m.venue) : ''}</p>
+                <div class="vs"><p class="tm">${esc(m.home)}<small>主隊</small></p>${done ? `<p class="sc">${esc(m.result)}</p>` : '<p class="x">VS</p>'}<p class="tm r">${esc(m.away)}<small>客隊</small></p></div>
+                <p class="sec">押誰贏<span>彩池 ${fmt(m.win.total)}</span></p>
+                <div class="opts two">${optBtn(m, 'win', 'home', esc(short(m.home)) + ' 贏', done)}${optBtn(m, 'win', 'away', esc(short(m.away)) + ' 贏', done)}</div>
+                <p class="sec">押局數比分<span>彩池 ${fmt(m.score.total)}</span></p>
+                <div class="six-h"><span>${esc(short(m.home))}贏</span><span></span><span></span></div>
+                <div class="opts six">${SCORES.home.map(s => optBtn(m, 'score', s, s, done)).join('')}</div>
+                <div class="six-h"><span>${esc(short(m.away))}贏</span><span></span><span></span></div>
+                <div class="opts six">${SCORES.away.map(s => optBtn(m, 'score', s, s, done)).join('')}</div>
+                ${mine.length ? `<div class="myb">${mine.map(b => `<p><span class="st ${b.status === 'won' ? 'won' : b.status === 'lost' ? 'lost' : ''}">${b.status === 'won' ? '中' : b.status === 'lost' ? '槓' : b.status === 'refund' ? '退' : '押'}</span>${esc(pickName(m, b.kind, b.pick))} <span class="num">${fmt(b.amount)}</span>${b.status === 'won' ? ` → 拿回 <b class="num won">${fmt(b.payout)}</b>` : ''}</p>`).join('')}</div>` : ''}
+            </section>`;
+        }
+        function pastRow(m) {
+            const mine = myBets(m.id), done = !!m.result && m.result !== 'void';
+            const hw = done && Number(m.result[0]) > Number(m.result[2]);
+            const won = mine.filter(b => b.status === 'won').reduce((t, b) => t + b.payout, 0), lost = mine.some(b => b.status === 'lost');
+            return `<section class="paper past"><div class="row1"><span class="d">${esc(when(m))}</span>
+                <span class="${done && hw ? 'w' : ''}">${esc(short(m.home))}</span><span class="sc num">${done ? esc(m.result) : m.result === 'void' ? '不算' : '等比分'}</span><span class="${done && !hw ? 'w' : ''}">${esc(short(m.away))}</span>
+                ${mine.length ? `<span class="ml-auto font-sans text-[10px] ${won ? 'won' : 'lost'}">${won ? '拿回 ' + fmt(won) : lost ? '槓龜' : mine.every(b => b.status === 'refund') ? '退錢' : '還沒開獎'}</span>` : ''}</div>
+                ${mine.length ? `<div class="myb">${mine.map(b => `<p><span class="st ${b.status === 'won' ? 'won' : 'lost'}">${b.status === 'won' ? '中' : b.status === 'lost' ? '槓' : b.status === 'refund' ? '退' : '押'}</span>${esc(pickName(m, b.kind, b.pick))} <span class="num">${fmt(b.amount)}</span>${b.status === 'won' ? ` → <b class="num won">${fmt(b.payout)}</b>` : ''}</p>`).join('')}</div>` : ''}</section>`;
+        }
+        function renderMatches() {
+            const open = $('open');
+            if (!Q) { open.innerHTML = state === 'loading' ? '<p class="empty paper">讀取中…</p>' : ''; return; }
+            const up = Q.matches.filter(m => m.open || (!m.result && m.start <= now()));
+            const past = Q.matches.filter(m => !up.includes(m)).reverse();
+            open.innerHTML = up.length ? up.map(ticket).join('') : `<p class="empty paper">最近三個禮拜沒有比賽可以押。<br>TPVL 放假，彩池也放假。</p>`;
+            $('past').innerHTML = past.map(pastRow).join('');
+            $('pastBox').classList.toggle('hidden', !past.length);
+        }
+
+        // ---- 押一注 ----
+        function amt() { return Math.max(0, Math.floor(Number(String($('amt').value).replace(/[^\d]/g, '')) || 0)); }
+        function room(m) {
+            const r = Q.rules, already = myBets(m.id).filter(b => b.status !== 'refund').reduce((t, b) => t + b.amount, 0);
+            return Math.max(0, Math.min(r.max, r.matchMax - already, Line.loggedIn ? Wallet.money : r.max));
+        }
+        function renderSheet() {
+            if (!cur) return;
+            const m = matchOf(cur.id);
+            if (!m) return closeSheet();
+            const o = m[cur.kind].opts[cur.pick], r = Q.rules, a = amt(), n = r.picks[cur.kind].length;
+            $('sTitle').textContent = '押 ' + pickName(m, cur.kind, cur.pick);
+            $('sMatch').textContent = `${when(m)}・${m.home} vs ${m.away}・${left(m)[0]}`;
+            $('sOdds').innerHTML = `現在 ${xo(o.odds)}・這個選項的彩池 ${fmt(o.pool)}・整個彩池 ${fmt(m[cur.kind].total)}`;
+            // 押下去以後的彩池：自己的錢也進去了
+            const total = m[cur.kind].total + r.seed * n + a, on = o.pool + r.seed + a, est = a ? Math.floor(a * total / on) : 0;
+            const lines = [];
+            if (a) lines.push(`照現在的彩池，押中大約拿回 <b class="text-wabi-dark num">${fmt(est)}</b>（${xo(total / on)}）。開賽前別人還會押，倍數會變。`);
+            const lim = room(m);
+            if (a && a < r.min) lines.push(`<span class="warn">一注最少 ${fmt(r.min)}。</span>`);
+            else if (a > lim) lines.push(`<span class="warn">${Line.loggedIn && a > Wallet.money ? '錢包不夠' : '超過上限（一注 $5 萬、一場 $20 萬）'}，最多可押 ${fmt(lim)}。</span>`);
+            $('sEst').innerHTML = lines.join('<br>');
+            const logged = Line.loggedIn && M;
+            $('betBtn').classList.toggle('hidden', !logged);
+            $('sLogin').classList.toggle('hidden', !!logged || !Line.available);
+            $('betBtn').disabled = busy || !m.open || !a || a < r.min || a > lim;
+            $('betBtn').textContent = busy ? '投注中…' : `押下去・${fmt(a)}`;
+        }
+        function openSheet(id, kind, pick) {
+            cur = { id, kind, pick };
+            const m = matchOf(id), lim = m ? room(m) : 0;
+            if (amt() > lim && lim >= Q.rules.min) $('amt').value = Math.min(1000, lim);
+            renderSheet();
+            $('sheet').classList.add('on');
+        }
+        function closeSheet() { $('sheet').classList.remove('on'); cur = null; }
+        function bigStamp(text, sub, grey) {
+            const st = $('bigStamp');
+            st.querySelector('b').textContent = text; st.querySelector('span').textContent = sub || '';
+            st.querySelector('.s').classList.toggle('grey', !!grey);
+            st.classList.remove('go'); void st.offsetWidth; st.classList.add('go');
+        }
+        async function bet() {
+            if (!cur || busy) return;
+            const m = matchOf(cur.id), a = amt(), what = pickName(m, cur.kind, cur.pick);
+            busy = true; renderSheet();
+            try {
+                await Wallet.settle();
+                const r = await Line.call({ type: 'sportBet', match: cur.id, kind: cur.kind, pick: cur.pick, amount: a });
+                if (r.quote) take(r.quote, r.mine);
+                if (r.wallet) Wallet.adopt(r.wallet);
+                if (r.result === 'success') { closeSheet(); bigStamp('投注', `${what}・${fmt(a)}`); showToast(`押了 ${what} ${fmt(a)}，開賽前倍數還會變`); }
+                else if (r.result === 'unauthorized') showToast('登入過期了，再登入一次');
+                else showToast(/不認得的請求/.test(r.error || '') ? '後端還是舊版，要重新部署「新版本」' : (r.error || '運彩行沒回應'));
+            } catch (e) { showToast('連不到後端，可能是網路不穩'); }
+            finally { busy = false; render(); }
+        }
+
+        function render() { renderStatus(); renderSlips(); renderAcct(); renderMatches(); renderSheet(); }
+
+        // ---- 事件 ----
+        document.addEventListener('click', e => {
+            const t = e.target;
+            if (t.closest('[data-login]')) return Line.login();
+            if (t.closest('[data-retry]')) { state = 'loading'; render(); return pull(); }
+            const b = t.closest('[data-bet]');
+            if (b) { const [id, kind, pick] = b.dataset.bet.split('|'); return openSheet(id, kind, pick); }
+            if (t.id === 'sheet' || t.closest('[data-close]')) return closeSheet();
+            const step = t.closest('[data-step]');
+            if (step) { $('amt').value = Math.max(0, amt() + Number(step.dataset.step) * 100); return renderSheet(); }
+            const set = t.closest('[data-set]');
+            if (set) { const m = matchOf(cur && cur.id); $('amt').value = set.dataset.set === 'max' ? (m ? room(m) : 0) : set.dataset.set; return renderSheet(); }
+            if (t.closest('#betBtn')) return bet();
+        });
+        $('amt').addEventListener('input', renderSheet);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && cur) closeSheet(); });
+        Wallet.on(type => {
+            if (type === 'login') { setTimeout(pull, 1500); render(); }
+            else if (type === 'logout') { M = null; slips = []; render(); }
+            else { renderAcct(); renderSheet(); }
+        });
+        // 倒數每 30 秒重畫一次；回到分頁就重新拿
+        setInterval(() => { if (Q && !document.hidden) { renderMatches(); renderSheet(); } }, 30000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
+        window.addEventListener('pageshow', e => { if (e.persisted) pull(); });
+
+        render();
+        Line.ready.then(pull, pull);
+    </script>
+</body>
+
+</html>
