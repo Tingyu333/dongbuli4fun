@@ -283,7 +283,7 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
         // 監修中：true 會蓋掉投注區、不能押；網址加 ?preview 可以先試玩
-        const MAINTENANCE = true;
+        const MAINTENANCE = false;
         const CLOSED = MAINTENANCE && !/[?&]preview\b/.test(location.search);
         const SEEN_KEY = 'dongbuli-yuncai-seen';
         const SHORT = { '桃園雲豹飛將': '桃園雲豹', '新竹可利工程師': '新竹可利' };
