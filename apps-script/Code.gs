@@ -2529,6 +2529,26 @@ function sportSetResult(id, homeSets, awaySets) {
   var n = sportSettle(sportReadMatches(), Date.now());
   Logger.log(m.home + ' ' + homeSets + ':' + awaySets + ' ' + m.away + '，結算了 ' + n + ' 注。');
 }
+// 清掉測試的注：還沒開獎的把押的錢退回錢包，然後把 Bets 分頁除了標題全部刪掉（已經開獎派過的錢不收回）。
+// 在編輯器選這個按「執行」就好，不用重新部署。正式開放以後不要再跑（會把大家的注一起清掉）。
+function sportClearBets() {
+  var out = withLock(function () {
+    var bets = sportReadBets(), refund = {}, n = 0;
+    bets.forEach(function (b) { if (b.status === 'open') { refund[b.lineId] = (refund[b.lineId] || 0) + b.amount; n++; } });
+    Object.keys(refund).forEach(function (id) {
+      var p = findPlayer(id);
+      if (!p) return;
+      p.money = Math.min(WALLET_MAX, p.money + refund[id]);
+      playersSheet().getRange(p.row, 5).setValue(p.money);
+    });
+    var sheet = sportBetsSheet(), last = sheet.getLastRow();
+    if (last > 1) sheet.deleteRows(2, last - 1);
+    return { all: bets.length, open: n, money: Object.keys(refund).reduce(function (t, k) { return t + refund[k]; }, 0) };
+  });
+  if (out.result) { Logger.log(out.error); return; }
+  Logger.log('清掉 ' + out.all + ' 注，其中 ' + out.open + ' 注還沒開獎，退回 $' + out.money.toLocaleString() + '。');
+}
+
 // 這場不算了，全部退錢：sportVoid('17013')
 function sportVoid(id) {
   var m = sportReadMatches().filter(function (x) { return x.id === String(id); })[0];
