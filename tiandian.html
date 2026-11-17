@@ -740,7 +740,7 @@
             drawBelt(c, beltOff);
             STATIONS.forEach((st, i) => drawStation(c, st, i, G.plates.some(p => Math.abs(p.s - st.s) < 30)));
             STATIONS.forEach((st, i) => st.bins.forEach(b => drawBin(c, i, b)));
-            c.fillStyle = '#b33a2f'; rr(c, 300, 496, 54, 50, 6); c.fill();
+            c.fillStyle = BLUE; rr(c, 300, 496, 54, 50, 6); c.fill();   // 出餐口用店的藍色，跟朱色「出盤」分開
             c.fillStyle = '#fff'; c.font = `600 13px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('出餐', 327, 514);
             c.font = `500 9px ${SANS}`; c.fillText('→ 客人', 327, 531);
             drawTray(c, now);
