@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>甜點・轉 | 丼步喱</title>
+    <!-- 設計稿：浣熊大王提案的甜點店流水線。畫面是假的、不能玩 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="assets/theme.css?v=20261116d">
+    <script src="assets/theme.js?v=20261116d"></script>
+    <style>
+        .stage { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+        #cv { display: block; width: 100%; aspect-ratio: 360 / 560; touch-action: none; border-radius: 4px; }
+        .tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .tool {
+            min-height: 46px; border: 1px solid rgb(var(--wabi-sub)); border-radius: 6px; background: rgb(var(--wabi-bg));
+            font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: 0.08em; color: rgb(var(--wabi-dark)); line-height: 1.25;
+        }
+        .tool small { display: block; font-size: 10px; color: rgb(var(--wabi-accent)); letter-spacing: 0.04em; }
+        .tool.locked { opacity: .55; border-style: dashed; }
+        .shop-btn {
+            display: inline-flex; align-items: center; height: 1.9rem; padding: 0 0.75rem;
+            border: 1px solid rgb(var(--wabi-accent) / 0.5); border-radius: 9999px;
+            font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.15em; color: rgb(var(--wabi-dark)); white-space: nowrap;
+        }
+        #shop { background: rgba(0, 0, 0, 0); transition: background 0.22s; }
+        #shop.on { background: rgba(0, 0, 0, 0.45); }
+        #shop .shop-sheet { transform: translateY(100%); transition: transform 0.22s ease-out; }
+        #shop.on .shop-sheet { transform: none; }
+        .shop-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 0; border-bottom: 1px solid rgb(var(--wabi-sub) / 0.6); }
+        .shop-icon { flex: none; width: 56px; height: 56px; border-radius: 6px; background: #f3ead9; }
+        .shop-dots i { display: inline-block; width: 6px; height: 6px; margin-left: 3px; border-radius: 50%; border: 1px solid rgb(var(--wabi-accent)); }
+        .shop-dots i.on { background: rgb(var(--wabi-shu)); border-color: rgb(var(--wabi-shu)); }
+        .shop-buy {
+            flex: none; min-width: 5.6rem; min-height: 44px; padding: 0 0.6rem;
+            border: 1px solid rgb(var(--wabi-dark)); background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg));
+            font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.1em; line-height: 1.3;
+        }
+    </style>
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261117">
+</head>
+
+<body class="text-wabi-text font-serif leading-loose antialiased min-h-screen flex flex-col overflow-x-hidden">
+
+    <nav class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <a href="index.html" class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-3 md:gap-8">
+            <a href="index.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap text-stone-400">首頁・歸</a>
+            <a href="reviews.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap text-stone-400">留言・絆</a>
+            <a href="about.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap text-stone-400">關於・絆</a>
+            <a href="member.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap text-stone-400">會員・我</a>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-md mx-auto pt-24 md:pt-32 pb-16 px-5 w-full">
+        <div class="text-center mb-6 relative">
+            <button id="shopBtn" type="button" class="shop-btn absolute right-0 top-0">店面</button>
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">DESSERT</span>
+            <h1 class="text-3xl font-light text-wabi-dark tracking-widest">甜點・轉</h1>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">浣熊大王甜點舖。轉盤不會等你。</p>
+        </div>
+
+        <section class="stage bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-3 pt-4 pb-4">
+            <div class="flex items-start justify-between gap-2 px-1 min-h-[2.9rem]">
+                <p class="text-sm text-wabi-dark tracking-wider leading-relaxed">浣熊大王：茱莉鴨要的是布丁，不是巧克力。</p>
+                <span class="shrink-0 text-right text-[10px] leading-relaxed font-sans tracking-widest text-stone-400">出餐 4<br>氣走 0</span>
+            </div>
+            <canvas id="cv" class="mt-2" aria-label="甜點店：上面是客人和想吃的甜點，下面是轉盤，經過三站各放一種料"></canvas>
+            <div class="tools mt-2">
+                <button type="button" class="tool locked">暫停<small>店面升級</small></button>
+                <button type="button" class="tool locked">倒轉<small>店面升級</small></button>
+                <button type="button" class="tool locked">店員<small>還沒請</small></button>
+            </div>
+            <p class="mt-3 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed text-center">甜點轉到哪一站（亮起來），就點那一站旁邊的料。<br>三站都放好，轉到「出餐」就會交給點這一份的客人。</p>
+        </section>
+
+        <p class="mt-6 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed text-center">設計稿：畫面是假的，還不能玩。</p>
+    </main>
+
+    <!-- 店面升級 -->
+    <div id="shop" class="hidden fixed inset-0 z-[80] flex items-end justify-center" role="dialog" aria-modal="true" aria-label="甜點店升級">
+        <div class="shop-sheet w-full max-w-md bg-wabi-bg rounded-t-xl">
+            <div class="px-5 pt-5 pb-2 flex items-baseline justify-between border-b border-stone-200">
+                <div>
+                    <p class="text-lg text-wabi-dark tracking-widest">店面・升</p>
+                    <p class="mt-1 text-[10px] font-sans tracking-widest text-stone-400">浣熊大王說：設備錢你出，甜點我先試吃</p>
+                </div>
+                <p class="text-xs font-sans tracking-widest text-stone-500">錢包 <b class="font-normal text-wabi-shu">$86,400</b></p>
+            </div>
+            <div id="shopList" class="px-5 max-h-[60vh] overflow-y-auto overscroll-contain"></div>
+            <div class="px-5 py-4">
+                <button type="button" data-close class="w-full py-3 border border-stone-300 text-wabi-dark tracking-[0.2em] font-sans text-xs">回去開店</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const W = 360, H = 560;
+        const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+        function fit() { const d = window.devicePixelRatio || 1, w = cv.clientWidth; cv.width = w * d; cv.height = w * H / W * d; ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0); }
+
+        // ---- 甜點的料（實物，顏色固定）----
+        const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); };
+        function base(kind, x, y, s = 1) {
+            ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+            ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.beginPath(); ctx.ellipse(0, 7, 19, 5, 0, 0, 7); ctx.fill();
+            if (kind === 'cookie') {
+                ctx.fillStyle = '#d29a52'; ctx.beginPath(); ctx.ellipse(0, 1, 17, 7, 0, 0, 7); ctx.fill();
+                ctx.fillStyle = '#b97d38'; ctx.beginPath(); ctx.ellipse(0, -1, 17, 6, 0, 0, 7); ctx.fill();
+                ctx.fillStyle = '#5a3420'; [[-8, -2], [3, -3], [9, 0], [-2, 1]].forEach(([a, b]) => { ctx.beginPath(); ctx.arc(a, b, 1.6, 0, 7); ctx.fill(); });
+            } else if (kind === 'cake') {
+                ctx.fillStyle = '#efcf78'; rr(-16, -9, 32, 15, 3); ctx.fill();
+                ctx.fillStyle = '#fff7ea'; ctx.fillRect(-16, -3, 32, 3);
+                ctx.fillStyle = '#e3bb5c'; ctx.fillRect(-16, 3, 32, 3);
+            } else {
+                ctx.fillStyle = '#c47f3c'; ctx.beginPath(); ctx.moveTo(-17, 6); ctx.quadraticCurveTo(-17, -12, 0, -12); ctx.quadraticCurveTo(17, -12, 17, 6); ctx.closePath(); ctx.fill();
+                ctx.strokeStyle = '#a0612a'; ctx.lineWidth = 1.5; [-6, 2, 10].forEach(a => { ctx.beginPath(); ctx.moveTo(a - 3, -7); ctx.lineTo(a + 2, -10); ctx.stroke(); });
+            }
+            ctx.restore();
+        }
+        function strawberry(x, y, r) {
+            ctx.fillStyle = '#d63a3a'; ctx.beginPath(); ctx.moveTo(x - r, y - r * .4); ctx.quadraticCurveTo(x, y - r * 1.3, x + r, y - r * .4); ctx.quadraticCurveTo(x + r * .8, y + r, x, y + r * 1.2); ctx.quadraticCurveTo(x - r * .8, y + r, x - r, y - r * .4); ctx.fill();
+            ctx.fillStyle = '#3f8f3a'; ctx.beginPath(); ctx.ellipse(x, y - r * .8, r * .7, r * .3, 0, 0, 7); ctx.fill();
+            ctx.fillStyle = '#ffd9c9'; [[-.3, 0], [.3, .2], [0, .6]].forEach(([a, b]) => { ctx.fillRect(x + a * r, y + b * r, 1, 1); });
+        }
+        function main(kind, x, y, s = 1) {
+            ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+            if (kind === 'choco') { ctx.fillStyle = '#6b3d22'; rr(-15, -6, 30, 8, 4); ctx.fill(); ctx.fillStyle = '#8a5432'; rr(-13, -6, 22, 3, 2); ctx.fill(); }
+            else if (kind === 'cream') { ctx.fillStyle = '#fffaf2'; ctx.strokeStyle = '#e8dccb'; ctx.lineWidth = 1; [[-9, 0, 7], [0, -2, 8], [9, 0, 7]].forEach(([a, b, r]) => { ctx.beginPath(); ctx.arc(a, b, r, Math.PI, 0); ctx.fill(); ctx.stroke(); }); }
+            else if (kind === 'pudding') { ctx.fillStyle = '#f2c445'; ctx.beginPath(); ctx.moveTo(-12, 2); ctx.lineTo(-9, -10); ctx.lineTo(9, -10); ctx.lineTo(12, 2); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#8f4f17'; rr(-9, -12, 18, 4, 2); ctx.fill(); }
+            else { strawberry(-7, -3, 5); strawberry(6, -4, 5.5); }
+            ctx.restore();
+        }
+        function topping(kind, x, y, s = 1) {
+            ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+            if (kind === 'sprinkle') { ['#e4566b', '#4f9ad9', '#f2c445', '#5fb36b', '#b06ad6', '#6b3d22'].forEach((c, i) => { ctx.fillStyle = c; ctx.save(); ctx.translate(-10 + i * 4, (i % 2) * 3 - 2); ctx.rotate(i); ctx.fillRect(-2, -.8, 4, 1.6); ctx.restore(); }); }
+            else if (kind === 'sauce') { ctx.strokeStyle = '#4a2614'; ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-12, -2); for (let i = 0; i < 6; i++) ctx.lineTo(-8 + i * 4, i % 2 ? -4 : 1); ctx.stroke(); }
+            else if (kind === 'berry') { strawberry(0, -3, 4.5); }
+            else { ctx.fillStyle = '#fffaf2'; ctx.strokeStyle = '#e8dccb'; ctx.beginPath(); ctx.moveTo(-6, 2); ctx.quadraticCurveTo(-7, -4, 0, -9); ctx.quadraticCurveTo(7, -4, 6, 2); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+            ctx.restore();
+        }
+        function dessert(d, x, y, s = 1) {
+            if (d.b) base(d.b, x, y, s);
+            if (d.m) main(d.m, x, y - 9 * s, s);
+            if (d.t) topping(d.t, x, y - (d.m ? 19 : 10) * s, s);
+        }
+
+        // ---- 轉盤（從左上進來，一站一站蛇行下去） ----
+        const PTS = [[-20, 184], [80, 236], [180, 290], [282, 344], [180, 398], [80, 452], [190, 508], [290, 522], [380, 522]];
+        function catmull(p, n = 24) {
+            const out = [];
+            for (let i = 0; i < p.length - 1; i++) {
+                const p0 = p[i - 1] || p[i], p1 = p[i], p2 = p[i + 1], p3 = p[i + 2] || p2;
+                for (let k = 0; k < n; k++) {
+                    const t = k / n, t2 = t * t, t3 = t2 * t;
+                    out.push([0, 1].map(j => 0.5 * (2 * p1[j] + (-p0[j] + p2[j]) * t + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * t2 + (-p0[j] + 3 * p1[j] - 3 * p2[j] + p3[j]) * t3)));
+                }
+            }
+            out.push(p[p.length - 1]);
+            return out;
+        }
+        const PATH = catmull(PTS);
+        function drawBelt(off) {
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.strokeStyle = '#5d5148'; ctx.lineWidth = 36; ctx.beginPath(); PATH.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke();
+            ctx.strokeStyle = '#8b7d70'; ctx.lineWidth = 30; ctx.stroke();
+            // 履帶的橫條，跟著轉
+            ctx.strokeStyle = 'rgba(60,50,44,.45)'; ctx.lineWidth = 2;
+            let acc = 0, next = off % 14;
+            for (let i = 1; i < PATH.length; i++) {
+                const [x0, y0] = PATH[i - 1], [x1, y1] = PATH[i], len = Math.hypot(x1 - x0, y1 - y0);
+                while (next <= acc + len) {
+                    const t = (next - acc) / len, x = x0 + (x1 - x0) * t, y = y0 + (y1 - y0) * t, nx = -(y1 - y0) / len, ny = (x1 - x0) / len;
+                    ctx.beginPath(); ctx.moveTo(x - nx * 14, y - ny * 14); ctx.lineTo(x + nx * 14, y + ny * 14); ctx.stroke();
+                    next += 14;
+                }
+                acc += len;
+            }
+        }
+
+        // 三站：轉盤經過的圓台，旁邊是料盒
+        const STATIONS = [
+            { x: 80, y: 236, name: '底', bins: [[170, 216, 'b', 'cookie', '餅乾'], [226, 216, 'b', 'cake', '蛋糕'], [282, 216, 'b', 'bread', '麵包']] },
+            { x: 282, y: 344, name: '餡', bins: [[34, 342, 'm', 'choco', '巧克力'], [88, 342, 'm', 'cream', '鮮奶油'], [142, 342, 'm', 'pudding', '布丁', '$2萬'], [196, 342, 'm', 'fruit', '水果', '$4萬']] },
+            { x: 80, y: 452, name: '飾', bins: [[160, 448, 't', 'sprinkle', '巧克力米'], [214, 448, 't', 'cream2', '鮮奶油'], [268, 448, 't', 'sauce', '巧克力醬', '$2萬'], [322, 448, 't', 'berry', '水果', '$4萬']] },
+        ];
+        function drawStation(s, active) {
+            if (active) { ctx.fillStyle = 'rgba(242,196,69,.35)'; ctx.beginPath(); ctx.arc(s.x, s.y, 42, 0, 7); ctx.fill(); }
+            ctx.fillStyle = '#d9d2c7'; ctx.beginPath(); ctx.arc(s.x, s.y, 33, 0, 7); ctx.fill();
+            ctx.fillStyle = '#efe9df'; ctx.beginPath(); ctx.arc(s.x, s.y, 27, 0, 7); ctx.fill();
+            ctx.strokeStyle = active ? '#b33a2f' : '#b9ad9d'; ctx.lineWidth = active ? 2.5 : 1.5; ctx.beginPath(); ctx.arc(s.x, s.y, 33, 0, 7); ctx.stroke();
+            // 站名小印
+            const lx = s.x - 30, ly = s.y - 34;
+            ctx.fillStyle = active ? '#b33a2f' : '#fffaf2'; rr(lx - 9, ly - 9, 18, 18, 3); ctx.fill();
+            ctx.strokeStyle = '#b33a2f'; ctx.lineWidth = 1.2; ctx.stroke();
+            ctx.fillStyle = active ? '#fff' : '#b33a2f'; ctx.font = '700 11px "Noto Serif TC", serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(s.name, lx, ly + 1);
+        }
+        function drawBin([x, y, layer, kind, label, lock], active) {
+            const w = 50, h = 52;
+            ctx.fillStyle = 'rgba(0,0,0,.12)'; rr(x - w / 2 + 1, y - h / 2 + 2, w, h, 6); ctx.fill();
+            ctx.fillStyle = lock ? '#e6e1d9' : active ? '#fff6dc' : '#fbf7ef'; rr(x - w / 2, y - h / 2, w, h, 6); ctx.fill();
+            ctx.strokeStyle = active && !lock ? '#d9a62e' : '#cbbfae'; ctx.lineWidth = active && !lock ? 2 : 1; ctx.stroke();
+            ctx.save(); if (lock) ctx.globalAlpha = .3;
+            const k = kind === 'cream2' ? 'cream' : kind;
+            if (layer === 'b') base(k, x, y - 4, .85);
+            else if (layer === 'm') main(k, x, y - 2, .85);
+            else topping(k, x, y - 2, 1.1);
+            ctx.restore();
+            ctx.fillStyle = lock ? '#9a9187' : '#4a4038'; ctx.font = `500 ${label.length > 3 ? 8.5 : 10}px "Noto Sans TC", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+            ctx.fillText(label, x, y + h / 2 - 5);
+            if (lock) {
+                ctx.fillStyle = 'rgba(80,70,60,.75)'; rr(x - 17, y - 16, 34, 16, 3); ctx.fill();
+                ctx.fillStyle = '#fff'; ctx.font = '500 9px "Noto Sans TC", sans-serif'; ctx.fillText('鎖 ' + lock, x, y - 4.5);
+            }
+        }
+
+        // ---- 客人 ----
+        const CUSTOMERS = [
+            { x: 60, kind: 'student', want: { b: 'cake', m: 'cream', t: 'sprinkle' }, left: .72 },
+            { x: 180, kind: 'duck', want: { b: 'cookie', m: 'pudding', t: 'cream' }, left: .45 },
+            { x: 300, kind: 'auntie', want: { b: 'bread', m: 'choco', t: 'sprinkle' }, left: .2 },
+        ];
+        function face(c) {
+            const x = c.x, y = 118;
+            if (c.kind === 'duck') {
+                ctx.fillStyle = '#fbfbf8'; ctx.beginPath(); ctx.arc(x, y + 4, 22, 0, 7); ctx.fill(); ctx.strokeStyle = '#d6d2c8'; ctx.stroke();
+                ctx.fillStyle = '#f0a03a'; ctx.beginPath(); ctx.ellipse(x + 2, y + 10, 10, 4.5, 0, 0, 7); ctx.fill();
+                ctx.fillStyle = '#2c2c2c'; [-8, 9].forEach(d => { ctx.fillRect(x + d - 3, y - 2, 6, 1.6); });
+                ctx.fillStyle = '#3d6fb6'; ctx.beginPath(); ctx.moveTo(x - 9, y + 24); ctx.lineTo(x, y + 21); ctx.lineTo(x - 9, y + 18); ctx.fill(); ctx.beginPath(); ctx.moveTo(x + 9, y + 24); ctx.lineTo(x, y + 21); ctx.lineTo(x + 9, y + 18); ctx.fill();
+                return;
+            }
+            const skin = c.kind === 'auntie' ? '#f0c9a4' : '#f3d0ad', hair = c.kind === 'auntie' ? '#6b4a3a' : '#2b2522';
+            ctx.fillStyle = c.kind === 'student' ? '#5a7fa8' : '#b0596a'; rr(x - 22, y + 16, 44, 30, 12); ctx.fill();
+            ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(x, y, 19, 0, 7); ctx.fill();
+            ctx.fillStyle = hair;
+            if (c.kind === 'auntie') { [[-14, -10], [0, -16], [14, -10], [-18, 2], [18, 2]].forEach(([a, b]) => { ctx.beginPath(); ctx.arc(x + a, y + b, 8, 0, 7); ctx.fill(); }); }
+            else { ctx.beginPath(); ctx.arc(x, y - 4, 19, Math.PI * 1.05, Math.PI * 1.95); ctx.fill(); }
+            ctx.fillStyle = '#2c2c2c'; [-7, 7].forEach(d => { ctx.beginPath(); ctx.arc(x + d, y + 1, 1.8, 0, 7); ctx.fill(); });
+            ctx.strokeStyle = '#9a5a40'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(x, y + 7, 4, .2, Math.PI - .2); ctx.stroke();
+        }
+        function bubble(c) {
+            const x = c.x, y = 58;
+            ctx.fillStyle = '#fffdf8'; ctx.strokeStyle = '#cbbfae'; ctx.lineWidth = 1;
+            rr(x - 42, y - 26, 84, 50, 12); ctx.fill(); ctx.stroke();
+            ctx.beginPath(); ctx.arc(x - 10, y + 30, 3.5, 0, 7); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.arc(x - 5, y + 37, 2, 0, 7); ctx.fill(); ctx.stroke();
+            dessert(c.want, x - 12, y + 12, .9);
+            // 三站各要什麼，用字列出來（打勾是已經做好的那份）
+            ctx.font = '500 8.5px "Noto Sans TC", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#6b5f52';
+            const L = { cookie: '餅乾', cake: '蛋糕', bread: '麵包', choco: '巧克力', cream: '鮮奶油', pudding: '布丁', fruit: '水果', sprinkle: '巧克力米', sauce: '巧克力醬', berry: '草莓' };
+            [L[c.want.t], L[c.want.m], L[c.want.b]].forEach((t, i) => ctx.fillText(t, x + 8, y - 12 + i * 12));
+            if (c.done) { ctx.strokeStyle = '#b33a2f'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x + 32, y - 18, 7, 0, 7); ctx.stroke(); ctx.fillStyle = '#b33a2f'; ctx.font = '700 9px "Noto Serif TC", serif'; ctx.textAlign = 'center'; ctx.fillText('製', x + 32, y - 17.5); }
+            // 等待條
+            const bw = 56, by = 160;
+            ctx.fillStyle = '#e3dcd1'; rr(x - bw / 2, by, bw, 6, 3); ctx.fill();
+            ctx.fillStyle = c.left > .5 ? '#6aa56a' : c.left > .25 ? '#e0b43c' : '#c9503f'; rr(x - bw / 2, by, bw * c.left, 6, 3); ctx.fill();
+        }
+
+        // ---- 轉盤上的甜點（設計稿：照固定的進度跑） ----
+        const ON_BELT = [
+            { at: 0.115, d: { b: 'cake' } },
+            { at: 0.24, d: { b: 'cookie' } },
+            { at: 0.63, d: { b: 'bread', m: 'choco' } },
+        ];
+        function pointAt(t) {
+            let total = 0; const seg = [];
+            for (let i = 1; i < PATH.length; i++) { const l = Math.hypot(PATH[i][0] - PATH[i - 1][0], PATH[i][1] - PATH[i - 1][1]); seg.push(l); total += l; }
+            let want = t * total;
+            for (let i = 0; i < seg.length; i++) { if (want <= seg[i]) { const k = want / seg[i]; return [PATH[i][0] + (PATH[i + 1][0] - PATH[i][0]) * k, PATH[i][1] + (PATH[i + 1][1] - PATH[i][1]) * k]; } want -= seg[i]; }
+            return PATH[PATH.length - 1];
+        }
+
+        let off = 0, speed = 0.022;
+        function draw() {
+            ctx.clearRect(0, 0, W, H);
+            // 店裡：牆、櫃台、廚房地板
+            ctx.fillStyle = '#f6efe4'; ctx.fillRect(0, 0, W, 176);
+            ctx.fillStyle = '#efe6d8'; for (let x = 0; x < W; x += 24) ctx.fillRect(x, 0, 12, 176);
+            ctx.fillStyle = '#e8ddcd'; ctx.fillRect(0, 176, W, H - 176);
+            ctx.strokeStyle = 'rgba(160,140,120,.18)'; ctx.lineWidth = 1;
+            for (let y = 196; y < H; y += 28) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+            for (let x = 0; x < W; x += 28) { ctx.beginPath(); ctx.moveTo(x, 176); ctx.lineTo(x, H); ctx.stroke(); }
+            // 最上面：時間、招牌、錢
+            ctx.fillStyle = '#7a5a3e'; rr(110, 6, 140, 22, 4); ctx.fill();
+            ctx.fillStyle = '#fbe9c8'; ctx.font = '600 11px "Noto Serif TC", serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('浣熊大王甜點舖', 180, 17.5);
+            ctx.font = '500 13px "Noto Sans TC", sans-serif'; ctx.fillStyle = '#4a4038'; ctx.textAlign = 'left'; ctx.fillText('0:42', 10, 17);
+            ctx.textAlign = 'right'; ctx.fillStyle = '#b33a2f'; ctx.fillText('$1,240', 350, 17);
+            CUSTOMERS.forEach(c => { face(c); bubble(c); });
+            ctx.fillStyle = '#b08a62'; ctx.fillRect(0, 168, W, 10); ctx.fillStyle = '#946f4a'; ctx.fillRect(0, 176, W, 3);
+
+            drawBelt(off);
+            const pos = ON_BELT.map(o => pointAt((o.at + off * 0.0004) % 1));
+            const activeIdx = STATIONS.map(s => pos.findIndex(([x, y]) => Math.hypot(x - s.x, y - s.y) < 30));
+            STATIONS.forEach((s, i) => drawStation(s, activeIdx[i] >= 0));
+            STATIONS.forEach((s, i) => s.bins.forEach(b => drawBin(b, activeIdx[i] >= 0)));
+            // 入口、出餐口
+            ctx.fillStyle = '#4a4038'; ctx.font = '500 10px "Noto Sans TC", sans-serif'; ctx.textAlign = 'left'; ctx.fillText('進', 6, 176 + 14);
+            ctx.fillStyle = '#b33a2f'; rr(300, 496, 54, 50, 6); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.font = '600 13px "Noto Serif TC", serif'; ctx.textAlign = 'center'; ctx.fillText('出餐', 327, 516);
+            ctx.font = '500 9px "Noto Sans TC", sans-serif'; ctx.fillText('→ 客人', 327, 532);
+            ON_BELT.forEach((o, i) => { const [x, y] = pos[i]; ctx.fillStyle = '#fffdf8'; ctx.beginPath(); ctx.ellipse(x, y + 6, 20, 6, 0, 0, 7); ctx.fill(); dessert(o.d, x, y); });
+        }
+        function loop() { off += speed * 16; draw(); requestAnimationFrame(loop); }
+        fit(); window.addEventListener('resize', () => { fit(); draw(); });
+        if (/still/.test(location.search)) { off = 0; draw(); } else loop();
+
+        // ---- 店面升級（設計稿的清單）----
+        const SHOP = [
+            { name: '配料櫃', sub: '配料', lv: 0, max: 3, price: '$2 萬', desc: '解鎖布丁、巧克力醬（一級）、水果（二級）、抹茶和焦糖（三級）。客人點的組合跟著變多，貴的料賣得比較貴。' },
+            { name: '轉盤馬達', sub: '轉盤', lv: 1, max: 3, price: '$3 萬', desc: '轉盤快 15％／30％／45％：一樣的時間出更多份，手也要更快。' },
+            { name: '煞車', sub: '轉盤', lv: 0, max: 2, price: '$1.5 萬', desc: '「暫停」鈕：轉盤停 3 秒，一輪兩次（二級三次、停 5 秒）。' },
+            { name: '倒轉把手', sub: '轉盤', lv: 0, max: 1, price: '$4 萬', desc: '「倒轉」鈕：漏放料的甜點退回上一站補，一輪三次。' },
+            { name: '店員', sub: '人手', lv: 0, max: 2, price: '$6 萬', desc: '一級：做好的甜點自動交給對的客人。二級：還會幫你放第一站的底。' },
+        ];
+        document.getElementById('shopList').innerHTML = SHOP.map(u => `<div class="shop-row">
+            <span class="shop-icon flex items-center justify-center text-lg text-wabi-dark">${u.name[0]}</span>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm text-wabi-dark tracking-widest">${u.name}<span class="ml-2 text-[10px] font-sans text-stone-400 tracking-widest">${u.sub}</span>
+                    <span class="shop-dots ml-1">${Array.from({ length: u.max }, (_, i) => `<i class="${i < u.lv ? 'on' : ''}"></i>`).join('')}</span></p>
+                <p class="text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">${u.desc}</p>
+            </div>
+            <button type="button" class="shop-buy">${u.lv >= u.max ? '買滿了' : '升級<br>' + u.price}</button>
+        </div>`).join('');
+        const shop = document.getElementById('shop');
+        document.getElementById('shopBtn').addEventListener('click', () => { shop.classList.remove('hidden'); requestAnimationFrame(() => shop.classList.add('on')); });
+        shop.addEventListener('click', e => { if (e.target === shop || e.target.closest('[data-close]')) { shop.classList.remove('on'); setTimeout(() => shop.classList.add('hidden'), 220); } });
+        if (/shop/.test(location.search)) document.getElementById('shopBtn').click();
+    </script>
+</body>
+
+</html>
