@@ -132,6 +132,44 @@
         .slip + .slip { margin-top: .9rem; }
         .slip.flat { transform: rotate(.4deg); }
         .line-btn { min-height: 44px; padding: 0 1.4rem; border-radius: 6px; background: #06c755; color: #fff; font-family: 'Noto Sans TC', sans-serif; font-weight: 500; font-size: .85rem; letter-spacing: .1em; touch-action: manipulation; }
+        /* 晚報可以翻：頭版＋每一檔一版，左右滑或按上一版、下一版 */
+        .ev-pages { display: flex; margin: 0 -1rem; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .ev-pages::-webkit-scrollbar { display: none; }
+        .ev-page { flex: 0 0 100%; min-width: 0; padding: 0 1rem; scroll-snap-align: start; scroll-snap-stop: always; }
+        .ev-kicker { margin-top: .5rem; font-family: 'Noto Sans TC', sans-serif; font-size: .58rem; letter-spacing: .2em; color: var(--faint); }
+        .ev-toc { margin-top: .7rem; border-top: 1px solid var(--rule); }
+        .ev-toc-h { padding: .45rem 0 .15rem; font-family: 'Noto Sans TC', sans-serif; font-size: .58rem; letter-spacing: .2em; color: var(--faint); }
+        .ev-toc button { width: 100%; display: grid; grid-template-columns: 1fr auto auto; gap: 0 .6rem; align-items: center; min-height: 40px; padding: .3rem 0; text-align: left; border-bottom: 1px dashed var(--rule); touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        .ev-toc button:last-child { border-bottom: 0; }
+        .ev-toc button:active { background: rgba(140, 120, 90, .08); }
+        .ev-toc .nm { font-size: .82rem; letter-spacing: .1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ev-toc .nm small { margin-left: .3rem; font-family: 'Noto Sans TC', sans-serif; font-size: .55rem; color: var(--faint); letter-spacing: .05em; }
+        .ev-toc .pg { font-family: 'Noto Sans TC', sans-serif; font-size: .55rem; letter-spacing: .1em; color: var(--faint); }
+        .ev-toc .ch { font-size: .72rem; text-align: right; min-width: 3.6rem; }
+        .ev-name { margin-top: .2rem; display: flex; align-items: center; gap: .5rem; font-size: 1.3rem; font-weight: 600; letter-spacing: .2em; line-height: 1.4; }
+        .ev-mark { font-family: 'Noto Sans TC', sans-serif; font-size: .55rem; font-weight: 500; letter-spacing: .1em; padding: .05rem .3rem; border: 1.5px solid var(--up); color: var(--up); border-radius: 2px; transform: rotate(-4deg); white-space: nowrap; }
+        .ev-full { font-size: .7rem; letter-spacing: .12em; color: var(--faint); }
+        .ev-px { margin-top: .5rem; display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+        .ev-px b { font-size: 1.6rem; font-weight: 400; line-height: 1; }
+        .ev-px span { font-size: .78rem; }
+        .ev-spark { display: block; width: 100%; height: 56px; margin-top: .55rem; }
+        .ev-cap { display: flex; justify-content: space-between; font-family: 'Noto Sans TC', sans-serif; font-size: .55rem; letter-spacing: .1em; color: var(--faint); }
+        .ev-stats { margin-top: .55rem; display: grid; grid-template-columns: 1fr 1fr; gap: .1rem 1rem; border-top: 1px solid var(--rule); padding-top: .45rem; }
+        .ev-stats div { display: flex; justify-content: space-between; align-items: baseline; padding: .15rem 0; border-bottom: 1px dotted var(--rule); }
+        .ev-stats dt { font-family: 'Noto Sans TC', sans-serif; font-size: .58rem; letter-spacing: .12em; color: var(--faint); }
+        .ev-stats dd { font-size: .74rem; }
+        .ev-quote { margin-top: .6rem; padding-left: .6rem; border-left: 2px solid var(--rule); font-size: .76rem; line-height: 1.75; letter-spacing: .05em; }
+        .ev-quote b { font-family: 'Noto Sans TC', sans-serif; font-size: .58rem; letter-spacing: .2em; color: var(--faint); font-weight: 500; display: block; }
+        .ev-hold { margin-top: .5rem; font-family: 'Noto Sans TC', sans-serif; font-size: .68rem; letter-spacing: .08em; color: var(--ink); }
+        .ev-go { margin-top: .7rem; width: 100%; min-height: 44px; border: 1px solid var(--ink); color: var(--ink); font-family: 'Noto Sans TC', sans-serif; font-size: .72rem; letter-spacing: .25em; touch-action: manipulation; }
+        .ev-go:active { background: rgba(140, 120, 90, .1); }
+        .ev-nav { margin-top: .7rem; padding-top: .35rem; border-top: 1px solid var(--rule); display: grid; grid-template-columns: auto 1fr auto; align-items: center; font-family: 'Noto Sans TC', sans-serif; }
+        .ev-nav button { min-height: 40px; padding: 0 .4rem; font-size: .66rem; letter-spacing: .15em; color: var(--ink); touch-action: manipulation; }
+        .ev-nav button:disabled { opacity: .25; }
+        .ev-nav p { text-align: center; font-size: .6rem; letter-spacing: .12em; color: var(--faint); line-height: 1.4; }
+        .ev-dots { display: flex; justify-content: center; gap: 4px; margin-top: 3px; }
+        .ev-dots i { width: 5px; height: 5px; border-radius: 50%; border: 1px solid var(--faint); }
+        .ev-dots i.on { background: var(--ink); border-color: var(--ink); }
         .ev-tag { margin-top: .5rem; font-family: 'Noto Sans TC', sans-serif; font-size: .62rem; letter-spacing: .15em; color: var(--faint); }
         .ev-tag b { font-weight: 500; padding: 0 .3rem; border: 1px solid currentColor; margin-left: .25rem; }
         .ord { display: flex; align-items: center; gap: .6rem; padding: .55rem .15rem; border-bottom: 1px dashed var(--rule); font-size: .74rem; }
@@ -363,16 +401,110 @@
             ${M ? `<p class="mt-2 px-1 text-[10px] font-sans tracking-widest text-stone-400 text-center">已實現損益 <span style="color:${toneColor(M.pl)}">${sfmt(M.pl)}</span>・付過手續費 ${fmt(M.fee)}</p>` : ''}`;
         }
 
+        // ---- 晚報：頭版＋每一檔一版（個股版），左右滑翻頁 ----
+        // 個股版只寫看得到的數字（股價、走勢、高低），點評照數字挑句子，不預測明天（明天的消息只有頭版那一檔）
+        let evPage = 0;
+        const evHash = str => { let h = 7; for (const ch of str) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h; };
+        const EV_LINES = {
+            limUp: ['今天漲停，買單排到二十七樓的電梯口。', '漲停鎖住了，想買的人只能排隊。', '一開盤就漲停，記者還來不及問為什麼。'],
+            limDown: ['今天跌停，賣單排到一樓大廳。', '跌停鎖住了，想跑的人只能排隊。', '一路跌停，公司發言人電話沒人接。'],
+            up: ['今天走得不錯，記者還在追原因。', '紅通通的一天，股東群組很熱鬧。', '今天漲，樓下管理員也在問怎麼買。'],
+            down: ['今天不太好看，公司說「沒有任何利空」。', '綠油油的一天，股東群組很安靜。', '今天跌，發言人說「長期看好」。'],
+            calm: ['今天很安靜，連記者都睡著了。', '沒什麼消息，股價自己晃。', '平平淡淡，適合泡茶看盤。'],
+            m30up: n => `這個月漲了 ${n}%，追高之前先想清楚。`,
+            m30down: n => `這個月跌了 ${n}%，股東會應該會很熱鬧。`,
+            m30flat: () => '一個月下來沒什麼變，是一檔很有耐心的股票。',
+        };
+        function evComment(s) {
+            const c = chg(s), m = s.month && s.month.length ? s.price / s.month[0] - 1 : 0;
+            const pickL = list => list[evHash(s.code + (Q.day || '')) % list.length];
+            const today = s.state === 'up' ? pickL(EV_LINES.limUp) : s.state === 'down' ? pickL(EV_LINES.limDown) : c > 0.02 ? pickL(EV_LINES.up) : c < -0.02 ? pickL(EV_LINES.down) : pickL(EV_LINES.calm);
+            const pct = Math.round(Math.abs(m) * 100);
+            const month = m > 0.08 ? EV_LINES.m30up(pct) : m < -0.08 ? EV_LINES.m30down(pct) : Math.abs(m) < 0.03 ? EV_LINES.m30flat() : '';
+            return today + (month ? month : '');
+        }
+        function stockPage(s, i, n) {
+            const info = INFO[s.code] || { full: s.name, desc: '' }, c = chg(s), h = holdOf(s.code);
+            const a = s.month && s.month.length ? s.month : [s.price], m30 = s.price / a[0] - 1;
+            const dayHi = Math.max(...s.day), dayLo = Math.min(...s.day);
+            const pctTxt = v => `<span class="${tone(v)}">${arrow(v)}${Math.abs(v * 100).toFixed(1)}%</span>`;
+            const hold = Line.loggedIn && M ? (h ? `你持有 <span class="num">${h.n}</span> 股・均價 <span class="num">${pf(h.avg)}</span>・損益 <span class="num ${tone(h.n * s.price - h.cost)}">${sfmt(h.n * s.price - h.cost)}</span>` : '你還沒有這一檔。') : '';
+            return `<article class="ev-page" aria-label="第 ${i + 2} 版 ${esc(s.name)}">
+                <p class="ev-kicker">第 ${i + 2} 版・個股・${s.code}</p>
+                <h3 class="ev-name">${lbl(s.name)}${n && n.code === s.code ? `<span class="ev-mark">上了今晚頭版</span>` : ''}</h3>
+                ${info.full !== s.name ? `<p class="ev-full">${lbl(info.full)}</p>` : ''}
+                <p class="ev-body">${esc(info.desc)}</p>
+                <div class="ev-px"><b class="num ${tone(c)}">${pf(s.price)}</b><span class="num ${tone(c)}">${arrow(c)} ${c ? pf(Math.abs(s.price - s.prev)) : '平盤'}（${Math.abs(c * 100).toFixed(1)}%）</span>${s.state ? `<span class="limit ${s.state === 'up' ? 'up' : 'down'}">${s.state === 'up' ? '漲停' : '跌停'}</span>` : ''}</div>
+                <canvas class="ev-spark" data-spark="${s.code}" aria-label="${esc(s.name)} 30 日走勢"></canvas>
+                <p class="ev-cap"><span>${a.length - 1} 天前</span><span>30 日走勢</span><span>今天</span></p>
+                <dl class="ev-stats">
+                    <div><dt>昨收</dt><dd class="num">${pf(s.prev)}</dd></div>
+                    <div><dt>30 日漲跌</dt><dd class="num">${pctTxt(m30)}</dd></div>
+                    <div><dt>今日最高</dt><dd class="num">${pf(dayHi)}</dd></div>
+                    <div><dt>30 日最高</dt><dd class="num">${pf(Math.max(...a))}</dd></div>
+                    <div><dt>今日最低</dt><dd class="num">${pf(dayLo)}</dd></div>
+                    <div><dt>30 日最低</dt><dd class="num">${pf(Math.min(...a))}</dd></div>
+                    <div><dt>漲停價</dt><dd class="num up">${pf(s.up)}</dd></div>
+                    <div><dt>跌停價</dt><dd class="num down">${pf(s.down)}</dd></div>
+                </dl>
+                <p class="ev-quote"><b>本報觀察</b>${esc(evComment(s))}</p>
+                ${hold ? `<p class="ev-hold">${hold}</p>` : ''}
+                <button type="button" class="ev-go" data-evgo="${s.code}">看走勢・買賣</button>
+            </article>`;
+        }
+        function monthSpark(cv, s) {
+            const d = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+            if (!w || !s) return;
+            cv.width = w * d; cv.height = h * d; const x = cv.getContext('2d'); x.scale(d, d);
+            const a = s.month && s.month.length > 1 ? s.month : [s.prev, s.price];
+            const lo = Math.min(...a), hi = Math.max(...a), Y = v => h - 4 - (v - lo) / (hi - lo || 1) * (h - 8), X = i => 2 + i / (a.length - 1) * (w - 6);
+            const col = toneColor(s.price - a[0]) || '#8c7f6c';
+            x.strokeStyle = '#d9cdb4'; x.setLineDash([2, 3]); x.beginPath(); x.moveTo(0, Y(a[0])); x.lineTo(w, Y(a[0])); x.stroke(); x.setLineDash([]);
+            const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, col + '30'); g.addColorStop(1, col + '00');
+            x.beginPath(); a.forEach((v, i) => i ? x.lineTo(X(i), Y(v)) : x.moveTo(X(i), Y(v))); x.lineTo(X(a.length - 1), h); x.lineTo(X(0), h); x.closePath(); x.fillStyle = g; x.fill();
+            x.beginPath(); a.forEach((v, i) => i ? x.lineTo(X(i), Y(v)) : x.moveTo(X(i), Y(v))); x.strokeStyle = col; x.lineWidth = 1.5; x.stroke();
+            x.beginPath(); x.arc(X(a.length - 1), Y(a[a.length - 1]), 2.8, 0, 7); x.fillStyle = col; x.fill();
+        }
+        function evNav() {
+            const pg = $('news').querySelector('.ev-pages'); if (!pg) return;
+            const total = pg.children.length, i = clampN(evPage, 0, total - 1);
+            const s = i ? Q.stocks[i - 1] : null;
+            $('evPrev').disabled = i === 0; $('evNext').disabled = i === total - 1;
+            $('evWhere').innerHTML = `第 ${i + 1}／${total} 版・${s ? lbl(s.name) : '頭版'}<span class="ev-dots">${Array.from({ length: total }, (_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('')}</span>`;
+        }
+        const clampN = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+        function evGo(i, smooth = true) {
+            const pg = $('news').querySelector('.ev-pages'); if (!pg) return;
+            evPage = clampN(i, 0, pg.children.length - 1);
+            pg.scrollTo({ left: evPage * pg.clientWidth, behavior: smooth && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'auto' });
+            evNav();
+        }
         function renderNews() {
             const box = $('news'), n = Q && Q.news;
-            box.classList.toggle('hidden', !n);
-            if (!n) return;
-            const pub = tpe(Date.parse(n.published)), about = n.day.slice(5).replace('-', '/');
-            box.innerHTML = `<header class="ev-head"><b>二十七樓晚報</b><span class="num">${pub.getUTCMonth() + 1} 月 ${pub.getUTCDate()} 日・21:00</span></header>
-                <p class="ev-tag">說的是 ${esc(about)}・本報判斷<b style="color:${n.claim === 'up' ? UP : DOWN}">${n.claim === 'up' ? '利多' : '利空'}</b></p>
+            box.classList.toggle('hidden', !Q);
+            if (!Q) return;
+            const pubAt = n ? tpe(Date.parse(n.published)) : tpe(now());
+            const front = n ? `<p class="ev-kicker">第 1 版・頭版</p>
+                <p class="ev-tag" style="margin-top:.2rem">說的是 ${esc(n.day.slice(5).replace('-', '/'))}・本報判斷<b style="color:${n.claim === 'up' ? UP : DOWN}">${n.claim === 'up' ? '利多' : '利空'}</b></p>
                 <h2 class="ev-title" style="margin-top:.25rem">${esc(n.title)}</h2>
                 <p class="ev-body">${esc(n.source)}。${esc(n.reply)}</p>
-                <p class="ev-foot">${esc(n.foot)}</p>`;
+                <p class="ev-foot">${esc(n.foot)}</p>`
+                : `<p class="ev-kicker">第 1 版・頭版</p><h2 class="ev-title">今晚還沒出刊</h2><p class="ev-body">每晚 21:00 出明天的晚報。先翻翻後面的個股版。</p>`;
+            const toc = `<div class="ev-toc"><p class="ev-toc-h">個股版・往左滑或點一檔</p>${Q.stocks.map((s, i) => {
+                const c = chg(s);
+                return `<button type="button" data-evpage="${i + 1}"><span class="nm">${lbl(s.name)}<small>${s.code}</small>${n && n.code === s.code ? '<span class="mine">頭版</span>' : ''}</span><span class="ch num ${tone(c)}">${arrow(c)}${Math.abs(c * 100).toFixed(1)}%</span><span class="pg">第 ${i + 2} 版 ›</span></button>`;
+            }).join('')}</div>`;
+            box.innerHTML = `<header class="ev-head"><b>二十七樓晚報</b><span class="num">${pubAt.getUTCMonth() + 1} 月 ${pubAt.getUTCDate()} 日・21:00</span></header>
+                <div class="ev-pages"><article class="ev-page" aria-label="第 1 版 頭版">${front}${toc}</article>${Q.stocks.map((s, i) => stockPage(s, i, n)).join('')}</div>
+                <nav class="ev-nav" aria-label="翻頁"><button type="button" id="evPrev">‹ 上一版</button><p id="evWhere"></p><button type="button" id="evNext">下一版 ›</button></nav>`;
+            const pg = box.querySelector('.ev-pages');
+            pg.scrollLeft = clampN(evPage, 0, pg.children.length - 1) * pg.clientWidth;   // 重畫（跳價、買賣）後停在原本那一版
+            pg.addEventListener('scroll', () => {
+                const i = Math.round(pg.scrollLeft / (pg.clientWidth || 1));
+                if (i !== evPage) { evPage = i; evNav(); }
+            }, { passive: true });
+            evNav();
+            box.querySelectorAll('[data-spark]').forEach(cv => monthSpark(cv, stockOf(cv.dataset.spark)));
         }
 
         function spark(cv, s) {
@@ -539,6 +671,10 @@
             if (t.closest('[data-login]')) return Line.login();
             if (t.closest('[data-retry]')) { state = 'loading'; render(); return pull(); }
             const row = t.closest('.row[data-code]'); if (row) return openSheet(row.dataset.code);
+            const evp = t.closest('[data-evpage]'); if (evp) return evGo(Number(evp.dataset.evpage));
+            const evg = t.closest('[data-evgo]'); if (evg) return openSheet(evg.dataset.evgo);
+            if (t.closest('#evPrev')) return evGo(evPage - 1);
+            if (t.closest('#evNext')) return evGo(evPage + 1);
             if (t.id === 'sheet' || t.closest('[data-close]')) return closeSheet();
             const rg = t.closest('[data-range]');
             if (rg) { range = rg.dataset.range; document.querySelectorAll('[data-range]').forEach(x => x.classList.toggle('on', x === rg)); return chart(); }
@@ -567,7 +703,13 @@
         // 回到這個分頁：過了跳價時間就重新拿
         document.addEventListener('visibilitychange', () => { if (!document.hidden && (!Q || now() >= Q.next)) pull(); });
         window.addEventListener('pageshow', e => { if (e.persisted) pull(); });
-        window.addEventListener('resize', () => { if (Q) { renderBoard(); if (cur) chart(); } });
+        window.addEventListener('resize', () => {
+            if (!Q) return;
+            renderBoard(); if (cur) chart();
+            // 晚報不重畫（手機網址列一縮一放也會觸發 resize，重畫會打斷正在滑的手指）：只重畫走勢、對齊到現在這一版
+            const pg = $('news').querySelector('.ev-pages');
+            if (pg) { pg.scrollLeft = evPage * pg.clientWidth; $('news').querySelectorAll('[data-spark]').forEach(cv => monthSpark(cv, stockOf(cv.dataset.spark))); }
+        });
 
         render();
         Line.ready.then(pull, pull);
