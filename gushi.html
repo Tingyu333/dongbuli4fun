@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股市・炒 | 丼步喱</title>
+    <!-- 設計稿：資料都是假的，還沒接後端 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="assets/theme.css?v=20261116d">
+    <script src="assets/theme.js?v=20261116d"></script>
+    <style>
+        .num { font-family: 'Noto Sans TC', sans-serif; font-variant-numeric: tabular-nums; }
+
+        /* ===== 紙本（實物），顏色固定，不跟晝夜切換 ===== */
+        .paper {
+            --paper: #fbf7ec;
+            --ink: #3b342e;
+            --faint: #8c7f6c;
+            --rule: #d9cdb4;
+            --up: #b33a2f;
+            --down: #3d7a55;
+            position: relative;
+            background: var(--paper);
+            color: var(--ink);
+            border: 1px solid var(--rule);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, .04), 0 10px 24px -14px rgba(0, 0, 0, .25);
+            background-image: repeating-linear-gradient(0deg, transparent 0 27px, rgba(140, 120, 90, .06) 27px 28px);
+        }
+
+        .paper::before { content: ''; position: absolute; inset: 4px; border: 1px solid var(--rule); pointer-events: none; }
+        .up { color: var(--up); }
+        .down { color: var(--down); }
+        .flat { color: var(--faint); }
+
+        /* 行情表 */
+        .board { padding: 0.9rem 0.9rem 0.5rem; }
+        .board-head { display: flex; align-items: baseline; gap: .5rem; padding-bottom: .5rem; border-bottom: 1.5px solid var(--ink); }
+        .board-head b { font-weight: 700; letter-spacing: .25em; font-size: .95rem; }
+        .board-head span { margin-left: auto; font-size: .62rem; letter-spacing: .08em; color: var(--faint); }
+        .cols { display: grid; grid-template-columns: 1fr 64px 62px 58px; gap: 0 .4rem; align-items: center; }
+        .cols-h { font-family: 'Noto Sans TC', sans-serif; font-size: .58rem; letter-spacing: .15em; color: var(--faint); padding: .45rem .2rem .25rem; border-bottom: 1px solid var(--rule); }
+        .row { width: 100%; text-align: left; padding: .6rem .2rem; border-bottom: 1px dashed var(--rule); -webkit-tap-highlight-color: transparent; touch-action: manipulation; position: relative; }
+        .row:last-child { border-bottom: 0; }
+        .row:active { background: rgba(140, 120, 90, .08); }
+        .row .nm { font-size: .88rem; letter-spacing: .12em; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .row .cd { display: block; font-family: 'Noto Sans TC', sans-serif; font-size: .58rem; letter-spacing: .1em; color: var(--faint); }
+        .row .px { text-align: right; font-size: .95rem; }
+        .row .ch { text-align: right; font-size: .72rem; line-height: 1.25; }
+        .row canvas { width: 64px; height: 26px; display: block; }
+        .mine { display: inline-block; margin-left: .25rem; font-size: .55rem; letter-spacing: 0; padding: 0 .2rem; border: 1px solid var(--up); color: var(--up); vertical-align: 2px; font-family: 'Noto Sans TC', sans-serif; }
+        .limit { display: inline-block; margin-top: .15rem; transform: rotate(-6deg); font-size: .6rem; letter-spacing: .1em; padding: .05rem .25rem; border: 1.5px solid currentColor; border-radius: 3px; opacity: .85; font-family: 'Noto Sans TC', sans-serif; }
+
+        /* 晚報 */
+        .evening { padding: .9rem 1rem .85rem; }
+        .ev-head { display: flex; align-items: baseline; gap: .5rem; border-bottom: 1.5px solid var(--ink); padding-bottom: .35rem; }
+        .ev-head b { font-size: 1.05rem; letter-spacing: .3em; font-weight: 700; }
+        .ev-head span { margin-left: auto; font-size: .6rem; color: var(--faint); letter-spacing: .08em; }
+        .ev-title { margin-top: .55rem; font-size: 1rem; font-weight: 600; letter-spacing: .08em; line-height: 1.5; }
+        .ev-body { margin-top: .25rem; font-size: .78rem; line-height: 1.75; letter-spacing: .05em; }
+        .ev-foot { margin-top: .5rem; padding-top: .4rem; border-top: 1px dashed var(--rule); font-size: .6rem; color: var(--faint); letter-spacing: .12em; font-family: 'Noto Sans TC', sans-serif; }
+
+        /* 開頁的損益紙條 */
+        .slip { padding: .8rem 1rem; display: flex; gap: .8rem; align-items: center; transform: rotate(-.6deg); }
+        .slip p { font-size: .82rem; line-height: 1.7; letter-spacing: .06em; flex: 1; }
+        .seal { flex-shrink: 0; width: 2.6rem; height: 2.6rem; border: 2px solid var(--up); color: var(--up); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 700; transform: rotate(8deg); }
+        .seal.grey { border-color: #8a8580; color: #8a8580; }
+
+        /* 對帳單 */
+        .stmt { padding: .9rem .9rem .6rem; }
+        .stmt table { width: 100%; border-collapse: collapse; font-size: .72rem; }
+        .stmt th { font-family: 'Noto Sans TC', sans-serif; font-weight: 400; font-size: .56rem; letter-spacing: .12em; color: var(--faint); text-align: right; padding: .45rem .15rem .25rem; border-bottom: 1px solid var(--rule); }
+        .stmt th:first-child, .stmt td:first-child { text-align: left; }
+        .stmt td { text-align: right; padding: .5rem .15rem; border-bottom: 1px dashed var(--rule); white-space: nowrap; }
+        .stmt td small { display: block; font-size: .56rem; color: var(--faint); letter-spacing: .05em; }
+        .stmt .sum td { border-bottom: 0; border-top: 1.5px solid var(--ink); font-weight: 600; }
+
+        /* 錢 */
+        .acct { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; }
+        .acct div + div { border-left: 1px solid rgb(var(--wabi-sub) / .8); }
+        .acct dt { font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; letter-spacing: .2em; color: rgb(var(--wabi-accent)); }
+        .acct dd { margin-top: .15rem; font-size: .95rem; color: rgb(var(--wabi-dark)); }
+
+        /* 狀態燈 */
+        .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--wabi-shu)); margin-right: .4rem; vertical-align: 1px; animation: blink 2s ease-in-out infinite; }
+        @keyframes blink { 50% { opacity: .25; } }
+
+        /* 底部面板 */
+        #sheet { position: fixed; inset: 0; z-index: 80; display: flex; align-items: flex-end; justify-content: center; background: rgba(30, 25, 20, .35); opacity: 0; pointer-events: none; transition: opacity .2s; }
+        #sheet.on { opacity: 1; pointer-events: auto; }
+        #sheet .sh { width: 100%; max-width: 28rem; max-height: 92vh; overflow-y: auto; overscroll-behavior: contain; background: rgb(var(--wabi-bg)); border-radius: .75rem .75rem 0 0; transform: translateY(100%); transition: transform .22s ease-out; }
+        #sheet.on .sh { transform: none; }
+        .tabs { display: inline-flex; border: 1px solid rgb(var(--wabi-sub)); }
+        .tabs button { padding: .3rem .8rem; font-family: 'Noto Sans TC', sans-serif; font-size: .68rem; letter-spacing: .15em; color: rgb(var(--wabi-accent)); }
+        .tabs button.on { background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); }
+        .qty { display: flex; align-items: center; border-bottom: 1px solid rgb(var(--wabi-sub)); }
+        .qty button { width: 44px; height: 44px; font-size: 1.2rem; color: rgb(var(--wabi-dark)); touch-action: manipulation; }
+        .qty input { flex: 1; min-width: 0; text-align: center; background: transparent; font-size: 1.3rem; color: rgb(var(--wabi-dark)); outline: none; }
+        .chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: .4rem; }
+        .chips button { min-height: 36px; border: 1px solid rgb(var(--wabi-sub)); font-family: 'Noto Sans TC', sans-serif; font-size: .7rem; letter-spacing: .1em; color: rgb(var(--wabi-text)); touch-action: manipulation; }
+        .btn { min-height: 48px; font-family: 'Noto Sans TC', sans-serif; font-size: .85rem; letter-spacing: .3em; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform .1s, opacity .2s; }
+        .btn:active { transform: scale(.98); }
+        .btn:disabled { opacity: .35; }
+        .btn-buy { background: rgb(var(--wabi-shu)); color: #fff; }
+        .btn-sell { background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); }
+        .lock { font-size: .65rem; letter-spacing: .1em; color: rgb(var(--wabi-accent)); }
+
+        /* 成交大章 */
+        #bigStamp { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+        #bigStamp .s { width: 9rem; height: 9rem; border: 5px solid #b33a2f; color: #b33a2f; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(251, 247, 236, .85); font-weight: 700; opacity: 0; transform: scale(2.2) rotate(-12deg); }
+        #bigStamp .s b { font-size: 2.8rem; letter-spacing: .1em; line-height: 1.1; }
+        #bigStamp .s span { font-size: .75rem; letter-spacing: .1em; font-family: 'Noto Sans TC', sans-serif; }
+        #bigStamp.go .s { animation: stamp 1.6s ease-out forwards; }
+        @keyframes stamp { 0% { opacity: 0; transform: scale(2.2) rotate(-12deg); } 15% { opacity: 1; transform: scale(1) rotate(-8deg); } 75% { opacity: 1; transform: scale(1) rotate(-8deg); } 100% { opacity: 0; transform: scale(1) rotate(-8deg); } }
+        @media (prefers-reduced-motion: reduce) { #sheet, #sheet .sh { transition: none; } .dot { animation: none; } }
+    </style>
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261116d">
+</head>
+
+<body
+    class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white min-h-screen flex flex-col overflow-x-hidden">
+
+    <nav
+        class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <a href="index.html"
+            class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-3 md:gap-8">
+            <a href="index.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <a href="reviews.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <a href="about.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+            <a href="member.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">會員・我</a>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-md mx-auto pt-28 md:pt-36 pb-16 px-6 w-full">
+
+        <div class="text-center mb-7">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-3">STOCK</span>
+            <h1 class="text-3xl font-light text-wabi-dark tracking-widest">股市・炒</h1>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">漲停的時候你沒買，<br>跌停的時候你都在。</p>
+            <p class="mt-4 text-[11px] font-sans tracking-[0.2em] text-stone-500"><span class="dot"></span>開盤中・下一次跳價 16:00</p>
+        </div>
+
+        <!-- 開頁先跳：昨晚押的結果 -->
+        <section class="paper slip mb-6">
+            <p>昨晚買的<b>長蘿貨運</b>，今天 <b class="up num">▲6.2%</b>。<br><span style="color:var(--faint);font-size:.72rem">晚報說中了。這次。</span></p>
+            <div class="seal">中</div>
+        </section>
+
+        <!-- 錢 -->
+        <section class="bg-white border border-stone-100 rounded-sm py-3 mb-6">
+            <dl class="acct">
+                <div><dt>現金</dt><dd class="num">$48,230</dd></div>
+                <div><dt>股票市值</dt><dd id="mv" class="num"></dd></div>
+                <div><dt>還沒賣的損益</dt><dd id="upl" class="num"></dd></div>
+            </dl>
+        </section>
+
+        <!-- 晚報 -->
+        <section class="paper evening mb-6">
+            <header class="ev-head"><b>二十七樓晚報</b><span class="num">11 月 16 日・21:00</span></header>
+            <h2 class="ev-title">長蘿號傳出加開夜航<br>船長：「誰說的？」</h2>
+            <p class="ev-body">碼頭工人透露，長蘿號昨晚在無人海域多跑了兩趟。青江菜船長對此不願多談，只是一直叉腰。另據可靠消息，San Farm 的鼴鼠又出沒了，農會表示無可奉告。</p>
+            <p class="ev-foot">本報消息大約七成準確。投資一定有風險，看報紙更有。</p>
+        </section>
+
+        <!-- 行情表 -->
+        <section class="paper board">
+            <header class="board-head"><b>行情表</b><span class="num">11/17 15:00 更新</span></header>
+            <div class="cols cols-h"><span>股票</span><span>今日</span><span style="text-align:right">股價</span><span style="text-align:right">漲跌</span></div>
+            <div id="rows"></div>
+        </section>
+        <p class="mt-2 text-[10px] font-sans tracking-widest text-stone-400 text-center">點一檔看走勢、買賣</p>
+
+        <!-- 對帳單 -->
+        <section class="paper stmt mt-8">
+            <header class="board-head"><b>持股對帳單</b><span>戶名 旅人</span></header>
+            <table>
+                <thead><tr><th>股票</th><th>股數</th><th>均價</th><th>現價</th><th>損益</th></tr></thead>
+                <tbody id="stmt"></tbody>
+            </table>
+        </section>
+
+        <!-- 規則 -->
+        <section class="mt-8 text-[11px] font-sans tracking-wider leading-relaxed text-stone-500 space-y-1 px-1">
+            <p>・每天 9:00 到 24:00 整點跳價，每晚 21:00 出晚報。</p>
+            <p>・一天最多漲跌 10%（漲停、跌停）。</p>
+            <p>・買、賣各收 1% 手續費。今天買的要等明天 9:00 開盤後才能賣。</p>
+            <p>・半夜也可以買賣，用 24:00 的收盤價成交。</p>
+            <p>・一檔最多買 $50 萬、全部最多 $200 萬，超過只能賣。</p>
+            <p>・要用 LINE 登入才能買賣，沒登入只能看盤。</p>
+            <p class="pt-2 text-stone-400">遊戲幣，不是真的股票。二十七樓證券交易所不對晚報的任何內容負責。</p>
+        </section>
+    </main>
+
+    <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
+        <p>&copy; 2026 DONGBULI · 二十七樓證券交易所</p>
+    </footer>
+
+    <!-- 底部面板：一檔的走勢、買賣 -->
+    <div id="sheet" role="dialog" aria-modal="true">
+        <div class="sh">
+            <div class="px-5 pt-5 pb-3 border-b border-stone-200">
+                <div class="flex items-baseline gap-2">
+                    <p id="sName" class="text-lg text-wabi-dark tracking-widest"></p>
+                    <p id="sCode" class="text-[10px] font-sans tracking-widest text-stone-400"></p>
+                    <button type="button" data-close class="ml-auto text-xs font-sans tracking-widest text-stone-400 px-2 py-1">關閉</button>
+                </div>
+                <p id="sDesc" class="text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed"></p>
+                <div class="mt-2 flex items-end gap-3">
+                    <p id="sPx" class="num text-3xl text-wabi-dark"></p>
+                    <p id="sCh" class="num text-sm pb-1"></p>
+                </div>
+            </div>
+            <div class="px-5 pt-3">
+                <div class="flex items-center">
+                    <div class="tabs"><button type="button" data-range="day" class="on">今日</button><button type="button" data-range="month">30 日</button></div>
+                    <p id="sRange" class="ml-auto pl-3 text-[10px] font-sans tracking-widest text-stone-400"></p>
+                </div>
+                <canvas id="chart" class="mt-2 w-full" style="height:150px"></canvas>
+                <p id="sHold" class="mt-2 text-xs font-sans tracking-wider text-stone-600"></p>
+                <p id="sLock" class="lock font-sans"></p>
+            </div>
+            <div class="px-5 pt-3">
+                <div class="qty"><button type="button" data-step="-1">−</button><input id="q" class="num" inputmode="numeric" value="100"><button type="button" data-step="1">＋</button></div>
+                <div class="chips mt-3"><button type="button" data-set="10">10 股</button><button type="button" data-set="100">100 股</button><button type="button" data-set="half">一半</button><button type="button" data-set="max">最多</button></div>
+                <p id="sCost" class="mt-3 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed"></p>
+            </div>
+            <div class="px-5 pt-3 pb-6 grid grid-cols-2 gap-3">
+                <button type="button" id="buy" class="btn btn-buy">買進</button>
+                <button type="button" id="sell" class="btn btn-sell">賣出</button>
+            </div>
+        </div>
+    </div>
+    <div id="bigStamp" aria-hidden="true"><div class="s"><b>成交</b><span></span></div></div>
+
+    <script>
+        // ===== 設計稿用的假資料 =====
+        const STOCKS = [
+            { code: '2701', name: '長蘿貨運', full: '長蘿貨運股份有限公司', desc: '青江菜船長的蘿蔔船。看天吃飯，颱風天特別刺激。', base: 128, seed: 3, ch: 6.2 },
+            { code: '2702', name: '麥克早餐', full: '大橋頭麥克早餐', desc: '老闆是雞塊。早上生意最好，晚上沒人理。', base: 64.5, seed: 7, ch: 1.4 },
+            { code: '2703', name: '丼步喱人壽', full: '丼步喱人壽保險', desc: '最無聊的一檔，也最不會讓你睡不著。', base: 210, seed: 11, ch: -0.5 },
+            { code: '2704', name: '伊藤彩券', full: '伊藤彩券經銷', desc: '伊藤開晴的明牌筆記本公司化。', base: 45.2, seed: 17, ch: 10, limit: 'up' },
+            { code: '2705', name: '茱莉鴨電信', full: '茱莉鴨電信', desc: '二十七樓的網路。最恨人家蹭網，轉頭比股價還快。', base: 88, seed: 19, ch: 0 },
+            { code: '2706', name: '雅雅沙龍', full: '雅雅沙龍', desc: '坐洗部的洗頭店。泡泡捏得越高，股價也跟著翹。', base: 156, seed: 23, ch: 3.1 },
+            { code: '2707', name: 'San Farm', full: 'San Farm', desc: '二十七樓頂樓菜園。拔太大力會斷，追高也是。', base: 37.4, seed: 29, ch: -10, limit: 'down' },
+        ];
+        const HOLD = { '2701': { n: 150, avg: 119.4, today: 50 }, '2704': { n: 300, avg: 41.0, today: 0 }, '2707': { n: 200, avg: 44.6, today: 0 } };
+
+        function rng(s) { return () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; }
+        STOCKS.forEach(s => {
+            const r = rng(s.seed * 99991);
+            const prev = s.base / (1 + s.ch / 100);
+            s.prev = prev; s.px = s.base;
+            // 30 日收盤
+            const m = [prev]; for (let i = 0; i < 29; i++) m.unshift(m[0] / (1 + (r() - 0.5) * 0.12));
+            s.month = [...m, s.px];
+            // 今日 9:00～15:00 整點（7 格），在昨收和今收之間晃
+            s.day = Array.from({ length: 7 }, (_, i) => { const t = i / 6; return prev + (s.px - prev) * t + (i && i < 6 ? (r() - 0.5) * prev * 0.025 : 0); });
+            s.day[0] = prev;
+        });
+
+        const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+        const pf = n => n >= 100 ? n.toFixed(1) : n.toFixed(2);
+        const tone = c => c > 0 ? 'up' : c < 0 ? 'down' : 'flat';
+        const arrow = c => c > 0 ? '▲' : c < 0 ? '▼' : '';
+
+        function spark(cv, s) {
+            const d = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+            cv.width = w * d; cv.height = h * d; const x = cv.getContext('2d'); x.scale(d, d);
+            const a = s.day, lo = s.prev * 0.9, hi = s.prev * 1.1;
+            const Y = v => h - 2 - (v - lo) / (hi - lo) * (h - 4);
+            x.strokeStyle = '#d9cdb4'; x.setLineDash([2, 2]); x.beginPath(); x.moveTo(0, Y(s.prev)); x.lineTo(w, Y(s.prev)); x.stroke(); x.setLineDash([]);
+            x.strokeStyle = s.ch > 0 ? '#b33a2f' : s.ch < 0 ? '#3d7a55' : '#8c7f6c'; x.lineWidth = 1.4; x.beginPath();
+            a.forEach((v, i) => { const px = i / 15 * w; i ? x.lineTo(px, Y(v)) : x.moveTo(px, Y(v)); }); x.stroke();
+        }
+
+        document.getElementById('rows').innerHTML = STOCKS.map((s, i) => `
+            <button type="button" class="row cols" data-i="${i}">
+                <span class="nm">${/^[A-Za-z]/.test(s.name) ? `<span style="letter-spacing:.02em">${s.name}</span>` : s.name}${HOLD[s.code] ? '<span class="mine">持</span>' : ''}<span class="cd">${s.code}</span></span>
+                <canvas></canvas>
+                <span class="px num ${tone(s.ch)}">${pf(s.px)}</span>
+                <span class="ch num ${tone(s.ch)}">${arrow(s.ch)}${Math.abs(s.ch).toFixed(1)}%<br>${s.limit ? `<span class="limit">${s.limit === 'up' ? '漲停' : '跌停'}</span>` : `<span style="font-size:.6rem">${s.ch ? (s.ch > 0 ? '+' : '−') + pf(Math.abs(s.px - s.prev)) : '平盤'}</span>`}</span>
+            </button>`).join('');
+        document.querySelectorAll('.row').forEach(b => spark(b.querySelector('canvas'), STOCKS[b.dataset.i]));
+
+        let tot = 0;
+        document.getElementById('stmt').innerHTML = STOCKS.filter(s => HOLD[s.code]).map(s => {
+            const h = HOLD[s.code], pl = (s.px - h.avg) * h.n; tot += pl;
+            return `<tr><td>${s.name}${h.today ? `<small>${h.today} 股明天才能賣</small>` : ''}</td><td class="num">${h.n}</td><td class="num">${pf(h.avg)}</td><td class="num ${tone(s.ch)}">${pf(s.px)}</td><td class="num ${tone(pl)}">${pl > 0 ? '+' : pl < 0 ? '−' : ''}${fmt(Math.abs(pl))}</td></tr>`;
+        }).join('') + `<tr class="sum"><td>合計</td><td></td><td></td><td></td><td class="num ${tone(tot)}">${tot > 0 ? '+' : '−'}${fmt(Math.abs(tot))}</td></tr>`;
+
+        const mv = STOCKS.filter(s => HOLD[s.code]).reduce((t, s) => t + HOLD[s.code].n * s.px, 0);
+        document.getElementById('mv').textContent = fmt(mv);
+        document.getElementById('upl').textContent = (tot >= 0 ? '+' : '−') + fmt(Math.abs(tot));
+        document.getElementById('upl').style.color = tot > 0 ? '#b33a2f' : tot < 0 ? '#3d7a55' : '';
+
+        // ===== 底部面板 =====
+        const $ = id => document.getElementById(id);
+        let cur = null, range = 'day';
+        function chart() {
+            const cv = $('chart'), d = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+            cv.width = w * d; cv.height = h * d; const x = cv.getContext('2d'); x.scale(d, d);
+            const s = cur, a = range === 'day' ? s.day : s.month, n = range === 'day' ? 15 : a.length - 1;
+            const lo0 = range === 'day' ? s.prev * 0.9 : Math.min(...a) * 0.97, hi0 = range === 'day' ? s.prev * 1.1 : Math.max(...a) * 1.03;
+            const L = 34, B = h - 16, T = 6, Y = v => B - (v - lo0) / (hi0 - lo0) * (B - T), X = i => L + i / n * (w - L - 4);
+            const ink = themeColor('--wabi-accent'), sub = themeColor('--wabi-sub');
+            x.font = '10px "Noto Sans TC", sans-serif'; x.fillStyle = ink; x.textAlign = 'right';
+            [hi0, (hi0 + lo0) / 2, lo0].forEach(v => { x.fillText(pf(v), L - 5, Y(v) + 3); x.strokeStyle = sub; x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w, Y(v)); x.stroke(); });
+            x.textAlign = 'center';
+            (range === 'day' ? [[0, '9'], [3, '12'], [6, '15'], [9, '18'], [12, '21'], [15, '24']] : [[0, '30 天前'], [15, '15 天前'], [30, '今天']]).forEach(([i, t]) => x.fillText(t, Math.min(Math.max(X(i), L + 14), w - 18), h - 3));
+            if (range === 'day') { x.setLineDash([3, 3]); x.strokeStyle = ink; x.beginPath(); x.moveTo(L, Y(s.prev)); x.lineTo(w, Y(s.prev)); x.stroke(); x.setLineDash([]); x.fillText('昨收', w - 14, Y(s.prev) - 4); }
+            const col = s.ch > 0 ? '#b33a2f' : s.ch < 0 ? '#3d7a55' : ink;
+            const g = x.createLinearGradient(0, T, 0, B); g.addColorStop(0, col + '33'); g.addColorStop(1, col + '00');
+            x.beginPath(); a.forEach((v, i) => i ? x.lineTo(X(i), Y(v)) : x.moveTo(X(i), Y(v)));
+            x.lineTo(X(a.length - 1), B); x.lineTo(X(0), B); x.closePath(); x.fillStyle = g; x.fill();
+            x.beginPath(); a.forEach((v, i) => i ? x.lineTo(X(i), Y(v)) : x.moveTo(X(i), Y(v))); x.strokeStyle = col; x.lineWidth = 1.8; x.stroke();
+            x.beginPath(); x.arc(X(a.length - 1), Y(a[a.length - 1]), 3.5, 0, 7); x.fillStyle = col; x.fill();
+            $('sRange').textContent = range === 'day' ? '下一次跳價 16:00' : `30 日最高 ${pf(Math.max(...a))}・最低 ${pf(Math.min(...a))}`;
+        }
+        function cost() {
+            const q = Math.max(0, parseInt($('q').value) || 0), v = q * cur.px, fee = Math.ceil(v * 0.01);
+            $('sCost').innerHTML = `${q} 股 × ${pf(cur.px)} ＝ ${fmt(v)}<br>買進付 <b class="text-wabi-dark">${fmt(v + fee)}</b>（含手續費 ${fmt(fee)}）・賣出拿回 ${fmt(v - fee)}`;
+            const h = HOLD[cur.code];
+            $('sell').disabled = !h || q > h.n - h.today;
+            $('buy').disabled = cur.limit === 'up';
+            $('buy').textContent = cur.limit === 'up' ? '漲停・買不到' : '買進';
+            $('sell').textContent = cur.limit === 'down' ? '跌停・照賣' : '賣出';
+        }
+        function openSheet(i) {
+            cur = STOCKS[i];
+            $('sName').textContent = cur.full; $('sCode').textContent = cur.code; $('sDesc').textContent = cur.desc;
+            $('sPx').textContent = pf(cur.px); $('sPx').style.color = cur.ch > 0 ? '#b33a2f' : cur.ch < 0 ? '#3d7a55' : '';
+            $('sCh').innerHTML = `<span style="color:${cur.ch > 0 ? '#b33a2f' : cur.ch < 0 ? '#3d7a55' : ''}">${arrow(cur.ch)} ${cur.ch ? pf(Math.abs(cur.px - cur.prev)) : '平盤'}（${Math.abs(cur.ch).toFixed(1)}%）</span>${cur.limit ? `<span class="ml-2 text-[10px] tracking-widest border px-1" style="color:${cur.limit === 'up' ? '#b33a2f' : '#3d7a55'}">${cur.limit === 'up' ? '漲停' : '跌停'}</span>` : ''}`;
+            const h = HOLD[cur.code];
+            $('sHold').textContent = h ? `持有 ${h.n} 股・均價 ${pf(h.avg)}・市值 ${fmt(h.n * cur.px)}` : '還沒有這一檔。';
+            $('sLock').textContent = h && h.today ? `今天買的 ${h.today} 股明天才能賣，現在可以賣 ${h.n - h.today} 股。` : '';
+            $('sheet').classList.add('on'); requestAnimationFrame(chart); cost();
+        }
+        document.querySelectorAll('.row').forEach(b => b.addEventListener('click', () => openSheet(+b.dataset.i)));
+        $('sheet').addEventListener('click', e => { if (e.target.id === 'sheet' || e.target.closest('[data-close]')) $('sheet').classList.remove('on'); });
+        document.querySelectorAll('[data-range]').forEach(b => b.addEventListener('click', () => { range = b.dataset.range; document.querySelectorAll('[data-range]').forEach(x => x.classList.toggle('on', x === b)); chart(); }));
+        document.querySelectorAll('[data-step]').forEach(b => b.addEventListener('click', () => { $('q').value = Math.max(1, (parseInt($('q').value) || 0) + +b.dataset.step); cost(); }));
+        document.querySelectorAll('[data-set]').forEach(b => b.addEventListener('click', () => {
+            const h = HOLD[cur.code], m = b.dataset.set;
+            $('q').value = m === 'max' ? Math.floor(48230 / (cur.px * 1.01)) : m === 'half' ? Math.max(1, Math.floor(((h ? h.n - h.today : 0) || 0) / 2)) : m; cost();
+        }));
+        $('q').addEventListener('input', cost);
+        $('buy').addEventListener('click', () => {
+            const st = $('bigStamp'); st.querySelector('span').textContent = `${$('q').value} 股・${pf(cur.px)}`;
+            st.classList.remove('go'); void st.offsetWidth; st.classList.add('go');
+            showToast(`買進 ${cur.name} ${$('q').value} 股（設計稿，沒有真的買）`);
+        });
+        $('sell').addEventListener('click', () => showToast('設計稿：賣出時，賠錢會蓋灰色「認賠」章'));
+    </script>
+</body>
+
+</html>
