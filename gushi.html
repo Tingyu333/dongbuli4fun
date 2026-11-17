@@ -66,6 +66,14 @@
         .mine { display: inline-block; margin-left: .25rem; font-size: .55rem; letter-spacing: 0; padding: 0 .2rem; border: 1px solid var(--up); color: var(--up); vertical-align: 2px; font-family: 'Noto Sans TC', sans-serif; }
         .limit { display: inline-block; margin-top: .15rem; transform: rotate(-6deg); font-size: .6rem; letter-spacing: .1em; padding: .05rem .25rem; border: 1.5px solid currentColor; border-radius: 3px; opacity: .85; font-family: 'Noto Sans TC', sans-serif; }
 
+        /* 妖股：行情表下面另外一區，標一個「妖」字 */
+        .yao-head { margin-top: .5rem; padding: .5rem .2rem .35rem; border-top: 1.5px solid var(--ink); font-family: 'Noto Sans TC', sans-serif; font-size: .58rem; letter-spacing: .08em; color: var(--faint); line-height: 1.5; }
+        .yao-head b { margin-right: .5rem; font-family: 'Noto Serif TC', serif; font-size: .8rem; font-weight: 700; letter-spacing: .3em; color: #6b2fa0; }
+        .yao { display: inline-block; margin-left: .3rem; padding: 0 .2rem; font-size: .55rem; line-height: 1.3; border: 1px solid #6b2fa0; color: #6b2fa0; border-radius: 2px; transform: rotate(-6deg); }
+        .row.is-yao .nm { font-size: .74rem; letter-spacing: 0; }   /* 六個字的名字才塞得下 */
+        .yao-note { color: #6b2fa0; }
+        html.night .yao-note { color: #c49be6; }
+
         /* 晚報 */
         .evening { padding: .9rem 1rem .85rem; }
         .ev-head { display: flex; align-items: baseline; gap: .5rem; border-bottom: 1.5px solid var(--ink); padding-bottom: .35rem; }
@@ -220,7 +228,8 @@
         <!-- 規則 -->
         <section class="mt-8 text-[11px] font-sans tracking-wider leading-relaxed text-stone-500 space-y-1 px-1">
             <p>・每天 9:00 開盤，10:00 到 24:00 整點跳價，每晚 21:00 出明天的晚報，一份兩則，各自大約七成說中。</p>
-            <p>・一天最多漲跌 10%。漲停的時候買不到，跌停的時候賣不掉，可以掛單排隊，打開了才用漲停／跌停價成交，收盤前沒排到就取消。</p>
+            <p>・<b class="font-normal yao-note">妖股</b>（2708～2710）一天最多漲跌 20%，不上晚報，會連續好幾天漲停或跌停。連續漲停的隔天，再漲停和直接跌停的機會差不多，追進去不會比較好賺。</p>
+            <p>・一天最多漲跌 10%（妖股 20%）。漲停的時候買不到，跌停的時候賣不掉，可以掛單排隊，打開了才用漲停／跌停價成交，收盤前沒排到就取消。</p>
             <p>・買、賣各收 1% 手續費。今天買的要等明天 9:00 開盤後才能賣。</p>
             <p>・半夜也可以買賣，用 24:00 的收盤價成交。</p>
             <p>・一檔最多買 $50 萬、全部最多 $200 萬（照成本算），超過只能賣。</p>
@@ -295,6 +304,10 @@
             '2705': { full: '茱莉鴨電信', desc: '二十七樓的網路。最恨人家蹭網，轉頭比股價還快。' },
             '2706': { full: '雅雅沙龍', desc: '坐洗部的洗頭店。泡泡捏得越高，股價也跟著翹。' },
             '2707': { full: 'San Farm', desc: '二十七樓頂樓菜園。拔太大力會斷，追高也是。' },
+            // 妖股：一天漲跌 20%、不上晚報
+            '2708': { full: '浣熊海盜控股股份有限公司', desc: '坐木盆出海的浣熊，本業是偷貨。財報寫「其他收入」。' },
+            '2709': { full: '伊藤明牌投顧', desc: '伊藤開晴的明牌筆記開了投顧。老師說會漲，老師自己先賣。' },
+            '2710': { full: '鼴鼠區塊鏈', desc: '在菜園底下挖礦。挖到什麼沒人知道，白皮書是一張蘿蔔葉。' },
         };
         const UP = '#b33a2f', DOWN = '#3d7a55';
         const $ = id => document.getElementById(id);
@@ -424,7 +437,7 @@
             const d = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
             if (!w) return;
             cv.width = w * d; cv.height = h * d; const x = cv.getContext('2d'); x.scale(d, d);
-            const lo = s.prev * 0.9, hi = s.prev * 1.1, Y = v => h - 2 - (v - lo) / (hi - lo) * (h - 4);
+            const lo = s.down, hi = s.up, Y = v => h - 2 - (v - lo) / (hi - lo) * (h - 4);
             x.strokeStyle = '#d9cdb4'; x.setLineDash([2, 2]); x.beginPath(); x.moveTo(0, Y(s.prev)); x.lineTo(w, Y(s.prev)); x.stroke(); x.setLineDash([]);
             x.strokeStyle = toneColor(chg(s)) || '#8c7f6c'; x.lineWidth = 1.4; x.beginPath();
             s.day.forEach((v, i) => { const px = i / 15 * w; i ? x.lineTo(px, Y(v)) : x.moveTo(px, Y(v)); });
@@ -437,11 +450,12 @@
             if (state === 'old') { box.innerHTML = '<p class="empty">股市還沒開張。<br>後端要貼上新版 Code.gs、重新部署「新版本」。</p>'; return; }
             if (!Q) { box.innerHTML = state === 'error' ? `<p class="empty">讀不到行情（${esc(errMsg)}）。</p>` : '<p class="empty">讀取中…</p>'; return; }
             $('boardAt').textContent = Q.label.slice(5).replace('-', '/') + ' 更新';
-            box.innerHTML = Q.stocks.map(s => {
+            box.innerHTML = Q.stocks.map((s, i) => {
                 const c = chg(s), diff = s.price - s.prev;
+                const head = s.yao && !(Q.stocks[i - 1] || {}).yao ? `<p class="yao-head"><b>妖股區</b>一天漲跌 20%・不上晚報・連續漲停的隔天，也可能連續跌停</p>` : '';
                 const tag = s.state ? `<span class="limit">${s.state === 'up' ? '漲停' : '跌停'}</span>` : `<span style="font-size:.6rem">${c ? (diff > 0 ? '+' : '−') + pf(Math.abs(diff)) : '平盤'}</span>`;
-                return `<button type="button" class="row cols" data-code="${s.code}">
-                    <span class="nm">${lbl(s.name)}${holdOf(s.code) ? '<span class="mine">持</span>' : ''}<span class="cd">${s.code}</span></span>
+                return `${head}<button type="button" class="row cols${s.yao ? ' is-yao' : ''}" data-code="${s.code}">
+                    <span class="nm">${lbl(s.name)}${holdOf(s.code) ? '<span class="mine">持</span>' : ''}<span class="cd">${s.code}${s.yao ? '<span class="yao">妖</span>' : ''}</span></span>
                     <canvas></canvas>
                     <span class="px num ${tone(c)}">${pf(s.price)}</span>
                     <span class="ch num ${tone(c)}">${arrow(c)}${Math.abs(c * 100).toFixed(1)}%<br>${tag}</span>
@@ -510,7 +524,8 @@
         function renderSheet() {
             const s = stockOf(cur); if (!s) return;
             const info = INFO[s.code] || { full: s.name, desc: '' }, c = chg(s), h = holdOf(s.code), logged = Line.loggedIn && M;
-            $('sName').innerHTML = lbl(info.full); $('sCode').textContent = s.code; $('sDesc').textContent = info.desc;
+            $('sName').innerHTML = lbl(info.full); $('sCode').textContent = s.code;
+            $('sDesc').innerHTML = esc(info.desc) + (s.yao ? '<br><span class="yao-note">妖股：一天漲跌 20%，不上晚報。漲停的隔天可能再漲停，也可能直接跌停。</span>' : '');
             $('sPx').textContent = pf(s.price); $('sPx').style.color = toneColor(c);
             $('sCh').innerHTML = `<span style="color:${toneColor(c)}">${arrow(c)} ${c ? pf(Math.abs(s.price - s.prev)) : '平盤'}（${Math.abs(c * 100).toFixed(1)}%）</span>${s.state ? `<span class="ml-2 text-[10px] tracking-widest border px-1" style="color:${s.state === 'up' ? UP : DOWN}">${s.state === 'up' ? '漲停' : '跌停'}</span>` : ''}`;
             $('sHold').textContent = !logged ? '' : h ? `持有 ${h.n} 股・均價 ${pf(h.avg)}・市值 ${fmt(h.n * s.price)}` : '還沒有這一檔。';
