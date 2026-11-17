@@ -94,8 +94,12 @@
         .fold span { font-family: 'Noto Sans TC', sans-serif; font-size: .62rem; letter-spacing: .1em; color: rgb(var(--wabi-accent)); }
         .fold i { margin-left: auto; font-style: normal; font-family: 'Noto Sans TC', sans-serif; color: rgb(var(--wabi-accent)); }
         .fold + div { margin-top: .4rem; }
-        #laterBox, #laterBox + #pastBox, #open + #laterBox.hidden + #pastBox { margin-top: 1.4rem; }
-        #laterBox + #pastBox { margin-top: 0; }
+        #pastBox { margin-top: 1.4rem; }
+        .sched { padding: .4rem .9rem; }
+        .sched p { display: flex; align-items: baseline; gap: .5rem; padding: .55rem 0; border-bottom: 1px dashed var(--rule); font-size: .8rem; letter-spacing: .05em; }
+        .sched p:last-child { border-bottom: 0; }
+        .sched .d { flex-shrink: 0; width: 5.6rem; font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; color: var(--faint); letter-spacing: .02em; }
+        .sched .x { font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; color: var(--faint); }
         .h2 span { margin-left: auto; font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; letter-spacing: .1em; color: rgb(var(--wabi-accent)); }
 
         /* 底部面板 */
@@ -171,11 +175,12 @@
         <div class="h2"><b id="openTitle">這週的比賽</b><span>TPVL 排球・開賽就截止</span></div>
         <div id="open"><p class="empty paper">讀取中…</p></div>
 
-        <!-- 之後的比賽、開獎了：預設收起來（使用者要的：優先只看這週） -->
+        <!-- 下週以後：只列賽程，不能押、不算倍數（一週是週一到週日） -->
         <div id="laterBox" class="hidden">
-            <button type="button" class="fold" data-fold="later"><b>之後的比賽</b><span id="laterN"></span><i aria-hidden="true">＋</i></button>
-            <div id="later" class="hidden"></div>
+            <div class="h2"><b>之後的賽程</b><span>週一開放下注</span></div>
+            <section id="later" class="paper sched"></section>
         </div>
+        <!-- 開獎了：預設收起來 -->
         <div id="pastBox" class="hidden">
             <button type="button" class="fold" data-fold="past"><b>開獎了</b><span id="pastN"></span><i aria-hidden="true">＋</i></button>
             <div id="past" class="hidden"></div>
@@ -189,6 +194,7 @@
             <p>・<b class="font-normal text-wabi-dark">彩池分錢</b>：每一場的「誰贏」和「比分」各一個彩池。比完以後，押中的人照押的比例分掉整個彩池，運彩不抽成。</p>
             <p>・二十七樓運彩在每個選項先放 $1 萬保底，所以只有你一個人押也有得賺；保底那份押中了就消失。</p>
             <p>・上面寫的 ×倍數是「照現在的彩池」算的，開賽前別人還會押，會一直變；最後照開賽那一刻的彩池算。</p>
+            <p>・<b class="font-normal text-wabi-dark">只能押這週的比賽</b>（一週是週一到週日）。下週以後的只列賽程、不算倍數，週一 0:00 開放。</p>
             <p>・一注 $100～$5 萬，一場最多押 $20 萬。開賽就不能押，押了不能退。</p>
             <p>・比分從 TPVL 官網抓，比完幾個小時內自動派彩，錢直接進錢包。延賽、取消、三天都沒有結果的，全部退錢。</p>
             <p>・要用 LINE 登入才能押，沒登入只能看。押的錢、贏的錢不算進打工榜和花錢榜。</p>
@@ -364,26 +370,20 @@
                 ${mine.length ? `<span class="ml-auto font-sans text-[10px] ${won ? 'won' : 'lost'}">${won ? '拿回 ' + fmt(won) : lost ? '槓龜' : mine.every(b => b.status === 'refund') ? '退錢' : '還沒開獎'}</span>` : ''}</div>
                 ${mine.length ? `<div class="myb">${mine.map(b => `<p><span class="st ${b.status === 'won' ? 'won' : 'lost'}">${b.status === 'won' ? '中' : b.status === 'lost' ? '槓' : b.status === 'refund' ? '退' : '押'}</span>${esc(pickName(m, b.kind, b.pick))} <span class="num">${fmt(b.amount)}</span>${b.status === 'won' ? ` → <b class="num won">${fmt(b.payout)}</b>` : ''}</p>`).join('')}</div>` : ''}</section>`;
         }
-        // 這週（台灣時間，週一到週日）結束的時間；這週沒比賽就用第一場比賽那週
-        function weekEnd(ms) {
-            const d = tpe(ms), dow = (d.getUTCDay() + 6) % 7;   // 週一是 0
-            return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - dow + 7) - 8 * 3600000;
+        const folded = { past: true };
+        function schedRow(m) {
+            return `<p><span class="d">${esc(when(m))}</span><span>${esc(short(m.home))}</span><span class="x">vs</span><span>${esc(short(m.away))}</span></p>`;
         }
-        const folded = { later: true, past: true };
         function renderMatches() {
             const open = $('open');
             if (!Q) { open.innerHTML = state === 'loading' ? '<p class="empty paper">讀取中…</p>' : ''; return; }
-            const up = Q.matches.filter(m => m.open || (!m.result && m.start <= now()));
-            const past = Q.matches.filter(m => !up.includes(m)).reverse();
-            let end = weekEnd(now());
-            const nowWeek = up.some(m => m.start < end);
-            if (!nowWeek && up.length) end = weekEnd(up[0].start);
-            const week = up.filter(m => m.start < end), later = up.filter(m => m.start >= end);
-            $('openTitle').textContent = nowWeek || !up.length ? '這週的比賽' : '下一個比賽週';
-            open.innerHTML = week.length ? week.map(ticket).join('') : `<p class="empty paper">最近三個禮拜沒有比賽可以押。<br>TPVL 放假，彩池也放假。</p>`;
-            $('laterN').textContent = later.length ? `${later.length} 場` : '';
-            $('later').innerHTML = later.map(ticket).join('');
-            $('later').classList.toggle('hidden', folded.later);
+            // 這週（週一到週日）的才能押；下週以後只列賽程
+            const end = Q.weekEnd || Infinity;
+            const week = Q.matches.filter(m => m.start < end && (m.open || (!m.result && m.start <= now())));
+            const later = Q.matches.filter(m => m.start >= end && !m.result);
+            const past = Q.matches.filter(m => m.result).reverse();
+            open.innerHTML = week.length ? week.map(ticket).join('') : `<p class="empty paper">這週沒有比賽可以押。<br>${later.length ? '下週的比賽週一開放下注。' : 'TPVL 放假，彩池也放假。'}</p>`;
+            $('later').innerHTML = later.map(schedRow).join('');
             $('laterBox').classList.toggle('hidden', !later.length);
             $('pastN').textContent = past.length ? `最近七天・${past.length} 場` : '';
             $('past').innerHTML = past.map(pastRow).join('');

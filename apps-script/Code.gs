@@ -2239,6 +2239,12 @@ var SPORT_MATCH_HEADERS = ['id', 'no', 'date', 'time', 'start', 'venue', 'home',
 var SPORT_BET_HEADERS = ['timestamp', 'id', 'line_id', 'match', 'kind', 'pick', 'amount', 'status', 'payout', 'settled', 'result'];
 
 function sportNow() { return new Date(); }
+// 一週是週一到週日（台灣時間），只能押這週的比賽；下週以後的只列賽程、不能押、不算倍數
+function sportWeekEnd(now) {
+  var d = new Date(now + 8 * 3600000), dow = (d.getUTCDay() + 6) % 7;
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - dow + 7) - 8 * 3600000;
+}
+function sportOpen(m, now) { return m.status === 'SCHEDULED' && now < m.start && m.start < sportWeekEnd(now); }
 function sportSheet(name, headers) {
   var ss = SpreadsheetApp.getActiveSpreadsheet(), sheet = ss.getSheetByName(name);
   if (!sheet) { sheet = ss.insertSheet(name); sheet.appendRow(headers); sheet.setFrozenRows(1); }
@@ -2444,10 +2450,10 @@ function sportQuoteData(matches, bets, now) {
     .map(function (m) {
       var p = pools[m.id] || { win: {}, score: {} }, o = sportOutcome(m, now);
       return { id: m.id, no: m.no, date: m.date, time: m.time, start: m.start, venue: m.venue, home: m.home, away: m.away, status: m.status,
-        homeSets: m.homeSets, awaySets: m.awaySets, open: m.status === 'SCHEDULED' && now < m.start,
+        homeSets: m.homeSets, awaySets: m.awaySets, open: sportOpen(m, now), later: m.start >= sportWeekEnd(now),
         result: o === 'void' ? 'void' : o ? o.score : null, win: sportOdds(p.win, 'win'), score: sportOdds(p.score, 'score') };
     });
-  return { now: now, matches: list, fetchedAt: Number(props.getProperty('sportFullAt') || 0), error: props.getProperty('sportError') || '',
+  return { now: now, weekEnd: sportWeekEnd(now), matches: list, fetchedAt: Number(props.getProperty('sportFullAt') || 0), error: props.getProperty('sportError') || '',
     rules: { seed: SPORT_SEED, min: SPORT_MIN, max: SPORT_MAX, matchMax: SPORT_MATCH_MAX, picks: SPORT_PICKS } };
 }
 // 行情（公開）
@@ -2492,7 +2498,8 @@ function sportBet(input) {
   var m = matches.filter(function (x) { return x.id === String(input.match || ''); })[0];
   var kind = String(input.kind || ''), pick = String(input.pick || ''), amount = cleanMoney(input.amount, SPORT_MIN, SPORT_MAX);
   if (!m) return { result: 'error', error: '找不到這場比賽' };
-  if (!(m.status === 'SCHEDULED' && now < m.start)) return { result: 'error', error: '這場已經開打，不能押了' };
+  if (m.status === 'SCHEDULED' && now < m.start && m.start >= sportWeekEnd(now)) return { result: 'error', error: '這場是下週以後的，週一開放才能押' };
+  if (!sportOpen(m, now)) return { result: 'error', error: '這場已經開打，不能押了' };
   if (!SPORT_PICKS[kind] || SPORT_PICKS[kind].indexOf(pick) < 0) return { result: 'error', error: '沒有這個選項' };
   if (amount === null) return { result: 'error', error: '一注要 $' + SPORT_MIN + '～$' + SPORT_MAX.toLocaleString() + ' 的整數' };
   var p = findPlayer(g.lineId);
