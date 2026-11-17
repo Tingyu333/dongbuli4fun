@@ -1709,6 +1709,7 @@ var STOCK_LIMIT = 0.10;                           // 漲跌停
 var STOCK_NOISE = 0.012;                          // 每小時亂晃 ±1.2%
 var STOCK_NEWS_SIZE = [0.03, 0.05];               // 上新聞那檔隔天整天往真正方向推多少
 var STOCK_TRUTH = 0.73;                           // 晚報說真話的機率（加上亂晃蓋過推力，整體說中大約七成）
+var STOCK_NEWS_COUNT = 2;                         // 一份晚報幾則（2026-11-17 從 1 則改 2 則；兩則各自七成說中，不會是同一檔）
 var STOCK_DRIFT = 0.006;                          // 沒上新聞的每天也有一點點方向（±0.6%）
 var STOCK_REVERT = 0.004;                         // 每小時往起始價拉回：偏離 50% 就拉 0.2%
 var STOCK_SHOCK = 0.10, STOCK_SHOCK_SIZE = [0.09, 0.16];  // 沒有晚報預告的突發大漲大跌：每天 10% 機會挑一檔（不是上新聞那檔）
@@ -1780,29 +1781,48 @@ function stockLimits(prev) {
 }
 
 // 第 day 天的新聞：哪一檔、真正往哪走、走多少、晚報說真話嗎（晚報說的方向 claim）
-function stockNewsPlan(seed, day) {
-  var d = stockDayStr(day);
-  var idx = Math.min(STOCKS.length - 1, Math.floor(stockRand(seed, 'news|' + d) * STOCKS.length));
-  var up = stockRand(seed, 'dir|' + d) < 0.5;
-  var size = STOCK_NEWS_SIZE[0] + stockRand(seed, 'size|' + d) * (STOCK_NEWS_SIZE[1] - STOCK_NEWS_SIZE[0]);
-  var truth = stockRand(seed, 'truth|' + d) < STOCK_TRUTH;
-  return { day: day, code: STOCKS[idx].code, up: up, size: size, truth: truth, claimUp: truth ? up : !up };
+// 第一則用原本的鑰匙（以前的日子算出來一樣），第二則在剩下的六檔裡挑、用另一組鑰匙
+function stockNewsPlans(seed, day) {
+  var d = stockDayStr(day), out = [], n = stockNewsCount(day);
+  for (var k = 0; k < n; k++) {
+    var sfx = k ? String(k + 1) : '';
+    var pool = STOCKS.filter(function (s) { return !out.some(function (p) { return p.code === s.code; }); });
+    var idx = Math.min(pool.length - 1, Math.floor(stockRand(seed, 'news' + sfx + '|' + d) * pool.length));
+    var up = stockRand(seed, 'dir' + sfx + '|' + d) < 0.5;
+    var size = STOCK_NEWS_SIZE[0] + stockRand(seed, 'size' + sfx + '|' + d) * (STOCK_NEWS_SIZE[1] - STOCK_NEWS_SIZE[0]);
+    var truth = stockRand(seed, 'truth' + sfx + '|' + d) < STOCK_TRUTH;
+    out.push({ day: day, n: k, code: pool[idx].code, up: up, size: size, truth: truth, claimUp: truth ? up : !up });
+  }
+  return out;
 }
+function stockNewsPlan(seed, day) { return stockNewsPlans(seed, day)[0]; }
+// 從哪一天的晚報開始出兩則：新版第一次跑的時候記下「還沒出刊的下一份」，已經出了一則的那幾天照舊（價格才對得上晚報）
+var stockNews2Cache = null;
+function stockNews2Day() {
+  if (stockNews2Cache !== null) return stockNews2Cache;
+  var props = PropertiesService.getScriptProperties(), v = props.getProperty('STOCK_NEWS2_DAY');
+  if (!v) { v = String(stockNewsDay(stockNow().getTime()) + 1); props.setProperty('STOCK_NEWS2_DAY', v); }
+  stockNews2Cache = Number(v);
+  return stockNews2Cache;
+}
+function stockNewsCount(day) { return day >= stockNews2Day() ? STOCK_NEWS_COUNT : 1; }
 
 // 這一天每檔每小時的推力
-function stockShock(seed, day, newsCode) {
+function stockShock(seed, day, newsCodes) {
   var d = stockDayStr(day);
   if (stockRand(seed, 'shock|' + d) >= STOCK_SHOCK) return null;
-  var others = STOCKS.filter(function (s) { return s.code !== newsCode; });
+  var others = STOCKS.filter(function (s) { return newsCodes.indexOf(s.code) < 0; });
   var s = others[Math.min(others.length - 1, Math.floor(stockRand(seed, 'shockwho|' + d) * others.length))];
   var size = STOCK_SHOCK_SIZE[0] + stockRand(seed, 'shocksize|' + d) * (STOCK_SHOCK_SIZE[1] - STOCK_SHOCK_SIZE[0]);
   return { code: s.code, move: stockRand(seed, 'shockdir|' + d) < 0.5 ? size : -size };
 }
 
 function stockDrifts(seed, day) {
-  var plan = stockNewsPlan(seed, day), shock = stockShock(seed, day, plan.code), d = stockDayStr(day), out = {};
+  var plans = stockNewsPlans(seed, day), codes = plans.map(function (p) { return p.code; });
+  var shock = stockShock(seed, day, codes), d = stockDayStr(day), out = {};
   STOCKS.forEach(function (s) {
-    var daily = s.code === plan.code ? (plan.up ? plan.size : -plan.size)
+    var plan = plans[codes.indexOf(s.code)];
+    var daily = plan ? (plan.up ? plan.size : -plan.size)
       : shock && shock.code === s.code ? shock.move
       : (stockRand(seed, 'drift|' + s.code + '|' + d) - 0.5) * 2 * STOCK_DRIFT;
     out[s.code] = daily / (STOCK_SLOTS - 1);
@@ -1893,13 +1913,14 @@ function stockNewsLines() {
 }
 function stockPick(seed, list, key) { return list.length ? list[Math.min(list.length - 1, Math.floor(stockRand(seed, key) * list.length))] : ''; }
 
+// { day: [第一則, 第二則] }：同一天幾則就幾列，照列的順序
 function stockReadNews() {
   var rows = newsSheet().getDataRange().getValues(), out = {};
   for (var i = 1; i < rows.length; i++) {
     var day = Number(rows[i][0]);
     if (!isFinite(day) || day <= 0) continue;
-    out[day] = { day: day, published: rows[i][1] instanceof Date ? rows[i][1].toISOString() : String(rows[i][1]), code: String(rows[i][2]), claim: String(rows[i][3]),
-      real: String(rows[i][4]), title: String(rows[i][7]), source: String(rows[i][8]), reply: String(rows[i][9]), foot: String(rows[i][10]) };
+    (out[day] = out[day] || []).push({ day: day, published: rows[i][1] instanceof Date ? rows[i][1].toISOString() : String(rows[i][1]), code: String(rows[i][2]), claim: String(rows[i][3]),
+      real: String(rows[i][4]), title: String(rows[i][7]), source: String(rows[i][8]), reply: String(rows[i][9]), foot: String(rows[i][10]) });
   }
   return out;
 }
@@ -1907,8 +1928,12 @@ function stockReadNews() {
 // 第 day 天的晚報（前一天 21:00 出），還沒有就抽句子存起來（要在排隊裡叫）
 function stockMakeNews(day, have) {
   if (have[day]) return have[day];
-  var seed = stockSeed(), plan = stockNewsPlan(seed, day), d = stockDayStr(day), claim = plan.claimUp ? 'up' : 'down';
-  var lines = stockNewsLines();
+  var seed = stockSeed(), lines = stockNewsLines(), d = stockDayStr(day);
+  have[day] = stockNewsPlans(seed, day).map(function (plan) { return stockMakeOne(seed, lines, d, day, plan); });
+  return have[day];
+}
+function stockMakeOne(seed, lines, d, day, plan) {
+  var claim = plan.claimUp ? 'up' : 'down', k = plan.n ? String(plan.n + 1) : '';
   var titles = lines.filter(function (x) { return x.kind === 'title' && x.code === plan.code && x.dir === claim; }).map(function (x) { return x.text; });
   if (!titles.length) titles = [STOCK_FALLBACK.title[plan.code][plan.claimUp ? 0 : 1]];
   var pickKind = function (kind) {
@@ -1917,17 +1942,17 @@ function stockMakeNews(day, have) {
   };
   var rec = {
     day: day, published: new Date(stockDayMs(day - 1, STOCK_NEWS_HOUR)).toISOString(), code: plan.code, claim: claim, real: plan.up ? 'up' : 'down',
-    title: stockPick(seed, titles, 'nt|' + d), source: stockPick(seed, pickKind('source'), 'ns|' + d),
-    reply: stockPick(seed, pickKind('reply'), 'nr|' + d), foot: stockPick(seed, pickKind('foot'), 'nf|' + d)
+    title: stockPick(seed, titles, 'nt' + k + '|' + d), source: stockPick(seed, pickKind('source'), 'ns' + k + '|' + d),
+    reply: stockPick(seed, pickKind('reply'), 'nr' + k + '|' + d), foot: stockPick(seed, pickKind('foot'), 'nf|' + d)
   };
   newsSheet().appendRow([day, new Date(stockDayMs(day - 1, STOCK_NEWS_HOUR)), plan.code, claim, rec.real, Math.round(plan.size * 1000) / 10, plan.truth ? 'true' : 'false',
     asText(rec.title), asText(rec.source), asText(rec.reply), asText(rec.foot)]);
-  have[day] = rec;
   return rec;
 }
 
 // 現在看得到的晚報：21:00 以後是明天的，之前是今天的（昨晚出的）
 function stockNewsDay(ms) { var c = stockClock(ms); return c.hour >= STOCK_NEWS_HOUR ? c.day + 1 : c.day; }
+function stockPublicList(list) { return (list || []).map(stockPublicNews); }
 function stockPublicNews(rec) {
   return rec ? { day: stockDayStr(rec.day), published: rec.published, code: rec.code, claim: rec.claim, title: rec.title, source: rec.source, reply: rec.reply, foot: rec.foot } : null;
 }
@@ -1954,7 +1979,7 @@ function stockEnsure(nowMs, locked) {
 // 公開的行情（不用登入）。存快取 3 分鐘
 function stockQuoteData(nowMs) {
   var cur = stockSlotAt(nowMs), newsDay = stockNewsDay(nowMs), today = stockSlotDay(cur);
-  var cache = CacheService.getScriptCache(), key = 'stockq:' + cur + ':' + newsDay, hit = cache.get(key);
+  var cache = CacheService.getScriptCache(), key = 'stockq:v2:' + cur + ':' + newsDay, hit = cache.get(key);
   if (hit) return JSON.parse(hit);
   var rows = stockRows(STOCK_SLOTS * (STOCK_HISTORY_DAYS + 1) + 1).filter(function (r) { return r.idx <= cur; });
   var dayRows = rows.filter(function (r) { return stockSlotDay(r.idx) === today; });
@@ -1972,7 +1997,9 @@ function stockQuoteData(nowMs) {
   var c = stockClock(nowMs);
   var out = {
     now: nowMs, slot: cur, label: stockSlotLabel(cur), day: stockDayStr(today), open: c.hour >= STOCK_OPEN, next: stockNextJump(nowMs),
-    stocks: stocks, news: stockPublicNews(news[newsDay]), newsNow: stockPublicNews(news[today]),
+    // news／newsNow 是第一則（舊頁面用），newsList／newsNowList 是整份（一則或兩則）
+    stocks: stocks, news: stockPublicNews((news[newsDay] || [])[0]), newsNow: stockPublicNews((news[today] || [])[0]),
+    newsList: stockPublicList(news[newsDay]), newsNowList: stockPublicList(news[today]),
     rules: { fee: STOCK_FEE, capOne: STOCK_CAP_ONE, capAll: STOCK_CAP_ALL, limit: STOCK_LIMIT, newsHour: STOCK_NEWS_HOUR }
   };
   cache.put(key, JSON.stringify(out), 180);
