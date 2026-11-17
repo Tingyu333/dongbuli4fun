@@ -89,6 +89,13 @@
         .line-btn { min-height: 44px; padding: 0 1.4rem; border-radius: 6px; background: #06c755; color: #fff; font-family: 'Noto Sans TC', sans-serif; font-weight: 500; font-size: .85rem; letter-spacing: .1em; touch-action: manipulation; }
         .h2 { display: flex; align-items: baseline; gap: .6rem; margin: 2rem .2rem .7rem; }
         .h2 b { font-weight: 400; font-size: .9rem; letter-spacing: .3em; color: rgb(var(--wabi-dark)); }
+        .fold { display: flex; align-items: baseline; gap: .6rem; width: 100%; margin-top: .4rem; padding: .7rem .2rem; border-top: 1px solid rgb(var(--wabi-sub)); text-align: left; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        .fold b { font-weight: 400; font-size: .9rem; letter-spacing: .3em; color: rgb(var(--wabi-dark)); }
+        .fold span { font-family: 'Noto Sans TC', sans-serif; font-size: .62rem; letter-spacing: .1em; color: rgb(var(--wabi-accent)); }
+        .fold i { margin-left: auto; font-style: normal; font-family: 'Noto Sans TC', sans-serif; color: rgb(var(--wabi-accent)); }
+        .fold + div { margin-top: .4rem; }
+        #laterBox, #laterBox + #pastBox, #open + #laterBox.hidden + #pastBox { margin-top: 1.4rem; }
+        #laterBox + #pastBox { margin-top: 0; }
         .h2 span { margin-left: auto; font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; letter-spacing: .1em; color: rgb(var(--wabi-accent)); }
 
         /* 底部面板 */
@@ -161,12 +168,17 @@
         <!-- 錢／登入 -->
         <section id="acct" class="mb-2"></section>
 
-        <div class="h2"><b>可以押的</b><span>TPVL 排球・開賽就截止</span></div>
+        <div class="h2"><b id="openTitle">這週的比賽</b><span>TPVL 排球・開賽就截止</span></div>
         <div id="open"><p class="empty paper">讀取中…</p></div>
 
+        <!-- 之後的比賽、開獎了：預設收起來（使用者要的：優先只看這週） -->
+        <div id="laterBox" class="hidden">
+            <button type="button" class="fold" data-fold="later"><b>之後的比賽</b><span id="laterN"></span><i aria-hidden="true">＋</i></button>
+            <div id="later" class="hidden"></div>
+        </div>
         <div id="pastBox" class="hidden">
-            <div class="h2"><b>開獎了</b><span>最近七天</span></div>
-            <div id="past"></div>
+            <button type="button" class="fold" data-fold="past"><b>開獎了</b><span id="pastN"></span><i aria-hidden="true">＋</i></button>
+            <div id="past" class="hidden"></div>
         </div>
 
         </div>
@@ -352,14 +364,32 @@
                 ${mine.length ? `<span class="ml-auto font-sans text-[10px] ${won ? 'won' : 'lost'}">${won ? '拿回 ' + fmt(won) : lost ? '槓龜' : mine.every(b => b.status === 'refund') ? '退錢' : '還沒開獎'}</span>` : ''}</div>
                 ${mine.length ? `<div class="myb">${mine.map(b => `<p><span class="st ${b.status === 'won' ? 'won' : 'lost'}">${b.status === 'won' ? '中' : b.status === 'lost' ? '槓' : b.status === 'refund' ? '退' : '押'}</span>${esc(pickName(m, b.kind, b.pick))} <span class="num">${fmt(b.amount)}</span>${b.status === 'won' ? ` → <b class="num won">${fmt(b.payout)}</b>` : ''}</p>`).join('')}</div>` : ''}</section>`;
         }
+        // 這週（台灣時間，週一到週日）結束的時間；這週沒比賽就用第一場比賽那週
+        function weekEnd(ms) {
+            const d = tpe(ms), dow = (d.getUTCDay() + 6) % 7;   // 週一是 0
+            return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - dow + 7) - 8 * 3600000;
+        }
+        const folded = { later: true, past: true };
         function renderMatches() {
             const open = $('open');
             if (!Q) { open.innerHTML = state === 'loading' ? '<p class="empty paper">讀取中…</p>' : ''; return; }
             const up = Q.matches.filter(m => m.open || (!m.result && m.start <= now()));
             const past = Q.matches.filter(m => !up.includes(m)).reverse();
-            open.innerHTML = up.length ? up.map(ticket).join('') : `<p class="empty paper">最近三個禮拜沒有比賽可以押。<br>TPVL 放假，彩池也放假。</p>`;
+            let end = weekEnd(now());
+            const nowWeek = up.some(m => m.start < end);
+            if (!nowWeek && up.length) end = weekEnd(up[0].start);
+            const week = up.filter(m => m.start < end), later = up.filter(m => m.start >= end);
+            $('openTitle').textContent = nowWeek || !up.length ? '這週的比賽' : '下一個比賽週';
+            open.innerHTML = week.length ? week.map(ticket).join('') : `<p class="empty paper">最近三個禮拜沒有比賽可以押。<br>TPVL 放假，彩池也放假。</p>`;
+            $('laterN').textContent = later.length ? `${later.length} 場` : '';
+            $('later').innerHTML = later.map(ticket).join('');
+            $('later').classList.toggle('hidden', folded.later);
+            $('laterBox').classList.toggle('hidden', !later.length);
+            $('pastN').textContent = past.length ? `最近七天・${past.length} 場` : '';
             $('past').innerHTML = past.map(pastRow).join('');
+            $('past').classList.toggle('hidden', folded.past);
             $('pastBox').classList.toggle('hidden', !past.length);
+            document.querySelectorAll('[data-fold]').forEach(b => { const k = b.dataset.fold; b.setAttribute('aria-expanded', String(!folded[k])); b.querySelector('i').textContent = folded[k] ? '＋' : '－'; });
         }
 
         // ---- 押一注 ----
@@ -428,6 +458,8 @@
             const t = e.target;
             if (t.closest('[data-login]')) return Line.login();
             if (t.closest('[data-retry]')) { state = 'loading'; render(); return pull(); }
+            const f = t.closest('[data-fold]');
+            if (f) { folded[f.dataset.fold] = !folded[f.dataset.fold]; return renderMatches(); }
             const b = t.closest('[data-bet]');
             if (b) { const [id, kind, pick] = b.dataset.bet.split('|'); return openSheet(id, kind, pick); }
             if (t.id === 'sheet' || t.closest('[data-close]')) return closeSheet();
