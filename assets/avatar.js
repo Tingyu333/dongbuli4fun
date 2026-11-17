@@ -34,23 +34,7 @@
             c.fillStyle = '#3d6fb6'; c.beginPath(); c.moveTo(-14, 40); c.lineTo(0, 34); c.lineTo(-14, 28); c.closePath(); c.fill();
             c.beginPath(); c.moveTo(14, 40); c.lineTo(0, 34); c.lineTo(14, 28); c.closePath(); c.fill(); dot(c, 0, 34, 4);
         },
-        appleduck(c) {
-            const B = '#2f4db0';
-            c.save(); c.translate(2, 8); c.scale(0.78, 0.78);
-            c.lineWidth = 3.4; c.strokeStyle = B; c.fillStyle = '#ffffff'; c.lineJoin = 'round'; c.lineCap = 'round';
-            c.beginPath(); c.moveTo(-24, -4); c.bezierCurveTo(-54, 4, -56, 44, -22, 46); c.lineTo(24, 46);
-            c.bezierCurveTo(46, 46, 54, 28, 48, 6); c.lineTo(42, -10); c.lineTo(34, 6); c.bezierCurveTo(26, 12, 12, 10, 6, -2); c.closePath(); c.fill(); c.stroke();
-            c.beginPath(); c.arc(-8, -22, 20, 0, TAU); c.fill(); c.stroke();
-            c.beginPath(); c.moveTo(-22, -17); c.quadraticCurveTo(-38, -20, -33, -11); c.quadraticCurveTo(-27, -5, -19, -10); c.closePath(); c.fill(); c.stroke();
-            c.beginPath(); c.moveTo(-34, -14); c.lineTo(-22, -13.5); c.stroke();
-            c.fillStyle = B; dot(c, -15, -27, 2.2); dot(c, -1, -27, 2.2);
-            c.beginPath(); c.arc(16, 22, 9, 0.25 * Math.PI, 0.8 * Math.PI); c.stroke();
-            c.fillStyle = '#ffffff'; c.beginPath(); c.moveTo(-8, -46);
-            c.bezierCurveTo(-11, -51, -18, -49, -18, -42); c.bezierCurveTo(-18, -36, -12, -33, -8, -35); c.bezierCurveTo(-4, -33, 2, -36, 2, -42); c.bezierCurveTo(2, -49, -5, -51, -8, -46); c.fill(); c.stroke();
-            c.beginPath(); c.moveTo(-8, -47); c.lineTo(-6, -54); c.stroke();
-            ellipse(c, -2, -54, 4, 2, -0.5); c.stroke();
-            c.restore();
-        },
+        appleduck(c) { appleDuck(c, 3, 10, 0.74); },
         raccoon(c) {
             c.fillStyle = '#7d7d84'; dot(c, -24, -22, 11); dot(c, 24, -22, 11);
             c.fillStyle = '#3a3a40'; dot(c, -24, -22, 6); dot(c, 24, -22, 6);
@@ -138,6 +122,114 @@
         },
     };
 
+
+    // 蘋果鴨（蘋果鴨甜點店的商標）：使用者給的概念「頭上頂一顆蘋果的鴨子」，正式版是圓滾滾的小黃鴨＋紅蘋果，
+    // 甜點店要精緻：頭和身體是一整個輪廓、脖子綁藍色緞帶（商標原本是藍線）、蘋果有光澤和葉脈、旁邊兩顆金色閃光。
+    // 中心大約在 (0,0)，蘋果頂端 -66、肚子底 +48，寬約 105。甜點店的招牌、泡泡鴨、日報、頭像都叫這支。
+    function appleDuck(c, x, y, s) {
+        const LINE = '#7a5236';
+        c.save(); c.translate(x, y); c.scale(s, s);
+        c.lineJoin = 'round'; c.lineCap = 'round';
+        const body = () => {
+            c.beginPath(); c.moveTo(-22, 2);
+            c.bezierCurveTo(-48, 10, -46, 48, -4, 48); c.lineTo(24, 48);
+            c.bezierCurveTo(46, 48, 53, 34, 48, 20);
+            c.bezierCurveTo(54, 13, 58, 2, 56, -9);
+            c.bezierCurveTo(48, -3, 41, 1, 34, 3);
+            c.bezierCurveTo(22, 7, 6, 6, -2, 0); c.closePath();
+        };
+        const head = () => { c.beginPath(); c.arc(-6, -20, 24, 0, TAU); };
+        // 地上的影子
+        const sh = c.createRadialGradient(8, 50, 2, 8, 50, 44); sh.addColorStop(0, 'rgba(110,70,40,.22)'); sh.addColorStop(1, 'rgba(110,70,40,0)');
+        c.fillStyle = sh; ellipse(c, 8, 50, 46, 6); c.fill();
+        // 外輪廓：先用兩倍粗的線描頭和身體，再把兩塊填起來，接縫就不見了
+        c.strokeStyle = LINE; c.lineWidth = 4.4; body(); c.stroke(); head(); c.stroke();
+        const gb = c.createLinearGradient(0, -2, 0, 48); gb.addColorStop(0, '#fff7da'); gb.addColorStop(0.55, '#ffe58e'); gb.addColorStop(1, '#ffcf55');
+        c.fillStyle = gb; body(); c.fill();
+        c.save(); body(); c.clip();
+        const gl = c.createRadialGradient(-22, 14, 2, -22, 14, 30); gl.addColorStop(0, 'rgba(255,255,255,.7)'); gl.addColorStop(1, 'rgba(255,255,255,0)');
+        c.fillStyle = gl; c.fillRect(-50, -10, 110, 60);
+        const gd = c.createLinearGradient(0, 30, 0, 50); gd.addColorStop(0, 'rgba(230,150,40,0)'); gd.addColorStop(1, 'rgba(230,150,40,.28)');
+        c.fillStyle = gd; c.fillRect(-50, 28, 110, 24);
+        c.restore();
+        // 尾巴的兩道羽毛
+        c.strokeStyle = 'rgba(122,82,54,.45)'; c.lineWidth = 1.3;
+        c.beginPath(); c.moveTo(44, 8); c.quadraticCurveTo(49, 4, 51, -3); c.moveTo(40, 12); c.quadraticCurveTo(46, 10, 48, 4); c.stroke();
+        // 頭
+        const gh = c.createRadialGradient(-16, -32, 3, -8, -20, 27); gh.addColorStop(0, '#fffbe8'); gh.addColorStop(0.6, '#ffeba6'); gh.addColorStop(1, '#ffd66a');
+        c.fillStyle = gh; head(); c.fill();
+        c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineWidth = 2; c.beginPath(); c.arc(-6, -20, 19.5, Math.PI * 1.08, Math.PI * 1.42); c.stroke();
+        // 蘋果壓在頭上的影子
+        c.fillStyle = 'rgba(200,120,40,.18)'; ellipse(c, -5, -40, 13, 3.4); c.fill();
+        // 翅膀（三片羽毛尖）
+        const gw = c.createLinearGradient(10, 8, 30, 32); gw.addColorStop(0, '#ffe68a'); gw.addColorStop(1, '#ffc43c');
+        c.fillStyle = gw; c.strokeStyle = LINE; c.lineWidth = 2;
+        c.beginPath(); c.moveTo(4, 17); c.bezierCurveTo(12, 6, 32, 7, 39, 17);
+        c.quadraticCurveTo(39, 23, 34, 23); c.quadraticCurveTo(35, 28, 29, 28); c.quadraticCurveTo(28, 33, 21, 31);
+        c.bezierCurveTo(13, 30, 7, 25, 4, 17); c.closePath(); c.fill(); c.stroke();
+        c.strokeStyle = 'rgba(122,82,54,.4)'; c.lineWidth = 1.2;
+        c.beginPath(); c.moveTo(13, 19); c.quadraticCurveTo(22, 16, 31, 20); c.moveTo(12, 23); c.quadraticCurveTo(19, 22, 25, 26); c.stroke();
+        // 脖子上的藍緞帶
+        c.fillStyle = '#4a6fd0'; c.strokeStyle = '#2f4db0'; c.lineWidth = 1.4;
+        c.beginPath(); c.moveTo(-26, 0); c.quadraticCurveTo(-8, 7, 12, 1); c.lineTo(12, 5.5); c.quadraticCurveTo(-8, 11.5, -26, 4.5); c.closePath(); c.fill(); c.stroke();
+        const bx = -14, by = 5;
+        c.beginPath(); c.moveTo(bx, by); c.bezierCurveTo(bx - 6, by - 9, bx - 15, by - 6, bx - 13, by + 1); c.bezierCurveTo(bx - 12, by + 5, bx - 5, by + 4, bx, by); c.closePath(); c.fill(); c.stroke();
+        c.beginPath(); c.moveTo(bx, by); c.bezierCurveTo(bx + 6, by - 9, bx + 15, by - 6, bx + 13, by + 1); c.bezierCurveTo(bx + 12, by + 5, bx + 5, by + 4, bx, by); c.closePath(); c.fill(); c.stroke();
+        c.beginPath(); c.moveTo(bx - 2, by + 2); c.lineTo(bx - 7, by + 13); c.lineTo(bx - 3.5, by + 11); c.lineTo(bx - 2, by + 14); c.lineTo(bx + 1, by + 3); c.closePath(); c.fill(); c.stroke();
+        c.beginPath(); c.moveTo(bx + 2, by + 2); c.lineTo(bx + 8, by + 12); c.lineTo(bx + 4.5, by + 11); c.lineTo(bx + 3, by + 14); c.lineTo(bx - 1, by + 3); c.closePath(); c.fill(); c.stroke();
+        c.fillStyle = '#3c5cc0'; ellipse(c, bx, by + 0.5, 3.2, 3.6); c.fill(); c.stroke();
+        c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = 1;
+        c.beginPath(); c.moveTo(bx - 4, by - 3); c.quadraticCurveTo(bx - 9, by - 6, bx - 11, by - 2); c.moveTo(bx + 4, by - 3); c.quadraticCurveTo(bx + 9, by - 6, bx + 11, by - 2); c.stroke();
+        // 嘴（上下兩片、往左）
+        const gk = c.createLinearGradient(-46, -18, -26, -6); gk.addColorStop(0, '#ffb24d'); gk.addColorStop(1, '#f2892b');
+        c.fillStyle = gk; c.strokeStyle = LINE; c.lineWidth = 1.8;
+        c.beginPath(); c.moveTo(-27, -18); c.bezierCurveTo(-36, -21, -46, -18, -46, -13); c.quadraticCurveTo(-38, -10.5, -27, -11); c.closePath(); c.fill(); c.stroke();
+        c.fillStyle = '#e57b22';
+        c.beginPath(); c.moveTo(-28, -11); c.quadraticCurveTo(-38, -10, -42, -8.5); c.quadraticCurveTo(-36, -4, -27, -6.5); c.closePath(); c.fill(); c.stroke();
+        c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(-31, -17.5); c.quadraticCurveTo(-37, -18.5, -41, -16.5); c.stroke();
+        c.fillStyle = 'rgba(122,82,54,.6)'; dot(c, -38, -15.5, 0.8);
+        // 眼睛（兩個反光）、腮紅
+        [[-17, -24], [1, -23.5]].forEach(([ex, ey]) => {
+            c.fillStyle = '#2e1d12'; ellipse(c, ex, ey, 3.4, 4.4); c.fill();
+            c.fillStyle = '#ffffff'; dot(c, ex + 1.1, ey - 1.6, 1.4); dot(c, ex - 1.2, ey + 1.7, 0.6);
+        });
+        [[-22, -13], [7, -13]].forEach(([cx, cy]) => {
+            const gc = c.createRadialGradient(cx, cy, 0.5, cx, cy, 6); gc.addColorStop(0, 'rgba(244,128,120,.55)'); gc.addColorStop(1, 'rgba(244,128,120,0)');
+            c.fillStyle = gc; ellipse(c, cx, cy, 6.5, 4.2); c.fill();
+        });
+        // 頭上的蘋果
+        const apple = () => {
+            c.beginPath(); c.moveTo(-6, -57);
+            c.bezierCurveTo(-11, -63, -25, -61, -24, -49.5);
+            c.bezierCurveTo(-23, -39, -15, -35, -10, -37.5); c.quadraticCurveTo(-6, -36, -2, -37.5);
+            c.bezierCurveTo(3, -35, 11, -39, 12, -49.5);
+            c.bezierCurveTo(13, -61, -1, -63, -6, -57); c.closePath();
+        };
+        const ga = c.createRadialGradient(-13, -53, 1.5, -7, -48, 19); ga.addColorStop(0, '#ff8a78'); ga.addColorStop(0.45, '#e8392f'); ga.addColorStop(1, '#a41c1e');
+        c.fillStyle = ga; c.strokeStyle = '#6e2418'; c.lineWidth = 1.8; apple(); c.fill();
+        c.save(); apple(); c.clip();
+        const gy = c.createRadialGradient(9, -44, 1, 9, -44, 9); gy.addColorStop(0, 'rgba(255,200,90,.45)'); gy.addColorStop(1, 'rgba(255,200,90,0)');
+        c.fillStyle = gy; c.fillRect(-2, -56, 16, 20);
+        c.strokeStyle = 'rgba(255,220,200,.25)'; c.lineWidth = 0.8;
+        [-1, 4].forEach(d => { c.beginPath(); c.moveTo(d - 6, -56); c.quadraticCurveTo(d - 2, -47, d - 5, -38); c.stroke(); });
+        c.restore();
+        c.strokeStyle = '#6e2418'; c.lineWidth = 1.8; apple(); c.stroke();
+        c.fillStyle = 'rgba(255,255,255,.85)'; ellipse(c, -16, -51, 2.4, 4.6, 0.45); c.fill(); dot(c, -12.5, -57, 1.1);
+        // 梗、葉子（有葉脈）
+        c.strokeStyle = '#6b4a2f'; c.lineWidth = 2.2; c.beginPath(); c.moveTo(-6, -56); c.quadraticCurveTo(-6.5, -62, -3.5, -66); c.stroke();
+        const gf = c.createLinearGradient(-4, -66, 12, -60); gf.addColorStop(0, '#7cc95f'); gf.addColorStop(1, '#3f8f35');
+        c.fillStyle = gf; c.strokeStyle = '#2f6b28'; c.lineWidth = 1.3;
+        c.beginPath(); c.moveTo(-4.5, -62); c.bezierCurveTo(-1, -71, 9, -71, 13, -64); c.bezierCurveTo(7, -58, 0, -58, -4.5, -62); c.closePath(); c.fill(); c.stroke();
+        c.strokeStyle = 'rgba(220,255,200,.75)'; c.lineWidth = 0.9; c.beginPath(); c.moveTo(-3, -62.5); c.quadraticCurveTo(4, -65, 11, -64); c.stroke();
+        // 金色閃光
+        const spark = (sx, sy, r) => {
+            c.beginPath(); c.moveTo(sx, sy - r); c.quadraticCurveTo(sx, sy, sx + r, sy); c.quadraticCurveTo(sx, sy, sx, sy + r);
+            c.quadraticCurveTo(sx, sy, sx - r, sy); c.quadraticCurveTo(sx, sy, sx, sy - r); c.closePath(); c.fill();
+        };
+        c.fillStyle = '#f2b938'; spark(22, -54, 6); c.fillStyle = '#f7d16a'; spark(-30, -46, 3.6); spark(29, -42, 2.6);
+        c.restore();
+    }
+
     function draw(c, key, cx, cy, r) {
         if (!DRAW[key]) return;
         c.save(); c.translate(cx, cy);
@@ -161,5 +253,5 @@
         return cache[k];
     }
     const name = key => (LIST.find(a => a.key === key) || {}).name || '';
-    window.Avatar = { LIST, draw, url, name, has: key => !!DRAW[key] };
+    window.Avatar = { LIST, draw, url, name, appleDuck, has: key => !!DRAW[key] };
 })();

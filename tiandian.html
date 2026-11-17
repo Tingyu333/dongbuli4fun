@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>甜點・轉 | 丼步喱</title>
-    <!-- 蘋果鴨甜點店：浣熊大王提案的流水線甜點店。商標是使用者畫的「頭上頂蘋果的鴨子」，用 canvas 重畫（drawLogo），原圖沒放進 repo；網站不放 emoji -->
+    <!-- 蘋果鴨甜點店：浣熊大王提案的流水線甜點店。商標蘋果鴨照使用者的概念（頭上頂蘋果的鴨子）畫成正式版：assets/avatar.js 的 Avatar.appleDuck；網站不放 emoji -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
@@ -15,6 +15,7 @@
     <script src="assets/saveimg.js?v=20261116d"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261116d"></script>
+    <script src="assets/avatar.js?v=20261117b"></script>
     <style>
         /* 整塊都是要點的地方：不能捲動、長按不能跳系統選單、不能選字 */
         .stage { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
@@ -480,23 +481,8 @@
         function fit() { const d = Math.min(window.devicePixelRatio || 1, 3), w = cv.clientWidth || 340; cv.width = Math.round(w * d); cv.height = Math.round(w * H / W * d); }
         const rr = (c, x, y, w, h, r) => { c.beginPath(); c.roundRect(x, y, w, h, r); };
 
-        // 商標：頭上頂蘋果的鴨子（使用者畫的，藍色線條）
-        function drawLogo(c, cx, cy, s, col = BLUE, fill = '#ffffff', lw = 3.4) {
-            c.save(); c.translate(cx, cy); c.scale(s, s);
-            c.lineWidth = lw; c.strokeStyle = col; c.fillStyle = fill; c.lineJoin = 'round'; c.lineCap = 'round';
-            c.beginPath(); c.moveTo(-24, -4); c.bezierCurveTo(-54, 4, -56, 44, -22, 46); c.lineTo(24, 46);
-            c.bezierCurveTo(46, 46, 54, 28, 48, 6); c.lineTo(42, -10); c.lineTo(34, 6); c.bezierCurveTo(26, 12, 12, 10, 6, -2); c.closePath(); c.fill(); c.stroke();
-            c.beginPath(); c.arc(-8, -22, 20, 0, TAU); c.fill(); c.stroke();
-            c.beginPath(); c.moveTo(-22, -17); c.quadraticCurveTo(-38, -20, -33, -11); c.quadraticCurveTo(-27, -5, -19, -10); c.closePath(); c.fill(); c.stroke();
-            c.beginPath(); c.moveTo(-34, -14); c.lineTo(-22, -13.5); c.stroke();
-            c.fillStyle = col; [[-15, -27], [-1, -27]].forEach(([x, y]) => { c.beginPath(); c.arc(x, y, 2.2, 0, TAU); c.fill(); });
-            c.beginPath(); c.arc(16, 22, 9, 0.25 * Math.PI, 0.8 * Math.PI); c.stroke();
-            c.fillStyle = fill; c.beginPath(); c.moveTo(-8, -46);
-            c.bezierCurveTo(-11, -51, -18, -49, -18, -42); c.bezierCurveTo(-18, -36, -12, -33, -8, -35); c.bezierCurveTo(-4, -33, 2, -36, 2, -42); c.bezierCurveTo(2, -49, -5, -51, -8, -46); c.fill(); c.stroke();
-            c.beginPath(); c.moveTo(-8, -47); c.lineTo(-6, -54); c.stroke();
-            c.beginPath(); c.ellipse(-2, -54, 4, 2, -0.5, 0, TAU); c.stroke();
-            c.restore();
-        }
+        // 商標：蘋果鴨（使用者給概念、照概念畫的正式版，在 assets/avatar.js 的 Avatar.appleDuck）
+        function drawLogo(c, cx, cy, s) { Avatar.appleDuck(c, cx, cy, s); }
         function strawberry(c, x, y, r) {
             c.fillStyle = '#d63a3a'; c.beginPath(); c.moveTo(x - r, y - r * .4); c.quadraticCurveTo(x, y - r * 1.3, x + r, y - r * .4); c.quadraticCurveTo(x + r * .8, y + r, x, y + r * 1.2); c.quadraticCurveTo(x - r * .8, y + r, x - r, y - r * .4); c.fill();
             c.fillStyle = '#3f8f3a'; c.beginPath(); c.ellipse(x, y - r * .8, r * .7, r * .3, 0, 0, TAU); c.fill();
@@ -830,7 +816,7 @@
             text('甜點店日報', 540, 220, `600 76px ${SERIF}`, '#2c2c2c');
             x.fillStyle = '#8e8070'; x.fillRect(500, 250, 80, 2);
             x.beginPath(); x.arc(860, 410, 120, 0, TAU); x.fillStyle = '#ffffff'; x.fill();
-            drawLogo(x, 868, 430, 2.0, BLUE, '#ffffff', 3.4);
+            drawLogo(x, 864, 424, 1.8);
             x.strokeStyle = '#8e8070'; x.lineWidth = 2; x.beginPath(); x.arc(860, 410, 120, 0, TAU); x.stroke();
             text(G.tally.angry ? `蘋果鴨說：跑了 ${G.tally.angry} 位` : '蘋果鴨說：甜', 860, 570, `400 28px ${SERIF}`, G.tally.angry ? '#b33a2f' : '#8e8070');
             text(`出餐 ${G.tally.served} 份`, 150, 320, `400 30px ${SERIF}`, '#8e8070', 'left');
