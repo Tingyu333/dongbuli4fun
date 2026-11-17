@@ -287,6 +287,7 @@
         const MAINTENANCE = false;
         const CLOSED = MAINTENANCE && !/[?&]preview\b/.test(location.search);
         const SEEN_KEY = 'dongbuli-yuncai-seen';
+        const CACHE_KEY = 'dongbuli-yuncai-last';   // 上次看到的賽程和彩池：打開頁面先畫這份，後端回來再換新的
         const SHORT = { '桃園雲豹飛將': '桃園雲豹', '新竹可利工程師': '新竹可利' };
         const SCORES = { home: ['3:0', '3:1', '3:2'], away: ['0:3', '1:3', '2:3'] };
         const WEEK = '日一二三四五六';
@@ -298,7 +299,7 @@
         const when = m => { const d = tpe(m.start); return `${d.getUTCMonth() + 1}/${d.getUTCDate()}（${WEEK[d.getUTCDay()]}）${m.time || ''}`; };
         const xo = v => '×' + (Math.floor(v * 100) / 100).toFixed(2);
 
-        let Q = null, M = null, state = 'loading', errMsg = '', busy = false, offset = 0, timer = 0, cur = null, slips = [];
+        let Q = null, M = null, state = 'loading', errMsg = '', busy = false, offset = 0, timer = 0, cur = null, slips = [], stale = false;
         const now = () => Date.now() + offset;
         const matchOf = id => Q && Q.matches.find(m => m.id === id);
         const myBets = id => M ? M.bets.filter(b => b.match === id) : [];
@@ -311,7 +312,8 @@
         }
         function take(q, m) {
             Q = q; if (m !== undefined) M = m;
-            offset = q.now - Date.now();
+            offset = q.now - Date.now(); stale = false;
+            saveLast();
             if (M) findSlips();
             state = 'ready';
             clearTimeout(timer);
@@ -330,6 +332,16 @@
             const won = fresh.filter(b => b.status === 'won');
             if (won.length) bigStamp('中', `拿回 ${fmt(won.reduce((t, b) => t + b.payout, 0))}`);
         }
+        // 存一份最近的（記是誰的：換了帳號就不拿別人的注來畫）
+        const who = () => { try { return (localStorage.getItem('dongbuli-session') || '').slice(0, 8); } catch (e) { return ''; } };
+        function saveLast() { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), offset, who: who(), q: Q, m: M })); } catch (e) { } }
+        function loadLast() {
+            let c = null;
+            try { c = JSON.parse(localStorage.getItem(CACHE_KEY)); } catch (e) { }
+            if (!c || !c.q || Date.now() - c.at > 2 * 864e5) return;
+            Q = c.q; M = c.who && c.who === who() && Line.loggedIn ? c.m : null; offset = c.offset || 0;
+            state = 'ready'; stale = true;   // 先畫舊的，標「更新中」；倍數、彩池等後端回來再換
+        }
         async function pull() {
             try {
                 let r = null;
@@ -342,9 +354,10 @@
                     const p = await pub();
                     if (p.result === 'success') take(p, Line.loggedIn ? M : null);
                     else if (/不認得的請求/.test(p.error || '')) state = 'old';
+                    else if (stale) stale = 'fail';
                     else { state = 'error'; errMsg = p.error || p.result; }
                 }
-            } catch (e) { if (!Q) { state = 'error'; errMsg = '連不到後端，可能是網路不穩'; } }
+            } catch (e) { if (stale) stale = 'fail'; else if (!Q) { state = 'error'; errMsg = '連不到後端，可能是網路不穩'; } }
             render();
         }
 
@@ -354,6 +367,8 @@
             if (state === 'old') { el.textContent = '運動還沒開張（後端要重新部署新版本）'; return; }
             if (state === 'error') { el.innerHTML = `讀不到賽程・<button type="button" data-retry class="underline underline-offset-2">再試一次</button>`; return; }
             if (!Q) { el.textContent = '讀取賽程中…'; return; }
+            if (stale === 'fail') { el.innerHTML = `連不到後端，這是上次的賽程・<button type="button" data-retry class="underline underline-offset-2">再試一次</button>`; return; }
+            if (stale) { el.textContent = '更新中…（先給你看上次的）'; return; }
             const d = Q.fetchedAt ? tpe(Q.fetchedAt) : null;
             el.textContent = Q.error && !Q.matches.length ? 'TPVL 官網暫時讀不到，晚點再來' : d ? `賽程 ${d.getUTCMonth() + 1}/${d.getUTCDate()} ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')} 更新` : '還沒有賽程';
         }
@@ -615,7 +630,7 @@
             const t = e.target;
             if (t.closest('[data-login]')) return Line.login();
             const sh = t.closest('[data-share]'); if (sh) return shareBet(sh.dataset.share);
-            if (t.closest('[data-retry]')) { state = 'loading'; render(); return pull(); }
+            if (t.closest('[data-retry]')) { if (stale) stale = true; else state = 'loading'; render(); return pull(); }
             const op = t.closest('[data-open]');
             if (op) { const id = op.dataset.open; expanded.has(id) ? expanded.delete(id) : expanded.add(id); return renderMatches(); }
             const f = t.closest('[data-fold]');
@@ -642,7 +657,8 @@
         window.addEventListener('pageshow', e => { if (e.persisted) pull(); });
 
         if (CLOSED) { $('closed').classList.remove('hidden'); $('live').classList.add('hidden'); $('status').textContent = ''; }
-        else { render(); Line.ready.then(pull, pull); }
+        // 不用等 LINE 的程式載完：有通行證就直接帶著去問後端（LINE 那邊之後才自動登入的，會再 pull 一次）
+        else { loadLast(); render(); pull(); }
     </script>
 </body>
 

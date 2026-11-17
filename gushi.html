@@ -661,7 +661,7 @@
         window.addEventListener('resize', () => { if (Q) { renderBoard(); if (cur) chart(); } });
 
         render();
-        Line.ready.then(pull, pull);
+        pull();   // 不用等 LINE 的程式載完：有通行證就直接帶著去問後端（LINE 那邊之後才自動登入的，登入事件會再 pull 一次）
     </script>
 </body>
 

@@ -67,7 +67,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 以前每個 POST 都排同一個隊，所有人一個一個來，洗頭、刮刮樂的人一多後台就擠不進來。
 // 現在只有這些整個排隊；錢包同步、LINE 登入只在寫 Players 那一下排隊（withLock）；
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
-var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockMine: 1, stockTrade: 1, stockCancel: 1, sportMine: 1, sportBet: 1 };
+var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockMine: 1, stockTrade: 1, stockCancel: 1, sportBet: 1 };
 
 function withLock(fn) {
   var lock = LockService.getScriptLock();
@@ -2403,7 +2403,25 @@ function sportStartMs(date, time) {
   return isNaN(t) ? 0 : t;
 }
 
-function sportReadMatches() {
+// 讀分頁很慢（一次幾百毫秒），賽程和注都先放 CacheService：一個版本號 sportver，寫入 SportMatches／Bets 就換版本號（sportBump），舊的自然不用
+// 會照 row 寫回分頁的地方（併賽程、派彩、手動開獎、清注）一律 fresh 讀分頁，不用快取
+function sportVer() {
+  var c = CacheService.getScriptCache(), v = c.get('sportver');
+  if (!v) { v = String(Date.now()); c.put('sportver', v, 21600); }
+  return v;
+}
+function sportBump() { CacheService.getScriptCache().put('sportver', Utilities.getUuid().slice(0, 8), 21600); }
+function sportCached(name, fresh, read) {
+  if (fresh) return read();
+  var c = CacheService.getScriptCache(), key = 'sport' + name + ':' + sportVer(), hit = c.get(key);
+  if (hit) { try { return JSON.parse(hit); } catch (e) { } }
+  var v = read(), str = JSON.stringify(v);
+  if (str.length < 95000) c.put(key, str, 21600);   // 一格最多 100KB，太大就每次讀分頁
+  return v;
+}
+function sportReadMatches(fresh) { return sportCached('m', fresh, sportReadMatchesSheet); }
+function sportReadBets(fresh) { return sportCached('b', fresh, sportReadBetsSheet); }
+function sportReadMatchesSheet() {
   var rows = sportMatchesSheet().getDataRange().getValues(), out = [];
   for (var i = 1; i < rows.length; i++) {
     var r = rows[i];
@@ -2418,7 +2436,7 @@ function sportReadMatches() {
 // 爬到的賽程併進 SportMatches：新的加一列，舊的更新（手動開獎過的不動）
 function sportUpsert(list, now) {
   var sheet = sportMatchesSheet(), have = {};
-  sportReadMatches().forEach(function (m) { have[m.id] = m; });
+  sportReadMatches(true).forEach(function (m) { have[m.id] = m; });
   list.forEach(function (m) {
     var start = sportStartMs(m.date, m.time);
     var row = [m.id, m.no, "'" + m.date, "'" + (m.time || ''), start, m.venue, m.home, m.away, m.status, m.homeSets == null ? '' : m.homeSets, m.awaySets == null ? '' : m.awaySets, new Date(now)];
@@ -2427,6 +2445,7 @@ function sportUpsert(list, now) {
     if (old.manual) return;
     sheet.getRange(old.row, 1, 1, row.length).setValues([row]);
   });
+  sportBump();
 }
 // 要不要去爬：一天一次賽程；有比賽開打兩小時以後還沒結果，每 15 分鐘看一次
 function sportNeedFetch(matches, now) {
@@ -2445,7 +2464,7 @@ function sportSync(now, force, locked) {
   if (force || sportNeedFetch(matches, now)) {
     var work = function () {
       var props = PropertiesService.getScriptProperties();
-      if (!force && !sportNeedFetch(sportReadMatches(), now)) return;  // 排隊的時候別人剛爬過
+      if (!force && !sportNeedFetch(sportReadMatches(true), now)) return;  // 排隊的時候別人剛爬過
       props.setProperty('sportTriedAt', String(now));
       try {
         sportUpsert(sportFetchTpvl(), now);
@@ -2459,7 +2478,7 @@ function sportSync(now, force, locked) {
     if (locked) work(); else withLock(work);
     matches = sportReadMatches();
   }
-  sportSettle(matches, now, locked);
+  if (sportSettle(matches, now, locked)) sportBump();
   return matches;
 }
 
@@ -2473,7 +2492,7 @@ function sportOutcome(m, now) {
   if (m.start && now > m.start + SPORT_VOID_MS) return 'void';
   return null;
 }
-function sportReadBets() {
+function sportReadBetsSheet() {
   var rows = sportBetsSheet().getDataRange().getValues(), out = [];
   for (var i = 1; i < rows.length; i++) {
     var r = rows[i];
@@ -2502,7 +2521,7 @@ function sportSettle(matches, now, locked) {
   open.forEach(function (b) { if (!(b.match in ready)) ready[b.match] = byId[b.match] ? sportOutcome(byId[b.match], now) : null; });
   if (!open.some(function (b) { return ready[b.match]; })) return 0;
   var work = function () {
-    bets = sportReadBets();
+    bets = sportReadBets(true);
     var pools = sportPools(bets), credit = {}, sheet = sportBetsSheet(), stamp = new Date(now), n = 0;
     bets.forEach(function (b) {
       var o = ready[b.match];
@@ -2525,9 +2544,11 @@ function sportSettle(matches, now, locked) {
       p.money = Math.min(WALLET_MAX, p.money + credit[id]);
       playersSheet().getRange(p.row, 5).setValue(p.money);
     });
+    if (n) sportBump();
     return n;
   };
-  return locked ? work() : withLock(work);
+  var r = locked ? work() : withLock(work);
+  return typeof r === 'number' ? r : 0;
 }
 
 function sportOdds(pool, kind) {
@@ -2551,7 +2572,7 @@ function sportQuoteData(matches, bets, now) {
 // 行情（公開）
 function sportQuote() {
   var now = sportNow().getTime(), matches = sportSync(now, false);
-  var out = sportQuoteData(matches, sportReadBets(), now);
+  var out = sportQuoteData(matches, sportReadBets(), now);   // 沒有變動的話兩個都是快取
   out.result = 'success';
   return out;
 }
@@ -2580,7 +2601,7 @@ function sportMine(input) {
   var g = sportGuard(input);
   if (g.error) return g.error;
   var now = sportNow().getTime();
-  return sportReply(g.lineId, now, sportSync(now, false, true));
+  return sportReply(g.lineId, now, sportSync(now, false, false));   // 只是讀：不排隊（要爬賽程、要派彩的時候 sportSync 自己排隊）
 }
 // 下注（要登入、排隊）：{ match, kind: 'win'|'score', pick, amount }
 function sportBet(input) {
@@ -2596,13 +2617,14 @@ function sportBet(input) {
   if (amount === null) return { result: 'error', error: '一注要 $' + SPORT_MIN + '～$' + SPORT_MAX.toLocaleString() + ' 的整數' };
   var p = findPlayer(g.lineId);
   if (!p) return { result: 'unauthorized' };
-  var already = sportReadBets().filter(function (b) { return b.lineId === g.lineId && b.match === m.id && b.status !== 'refund'; }).reduce(function (t, b) { return t + b.amount; }, 0);
+  var already = sportReadBets(true).filter(function (b) { return b.lineId === g.lineId && b.match === m.id && b.status !== 'refund'; }).reduce(function (t, b) { return t + b.amount; }, 0);
   if (already + amount > SPORT_MATCH_MAX) return { result: 'error', error: '一場最多押 $' + SPORT_MATCH_MAX.toLocaleString() + '（這場已經押了 $' + already.toLocaleString() + '）' };
   if (p.money < amount) return { result: 'error', error: '錢包不夠' };
   p.money -= amount;
   playersSheet().getRange(p.row, 5).setValue(p.money);
   var id = 'B' + Utilities.getUuid().replace(/-/g, '').slice(0, 7).toUpperCase();
   sportBetsSheet().appendRow([new Date(now), id, g.lineId, m.id, kind, "'" + pick, amount, 'open', 0, '', '']);
+  sportBump();
   return sportReply(g.lineId, now, matches, { done: id });
 }
 
@@ -2615,17 +2637,18 @@ function setupSport() {
 }
 // 官網爬不到比分的時候手動開獎：sportSetResult('17013', 3, 1)（主隊 3、客隊 1），比賽 id 看 SportMatches 的 A 欄
 function sportSetResult(id, homeSets, awaySets) {
-  var m = sportReadMatches().filter(function (x) { return x.id === String(id); })[0];
+  var m = sportReadMatches(true).filter(function (x) { return x.id === String(id); })[0];
   if (!m) { Logger.log('找不到 ' + id); return; }
   sportMatchesSheet().getRange(m.row, 9, 1, 5).setValues([['COMPLETED', homeSets, awaySets, new Date(), 'manual']]);
-  var n = sportSettle(sportReadMatches(), Date.now());
+  sportBump();
+  var n = sportSettle(sportReadMatches(true), Date.now());
   Logger.log(m.home + ' ' + homeSets + ':' + awaySets + ' ' + m.away + '，結算了 ' + n + ' 注。');
 }
 // 清掉測試的注：還沒開獎的把押的錢退回錢包，然後把 Bets 分頁除了標題全部刪掉（已經開獎派過的錢不收回）。
 // 在編輯器選這個按「執行」就好，不用重新部署。正式開放以後不要再跑（會把大家的注一起清掉）。
 function sportClearBets() {
   var out = withLock(function () {
-    var bets = sportReadBets(), refund = {}, n = 0;
+    var bets = sportReadBets(true), refund = {}, n = 0;
     bets.forEach(function (b) { if (b.status === 'open') { refund[b.lineId] = (refund[b.lineId] || 0) + b.amount; n++; } });
     Object.keys(refund).forEach(function (id) {
       var p = findPlayer(id);
@@ -2635,6 +2658,7 @@ function sportClearBets() {
     });
     var sheet = sportBetsSheet(), last = sheet.getLastRow();
     if (last > 1) sheet.deleteRows(2, last - 1);
+    sportBump();
     return { all: bets.length, open: n, money: Object.keys(refund).reduce(function (t, k) { return t + refund[k]; }, 0) };
   });
   if (out.result) { Logger.log(out.error); return; }
@@ -2643,10 +2667,11 @@ function sportClearBets() {
 
 // 這場不算了，全部退錢：sportVoid('17013')
 function sportVoid(id) {
-  var m = sportReadMatches().filter(function (x) { return x.id === String(id); })[0];
+  var m = sportReadMatches(true).filter(function (x) { return x.id === String(id); })[0];
   if (!m) { Logger.log('找不到 ' + id); return; }
   sportMatchesSheet().getRange(m.row, 9, 1, 5).setValues([['VOID', '', '', new Date(), 'manual']]);
-  var n = sportSettle(sportReadMatches(), Date.now());
+  sportBump();
+  var n = sportSettle(sportReadMatches(true), Date.now());
   Logger.log(m.home + ' vs ' + m.away + ' 不算了，退了 ' + n + ' 注。');
 }
 
