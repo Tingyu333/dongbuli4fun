@@ -1,30 +1,7 @@
-// 全站共用（前台頁面和後台；404 沒接）：Tailwind 設定、夜間模式、提示紙條
-// 要放在 Tailwind CDN 之後、<head> 裡同步載入，夜間模式才不會先閃一下白天
+// 全站共用（前台頁面和後台；404 沒接）：夜間模式、提示紙條
+// 要放在 <head> 裡同步載入，夜間模式才不會先閃一下白天
 
-// Tailwind CDN 被擋時 tailwind 不存在，先補一個空的，下面的夜間模式、提示紙條才不會跟著壞
-window.tailwind = window.tailwind || {};
-tailwind.config = {
-    theme: {
-        extend: {
-            // 顏色讀 assets/theme.css 的 CSS 變數，夜間模式換變數就會跟著變
-            colors: {
-                'wabi-bg': 'rgb(var(--wabi-bg) / <alpha-value>)',         // 米白紙張色
-                'wabi-text': 'rgb(var(--wabi-text) / <alpha-value>)',     // 墨色
-                'wabi-accent': 'rgb(var(--wabi-accent) / <alpha-value>)', // 枯茶色
-                'wabi-sub': 'rgb(var(--wabi-sub) / <alpha-value>)',       // 淺灰
-                'wabi-dark': 'rgb(var(--wabi-dark) / <alpha-value>)',     // 深岩灰
-                'wabi-shu': 'rgb(var(--wabi-shu) / <alpha-value>)',       // 朱色
-            },
-            fontFamily: {
-                serif: ['"Noto Serif TC"', 'serif'],
-                sans: ['"Noto Sans TC"', 'sans-serif'],
-            },
-            letterSpacing: {
-                'widest-xl': '.25em',
-            }
-        }
-    }
-};
+// 排版用先打包好的 assets/tailwind.css（設定在 tools/tailwind.config.js），2026-11-17 起不再載 Tailwind CDN
 
 // 夜間模式：晚上 10 點到早上 6 點、或手機設成深色時自動切換。
 // 手動切過的話，這個分頁關掉前都照你選的。

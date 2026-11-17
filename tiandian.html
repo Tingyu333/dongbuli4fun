@@ -6,12 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>甜點・轉 | 丼步喱</title>
     <!-- 蘋果鴨甜點店：浣熊大王提案的流水線甜點店。商標蘋果鴨照使用者的概念（頭上頂蘋果的鴨子）畫成正式版：assets/avatar.js 的 Avatar.appleDuck；網站不放 emoji -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="assets/theme.css?v=20261116d">
-    <script src="assets/theme.js?v=20261116d"></script>
+    <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/saveimg.js?v=20261116d"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261116d"></script>
@@ -806,7 +807,7 @@
                 if ((toolsTick += dt) > 0.25) { toolsTick = 0; renderTools(); renderBest(); }
             }
             draw(now);
-            requestAnimationFrame(frame);
+            nextFrame();
         }
         document.addEventListener('visibilitychange', () => { lastNow = performance.now(); });
 
@@ -1049,7 +1050,12 @@
         if (!CLOSED) $('closed').remove();
         newRound();
         renderShopLv();
-        requestAnimationFrame(frame);
+        // 畫布整個捲出畫面（收工看結果、往下看說明）就先停，捲回來再接著畫：手機才不會一直燙、一直耗電
+        let loopOn = false, cvSeen = true;
+        function nextFrame() { if (cvSeen) requestAnimationFrame(frame); else loopOn = false; }
+        function startLoop() { if (loopOn) return; loopOn = true; lastNow = performance.now(); requestAnimationFrame(frame); }
+        if ('IntersectionObserver' in window) new IntersectionObserver(es => { cvSeen = es[es.length - 1].isIntersecting; if (cvSeen) startLoop(); }).observe(cv);
+        startLoop();
         setTimeout(uploadRounds, 2500);
     </script>
 </body>

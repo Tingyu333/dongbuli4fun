@@ -16,14 +16,15 @@
     <meta property="og:image:height" content="1200">
     <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/xitou.html">
     <meta name="twitter:card" content="summary">
-    <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入日系字體 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
 
     <link rel="stylesheet" href="assets/theme.css?v=20261116d">
-    <script src="assets/theme.js?v=20261116d"></script>
+    <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/saveimg.js?v=20261116d"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261116d"></script>
@@ -2822,7 +2823,7 @@
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             drawScene(ctx, pal, now, true);
             drawShelf(now);
-            requestAnimationFrame(frame);
+            nextFrame();
         }
 
         renderBest();
@@ -2831,7 +2832,12 @@
         sizeShelf();
         window.addEventListener('resize', sizeShelf);
         intro();
-        requestAnimationFrame(frame);
+        // 畫布整個捲出畫面（收工看結果、往下看說明）就先停，捲回來再接著畫：手機才不會一直燙、一直耗電
+        let loopOn = false, cvSeen = true;
+        function nextFrame() { if (cvSeen) requestAnimationFrame(frame); else loopOn = false; }
+        function startLoop() { if (loopOn) return; loopOn = true; lastFrame = performance.now(); requestAnimationFrame(frame); }
+        if ('IntersectionObserver' in window) new IntersectionObserver(es => { cvSeen = es[es.length - 1].isIntersecting; if (cvSeen) startLoop(); }).observe(cv);
+        startLoop();
         setTimeout(uploadWashes, 2500);  // 之前沒送成功的補送
     </script>
 </body>
