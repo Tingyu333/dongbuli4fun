@@ -102,7 +102,7 @@
                 <p class="text-sm text-wabi-dark tracking-widest leading-loose">蘋果鴨正在重新設計轉盤。<br>甜點店暫停營業，過幾天再來。</p>
                 <a href="member.html" class="mt-2 py-3 px-8 border border-stone-300 text-wabi-dark font-sans text-xs tracking-[0.2em]">回會員中心</a>
             </div>
-            <p id="hint" class="mt-3 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed text-center">每一站先點好「下一盤」要放的料（料盒亮起來待命），<br>盤子經過就自動放上去。三層都對，轉到出餐就交給客人。</p>
+            <p id="hint" class="mt-3 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed text-center">看朱框「下一盤」的客人要什麼，三排料盒各點一個，<br>再點右上角「出盤」。盤子經過三站一層一層放上去。</p>
         </section>
 
         <section id="result" class="hidden mt-10 text-center scroll-mt-24">
@@ -131,10 +131,10 @@
             <h2 class="text-sm tracking-[0.3em] text-wabi-dark">怎麼做</h2>
             <ol class="mt-3 list-decimal pl-5 space-y-1.5 text-xs font-sans tracking-wide text-stone-500 leading-relaxed">
                 <li>客人坐下就點一份甜點，頭上的泡泡寫著三層要什麼，左上角的<b class="font-normal text-wabi-dark">彩色號碼</b>就是他那一盤；下面那條是他還願意等多久。</li>
-                <li>他的盤子會自己上轉盤，依序經過<b class="font-normal text-wabi-dark">底、餡、飾</b>三站。</li>
-                <li>每一站旁邊的料盒，<b class="font-normal text-wabi-dark">先點好「下一盤」要放的料</b>，料盒亮起來寫「待命」；下一盤經過就自動放上去，放完待命就取消，再點下一盤的。再點一次同一盒可以取消待命。</li>
-                <li><b class="font-normal text-wabi-shu">放錯料</b>：那一盤直接報廢，扣材料費 $25，客人的盤子重新上轉盤。</li>
-                <li>經過的時候沒有待命的料就是<b class="font-normal text-wabi-dark">漏放</b>，盤子上標「漏」；漏了一層的轉到出餐一樣報廢。買了倒轉把手，可以把漏放的那盤退回漏掉的那一站重放。</li>
+                <li>轉盤上<b class="font-normal text-wabi-dark">一次一盤</b>。泡泡框成朱色、寫「下一盤」的就是輪到的客人（照來的順序）。</li>
+                <li><b class="font-normal text-wabi-dark">先點好料再出盤</b>：底、餡、飾三排料盒各點一個（料盒亮起來寫「選好」，再點一次取消），右上角的出盤卡會畫出三層的樣子；選齊了點「出盤」，盤子就上轉盤。</li>
+                <li>盤子經過底、餡、飾三站，把你選的一層一層放上去。轉盤上那盤還沒出餐時就可以先選下一盤的料；這時按出盤會「排隊」，轉盤空了自己出。</li>
+                <li><b class="font-normal text-wabi-shu">選錯料</b>：經過那一站就直接報廢，扣材料費 $25，客人重新排到最後面。買了倒轉把手，可以在出錯前把那盤退回出盤口改料。</li>
                 <li>三層都放對、轉到出餐，就交給客人：照料的價錢付錢，等得越短小費越多（最多四成）。氣走一位扣 $60。</li>
                 <li>七十五秒打烊。熟面孔也會來：茱莉鴨、伊藤、坐洗部的狗。</li>
                 <li>賺的錢可以按上面的<b class="font-normal text-wabi-dark">店面</b>升級：配料櫃、轉盤馬達、煞車、倒轉把手、店員、泡泡鴨。登入 LINE 換手機也在。</li>
@@ -185,10 +185,12 @@
             sauce: { layer: 't', name: '巧克力醬', price: 35, unlock: 1 }, berry: { layer: 't', name: '草莓', price: 50, unlock: 2 },
         };
         const TIP_MAX = 0.4, SCRAP = 25, ANGRY = 60, ITO_WIN = 300, ITO_P = 0.35;
-        const PAT_BASE = 36;                 // 客人基本願意等幾秒
-        const CLOSED = true;                 // 監修中：蓋住店面、不能開店（改好再拿掉）
-        const BELT = 62;                     // 轉盤每秒走幾 px（轉盤馬達會變快）
-        const GAP = 104;                     // 盤子之間至少隔多遠才上下一盤
+        const PAT_BASE = 26;                 // 客人基本願意等幾秒
+        // 監修中：蓋住店面、不能開店（改好再拿掉）；網址加 ?preview 可以先試玩
+        const CLOSED = !/[?&]preview\b/.test(location.search);
+        const BELT = 160;                    // 轉盤每秒走幾 px（轉盤馬達會變快）；轉盤上一次一盤，所以走得快
+        const NEXT_GAP = 0.3;                // 上一盤離開轉盤後，隔幾秒才能出下一盤
+        const TRAY = { x: 333, y: 217, w: 46, h: 62 };   // 右上角的「出盤」卡：三層選好的樣子，點了出盤
         const SLOT_COL = ['#3f7fbf', '#d0782a', '#8a56b0'];   // 三位客人的號碼顏色（盤子上同一色）
         const GRADES = [
             { min: 2600, mark: '甜', line: '整條轉盤都在冒甜味' },
@@ -206,11 +208,11 @@
             { key: 'motor', name: '轉盤馬達', sub: '轉盤', prices: [30000, 70000, 120000], vals: [1.15, 1.3, 1.45],
               tiers: ['', '二手馬達', '新馬達', '工業馬達'], fx: v => `轉盤快 ${Math.round(v * 100 - 100)}%：出餐更快，手也要更快` },
             { key: 'brake', name: '煞車', sub: '暫停', prices: [15000, 40000], vals: [{ n: 2, s: 3 }, { n: 3, s: 5 }],
-              tiers: ['', '手煞車', '腳踏煞車'], fx: v => `「暫停」鈕：轉盤停 ${v.s} 秒，一輪 ${v.n} 次（客人照樣在等）` },
+              tiers: ['', '手煞車', '腳踏煞車'], fx: v => `「暫停」鈕：整家店停 ${v.s} 秒（轉盤停、客人也不扣耐心），一輪 ${v.n} 次` },
             { key: 'rewind', name: '倒轉把手', sub: '補漏', prices: [40000], vals: [3],
-              tiers: ['', '倒轉把手'], fx: v => `「倒轉」鈕：漏放的那一盤退回漏掉的那一站前面重放，一輪 ${v} 次` },
+              tiers: ['', '倒轉把手'], fx: v => `「倒轉」鈕：轉盤上那盤退回出盤口，料放回料盒讓你改（不扣材料費），一輪 ${v} 次` },
             { key: 'staff', name: '店員', sub: '人手', prices: [60000, 120000], vals: [1, 2],
-              tiers: ['', '工讀生', '兩個工讀生'], fx: v => v >= 2 ? '「底」和「餡」兩站沒待命的話，店員自動放對的料' : '「底」那一站沒待命的話，店員自動放對的料' },
+              tiers: ['', '工讀生', '兩個工讀生'], fx: v => v >= 2 ? '「底」和「餡」你沒選的話，出盤時店員幫你放對的' : '「底」你沒選的話，出盤時店員幫你放對的' },
             { key: 'bubbleduck', name: '泡泡鴨', sub: '客人', prices: [20000, 80000], vals: [1, 2],
               tiers: ['', '泡泡鴨', '馬達泡泡鴨'], fx: v => v >= 2 ? '每 12 秒自己吐一次泡泡：每位客人多等 6 秒' : '「吐泡泡」鈕：客人看了開心，每位多等 6 秒（14 秒才能再吐一次）' },
         ];
@@ -243,7 +245,7 @@
             { kind: 'dog', name: '坐洗部的狗', p: 0.05, mult: 0.75 },
         ];
         const BOSS = {
-            start: ['開店囉。先點料，盤子經過就會放上去。', '今天也要甜甜的。'],
+            start: ['開店囉。三層料點好，按右上角出盤。', '今天也要甜甜的。'],
             wrong: ['放錯了，那一盤報廢。', '這不是客人點的啦。', '材料費從你薪水扣喔。'],
             miss: ['漏放了！', '那一盤少一層。'],
             served: ['好吃好吃。', '客人笑了。', '下一位。', '這盤漂亮。'],
@@ -295,7 +297,7 @@
         function newRound() {
             shop = loadShop();
             G = {
-                started: false, ended: false, clock: 0, custs: [null, null, null], nextAt: [0.2, 3, 6.5], plates: [], plateId: 0,
+                started: false, ended: false, clock: 0, custs: [null, null, null], nextAt: [0.2, 3, 6.5], plates: [], plateId: 0, queued: false, nextPlateAt: 0, trayFlash: 0,
                 armed: [null, null, null], pauseLeft: 0, brakes: val('brake') ? val('brake').n : 0, rewinds: val('rewind') || 0,
                 bubbleCd: 0, bubbleAuto: BUBBLE_AUTO, bubbles: [], floats: [], flash: [0, 0, 0],
                 earn: { sales: 0, tip: 0, ito: 0, scrap: 0, angry: 0 },
@@ -325,38 +327,53 @@
             if (who.kind === 'duck') { order.m = unlocked('pudding') ? 'pudding' : 'cream'; order.t = 'whip'; }
             if (who.kind === 'dog') order.b = 'cookie';
             const max = PAT_BASE * who.mult * (1 - 0.12 * progress());
-            G.custs[i] = { slot: i, who, order, max, left: max, state: 'wait', plate: null, arrive: G.clock, say: '', sayAt: -9, leaveAt: 0 };
+            G.custs[i] = { slot: i, who, order, max, left: max, state: 'wait', plate: null, arrive: G.clock, queueAt: G.clock, say: '', sayAt: -9, leaveAt: 0 };
             G.tally.customers++;
             if (SPECIALS.includes(who)) G.tally.specials[who.kind] = (G.tally.specials[who.kind] || 0) + 1;
         }
+        // 還沒上轉盤的客人，照先來後到；排第一個的就是下一盤（報廢重做的排到最後面）
+        const queue = () => G.custs.filter(cu => cu && cu.state === 'wait' && !cu.plate).sort((a, b) => a.queueAt - b.queueAt);
+        // 出盤時這一層放什麼：你選的；沒選的話，店員負責的層幫你放對的
+        const staffCovers = i => i < 2 && lv('staff') >= i + 1;
+        function trayPick(i, cu) { return G.armed[i] || (staffCovers(i) && cu ? cu.order[STATIONS[i].layer] : null); }
         function custSay(cu, text) { cu.say = text; cu.sayAt = G.clock; }
         const price = o => ING[o.b].price + ING[o.m].price + ING[o.t].price;
 
-        // 盤子經過一站：有待命的料就放上去（不對就報廢），沒有就漏放；店員負責的站自動放對的
+        // 盤子經過一站：把出盤時選好的那一層放上去；不是客人要的就報廢
         function passStation(i, p) {
-            const st = STATIONS[i], want = p.cu.order[st.layer];
-            let k = G.armed[i];
-            const staffOn = !k && i < 2 && lv('staff') >= i + 1;
-            if (staffOn) { k = want; G.tally.staff++; }
-            if (!k) {
-                p.miss[i] = true; G.tally.missed++;
-                floatText(st.x, st.y - 40, '漏', '#8a8580');
-                note('蘋果鴨：' + pick(BOSS.miss)); sfx.miss();
-                return;
-            }
-            if (!staffOn) G.armed[i] = null;
+            const st = STATIONS[i], want = p.cu.order[st.layer], k = p.pick[i];
             if (k !== want) { G.tally.wrong++; scrap(p, 'wrong'); return; }
-            p[st.layer] = k; p.miss[i] = false;
+            p[st.layer] = k;
             G.tally.menu[k] = (G.tally.menu[k] || 0) + 1;
             G.flash[i] = 0.35;
             sfx.pop(i);
+        }
+        // 出盤：三層都選好（店員補的也算）、有客人在等；轉盤上還有一盤就先排著，空了自己出
+        function sendPlate() {
+            if (CLOSED) return showToast('甜點店監修中，過幾天再來');
+            if (G.ended) return;
+            if (!G.started) start();
+            const cu = queue()[0];
+            if (!cu) { showToast('現在沒有客人在等盤子'); return; }
+            const lack = STATIONS.filter((st, i) => !trayPick(i, cu)).map(st => st.name);
+            if (lack.length) { G.trayFlash = 0.5; showToast(`還沒選：${lack.join('、')}`); sfx.miss(); return; }
+            if (G.plates.length || G.clock < G.nextPlateAt) { G.queued = !G.queued; sfx.arm(); return; }
+            doSend(cu);
+        }
+        function doSend(cu) {
+            const pick = STATIONS.map((st, i) => trayPick(i, cu));
+            G.tally.staff += STATIONS.filter((st, i) => !G.armed[i] && staffCovers(i)).length;
+            const p = { id: ++G.plateId, cu, s: 0, pick, b: null, m: null, t: null };
+            cu.plate = p; G.plates.push(p);
+            G.armed = [null, null, null]; G.queued = false;
+            sfx.send();
         }
         function scrap(p, why) {
             G.plates = G.plates.filter(x => x !== p);
             G.earn.scrap -= SCRAP; G.tally.scrapped++;
             const [x, y] = pointAt(p.s);
             floatText(x, y - 24, `報廢 −${fmt(SCRAP)}`, '#b33a2f');
-            if (p.cu.state === 'wait') { p.cu.plate = null; custSay(p.cu, pick(why === 'wrong' ? SAY.wrong : SAY.incomplete)); }
+            if (p.cu.state === 'wait') { p.cu.plate = null; p.cu.queueAt = G.clock; custSay(p.cu, pick(why === 'wrong' ? SAY.wrong : SAY.incomplete)); }
             if (why === 'wrong') note('蘋果鴨：' + pick(BOSS.wrong));
             sfx.wrong();
         }
@@ -406,17 +423,17 @@
         function useBrake() {
             if (!lv('brake') || !G.started || G.ended || G.brakes <= 0 || G.pauseLeft > 0) return;
             G.brakes--; G.pauseLeft = val('brake').s; G.tally.pauses++;
-            note('蘋果鴨：轉盤停一下，快點料。'); sfx.arm(); renderTools();
+            note('蘋果鴨：整家店停一下，看清楚再點。'); sfx.arm(); renderTools();
         }
         function useRewind() {
             if (!lv('rewind') || !G.started || G.ended || G.rewinds <= 0) return;
-            const p = G.plates.filter(x => x.miss.some(Boolean)).sort((a, b) => b.s - a.s)[0];
-            if (!p) { showToast('現在沒有漏放的盤子'); return; }
-            const i = p.miss.findIndex(Boolean);
-            p.s = STATIONS[i].s - 36; p.miss = p.miss.map((m, j) => j < i ? m : false);
-            G.rewinds--; G.tally.rewinds++;
+            const p = G.plates[0];
+            if (!p) { showToast('轉盤上沒有盤子'); return; }
             const [x, y] = pointAt(p.s); floatText(x, y - 26, '倒轉', BLUE);
-            note(`蘋果鴨：${p.cu.slot + 1} 號那盤退回「${STATIONS[i].name}」重放。`); sfx.rewind(); renderTools();
+            G.plates = []; p.cu.plate = null; p.cu.queueAt = -1;   // 排回第一個
+            G.armed = p.pick.slice(); G.queued = false; G.nextPlateAt = G.clock;
+            G.rewinds--; G.tally.rewinds++;
+            note(`蘋果鴨：${p.cu.slot + 1} 號那盤退回來了，料放回料盒，改好再出。`); sfx.rewind(); renderTools();
         }
         function blowBubbles(auto) {
             if (!lv('bubbleduck') || !G.started || G.ended) return;
@@ -440,14 +457,15 @@
             // 客人
             G.custs.forEach((cu, i) => {
                 if (!cu) { if (G.clock >= G.nextAt[i]) spawnCust(i); return; }
-                if (cu.state === 'wait') { cu.left -= dt; if (cu.left <= 0) angry(cu); }
+                if (cu.state === 'wait') { if (G.pauseLeft <= 0) cu.left -= dt; if (cu.left <= 0) angry(cu); }
                 else if (G.clock >= cu.leaveAt) { G.custs[i] = null; G.nextAt[i] = G.clock + rnd(0.8, 2.4); }
             });
-            // 上盤子：等最久、還沒有盤子的客人先上；入口要空出 GAP
-            const waiting = G.custs.filter(cu => cu && cu.state === 'wait' && !cu.plate).sort((a, b) => a.arrive - b.arrive);
-            if (waiting.length && !G.plates.some(p => p.s < GAP)) {
-                const cu = waiting[0], p = { id: ++G.plateId, cu, s: 0, b: null, m: null, t: null, miss: [false, false, false] };
-                cu.plate = p; G.plates.push(p);
+            // 出盤：排著的（按過出盤、轉盤還有一盤）等轉盤空了自己出
+            G.trayFlash = Math.max(0, G.trayFlash - dt);
+            if (G.plates.length) G.nextPlateAt = G.clock + NEXT_GAP;
+            else if (G.queued && G.clock >= G.nextPlateAt) {
+                const cu = queue()[0];
+                if (cu && STATIONS.every((st, i) => trayPick(i, cu))) doSend(cu); else G.queued = false;
             }
             // 轉盤
             if (G.pauseLeft > 0) { G.pauseLeft = Math.max(0, G.pauseLeft - dt); if (!G.pauseLeft) renderTools(); }
@@ -456,7 +474,7 @@
                 G.plates.slice().sort((a, b) => b.s - a.s).forEach(p => {
                     const prev = p.s; p.s += ds;
                     STATIONS.forEach((st, i) => { if (G.plates.includes(p) && prev < st.s && p.s >= st.s) passStation(i, p); });
-                    if (G.plates.includes(p) && p.s >= EXIT_S) { if (p.b && p.m && p.t) serve(p); else scrap(p, 'incomplete'); }
+                    if (G.plates.includes(p) && p.s >= EXIT_S) serve(p);
                 });
             }
             G.bubbles.forEach(b => { b.t += dt; b.x += b.vx * dt; b.y += b.vy * dt; b.vy -= 8 * dt; });
@@ -477,6 +495,7 @@
         }
         const sfx = {
             arm: () => tone(660, 0.07, 0.08, 'triangle'),
+            send: () => { tone(520, 0.08, 0.1, 'triangle'); tone(780, 0.1, 0.1, 'triangle', 0.07); },
             pop: i => tone(520 + i * 120, 0.09, 0.12, 'sine', 0, 1.6),
             miss: () => tone(300, 0.18, 0.08, 'triangle', 0, 0.8),
             wrong: () => { tone(180, 0.22, 0.12, 'square', 0, 0.7); tone(140, 0.25, 0.08, 'square', 0.08, 0.7); },
@@ -584,6 +603,7 @@
             c.save(); c.translate(shake, 0);
             c.fillStyle = '#fffdf8'; c.strokeStyle = '#cbbfae'; c.lineWidth = 1;
             rr(c, x - 44, by - 26, 88, 50, 12); c.fill(); c.stroke();
+            if (G.started && cu.state === 'wait' && queue()[0] === cu) { c.strokeStyle = '#b33a2f'; c.lineWidth = 2; rr(c, x - 44, by - 26, 88, 50, 12); c.stroke(); c.fillStyle = '#b33a2f'; rr(c, x + 6, by - 33, 36, 13, 3); c.fill(); c.fillStyle = '#fff'; c.font = `600 8.5px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('下一盤', x + 24, by - 26.5); c.fillStyle = '#fffdf8'; c.strokeStyle = '#cbbfae'; c.lineWidth = 1; }
             c.beginPath(); c.arc(x - 10, by + 30, 3.5, 0, TAU); c.fill(); c.stroke(); c.beginPath(); c.arc(x - 5, by + 37, 2, 0, TAU); c.fill(); c.stroke();
             drawDessert(c, cu.order, x - 16, by + 12, 0.85);
             c.font = `500 8.5px ${SANS}`; c.textAlign = 'left'; c.textBaseline = 'middle';
@@ -633,7 +653,7 @@
             c.fillStyle = active ? '#b33a2f' : '#fffaf2'; rr(c, lx - 9, ly - 9, 18, 18, 3); c.fill();
             c.strokeStyle = '#b33a2f'; c.lineWidth = 1.2; c.stroke();
             c.fillStyle = active ? '#fff' : '#b33a2f'; c.font = `700 11px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(st.name, lx, ly + 1);
-            // 待命的料畫在圓台右上角；店員負責的站蓋「員」
+            // 選好的料畫在圓台右上角；店員負責的站蓋「員」
             if (G.armed[i]) { c.fillStyle = '#fff6dc'; c.strokeStyle = '#b33a2f'; c.lineWidth = 1.5; c.beginPath(); c.arc(st.x + 28, st.y - 28, 12, 0, TAU); c.fill(); c.stroke(); drawIng(c, G.armed[i], st.x + 28, st.y - 26, 0.5); }
             else if (i < 2 && lv('staff') >= i + 1) { c.fillStyle = '#eef3fb'; c.strokeStyle = BLUE; c.lineWidth = 1.2; c.beginPath(); c.arc(st.x + 28, st.y - 28, 10, 0, TAU); c.fill(); c.stroke(); c.fillStyle = BLUE; c.font = `600 10px ${SERIF}`; c.fillText('員', st.x + 28, st.y - 27.5); }
         }
@@ -655,8 +675,26 @@
             }
             if (armed) {
                 c.fillStyle = '#b33a2f'; rr(c, x - 15, y - h / 2 - 9, 30, 12, 3); c.fill();
-                c.fillStyle = '#fff'; c.font = `600 8.5px ${SANS}`; c.textBaseline = 'middle'; c.fillText('待命', x, y - h / 2 - 3);
+                c.fillStyle = '#fff'; c.font = `600 8.5px ${SANS}`; c.textBaseline = 'middle'; c.fillText('選好', x, y - h / 2 - 3);
             }
+        }
+        // 右上角的出盤卡：下一位是誰、三層選好的樣子；選齊了變朱色「出盤」，排著等轉盤寫「排隊」
+        function drawTray(c, now) {
+            const { x, y, w, h } = TRAY, cu = G.started ? queue()[0] : null;
+            const picks = STATIONS.map((st, i) => trayPick(i, cu));
+            const ready = cu && picks.every(Boolean), busy = G.plates.length > 0;
+            const pulse = ready && !busy && !G.queued ? 0.5 + 0.5 * Math.sin(now / 160) : 0;
+            c.fillStyle = 'rgba(0,0,0,.12)'; rr(c, x - w / 2 + 1, y - h / 2 + 2, w, h, 7); c.fill();
+            c.fillStyle = G.trayFlash ? '#ffe1d9' : '#fffdf8'; rr(c, x - w / 2, y - h / 2, w, h, 7); c.fill();
+            c.strokeStyle = ready ? '#b33a2f' : '#cbbfae'; c.lineWidth = ready ? 2 + pulse : 1; c.stroke();
+            c.fillStyle = 'rgba(0,0,0,.08)'; c.beginPath(); c.ellipse(x, y + 8, 17, 5, 0, 0, TAU); c.fill();
+            c.fillStyle = '#ffffff'; c.strokeStyle = '#d8cfc2'; c.lineWidth = 1; c.beginPath(); c.ellipse(x, y + 6, 17, 5, 0, 0, TAU); c.fill(); c.stroke();
+            drawDessert(c, { b: picks[0], m: picks[1], t: picks[2] }, x, y + 2, 0.72);
+            if (cu) badge(c, cu.slot, x + w / 2 - 6, y - h / 2 + 6, 6.5);
+            c.fillStyle = ready ? '#b33a2f' : '#cbbfae'; rr(c, x - w / 2 + 4, y + h / 2 - 17, w - 8, 13, 3); c.fill();
+            c.fillStyle = '#fff'; c.font = `600 9px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+            c.fillText(!cu ? '沒客人' : !ready ? `還差 ${picks.filter(k => !k).length}` : busy || G.queued ? (G.queued ? '排隊中' : '出盤') : '出盤', x, y + h / 2 - 10);
+            if (!picks.some(Boolean)) { c.fillStyle = '#9a9187'; c.font = `500 8.5px ${SANS}`; c.fillText('三層', x, y - 14); c.fillText('選好', x, y - 3); }
         }
         function drawPlate(c, p) {
             const [x, y] = pointAt(p.s);
@@ -664,7 +702,6 @@
             c.strokeStyle = 'rgba(0,0,0,.12)'; c.lineWidth = 1; c.stroke();
             drawDessert(c, p, x, y);
             badge(c, p.cu.slot, x + 18, y - 14, 6.5);
-            if (p.miss.some(Boolean)) { c.fillStyle = '#8a8580'; rr(c, x - 26, y - 22, 14, 14, 2); c.fill(); c.fillStyle = '#fff'; c.font = `600 9px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('漏', x - 19, y - 14.5); }
         }
         function floatText(x, y, text, color, big = false) { G.floats.push({ x, y, text, color, big, at: performance.now() }); }
         function drawFloats(c, now) {
@@ -705,6 +742,7 @@
             c.fillStyle = '#b33a2f'; rr(c, 300, 496, 54, 50, 6); c.fill();
             c.fillStyle = '#fff'; c.font = `600 13px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('出餐', 327, 514);
             c.font = `500 9px ${SANS}`; c.fillText('→ 客人', 327, 531);
+            drawTray(c, now);
             G.plates.forEach(p => drawPlate(c, p));
             if (lv('bubbleduck')) {
                 drawLogo(c, DUCK.x, DUCK.y, 0.3, BLUE, '#ffffff', 3.4);
@@ -734,6 +772,7 @@
             for (let i = 0; i < STATIONS.length; i++) for (const [x, y, key] of STATIONS[i].bins) {
                 if (Math.abs(p.x - x) <= 27 && Math.abs(p.y - y) <= 28) { tapBin(i, key); return; }
             }
+            if (G.started && Math.abs(p.x - TRAY.x) <= TRAY.w / 2 + 4 && Math.abs(p.y - TRAY.y) <= TRAY.h / 2 + 4) { sendPlate(); return; }
             if (lv('bubbleduck') && G.started && Math.hypot(p.x - DUCK.x, p.y - DUCK.y) < 28) { blowBubbles(false); return; }
             if (!G.started) start();
         });
@@ -775,7 +814,7 @@
                 ['賣出的甜點', t.served, '份', e.sales, '照三層料的價錢加起來'],
                 ['小費', t.served - t.itoServed, '位', e.tip, '等得越短給越多，最多這一份的四成'],
                 ['伊藤的刮刮樂', t.itoWins, '張', e.ito, `伊藤用刮刮樂付小費，刮中 ${fmt(ITO_WIN)}`],
-                ['報廢的盤子', t.scrapped, '盤', e.scrap, `放錯料或少一層，材料費每盤 ${fmt(SCRAP)}`],
+                ['報廢的盤子', t.scrapped, '盤', e.scrap, `選錯料，材料費每盤 ${fmt(SCRAP)}`],
                 ['氣走的客人', t.angry, '位', e.angry, `蘋果鴨扣薪，每位 ${fmt(ANGRY)}`],
             ].filter(r => r[1] && r[3]);
         }
@@ -1002,6 +1041,7 @@
 
         fit();
         window.addEventListener('resize', fit);
+        if (!CLOSED) $('closed').remove();
         newRound();
         renderShopLv();
         requestAnimationFrame(frame);
