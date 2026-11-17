@@ -57,6 +57,8 @@ var WIFI_LOGS_PER_HOUR = 60;     // 一支手機每小時最多送幾次蹭網�
 var WIFI_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾輪
 var ZAOCAN_LOGS_PER_HOUR = 60;   // 一支手機每小時最多送幾次早餐店紀錄
 var ZAOCAN_ROWS_PER_HOUR = 2000; // 全站每小時最多存幾天（一輪 75 秒算一天）
+var DESSERT_LOGS_PER_HOUR = 60;  // 一支手機每小時最多送幾次甜點店紀錄
+var DESSERT_ROWS_PER_HOUR = 2000;
 var SHIP_LOGS_PER_HOUR = 60;     // 一支手機每小時最多送幾次貨運紀錄
 var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 
@@ -105,6 +107,7 @@ function route(type, input) {
     if (type === 'farmLog') return farmLog(input);
     if (type === 'wifiLog') return wifiLog(input);
     if (type === 'zaocanLog') return zaocanLog(input);
+    if (type === 'dessertLog') return dessertLog(input);
     if (type === 'shipLog') return shipLog(input);
     if (type === 'gongdeLog') return gongdeLog(input);
     if (type === 'leaderboard') return leaderboard(input);
@@ -1359,7 +1362,7 @@ function boardScan(st, name) {
 // 執行 archiveLogs() 把 90 天以前的紀錄搬到新的一份試算表（檔名「丼步喱紀錄封存 日期」，在你的雲端硬碟），這份裡的刪掉。
 // 排行榜的最好成績先記進 Board 再搬，所以搬走的那幾場還是算數。第一次執行會跳出授權（要能建新的試算表）。
 var CELL_LIMIT = 10000000;
-var ARCHIVE_SHEETS = ['Washes', 'Cleans', 'Farms', 'Wifis', 'Zaocans', 'Ships', 'Gongde'];
+var ARCHIVE_SHEETS = ['Washes', 'Cleans', 'Farms', 'Wifis', 'Zaocans', 'Ships', 'Desserts', 'Gongde'];
 function logSize() {
   var ss = SpreadsheetApp.getActiveSpreadsheet(), total = 0, lines = [];
   ss.getSheets().forEach(function (sh) {
@@ -2372,6 +2375,81 @@ function zaocanLog(input) {
   });
   if (rows.length) {
     var sheet = zaocansSheet();
+    rows.forEach(function (row) { sheet.appendRow(row); });
+    cache.put(allKey, String(allCount + rows.length), 3600);
+  }
+  return { result: 'success', saved: rows.length, skipped: skipped };
+}
+
+// --- 甜點・轉（tiandian.html）：蘋果鴨甜點店，每一輪的紀錄 ---
+// 跟早餐店紀錄一樣：公開、appendRow 不排隊、不寄信不回資料；session 對就記 line_id。
+var DESSERT_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'total', 'sales', 'grade',
+  'customers', 'served', 'angry', 'scrapped', 'wrong', 'missed', 'tips', 'ito', 'bubbles', 'pauses', 'rewinds', 'staff',
+  'fastest_ms', 'avg_wait_ms', 'specials', 'menu', 'shop', 'ms', 'len', 'login'];
+var DESSERT_MENU = ['cookie', 'cake', 'bread', 'choco', 'cream', 'pudding', 'fruit', 'sprinkle', 'whip', 'sauce', 'berry'];
+var DESSERT_SPECIALS = ['duck', 'ito', 'dog'];
+
+function dessertsSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Desserts');
+  if (!sheet) {
+    sheet = ss.insertSheet('Desserts');
+    sheet.appendRow(DESSERT_HEADERS);
+    sheet.setFrozenRows(1);
+  } else if (sheet.getLastColumn() < DESSERT_HEADERS.length) {
+    sheet.getRange(1, 1, 1, DESSERT_HEADERS.length).setValues([DESSERT_HEADERS]);
+  }
+  return sheet;
+}
+
+function dessertRow(r, now, lineId, device) {
+  if (!r || typeof r !== 'object') return null;
+  var at = new Date(r.at);
+  if (isNaN(at.getTime()) || at.getTime() > now.getTime() + 86400000 || at.getTime() < now.getTime() - 90 * 86400000) return null;
+  var n = function (v) { return washNum(v, 0, 999); };
+  var shop = {};
+  if (r.shop && typeof r.shop === 'object') Object.keys(r.shop).slice(0, 20).forEach(function (k) { if (/^[a-z]{1,16}$/.test(k)) shop[k] = washNum(r.shop[k], 0, 10); });
+  return [
+    now, at, lineId || '', device,
+    washNum(r.total, 0, 100000), washNum(r.sales, -10000, 100000), washText(r.grade, 2),
+    n(r.customers), n(r.served), n(r.angry), n(r.scrapped), n(r.wrong), n(r.missed),
+    washNum(r.tips, 0, 100000), washNum(r.ito, 0, 100000), n(r.bubbles), n(r.pauses), n(r.rewinds), n(r.staff),
+    washNum(r.fastest_ms, 0, 600000), washNum(r.avg_wait_ms, 0, 600000),
+    zaocanCounts(r.specials, DESSERT_SPECIALS, 99), zaocanCounts(r.menu, DESSERT_MENU, 999), JSON.stringify(shop),
+    washNum(r.ms, 0, 3600000), washNum(r.len, 0, 3600), !!r.login
+  ];
+}
+
+// 在編輯器選這個按「執行」：先把 Desserts 分頁建出來
+function setupDesserts() {
+  var sheet = dessertsSheet();
+  Logger.log('Desserts 分頁好了，目前有 ' + (sheet.getLastRow() - 1) + ' 輪。網頁要能存，還要「部署 → 管理部署作業 → 編輯 → 版本選新版本 → 部署」。');
+}
+
+function dessertLog(input) {
+  var device = String(input.device || '').replace(/[^A-Za-z0-9-]/g, '').slice(0, 40);
+  if (device.length < 8) return { result: 'error', error: '沒有裝置代號' };
+  var recs = Array.isArray(input.recs) ? input.recs.slice(0, 20) : [];
+  if (!recs.length) return { result: 'success', saved: 0 };
+  var cache = CacheService.getScriptCache();
+  var hour = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var devKey = 'dessertLog:' + device + ':' + hour, allKey = 'dessertRows:' + hour;
+  var devCount = Number(cache.get(devKey) || 0), allCount = Number(cache.get(allKey) || 0);
+  if (devCount >= DESSERT_LOGS_PER_HOUR) return { result: 'error', error: '這小時送太多次了' };
+  if (allCount + recs.length > DESSERT_ROWS_PER_HOUR) return { result: 'error', error: '這小時全站開太多次店了' };
+  cache.put(devKey, String(devCount + 1), 3600);
+  var lineId = input.session ? sessionUser(input.session) : null;
+  var now = new Date(), rows = [], skipped = 0;
+  recs.forEach(function (r) {
+    var row = dessertRow(r, now, lineId, device);
+    if (!row) { skipped++; return; }
+    var dupKey = 'dessert:' + device + ':' + row[1].getTime();
+    if (cache.get(dupKey)) { skipped++; return; }
+    cache.put(dupKey, '1', 6 * 3600);
+    rows.push(row);
+  });
+  if (rows.length) {
+    var sheet = dessertsSheet();
     rows.forEach(function (row) { sheet.appendRow(row); });
     cache.put(allKey, String(allCount + rows.length), 3600);
   }

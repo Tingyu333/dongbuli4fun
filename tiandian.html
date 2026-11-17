@@ -5,32 +5,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>甜點・轉 | 丼步喱</title>
-    <!-- 設計稿：浣熊大王提案的甜點店流水線，店名泡泡鴨甜點舖（使用者寫的是「泡泡鴨🍎甜點舖」，蘋果用畫的，網站不放 emoji）。畫面是假的、不能玩 -->
+    <!-- 蘋果鴨甜點店：浣熊大王提案的流水線甜點店。商標是使用者畫的「頭上頂蘋果的鴨子」，用 canvas 重畫（drawLogo），原圖沒放進 repo；網站不放 emoji -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="assets/theme.css?v=20261116d">
     <script src="assets/theme.js?v=20261116d"></script>
+    <script src="assets/saveimg.js?v=20261116d"></script>
+    <script src="assets/line.js?v=20261116d"></script>
+    <script src="assets/wallet.js?v=20261116d"></script>
     <style>
+        /* 整塊都是要點的地方：不能捲動、長按不能跳系統選單、不能選字 */
         .stage { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         #cv { display: block; width: 100%; aspect-ratio: 360 / 560; touch-action: none; border-radius: 4px; }
         .tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .tool {
-            min-height: 46px; border: 1px solid rgb(var(--wabi-sub)); border-radius: 6px; background: rgb(var(--wabi-bg));
-            font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: 0.08em; color: rgb(var(--wabi-dark)); line-height: 1.25;
+            min-height: 50px; border: 1px solid rgb(var(--wabi-sub)); border-radius: 6px; background: rgb(var(--wabi-bg));
+            font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: 0.08em; color: rgb(var(--wabi-dark)); line-height: 1.25;
+            touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform .08s, background-color .15s;
         }
-        .tool small { display: block; font-size: 10px; color: rgb(var(--wabi-accent)); letter-spacing: 0.04em; }
-        .tool.locked { opacity: .55; border-style: dashed; }
+        .tool small { display: block; font-size: 10px; color: rgb(var(--wabi-accent)); letter-spacing: 0.04em; margin-top: 1px; }
+        .tool:active { transform: scale(.95); background: rgb(var(--wabi-sub) / 0.5); }
+        .tool:disabled { opacity: .45; }
+        .tool.locked { opacity: .5; border-style: dashed; }
+        .tool.is-on { border-color: rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); }
+        /* 開店中把左下角的晝夜鈕收起來：會蓋住「暫停」 */
+        html.td-open .theme-toggle { opacity: 0; pointer-events: none; transition: opacity .2s; }
+
         .shop-btn {
             display: inline-flex; align-items: center; height: 1.9rem; padding: 0 0.75rem;
             border: 1px solid rgb(var(--wabi-accent) / 0.5); border-radius: 9999px;
-            font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.15em; color: rgb(var(--wabi-dark)); white-space: nowrap;
+            font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.15em; color: rgb(var(--wabi-dark));
+            white-space: nowrap; touch-action: manipulation;
         }
+        .shop-btn b { margin-left: 0.3rem; font-weight: 400; color: rgb(var(--wabi-shu)); }
         #shop { background: rgba(0, 0, 0, 0); transition: background 0.22s; }
         #shop.on { background: rgba(0, 0, 0, 0.45); }
         #shop .shop-sheet { transform: translateY(100%); transition: transform 0.22s ease-out; }
         #shop.on .shop-sheet { transform: none; }
+        @media (prefers-reduced-motion: reduce) { #shop, #shop .shop-sheet { transition: none; } }
         .shop-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 0; border-bottom: 1px solid rgb(var(--wabi-sub) / 0.6); }
         .shop-icon { flex: none; width: 56px; height: 56px; border-radius: 6px; background: #f3ead9; }
         .shop-dots i { display: inline-block; width: 6px; height: 6px; margin-left: 3px; border-radius: 50%; border: 1px solid rgb(var(--wabi-accent)); }
@@ -38,48 +52,89 @@
         .shop-buy {
             flex: none; min-width: 5.6rem; min-height: 44px; padding: 0 0.6rem;
             border: 1px solid rgb(var(--wabi-dark)); background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg));
-            font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.1em; line-height: 1.3;
+            font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.1em; line-height: 1.3; touch-action: manipulation;
         }
+        .shop-buy:disabled { background: transparent; color: rgb(var(--wabi-accent)); border-color: rgb(var(--wabi-sub)); }
+        .bill li { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.35rem 0; border-bottom: 1px dashed rgb(var(--wabi-sub) / 0.8); }
     </style>
     <link rel="stylesheet" href="assets/tailwind.css?v=20261117">
 </head>
 
-<body class="text-wabi-text font-serif leading-loose antialiased min-h-screen flex flex-col overflow-x-hidden">
+<body class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white min-h-screen flex flex-col overflow-x-hidden">
 
     <nav class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
         <a href="index.html" class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
         <div class="flex gap-3 md:gap-8">
-            <a href="index.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap text-stone-400">首頁・歸</a>
-            <a href="reviews.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap text-stone-400">留言・絆</a>
-            <a href="about.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap text-stone-400">關於・絆</a>
-            <a href="member.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap text-stone-400">會員・我</a>
+            <a href="index.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <a href="reviews.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <a href="about.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+            <a href="member.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">會員・我</a>
         </div>
     </nav>
 
     <main class="flex-grow max-w-md mx-auto pt-24 md:pt-32 pb-16 px-5 w-full">
         <div class="text-center mb-6 relative">
-            <button id="shopBtn" type="button" class="shop-btn absolute right-0 top-0">店面</button>
+            <button id="shopBtn" type="button" class="shop-btn absolute right-0 top-0" aria-haspopup="dialog">店面<b id="shopLv"></b></button>
             <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">DESSERT</span>
             <h1 class="text-3xl font-light text-wabi-dark tracking-widest">甜點・轉</h1>
-            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">泡泡鴨<svg viewBox="0 0 20 20" width="13" height="13" style="display:inline-block;vertical-align:-1px;margin:0 1px" aria-label="蘋果"><path d="M10 6c-2-1.6-6.5-1.4-6.5 3.6 0 3.8 2.6 7.4 4.4 7.4 1 0 1.4-.5 2.1-.5s1.1.5 2.1.5c1.8 0 4.4-3.6 4.4-7.4 0-5-4.5-5.2-6.5-3.6z" fill="#c8372f"/><path d="M10 6c0-2 1-3.5 2.5-4" stroke="#6b4a2a" stroke-width="1.4" fill="none" stroke-linecap="round"/><path d="M10.6 4.6c1.6-1.4 3.6-1 4.2-.4-.8 1.2-2.6 1.6-4.2.4z" fill="#4c9a3f"/></svg>甜點舖。轉盤不會等你。</p>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">蘋果鴨甜點店。轉盤不會等你。</p>
         </div>
 
-        <section class="stage bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-3 pt-4 pb-4">
+        <section id="stage" class="stage bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-3 pt-4 pb-4">
+            <!-- 固定兩行高：字數變了畫布才不會上下跳 -->
             <div class="flex items-start justify-between gap-2 px-1 min-h-[2.9rem]">
-                <p class="text-sm text-wabi-dark tracking-wider leading-relaxed">泡泡鴨：茱莉鴨要的是布丁，不是巧克力。</p>
-                <span class="shrink-0 text-right text-[10px] leading-relaxed font-sans tracking-widest text-stone-400">出餐 4<br>氣走 0</span>
+                <p id="note" class="text-sm text-wabi-dark tracking-wider leading-relaxed">蘋果鴨：開店前先看一下右上角的「店面」。</p>
+                <span id="best" class="shrink-0 text-right text-[10px] leading-relaxed font-sans tracking-widest text-stone-400">&nbsp;<br>&nbsp;</span>
             </div>
-            <canvas id="cv" class="mt-2" aria-label="甜點店：上面是客人和想吃的甜點，下面是轉盤，經過三站各放一種料"></canvas>
+            <canvas id="cv" class="mt-2" aria-label="甜點店：上面是客人和想吃的甜點，下面是轉盤，經過底、餡、飾三站，每一站先點好下一份要放的料"></canvas>
             <div class="tools mt-2">
-                <button type="button" class="tool locked">暫停<small>店面升級</small></button>
-                <button type="button" class="tool locked">倒轉<small>店面升級</small></button>
-                <button type="button" class="tool locked">店員<small>還沒請</small></button>
+                <button type="button" id="brakeBtn" class="tool">暫停<small></small></button>
+                <button type="button" id="rewindBtn" class="tool">倒轉<small></small></button>
+                <button type="button" id="bubbleBtn" class="tool">吐泡泡<small></small></button>
             </div>
-            <p class="mt-3 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed text-center">甜點轉到哪一站（亮起來），就點那一站旁邊的料。<br>三站都放好，轉到「出餐」就會交給點這一份的客人。</p>
+            <p id="hint" class="mt-3 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed text-center">每一站先點好「下一盤」要放的料（料盒亮起來待命），<br>盤子經過就自動放上去。三層都對，轉到出餐就交給客人。</p>
         </section>
 
-        <p class="mt-6 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed text-center">設計稿：畫面是假的，還不能玩。</p>
+        <section id="result" class="hidden mt-10 text-center scroll-mt-24">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent">打烊了</span>
+            <p class="mt-2 text-wabi-dark"><span id="score" class="text-5xl font-light">$0</span></p>
+            <p id="gradeLine" class="mt-1 text-sm text-stone-500 tracking-widest"></p>
+            <p id="servedLine" class="mt-1 text-xs font-sans tracking-widest text-stone-400"></p>
+            <ul id="bill" class="bill mt-5 mx-auto max-w-[17rem] text-left font-sans text-xs tracking-widest text-stone-500"></ul>
+            <div class="mt-3 mx-auto max-w-[17rem] border-y border-stone-100 py-3 font-sans text-xs tracking-widest text-stone-500">
+                <p class="flex justify-between"><span>合計</span><span id="paySales" class="text-wabi-dark"></span></p>
+                <p id="payMinRow" class="hidden flex justify-between mt-1"><span>保底出勤費<span class="block text-[10px] text-stone-400">合計不到 $100，照樣給 $100</span></span><span id="payMin" class="text-wabi-dark self-center"></span></p>
+                <p class="flex justify-between mt-2 pt-2 border-t border-stone-100"><span>錢包</span><span id="payWallet" class="text-wabi-shu text-sm"></span></p>
+                <p id="payAcct" class="mt-2 text-[10px] leading-relaxed text-stone-400"></p>
+                <p id="syncNote" class="mt-1 text-[10px] leading-relaxed text-stone-400"></p>
+            </div>
+            <img id="sheetImg" alt="甜點店日報" class="mt-6 w-full border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]">
+            <div class="mt-6 flex flex-col gap-3">
+                <button id="shareBtn" type="button" class="w-full bg-wabi-dark text-wabi-bg py-4 px-8 tracking-[0.2em] font-sans text-xs shadow-lg">分享甜點店日報</button>
+                <button id="againBtn" type="button" class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">再開一次店</button>
+                <button id="shopBtn2" type="button" class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">拿薪水升級店面</button>
+                <a href="scratch.html" class="block w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">拿薪水去彩券行</a>
+            </div>
+        </section>
+
+        <section class="mt-10 px-1">
+            <h2 class="text-sm tracking-[0.3em] text-wabi-dark">怎麼做</h2>
+            <ol class="mt-3 list-decimal pl-5 space-y-1.5 text-xs font-sans tracking-wide text-stone-500 leading-relaxed">
+                <li>客人坐下就點一份甜點，頭上的泡泡寫著三層要什麼，左上角的<b class="font-normal text-wabi-dark">彩色號碼</b>就是他那一盤；下面那條是他還願意等多久。</li>
+                <li>他的盤子會自己上轉盤，依序經過<b class="font-normal text-wabi-dark">底、餡、飾</b>三站。</li>
+                <li>每一站旁邊的料盒，<b class="font-normal text-wabi-dark">先點好「下一盤」要放的料</b>，料盒亮起來寫「待命」；下一盤經過就自動放上去，放完待命就取消，再點下一盤的。再點一次同一盒可以取消待命。</li>
+                <li><b class="font-normal text-wabi-shu">放錯料</b>：那一盤直接報廢，扣材料費 $25，客人的盤子重新上轉盤。</li>
+                <li>經過的時候沒有待命的料就是<b class="font-normal text-wabi-dark">漏放</b>，盤子上標「漏」；漏了一層的轉到出餐一樣報廢。買了倒轉把手，可以把漏放的那盤退回漏掉的那一站重放。</li>
+                <li>三層都放對、轉到出餐，就交給客人：照料的價錢付錢，等得越短小費越多（最多四成）。氣走一位扣 $60。</li>
+                <li>七十五秒打烊。熟面孔也會來：茱莉鴨、伊藤、坐洗部的狗。</li>
+                <li>賺的錢可以按上面的<b class="font-normal text-wabi-dark">店面</b>升級：配料櫃、轉盤馬達、煞車、倒轉把手、店員、泡泡鴨。登入 LINE 換手機也在。</li>
+            </ol>
+        </section>
     </main>
+
+    <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
+        <p>&copy; 2026 DONGBULI · 蘋果鴨甜點店</p>
+    </footer>
 
     <!-- 店面升級 -->
     <div id="shop" class="hidden fixed inset-0 z-[80] flex items-end justify-center" role="dialog" aria-modal="true" aria-label="甜點店升級">
@@ -87,76 +142,112 @@
             <div class="px-5 pt-5 pb-2 flex items-baseline justify-between border-b border-stone-200">
                 <div>
                     <p class="text-lg text-wabi-dark tracking-widest">店面・升</p>
-                    <p class="mt-1 text-[10px] font-sans tracking-widest text-stone-400">泡泡鴨說：設備錢你出，甜點我先試吃</p>
+                    <p class="mt-1 text-[10px] font-sans tracking-widest text-stone-400">蘋果鴨說：設備錢你出，甜點我先試吃</p>
                 </div>
-                <p class="text-xs font-sans tracking-widest text-stone-500">錢包 <b class="font-normal text-wabi-shu">$86,400</b></p>
+                <p class="text-xs font-sans tracking-widest text-stone-500">錢包 <b id="shopMoney" class="font-normal text-wabi-shu"></b></p>
             </div>
             <div id="shopList" class="px-5 max-h-[60vh] overflow-y-auto overscroll-contain"></div>
             <div class="px-5 py-4">
-                <button type="button" data-close class="w-full py-3 border border-stone-300 text-wabi-dark tracking-[0.2em] font-sans text-xs">回去開店</button>
+                <button type="button" data-shop-close class="w-full py-3 border border-stone-300 text-wabi-dark tracking-[0.2em] font-sans text-xs">回去開店</button>
             </div>
         </div>
     </div>
 
     <script>
-        const W = 360, H = 560;
-        const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
-        function fit() { const d = window.devicePixelRatio || 1, w = cv.clientWidth; cv.width = w * d; cv.height = w * H / W * d; ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0); }
+        // ===== 1. 基本 =====
+        const $ = id => document.getElementById(id);
+        const W = 360, H = 560, TAU = Math.PI * 2, ROUND = 75;
+        const SERIF = '"Noto Serif TC", serif', SANS = '"Noto Sans TC", sans-serif';
+        const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+        const rnd = (a, b) => a + Math.random() * (b - a);
+        const pick = a => a[Math.floor(Math.random() * a.length)];
+        const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+        const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const BLUE = '#2f4db0';   // 商標的藍
 
-        // ---- 甜點的料（實物，顏色固定）----
-        const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); };
-        function base(kind, x, y, s = 1) {
-            ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
-            ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.beginPath(); ctx.ellipse(0, 7, 19, 5, 0, 0, 7); ctx.fill();
-            if (kind === 'cookie') {
-                ctx.fillStyle = '#d29a52'; ctx.beginPath(); ctx.ellipse(0, 1, 17, 7, 0, 0, 7); ctx.fill();
-                ctx.fillStyle = '#b97d38'; ctx.beginPath(); ctx.ellipse(0, -1, 17, 6, 0, 0, 7); ctx.fill();
-                ctx.fillStyle = '#5a3420'; [[-8, -2], [3, -3], [9, 0], [-2, 1]].forEach(([a, b]) => { ctx.beginPath(); ctx.arc(a, b, 1.6, 0, 7); ctx.fill(); });
-            } else if (kind === 'cake') {
-                ctx.fillStyle = '#efcf78'; rr(-16, -9, 32, 15, 3); ctx.fill();
-                ctx.fillStyle = '#fff7ea'; ctx.fillRect(-16, -3, 32, 3);
-                ctx.fillStyle = '#e3bb5c'; ctx.fillRect(-16, 3, 32, 3);
-            } else {
-                ctx.fillStyle = '#c47f3c'; ctx.beginPath(); ctx.moveTo(-17, 6); ctx.quadraticCurveTo(-17, -12, 0, -12); ctx.quadraticCurveTo(17, -12, 17, 6); ctx.closePath(); ctx.fill();
-                ctx.strokeStyle = '#a0612a'; ctx.lineWidth = 1.5; [-6, 2, 10].forEach(a => { ctx.beginPath(); ctx.moveTo(a - 3, -7); ctx.lineTo(a + 2, -10); ctx.stroke(); });
-            }
-            ctx.restore();
-        }
-        function strawberry(x, y, r) {
-            ctx.fillStyle = '#d63a3a'; ctx.beginPath(); ctx.moveTo(x - r, y - r * .4); ctx.quadraticCurveTo(x, y - r * 1.3, x + r, y - r * .4); ctx.quadraticCurveTo(x + r * .8, y + r, x, y + r * 1.2); ctx.quadraticCurveTo(x - r * .8, y + r, x - r, y - r * .4); ctx.fill();
-            ctx.fillStyle = '#3f8f3a'; ctx.beginPath(); ctx.ellipse(x, y - r * .8, r * .7, r * .3, 0, 0, 7); ctx.fill();
-            ctx.fillStyle = '#ffd9c9'; [[-.3, 0], [.3, .2], [0, .6]].forEach(([a, b]) => { ctx.fillRect(x + a * r, y + b * r, 1, 1); });
-        }
-        function main(kind, x, y, s = 1) {
-            ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
-            if (kind === 'choco') { ctx.fillStyle = '#6b3d22'; rr(-15, -6, 30, 8, 4); ctx.fill(); ctx.fillStyle = '#8a5432'; rr(-13, -6, 22, 3, 2); ctx.fill(); }
-            else if (kind === 'cream') { ctx.fillStyle = '#fffaf2'; ctx.strokeStyle = '#e8dccb'; ctx.lineWidth = 1; [[-9, 0, 7], [0, -2, 8], [9, 0, 7]].forEach(([a, b, r]) => { ctx.beginPath(); ctx.arc(a, b, r, Math.PI, 0); ctx.fill(); ctx.stroke(); }); }
-            else if (kind === 'pudding') { ctx.fillStyle = '#f2c445'; ctx.beginPath(); ctx.moveTo(-12, 2); ctx.lineTo(-9, -10); ctx.lineTo(9, -10); ctx.lineTo(12, 2); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#8f4f17'; rr(-9, -12, 18, 4, 2); ctx.fill(); }
-            else { strawberry(-7, -3, 5); strawberry(6, -4, 5.5); }
-            ctx.restore();
-        }
-        function topping(kind, x, y, s = 1) {
-            ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
-            if (kind === 'sprinkle') { ['#e4566b', '#4f9ad9', '#f2c445', '#5fb36b', '#b06ad6', '#6b3d22'].forEach((c, i) => { ctx.fillStyle = c; ctx.save(); ctx.translate(-10 + i * 4, (i % 2) * 3 - 2); ctx.rotate(i); ctx.fillRect(-2, -.8, 4, 1.6); ctx.restore(); }); }
-            else if (kind === 'sauce') { ctx.strokeStyle = '#4a2614'; ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-12, -2); for (let i = 0; i < 6; i++) ctx.lineTo(-8 + i * 4, i % 2 ? -4 : 1); ctx.stroke(); }
-            else if (kind === 'berry') { strawberry(0, -3, 4.5); }
-            else { ctx.fillStyle = '#fffaf2'; ctx.strokeStyle = '#e8dccb'; ctx.beginPath(); ctx.moveTo(-6, 2); ctx.quadraticCurveTo(-7, -4, 0, -9); ctx.quadraticCurveTo(7, -4, 6, 2); ctx.closePath(); ctx.fill(); ctx.stroke(); }
-            ctx.restore();
-        }
-        function apple(x, y, r) {
-            ctx.fillStyle = '#c8372f'; ctx.beginPath(); ctx.moveTo(x, y - r * .55);
-            ctx.bezierCurveTo(x - r * .4, y - r * 1.05, x - r * 1.1, y - r * .8, x - r, y); ctx.bezierCurveTo(x - r * .9, y + r * .9, x - r * .3, y + r * 1.05, x, y + r * .85);
-            ctx.bezierCurveTo(x + r * .3, y + r * 1.05, x + r * .9, y + r * .9, x + r, y); ctx.bezierCurveTo(x + r * 1.1, y - r * .8, x + r * .4, y - r * 1.05, x, y - r * .55); ctx.fill();
-            ctx.strokeStyle = '#4a3020'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, y - r * .55); ctx.lineTo(x + r * .2, y - r * 1.15); ctx.stroke();
-            ctx.fillStyle = '#5aa04a'; ctx.beginPath(); ctx.ellipse(x + r * .55, y - r * 1, r * .45, r * .2, -.4, 0, 7); ctx.fill();
-        }
-        function dessert(d, x, y, s = 1) {
-            if (d.b) base(d.b, x, y, s);
-            if (d.m) main(d.m, x, y - 9 * s, s);
-            if (d.t) topping(d.t, x, y - (d.m ? 19 : 10) * s, s);
-        }
+        // 料：layer b 底、m 餡、t 飾；unlock 是配料櫃要幾級
+        const ING = {
+            cookie: { layer: 'b', name: '餅乾', price: 55 }, cake: { layer: 'b', name: '蛋糕', price: 80 }, bread: { layer: 'b', name: '麵包', price: 65 },
+            choco: { layer: 'm', name: '巧克力', price: 45 }, cream: { layer: 'm', name: '鮮奶油', price: 35 },
+            pudding: { layer: 'm', name: '布丁', price: 70, unlock: 1 }, fruit: { layer: 'm', name: '水果', price: 80, unlock: 2 },
+            sprinkle: { layer: 't', name: '巧克力米', price: 20 }, whip: { layer: 't', name: '鮮奶油', price: 25 },
+            sauce: { layer: 't', name: '巧克力醬', price: 35, unlock: 1 }, berry: { layer: 't', name: '草莓', price: 50, unlock: 2 },
+        };
+        const TIP_MAX = 0.4, SCRAP = 25, ANGRY = 60, ITO_WIN = 300, ITO_P = 0.35;
+        const PAT_BASE = 36;                 // 客人基本願意等幾秒
+        const BELT = 62;                     // 轉盤每秒走幾 px（轉盤馬達會變快）
+        const GAP = 104;                     // 盤子之間至少隔多遠才上下一盤
+        const SLOT_COL = ['#3f7fbf', '#d0782a', '#8a56b0'];   // 三位客人的號碼顏色（盤子上同一色）
+        const GRADES = [
+            { min: 2600, mark: '甜', line: '整條轉盤都在冒甜味' },
+            { min: 1800, mark: '香', line: '蘋果鴨點頭了' },
+            { min: 1100, mark: '可', line: '還算像一家店' },
+            { min: 500, mark: '淡', line: '轉盤轉得比你快' },
+            { min: 0, mark: '苦', line: '蘋果鴨把蘋果拿下來了' },
+        ];
+        const BEST_KEY = 'dongbuli-tiandian-best', STATS_KEY = 'dongbuli-tiandian-stats';
 
-        // ---- 轉盤（從左上進來，一站一站蛇行下去） ----
+        // ===== 2. 店面升級（存在共用錢包的 shop，key 跟別家店不重複）=====
+        const SHOP = [
+            { key: 'cabinet', name: '配料櫃', sub: '配料', prices: [20000, 50000], vals: [1, 2],
+              tiers: ['', '加一層冷藏', '整排玻璃櫃'], fx: v => v >= 2 ? '再多水果（餡）、草莓（飾），客人也會點' : '多了布丁（餡）、巧克力醬（飾），客人也會點；貴的料賣得比較貴' },
+            { key: 'motor', name: '轉盤馬達', sub: '轉盤', prices: [30000, 70000, 120000], vals: [1.15, 1.3, 1.45],
+              tiers: ['', '二手馬達', '新馬達', '工業馬達'], fx: v => `轉盤快 ${Math.round(v * 100 - 100)}%：出餐更快，手也要更快` },
+            { key: 'brake', name: '煞車', sub: '暫停', prices: [15000, 40000], vals: [{ n: 2, s: 3 }, { n: 3, s: 5 }],
+              tiers: ['', '手煞車', '腳踏煞車'], fx: v => `「暫停」鈕：轉盤停 ${v.s} 秒，一輪 ${v.n} 次（客人照樣在等）` },
+            { key: 'rewind', name: '倒轉把手', sub: '補漏', prices: [40000], vals: [3],
+              tiers: ['', '倒轉把手'], fx: v => `「倒轉」鈕：漏放的那一盤退回漏掉的那一站前面重放，一輪 ${v} 次` },
+            { key: 'staff', name: '店員', sub: '人手', prices: [60000, 120000], vals: [1, 2],
+              tiers: ['', '工讀生', '兩個工讀生'], fx: v => v >= 2 ? '「底」和「餡」兩站沒待命的話，店員自動放對的料' : '「底」那一站沒待命的話，店員自動放對的料' },
+            { key: 'bubbleduck', name: '泡泡鴨', sub: '客人', prices: [20000, 80000], vals: [1, 2],
+              tiers: ['', '泡泡鴨', '馬達泡泡鴨'], fx: v => v >= 2 ? '每 12 秒自己吐一次泡泡：每位客人多等 6 秒' : '「吐泡泡」鈕：客人看了開心，每位多等 6 秒（14 秒才能再吐一次）' },
+        ];
+        const SHOP_BY = Object.fromEntries(SHOP.map(u => [u.key, u]));
+        function loadShop() {
+            let d = null;
+            try { d = Wallet.shop; } catch (e) { }
+            d = d && typeof d === 'object' ? { lv: { ...(d.lv || {}) }, spent: Number(d.spent) || 0 } : { lv: {}, spent: 0 };
+            SHOP.forEach(u => { d.lv[u.key] = clamp(Math.floor(Number(d.lv[u.key]) || 0), 0, u.prices.length); });
+            return d;
+        }
+        let shop = loadShop();
+        const lv = key => shop.lv[key] || 0;
+        const val = key => lv(key) ? SHOP_BY[key].vals[lv(key) - 1] : 0;
+        const unlocked = k => (ING[k].unlock || 0) <= lv('cabinet');
+        const speed = () => BELT * (val('motor') || 1);
+        const BUBBLE_ADD = 6, BUBBLE_CD = 14, BUBBLE_AUTO = 12;
+
+        // 客人
+        const PEOPLE = [
+            { kind: 'student', name: '學生', mult: 1, shirt: '#5a7fa8' },
+            { kind: 'office', name: '上班族', mult: 0.9, shirt: '#6b7280' },
+            { kind: 'auntie', name: '阿姨', mult: 1.15, shirt: '#b0596a' },
+            { kind: 'worker', name: '工人', mult: 0.85, shirt: '#d48a3a' },
+            { kind: 'grandpa', name: '阿伯', mult: 1.25, shirt: '#7a8f5c' },
+        ];
+        const SPECIALS = [
+            { kind: 'duck', name: '茱莉鴨', p: 0.06, mult: 1.4 },
+            { kind: 'ito', name: '伊藤開晴', p: 0.06, mult: 1 },
+            { kind: 'dog', name: '坐洗部的狗', p: 0.05, mult: 0.75 },
+        ];
+        const BOSS = {
+            start: ['開店囉。先點料，盤子經過就會放上去。', '今天也要甜甜的。'],
+            wrong: ['放錯了，那一盤報廢。', '這不是客人點的啦。', '材料費從你薪水扣喔。'],
+            miss: ['漏放了！', '那一盤少一層。'],
+            served: ['好吃好吃。', '客人笑了。', '下一位。', '這盤漂亮。'],
+            angry: ['客人走掉了……', '等太久了啦。'],
+            bubble: ['泡泡來了，客人開心。', '噗噗噗。'],
+            end: ['打烊了。', '收工，蘋果鴨要去睡了。'],
+        };
+        const SAY = {
+            wrong: ['做錯了啦', '我不是點這個', '重做'], incomplete: ['少一層', '這樣不行', '還沒好吧'],
+            angry: ['不等了', '好慢', '下次再來'], happy: ['好吃！', '謝謝～', '讚', '就是這個'],
+            duck: '嘎（好吃）', dog: '汪！',
+        };
+        const SLOT_X = [60, 180, 300];
+
+        // ===== 3. 轉盤路線（從左上蛇行下來）=====
         const PTS = [[-20, 184], [80, 236], [180, 290], [282, 344], [180, 398], [80, 452], [190, 508], [290, 522], [380, 522]];
         function catmull(p, n = 24) {
             const out = [];
@@ -171,172 +262,752 @@
             return out;
         }
         const PATH = catmull(PTS);
-        function drawBelt(off) {
-            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-            ctx.strokeStyle = '#5d5148'; ctx.lineWidth = 36; ctx.beginPath(); PATH.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke();
-            ctx.strokeStyle = '#8b7d70'; ctx.lineWidth = 30; ctx.stroke();
-            // 履帶的橫條，跟著轉
-            ctx.strokeStyle = 'rgba(60,50,44,.45)'; ctx.lineWidth = 2;
-            let acc = 0, next = off % 14;
-            for (let i = 1; i < PATH.length; i++) {
-                const [x0, y0] = PATH[i - 1], [x1, y1] = PATH[i], len = Math.hypot(x1 - x0, y1 - y0);
-                while (next <= acc + len) {
-                    const t = (next - acc) / len, x = x0 + (x1 - x0) * t, y = y0 + (y1 - y0) * t, nx = -(y1 - y0) / len, ny = (x1 - x0) / len;
-                    ctx.beginPath(); ctx.moveTo(x - nx * 14, y - ny * 14); ctx.lineTo(x + nx * 14, y + ny * 14); ctx.stroke();
-                    next += 14;
-                }
-                acc += len;
-            }
-        }
-
-        // 三站：轉盤經過的圓台，旁邊是料盒
-        const STATIONS = [
-            { x: 80, y: 236, name: '底', bins: [[170, 216, 'b', 'cookie', '餅乾'], [226, 216, 'b', 'cake', '蛋糕'], [282, 216, 'b', 'bread', '麵包']] },
-            { x: 282, y: 344, name: '餡', bins: [[34, 342, 'm', 'choco', '巧克力'], [88, 342, 'm', 'cream', '鮮奶油'], [142, 342, 'm', 'pudding', '布丁', '$2萬'], [196, 342, 'm', 'fruit', '水果', '$4萬']] },
-            { x: 80, y: 452, name: '飾', bins: [[160, 448, 't', 'sprinkle', '巧克力米'], [214, 448, 't', 'cream2', '鮮奶油'], [268, 448, 't', 'sauce', '巧克力醬', '$2萬'], [322, 448, 't', 'berry', '水果', '$4萬']] },
-        ];
-        function drawStation(s, active) {
-            if (active) { ctx.fillStyle = 'rgba(242,196,69,.35)'; ctx.beginPath(); ctx.arc(s.x, s.y, 42, 0, 7); ctx.fill(); }
-            ctx.fillStyle = '#d9d2c7'; ctx.beginPath(); ctx.arc(s.x, s.y, 33, 0, 7); ctx.fill();
-            ctx.fillStyle = '#efe9df'; ctx.beginPath(); ctx.arc(s.x, s.y, 27, 0, 7); ctx.fill();
-            ctx.strokeStyle = active ? '#b33a2f' : '#b9ad9d'; ctx.lineWidth = active ? 2.5 : 1.5; ctx.beginPath(); ctx.arc(s.x, s.y, 33, 0, 7); ctx.stroke();
-            // 站名小印
-            const lx = s.x - 30, ly = s.y - 34;
-            ctx.fillStyle = active ? '#b33a2f' : '#fffaf2'; rr(lx - 9, ly - 9, 18, 18, 3); ctx.fill();
-            ctx.strokeStyle = '#b33a2f'; ctx.lineWidth = 1.2; ctx.stroke();
-            ctx.fillStyle = active ? '#fff' : '#b33a2f'; ctx.font = '700 11px "Noto Serif TC", serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(s.name, lx, ly + 1);
-        }
-        function drawBin([x, y, layer, kind, label, lock], active) {
-            const w = 50, h = 52;
-            ctx.fillStyle = 'rgba(0,0,0,.12)'; rr(x - w / 2 + 1, y - h / 2 + 2, w, h, 6); ctx.fill();
-            ctx.fillStyle = lock ? '#e6e1d9' : active ? '#fff6dc' : '#fbf7ef'; rr(x - w / 2, y - h / 2, w, h, 6); ctx.fill();
-            ctx.strokeStyle = active && !lock ? '#d9a62e' : '#cbbfae'; ctx.lineWidth = active && !lock ? 2 : 1; ctx.stroke();
-            ctx.save(); if (lock) ctx.globalAlpha = .3;
-            const k = kind === 'cream2' ? 'cream' : kind;
-            if (layer === 'b') base(k, x, y - 4, .85);
-            else if (layer === 'm') main(k, x, y - 2, .85);
-            else topping(k, x, y - 2, 1.1);
-            ctx.restore();
-            ctx.fillStyle = lock ? '#9a9187' : '#4a4038'; ctx.font = `500 ${label.length > 3 ? 8.5 : 10}px "Noto Sans TC", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-            ctx.fillText(label, x, y + h / 2 - 5);
-            if (lock) {
-                ctx.fillStyle = 'rgba(80,70,60,.75)'; rr(x - 17, y - 16, 34, 16, 3); ctx.fill();
-                ctx.fillStyle = '#fff'; ctx.font = '500 9px "Noto Sans TC", sans-serif'; ctx.fillText('鎖 ' + lock, x, y - 4.5);
-            }
-        }
-
-        // ---- 客人 ----
-        const CUSTOMERS = [
-            { x: 60, kind: 'student', want: { b: 'cake', m: 'cream', t: 'sprinkle' }, left: .72 },
-            { x: 180, kind: 'duck', want: { b: 'cookie', m: 'pudding', t: 'cream' }, left: .45 },
-            { x: 300, kind: 'auntie', want: { b: 'bread', m: 'choco', t: 'sprinkle' }, left: .2 },
-        ];
-        function face(c) {
-            const x = c.x, y = 118;
-            if (c.kind === 'duck') {
-                ctx.fillStyle = '#fbfbf8'; ctx.beginPath(); ctx.arc(x, y + 4, 22, 0, 7); ctx.fill(); ctx.strokeStyle = '#d6d2c8'; ctx.stroke();
-                ctx.fillStyle = '#f0a03a'; ctx.beginPath(); ctx.ellipse(x + 2, y + 10, 10, 4.5, 0, 0, 7); ctx.fill();
-                ctx.fillStyle = '#2c2c2c'; [-8, 9].forEach(d => { ctx.fillRect(x + d - 3, y - 2, 6, 1.6); });
-                ctx.fillStyle = '#3d6fb6'; ctx.beginPath(); ctx.moveTo(x - 9, y + 24); ctx.lineTo(x, y + 21); ctx.lineTo(x - 9, y + 18); ctx.fill(); ctx.beginPath(); ctx.moveTo(x + 9, y + 24); ctx.lineTo(x, y + 21); ctx.lineTo(x + 9, y + 18); ctx.fill();
-                return;
-            }
-            const skin = c.kind === 'auntie' ? '#f0c9a4' : '#f3d0ad', hair = c.kind === 'auntie' ? '#6b4a3a' : '#2b2522';
-            ctx.fillStyle = c.kind === 'student' ? '#5a7fa8' : '#b0596a'; rr(x - 22, y + 16, 44, 30, 12); ctx.fill();
-            ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(x, y, 19, 0, 7); ctx.fill();
-            ctx.fillStyle = hair;
-            if (c.kind === 'auntie') { [[-14, -10], [0, -16], [14, -10], [-18, 2], [18, 2]].forEach(([a, b]) => { ctx.beginPath(); ctx.arc(x + a, y + b, 8, 0, 7); ctx.fill(); }); }
-            else { ctx.beginPath(); ctx.arc(x, y - 4, 19, Math.PI * 1.05, Math.PI * 1.95); ctx.fill(); }
-            ctx.fillStyle = '#2c2c2c'; [-7, 7].forEach(d => { ctx.beginPath(); ctx.arc(x + d, y + 1, 1.8, 0, 7); ctx.fill(); });
-            ctx.strokeStyle = '#9a5a40'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(x, y + 7, 4, .2, Math.PI - .2); ctx.stroke();
-        }
-        function bubble(c) {
-            const x = c.x, y = 58;
-            ctx.fillStyle = '#fffdf8'; ctx.strokeStyle = '#cbbfae'; ctx.lineWidth = 1;
-            rr(x - 42, y - 26, 84, 50, 12); ctx.fill(); ctx.stroke();
-            ctx.beginPath(); ctx.arc(x - 10, y + 30, 3.5, 0, 7); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.arc(x - 5, y + 37, 2, 0, 7); ctx.fill(); ctx.stroke();
-            dessert(c.want, x - 12, y + 12, .9);
-            // 三站各要什麼，用字列出來（打勾是已經做好的那份）
-            ctx.font = '500 8.5px "Noto Sans TC", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#6b5f52';
-            const L = { cookie: '餅乾', cake: '蛋糕', bread: '麵包', choco: '巧克力', cream: '鮮奶油', pudding: '布丁', fruit: '水果', sprinkle: '巧克力米', sauce: '巧克力醬', berry: '草莓' };
-            [L[c.want.t], L[c.want.m], L[c.want.b]].forEach((t, i) => ctx.fillText(t, x + 8, y - 12 + i * 12));
-            if (c.done) { ctx.strokeStyle = '#b33a2f'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x + 32, y - 18, 7, 0, 7); ctx.stroke(); ctx.fillStyle = '#b33a2f'; ctx.font = '700 9px "Noto Serif TC", serif'; ctx.textAlign = 'center'; ctx.fillText('製', x + 32, y - 17.5); }
-            // 等待條
-            const bw = 56, by = 160;
-            ctx.fillStyle = '#e3dcd1'; rr(x - bw / 2, by, bw, 6, 3); ctx.fill();
-            ctx.fillStyle = c.left > .5 ? '#6aa56a' : c.left > .25 ? '#e0b43c' : '#c9503f'; rr(x - bw / 2, by, bw * c.left, 6, 3); ctx.fill();
-        }
-
-        // ---- 轉盤上的甜點（設計稿：照固定的進度跑） ----
-        const ON_BELT = [
-            { at: 0.115, d: { b: 'cake' } },
-            { at: 0.24, d: { b: 'cookie' } },
-            { at: 0.63, d: { b: 'bread', m: 'choco' } },
-        ];
-        function pointAt(t) {
-            let total = 0; const seg = [];
-            for (let i = 1; i < PATH.length; i++) { const l = Math.hypot(PATH[i][0] - PATH[i - 1][0], PATH[i][1] - PATH[i - 1][1]); seg.push(l); total += l; }
-            let want = t * total;
-            for (let i = 0; i < seg.length; i++) { if (want <= seg[i]) { const k = want / seg[i]; return [PATH[i][0] + (PATH[i + 1][0] - PATH[i][0]) * k, PATH[i][1] + (PATH[i + 1][1] - PATH[i][1]) * k]; } want -= seg[i]; }
+        const CUM = [0];
+        for (let i = 1; i < PATH.length; i++) CUM.push(CUM[i - 1] + Math.hypot(PATH[i][0] - PATH[i - 1][0], PATH[i][1] - PATH[i - 1][1]));
+        const nearestS = (x, y) => { let b = 0, bd = 1e9; PATH.forEach((p, i) => { const d = Math.hypot(p[0] - x, p[1] - y); if (d < bd) { bd = d; b = i; } }); return CUM[b]; };
+        function pointAt(s) {
+            if (s <= 0) return PATH[0];
+            for (let i = 1; i < PATH.length; i++) if (s <= CUM[i]) { const k = (s - CUM[i - 1]) / (CUM[i] - CUM[i - 1] || 1); return [PATH[i - 1][0] + (PATH[i][0] - PATH[i - 1][0]) * k, PATH[i - 1][1] + (PATH[i][1] - PATH[i - 1][1]) * k]; }
             return PATH[PATH.length - 1];
         }
-
-        let off = 0, speed = 0.022;
-        function draw() {
-            ctx.clearRect(0, 0, W, H);
-            // 店裡：牆、櫃台、廚房地板
-            ctx.fillStyle = '#f6efe4'; ctx.fillRect(0, 0, W, 176);
-            ctx.fillStyle = '#efe6d8'; for (let x = 0; x < W; x += 24) ctx.fillRect(x, 0, 12, 176);
-            ctx.fillStyle = '#e8ddcd'; ctx.fillRect(0, 176, W, H - 176);
-            ctx.strokeStyle = 'rgba(160,140,120,.18)'; ctx.lineWidth = 1;
-            for (let y = 196; y < H; y += 28) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
-            for (let x = 0; x < W; x += 28) { ctx.beginPath(); ctx.moveTo(x, 176); ctx.lineTo(x, H); ctx.stroke(); }
-            // 最上面：時間、招牌、錢
-            ctx.fillStyle = '#7a5a3e'; rr(104, 6, 152, 22, 4); ctx.fill();
-            ctx.fillStyle = '#fbe9c8'; ctx.font = '600 11px "Noto Serif TC", serif'; ctx.textBaseline = 'middle';
-            ctx.textAlign = 'right'; ctx.fillText('泡泡鴨', 166, 17.5); ctx.textAlign = 'left'; ctx.fillText('甜點舖', 185, 17.5);
-            apple(175.5, 17.5, 6.5);
-            ctx.font = '500 13px "Noto Sans TC", sans-serif'; ctx.fillStyle = '#4a4038'; ctx.textAlign = 'left'; ctx.fillText('0:42', 10, 17);
-            ctx.textAlign = 'right'; ctx.fillStyle = '#b33a2f'; ctx.fillText('$1,240', 350, 17);
-            CUSTOMERS.forEach(c => { face(c); bubble(c); });
-            ctx.fillStyle = '#b08a62'; ctx.fillRect(0, 168, W, 10); ctx.fillStyle = '#946f4a'; ctx.fillRect(0, 176, W, 3);
-
-            drawBelt(off);
-            const pos = ON_BELT.map(o => pointAt((o.at + off * 0.0004) % 1));
-            const activeIdx = STATIONS.map(s => pos.findIndex(([x, y]) => Math.hypot(x - s.x, y - s.y) < 30));
-            STATIONS.forEach((s, i) => drawStation(s, activeIdx[i] >= 0));
-            STATIONS.forEach((s, i) => s.bins.forEach(b => drawBin(b, activeIdx[i] >= 0)));
-            // 入口、出餐口
-            ctx.fillStyle = '#4a4038'; ctx.font = '500 10px "Noto Sans TC", sans-serif'; ctx.textAlign = 'left'; ctx.fillText('進', 6, 176 + 14);
-            ctx.fillStyle = '#b33a2f'; rr(300, 496, 54, 50, 6); ctx.fill();
-            ctx.fillStyle = '#fff'; ctx.font = '600 13px "Noto Serif TC", serif'; ctx.textAlign = 'center'; ctx.fillText('出餐', 327, 516);
-            ctx.font = '500 9px "Noto Sans TC", sans-serif'; ctx.fillText('→ 客人', 327, 532);
-            ON_BELT.forEach((o, i) => { const [x, y] = pos[i]; ctx.fillStyle = '#fffdf8'; ctx.beginPath(); ctx.ellipse(x, y + 6, 20, 6, 0, 0, 7); ctx.fill(); dessert(o.d, x, y); });
-        }
-        function loop() { off += speed * 16; draw(); requestAnimationFrame(loop); }
-        fit(); window.addEventListener('resize', () => { fit(); draw(); });
-        if (/still/.test(location.search)) { off = 0; draw(); } else loop();
-
-        // ---- 店面升級（設計稿的清單）----
-        const SHOP = [
-            { name: '配料櫃', sub: '配料', lv: 0, max: 3, price: '$2 萬', desc: '解鎖布丁、巧克力醬（一級）、水果（二級）、抹茶和焦糖（三級）。客人點的組合跟著變多，貴的料賣得比較貴。' },
-            { name: '轉盤馬達', sub: '轉盤', lv: 1, max: 3, price: '$3 萬', desc: '轉盤快 15％／30％／45％：一樣的時間出更多份，手也要更快。' },
-            { name: '煞車', sub: '轉盤', lv: 0, max: 2, price: '$1.5 萬', desc: '「暫停」鈕：轉盤停 3 秒，一輪兩次（二級三次、停 5 秒）。' },
-            { name: '倒轉把手', sub: '轉盤', lv: 0, max: 1, price: '$4 萬', desc: '「倒轉」鈕：漏放料的甜點退回上一站補，一輪三次。' },
-            { name: '店員', sub: '人手', lv: 0, max: 2, price: '$6 萬', desc: '一級：做好的甜點自動交給對的客人。二級：還會幫你放第一站的底。' },
+        const STATIONS = [
+            { x: 80, y: 236, name: '底', layer: 'b', bins: [[170, 216, 'cookie'], [226, 216, 'cake'], [282, 216, 'bread']] },
+            { x: 282, y: 344, name: '餡', layer: 'm', bins: [[34, 342, 'choco'], [88, 342, 'cream'], [142, 342, 'pudding'], [196, 342, 'fruit']] },
+            { x: 80, y: 452, name: '飾', layer: 't', bins: [[160, 448, 'sprinkle'], [214, 448, 'whip'], [268, 448, 'sauce'], [322, 448, 'berry']] },
         ];
-        document.getElementById('shopList').innerHTML = SHOP.map(u => `<div class="shop-row">
-            <span class="shop-icon flex items-center justify-center text-lg text-wabi-dark">${u.name[0]}</span>
-            <div class="flex-1 min-w-0">
-                <p class="text-sm text-wabi-dark tracking-widest">${u.name}<span class="ml-2 text-[10px] font-sans text-stone-400 tracking-widest">${u.sub}</span>
-                    <span class="shop-dots ml-1">${Array.from({ length: u.max }, (_, i) => `<i class="${i < u.lv ? 'on' : ''}"></i>`).join('')}</span></p>
-                <p class="text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">${u.desc}</p>
-            </div>
-            <button type="button" class="shop-buy">${u.lv >= u.max ? '買滿了' : '升級<br>' + u.price}</button>
-        </div>`).join('');
-        const shop = document.getElementById('shop');
-        document.getElementById('shopBtn').addEventListener('click', () => { shop.classList.remove('hidden'); requestAnimationFrame(() => shop.classList.add('on')); });
-        shop.addEventListener('click', e => { if (e.target === shop || e.target.closest('[data-close]')) { shop.classList.remove('on'); setTimeout(() => shop.classList.add('hidden'), 220); } });
-        if (/shop/.test(location.search)) document.getElementById('shopBtn').click();
+        STATIONS.forEach(st => { st.s = nearestS(st.x, st.y); });
+        const EXIT_S = nearestS(318, 522);
+        const DUCK = { x: 34, y: 518 };
+
+        // ===== 4. 一輪 =====
+        let G = null;
+        function newRound() {
+            shop = loadShop();
+            G = {
+                started: false, ended: false, clock: 0, custs: [null, null, null], nextAt: [0.2, 3, 6.5], plates: [], plateId: 0,
+                armed: [null, null, null], pauseLeft: 0, brakes: val('brake') ? val('brake').n : 0, rewinds: val('rewind') || 0,
+                bubbleCd: 0, bubbleAuto: BUBBLE_AUTO, bubbles: [], floats: [], flash: [0, 0, 0],
+                earn: { sales: 0, tip: 0, ito: 0, scrap: 0, angry: 0 },
+                tally: { customers: 0, served: 0, angry: 0, scrapped: 0, wrong: 0, missed: 0, bubbles: 0, pauses: 0, rewinds: 0, staff: 0, itoWins: 0, itoServed: 0, fastest: 0, waits: [], specials: {}, menu: {} },
+                pay: null,
+            };
+            spawnCust(0);   // 開店前先坐一位客人（開店前不會等到生氣）
+            note('蘋果鴨：' + pick(BOSS.start));
+            $('result').classList.add('hidden');
+            renderTools(); renderBest();
+        }
+        function start() {
+            if (G.started) return;
+            G.started = true;
+            document.documentElement.classList.add('td-open');
+            audio(); renderTools(); renderBest();
+        }
+        const progress = () => clamp(G.clock / ROUND, 0, 1);
+        function spawnCust(i) {
+            let who = null;
+            const r = Math.random();
+            let acc = 0;
+            for (const s of SPECIALS) { acc += s.p; if (r < acc) { who = s; break; } }
+            if (!who) who = pick(PEOPLE);
+            const pickL = layer => pick(Object.keys(ING).filter(k => ING[k].layer === layer && unlocked(k)));
+            const order = { b: pickL('b'), m: pickL('m'), t: pickL('t') };
+            if (who.kind === 'duck') { order.m = unlocked('pudding') ? 'pudding' : 'cream'; order.t = 'whip'; }
+            if (who.kind === 'dog') order.b = 'cookie';
+            const max = PAT_BASE * who.mult * (1 - 0.12 * progress());
+            G.custs[i] = { slot: i, who, order, max, left: max, state: 'wait', plate: null, arrive: G.clock, say: '', sayAt: -9, leaveAt: 0 };
+            G.tally.customers++;
+            if (SPECIALS.includes(who)) G.tally.specials[who.kind] = (G.tally.specials[who.kind] || 0) + 1;
+        }
+        function custSay(cu, text) { cu.say = text; cu.sayAt = G.clock; }
+        const price = o => ING[o.b].price + ING[o.m].price + ING[o.t].price;
+
+        // 盤子經過一站：有待命的料就放上去（不對就報廢），沒有就漏放；店員負責的站自動放對的
+        function passStation(i, p) {
+            const st = STATIONS[i], want = p.cu.order[st.layer];
+            let k = G.armed[i];
+            const staffOn = !k && i < 2 && lv('staff') >= i + 1;
+            if (staffOn) { k = want; G.tally.staff++; }
+            if (!k) {
+                p.miss[i] = true; G.tally.missed++;
+                floatText(st.x, st.y - 40, '漏', '#8a8580');
+                note('蘋果鴨：' + pick(BOSS.miss)); sfx.miss();
+                return;
+            }
+            if (!staffOn) G.armed[i] = null;
+            if (k !== want) { G.tally.wrong++; scrap(p, 'wrong'); return; }
+            p[st.layer] = k; p.miss[i] = false;
+            G.tally.menu[k] = (G.tally.menu[k] || 0) + 1;
+            G.flash[i] = 0.35;
+            sfx.pop(i);
+        }
+        function scrap(p, why) {
+            G.plates = G.plates.filter(x => x !== p);
+            G.earn.scrap -= SCRAP; G.tally.scrapped++;
+            const [x, y] = pointAt(p.s);
+            floatText(x, y - 24, `報廢 −${fmt(SCRAP)}`, '#b33a2f');
+            if (p.cu.state === 'wait') { p.cu.plate = null; custSay(p.cu, pick(why === 'wrong' ? SAY.wrong : SAY.incomplete)); }
+            if (why === 'wrong') note('蘋果鴨：' + pick(BOSS.wrong));
+            sfx.wrong();
+        }
+        function serve(p) {
+            const cu = p.cu;
+            G.plates = G.plates.filter(x => x !== p);
+            const base = price(cu.order), frac = clamp(cu.left / cu.max, 0, 1);
+            G.earn.sales += base;
+            let gain = base;
+            if (cu.who.kind === 'ito') {
+                G.tally.itoServed++;
+                if (Math.random() < ITO_P) { G.earn.ito += ITO_WIN; G.tally.itoWins++; gain += ITO_WIN; custSay(cu, '刮中了，給你'); }
+                else custSay(cu, '沒中，下次');
+            } else {
+                const tip = Math.round(base * TIP_MAX * frac);
+                G.earn.tip += tip; gain += tip;
+                custSay(cu, cu.who.kind === 'duck' ? SAY.duck : cu.who.kind === 'dog' ? SAY.dog : pick(SAY.happy));
+            }
+            const wait = Math.round((G.clock - cu.arrive) * 1000);
+            G.tally.waits.push(wait);
+            if (!G.tally.fastest || wait < G.tally.fastest) G.tally.fastest = wait;
+            G.tally.served++;
+            cu.state = 'happy'; cu.leaveAt = G.clock + 0.9; cu.plate = null;
+            floatText(SLOT_X[cu.slot], 92, '+' + fmt(gain), '#2f7a3f', true);
+            note('蘋果鴨：' + pick(BOSS.served));
+            sfx.serve(); bump();
+        }
+        function angry(cu) {
+            cu.state = 'angry'; cu.leaveAt = G.clock + 1.1;
+            custSay(cu, pick(SAY.angry));
+            G.earn.angry -= ANGRY; G.tally.angry++;
+            if (cu.plate) { G.plates = G.plates.filter(x => x !== cu.plate); cu.plate = null; }
+            floatText(SLOT_X[cu.slot], 92, `−${fmt(ANGRY)}`, '#b33a2f', true);
+            note('蘋果鴨：' + pick(BOSS.angry));
+            sfx.wrong();
+        }
+
+        // 點料盒：待命／取消待命
+        function tapBin(i, key) {
+            if (G.ended) return;
+            if (!unlocked(key)) { showToast(`配料櫃升到 ${ING[key].unlock} 級才有${ING[key].name}`); return; }
+            if (!G.started) start();
+            G.armed[i] = G.armed[i] === key ? null : key;
+            sfx.arm();
+        }
+        function useBrake() {
+            if (!lv('brake') || !G.started || G.ended || G.brakes <= 0 || G.pauseLeft > 0) return;
+            G.brakes--; G.pauseLeft = val('brake').s; G.tally.pauses++;
+            note('蘋果鴨：轉盤停一下，快點料。'); sfx.arm(); renderTools();
+        }
+        function useRewind() {
+            if (!lv('rewind') || !G.started || G.ended || G.rewinds <= 0) return;
+            const p = G.plates.filter(x => x.miss.some(Boolean)).sort((a, b) => b.s - a.s)[0];
+            if (!p) { showToast('現在沒有漏放的盤子'); return; }
+            const i = p.miss.findIndex(Boolean);
+            p.s = STATIONS[i].s - 36; p.miss = p.miss.map((m, j) => j < i ? m : false);
+            G.rewinds--; G.tally.rewinds++;
+            const [x, y] = pointAt(p.s); floatText(x, y - 26, '倒轉', BLUE);
+            note(`蘋果鴨：${p.cu.slot + 1} 號那盤退回「${STATIONS[i].name}」重放。`); sfx.rewind(); renderTools();
+        }
+        function blowBubbles(auto) {
+            if (!lv('bubbleduck') || !G.started || G.ended) return;
+            if (!auto && G.bubbleCd > 0) return;
+            if (!auto) G.bubbleCd = BUBBLE_CD;
+            G.tally.bubbles++;
+            G.custs.forEach(cu => {
+                if (cu && cu.state === 'wait') { cu.left = Math.min(cu.max, cu.left + BUBBLE_ADD); floatText(SLOT_X[cu.slot], 150, `+${BUBBLE_ADD} 秒`, '#3f7fbf'); }
+            });
+            for (let k = 0; k < 14; k++) G.bubbles.push({ x: DUCK.x + rnd(-4, 10), y: DUCK.y - 18, vx: rnd(10, 55), vy: rnd(-90, -50), r: rnd(3, 8), t: 0 });
+            if (!auto) note('蘋果鴨：' + pick(BOSS.bubble));
+            sfx.bubble(); renderTools();
+        }
+
+        function update(dt) {
+            G.clock += dt;
+            if (G.clock >= ROUND) { G.clock = ROUND; endRound(); return; }
+            G.flash = G.flash.map(f => Math.max(0, f - dt));
+            if (G.bubbleCd > 0) G.bubbleCd = Math.max(0, G.bubbleCd - dt);
+            if (lv('bubbleduck') >= 2) { G.bubbleAuto -= dt; if (G.bubbleAuto <= 0) { G.bubbleAuto = BUBBLE_AUTO; blowBubbles(true); } }
+            // 客人
+            G.custs.forEach((cu, i) => {
+                if (!cu) { if (G.clock >= G.nextAt[i]) spawnCust(i); return; }
+                if (cu.state === 'wait') { cu.left -= dt; if (cu.left <= 0) angry(cu); }
+                else if (G.clock >= cu.leaveAt) { G.custs[i] = null; G.nextAt[i] = G.clock + rnd(0.8, 2.4); }
+            });
+            // 上盤子：等最久、還沒有盤子的客人先上；入口要空出 GAP
+            const waiting = G.custs.filter(cu => cu && cu.state === 'wait' && !cu.plate).sort((a, b) => a.arrive - b.arrive);
+            if (waiting.length && !G.plates.some(p => p.s < GAP)) {
+                const cu = waiting[0], p = { id: ++G.plateId, cu, s: 0, b: null, m: null, t: null, miss: [false, false, false] };
+                cu.plate = p; G.plates.push(p);
+            }
+            // 轉盤
+            if (G.pauseLeft > 0) { G.pauseLeft = Math.max(0, G.pauseLeft - dt); if (!G.pauseLeft) renderTools(); }
+            else {
+                const ds = speed() * dt;
+                G.plates.slice().sort((a, b) => b.s - a.s).forEach(p => {
+                    const prev = p.s; p.s += ds;
+                    STATIONS.forEach((st, i) => { if (G.plates.includes(p) && prev < st.s && p.s >= st.s) passStation(i, p); });
+                    if (G.plates.includes(p) && p.s >= EXIT_S) { if (p.b && p.m && p.t) serve(p); else scrap(p, 'incomplete'); }
+                });
+            }
+            G.bubbles.forEach(b => { b.t += dt; b.x += b.vx * dt; b.y += b.vy * dt; b.vy -= 8 * dt; });
+            G.bubbles = G.bubbles.filter(b => b.t < 4 && b.y > -20);
+        }
+
+        // ===== 5. 聲音（Web Audio 合成）=====
+        let audioCtx = null;
+        function audio() { try { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); } catch (e) { } }
+        function tone(freq, dur, vol = 0.12, type = 'sine', at = 0, slide = 1) {
+            if (!audioCtx) return;
+            try {
+                const t = audioCtx.currentTime + at, o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                o.type = type; o.frequency.setValueAtTime(freq, t); o.frequency.exponentialRampToValueAtTime(freq * slide, t + dur);
+                g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+                o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + dur + 0.02);
+            } catch (e) { }
+        }
+        const sfx = {
+            arm: () => tone(660, 0.07, 0.08, 'triangle'),
+            pop: i => tone(520 + i * 120, 0.09, 0.12, 'sine', 0, 1.6),
+            miss: () => tone(300, 0.18, 0.08, 'triangle', 0, 0.8),
+            wrong: () => { tone(180, 0.22, 0.12, 'square', 0, 0.7); tone(140, 0.25, 0.08, 'square', 0.08, 0.7); },
+            serve: () => { tone(880, 0.1, 0.1); tone(1320, 0.16, 0.1, 'sine', 0.08); },
+            bubble: () => { for (let k = 0; k < 5; k++) tone(500 + k * 140, 0.08, 0.06, 'sine', k * 0.05, 1.8); },
+            rewind: () => tone(700, 0.3, 0.08, 'sawtooth', 0, 0.4),
+            bell: () => { tone(988, 0.5, 0.1); tone(1318, 0.7, 0.08, 'sine', 0.12); },
+        };
+        function bump() { try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) { } }
+
+        // ===== 6. 畫（店裡的東西是實物，顏色固定）=====
+        const cv = $('cv'), ctx = cv.getContext('2d');
+        function fit() { const d = Math.min(window.devicePixelRatio || 1, 3), w = cv.clientWidth || 340; cv.width = Math.round(w * d); cv.height = Math.round(w * H / W * d); }
+        const rr = (c, x, y, w, h, r) => { c.beginPath(); c.roundRect(x, y, w, h, r); };
+
+        // 商標：頭上頂蘋果的鴨子（使用者畫的，藍色線條）
+        function drawLogo(c, cx, cy, s, col = BLUE, fill = '#ffffff', lw = 3.4) {
+            c.save(); c.translate(cx, cy); c.scale(s, s);
+            c.lineWidth = lw; c.strokeStyle = col; c.fillStyle = fill; c.lineJoin = 'round'; c.lineCap = 'round';
+            c.beginPath(); c.moveTo(-24, -4); c.bezierCurveTo(-54, 4, -56, 44, -22, 46); c.lineTo(24, 46);
+            c.bezierCurveTo(46, 46, 54, 28, 48, 6); c.lineTo(42, -10); c.lineTo(34, 6); c.bezierCurveTo(26, 12, 12, 10, 6, -2); c.closePath(); c.fill(); c.stroke();
+            c.beginPath(); c.arc(-8, -22, 20, 0, TAU); c.fill(); c.stroke();
+            c.beginPath(); c.moveTo(-22, -17); c.quadraticCurveTo(-38, -20, -33, -11); c.quadraticCurveTo(-27, -5, -19, -10); c.closePath(); c.fill(); c.stroke();
+            c.beginPath(); c.moveTo(-34, -14); c.lineTo(-22, -13.5); c.stroke();
+            c.fillStyle = col; [[-15, -27], [-1, -27]].forEach(([x, y]) => { c.beginPath(); c.arc(x, y, 2.2, 0, TAU); c.fill(); });
+            c.beginPath(); c.arc(16, 22, 9, 0.25 * Math.PI, 0.8 * Math.PI); c.stroke();
+            c.fillStyle = fill; c.beginPath(); c.moveTo(-8, -46);
+            c.bezierCurveTo(-11, -51, -18, -49, -18, -42); c.bezierCurveTo(-18, -36, -12, -33, -8, -35); c.bezierCurveTo(-4, -33, 2, -36, 2, -42); c.bezierCurveTo(2, -49, -5, -51, -8, -46); c.fill(); c.stroke();
+            c.beginPath(); c.moveTo(-8, -47); c.lineTo(-6, -54); c.stroke();
+            c.beginPath(); c.ellipse(-2, -54, 4, 2, -0.5, 0, TAU); c.stroke();
+            c.restore();
+        }
+        function strawberry(c, x, y, r) {
+            c.fillStyle = '#d63a3a'; c.beginPath(); c.moveTo(x - r, y - r * .4); c.quadraticCurveTo(x, y - r * 1.3, x + r, y - r * .4); c.quadraticCurveTo(x + r * .8, y + r, x, y + r * 1.2); c.quadraticCurveTo(x - r * .8, y + r, x - r, y - r * .4); c.fill();
+            c.fillStyle = '#3f8f3a'; c.beginPath(); c.ellipse(x, y - r * .8, r * .7, r * .3, 0, 0, TAU); c.fill();
+        }
+        function drawBase(c, k, x, y, s = 1) {
+            c.save(); c.translate(x, y); c.scale(s, s);
+            if (k === 'cookie') {
+                c.fillStyle = '#d29a52'; c.beginPath(); c.ellipse(0, 1, 17, 7, 0, 0, TAU); c.fill();
+                c.fillStyle = '#b97d38'; c.beginPath(); c.ellipse(0, -1, 17, 6, 0, 0, TAU); c.fill();
+                c.fillStyle = '#5a3420'; [[-8, -2], [3, -3], [9, 0], [-2, 1]].forEach(([a, b]) => { c.beginPath(); c.arc(a, b, 1.6, 0, TAU); c.fill(); });
+            } else if (k === 'cake') {
+                c.fillStyle = '#efcf78'; rr(c, -16, -9, 32, 15, 3); c.fill();
+                c.fillStyle = '#fff7ea'; c.fillRect(-16, -3, 32, 3); c.fillStyle = '#e3bb5c'; c.fillRect(-16, 3, 32, 3);
+            } else {
+                c.fillStyle = '#c47f3c'; c.beginPath(); c.moveTo(-17, 6); c.quadraticCurveTo(-17, -12, 0, -12); c.quadraticCurveTo(17, -12, 17, 6); c.closePath(); c.fill();
+                c.strokeStyle = '#a0612a'; c.lineWidth = 1.5; [-6, 2, 10].forEach(a => { c.beginPath(); c.moveTo(a - 3, -7); c.lineTo(a + 2, -10); c.stroke(); });
+            }
+            c.restore();
+        }
+        function drawMain(c, k, x, y, s = 1) {
+            c.save(); c.translate(x, y); c.scale(s, s);
+            if (k === 'choco') { c.fillStyle = '#6b3d22'; rr(c, -15, -6, 30, 8, 4); c.fill(); c.fillStyle = '#8a5432'; rr(c, -13, -6, 22, 3, 2); c.fill(); }
+            else if (k === 'cream') { c.fillStyle = '#fffaf2'; c.strokeStyle = '#e8dccb'; c.lineWidth = 1; [[-9, 0, 7], [0, -2, 8], [9, 0, 7]].forEach(([a, b, r]) => { c.beginPath(); c.arc(a, b, r, Math.PI, 0); c.fill(); c.stroke(); }); }
+            else if (k === 'pudding') { c.fillStyle = '#f2c445'; c.beginPath(); c.moveTo(-12, 2); c.lineTo(-9, -10); c.lineTo(9, -10); c.lineTo(12, 2); c.closePath(); c.fill(); c.fillStyle = '#8f4f17'; rr(c, -9, -12, 18, 4, 2); c.fill(); }
+            else { strawberry(c, -7, -3, 5); c.fillStyle = '#f2a33a'; c.beginPath(); c.arc(6, -3, 5, 0, TAU); c.fill(); c.fillStyle = '#7bb04a'; c.beginPath(); c.arc(1, 1, 3.5, 0, TAU); c.fill(); }
+            c.restore();
+        }
+        function drawTop(c, k, x, y, s = 1) {
+            c.save(); c.translate(x, y); c.scale(s, s);
+            if (k === 'sprinkle') { ['#e4566b', '#4f9ad9', '#f2c445', '#5fb36b', '#b06ad6', '#6b3d22'].forEach((col, i) => { c.fillStyle = col; c.save(); c.translate(-10 + i * 4, (i % 2) * 3 - 2); c.rotate(i); c.fillRect(-2, -.8, 4, 1.6); c.restore(); }); }
+            else if (k === 'sauce') { c.strokeStyle = '#4a2614'; c.lineWidth = 2.2; c.lineCap = 'round'; c.beginPath(); c.moveTo(-12, -2); for (let i = 0; i < 6; i++) c.lineTo(-8 + i * 4, i % 2 ? -4 : 1); c.stroke(); }
+            else if (k === 'berry') { strawberry(c, 0, -3, 4.5); }
+            else { c.fillStyle = '#fffaf2'; c.strokeStyle = '#e8dccb'; c.lineWidth = 1; c.beginPath(); c.moveTo(-6, 2); c.quadraticCurveTo(-7, -4, 0, -9); c.quadraticCurveTo(7, -4, 6, 2); c.closePath(); c.fill(); c.stroke(); }
+            c.restore();
+        }
+        function drawIng(c, k, x, y, s = 1) { const L = ING[k].layer; if (L === 'b') drawBase(c, k, x, y, s); else if (L === 'm') drawMain(c, k, x, y, s); else drawTop(c, k, x, y, s * 1.1); }
+        function drawDessert(c, d, x, y, s = 1) {
+            if (d.b) drawBase(c, d.b, x, y, s);
+            if (d.m) drawMain(c, d.m, x, y - 9 * s, s);
+            if (d.t) drawTop(c, d.t, x, y - (d.m ? 19 : 10) * s, s);
+        }
+        function badge(c, i, x, y, r = 7) {
+            c.fillStyle = SLOT_COL[i]; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill();
+            c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.stroke();
+            c.fillStyle = '#fff'; c.font = `600 ${r * 1.4}px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(i + 1), x, y + 0.5);
+        }
+
+        function drawFace(c, cu, x, y) {
+            const w = cu.who, mood = cu.state === 'angry' ? 'angry' : cu.state === 'happy' ? 'happy' : cu.left / cu.max < 0.3 ? 'worried' : 'ok';
+            if (w.kind === 'duck') {
+                c.fillStyle = '#fbfbf8'; c.beginPath(); c.arc(x, y + 4, 22, 0, TAU); c.fill(); c.strokeStyle = '#d6d2c8'; c.lineWidth = 1; c.stroke();
+                c.fillStyle = '#f0a03a'; c.beginPath(); c.ellipse(x + 2, y + 10, 10, 4.5, 0, 0, TAU); c.fill();
+                c.fillStyle = '#2c2c2c'; [-8, 9].forEach(d => c.fillRect(x + d - 3, y - 2, 6, mood === 'happy' ? 1 : 1.6));
+                c.fillStyle = '#3d6fb6'; c.beginPath(); c.moveTo(x - 9, y + 24); c.lineTo(x, y + 21); c.lineTo(x - 9, y + 18); c.fill(); c.beginPath(); c.moveTo(x + 9, y + 24); c.lineTo(x, y + 21); c.lineTo(x + 9, y + 18); c.fill();
+                return;
+            }
+            if (w.kind === 'dog') {
+                c.fillStyle = '#e9d3a8'; c.beginPath(); c.arc(x, y + 2, 19, 0, TAU); c.fill();
+                c.fillStyle = '#c9a46a'; c.beginPath(); c.ellipse(x - 17, y + 4, 7, 13, 0.3, 0, TAU); c.fill(); c.beginPath(); c.ellipse(x + 17, y + 4, 7, 13, -0.3, 0, TAU); c.fill();
+                c.fillStyle = '#2c2c2c'; [-7, 7].forEach(d => { c.beginPath(); c.arc(x + d, y - 1, 2, 0, TAU); c.fill(); });
+                c.beginPath(); c.ellipse(x, y + 6, 4, 3, 0, 0, TAU); c.fill();
+                c.fillStyle = '#e46a7a'; c.beginPath(); c.ellipse(x + 1, y + 14, 3.5, 4.5, 0, 0, TAU); c.fill();
+                return;
+            }
+            const skin = w.kind === 'auntie' ? '#f0c9a4' : w.kind === 'grandpa' ? '#eac4a0' : '#f3d0ad';
+            c.fillStyle = w.kind === 'ito' ? '#b33a2f' : w.shirt; rr(c, x - 22, y + 16, 44, 30, 12); c.fill();
+            if (w.kind === 'ito') { c.fillStyle = '#2b2522'; rr(c, x - 22, y - 16, 44, 44, 18); c.fill(); }
+            c.fillStyle = skin; c.beginPath(); c.arc(x, y, 19, 0, TAU); c.fill();
+            c.fillStyle = w.kind === 'auntie' ? '#6b4a3a' : w.kind === 'grandpa' ? '#d9d4cc' : '#2b2522';
+            if (w.kind === 'auntie') [[-14, -10], [0, -16], [14, -10], [-18, 2], [18, 2]].forEach(([a, b]) => { c.beginPath(); c.arc(x + a, y + b, 8, 0, TAU); c.fill(); });
+            else if (w.kind === 'grandpa') { c.beginPath(); c.ellipse(x - 17, y - 2, 4, 8, 0, 0, TAU); c.fill(); c.beginPath(); c.ellipse(x + 17, y - 2, 4, 8, 0, 0, TAU); c.fill(); }
+            else if (w.kind === 'worker') { c.fillStyle = '#e8c23a'; c.beginPath(); c.arc(x, y - 6, 20, Math.PI, 0); c.fill(); c.fillRect(x - 23, y - 7, 46, 4); }
+            else { c.beginPath(); c.arc(x, y - 4, 19, Math.PI * 1.05, Math.PI * 1.95); c.fill(); }
+            if (w.kind === 'office' || w.kind === 'ito') { c.strokeStyle = '#2c2c2c'; c.lineWidth = 1.2; [-7, 7].forEach(d => { c.beginPath(); c.arc(x + d, y + 1, 4.5, 0, TAU); c.stroke(); }); }
+            c.fillStyle = '#2c2c2c'; [-7, 7].forEach(d => { c.beginPath(); c.arc(x + d, y + 1, 1.8, 0, TAU); c.fill(); });
+            c.strokeStyle = '#9a5a40'; c.lineWidth = 1.4; c.beginPath();
+            if (mood === 'angry') c.arc(x, y + 12, 4, Math.PI + .3, -0.3); else if (mood === 'worried') { c.moveTo(x - 4, y + 9); c.lineTo(x + 4, y + 9); } else c.arc(x, y + 7, 4, .2, Math.PI - .2);
+            c.stroke();
+            if (mood === 'angry') { c.strokeStyle = '#b33a2f'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(x - 11, y - 7); c.lineTo(x - 4, y - 4); c.moveTo(x + 11, y - 7); c.lineTo(x + 4, y - 4); c.stroke(); }
+            if (mood === 'worried') { c.fillStyle = '#7fb6e6'; c.beginPath(); c.ellipse(x + 16, y - 6, 2.5, 4, 0, 0, TAU); c.fill(); }
+        }
+        function drawCustomer(c, cu, now) {
+            const x = SLOT_X[cu.slot], y = 118, fade = cu.state !== 'wait' ? clamp((cu.leaveAt - G.clock) / 0.9, 0, 1) : 1;
+            c.save(); c.globalAlpha = fade;
+            drawFace(c, cu, x, y);
+            // 想法泡泡：要的甜點、三層的字（放好的變淡打勾）、號碼
+            const by = 58, shake = cu.state === 'wait' && cu.left / cu.max < 0.25 ? Math.sin(now / 60) * 1.5 : 0;
+            c.save(); c.translate(shake, 0);
+            c.fillStyle = '#fffdf8'; c.strokeStyle = '#cbbfae'; c.lineWidth = 1;
+            rr(c, x - 44, by - 26, 88, 50, 12); c.fill(); c.stroke();
+            c.beginPath(); c.arc(x - 10, by + 30, 3.5, 0, TAU); c.fill(); c.stroke(); c.beginPath(); c.arc(x - 5, by + 37, 2, 0, TAU); c.fill(); c.stroke();
+            drawDessert(c, cu.order, x - 16, by + 12, 0.85);
+            c.font = `500 8.5px ${SANS}`; c.textAlign = 'left'; c.textBaseline = 'middle';
+            const p = cu.plate;
+            [['t', -12], ['m', 0], ['b', 12]].forEach(([L, dy]) => {
+                const done = p && p[L];
+                c.fillStyle = done ? '#a9bda4' : '#5b5046';
+                c.fillText(ING[cu.order[L]].name, x + 2, by + dy);
+                if (done) { c.strokeStyle = '#7fa07a'; c.lineWidth = 1; c.beginPath(); c.moveTo(x + 2, by + dy); c.lineTo(x + 2 + c.measureText(ING[cu.order[L]].name).width, by + dy); c.stroke(); }
+            });
+            badge(c, cu.slot, x - 40, by - 22, 7.5);
+            c.restore();
+            if (cu.state === 'wait') {
+                const bw = 56, bar = 160, f = clamp(cu.left / cu.max, 0, 1);
+                c.fillStyle = '#e3dcd1'; rr(c, x - bw / 2, bar, bw, 6, 3); c.fill();
+                c.fillStyle = f > 0.5 ? '#6aa56a' : f > 0.25 ? '#e0b43c' : '#c9503f'; rr(c, x - bw / 2, bar, bw * f, 6, 3); c.fill();
+            }
+            if (cu.say && G.clock - cu.sayAt < 1.6) {
+                c.font = `500 10px ${SANS}`; const tw = c.measureText(cu.say).width + 12;
+                c.fillStyle = 'rgba(44,44,44,.85)'; rr(c, x - tw / 2, 138, tw, 17, 8); c.fill();
+                c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(cu.say, x, 147);
+            }
+            c.restore();
+        }
+        function drawBelt(c, off) {
+            c.lineCap = 'round'; c.lineJoin = 'round';
+            c.beginPath(); PATH.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y));
+            c.strokeStyle = '#5d5148'; c.lineWidth = 36; c.stroke();
+            c.strokeStyle = '#8b7d70'; c.lineWidth = 30; c.stroke();
+            c.strokeStyle = 'rgba(60,50,44,.45)'; c.lineWidth = 2;
+            let next = ((off % 14) + 14) % 14;
+            for (let i = 1; i < PATH.length; i++) {
+                const [x0, y0] = PATH[i - 1], [x1, y1] = PATH[i], len = CUM[i] - CUM[i - 1];
+                while (next <= CUM[i]) {
+                    const t = (next - CUM[i - 1]) / len, x = x0 + (x1 - x0) * t, y = y0 + (y1 - y0) * t, nx = -(y1 - y0) / len, ny = (x1 - x0) / len;
+                    c.beginPath(); c.moveTo(x - nx * 14, y - ny * 14); c.lineTo(x + nx * 14, y + ny * 14); c.stroke();
+                    next += 14;
+                }
+            }
+        }
+        function drawStation(c, st, i, active) {
+            if (active || G.flash[i]) { c.fillStyle = `rgba(242,196,69,${0.25 + G.flash[i]})`; c.beginPath(); c.arc(st.x, st.y, 42, 0, TAU); c.fill(); }
+            c.fillStyle = '#d9d2c7'; c.beginPath(); c.arc(st.x, st.y, 33, 0, TAU); c.fill();
+            c.fillStyle = '#efe9df'; c.beginPath(); c.arc(st.x, st.y, 27, 0, TAU); c.fill();
+            c.strokeStyle = active ? '#b33a2f' : '#b9ad9d'; c.lineWidth = active ? 2.5 : 1.5; c.beginPath(); c.arc(st.x, st.y, 33, 0, TAU); c.stroke();
+            const lx = st.x - 30, ly = st.y - 34;
+            c.fillStyle = active ? '#b33a2f' : '#fffaf2'; rr(c, lx - 9, ly - 9, 18, 18, 3); c.fill();
+            c.strokeStyle = '#b33a2f'; c.lineWidth = 1.2; c.stroke();
+            c.fillStyle = active ? '#fff' : '#b33a2f'; c.font = `700 11px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(st.name, lx, ly + 1);
+            // 待命的料畫在圓台右上角；店員負責的站蓋「員」
+            if (G.armed[i]) { c.fillStyle = '#fff6dc'; c.strokeStyle = '#b33a2f'; c.lineWidth = 1.5; c.beginPath(); c.arc(st.x + 28, st.y - 28, 12, 0, TAU); c.fill(); c.stroke(); drawIng(c, G.armed[i], st.x + 28, st.y - 26, 0.5); }
+            else if (i < 2 && lv('staff') >= i + 1) { c.fillStyle = '#eef3fb'; c.strokeStyle = BLUE; c.lineWidth = 1.2; c.beginPath(); c.arc(st.x + 28, st.y - 28, 10, 0, TAU); c.fill(); c.stroke(); c.fillStyle = BLUE; c.font = `600 10px ${SERIF}`; c.fillText('員', st.x + 28, st.y - 27.5); }
+        }
+        function drawBin(c, i, [x, y, key]) {
+            const w = 50, h = 52, open = unlocked(key), armed = G.armed[i] === key;
+            c.fillStyle = 'rgba(0,0,0,.12)'; rr(c, x - w / 2 + 1, y - h / 2 + 2, w, h, 6); c.fill();
+            c.fillStyle = !open ? '#e6e1d9' : armed ? '#ffe9a8' : '#fbf7ef'; rr(c, x - w / 2, y - h / 2, w, h, 6); c.fill();
+            c.strokeStyle = armed ? '#b33a2f' : '#cbbfae'; c.lineWidth = armed ? 2.5 : 1; c.stroke();
+            c.save(); if (!open) c.globalAlpha = .3;
+            drawIng(c, key, x, y - 3, ING[key].layer === 't' ? 1 : 0.85);
+            c.restore();
+            const label = ING[key].name;
+            c.fillStyle = open ? '#4a4038' : '#9a9187'; c.font = `500 ${label.length > 3 ? 8.5 : 10}px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+            c.fillText(label, x, y + h / 2 - 5);
+            if (!open) {
+                const pr = SHOP_BY.cabinet.prices[ING[key].unlock - 1];
+                c.fillStyle = 'rgba(80,70,60,.75)'; rr(c, x - 18, y - 16, 36, 16, 3); c.fill();
+                c.fillStyle = '#fff'; c.font = `500 9px ${SANS}`; c.fillText(`鎖 $${pr / 10000}萬`, x, y - 4.5);
+            }
+            if (armed) {
+                c.fillStyle = '#b33a2f'; rr(c, x - 15, y - h / 2 - 9, 30, 12, 3); c.fill();
+                c.fillStyle = '#fff'; c.font = `600 8.5px ${SANS}`; c.textBaseline = 'middle'; c.fillText('待命', x, y - h / 2 - 3);
+            }
+        }
+        function drawPlate(c, p) {
+            const [x, y] = pointAt(p.s);
+            c.fillStyle = '#fffdf8'; c.beginPath(); c.ellipse(x, y + 6, 20, 6, 0, 0, TAU); c.fill();
+            c.strokeStyle = 'rgba(0,0,0,.12)'; c.lineWidth = 1; c.stroke();
+            drawDessert(c, p, x, y);
+            badge(c, p.cu.slot, x + 18, y - 14, 6.5);
+            if (p.miss.some(Boolean)) { c.fillStyle = '#8a8580'; rr(c, x - 26, y - 22, 14, 14, 2); c.fill(); c.fillStyle = '#fff'; c.font = `600 9px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('漏', x - 19, y - 14.5); }
+        }
+        function floatText(x, y, text, color, big = false) { G.floats.push({ x, y, text, color, big, at: performance.now() }); }
+        function drawFloats(c, now) {
+            G.floats = G.floats.filter(f => now - f.at < 1100);
+            G.floats.forEach(f => {
+                const k = (now - f.at) / 1100;
+                c.globalAlpha = 1 - k; c.fillStyle = f.color; c.font = `600 ${f.big ? 15 : 12}px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+                c.fillText(f.text, f.x, f.y - k * 22);
+            });
+            c.globalAlpha = 1;
+        }
+        const sumEarn = () => { const e = G.earn; return e.sales + e.tip + e.ito + e.scrap + e.angry; };
+        let beltOff = 0;
+        function draw(now) {
+            const c = ctx, k = cv.width / W;
+            c.setTransform(k, 0, 0, k, 0, 0);
+            c.clearRect(0, 0, W, H);
+            c.fillStyle = '#f6efe4'; c.fillRect(0, 0, W, 176);
+            c.fillStyle = '#efe6d8'; for (let x = 0; x < W; x += 24) c.fillRect(x, 0, 12, 176);
+            c.fillStyle = '#e8ddcd'; c.fillRect(0, 176, W, H - 176);
+            c.strokeStyle = 'rgba(160,140,120,.18)'; c.lineWidth = 1;
+            for (let y = 196; y < H; y += 28) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+            for (let x = 0; x < W; x += 28) { c.beginPath(); c.moveTo(x, 176); c.lineTo(x, H); c.stroke(); }
+            // 招牌：商標＋店名
+            c.fillStyle = '#fffaf0'; rr(c, 96, 4, 168, 26, 5); c.fill(); c.strokeStyle = BLUE; c.lineWidth = 1.5; c.stroke();
+            drawLogo(c, 114, 20, 0.2, BLUE, '#fffaf0', 4);
+            c.fillStyle = BLUE; c.font = `600 13px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('蘋果鴨甜點店', 192, 18);
+            const left = Math.max(0, ROUND - G.clock);
+            c.font = `500 13px ${SANS}`; c.textAlign = 'left'; c.fillStyle = left < 10 && G.started ? '#b33a2f' : '#4a4038';
+            c.fillText(`${Math.floor(left / 60)}:${String(Math.floor(left % 60)).padStart(2, '0')}`, 10, 17);
+            const se = sumEarn();
+            c.textAlign = 'right'; c.fillStyle = se < 0 ? '#b33a2f' : '#2f7a3f'; c.fillText((se < 0 ? '−' : '') + fmt(Math.abs(se)), 350, 17);
+            G.custs.forEach(cu => cu && drawCustomer(c, cu, now));
+            c.fillStyle = '#b08a62'; c.fillRect(0, 168, W, 10); c.fillStyle = '#946f4a'; c.fillRect(0, 176, W, 3);
+            drawBelt(c, beltOff);
+            STATIONS.forEach((st, i) => drawStation(c, st, i, G.plates.some(p => Math.abs(p.s - st.s) < 30)));
+            STATIONS.forEach((st, i) => st.bins.forEach(b => drawBin(c, i, b)));
+            c.fillStyle = '#b33a2f'; rr(c, 300, 496, 54, 50, 6); c.fill();
+            c.fillStyle = '#fff'; c.font = `600 13px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('出餐', 327, 514);
+            c.font = `500 9px ${SANS}`; c.fillText('→ 客人', 327, 531);
+            G.plates.forEach(p => drawPlate(c, p));
+            if (lv('bubbleduck')) {
+                drawLogo(c, DUCK.x, DUCK.y, 0.3, BLUE, '#ffffff', 3.4);
+                c.font = `600 8px ${SANS}`; c.textAlign = 'center';
+                if (lv('bubbleduck') >= 2) { c.fillStyle = BLUE; c.fillText('馬達', DUCK.x, DUCK.y + 22); }
+                else if (G.started && !G.ended && !G.bubbleCd) { c.fillStyle = '#b33a2f'; c.fillText('點我', DUCK.x, DUCK.y + 22); }
+            }
+            G.bubbles.forEach(b => { c.strokeStyle = 'rgba(120,170,230,.8)'; c.lineWidth = 1.2; c.fillStyle = 'rgba(200,225,255,.25)'; c.beginPath(); c.arc(b.x, b.y, b.r, 0, TAU); c.fill(); c.stroke(); c.fillStyle = 'rgba(255,255,255,.8)'; c.beginPath(); c.arc(b.x - b.r * .35, b.y - b.r * .35, b.r * .25, 0, TAU); c.fill(); });
+            drawFloats(c, now);
+            if (G.pauseLeft > 0) {
+                c.fillStyle = 'rgba(44,44,44,.72)'; rr(c, 120, 268, 120, 30, 15); c.fill();
+                c.fillStyle = '#fff'; c.font = `600 13px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(`暫停 ${G.pauseLeft.toFixed(1)}`, 180, 283);
+            }
+            if (!G.started && !G.ended) {
+                c.fillStyle = 'rgba(252,250,248,.55)'; c.fillRect(0, 180, W, H - 180);
+                c.fillStyle = 'rgba(44,44,44,.82)'; rr(c, 80, 362, 200, 46, 23); c.fill();
+                c.fillStyle = '#fff'; c.font = `600 15px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('點一下開店', 180, 385);
+            }
+        }
+
+        // ===== 7. 操作 =====
+        function toCanvas(e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height }; }
+        cv.addEventListener('pointerdown', e => {
+            e.preventDefault(); audio();
+            if (G.ended) return;
+            const p = toCanvas(e);
+            for (let i = 0; i < STATIONS.length; i++) for (const [x, y, key] of STATIONS[i].bins) {
+                if (Math.abs(p.x - x) <= 27 && Math.abs(p.y - y) <= 28) { tapBin(i, key); return; }
+            }
+            if (lv('bubbleduck') && G.started && Math.hypot(p.x - DUCK.x, p.y - DUCK.y) < 28) { blowBubbles(false); return; }
+            if (!G.started) start();
+        });
+        $('brakeBtn').addEventListener('click', () => { if (!lv('brake')) return showToast('店面買「煞車」才能暫停'); useBrake(); });
+        $('rewindBtn').addEventListener('click', () => { if (!lv('rewind')) return showToast('店面買「倒轉把手」才能倒轉'); useRewind(); });
+        $('bubbleBtn').addEventListener('click', () => {
+            if (!lv('bubbleduck')) return showToast('店面買「泡泡鴨」才能吐泡泡');
+            if (lv('bubbleduck') >= 2) return showToast('馬達泡泡鴨會自己定時吐');
+            if (!G.started) return showToast('開店了才能吐');
+            blowBubbles(false);
+        });
+        function renderTools() {
+            const set = (id, locked, on, sub, dis) => { const b = $(id); b.classList.toggle('locked', locked); b.classList.toggle('is-on', !!on); b.querySelector('small').textContent = sub; b.disabled = !!dis; };
+            set('brakeBtn', !lv('brake'), G && G.pauseLeft > 0, lv('brake') ? `剩 ${G ? G.brakes : 0} 次・${val('brake').s} 秒` : '店面升級', lv('brake') && G && G.started && (!G.brakes || G.ended));
+            set('rewindBtn', !lv('rewind'), false, lv('rewind') ? `剩 ${G ? G.rewinds : 0} 次` : '店面升級', lv('rewind') && G && G.started && (!G.rewinds || G.ended));
+            const bl = lv('bubbleduck');
+            set('bubbleBtn', !bl, false, !bl ? '店面升級' : bl >= 2 ? '馬達：自動' : G && G.bubbleCd > 0 ? `${Math.ceil(G.bubbleCd)} 秒後` : '客人多等 6 秒', bl === 1 && G && G.started && (G.bubbleCd > 0 || G.ended));
+        }
+        function note(t) { $('note').textContent = t; }
+        let toolsTick = 0, lastNow = performance.now();
+        function frame(now) {
+            const dt = Math.min(0.05, (now - lastNow) / 1000); lastNow = now;
+            if (G.started && !G.ended) {
+                update(dt);
+                if (G.pauseLeft <= 0) beltOff += speed() * dt;
+                if ((toolsTick += dt) > 0.25) { toolsTick = 0; renderTools(); renderBest(); }
+            }
+            draw(now);
+            requestAnimationFrame(frame);
+        }
+        document.addEventListener('visibilitychange', () => { lastNow = performance.now(); });
+
+        // ===== 8. 打烊 =====
+        function gradeOf(pay) { return GRADES.find(g => pay >= g.min); }
+        function bill() {
+            const e = G.earn, t = G.tally;
+            // [名稱, 數量, 單位, 金額, 怎麼算]；金額加起來等於合計
+            return [
+                ['賣出的甜點', t.served, '份', e.sales, '照三層料的價錢加起來'],
+                ['小費', t.served - t.itoServed, '位', e.tip, '等得越短給越多，最多這一份的四成'],
+                ['伊藤的刮刮樂', t.itoWins, '張', e.ito, `伊藤用刮刮樂付小費，刮中 ${fmt(ITO_WIN)}`],
+                ['報廢的盤子', t.scrapped, '盤', e.scrap, `放錯料或少一層，材料費每盤 ${fmt(SCRAP)}`],
+                ['氣走的客人', t.angry, '位', e.angry, `蘋果鴨扣薪，每位 ${fmt(ANGRY)}`],
+            ].filter(r => r[1] && r[3]);
+        }
+        let sheetFile = null;
+        async function endRound() {
+            if (G.ended) return;
+            G.ended = true; G.pauseLeft = 0;
+            document.documentElement.classList.remove('td-open');
+            sfx.bell();
+            const rows = bill(), sales = sumEarn(), pay = Math.max(100, sales), grade = gradeOf(pay);
+            G.pay = { sales, pay };
+            note('蘋果鴨：' + pick(BOSS.end) + (G.tally.angry ? `跑了 ${G.tally.angry} 位客人喔。` : ''));
+            Wallet.earn(pay, 'dessert');
+            recordRound(pay, grade);
+            $('syncNote').textContent = '';
+            uploadRounds().then(showSyncNote);
+            $('score').textContent = fmt(pay);
+            $('gradeLine').textContent = `${grade.mark}・${grade.line}`;
+            $('servedLine').textContent = `出餐 ${G.tally.served} 份${G.tally.scrapped ? `・報廢 ${G.tally.scrapped} 盤` : ''}${G.tally.angry ? `・氣走 ${G.tally.angry} 位` : ''}`;
+            const money = v => (v < 0 ? '−' : v > 0 ? '+' : '') + fmt(Math.abs(v));
+            $('bill').innerHTML = rows.length ? rows.map(([k, v, u, m, how]) => `<li><span>${k} <span class="text-wabi-dark">${v} ${u}</span><span class="block text-[10px] text-stone-400">${esc(how)}</span></span><span class="${m < 0 ? 'text-wabi-shu' : 'text-wabi-dark'} self-center">${money(m)}</span></li>`).join('')
+                : '<li><span>一份都沒賣出去</span><span></span></li>';
+            $('paySales').textContent = (sales < 0 ? '−' : '') + fmt(Math.abs(sales));
+            $('payMinRow').classList.toggle('hidden', pay === sales); $('payMin').textContent = fmt(pay);
+            $('payWallet').textContent = fmt(Wallet.money);
+            $('payAcct').innerHTML = Line.loggedIn ? `存在 ${esc((Line.profile || {}).name || 'LINE')} 的 LINE 帳號` : '錢只存在這支手機。<button type="button" data-login class="min-h-[32px] underline underline-offset-4 text-wabi-dark">用 LINE 登入</button>，換手機也在';
+            renderTools(); renderBest();
+            try {
+                const blob = await makeSheet(pay, grade, rows);
+                sheetFile = new File([blob], `dongbuli-tiandian-${Date.now()}.png`, { type: 'image/png' });
+                $('sheetImg').src = URL.createObjectURL(blob);
+            } catch (e) { }
+            const canShare = !!(sheetFile && navigator.canShare && navigator.canShare({ files: [sheetFile] }));
+            $('shareBtn').textContent = canShare ? '分享甜點店日報' : SaveImg.inApp ? '存甜點店日報圖片' : '下載甜點店日報';
+            setTimeout(() => {
+                $('result').classList.remove('hidden');
+                $('result').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+            }, 900);
+        }
+        async function makeSheet(pay, grade, rows) {
+            const lines = rows.map(([k, v, u, m]) => [`${k} ${v} ${u}`, (m < 0 ? '−' : '+') + fmt(Math.abs(m))]);
+            try { await Promise.race([document.fonts.load(`600 40px ${SERIF}`, '甜點店日報蘋果鴨'), new Promise(res => setTimeout(res, 2500))]); } catch (e) { }
+            const c = document.createElement('canvas'); c.width = 1080; c.height = 1350;
+            const x = c.getContext('2d');
+            const text = (str, px, py, font, color, align = 'center') => { x.font = font; x.fillStyle = color; x.textAlign = align; x.fillText(str, px, py); };
+            x.fillStyle = '#fcfaf8'; x.fillRect(0, 0, c.width, c.height);
+            x.strokeStyle = '#8e8070'; x.lineWidth = 2; x.strokeRect(40, 40, 1000, 1270); x.lineWidth = 1; x.strokeRect(54, 54, 972, 1242);
+            text('D O N G B U L I ・ 蘋 果 鴨 甜 點 店', 540, 130, `400 26px ${SANS}`, '#8e8070');
+            text('甜點店日報', 540, 220, `600 76px ${SERIF}`, '#2c2c2c');
+            x.fillStyle = '#8e8070'; x.fillRect(500, 250, 80, 2);
+            x.beginPath(); x.arc(860, 410, 120, 0, TAU); x.fillStyle = '#ffffff'; x.fill();
+            drawLogo(x, 868, 430, 2.0, BLUE, '#ffffff', 3.4);
+            x.strokeStyle = '#8e8070'; x.lineWidth = 2; x.beginPath(); x.arc(860, 410, 120, 0, TAU); x.stroke();
+            text(G.tally.angry ? `蘋果鴨說：跑了 ${G.tally.angry} 位` : '蘋果鴨說：甜', 860, 570, `400 28px ${SERIF}`, G.tally.angry ? '#b33a2f' : '#8e8070');
+            text(`出餐 ${G.tally.served} 份`, 150, 320, `400 30px ${SERIF}`, '#8e8070', 'left');
+            let y = 380;
+            (lines.length ? lines : [['一份都沒賣出去', '']]).forEach(([k, v]) => {
+                text(k, 150, y, `400 30px ${SERIF}`, '#4a4a4a', 'left');
+                text(v, 640, y, `400 30px ${SANS}`, v.startsWith('−') ? '#b33a2f' : '#2c2c2c', 'right');
+                x.strokeStyle = '#e4ddd2'; x.lineWidth = 1; x.beginPath(); x.moveTo(150, y + 16); x.lineTo(640, y + 16); x.stroke();
+                y += 52;
+            });
+            y = Math.max(y + 30, 900);
+            text(`合計 ${(G.pay.sales < 0 ? '−' : '') + fmt(Math.abs(G.pay.sales))}`, 150, y + 10, `400 30px ${SANS}`, '#8e8070', 'left');
+            if (pay !== G.pay.sales) text(`合計不到 $100，保底出勤費給 ${fmt(pay)}`, 150, y + 52, `400 30px ${SANS}`, '#8e8070', 'left');
+            text(`共 ${fmt(pay)}`, 150, y + 130, `600 60px ${SERIF}`, '#2c2c2c', 'left');
+            text(grade.line, 150, y + 190, `400 30px ${SERIF}`, '#8e8070', 'left');
+            x.save(); x.translate(850, y + 100); x.rotate(-0.12); x.globalAlpha = 0.9;
+            x.strokeStyle = '#b33a2f'; x.lineWidth = 7; x.strokeRect(-85, -85, 170, 170); x.lineWidth = 2.5; x.strokeRect(-100, -100, 200, 200);
+            x.textBaseline = 'middle'; text(grade.mark, 0, 6, `700 120px ${SERIF}`, '#b33a2f');
+            x.restore();
+            const d = new Date();
+            text(`${d.getFullYear()}・${d.getMonth() + 1}・${d.getDate()}`, 540, 1270, `400 24px ${SANS}`, '#8e8070');
+            return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(), 'image/png'));
+        }
+        async function shareSheet() {
+            await SaveImg.save(sheetFile, { title: '丼步喱・絆 甜點店日報', text: `我在蘋果鴨甜點店打工，賺了 ${$('score').textContent}` });
+        }
+
+        // ===== 9. 紀錄：這支手機的統計，也送到後端（Desserts 分頁）=====
+        const loadStats = () => {
+            let st = null;
+            try { st = JSON.parse(localStorage.getItem(STATS_KEY)); } catch (e) { }
+            st = st || { rounds: 0, best: 0, paid: 0, served: 0, angry: 0, scrapped: 0, specials: {} };
+            st.recent = st.recent || []; st.specials = st.specials || {};
+            return st;
+        };
+        function recordRound(pay, grade) {
+            const st = loadStats(), t = G.tally, e = G.earn;
+            st.rounds++; st.paid += pay; st.best = Math.max(st.best, pay);
+            st.served += t.served; st.angry += t.angry; st.scrapped += t.scrapped;
+            Object.entries(t.specials).forEach(([k, v]) => { st.specials[k] = (st.specials[k] || 0) + v; });
+            const avg = t.waits.length ? Math.round(t.waits.reduce((a, b) => a + b, 0) / t.waits.length) : 0;
+            st.recent.unshift({
+                at: new Date().toISOString(), ms: Math.round(G.clock * 1000), len: ROUND,
+                total: pay, sales: G.pay.sales, grade: grade.mark,
+                customers: t.customers, served: t.served, angry: t.angry, scrapped: t.scrapped, wrong: t.wrong, missed: t.missed,
+                tips: e.tip, ito: e.ito, bubbles: t.bubbles, pauses: t.pauses, rewinds: t.rewinds, staff: t.staff,
+                fastest_ms: t.fastest, avg_wait_ms: avg, ito_wins: t.itoWins, specials: t.specials, menu: t.menu,
+                shop: Object.fromEntries(SHOP.map(u => [u.key, lv(u.key)]).filter(x => x[1])),
+                login: !!(window.Line && Line.loggedIn),
+            });
+            st.recent = st.recent.slice(0, 50);
+            try { localStorage.setItem(STATS_KEY, JSON.stringify(st)); } catch (err) { }
+            try { if (pay > Number(localStorage.getItem(BEST_KEY) || 0)) localStorage.setItem(BEST_KEY, String(pay)); } catch (err) { }
+        }
+        function renderBest() {
+            if (G && G.started && !G.ended) { $('best').innerHTML = `出餐 ${G.tally.served}<br>氣走 <span class="${G.tally.angry ? 'text-wabi-shu' : ''}">${G.tally.angry}</span>`; return; }
+            let best = 0;
+            try { best = Number(localStorage.getItem(BEST_KEY) || 0); } catch (e) { }
+            $('best').innerHTML = best ? `最好一輪<br>${fmt(best)}` : '&nbsp;<br>&nbsp;';
+        }
+        const API_URL = (window.Line && Line.API_URL) || "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
+        function deviceId() {
+            let id = '';
+            try { id = localStorage.getItem('dongbuli-device') || ''; } catch (e) { }
+            if (!id) {
+                id = window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'd-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+                try { localStorage.setItem('dongbuli-device', id); } catch (e) { }
+            }
+            return id;
+        }
+        let uploading = null;
+        function uploadRounds() { if (!uploading) uploading = doUpload().finally(() => { uploading = null; }); return uploading; }
+        async function doUpload() {
+            const st = loadStats();
+            const todo = st.recent.filter(r => !st.synced || r.at > st.synced).reverse().slice(0, 20);
+            if (!todo.length) return { ok: true, saved: 0 };
+            try {
+                let session = '';
+                try { session = localStorage.getItem('dongbuli-session') || ''; } catch (e) { }
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'dessertLog', device: deviceId(), session, recs: todo }) });
+                const r = await res.json();
+                if (r.result !== 'success') return { ok: false, error: r.error || r.result || '後端沒回成功' };
+                const now = loadStats(); now.synced = todo[todo.length - 1].at;
+                try { localStorage.setItem(STATS_KEY, JSON.stringify(now)); } catch (e) { }
+                if (todo.length === 20) setTimeout(uploadRounds, 1500);
+                return { ok: true, saved: r.saved };
+            } catch (e) { return { ok: false, error: '連不到後端' }; }
+        }
+        function showSyncNote(r) {
+            const el = $('syncNote');
+            if (r.ok) el.textContent = '這一輪的紀錄存到雲端了';
+            else if (/不認得的請求/.test(r.error)) el.textContent = '紀錄先存在這支手機：後端還沒部署新版本，部署好下次打開會自己補送';
+            else el.textContent = `紀錄先存在這支手機（${r.error}），下次會補送`;
+        }
+
+        // ===== 10. 店面升級面板 =====
+        const playing = () => G && G.started && !G.ended;
+        function shopIcon(el, u, level) {
+            const r = Math.min(window.devicePixelRatio || 1, 3), px = 56;
+            el.width = px * r; el.height = px * r;
+            const c = el.getContext('2d'); c.scale(r, r);
+            const k = u.key;
+            if (k === 'cabinet') { c.fillStyle = '#d9e4ea'; rr(c, 10, 8, 36, 40, 4); c.fill(); c.strokeStyle = '#8a9aa4'; c.lineWidth = 1.5; c.stroke(); c.beginPath(); c.moveTo(10, 28); c.lineTo(46, 28); c.stroke(); drawMain(c, level >= 2 ? 'fruit' : 'pudding', 28, 24, 0.7); drawTop(c, level >= 2 ? 'berry' : 'sauce', 28, 42, 0.8); }
+            else if (k === 'motor') { c.save(); c.translate(28, 28); c.fillStyle = '#8b7d70'; for (let i = 0; i < 8; i++) { c.rotate(TAU / 8); c.fillRect(-3, -20, 6, 8); } c.beginPath(); c.arc(0, 0, 14, 0, TAU); c.fill(); c.fillStyle = '#f3ead9'; c.beginPath(); c.arc(0, 0, 5, 0, TAU); c.fill(); c.restore(); }
+            else if (k === 'brake') { c.fillStyle = '#b33a2f'; c.beginPath(); for (let i = 0; i < 8; i++) { const a = Math.PI / 8 + i * TAU / 8; c.lineTo(28 + 18 * Math.cos(a), 28 + 18 * Math.sin(a)); } c.closePath(); c.fill(); c.fillStyle = '#fff'; c.font = `700 12px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('停', 28, 29); }
+            else if (k === 'rewind') { c.strokeStyle = BLUE; c.lineWidth = 3; c.beginPath(); c.arc(28, 28, 15, -0.3, Math.PI * 1.4); c.stroke(); c.fillStyle = BLUE; c.beginPath(); c.moveTo(42, 14); c.lineTo(44, 26); c.lineTo(33, 22); c.fill(); }
+            else if (k === 'staff') { c.fillStyle = '#5a7fa8'; rr(c, 16, 32, 24, 18, 8); c.fill(); c.fillStyle = '#f3d0ad'; c.beginPath(); c.arc(28, 24, 10, 0, TAU); c.fill(); c.fillStyle = '#fffaf2'; c.fillRect(19, 12, 18, 5); if (level >= 2) { c.fillStyle = '#d48a3a'; rr(c, 34, 36, 18, 14, 6); c.fill(); c.fillStyle = '#f0c9a4'; c.beginPath(); c.arc(43, 30, 7, 0, TAU); c.fill(); } }
+            else { drawLogo(c, 26, 32, 0.38, BLUE, '#ffffff', 3.4); c.strokeStyle = 'rgba(80,140,220,.8)'; c.lineWidth = 1; [[44, 14, 4], [48, 24, 3], [40, 8, 2.5]].forEach(([a, b, rad]) => { c.beginPath(); c.arc(a, b, rad, 0, TAU); c.stroke(); }); if (level >= 2) { c.fillStyle = BLUE; c.font = `600 8px ${SANS}`; c.textAlign = 'center'; c.fillText('馬達', 26, 53); } }
+        }
+        function renderShop() {
+            $('shopMoney').textContent = fmt(Wallet.money);
+            $('shopList').innerHTML = SHOP.map(u => {
+                const now = lv(u.key), max = u.prices.length, next = now < max ? now + 1 : null;
+                const pr = next ? u.prices[now] : 0;
+                const dots = Array.from({ length: max }, (_, i) => `<i class="${i < now ? 'on' : ''}"></i>`).join('');
+                const tier = next ? `${u.tiers[now] ? u.tiers[now] + ' → ' : ''}${u.tiers[next]}` : u.tiers[now];
+                return `<div class="shop-row">
+                    <canvas class="shop-icon" data-icon="${u.key}" data-lv="${next || now}"></canvas>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm text-wabi-dark tracking-widest">${u.name}<span class="ml-1 text-[10px] font-sans text-stone-400">${u.sub}</span><span class="shop-dots ml-1">${dots}</span></p>
+                        <p class="mt-0.5 text-[10px] font-sans tracking-wider text-stone-400">${tier}</p>
+                        <p class="mt-1 text-[11px] font-sans leading-relaxed text-stone-600">${now ? '現在：' + u.fx(u.vals[now - 1]) : ''}${next ? `${now ? '<br>' : ''}升級：${u.fx(u.vals[next - 1])}` : '<br>已經是最高級'}</p>
+                    </div>
+                    <button type="button" class="shop-buy" data-buy="${u.key}" ${!next || Wallet.money < pr ? 'disabled' : ''}>${next ? `${now ? '升級' : '買'}<br>${fmt(pr)}` : '滿級'}</button>
+                </div>`;
+            }).join('');
+            $('shopList').querySelectorAll('[data-icon]').forEach(el => shopIcon(el, SHOP_BY[el.dataset.icon], Number(el.dataset.lv)));
+        }
+        function renderShopLv() {
+            const total = SHOP.reduce((t, u) => t + lv(u.key), 0);
+            $('shopLv').textContent = total ? total : '';
+            $('shopBtn').setAttribute('aria-label', total ? `店面，升級了 ${total} 次` : '店面升級');
+        }
+        function openShop() {
+            if (playing()) { showToast('打烊再去升級店面'); return; }
+            shop = loadShop(); renderShop();
+            const el = $('shop'); el.classList.remove('hidden'); requestAnimationFrame(() => el.classList.add('on'));
+        }
+        function closeShop() { const el = $('shop'); el.classList.remove('on'); setTimeout(() => el.classList.add('hidden'), reduceMotion ? 0 : 220); }
+        function buyUpgrade(key) {
+            if (playing()) return;
+            shop = loadShop();   // 用錢包裡最新的（別家店可能也買過，spent 要接著加）
+            const u = SHOP_BY[key], now = lv(key);
+            if (now >= u.prices.length) return;
+            const pr = u.prices[now];
+            if (!Wallet.spend(pr)) { showToast('錢包不夠，先多開幾輪店'); return; }
+            shop.lv[key] = now + 1; shop.spent += pr;
+            Wallet.setShop(shop);
+            audio(); sfx.serve();
+            showToast(`${u.name}升級了：${u.tiers[now + 1]}`);
+            if (G && !G.started && !G.ended) newRound(); else shop = loadShop();
+            renderShop(); renderShopLv();
+        }
+        $('shopBtn').addEventListener('click', openShop);
+        $('shopBtn2').addEventListener('click', openShop);
+        $('shop').addEventListener('click', e => {
+            const b = e.target.closest('[data-buy]');
+            if (b && !b.disabled) { buyUpgrade(b.dataset.buy); return; }
+            if (e.target.closest('[data-shop-close]') || e.target.id === 'shop') closeShop();
+        });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('shop').classList.contains('hidden')) closeShop(); });
+        Wallet.on(type => {
+            if (type === 'login') showToast('登入了，薪水存進 LINE 帳號');
+            if (!playing()) { if (G && !G.started && !G.ended) newRound(); else shop = loadShop(); }
+            renderShopLv();
+            if (!$('shop').classList.contains('hidden')) renderShop();
+        });
+        $('shareBtn').addEventListener('click', shareSheet);
+        $('againBtn').addEventListener('click', () => { newRound(); $('stage').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' }); });
+        $('payAcct').addEventListener('click', e => { if (e.target.closest('[data-login]')) Line.login(); });
+
+        fit();
+        window.addEventListener('resize', fit);
+        newRound();
+        renderShopLv();
+        requestAnimationFrame(frame);
+        setTimeout(uploadRounds, 2500);
     </script>
 </body>
 
