@@ -83,7 +83,6 @@
         .modes button small { display: block; font-size: 9px; letter-spacing: 0.08em; opacity: .8; }
         .modes button[aria-pressed="true"] { background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); }
         .modes button:disabled { opacity: .45; }
-        .act-quit { width: 100%; min-height: 44px; margin-top: 0.6rem; border: 1px solid rgb(var(--wabi-sub)); border-radius: 9999px; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: 0.2em; color: rgb(var(--wabi-dark)); touch-action: manipulation; }
 
         .bill li {
             display: flex;
@@ -140,8 +139,6 @@
                 <button type="button" data-steer="1" aria-label="往右換一條航道">右 →</button>
             </div>
             <p id="hint" class="mt-3 min-h-[2.6rem] text-xs text-center text-stone-500 font-sans tracking-widest leading-relaxed [text-wrap:balance]" aria-live="polite"></p>
-            <!-- 無盡模式出航中：放在提示那一行的位置（提示這時候是空的），版面不會變高 -->
-            <button id="quit" type="button" class="act-quit hidden">靠港，領運費</button>
         </section>
 
         <!-- 靠港 -->
@@ -185,7 +182,7 @@
                 <li>連續撈到好東西，運費一路往上加：連撈 5 個 ×1.2、10 個 ×1.5、20 個 ×2。撈到垃圾、撞到東西就從頭算。</li>
                 <li><b class="font-normal text-wabi-dark">茱莉鴨</b>在游泳：不要撞到她，從隔壁航道經過她會點頭（+$80，撞到她要賠 $80）。<b class="font-normal text-wabi-dark">海鷗</b>會飛過來叼蘿蔔、坐在木盆裡的<b class="font-normal text-wabi-dark">浣熊</b>會跳上船偷貨：<b class="font-normal text-wabi-dark">點牠一下</b>就嚇跑了（趕走浣熊 +$50）。</li>
                 <li>六十秒靠港。偶爾會起霧，或者吹順風。</li>
-                <li><b class="font-normal text-wabi-dark">無盡模式</b>：不計時，船身破光才靠港，也可以隨時按「靠港，領運費」收工；比的是<b class="font-normal text-wabi-dark">航程</b>（海里），上「無盡・榜」。每 30 秒換一個海域，一區比一區難：外海有<b class="font-normal text-wabi-dark">漩渦</b>（經過會被吸到隔壁航道）、颱風區有<b class="font-normal text-wabi-dark">側風</b>（看到箭頭就準備修回來）、鯨魚灣的<b class="font-normal text-wabi-shu">鯨魚</b>一次佔兩條航道（先冒水柱）、浣熊海盜成群結隊、夜航只看得到船頭燈照的那段；第七海域「無人海域」以後貨輪不再先警告，船也會越開越快（每分鐘快 0.5 倍，最快 2.5 倍）。第三、第五海域會漂來<b class="font-normal text-wabi-dark">補給港浮標</b>，撈到補回一格船身。運費算法跟一般模式一樣，船廠的升級照用。</li>
+                <li><b class="font-normal text-wabi-dark">無盡模式</b>：不計時，船身破光才靠港（沒有中途靠港的按鈕，開出去就開到底）；比的是<b class="font-normal text-wabi-dark">航程</b>（海里），上「無盡・榜」。每 30 秒換一個海域，一區比一區難：外海有<b class="font-normal text-wabi-dark">漩渦</b>（經過會被吸到隔壁航道）、颱風區有<b class="font-normal text-wabi-dark">側風</b>（看到箭頭就準備修回來）、鯨魚灣的<b class="font-normal text-wabi-shu">鯨魚</b>一次佔兩條航道（先冒水柱）、浣熊海盜成群結隊、夜航只看得到船頭燈照的那段；第七海域「無人海域」以後貨輪不再先警告，船也會越開越快（每分鐘快 0.5 倍，最快 2.5 倍）。第三、第五海域會漂來<b class="font-normal text-wabi-dark">補給港浮標</b>，撈到補回一格船身。運費算法跟一般模式一樣，船廠的升級照用。</li>
                 <li>賺來的運費可以按上面的<b class="font-normal text-wabi-dark">船廠</b>升級長蘿號：雷達、鐵甲、吸塵網、冷藏貨艙、汽笛。登入 LINE 換手機也在。</li>
             </ol>
         </section>
@@ -391,7 +388,7 @@
             G.shipAt = 9 + rand(0, 4);
             document.documentElement.classList.remove('hy-open');
             note('船長：' + pick(CAP.start));
-            hint(endless ? '無盡模式：船破光才靠港，也可以隨時自己靠港。每 30 秒換一個海域，一區比一區難。'
+            hint(endless ? '無盡模式：船破光才靠港，開出去就開到底。每 30 秒換一個海域，一區比一區難。'
                 : '在畫面上<b class="font-normal text-wabi-dark">左右滑</b>（或點左右兩邊、按下面的按鈕）換航道，第一下就開船。');
             $('result').classList.add('hidden');
             renderBest();
@@ -400,10 +397,7 @@
         function renderModes() {
             const busy = G && G.started && !G.ended;
             document.querySelectorAll('[data-mode]').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.mode === mode)); b.disabled = busy; });
-            // 無盡模式出航中：靠港鈕放在提示那一行
-            const q = !!(G && G.endless && busy);
-            $('quit').classList.toggle('hidden', !q);
-            $('hint').classList.toggle('hidden', q);
+            // 無盡模式沒有「靠港」鈕了（使用者說常常誤觸），船身破光才靠港
         }
         // 進到新的海域：說一聲、排這一區的事件
         function enterZone(z) {
@@ -1612,7 +1606,6 @@
             try { localStorage.setItem(MODE_KEY, mode); } catch (e) { }
             newRound();
         }));
-        $('quit').addEventListener('click', () => { if (G && G.endless && G.started && !G.ended && !G.sank) endRound(); });
         $('againBtn').addEventListener('click', () => { newRound(); $('stage').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' }); });
         $('payAcct').addEventListener('click', e => { if (e.target.closest('[data-login]')) Line.login(); });
         // ===== 12. 船隻升級面板 =====
