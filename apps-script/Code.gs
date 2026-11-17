@@ -2220,7 +2220,7 @@ function setupStocks() {
 // 保底那份押中了就消失（運彩不抽成）。開賽就不能押。比完自動派彩，錢直接加進 Players 的錢包（不算 earned、押的不算 spent，跟股市一樣）。
 // 賽程存在 SportMatches 分頁，不用每次都去爬官網：一天爬一次賽程；有比賽開打兩小時後還沒結果，才每 15 分鐘去看一次比分。
 // 比賽都在週末，平常幾乎不會去爬。官網改版爬不到的時候，可以在編輯器用 sportSetResult()／sportVoid() 手動開獎、退錢。
-var SPORT_SEED = 1000;
+var SPORT_SEED = 10000;
 var SPORT_MIN = 100, SPORT_MAX = 50000, SPORT_MATCH_MAX = 200000;
 var SPORT_OPS_PER_HOUR = 300;
 var SPORT_PICKS = { win: ['home', 'away'], score: ['3:0', '3:1', '3:2', '2:3', '1:3', '0:3'] };
