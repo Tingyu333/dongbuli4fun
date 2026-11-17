@@ -1286,7 +1286,7 @@ function washLog(input) {
 // 花錢：Players 的 spent（全部花掉的）拆成店面升級（shop.spent，洗頭店＋菜園農具＋早餐店）、捐香油錢（gongde.donated）、點燈（gongde.lit），剩下的算刮刮樂。
 // 公開：回 LINE 名字和大頭貼，不回 line_id；有帶 session 的話把自己那列標 me。算好的榜存 CacheService 5 分鐘。
 
-var BOARD_CACHE_KEY = 'board:v11', BOARD_CACHE_SEC = 60;  // 只讀新的列以後重算很快，一分鐘算一次（以前五分鐘）
+var BOARD_CACHE_KEY = 'board:v12', BOARD_CACHE_SEC = 60;  // 只讀新的列以後重算很快，一分鐘算一次（以前五分鐘）
 
 // 每張紀錄表怎麼併成「每個人最好的一場」：cols 讀幾欄，merge(best, row) 把一列併進去（best 用 line_id 當 key）
 // 單場最高分（Washes G total／AE ms、Cleans F total／AA ms）：分數高的贏，同分比快
@@ -1340,6 +1340,13 @@ var BOARD_SOURCES = {
     var b = best[id];
     if (!b || served > b.n || (served === b.n && (angry < b.angry || (angry === b.angry && total > b.total)))) best[id] = { n: served, items: Number(r[10]) || 0, angry: angry, total: total };
   } },
+  // 甜點店：每個 line_id 出餐最多的一輪（I served），同樣多比氣走少（J angry）、再比報廢少（K scrapped）、再比賺多（E total）
+  Desserts: { cols: 11, merge: function (best, r) {
+    var id = String(r[2] || ''), served = Number(r[8]) || 0, angry = Number(r[9]) || 0, scrapped = Number(r[10]) || 0, total = Number(r[4]) || 0;
+    if (!id || !served) return;
+    var b = best[id];
+    if (!b || served > b.n || (served === b.n && (angry < b.angry || (angry === b.angry && (scrapped < b.scrapped || (scrapped === b.scrapped && total > b.total)))))) best[id] = { n: served, angry: angry, scrapped: scrapped, total: total };
+  } },
 };
 
 // --- 排行榜只讀新的列 ---
@@ -1347,7 +1354,8 @@ var BOARD_SOURCES = {
 // 下次只讀 row 後面新增的列、跟記下的比。紀錄被 archiveLogs() 搬走也沒關係：成績已經記在 Board，搬走幾列 row 就減幾。
 // 改了 merge 的規則要重算：把 BOARD_STATE_VERSION 加一（會從頭讀一次；已經封存走的紀錄就不算了，要小心）。
 var BOARD_STATE_VERSION = 3;  // 2：多了 Ships（欄位位置變了，從頭讀一次）；3：一般模式、無盡模式分開記（無盡・榜）
-var BOARD_STATE_COLS = ['Washes', 'Cleans', 'Wifis', 'Zaocans', 'Ships'];
+var BOARD_STATE_COLS = ['Washes', 'Cleans', 'Wifis', 'Zaocans', 'Ships', 'Desserts'];
+// Board 分頁照第一列的標題找欄（加新的表只多一欄，舊的照樣接著讀，不用從頭讀）
 function boardStateSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('Board');
@@ -1358,12 +1366,17 @@ function boardStateSheet() {
   return sheet;
 }
 // epoch：archiveLogs() 每搬一次加一。算榜算到一半剛好有人封存，存回去之前看 epoch 變了就不存（不然列數會對不上）
+function boardStateRow() {
+  var sheet = boardStateSheet(), w = Math.max(sheet.getLastColumn(), 1), rows = sheet.getRange(1, 1, 2, w).getValues(), m = {};
+  rows[0].forEach(function (h, i) { if (h) m[String(h)] = rows[1][i]; });
+  return m;
+}
 function loadBoardState() {
-  var n = BOARD_STATE_COLS.length, vals = boardStateSheet().getRange(2, 1, 1, n + 2).getValues()[0];
-  var st = { epoch: Number(vals[n + 1]) || 0 };
-  if (Number(vals[n]) !== BOARD_STATE_VERSION) return st;  // 版本不對：從頭讀
-  BOARD_STATE_COLS.forEach(function (name, i) {
-    try { var v = JSON.parse(vals[i] || 'null'); if (v && typeof v.row === 'number' && v.best) st[name] = v; } catch (e) { }
+  var m = boardStateRow();
+  var st = { epoch: Number(m.epoch) || 0 };
+  if (Number(m.version) !== BOARD_STATE_VERSION) return st;  // 版本不對：從頭讀
+  BOARD_STATE_COLS.forEach(function (name) {
+    try { var v = JSON.parse(m[name] || 'null'); if (v && typeof v.row === 'number' && v.best) st[name] = v; } catch (e) { }
   });
   return st;
 }
@@ -1371,6 +1384,7 @@ function writeBoardState(st) {
   var row = BOARD_STATE_COLS.map(function (name) { return JSON.stringify(st[name] || { row: 1, best: {} }); });
   if (row.some(function (v) { return v.length > 49000; })) return false;  // 一格最多五萬字，放不下就不存（下次照樣從頭讀，只是慢）
   var sheet = boardStateSheet();
+  if (sheet.getLastColumn() > row.length + 2) sheet.getRange(1, row.length + 3, 2, sheet.getLastColumn() - row.length - 2).clearContent();
   sheet.getRange(1, 1, 1, row.length + 2).setValues([BOARD_STATE_COLS.concat(['version', 'epoch'])]);
   sheet.getRange(2, 1, 1, row.length + 2).setValues([row.concat([BOARD_STATE_VERSION, st.epoch || 0])]);
   return true;
@@ -1378,7 +1392,7 @@ function writeBoardState(st) {
 // 算榜後存回去：排隊，存之前確認沒有人剛封存過
 function saveBoardState(st) {
   return withLock(function () {
-    var n = BOARD_STATE_COLS.length, now = Number(boardStateSheet().getRange(2, n + 2).getValue()) || 0;
+    var now = Number(boardStateRow().epoch) || 0;
     if (now !== (st.epoch || 0)) return false;
     return writeBoardState(st);
   });
@@ -1448,7 +1462,7 @@ function archiveLogs(days) {
 
 function buildBoard() {
   var st = loadBoardState();
-  var washBest = boardScan(st, 'Washes'), cleanBest = boardScan(st, 'Cleans'), wifis = boardScan(st, 'Wifis'), served = boardScan(st, 'Zaocans'), ships = boardScan(st, 'Ships');
+  var washBest = boardScan(st, 'Washes'), cleanBest = boardScan(st, 'Cleans'), wifis = boardScan(st, 'Wifis'), served = boardScan(st, 'Zaocans'), ships = boardScan(st, 'Ships'), desserts = boardScan(st, 'Desserts');
   try { saveBoardState(st); } catch (e) { console.warn('Board 分頁存不進去：' + e); }
   var rows = playersSheet().getDataRange().getValues(), out = [];
   for (var i = 1; i < rows.length; i++) {
@@ -1468,6 +1482,8 @@ function buildBoard() {
       endless: { money: wb.money || null, alive: wb.alive || null } };
     var ze = earned.zaocan || {};  // 早餐店：最高的一天是 earned 的 best；served 是出餐最多的一天
     var zc = { n: Number(ze.times) || 0, money: Number(ze.total) || 0, best: ze.best ? Number(ze.best) : null, ms: 0, served: served[id] || null };
+    var de = earned.dessert || {};  // 甜點店：最高的一輪是 earned 的 best；served 是出餐最多的一輪
+    var ds = { n: Number(de.times) || 0, money: Number(de.total) || 0, best: de.best ? Number(de.best) : null, ms: 0, served: desserts[id] || null };
     var se = earned.ship || {}, sb = ships[id] || {};  // 貨運：最高分、最長連撈只算一般模式；無盡模式航最遠、一趟最多放 endless
     var sh = { n: Number(se.times) || 0, money: Number(se.total) || 0, best: sb.normal || null, ms: 0, combo: sb.combo || null,
       endless: { money: sb.money || null, far: sb.far || null } };
@@ -1478,12 +1494,12 @@ function buildBoard() {
     var sp = { total: num(rows[i][5]), shop: num(shop.spent), donate: num(gd.donated), lamp: num(gd.lit) };
     sp.scratch = Math.max(0, sp.total - sp.shop - sp.donate - sp.lamp);
     sp.won = num((earned.scratch || {}).total) + num((earned.caishen || {}).total);  // 刮中的（含財神加碼）
-    if (!x.n && !c.n && !fm.n && !wf.n && !zc.n && !sh.n && x.best == null && c.best == null && !sp.total) continue;
+    if (!x.n && !c.n && !fm.n && !wf.n && !zc.n && !sh.n && !ds.n && x.best == null && c.best == null && !sp.total) continue;
     // 有暱稱、指定頭像就用它，沒有才用 LINE 的
     var nick = String(rows[i][12] || '').replace(/^'/, '').trim().slice(0, 12), avatar = String(rows[i][13] || '');
     if (AVATAR_KEYS.indexOf(avatar) < 0) avatar = '';
     out.push({ id: id, name: nick || String(rows[i][2] || '旅人').slice(0, 20), avatar: avatar,
-      picture: !avatar && /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c, farm: fm, wifi: wf, zaocan: zc, ship: sh, spend: sp });
+      picture: !avatar && /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c, farm: fm, wifi: wf, zaocan: zc, ship: sh, dessert: ds, spend: sp });
   }
   return { at: new Date().toISOString(), players: out };
 }
@@ -1499,7 +1515,7 @@ function leaderboard(input) {
   return {
     result: 'success', at: board.at,
     players: board.players.map(function (p) {
-      return { name: p.name, picture: p.picture, avatar: p.avatar || '', xitou: p.xitou, clean: p.clean, farm: p.farm, wifi: p.wifi, zaocan: p.zaocan, ship: p.ship, spend: p.spend, me: !!me && p.id === me };
+      return { name: p.name, picture: p.picture, avatar: p.avatar || '', xitou: p.xitou, clean: p.clean, farm: p.farm, wifi: p.wifi, zaocan: p.zaocan, ship: p.ship, dessert: p.dessert, spend: p.spend, me: !!me && p.id === me };
     })
   };
 }
