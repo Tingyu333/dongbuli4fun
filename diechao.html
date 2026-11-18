@@ -121,8 +121,8 @@
         <section class="mt-10 px-1">
             <h2 class="text-sm tracking-[0.3em] text-wabi-dark">怎麼疊</h2>
             <ol class="mt-3 list-decimal pl-5 space-y-1.5 text-xs font-sans tracking-wide text-stone-500 leading-relaxed">
-                <li>小吳鴨抓著下一本書左右飛，點畫面任何地方就放下去。一場 <b class="font-normal text-wabi-dark">60 秒</b>。</li>
-                <li>跟下面那本沒對齊的部分會被切掉，上面就越來越窄。對得剛剛好蓋朱色的「正」，連續三個「正」寬度會長回來一點。</li>
+                <li>小吳鴨抓著下一本書左右飛，點畫面任何地方就放下去。一場 <b class="font-normal text-wabi-dark">60 秒</b>（店面買咖啡可以多幾秒）。</li>
+                <li>跟下面那本沒對齊的部分會被切掉，上面就越來越窄。對得剛剛好蓋朱色的「正」（不切，「正」越多錢越多）。</li>
                 <li>完全沒疊到：書掉下去、<b class="font-normal text-wabi-shu">扣 3 秒</b>，下一本照原本的寬度繼續。</li>
                 <li>右上角<b class="font-normal text-wabi-dark">店面</b>可以買工具：<b class="font-normal text-wabi-dark">回滾</b>把剛放歪的那本退回去重放（一場一、兩次）；<b class="font-normal text-wabi-dark">補習</b>疊到第 20（、40）層送一次，按了最上面那本寬度補回一截。</li>
                 <li>從 26 樓的冷氣外機往上疊，每 11 層一層樓。書從注音符號一路疊到當顧問，每場抽到的書不一樣。</li>
@@ -303,6 +303,14 @@
             tiers: ['', '一次', '兩次'], fx: v => `一場可以把剛放歪的那本退回去重放 ${v} 次（不退時間）` },
           { key: 'tutor', name: '補習', sub: '補寬度', prices: [40000, 100000], vals: [[20], [20, 40]],
             tiers: ['', '補習班', '名師一對一'], fx: v => `疊到第 ${v.join('、')} 層各送一次補習：按了最上面那本寬度補回 30` },
+          { key: 'coffee', name: '咖啡', sub: '加班', prices: [50000, 120000], vals: [5, 10],
+            tiers: ['', '超商美式', '手沖單品'], fx: v => `一場多 ${v} 秒（${ROUND + v} 秒）` },
+          { key: 'headset', name: '降噪耳機', sub: '專心', prices: [30000, 80000], vals: [0.1, 0.2],
+            tiers: ['', '有線耳機', '降噪耳機'], fx: v => `小吳鴨飛慢 ${Math.round(v * 100)}%，比較好對準` },
+          { key: 'caliper', name: '遊標卡尺', sub: '「正」', prices: [25000, 70000], vals: [6, 8],
+            tiers: ['', '塑膠尺', '遊標卡尺'], fx: v => `差 ${v} 以內就算對齊、蓋「正」（本來 ${PERFECT_TOL}）` },
+          { key: 'shelf', name: '書架', sub: '地基', prices: [35000, 90000], vals: [16, 32],
+            tiers: ['', '加寬層板', '整面書牆'], fx: v => `第一本書寬多 ${v}（${FULL + v}），補習也能補到這麼寬` },
         ];
         const SHOP_BY = Object.fromEntries(SHOP.map(u => [u.key, u]));
         function loadShop() {
@@ -319,12 +327,12 @@
         function newGame() {
           deck = {};
           shop = loadShop();
-          G = { phase: 'title', time: ROUND, layers: [], debris: [], cur: null, perfect: 0, miss: 0, streak: 0, rollback: val('revert') || 0, rollbackMax: val('revert') || 0, tutor: 0, tutorGot: {}, flash: 0, face: 'normal', faceT: 0, julieT: 0, shake: 0, ended: 0, minW: FULL, wage: 0 };
+          G = { phase: 'title', round: ROUND + (val('coffee') || 0), full: FULL + (val('shelf') || 0), tol: val('caliper') || PERFECT_TOL, time: ROUND + (val('coffee') || 0), layers: [], debris: [], cur: null, perfect: 0, miss: 0, streak: 0, rollback: val('revert') || 0, rollbackMax: val('revert') || 0, tutor: 0, tutorGot: {}, flash: 0, face: 'normal', faceT: 0, julieT: 0, shake: 0, ended: 0, minW: FULL + (val('shelf') || 0), wage: 0 };
           cam = 0; joke = '點一下開工';
           spawn(true);
         }
-        function topLayer() { return G.layers[G.layers.length - 1] || { x: (W - FULL) / 2 + 8, w: FULL }; }
-        function speed() { return Math.min(300, 140 + G.layers.length * 4); }
+        function topLayer() { return G.layers[G.layers.length - 1] || { x: (W - G.full) / 2 + 8, w: G.full }; }
+        function speed() { return Math.min(300, 140 + G.layers.length * 4) * (1 - (val('headset') || 0)); }   // 降噪耳機：小吳鴨飛慢一點
         function spawn(first, again) {
           const t = topLayer(), n = G.layers.length + 1;
           const book = again || bookFor(n);
@@ -370,11 +378,11 @@
             joke = '沒疊到，扣 3 秒'; spawn(false, c.book); return;
           }
           let nx = l, nw = ov, perfect = false;
-          if (Math.abs(c.x - t.x) <= PERFECT_TOL && !first || first && false) { perfect = true; nx = t.x; nw = t.w; }
+          if (Math.abs(c.x - t.x) <= G.tol && !first) { perfect = true; nx = t.x; nw = t.w; }
           if (first) { perfect = true; nx = c.x; nw = c.w; } // 第一本直接放在冷氣機上，算對齊
           if (perfect) {
             G.streak++; G.perfect++; G.maxStreak = Math.max(G.maxStreak || 0, G.streak);
-            if (G.streak >= 3 && nw < FULL) { const add = Math.min(8, FULL - nw); nx -= add / 2; nw += add; SFX.grow(); joke = '融會貫通，寬度長回來一點'; }
+            // 連續「正」不會讓塔變寬（使用者 2026-11-18：中間鼓起來很怪）
             face('smug'); SFX.perfect(Math.min(G.streak, 6)); buzz(12);
           } else {
             G.streak = 0;
@@ -401,7 +409,7 @@
         function doTutor() {
           if (!lv('tutor')) { openShop(); return; }
           if (G.phase !== 'play' || !G.tutor || !G.layers.length) return;
-          const t = topLayer(), add = Math.min(30, FULL - t.w); if (add <= 0) return;
+          const t = topLayer(), add = Math.min(30, G.full - t.w); if (add <= 0) return;
           G.tutor--; t.x -= add / 2; t.w += add; if (t.x < 20) t.x = 20; if (t.x + t.w > W - 20) t.x = W - 20 - t.w;
           if (G.cur) { G.cur.w = t.w; }
           joke = '補習：寬度補回一截'; SFX.grow(); syncUI();
@@ -443,7 +451,7 @@
           if (G.phase !== 'play') return;
           G.phase = 'end'; G.ended = performance.now();
           if (G.cur) { const c = G.cur; G.debris.push({ x: c.x, y: worldTop() + LH * 1.6, w: c.w, book: c.book, vx: 0, vy: 0, rot: 0, vr: 1.5 }); G.stuck = c.book; G.cur = null; }
-          G.playMs = Math.round((ROUND - G.time) * 1000);
+          G.playMs = Math.round((G.round - G.time) * 1000);
           calcWage(); SFX.end(); joke = '收工'; document.documentElement.classList.remove('dc-open'); showResult(); syncUI();
         }
 
@@ -532,7 +540,7 @@
           txt(String(sec), W / 2 - 3, 23, { size: 19, w: 500, color: low ? '#b33a2f' : '#2c2c2c', align: 'right' });
           txt('秒', W / 2 + 1, 22, { size: 10, color: '#8e8070' });
           txt('$' + G.wage.toLocaleString(), W - 12, 21, { size: 12, w: 500, color: '#2c2c2c', align: 'right' });
-          c.fillStyle = '#e6e0d6'; c.fillRect(0, 31, W, 3); c.fillStyle = low ? '#b33a2f' : '#8e8070'; c.fillRect(0, 31, W * G.time / ROUND, 3);
+          c.fillStyle = '#e6e0d6'; c.fillRect(0, 31, W, 3); c.fillStyle = low ? '#b33a2f' : '#8e8070'; c.fillRect(0, 31, W * G.time / G.round, 3);
           // 吐槽條
           c.fillStyle = 'rgba(252,250,248,.94)'; c.fillRect(0, H - 30, W, 30); c.fillStyle = '#dcdcdc'; c.fillRect(0, H - 30, W, 1);
           c.font = `400 12.5px ${SERIF}`; let j = joke; while (c.measureText(j).width > W - 24 && j.length > 4) j = j.slice(0, -2) + '…';
@@ -541,7 +549,7 @@
           if (G.phase === 'title') {
             c.fillStyle = 'rgba(252,250,248,.78)'; c.fillRect(0, 150, W, 150);
             txt('疊・巢', W / 2, 205, { size: 30, font: SERIF, color: '#2c2c2c', align: 'center', ls: 8 });
-            txt('60 秒，從 26 樓往上疊', W / 2, 236, { size: 12, color: '#6b6158', align: 'center', ls: 2 });
+            txt(`${G.round} 秒，從 26 樓往上疊`, W / 2, 236, { size: 12, color: '#6b6158', align: 'center', ls: 2 });
             const a = 0.55 + 0.45 * Math.sin(performance.now() / 300);
             txt('點一下開工', W / 2, 272, { size: 15, w: 500, color: `rgba(179,58,47,${a})`, align: 'center', ls: 4 });
           }
@@ -585,6 +593,27 @@
             c.strokeStyle = '#b33a2f'; c.lineWidth = 2.6; c.lineCap = 'round'; c.beginPath(); c.arc(28, 18, 10, Math.PI * 1.15, Math.PI * 2.2); c.stroke();
             c.fillStyle = '#b33a2f'; c.beginPath(); c.moveTo(14, 10); c.lineTo(20, 20); c.lineTo(11, 20); c.closePath(); c.fill();
             if (level >= 2) { c.fillStyle = '#2c2c2c'; c.font = `700 9px ${SANS}`; c.textAlign = 'center'; c.fillText('×2', 46, 12); }
+          } else if (u.key === 'coffee') {
+            // 一杯熱咖啡
+            c.fillStyle = '#f7f3ec'; c.strokeStyle = '#8b7d70'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(16, 22); c.lineTo(40, 22); c.lineTo(37, 48); c.lineTo(19, 48); c.closePath(); c.fill(); c.stroke();
+            c.fillStyle = '#6b4a2f'; c.fillRect(17, 24, 22, 4); c.beginPath(); c.arc(42, 32, 5, -1.3, 1.3); c.stroke();
+            c.fillStyle = level >= 2 ? '#2c2c2c' : '#3f6a63'; c.fillRect(19, 33, 18, 7);
+            c.strokeStyle = 'rgba(139,125,112,.7)'; c.lineWidth = 1.4; [22, 28, 34].forEach(x => { c.beginPath(); c.moveTo(x, 18); c.quadraticCurveTo(x - 3, 13, x, 8); c.stroke(); });
+          } else if (u.key === 'headset') {
+            // 耳機
+            c.strokeStyle = '#2c2c2c'; c.lineWidth = 3; c.beginPath(); c.arc(28, 30, 16, Math.PI * 1.05, Math.PI * 1.95); c.stroke();
+            c.fillStyle = level >= 2 ? '#43476e' : '#8b7d70'; [[10, 30], [40, 30]].forEach(([x, y]) => { c.beginPath(); c.roundRect(x, y, 7, 14, 3); c.fill(); });
+            if (level >= 2) { c.fillStyle = '#c9a050'; c.fillRect(11, 35, 5, 2); c.fillRect(41, 35, 5, 2); }
+          } else if (u.key === 'caliper') {
+            // 尺：一排刻度
+            c.fillStyle = level >= 2 ? '#b8c0c4' : '#e8d9a8'; c.strokeStyle = '#8b7d70'; c.lineWidth = 1; c.beginPath(); c.roundRect(6, 22, 44, 14, 2); c.fill(); c.stroke();
+            c.strokeStyle = '#4a4a4a'; for (let i = 0; i <= 10; i++) { c.beginPath(); c.moveTo(9 + i * 3.8, 22); c.lineTo(9 + i * 3.8, i % 5 ? 27 : 30); c.stroke(); }
+            if (level >= 2) { c.fillStyle = '#9aa2a6'; c.fillRect(30, 14, 8, 26); c.strokeStyle = '#6b7276'; c.strokeRect(30, 14, 8, 26); }
+            stamp(c, 44, 46, 12, '正', -0.06);
+          } else if (u.key === 'shelf') {
+            // 一塊層板上放一本很寬的書
+            c.fillStyle = '#b08a5a'; c.fillRect(4, 40, 48, 5); c.fillStyle = '#8c6a40'; c.fillRect(4, 45, 48, 2);
+            layer(c, level >= 2 ? 5 : 10, 26, level >= 2 ? 44 : 34, 12, { name: '', c: '#8a7458' }, { d: 3, bare: true });
           } else {
             // 兩本書，上面那本比較寬：補回一截
             layer(c, 14, 38, 28, 12, { name: '', c: '#563f5e' }, { d: 3, bare: true });
@@ -680,7 +709,7 @@
           const st = loadStats(), n = G.layers.length, last = G.layers[n - 1];
           st.rounds++; st.paid += G.wage; st.best = Math.max(st.best, G.wage); st.layers = Math.max(st.layers, n);
           st.recent.unshift({
-            at: new Date().toISOString(), ms: G.playMs || ROUND * 1000, len: ROUND, total: G.wage, layers: n, perfect: G.perfect, miss: G.miss,
+            at: new Date().toISOString(), ms: G.playMs || G.round * 1000, len: G.round, total: G.wage, layers: n, perfect: G.perfect, miss: G.miss,
             rollback: G.rollbackMax - G.rollback, tutor: Object.keys(G.tutorGot).length - G.tutor, max_streak: G.maxStreak || 0, min_w: Math.round(G.minW),
             stage: n ? stageOf(n).name : '', last: last ? last.book.name : '', stuck: G.stuck ? G.stuck.name : '', login: !!(window.Line && Line.loggedIn),
           });
@@ -737,7 +766,7 @@
           const RT = 346, RH = 40, TX = 452, TW = 74, rowsH = Math.max(1, reached.length) * RH, TB = RT + Math.max(rowsH, 120) - 6, LHh = N ? Math.min(8, (TB - RT - 2) / N) : 0;
           if (!N) T('一本都還沒疊好', 62, RT + 20, { size: 13, color: '#8e8070' });
           c.fillStyle = '#e4e1da'; c.fillRect(TX - TW / 2 - 4, TB, TW + 8, 4);
-          G.layers.forEach((L, i) => { const ww = L.w / FULL * TW, x = TX - TW / 2 + (L.x - (W - FULL) / 2 - 8) / FULL * TW, y = TB - (i + 1) * LHh; c.fillStyle = L.book.c; c.fillRect(x, y, ww, Math.max(0.8, LHh - 0.5)); if (L.perfect) { c.fillStyle = 'rgba(232,205,132,.85)'; c.fillRect(x, y, ww, 0.6); } });
+          G.layers.forEach((L, i) => { const ww = L.w / G.full * TW, x = TX - TW / 2 + (L.x - (W - G.full) / 2 - 8) / G.full * TW, y = TB - (i + 1) * LHh; c.fillStyle = L.book.c; c.fillRect(x, y, ww, Math.max(0.8, LHh - 0.5)); if (L.perfect) { c.fillStyle = 'rgba(232,205,132,.85)'; c.fillRect(x, y, ww, 0.6); } });
           if (G.stuck) { c.fillStyle = '#b33a2f'; c.fillRect(TX - 10, TB - N * LHh - 5, 20, 1.2); T(`時間到・第 ${N + 1} 本`, TX, TB - N * LHh - 10, { size: 8.5, font: SANS, color: '#b33a2f', align: 'center' }); }
           reached.forEach((s, i) => {
             const y = RT + i * RH, cy = y + 15, segTop = TB - s.b2 * LHh, segBot = TB - (s.a - 1) * LHh, bx = TX - TW / 2 - 10;
