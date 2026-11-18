@@ -1289,7 +1289,25 @@ function washLog(input) {
 // 花錢：Players 的 spent（全部花掉的）拆成店面升級（shop.spent，洗頭店＋菜園農具＋早餐店）、捐香油錢（gongde.donated）、點燈（gongde.lit），剩下的算刮刮樂。
 // 公開：回 LINE 名字和大頭貼，不回 line_id；有帶 session 的話把自己那列標 me。算好的榜存 CacheService 5 分鐘。
 
-var BOARD_CACHE_KEY = 'board:v12', BOARD_CACHE_SEC = 60;  // 只讀新的列以後重算很快，一分鐘算一次（以前五分鐘）
+// 排行榜：排程 cronBoard() 每 5 分鐘先算好存快取（2026-11-18，使用者定的），打開排行榜只讀現成的。
+// 快取一筆最多 100KB，榜大了就切成好幾段存（BOARD_CHUNK 個字一段，中文一字最多 3 bytes 也放得下）。
+// 存 10 分鐘：排程哪天停了，過期後有人打開就當場算（跟以前一樣），不會壞。
+var BOARD_CACHE_KEY = 'board:v13', BOARD_CACHE_SEC = 600, BOARD_CHUNK = 30000;
+function boardCachePut(board) {
+  var s = JSON.stringify(board), n = Math.ceil(s.length / BOARD_CHUNK), m = {};
+  for (var i = 0; i < n; i++) m[BOARD_CACHE_KEY + ':' + i] = s.slice(i * BOARD_CHUNK, (i + 1) * BOARD_CHUNK);
+  m[BOARD_CACHE_KEY] = String(n);
+  try { CacheService.getScriptCache().putAll(m, BOARD_CACHE_SEC); } catch (e) { console.warn('排行榜存不進快取：' + e); }
+}
+function boardCacheGet() {
+  var cache = CacheService.getScriptCache(), n = Number(cache.get(BOARD_CACHE_KEY));
+  if (!n) return null;
+  var keys = [];
+  for (var i = 0; i < n; i++) keys.push(BOARD_CACHE_KEY + ':' + i);
+  var got = cache.getAll(keys), parts = [];
+  for (var j = 0; j < n; j++) { if (got[keys[j]] == null) return null; parts.push(got[keys[j]]); }
+  try { return JSON.parse(parts.join('')); } catch (e) { return null; }
+}
 
 // 每張紀錄表怎麼併成「每個人最好的一場」：cols 讀幾欄，merge(best, row) 把一列併進去（best 用 line_id 當 key）
 // 單場最高分（Washes G total／AE ms、Cleans F total／AA ms）：分數高的贏，同分比快
@@ -1508,12 +1526,8 @@ function buildBoard() {
 }
 
 function leaderboard(input) {
-  var cache = CacheService.getScriptCache(), board = null, hit = cache.get(BOARD_CACHE_KEY);
-  if (hit) { try { board = JSON.parse(hit); } catch (e) { } }
-  if (!board) {
-    board = buildBoard();
-    try { cache.put(BOARD_CACHE_KEY, JSON.stringify(board), BOARD_CACHE_SEC); } catch (e) { }  // 太大存不進去就每次重算
-  }
+  var board = boardCacheGet();
+  if (!board) { board = buildBoard(); boardCachePut(board); }   // 排程沒算到（剛部署、排程停了）才當場算
   var me = input && input.session ? sessionUser(input.session) : null;
   return {
     result: 'success', at: board.at,
@@ -3197,3 +3211,104 @@ function gongdeLog(input) {
   if (saved) cache.put(allKey, String(allCount + saved), 3600);
   return { result: 'success', saved: saved, skipped: skipped };
 }
+
+
+// ===== 排程（2026-11-18，使用者定的時間；都是台灣時間）=====
+// 在 Apps Script 編輯器選 setupTriggers 按「執行」一次就設好（第一次會跳授權：要多「管理觸發器」和「存檔到雲端硬碟」）。
+// 看下次什麼時候跑：執行 cronStatus()，結果在「執行紀錄」。
+//   cronBoard   每 5 分鐘：先算好排行榜存快取；順便檢查下面三個每日排程還在不在（不在就補排）
+//   cronNews    每天 20:58：先把 21:00 要出的晚報寫好（21:00 以前公開的 API 只給今天的，所以不會提早曝光）
+//   cronSport   每天 00:00：去 TPVL 官網抓比分，比完的派彩（有人打開運動頁時也照樣會抓、會派）
+//   cronBackup  每天 03:00：整份試算表匯出成 .xlsx 存到雲端硬碟「丼步喱備份」資料夾，只留最近 90 份（舊的丟垃圾桶，30 天內還救得回來）
+// 每日排程用「指定時間跑一次」的觸發器，跑的時候先排好明天的（Google 每日觸發器只能準到前後 15 分鐘）。
+// Google 不保證準到秒，通常晚幾十秒到幾分鐘。
+var CRON_DAILY = { cronNews: [20, 58], cronSport: [0, 0], cronBackup: [3, 0] };
+var BACKUP_FOLDER = '丼步喱備份', BACKUP_PREFIX = '丼步喱備份-', BACKUP_KEEP = 90;
+
+function setupTriggers() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    var fn = t.getHandlerFunction();
+    if (fn === 'cronBoard' || CRON_DAILY[fn]) ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('cronBoard').timeBased().everyMinutes(5).create();
+  Object.keys(CRON_DAILY).forEach(function (fn) { cronSchedule(fn); });
+  backupFolder();   // 先建好資料夾，順便讓授權一次問完
+  cronStatus();
+}
+function cronStatus() {
+  var props = PropertiesService.getScriptProperties(), lines = [];
+  ScriptApp.getProjectTriggers().forEach(function (t) { lines.push('觸發器：' + t.getHandlerFunction()); });
+  Object.keys(CRON_DAILY).forEach(function (fn) {
+    var next = Number(props.getProperty('cron:' + fn) || 0), last = props.getProperty('cronLast:' + fn) || '還沒跑過';
+    lines.push(fn + ' 下次 ' + (next ? Utilities.formatDate(new Date(next), 'Asia/Taipei', 'yyyy-MM-dd HH:mm') : '沒排') + '｜上次 ' + last);
+  });
+  Logger.log(lines.join('\n'));
+}
+// 下一個台灣時間 h:m（已經過了或一分鐘內就排明天）
+function cronNextAt(h, m, nowMs) {
+  var tpe = new Date(nowMs + 8 * 3600000);
+  var t = Date.UTC(tpe.getUTCFullYear(), tpe.getUTCMonth(), tpe.getUTCDate(), h, m) - 8 * 3600000;
+  while (t <= nowMs + 60000) t += 86400000;
+  return t;
+}
+// 把 fn 的觸發器換成下一次的時間，記在指令碼屬性 cron:fn
+function cronSchedule(fn) {
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === fn) ScriptApp.deleteTrigger(t); });
+  var at = cronNextAt(CRON_DAILY[fn][0], CRON_DAILY[fn][1], Date.now());
+  ScriptApp.newTrigger(fn).timeBased().at(new Date(at)).create();
+  PropertiesService.getScriptProperties().setProperty('cron:' + fn, String(at));
+}
+// 每日排程跑的時候：先排明天（後面出錯也不會斷），跑完記一下
+function cronRun(fn, work) {
+  try { cronSchedule(fn); } catch (e) { console.warn(fn + ' 排明天失敗：' + e); }
+  var msg = 'OK';
+  try { var r = work(); if (r && r.result === 'error') msg = r.error; else if (r && r.msg) msg = r.msg; }
+  catch (e) { msg = '失敗：' + (e && e.message || e); console.warn(fn + ' ' + msg); }
+  PropertiesService.getScriptProperties().setProperty('cronLast:' + fn, Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd HH:mm') + ' ' + String(msg).slice(0, 120));
+}
+
+function cronBoard() {
+  var board = buildBoard();
+  boardCachePut(board);
+  // 看門狗：每日排程該跑卻超過 15 分鐘沒跑（觸發器不見了），補排
+  var props = PropertiesService.getScriptProperties(), now = Date.now();
+  Object.keys(CRON_DAILY).forEach(function (fn) {
+    var next = Number(props.getProperty('cron:' + fn) || 0);
+    if (next && now > next + 15 * 60000) { try { cronSchedule(fn); } catch (e) { console.warn('補排 ' + fn + ' 失敗：' + e); } }
+  });
+}
+function cronNews() {
+  cronRun('cronNews', function () {
+    var now = stockNow().getTime(), day = stockNewsDay(now + 30 * 60000);   // 20:58 跑：算的是 21:00 以後那份（明天的）
+    return withLock(function () { stockSync(now); var have = stockReadNews(); stockMakeNews(day, have); return { msg: '第 ' + stockDayStr(day) + ' 的晚報好了' }; });
+  });
+}
+function cronSport() {
+  cronRun('cronSport', function () { sportSync(Date.now(), true, false); return { msg: PropertiesService.getScriptProperties().getProperty('sportError') || 'OK' }; });
+}
+function cronBackup() { cronRun('cronBackup', backupSheet); }
+
+function backupFolder() {
+  var props = PropertiesService.getScriptProperties(), id = props.getProperty('BACKUP_FOLDER_ID');
+  if (id) { try { var f = DriveApp.getFolderById(id); if (!f.isTrashed()) return f; } catch (e) { } }
+  var it = DriveApp.getFoldersByName(BACKUP_FOLDER), folder = it.hasNext() ? it.next() : DriveApp.createFolder(BACKUP_FOLDER);
+  props.setProperty('BACKUP_FOLDER_ID', folder.getId());
+  return folder;
+}
+// 整份試算表匯出成 .xlsx（只有資料，不會連程式、指令碼屬性一起複製），存進備份資料夾；超過 BACKUP_KEEP 份的舊檔丟垃圾桶
+// 備份裡有電話、Email、大家的錢：資料夾不要分享給別人
+function backupSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet(), folder = backupFolder();
+  var res = UrlFetchApp.fetch('https://docs.google.com/spreadsheets/d/' + ss.getId() + '/export?format=xlsx', {
+    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() }, muteHttpExceptions: true
+  });
+  if (res.getResponseCode() !== 200) throw new Error('匯出失敗 HTTP ' + res.getResponseCode());
+  var name = BACKUP_PREFIX + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd-HHmm') + '.xlsx';
+  folder.createFile(res.getBlob().setName(name));
+  var files = [], it = folder.getFiles();
+  while (it.hasNext()) { var f = it.next(); if (f.getName().indexOf(BACKUP_PREFIX) === 0) files.push(f); }
+  files.sort(function (a, b) { return b.getDateCreated() - a.getDateCreated(); });
+  files.slice(BACKUP_KEEP).forEach(function (f) { f.setTrashed(true); });
+  return { msg: name + '（' + Math.round(res.getBlob().getBytes().length / 1024) + ' KB，資料夾裡 ' + Math.min(files.length, BACKUP_KEEP) + ' 份）' };
+}
+

@@ -69,7 +69,7 @@
 
 - `docs/wallet.md`：小遊戲共用錢包（`assets/wallet.js`）、功德和燈、店面升級怎麼同步、主人發紅包。**新遊戲要賺錢、要做升級先讀這份。**
 - `docs/line-login.md`：LINE 登入（`assets/line.js`）、通行證、LIFF。
-- `docs/api.md`：後端 API 和每一張 Sheet 的欄位、排隊（`LOCKED_TYPES`）、額度、排行榜怎麼算、股市和運動怎麼算。**改 `apps-script/Code.gs` 前先讀這份。**
+- `docs/api.md`：後端 API 和每一張 Sheet 的欄位、排隊（`LOCKED_TYPES`）、額度、排行榜怎麼算、股市和運動怎麼算、**排程**（排行榜每 5 分鐘、20:58 晚報、00:00 派彩、03:00 備份，`setupTriggers()`）。**改 `apps-script/Code.gs` 前先讀這份。**
 - `docs/line-bot.md`：LINE bot 的指令、資料來源、圖文選單。
 
 ## 設計規範
