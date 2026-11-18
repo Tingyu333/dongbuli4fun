@@ -126,7 +126,7 @@
                 <li>完全沒疊到：書掉下去、<b class="font-normal text-wabi-shu">扣 3 秒</b>，下一本照原本的寬度繼續。</li>
                 <li>右上角<b class="font-normal text-wabi-dark">店面</b>可以買工具：<b class="font-normal text-wabi-dark">回滾</b>把剛放歪的那本退回去重放（一場一、兩次）；<b class="font-normal text-wabi-dark">補習</b>疊到第 20（、40）層送一次，按了最上面那本寬度補回一截。</li>
                 <li>從 26 樓的冷氣外機往上疊，每 11 層一層樓。書從注音符號一路疊到當顧問，每場抽到的書不一樣。</li>
-                <li>工資：出勤費 $200，每疊一層 $75，每個「正」$25，每滿 10 層 $100。</li>
+                <li>工資：出勤費 $200；第 1–20 層每層 $75、第 21–40 層每層 $150、第 41 層起每層 $200；每個「正」$25；每滿 10 層 $100。</li>
             </ol>
         </section>
     </main>
@@ -259,7 +259,8 @@
         const { crow, layer, stamp } = Crow;
         const SERIF = '"Noto Serif TC", "Noto Serif CJK TC", serif', SANS = '"Noto Sans TC", "Noto Sans CJK TC", sans-serif';
         const W = 360, H = 560, LH = 32, FULL = 190, BASE_Y = 492, ROUND = 60, PERFECT_TOL = 4;
-        const PAY = { base: 200, layer: 75, perfect: 25, stage10: 100 };
+        // 工資（使用者 2026-11-18 定的：20 層約 $2,025、60 層約 $10,050）：越上面一層越值錢
+        const PAY = { base: 200, tiers: [[20, 75], [40, 150], [Infinity, 200]], perfect: 25, stage10: 100 };
 
         // ---------- 書池：九個階段，一個階段一種顏色 ----------
         const STAGES = [
@@ -416,7 +417,10 @@
         }
         function calcWage() {
           const n = G.layers.length;
-          G.bill = [['出勤費', PAY.base], [`疊 ${n} 層 × $${PAY.layer}`, n * PAY.layer], [`「正」${G.perfect} 次 × $${PAY.perfect}`, G.perfect * PAY.perfect], [`每滿 10 層 × ${Math.floor(n / 10)}`, Math.floor(n / 10) * PAY.stage10]];
+          G.bill = [['出勤費', PAY.base]];
+          let from = 1; PAY.tiers.forEach(([to, per]) => { const k = Math.max(0, Math.min(n, to) - from + 1); if (k) G.bill.push([`第 ${from}${to === Infinity ? ' 層起' : '–' + to + ' 層'} ${k} 層 × $${per}`, k * per]); from = to + 1; });
+          if (!n) G.bill.push(['疊 0 層', 0]);
+          G.bill.push([`「正」${G.perfect} 次 × $${PAY.perfect}`, G.perfect * PAY.perfect], [`每滿 10 層 × ${Math.floor(n / 10)}`, Math.floor(n / 10) * PAY.stage10]);
           G.wage = G.bill.reduce((s, b) => s + b[1], 0);
         }
         cv.addEventListener('pointerdown', e => { e.preventDefault(); if (!CLOSED) tap(); });
