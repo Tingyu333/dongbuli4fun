@@ -309,8 +309,8 @@
             tiers: ['', '有線耳機', '降噪耳機'], fx: v => `小吳鴨飛慢 ${Math.round(v * 100)}%，比較好對準` },
           { key: 'caliper', name: '遊標卡尺', sub: '「正」', prices: [25000, 70000], vals: [6, 8],
             tiers: ['', '塑膠尺', '遊標卡尺'], fx: v => `差 ${v} 以內就算對齊、蓋「正」（本來 ${PERFECT_TOL}）` },
-          { key: 'shelf', name: '書架', sub: '地基', prices: [35000, 90000], vals: [16, 32],
-            tiers: ['', '加寬層板', '整面書牆'], fx: v => `第一本書寬多 ${v}（${FULL + v}），補習也能補到這麼寬` },
+          { key: 'shelf', name: '書架', sub: '地基', prices: [35000, 90000], vals: [0.1, 0.2],
+            tiers: ['', '加寬層板', '整面書牆'], fx: v => `第一本書寬 ${Math.round(v * 100)}%，補習也能補到這麼寬` },
         ];
         const SHOP_BY = Object.fromEntries(SHOP.map(u => [u.key, u]));
         function loadShop() {
@@ -327,7 +327,7 @@
         function newGame() {
           deck = {};
           shop = loadShop();
-          G = { phase: 'title', round: ROUND + (val('coffee') || 0), full: FULL + (val('shelf') || 0), tol: val('caliper') || PERFECT_TOL, time: ROUND + (val('coffee') || 0), layers: [], debris: [], cur: null, perfect: 0, miss: 0, streak: 0, rollback: val('revert') || 0, rollbackMax: val('revert') || 0, tutor: 0, tutorGot: {}, flash: 0, face: 'normal', faceT: 0, julieT: 0, shake: 0, ended: 0, minW: FULL + (val('shelf') || 0), wage: 0 };
+          G = { phase: 'title', round: ROUND + (val('coffee') || 0), full: Math.round(FULL * (1 + (val('shelf') || 0))), tol: val('caliper') || PERFECT_TOL, time: ROUND + (val('coffee') || 0), layers: [], debris: [], cur: null, perfect: 0, miss: 0, streak: 0, rollback: val('revert') || 0, rollbackMax: val('revert') || 0, tutor: 0, tutorGot: {}, flash: 0, face: 'normal', faceT: 0, julieT: 0, shake: 0, ended: 0, minW: Math.round(FULL * (1 + (val('shelf') || 0))), wage: 0 };
           cam = 0; joke = '點一下開工';
           spawn(true);
         }
