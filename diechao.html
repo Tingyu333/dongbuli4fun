@@ -33,6 +33,29 @@
         /* 開工中把左下角的晝夜鈕收起來 */
         html.dc-open .theme-toggle { opacity: 0; pointer-events: none; transition: opacity .2s; }
         .bill li { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.35rem 0; border-bottom: 1px dashed rgb(var(--wabi-sub) / 0.8); }
+        .tool.locked { opacity: .55; border-style: dashed; }
+        .shop-btn {
+            display: inline-flex; align-items: center; height: 1.9rem; padding: 0 0.75rem;
+            border: 1px solid rgb(var(--wabi-accent) / 0.5); border-radius: 9999px;
+            font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.15em; color: rgb(var(--wabi-dark));
+            white-space: nowrap; touch-action: manipulation;
+        }
+        .shop-btn b { margin-left: 0.3rem; font-weight: 400; color: rgb(var(--wabi-shu)); }
+        #shop { background: rgba(0, 0, 0, 0); transition: background 0.22s; }
+        #shop.on { background: rgba(0, 0, 0, 0.45); }
+        #shop .shop-sheet { transform: translateY(100%); transition: transform 0.22s ease-out; }
+        #shop.on .shop-sheet { transform: none; }
+        @media (prefers-reduced-motion: reduce) { #shop, #shop .shop-sheet { transition: none; } }
+        .shop-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 0; border-bottom: 1px solid rgb(var(--wabi-sub) / 0.6); }
+        .shop-icon { flex: none; width: 56px; height: 56px; border-radius: 6px; background: #ece8e0; }
+        .shop-dots i { display: inline-block; width: 6px; height: 6px; margin-left: 3px; border-radius: 50%; border: 1px solid rgb(var(--wabi-accent)); }
+        .shop-dots i.on { background: rgb(var(--wabi-shu)); border-color: rgb(var(--wabi-shu)); }
+        .shop-buy {
+            flex: none; min-width: 5.6rem; min-height: 44px; padding: 0 0.6rem;
+            border: 1px solid rgb(var(--wabi-dark)); background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg));
+            font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.1em; line-height: 1.3; touch-action: manipulation;
+        }
+        .shop-buy:disabled { background: transparent; color: rgb(var(--wabi-accent)); border-color: rgb(var(--wabi-sub)); }
         /* 監修中：整個畫布蓋起來 */
         .closed { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 2rem 1.5rem; text-align: center; background: rgb(var(--wabi-bg) / 0.86); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
         .closed-stamp { font-size: 1.9rem; letter-spacing: 0.25em; padding: 0.35rem 0.4rem 0.35rem 0.65rem; color: rgb(var(--wabi-shu)); border: 3px double rgb(var(--wabi-shu)); transform: rotate(-6deg); }
@@ -53,7 +76,8 @@
     </nav>
 
     <main class="flex-grow max-w-md mx-auto pt-24 md:pt-32 pb-16 px-5 w-full">
-        <div class="text-center mb-6">
+        <div class="text-center mb-6 relative">
+            <button id="shopBtn" type="button" class="shop-btn absolute right-0 top-0" aria-haspopup="dialog">店面<b id="shopLv"></b></button>
             <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">STACK</span>
             <h1 class="text-3xl font-light text-wabi-dark tracking-widest">疊・巢</h1>
             <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">小吳鴨的全端疊疊樂。基礎沒對齊，上面就越來越難。</p>
@@ -62,8 +86,8 @@
         <section id="stage" class="stage relative bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-3 pt-3 pb-4">
             <canvas id="cv" aria-label="疊・巢：小吳鴨抓著書左右飛，點一下放下去"></canvas>
             <div class="tools mt-2">
-                <button type="button" id="rb" class="tool" disabled>回滾<b id="rbN">×1</b></button>
-                <button type="button" id="tu" class="tool" disabled>補習<b id="tuN">第 20 層送</b></button>
+                <button type="button" id="rb" class="tool">回滾<b id="rbN"></b></button>
+                <button type="button" id="tu" class="tool">補習<b id="tuN"></b></button>
             </div>
             <!-- 監修中（CLOSED）：蓋住畫布，不能開工；網址加 ?preview 可以試玩 -->
             <div id="closed" class="closed">
@@ -100,12 +124,29 @@
                 <li>小吳鴨抓著下一本書左右飛，點畫面任何地方就放下去。一場 <b class="font-normal text-wabi-dark">60 秒</b>。</li>
                 <li>跟下面那本沒對齊的部分會被切掉，上面就越來越窄。對得剛剛好蓋朱色的「正」，連續三個「正」寬度會長回來一點。</li>
                 <li>完全沒疊到：書掉下去、<b class="font-normal text-wabi-shu">扣 3 秒</b>，下一本照原本的寬度繼續。</li>
-                <li><b class="font-normal text-wabi-dark">回滾</b>：一場一次，把剛放歪的那本退回去重放。<b class="font-normal text-wabi-dark">補習</b>：疊到第 20、40 層各送一次，寬度補回一截。</li>
+                <li>右上角<b class="font-normal text-wabi-dark">店面</b>可以買工具：<b class="font-normal text-wabi-dark">回滾</b>把剛放歪的那本退回去重放（一場一、兩次）；<b class="font-normal text-wabi-dark">補習</b>疊到第 20（、40）層送一次，按了最上面那本寬度補回一截。</li>
                 <li>從 26 樓的冷氣外機往上疊，每 11 層一層樓。書從注音符號一路疊到當顧問，每場抽到的書不一樣。</li>
                 <li>工資：出勤費 $200，每疊一層 $75，每個「正」$25，每滿 10 層 $100。</li>
             </ol>
         </section>
     </main>
+
+    <!-- 店面：回滾、補習 -->
+    <div id="shop" class="hidden fixed inset-0 z-[80] flex items-end justify-center" role="dialog" aria-modal="true" aria-label="疊巢店面">
+        <div class="shop-sheet w-full max-w-md bg-wabi-bg rounded-t-xl">
+            <div class="px-5 pt-5 pb-2 flex items-baseline justify-between border-b border-stone-200">
+                <div>
+                    <p class="text-lg text-wabi-dark tracking-widest">店面・升</p>
+                    <p id="shopSub" class="mt-1 text-[10px] font-sans tracking-widest text-stone-400">小吳鴨說：工具錢你出，書我來疊</p>
+                </div>
+                <p class="text-xs font-sans tracking-widest text-stone-500">錢包 <b id="shopMoney" class="font-normal text-wabi-shu"></b></p>
+            </div>
+            <div id="shopList" class="px-5 max-h-[60vh] overflow-y-auto overscroll-contain"></div>
+            <div class="px-5 py-4">
+                <button type="button" data-shop-close class="w-full py-3 border border-stone-300 text-wabi-dark tracking-[0.2em] font-sans text-xs">回去疊書</button>
+            </div>
+        </div>
+    </div>
 
     <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
         <p>&copy; 2026 DONGBULI · 27 樓窗外</p>
@@ -255,9 +296,30 @@
         fit();
         const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
         let G = null, cam = 0, last = performance.now(), joke = '點一下開工';
+        // ---------- 店面：回滾、補習（存在共用錢包的 shop，key 跟別家店不重複）----------
+        // 使用者 2026-11-18 定的：回滾、補習都要用買的。監修中試玩先借你滿級，不能買。
+        const SHOP = [
+          { key: 'revert', name: '回滾', sub: 'git revert', prices: [30000, 80000], vals: [1, 2],
+            tiers: ['', '一次', '兩次'], fx: v => `一場可以把剛放歪的那本退回去重放 ${v} 次（不退時間）` },
+          { key: 'tutor', name: '補習', sub: '補寬度', prices: [40000, 100000], vals: [[20], [20, 40]],
+            tiers: ['', '補習班', '名師一對一'], fx: v => `疊到第 ${v.join('、')} 層各送一次補習：按了最上面那本寬度補回 30` },
+        ];
+        const SHOP_BY = Object.fromEntries(SHOP.map(u => [u.key, u]));
+        function loadShop() {
+          let d = null; try { d = Wallet.shop; } catch (e) { }
+          d = d && typeof d === 'object' ? { lv: { ...(d.lv || {}) }, spent: Number(d.spent) || 0 } : { lv: {}, spent: 0 };
+          SHOP.forEach(u => { d.lv[u.key] = Math.max(0, Math.min(u.prices.length, Math.floor(Number(d.lv[u.key]) || 0))); });
+          return d;
+        }
+        let shop = loadShop();
+        const lv = key => MAINTENANCE ? SHOP_BY[key].prices.length : shop.lv[key] || 0;   // 監修中試玩：滿級借你用
+        const val = key => lv(key) ? SHOP_BY[key].vals[lv(key) - 1] : 0;
+        const tutorAt = () => val('tutor') || [];
+
         function newGame() {
           deck = {};
-          G = { phase: 'title', time: ROUND, layers: [], debris: [], cur: null, perfect: 0, miss: 0, streak: 0, rollback: 1, tutor: 0, tutorGot: {}, flash: 0, face: 'normal', faceT: 0, julieT: 0, shake: 0, ended: 0, minW: FULL, wage: 0 };
+          shop = loadShop();
+          G = { phase: 'title', time: ROUND, layers: [], debris: [], cur: null, perfect: 0, miss: 0, streak: 0, rollback: val('revert') || 0, rollbackMax: val('revert') || 0, tutor: 0, tutorGot: {}, flash: 0, face: 'normal', faceT: 0, julieT: 0, shake: 0, ended: 0, minW: FULL, wage: 0 };
           cam = 0; joke = '點一下開工';
           spawn(true);
         }
@@ -325,17 +387,19 @@
           if (!(perfect && G.streak >= 3)) joke = c.book.joke;
           const n = G.layers.length;
           if (n === 11) { G.julieT = 4; }
-          if ((n === 20 || n === 40) && !G.tutorGot[n]) { G.tutorGot[n] = 1; G.tutor++; joke = '拿到一次補習'; }
+          if (tutorAt().includes(n) && !G.tutorGot[n]) { G.tutorGot[n] = 1; G.tutor++; joke = '拿到一次補習'; }
           calcWage(); syncUI();
           spawn(false);
         }
         function face(f) { G.face = f; G.faceT = 0.6; }
         function doRollback() {
+          if (!lv('revert')) { openShop(); return; }
           if (G.phase !== 'play' || !G.rollback || !G.layers.length) return;
           const L = G.layers.pop(); G.rollback--; if (L.perfect) G.perfect--; G.streak = 0;
           G.cur = null; spawn(false, L.book); joke = 'git revert：' + L.book.name + ' 重放'; SFX.grow(); calcWage(); syncUI();
         }
         function doTutor() {
+          if (!lv('tutor')) { openShop(); return; }
           if (G.phase !== 'play' || !G.tutor || !G.layers.length) return;
           const t = topLayer(), add = Math.min(30, FULL - t.w); if (add <= 0) return;
           G.tutor--; t.x -= add / 2; t.w += add; if (t.x < 20) t.x = 20; if (t.x + t.w > W - 20) t.x = W - 20 - t.w;
@@ -499,13 +563,88 @@
         // ---------- 介面 ----------
         const $ = id => document.getElementById(id);
         function syncUI() {
-          $('rb').disabled = !(G.phase === 'play' && G.rollback && G.layers.length); $('rbN').textContent = '×' + G.rollback;
-          $('tu').disabled = !(G.phase === 'play' && G.tutor); $('tuN').textContent = G.tutor ? '×' + G.tutor : (G.layers.length < 20 ? '第 20 層送' : G.layers.length < 40 ? '第 40 層送' : '用完了');
+          const hasR = lv('revert') > 0, hasT = lv('tutor') > 0, nextT = tutorAt().find(k => k > G.layers.length && !G.tutorGot[k]);
+          $('rb').classList.toggle('locked', !hasR); $('tu').classList.toggle('locked', !hasT);
+          $('rb').disabled = hasR && !(G.phase === 'play' && G.rollback && G.layers.length); $('rbN').textContent = hasR ? '×' + G.rollback : '店面買';
+          $('tu').disabled = hasT && !(G.phase === 'play' && G.tutor); $('tuN').textContent = !hasT ? '店面買' : G.tutor ? '×' + G.tutor : nextT ? `第 ${nextT} 層送` : '用完了';
+          renderShopLv();
         }
         $('rb').addEventListener('click', doRollback);
         $('tu').addEventListener('click', doTutor);
         $('again').addEventListener('click', () => { $('result').classList.add('hidden'); newGame(); syncUI(); $('stage').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' }); });
         $('shareBtn').addEventListener('click', async () => { if (sheetFile) await SaveImg.save(sheetFile, { title: '丼步喱・絆 小吳鴨的履歷', text: `我在疊・巢疊了 ${G.layers.length} 層` }); });
+
+        // ---------- 店面面板 ----------
+        const fmtM = n => '$' + Math.round(n).toLocaleString('en-US');
+        function shopIcon(el, u, level) {
+          const r = Math.min(window.devicePixelRatio || 1, 3), px = 56; el.width = px * r; el.height = px * r;
+          const c = el.getContext('2d'); c.scale(r, r);
+          if (u.key === 'revert') {
+            // 一本書＋往回轉的箭頭
+            layer(c, 8, 30, 40, 16, { name: '', c: '#3f6a63' }, { d: 4, bare: true });
+            c.strokeStyle = '#b33a2f'; c.lineWidth = 2.6; c.lineCap = 'round'; c.beginPath(); c.arc(28, 18, 10, Math.PI * 1.15, Math.PI * 2.2); c.stroke();
+            c.fillStyle = '#b33a2f'; c.beginPath(); c.moveTo(14, 10); c.lineTo(20, 20); c.lineTo(11, 20); c.closePath(); c.fill();
+            if (level >= 2) { c.fillStyle = '#2c2c2c'; c.font = `700 9px ${SANS}`; c.textAlign = 'center'; c.fillText('×2', 46, 12); }
+          } else {
+            // 兩本書，上面那本比較寬：補回一截
+            layer(c, 14, 38, 28, 12, { name: '', c: '#563f5e' }, { d: 3, bare: true });
+            layer(c, 6, 24, 44, 12, { name: '', c: '#9a7636' }, { d: 3, bare: true });
+            stamp(c, 28, 12, 16, '補', -0.06);
+            if (level >= 2) { c.fillStyle = '#2c2c2c'; c.font = `700 9px ${SANS}`; c.textAlign = 'center'; c.fillText('×2', 48, 12); }
+          }
+        }
+        function renderShop() {
+          $('shopMoney').textContent = fmtM(Wallet.money);
+          $('shopSub').textContent = MAINTENANCE ? '監修中試玩：滿級先借你用，還不能買' : '小吳鴨說：工具錢你出，書我來疊';
+          $('shopList').innerHTML = SHOP.map(u => {
+            const now = MAINTENANCE ? 0 : lv(u.key), max = u.prices.length, next = now < max ? now + 1 : null, pr = next ? u.prices[now] : 0;
+            const dots = Array.from({ length: max }, (_, i) => `<i class="${i < now ? 'on' : ''}"></i>`).join('');
+            const tier = next ? `${u.tiers[now] ? u.tiers[now] + ' → ' : ''}${u.tiers[next]}` : u.tiers[now];
+            return `<div class="shop-row">
+              <canvas class="shop-icon" data-icon="${u.key}" data-lv="${next || now}"></canvas>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm text-wabi-dark tracking-widest">${u.name}<span class="ml-1 text-[10px] font-sans text-stone-400">${u.sub}</span><span class="shop-dots ml-1">${dots}</span></p>
+                <p class="mt-0.5 text-[10px] font-sans tracking-wider text-stone-400">${tier}</p>
+                <p class="mt-1 text-[11px] font-sans leading-relaxed text-stone-600">${now ? '現在：' + u.fx(u.vals[now - 1]) : ''}${next ? `${now ? '<br>' : ''}升級：${u.fx(u.vals[next - 1])}` : '<br>已經是最高級'}</p>
+              </div>
+              <button type="button" class="shop-buy" data-buy="${u.key}" ${MAINTENANCE || !next || Wallet.money < pr ? 'disabled' : ''}>${next ? `${now ? '升級' : '買'}<br>${fmtM(pr)}` : '滿級'}</button>
+            </div>`;
+          }).join('');
+          $('shopList').querySelectorAll('[data-icon]').forEach(el => shopIcon(el, SHOP_BY[el.dataset.icon], Number(el.dataset.lv)));
+        }
+        function renderShopLv() {
+          const total = MAINTENANCE ? 0 : SHOP.reduce((t, u) => t + lv(u.key), 0);
+          $('shopLv').textContent = total ? total : '';
+          $('shopBtn').setAttribute('aria-label', total ? `店面，升級了 ${total} 次` : '店面升級');
+        }
+        function openShop() {
+          if (CLOSED) { showToast('疊・巢監修中，店面也先不賣'); return; }
+          if (G.phase === 'play') { showToast('收工再去店面'); return; }
+          shop = loadShop(); renderShop();
+          const el = $('shop'); el.classList.remove('hidden'); requestAnimationFrame(() => el.classList.add('on'));
+        }
+        function closeShop() { const el = $('shop'); el.classList.remove('on'); setTimeout(() => el.classList.add('hidden'), reduce ? 0 : 220); }
+        function buyUpgrade(key) {
+          if (MAINTENANCE || G.phase === 'play') return;
+          shop = loadShop();   // 用錢包裡最新的（別家店可能也買過，spent 要接著加）
+          const u = SHOP_BY[key], now = lv(key);
+          if (now >= u.prices.length) return;
+          const pr = u.prices[now];
+          if (!Wallet.spend(pr)) { showToast('錢包不夠，先多疊幾場'); return; }
+          shop.lv[key] = now + 1; shop.spent += pr; Wallet.setShop(shop);
+          audio(); SFX.grow();
+          showToast(`${u.name}升級了：${u.tiers[now + 1]}`);
+          if (G.phase === 'title') newGame();
+          renderShop(); syncUI();
+        }
+        $('shopBtn').addEventListener('click', openShop);
+        $('shop').addEventListener('click', e => {
+          const b = e.target.closest('[data-buy]');
+          if (b && !b.disabled) { buyUpgrade(b.dataset.buy); return; }
+          if (e.target.closest('[data-shop-close]') || e.target.id === 'shop') closeShop();
+        });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('shop').classList.contains('hidden')) closeShop(); });
+        Wallet.on(() => { if (G.phase !== 'play') { shop = loadShop(); if (G.phase === 'title') { G.rollback = G.rollbackMax = val('revert') || 0; } syncUI(); if (!$('shop').classList.contains('hidden')) renderShop(); } });
 
         const BEST_KEY = 'dongbuli-diechao-best';
         let sheetFile = null;
@@ -542,7 +681,7 @@
           st.rounds++; st.paid += G.wage; st.best = Math.max(st.best, G.wage); st.layers = Math.max(st.layers, n);
           st.recent.unshift({
             at: new Date().toISOString(), ms: G.playMs || ROUND * 1000, len: ROUND, total: G.wage, layers: n, perfect: G.perfect, miss: G.miss,
-            rollback: 1 - G.rollback, tutor: Object.keys(G.tutorGot).length - G.tutor, max_streak: G.maxStreak || 0, min_w: Math.round(G.minW),
+            rollback: G.rollbackMax - G.rollback, tutor: Object.keys(G.tutorGot).length - G.tutor, max_streak: G.maxStreak || 0, min_w: Math.round(G.minW),
             stage: n ? stageOf(n).name : '', last: last ? last.book.name : '', stuck: G.stuck ? G.stuck.name : '', login: !!(window.Line && Line.loggedIn),
           });
           st.recent = st.recent.slice(0, 50);
