@@ -607,7 +607,7 @@
                 <button type="button" data-login class="line-btn mt-4 w-full">用 LINE 登入</button>`;
         }
 
-        // 回傳：'fresh' 後端當場重算了／'cached' 30 秒內有人刷過，給的是快取／'old' 後端還沒部署新版本／'fail'
+        // 回傳：'fresh' 後端當場重算了／'cached' 只拿快取（沒按刷新）／'old' 後端還沒部署新版本／'fail'
         async function load(fresh) {
             if (loading) return 'busy';
             loading = true; failed = '';
@@ -629,10 +629,12 @@
             return status;
         }
 
-        // ===== 刷新：後端當場重抄榜單（全站 30 秒最多一次）＋蓋板 =====
+        // ===== 刷新：後端當場重抄榜單＋蓋板。同一支手機一分鐘只能按一次（記在 localStorage，重新整理也一樣） =====
+        const FRESH_GAP = 60000, FRESH_KEY = 'dongbuli-rank-fresh';
         const BUSY_LINES = ['蘋果鴨在重抄榜單…', '浣熊大王想偷改名次，被請出去了…', '茱莉鴨在數誰被抓最多次…', '青江菜船長在核對貨單…', '店貓趴在榜單上，正在搬開…', '墨還沒乾，吹一下…'];
         const sleep = ms => new Promise(r => setTimeout(r, ms));
         let busyTimer = null, lastFresh = 0;
+        try { lastFresh = Number(localStorage.getItem(FRESH_KEY)) || 0; } catch (e) { }
         function showBusy(on) {
             const el = $('boardBusy');
             clearInterval(busyTimer);
@@ -643,9 +645,10 @@
         }
         async function refresh() {
             if (loading) return showToast('榜正在讀，等一下');
-            const wait = 30000 - (Date.now() - lastFresh);
-            if (wait > 0) return showToast(`剛刷新過，${Math.ceil(wait / 1000)} 秒後再按`);
+            const wait = FRESH_GAP - (Date.now() - lastFresh);
+            if (wait > 0 && wait <= FRESH_GAP) return showToast(`剛刷新過，${Math.ceil(wait / 1000)} 秒後再按`);
             lastFresh = Date.now();
+            try { localStorage.setItem(FRESH_KEY, String(lastFresh)); } catch (e) { }
             $('refreshBtn').disabled = true;
             showBusy(true);
             const t0 = Date.now(), r = await load(true);
@@ -655,7 +658,6 @@
             showBusy(false);
             $('refreshBtn').disabled = false;
             if (r === 'fresh') showToast('榜重新抄好了');
-            else if (r === 'cached') showToast('剛剛才有人重抄過，這就是最新的');
             else if (r === 'fail') showToast('沒抄成，等一下再試');
             else if (r === 'old') showToast('後端還是舊版，要重新部署「新版本」才能刷新');
         }
