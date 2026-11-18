@@ -391,7 +391,7 @@
                 const h = holdOf(nn.code), s = stockOf(nn.code);
                 if (!h || !s) return;
                 const c = chg(s), claimUp = nn.claim === 'up', hit = c !== 0 && (c > 0) === claimUp;
-                out.push(`<section class="paper slip"><p>晚報說<b>${lbl(s.name)}</b>會${claimUp ? '漲' : '跌'}，你有 ${h.n} 股，今天目前 <b class="num ${tone(c)}">${arrow(c)}${Math.abs(c * 100).toFixed(1)}%</b>。<br><span style="color:var(--faint);font-size:.72rem">${c === 0 ? '還看不出來。' : hit ? '晚報說中了。目前。' : '晚報騙了你。目前。'}</span></p><div class="seal${c !== 0 && hit ? '' : ' grey'}">${c === 0 ? '平' : hit ? '中' : '騙'}</div></section>`);
+                out.push(`<section class="paper slip"><p>晚報說<b>${lbl(s.name)}</b>會${claimUp ? '漲' : '跌'}，你有 ${h.n} 股，今天到現在 <b class="num ${tone(c)}">${arrow(c)}${Math.abs(c * 100).toFixed(1)}%</b>。<br><span style="color:var(--faint);font-size:.72rem">${c === 0 ? '還看不出來。' : hit ? '目前看來，晚報說中了。' : '目前看來，晚報騙了你。'}</span></p><div class="seal${c !== 0 && hit ? '' : ' grey'}">${c === 0 ? '平' : hit ? '中' : '騙'}</div></section>`);
             });
             box.innerHTML = out.join('');
             box.classList.toggle('hidden', !out.length);
@@ -423,9 +423,10 @@
             box.classList.toggle('hidden', !n);
             if (!n) return;
             const pub = tpe(Date.parse(n.published)), about = n.day.slice(5).replace('-', '/');
+            const today = tpe(Date.now()), tonight = pub.getUTCFullYear() === today.getUTCFullYear() && pub.getUTCMonth() === today.getUTCMonth() && pub.getUTCDate() === today.getUTCDate();
             const nameOf = code => (stockOf(code) || {}).name || code;
             box.innerHTML = `<header class="ev-head"><b>二十七樓晚報</b><span class="num">${pub.getUTCMonth() + 1} 月 ${pub.getUTCDate()} 日・21:00</span></header>
-                <p class="ev-tag">說的是 ${esc(about)}${list.length > 1 ? `・今晚 ${list.length} 則` : ''}</p>
+                <p class="ev-tag">說的是 ${esc(about)}${list.length > 1 ? `・${tonight ? '今晚' : '昨晚'} ${list.length} 則` : ''}</p>
                 ${list.map((x, i) => `<article class="ev-item${i ? ' ev-more' : ''}">
                     <p class="ev-tag" style="margin-top:.35rem">${lbl(nameOf(x.code))}・本報判斷<b style="color:${x.claim === 'up' ? UP : DOWN}">${x.claim === 'up' ? '利多' : '利空'}</b></p>
                     <h2 class="ev-title" style="margin-top:.2rem">${esc(x.title)}</h2>
