@@ -12,8 +12,9 @@
         { key: 'dog', name: '坐洗部的狗' },
         { key: 'mole', name: '鼴鼠' },
         { key: 'nugget', name: '雞塊' },
+        { key: 'xiaowu', name: '小吳鴨' },
     ];
-    const BG = { julie: '#dbe8f5', appleduck: '#eef2fb', raccoon: '#ece4d6', captain: '#e3f0dc', cat: '#f6e6cf', dog: '#f3ead9', mole: '#e8ddcd', nugget: '#fbefd2' };
+    const BG = { julie: '#dbe8f5', appleduck: '#eef2fb', raccoon: '#ece4d6', captain: '#e3f0dc', cat: '#f6e6cf', dog: '#f3ead9', mole: '#e8ddcd', nugget: '#fbefd2', xiaowu: '#e4e7ef' };
 
     const ellipse = (c, x, y, rx, ry, rot = 0) => { c.beginPath(); c.ellipse(x, y, rx, ry, rot, 0, TAU); };
     const dot = (c, x, y, r) => { c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill(); };
@@ -35,6 +36,7 @@
             c.beginPath(); c.moveTo(14, 40); c.lineTo(0, 34); c.lineTo(14, 28); c.closePath(); c.fill(); dot(c, 0, 34, 4);
         },
         appleduck(c) { appleDuck(c, 3, 10, 0.74); },
+        xiaowu(c) { crow(c, 12, 22, 0.9, { face: 'normal' }); },
         raccoon(c) {
             c.fillStyle = '#7d7d84'; dot(c, -24, -22, 11); dot(c, 24, -22, 11);
             c.fillStyle = '#3a3a40'; dot(c, -24, -22, 6); dot(c, 24, -22, 6);
@@ -230,6 +232,160 @@
         c.restore();
     }
 
+    // 小吳鴨（疊・巢的主角）：烏鴉，鴉鴨同音所以堅持自己是鴨。金框圓眼鏡、呆毛、粗嘴＋剛毛、藍掛繩識別證（照片是一隻鴨）、藍紫光澤。
+    // 面向左、3/4 側臉，跟蘋果鴨同一個座標習慣：中心約 (0,0)，頭頂 -48、腳底 +50。
+    // o: { pose: 'stand'|'fly', face: 'normal'|'smug'|'panic'|'caw', badge, glasses, rim }
+    const ell = ellipse;
+    const LINE = '#0d0d12';
+    function wingFly(c, back) {
+        // 張開的翅膀：烏鴉的初級飛羽像手指一樣分開
+        c.save();
+        if (back) { c.translate(14, -2); c.rotate(0.35); c.scale(0.9, 0.9); } else { c.translate(4, 0); c.rotate(-0.15); }
+        const g = c.createLinearGradient(0, -60, 0, 10);
+        g.addColorStop(0, back ? '#1a1b22' : '#2c2e3e'); g.addColorStop(1, back ? '#111217' : '#181920');
+        c.fillStyle = g; c.strokeStyle = LINE; c.lineWidth = 2.4;
+        c.beginPath(); c.moveTo(-6, 6);
+        c.bezierCurveTo(-14, -14, -10, -40, 4, -58);
+        c.lineTo(10, -50); c.lineTo(14, -62); c.lineTo(20, -50); c.lineTo(26, -60); c.lineTo(30, -46); c.lineTo(38, -54); c.lineTo(40, -38);
+        c.bezierCurveTo(44, -20, 34, 0, 18, 10); c.closePath(); c.fill(); c.stroke();
+        c.strokeStyle = 'rgba(150,165,230,.35)'; c.lineWidth = 1.2;
+        [[2, -40, 8, -10], [12, -44, 14, -10], [22, -42, 22, -8], [32, -36, 28, -4]].forEach(([a, b, x, y]) => { c.beginPath(); c.moveTo(a, b); c.quadraticCurveTo((a + x) / 2 + 2, (b + y) / 2, x, y); c.stroke(); });
+        c.restore();
+    }
+
+    function crow(c, x, y, s, o = {}) {
+        const pose = o.pose || 'stand', face = o.face || 'normal';
+        const glasses = o.glasses !== false, badge = o.badge !== false;
+        c.save(); c.translate(x, y); c.scale(s, s); c.lineJoin = 'round'; c.lineCap = 'round';
+
+        if (pose === 'stand') {
+            const sh = c.createRadialGradient(6, 51, 2, 6, 51, 42); sh.addColorStop(0, 'rgba(40,30,20,.22)'); sh.addColorStop(1, 'rgba(40,30,20,0)');
+            c.fillStyle = sh; ell(c, 6, 51, 44, 6); c.fill();
+        }
+        if (pose === 'fly') wingFly(c, true);
+
+        // 尾巴：三根羽毛扇開
+        c.fillStyle = '#16171d'; c.strokeStyle = LINE; c.lineWidth = 2.2;
+        const tail = pose === 'fly' ? [[30, 18, 62, 22], [30, 22, 64, 32], [28, 26, 58, 40]] : [[30, 16, 64, 26], [30, 20, 66, 36], [28, 24, 58, 44]];
+        tail.forEach(([a, b, tx, ty]) => { c.beginPath(); c.moveTo(a, b - 5); c.quadraticCurveTo(tx - 6, ty - 8, tx, ty); c.quadraticCurveTo(tx - 10, ty + 5, a - 2, b + 7); c.closePath(); c.fill(); c.stroke(); });
+
+        // 腳
+        if (pose === 'stand') {
+            c.strokeStyle = '#3b3c44'; c.lineWidth = 3.4;
+            [[-2, 36, -4, 50], [14, 36, 14, 50]].forEach(([a, b, fx, fy]) => {
+                c.beginPath(); c.moveTo(a, b); c.lineTo(fx, fy); c.stroke();
+                c.lineWidth = 2.6; c.beginPath(); c.moveTo(fx, fy); c.lineTo(fx - 9, fy + 1); c.moveTo(fx, fy); c.lineTo(fx - 6, fy + 4); c.moveTo(fx, fy); c.lineTo(fx + 5, fy + 1); c.stroke(); c.lineWidth = 3.4;
+            });
+        } else {
+            // 飛的時候腳往下抓（抓著要疊的那塊）
+            c.strokeStyle = '#3b3c44'; c.lineWidth = 3;
+            [[-4, 34, -6, 48], [10, 34, 10, 48]].forEach(([a, b, fx, fy]) => {
+                c.beginPath(); c.moveTo(a, b); c.lineTo(fx, fy); c.stroke();
+                c.lineWidth = 2.2; c.beginPath(); c.moveTo(fx, fy); c.quadraticCurveTo(fx - 6, fy + 1, fx - 7, fy + 6); c.moveTo(fx, fy); c.quadraticCurveTo(fx + 5, fy + 1, fx + 6, fy + 6); c.stroke(); c.lineWidth = 3;
+            });
+        }
+
+        // 身體＋頭：先描粗外框再填，接縫就不見了
+        const body = () => {
+            c.beginPath(); c.moveTo(-26, -6);
+            c.bezierCurveTo(-46, 10, -36, 42, -4, 42); c.lineTo(16, 40);
+            c.bezierCurveTo(38, 36, 46, 22, 38, 8);
+            c.bezierCurveTo(30, -4, 8, -6, -8, -8); c.closePath();
+        };
+        const head = () => { c.beginPath(); c.arc(-12, -22, 23, 0, TAU); };
+        c.strokeStyle = LINE; c.lineWidth = 4.6; body(); c.stroke(); head(); c.stroke();
+        if (o.rim) { c.strokeStyle = 'rgba(255,236,170,.55)'; c.lineWidth = 7.5; body(); c.stroke(); head(); c.stroke(); c.strokeStyle = LINE; c.lineWidth = 4.6; body(); c.stroke(); head(); c.stroke(); }
+        const gb = c.createLinearGradient(0, -8, 0, 42); gb.addColorStop(0, '#30324a'); gb.addColorStop(1, '#14151b');
+        c.fillStyle = gb; body(); c.fill();
+        const gh = c.createRadialGradient(-22, -36, 2, -12, -22, 26); gh.addColorStop(0, '#4a4e6e'); gh.addColorStop(0.5, '#262838'); gh.addColorStop(1, '#14151b');
+        c.fillStyle = gh; head(); c.fill();
+        // 藍紫色光澤
+        c.strokeStyle = 'rgba(150,170,245,.5)'; c.lineWidth = 2.2; c.beginPath(); c.arc(-12, -22, 18, Math.PI * 1.05, Math.PI * 1.45); c.stroke();
+        c.strokeStyle = 'rgba(150,170,245,.3)'; c.lineWidth = 2; c.beginPath(); c.moveTo(-30, 14); c.quadraticCurveTo(-30, 30, -14, 36); c.stroke();
+        // 呆毛：兩根翹起來的羽毛
+        c.fillStyle = '#1c1d26'; c.strokeStyle = LINE; c.lineWidth = 1.8;
+        c.beginPath(); c.moveTo(-14, -44); c.quadraticCurveTo(-12, -58, -2, -62); c.quadraticCurveTo(-8, -54, -7, -44); c.closePath(); c.fill(); c.stroke();
+        c.beginPath(); c.moveTo(-8, -44); c.quadraticCurveTo(0, -54, 8, -54); c.quadraticCurveTo(0, -50, -2, -43); c.closePath(); c.fill(); c.stroke();
+        if (face === 'panic') { // 嚇到羽毛都豎起來
+            c.beginPath(); c.moveTo(-26, -40); c.lineTo(-32, -52); c.lineTo(-22, -43); c.moveTo(4, -40); c.lineTo(12, -50); c.lineTo(6, -38); c.fill(); c.stroke();
+        }
+
+        // 收起來的翅膀
+        if (pose === 'stand') {
+            const gw = c.createLinearGradient(0, 0, 30, 34); gw.addColorStop(0, '#2a2c3c'); gw.addColorStop(1, '#121318');
+            c.fillStyle = gw; c.strokeStyle = LINE; c.lineWidth = 2.2;
+            c.beginPath(); c.moveTo(-2, 6); c.bezierCurveTo(10, -2, 34, 2, 42, 18);
+            c.quadraticCurveTo(44, 26, 38, 26); c.quadraticCurveTo(38, 32, 31, 31); c.quadraticCurveTo(29, 37, 21, 34);
+            c.bezierCurveTo(10, 31, 2, 22, -2, 6); c.closePath(); c.fill(); c.stroke();
+            c.strokeStyle = 'rgba(150,165,230,.35)'; c.lineWidth = 1.3;
+            c.beginPath(); c.moveTo(8, 12); c.quadraticCurveTo(20, 10, 33, 18); c.moveTo(8, 18); c.quadraticCurveTo(18, 18, 27, 25); c.stroke();
+        } else wingFly(c, false);
+
+        // 識別證：藍色掛繩、白卡、照片是一隻鴨
+        if (badge) {
+            c.strokeStyle = '#3d6fb6'; c.lineWidth = 2.2;
+            c.beginPath(); c.moveTo(-28, -4); c.quadraticCurveTo(-20, 6, -12, 12); c.moveTo(0, -6); c.quadraticCurveTo(-4, 4, -10, 12); c.stroke();
+            c.save(); c.translate(-12, 12); c.rotate(-0.08);
+            c.fillStyle = '#9aa0a8'; c.fillRect(-2.5, -1, 5, 4);
+            c.fillStyle = '#ffffff'; c.strokeStyle = '#c9c2b4'; c.lineWidth = 1;
+            c.beginPath(); c.roundRect(-10, 2, 20, 25, 2); c.fill(); c.stroke();
+            c.fillStyle = '#fbe7a0'; c.fillRect(-7, 5, 14, 11);
+            c.fillStyle = '#f2c23c'; dot(c, -1, 11.5, 3.6); dot(c, 2.5, 8.5, 2.4); c.fillStyle = '#f08a2a'; c.beginPath(); c.moveTo(-0.5, 8.5); c.lineTo(-3.5, 9.2); c.lineTo(-0.5, 10); c.fill();
+            c.fillStyle = '#b8b0a2'; c.fillRect(-7, 19, 14, 1.6); c.fillRect(-7, 22.5, 9, 1.6);
+            c.restore();
+        }
+
+        // 嘴：粗厚、往左，鼻孔上方一撮剛毛
+        const open = face === 'caw' ? 0.5 : face === 'panic' ? 0.3 : 0;
+        const gk = c.createLinearGradient(-58, -24, -30, -12); gk.addColorStop(0, '#2a2a31'); gk.addColorStop(1, '#4c4d58');
+        c.fillStyle = gk; c.strokeStyle = LINE; c.lineWidth = 1.8;
+        c.save(); c.translate(-31, -14); c.rotate(open);
+        c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-14, 2, -21, 0); c.quadraticCurveTo(-12, 6, 0, 5); c.closePath(); c.fill(); c.stroke();
+        c.restore();
+        if (open) { c.fillStyle = '#8c3a3a'; c.beginPath(); c.moveTo(-31, -14); c.lineTo(-50, -15); c.lineTo(-48, -14 + open * 22); c.closePath(); c.fill(); }
+        c.fillStyle = gk; c.beginPath(); c.moveTo(-30, -27); c.bezierCurveTo(-40, -29, -54, -24, -60, -15); c.quadraticCurveTo(-46, -12, -31, -13); c.closePath(); c.fill(); c.stroke();
+        c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(-34, -24.5); c.quadraticCurveTo(-44, -24, -52, -19); c.stroke();
+        c.strokeStyle = 'rgba(60,62,80,.9)'; c.lineWidth = 1.1;
+        [[-30, -27, -38, -25], [-29, -25, -37, -22], [-30, -29, -36, -28.5]].forEach(([a, b, x2, y2]) => { c.beginPath(); c.moveTo(a, b); c.lineTo(x2, y2); c.stroke(); });
+
+        // 眼睛：黑鳥要看得到臉，眼睛外面一圈淺灰
+        const eyes = [[-21, -27], [-2, -26]];
+        eyes.forEach(([ex, ey]) => {
+            if (face === 'smug') {
+                c.strokeStyle = '#e6e6ee'; c.lineWidth = 2; c.beginPath(); c.arc(ex, ey + 2, 4.2, Math.PI * 1.1, Math.PI * 1.9); c.stroke();
+            } else if (face === 'caw') {
+                c.strokeStyle = '#e6e6ee'; c.lineWidth = 2;
+                c.beginPath(); c.moveTo(ex - 4, ey - 3); c.lineTo(ex + 1, ey); c.lineTo(ex - 4, ey + 3); c.stroke();
+            } else if (face === 'panic') {
+                c.fillStyle = '#ffffff'; dot(c, ex, ey, 5.2); c.fillStyle = '#111'; dot(c, ex - 1, ey, 1.6);
+            } else {
+                c.fillStyle = '#5a5e78'; ell(c, ex, ey, 5.4, 6.2); c.fill();
+                c.fillStyle = '#08080b'; ell(c, ex, ey, 3.8, 4.8); c.fill();
+                c.fillStyle = '#ffffff'; dot(c, ex + 1.2, ey - 1.8, 1.6); dot(c, ex - 1.3, ey + 1.8, 0.7);
+            }
+        });
+        // 腮紅（淡淡的）
+        [[-28, -15], [6, -15]].forEach(([cx, cy]) => {
+            const g = c.createRadialGradient(cx, cy, 0.5, cx, cy, 6); g.addColorStop(0, 'rgba(240,120,110,.4)'); g.addColorStop(1, 'rgba(240,120,110,0)');
+            c.fillStyle = g; ell(c, cx, cy, 6, 4); c.fill();
+        });
+        // 圓框眼鏡（金色鏡框）
+        if (glasses) {
+            c.strokeStyle = '#d6ad5a'; c.lineWidth = 1.9;
+            eyes.forEach(([ex, ey]) => { c.beginPath(); c.arc(ex, ey, 8.4, 0, TAU); c.stroke(); });
+            c.beginPath(); c.moveTo(-12.8, -27.5); c.quadraticCurveTo(-11.5, -30, -10.2, -27.2); c.moveTo(6.3, -27); c.lineTo(10, -28.5); c.stroke();
+            c.strokeStyle = 'rgba(255,255,255,.75)'; c.lineWidth = 1.4;
+            eyes.forEach(([ex, ey]) => { c.beginPath(); c.moveTo(ex + 3, ey - 6); c.lineTo(ex + 5.6, ey - 3.2); c.stroke(); });
+            if (face === 'smug') { c.fillStyle = '#fff6d0'; [[-25, -36], [6, -35]].forEach(([sx, sy]) => { c.beginPath(); c.moveTo(sx, sy - 4); c.quadraticCurveTo(sx, sy, sx + 4, sy); c.quadraticCurveTo(sx, sy, sx, sy + 4); c.quadraticCurveTo(sx, sy, sx - 4, sy); c.quadraticCurveTo(sx, sy, sx, sy - 4); c.fill(); }); }
+        }
+        // 慌張的汗
+        if (face === 'panic') {
+            c.fillStyle = '#9cc7ea'; c.strokeStyle = '#5f97c8'; c.lineWidth = 1;
+            [[12, -42, 1], [18, -32, 0.75]].forEach(([sx, sy, k]) => { c.beginPath(); c.moveTo(sx, sy - 7 * k); c.quadraticCurveTo(sx + 5 * k, sy, sx, sy + 3 * k); c.quadraticCurveTo(sx - 5 * k, sy, sx, sy - 7 * k); c.fill(); c.stroke(); });
+        }
+        c.restore();
+    }
+
     function draw(c, key, cx, cy, r) {
         if (!DRAW[key]) return;
         c.save(); c.translate(cx, cy);
@@ -253,5 +409,5 @@
         return cache[k];
     }
     const name = key => (LIST.find(a => a.key === key) || {}).name || '';
-    window.Avatar = { LIST, draw, url, name, appleDuck, has: key => !!DRAW[key] };
+    window.Avatar = { LIST, draw, url, name, appleDuck, crow, has: key => !!DRAW[key] };
 })();

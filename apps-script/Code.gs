@@ -59,6 +59,8 @@ var ZAOCAN_LOGS_PER_HOUR = 60;   // 一支手機每小時最多送幾次早餐�
 var ZAOCAN_ROWS_PER_HOUR = 2000; // 全站每小時最多存幾天（一輪 75 秒算一天）
 var DESSERT_LOGS_PER_HOUR = 60;  // 一支手機每小時最多送幾次甜點店紀錄
 var DESSERT_ROWS_PER_HOUR = 2000;
+var STACK_LOGS_PER_HOUR = 60;    // 一支手機每小時最多送幾次疊巢紀錄
+var STACK_ROWS_PER_HOUR = 2000;
 var SHIP_LOGS_PER_HOUR = 60;     // 一支手機每小時最多送幾次貨運紀錄
 var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 
@@ -69,7 +71,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-18a';
+var BACKEND_VERSION = '2026-11-18b';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1 };
 
@@ -130,6 +132,7 @@ function route(type, input) {
     if (type === 'wifiLog') return wifiLog(input);
     if (type === 'zaocanLog') return zaocanLog(input);
     if (type === 'dessertLog') return dessertLog(input);
+    if (type === 'stackLog') return stackLog(input);
     if (type === 'shipLog') return shipLog(input);
     if (type === 'gongdeLog') return gongdeLog(input);
     if (type === 'leaderboard') return leaderboard(input);
@@ -1154,7 +1157,7 @@ function lineLogin(input) {
 // --- 暱稱、指定頭像（Players 的 M nick、N avatar）---
 // LINE 的名字、大頭貼（C、D）不動，登入時照樣更新；有暱稱或指定頭像就優先顯示它（排行榜），沒有才用 LINE 的。
 // 頭像只能從網站的角色挑（AVATAR_KEYS，網頁 assets/avatar.js 畫），不收上傳的圖。
-var AVATAR_KEYS = ['julie', 'appleduck', 'raccoon', 'captain', 'cat', 'dog', 'mole', 'nugget'];
+var AVATAR_KEYS = ['julie', 'appleduck', 'raccoon', 'captain', 'cat', 'dog', 'mole', 'nugget', 'xiaowu'];
 var PROFILE_OPS_PER_HOUR = 60;
 function playerProfile(row) {
   var v = playersSheet().getRange(row, 13, 1, 2).getValues()[0];
@@ -1360,7 +1363,7 @@ function washLog(input) {
 // 排行榜：排程 cronBoard() 每 5 分鐘先算好存快取（2026-11-18，使用者定的），打開排行榜只讀現成的。
 // 快取一筆最多 100KB，榜大了就切成好幾段存（BOARD_CHUNK 個字一段，中文一字最多 3 bytes 也放得下）。
 // 存 10 分鐘：排程哪天停了，過期後有人打開就當場算（跟以前一樣），不會壞。
-var BOARD_CACHE_KEY = 'board:v13', BOARD_CACHE_SEC = 600, BOARD_CHUNK = 30000;
+var BOARD_CACHE_KEY = 'board:v14', BOARD_CACHE_SEC = 600, BOARD_CHUNK = 30000;
 function boardCachePut(board) {
   var s = JSON.stringify(board), n = Math.ceil(s.length / BOARD_CHUNK), m = {};
   for (var i = 0; i < n; i++) m[BOARD_CACHE_KEY + ':' + i] = s.slice(i * BOARD_CHUNK, (i + 1) * BOARD_CHUNK);
@@ -1429,6 +1432,13 @@ var BOARD_SOURCES = {
     var b = best[id];
     if (!b || served > b.n || (served === b.n && (angry < b.angry || (angry === b.angry && total > b.total)))) best[id] = { n: served, items: Number(r[10]) || 0, angry: angry, total: total };
   } },
+  // 疊巢：每個 line_id 疊最高的一場（F layers），一樣高比「正」多（G perfect）、再比賺多（E total）
+  Stacks: { cols: 7, merge: function (best, r) {
+    var id = String(r[2] || ''), layers = Number(r[5]) || 0, perfect = Number(r[6]) || 0, total = Number(r[4]) || 0;
+    if (!id || !layers) return;
+    var b = best[id];
+    if (!b || layers > b.n || (layers === b.n && (perfect > b.perfect || (perfect === b.perfect && total > b.total)))) best[id] = { n: layers, perfect: perfect, total: total };
+  } },
   // 甜點店：每個 line_id 出餐最多的一輪（I served），同樣多比氣走少（J angry）、再比報廢少（K scrapped）、再比賺多（E total）
   Desserts: { cols: 11, merge: function (best, r) {
     var id = String(r[2] || ''), served = Number(r[8]) || 0, angry = Number(r[9]) || 0, scrapped = Number(r[10]) || 0, total = Number(r[4]) || 0;
@@ -1443,7 +1453,7 @@ var BOARD_SOURCES = {
 // 下次只讀 row 後面新增的列、跟記下的比。紀錄被 archiveLogs() 搬走也沒關係：成績已經記在 Board，搬走幾列 row 就減幾。
 // 改了 merge 的規則要重算：把 BOARD_STATE_VERSION 加一（會從頭讀一次；已經封存走的紀錄就不算了，要小心）。
 var BOARD_STATE_VERSION = 3;  // 2：多了 Ships（欄位位置變了，從頭讀一次）；3：一般模式、無盡模式分開記（無盡・榜）
-var BOARD_STATE_COLS = ['Washes', 'Cleans', 'Wifis', 'Zaocans', 'Ships', 'Desserts'];
+var BOARD_STATE_COLS = ['Washes', 'Cleans', 'Wifis', 'Zaocans', 'Ships', 'Desserts', 'Stacks'];
 // Board 分頁照第一列的標題找欄（加新的表只多一欄，舊的照樣接著讀，不用從頭讀）
 function boardStateSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -1506,7 +1516,7 @@ function boardScan(st, name) {
 // 執行 archiveLogs() 把 90 天以前的紀錄搬到新的一份試算表（檔名「丼步喱紀錄封存 日期」，在你的雲端硬碟），這份裡的刪掉。
 // 排行榜的最好成績先記進 Board 再搬，所以搬走的那幾場還是算數。第一次執行會跳出授權（要能建新的試算表）。
 var CELL_LIMIT = 10000000;
-var ARCHIVE_SHEETS = ['Washes', 'Cleans', 'Farms', 'Wifis', 'Zaocans', 'Ships', 'Desserts', 'Gongde'];
+var ARCHIVE_SHEETS = ['Washes', 'Cleans', 'Farms', 'Wifis', 'Zaocans', 'Ships', 'Desserts', 'Stacks', 'Gongde'];
 function logSize() {
   var ss = SpreadsheetApp.getActiveSpreadsheet(), total = 0, lines = [];
   ss.getSheets().forEach(function (sh) {
@@ -1551,7 +1561,7 @@ function archiveLogs(days) {
 
 function buildBoard() {
   var st = loadBoardState();
-  var washBest = boardScan(st, 'Washes'), cleanBest = boardScan(st, 'Cleans'), wifis = boardScan(st, 'Wifis'), served = boardScan(st, 'Zaocans'), ships = boardScan(st, 'Ships'), desserts = boardScan(st, 'Desserts');
+  var washBest = boardScan(st, 'Washes'), cleanBest = boardScan(st, 'Cleans'), wifis = boardScan(st, 'Wifis'), served = boardScan(st, 'Zaocans'), ships = boardScan(st, 'Ships'), desserts = boardScan(st, 'Desserts'), stacks = boardScan(st, 'Stacks');
   try { saveBoardState(st); } catch (e) { console.warn('Board 分頁存不進去：' + e); }
   var rows = playersSheet().getDataRange().getValues(), out = [];
   for (var i = 1; i < rows.length; i++) {
@@ -1573,6 +1583,8 @@ function buildBoard() {
     var zc = { n: Number(ze.times) || 0, money: Number(ze.total) || 0, best: ze.best ? Number(ze.best) : null, ms: 0, served: served[id] || null };
     var de = earned.dessert || {};  // 甜點店：最高的一輪是 earned 的 best；served 是出餐最多的一輪
     var ds = { n: Number(de.times) || 0, money: Number(de.total) || 0, best: de.best ? Number(de.best) : null, ms: 0, served: desserts[id] || null };
+    var ke = earned.stack || {};  // 疊巢：最高的一場是 earned 的 best；layers 是疊最高的一場（從 Stacks 算）
+    var sk = { n: Number(ke.times) || 0, money: Number(ke.total) || 0, best: ke.best ? Number(ke.best) : null, ms: 0, layers: stacks[id] || null };
     var se = earned.ship || {}, sb = ships[id] || {};  // 貨運：最高分、最長連撈只算一般模式；無盡模式航最遠、一趟最多放 endless
     var sh = { n: Number(se.times) || 0, money: Number(se.total) || 0, best: sb.normal || null, ms: 0, combo: sb.combo || null,
       endless: { money: sb.money || null, far: sb.far || null } };
@@ -1583,12 +1595,12 @@ function buildBoard() {
     var sp = { total: num(rows[i][5]), shop: num(shop.spent), donate: num(gd.donated), lamp: num(gd.lit) };
     sp.scratch = Math.max(0, sp.total - sp.shop - sp.donate - sp.lamp);
     sp.won = num((earned.scratch || {}).total) + num((earned.caishen || {}).total);  // 刮中的（含財神加碼）
-    if (!x.n && !c.n && !fm.n && !wf.n && !zc.n && !sh.n && !ds.n && x.best == null && c.best == null && !sp.total) continue;
+    if (!x.n && !c.n && !fm.n && !wf.n && !zc.n && !sh.n && !ds.n && !sk.n && x.best == null && c.best == null && !sp.total) continue;
     // 有暱稱、指定頭像就用它，沒有才用 LINE 的
     var nick = String(rows[i][12] || '').replace(/^'/, '').trim().slice(0, 12), avatar = String(rows[i][13] || '');
     if (AVATAR_KEYS.indexOf(avatar) < 0) avatar = '';
     out.push({ id: id, name: nick || String(rows[i][2] || '旅人').slice(0, 20), avatar: avatar,
-      picture: !avatar && /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c, farm: fm, wifi: wf, zaocan: zc, ship: sh, dessert: ds, spend: sp });
+      picture: !avatar && /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c, farm: fm, wifi: wf, zaocan: zc, ship: sh, dessert: ds, stack: sk, spend: sp });
   }
   return { at: new Date().toISOString(), players: out };
 }
@@ -1603,7 +1615,7 @@ function leaderboard(input) {
   return {
     result: 'success', at: board.at, refreshed: refreshed,
     players: board.players.map(function (p) {
-      return { name: p.name, picture: p.picture, avatar: p.avatar || '', xitou: p.xitou, clean: p.clean, farm: p.farm, wifi: p.wifi, zaocan: p.zaocan, ship: p.ship, dessert: p.dessert, spend: p.spend, me: !!me && p.id === me };
+      return { name: p.name, picture: p.picture, avatar: p.avatar || '', xitou: p.xitou, clean: p.clean, farm: p.farm, wifi: p.wifi, zaocan: p.zaocan, ship: p.ship, dessert: p.dessert, stack: p.stack, spend: p.spend, me: !!me && p.id === me };
     })
   };
 }
@@ -3078,6 +3090,72 @@ function dessertLog(input) {
   return { result: 'success', saved: rows.length, skipped: skipped };
 }
 
+// --- 疊・巢（diechao.html）：小吳鴨疊書，每一場的紀錄 ---
+// 跟甜點店紀錄一樣：公開、appendRow 不排隊、不寄信不回資料；session 對就記 line_id。
+var STACK_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'total', 'layers', 'perfect', 'miss', 'rollback', 'tutor',
+  'max_streak', 'min_w', 'stage', 'last', 'stuck', 'ms', 'len', 'login'];
+
+function stacksSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Stacks');
+  if (!sheet) {
+    sheet = ss.insertSheet('Stacks');
+    sheet.appendRow(STACK_HEADERS);
+    sheet.setFrozenRows(1);
+  } else if (sheet.getLastColumn() < STACK_HEADERS.length) {
+    sheet.getRange(1, 1, 1, STACK_HEADERS.length).setValues([STACK_HEADERS]);
+  }
+  return sheet;
+}
+
+function stackRow(r, now, lineId, device) {
+  if (!r || typeof r !== 'object') return null;
+  var at = new Date(r.at);
+  if (isNaN(at.getTime()) || at.getTime() > now.getTime() + 86400000 || at.getTime() < now.getTime() - 90 * 86400000) return null;
+  var n = function (v) { return washNum(v, 0, 999); };
+  return [
+    now, at, lineId || '', device,
+    washNum(r.total, 0, 100000), n(r.layers), n(r.perfect), n(r.miss), n(r.rollback), n(r.tutor),
+    n(r.max_streak), washNum(r.min_w, 0, 400), washText(r.stage, 6), washText(r.last, 24), washText(r.stuck, 24),
+    washNum(r.ms, 0, 3600000), washNum(r.len, 0, 3600), !!r.login
+  ];
+}
+
+// 在編輯器選這個按「執行」：先把 Stacks 分頁建出來
+function setupStacks() {
+  var sheet = stacksSheet();
+  Logger.log('Stacks 分頁好了，目前有 ' + (sheet.getLastRow() - 1) + ' 場。網頁要能存，還要「部署 → 管理部署作業 → 編輯 → 版本選新版本 → 部署」。');
+}
+
+function stackLog(input) {
+  var device = String(input.device || '').replace(/[^A-Za-z0-9-]/g, '').slice(0, 40);
+  if (device.length < 8) return { result: 'error', error: '沒有裝置代號' };
+  var recs = Array.isArray(input.recs) ? input.recs.slice(0, 20) : [];
+  if (!recs.length) return { result: 'success', saved: 0 };
+  var cache = CacheService.getScriptCache();
+  var hour = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var allKey = 'stackRows' + ':' + hour, gate = logGate('stack', device, hour);
+  var devCount = gate.n, allCount = Number(cache.get(allKey) || 0);
+  if (devCount >= STACK_LOGS_PER_HOUR) return { result: 'error', error: '這小時送太多次了' };
+  if (allCount + recs.length > STACK_ROWS_PER_HOUR) return { result: 'error', error: '這小時全站疊太多次了' };
+  gate.count();
+  var lineId = input.session ? sessionUser(input.session) : null;
+  var now = new Date(), rows = [], skipped = 0;
+  recs.forEach(function (r) {
+    var row = stackRow(r, now, lineId, device);
+    if (!row) { skipped++; return; }
+    if (gate.seen(row[1].getTime())) { skipped++; return; }   // 同一支手機重送的同一場，不要存兩次
+    rows.push(row);
+  });
+  if (rows.length) {
+    var sheet = stacksSheet();
+    rows.forEach(function (row) { sheet.appendRow(row); });
+    cache.put(allKey, String(allCount + rows.length), 3600);
+  }
+  gate.save();
+  return { result: 'success', saved: rows.length, skipped: skipped };
+}
+
 // --- 貨運・航（huoyun.html）：每一趟的紀錄 ---
 // 跟早餐店紀錄一樣：公開、appendRow 不排隊、不寄信不回資料；session 對就記 line_id。欄位收齊，之後排行榜、升級都從這裡算。
 var SHIP_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'total', 'sales', 'grade', 'sank', 'hull',
@@ -3460,7 +3538,8 @@ var ECON_SOURCES = [
   { sheet: 'Wifis', name: '蹭・網', dur: 'ms', fallback: 0, mode: true },
   { sheet: 'Zaocans', name: '早餐・煎', dur: 'len', fallback: 75 },
   { sheet: 'Ships', name: '貨運・航', dur: 'len', fallback: 60, mode: true },
-  { sheet: 'Desserts', name: '甜點・轉', dur: 'len', fallback: 75 }
+  { sheet: 'Desserts', name: '甜點・轉', dur: 'len', fallback: 75 },
+  { sheet: 'Stacks', name: '疊・巢', dur: 'len', fallback: 60 }
 ];
 function econMedian(a) { if (!a.length) return 0; a = a.slice().sort(function (x, y) { return x - y; }); var m = Math.floor(a.length / 2); return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }
 function econPct(a, p) { if (!a.length) return 0; a = a.slice().sort(function (x, y) { return x - y; }); return a[Math.min(a.length - 1, Math.floor(p * a.length))]; }

@@ -16,7 +16,7 @@
     <script src="assets/saveimg.js?v=20261116d"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261116d"></script>
-    <script src="assets/avatar.js?v=20261117b"></script>
+    <script src="assets/avatar.js?v=20261118a"></script>
     <style>
         /* 整塊都是要點的地方：長按不能跳系統選單、不能選字 */
         .stage { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
@@ -83,11 +83,13 @@
             <div class="mt-3 mx-auto max-w-[17rem] border-y border-stone-100 py-3 font-sans text-xs tracking-widest text-stone-500">
                 <p class="flex justify-between"><span>錢包</span><span id="payWallet" class="text-wabi-shu text-sm"></span></p>
                 <p id="rBest" class="mt-2 text-[10px] leading-relaxed text-stone-400"></p>
+                <p id="syncNote" class="mt-1 text-[10px] leading-relaxed text-stone-400"></p>
             </div>
             <img id="sheetImg" alt="小吳鴨的履歷" class="mt-6 w-full border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]">
             <div class="mt-6 flex flex-col gap-3">
                 <button id="shareBtn" type="button" class="w-full bg-wabi-dark text-wabi-bg py-4 px-8 tracking-[0.2em] font-sans text-xs shadow-lg">分享履歷</button>
                 <button id="again" type="button" class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">再疊一次</button>
+                <a id="rankLink" href="rank.html#stack" class="hidden block w-full py-3 text-stone-500 underline underline-offset-4 tracking-[0.2em] font-sans text-xs">看疊巢部疊最高</a>
                 <a href="member.html" class="block w-full py-3 text-stone-500 underline underline-offset-4 tracking-[0.2em] font-sans text-xs">回會員中心</a>
             </div>
         </section>
@@ -110,162 +112,12 @@
     </footer>
 
     <script>
-        // 小吳鴨（烏鴉）：面向左、3/4 側臉，跟蘋果鴨同一個座標習慣。中心約 (0,0)，頭頂 -48、腳底 +50。
-        // o: { pose: 'stand'|'fly', face: 'normal'|'smug'|'panic'|'caw', badge, glasses, rim }
+        // 書（典藏布面）和朱色小章的畫法；小吳鴨本人在 assets/avatar.js 的 Avatar.crow
         (function () {
             const TAU = Math.PI * 2;
             const ell = (c, x, y, rx, ry, r = 0) => { c.beginPath(); c.ellipse(x, y, rx, ry, r, 0, TAU); };
             const dot = (c, x, y, r) => { c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill(); };
             const LINE = '#0d0d12';
-
-            function wingFly(c, back) {
-                // 張開的翅膀：烏鴉的初級飛羽像手指一樣分開
-                c.save();
-                if (back) { c.translate(14, -2); c.rotate(0.35); c.scale(0.9, 0.9); } else { c.translate(4, 0); c.rotate(-0.15); }
-                const g = c.createLinearGradient(0, -60, 0, 10);
-                g.addColorStop(0, back ? '#1a1b22' : '#2c2e3e'); g.addColorStop(1, back ? '#111217' : '#181920');
-                c.fillStyle = g; c.strokeStyle = LINE; c.lineWidth = 2.4;
-                c.beginPath(); c.moveTo(-6, 6);
-                c.bezierCurveTo(-14, -14, -10, -40, 4, -58);
-                c.lineTo(10, -50); c.lineTo(14, -62); c.lineTo(20, -50); c.lineTo(26, -60); c.lineTo(30, -46); c.lineTo(38, -54); c.lineTo(40, -38);
-                c.bezierCurveTo(44, -20, 34, 0, 18, 10); c.closePath(); c.fill(); c.stroke();
-                c.strokeStyle = 'rgba(150,165,230,.35)'; c.lineWidth = 1.2;
-                [[2, -40, 8, -10], [12, -44, 14, -10], [22, -42, 22, -8], [32, -36, 28, -4]].forEach(([a, b, x, y]) => { c.beginPath(); c.moveTo(a, b); c.quadraticCurveTo((a + x) / 2 + 2, (b + y) / 2, x, y); c.stroke(); });
-                c.restore();
-            }
-
-            function crow(c, x, y, s, o = {}) {
-                const pose = o.pose || 'stand', face = o.face || 'normal';
-                const glasses = o.glasses !== false, badge = o.badge !== false;
-                c.save(); c.translate(x, y); c.scale(s, s); c.lineJoin = 'round'; c.lineCap = 'round';
-
-                if (pose === 'stand') {
-                    const sh = c.createRadialGradient(6, 51, 2, 6, 51, 42); sh.addColorStop(0, 'rgba(40,30,20,.22)'); sh.addColorStop(1, 'rgba(40,30,20,0)');
-                    c.fillStyle = sh; ell(c, 6, 51, 44, 6); c.fill();
-                }
-                if (pose === 'fly') wingFly(c, true);
-
-                // 尾巴：三根羽毛扇開
-                c.fillStyle = '#16171d'; c.strokeStyle = LINE; c.lineWidth = 2.2;
-                const tail = pose === 'fly' ? [[30, 18, 62, 22], [30, 22, 64, 32], [28, 26, 58, 40]] : [[30, 16, 64, 26], [30, 20, 66, 36], [28, 24, 58, 44]];
-                tail.forEach(([a, b, tx, ty]) => { c.beginPath(); c.moveTo(a, b - 5); c.quadraticCurveTo(tx - 6, ty - 8, tx, ty); c.quadraticCurveTo(tx - 10, ty + 5, a - 2, b + 7); c.closePath(); c.fill(); c.stroke(); });
-
-                // 腳
-                if (pose === 'stand') {
-                    c.strokeStyle = '#3b3c44'; c.lineWidth = 3.4;
-                    [[-2, 36, -4, 50], [14, 36, 14, 50]].forEach(([a, b, fx, fy]) => {
-                        c.beginPath(); c.moveTo(a, b); c.lineTo(fx, fy); c.stroke();
-                        c.lineWidth = 2.6; c.beginPath(); c.moveTo(fx, fy); c.lineTo(fx - 9, fy + 1); c.moveTo(fx, fy); c.lineTo(fx - 6, fy + 4); c.moveTo(fx, fy); c.lineTo(fx + 5, fy + 1); c.stroke(); c.lineWidth = 3.4;
-                    });
-                } else {
-                    // 飛的時候腳往下抓（抓著要疊的那塊）
-                    c.strokeStyle = '#3b3c44'; c.lineWidth = 3;
-                    [[-4, 34, -6, 48], [10, 34, 10, 48]].forEach(([a, b, fx, fy]) => {
-                        c.beginPath(); c.moveTo(a, b); c.lineTo(fx, fy); c.stroke();
-                        c.lineWidth = 2.2; c.beginPath(); c.moveTo(fx, fy); c.quadraticCurveTo(fx - 6, fy + 1, fx - 7, fy + 6); c.moveTo(fx, fy); c.quadraticCurveTo(fx + 5, fy + 1, fx + 6, fy + 6); c.stroke(); c.lineWidth = 3;
-                    });
-                }
-
-                // 身體＋頭：先描粗外框再填，接縫就不見了
-                const body = () => {
-                    c.beginPath(); c.moveTo(-26, -6);
-                    c.bezierCurveTo(-46, 10, -36, 42, -4, 42); c.lineTo(16, 40);
-                    c.bezierCurveTo(38, 36, 46, 22, 38, 8);
-                    c.bezierCurveTo(30, -4, 8, -6, -8, -8); c.closePath();
-                };
-                const head = () => { c.beginPath(); c.arc(-12, -22, 23, 0, TAU); };
-                c.strokeStyle = LINE; c.lineWidth = 4.6; body(); c.stroke(); head(); c.stroke();
-                if (o.rim) { c.strokeStyle = 'rgba(255,236,170,.55)'; c.lineWidth = 7.5; body(); c.stroke(); head(); c.stroke(); c.strokeStyle = LINE; c.lineWidth = 4.6; body(); c.stroke(); head(); c.stroke(); }
-                const gb = c.createLinearGradient(0, -8, 0, 42); gb.addColorStop(0, '#30324a'); gb.addColorStop(1, '#14151b');
-                c.fillStyle = gb; body(); c.fill();
-                const gh = c.createRadialGradient(-22, -36, 2, -12, -22, 26); gh.addColorStop(0, '#4a4e6e'); gh.addColorStop(0.5, '#262838'); gh.addColorStop(1, '#14151b');
-                c.fillStyle = gh; head(); c.fill();
-                // 藍紫色光澤
-                c.strokeStyle = 'rgba(150,170,245,.5)'; c.lineWidth = 2.2; c.beginPath(); c.arc(-12, -22, 18, Math.PI * 1.05, Math.PI * 1.45); c.stroke();
-                c.strokeStyle = 'rgba(150,170,245,.3)'; c.lineWidth = 2; c.beginPath(); c.moveTo(-30, 14); c.quadraticCurveTo(-30, 30, -14, 36); c.stroke();
-                // 呆毛：兩根翹起來的羽毛
-                c.fillStyle = '#1c1d26'; c.strokeStyle = LINE; c.lineWidth = 1.8;
-                c.beginPath(); c.moveTo(-14, -44); c.quadraticCurveTo(-12, -58, -2, -62); c.quadraticCurveTo(-8, -54, -7, -44); c.closePath(); c.fill(); c.stroke();
-                c.beginPath(); c.moveTo(-8, -44); c.quadraticCurveTo(0, -54, 8, -54); c.quadraticCurveTo(0, -50, -2, -43); c.closePath(); c.fill(); c.stroke();
-                if (face === 'panic') { // 嚇到羽毛都豎起來
-                    c.beginPath(); c.moveTo(-26, -40); c.lineTo(-32, -52); c.lineTo(-22, -43); c.moveTo(4, -40); c.lineTo(12, -50); c.lineTo(6, -38); c.fill(); c.stroke();
-                }
-
-                // 收起來的翅膀
-                if (pose === 'stand') {
-                    const gw = c.createLinearGradient(0, 0, 30, 34); gw.addColorStop(0, '#2a2c3c'); gw.addColorStop(1, '#121318');
-                    c.fillStyle = gw; c.strokeStyle = LINE; c.lineWidth = 2.2;
-                    c.beginPath(); c.moveTo(-2, 6); c.bezierCurveTo(10, -2, 34, 2, 42, 18);
-                    c.quadraticCurveTo(44, 26, 38, 26); c.quadraticCurveTo(38, 32, 31, 31); c.quadraticCurveTo(29, 37, 21, 34);
-                    c.bezierCurveTo(10, 31, 2, 22, -2, 6); c.closePath(); c.fill(); c.stroke();
-                    c.strokeStyle = 'rgba(150,165,230,.35)'; c.lineWidth = 1.3;
-                    c.beginPath(); c.moveTo(8, 12); c.quadraticCurveTo(20, 10, 33, 18); c.moveTo(8, 18); c.quadraticCurveTo(18, 18, 27, 25); c.stroke();
-                } else wingFly(c, false);
-
-                // 識別證：藍色掛繩、白卡、照片是一隻鴨
-                if (badge) {
-                    c.strokeStyle = '#3d6fb6'; c.lineWidth = 2.2;
-                    c.beginPath(); c.moveTo(-28, -4); c.quadraticCurveTo(-20, 6, -12, 12); c.moveTo(0, -6); c.quadraticCurveTo(-4, 4, -10, 12); c.stroke();
-                    c.save(); c.translate(-12, 12); c.rotate(-0.08);
-                    c.fillStyle = '#9aa0a8'; c.fillRect(-2.5, -1, 5, 4);
-                    c.fillStyle = '#ffffff'; c.strokeStyle = '#c9c2b4'; c.lineWidth = 1;
-                    c.beginPath(); c.roundRect(-10, 2, 20, 25, 2); c.fill(); c.stroke();
-                    c.fillStyle = '#fbe7a0'; c.fillRect(-7, 5, 14, 11);
-                    c.fillStyle = '#f2c23c'; dot(c, -1, 11.5, 3.6); dot(c, 2.5, 8.5, 2.4); c.fillStyle = '#f08a2a'; c.beginPath(); c.moveTo(-0.5, 8.5); c.lineTo(-3.5, 9.2); c.lineTo(-0.5, 10); c.fill();
-                    c.fillStyle = '#b8b0a2'; c.fillRect(-7, 19, 14, 1.6); c.fillRect(-7, 22.5, 9, 1.6);
-                    c.restore();
-                }
-
-                // 嘴：粗厚、往左，鼻孔上方一撮剛毛
-                const open = face === 'caw' ? 0.5 : face === 'panic' ? 0.3 : 0;
-                const gk = c.createLinearGradient(-58, -24, -30, -12); gk.addColorStop(0, '#2a2a31'); gk.addColorStop(1, '#4c4d58');
-                c.fillStyle = gk; c.strokeStyle = LINE; c.lineWidth = 1.8;
-                c.save(); c.translate(-31, -14); c.rotate(open);
-                c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-14, 2, -21, 0); c.quadraticCurveTo(-12, 6, 0, 5); c.closePath(); c.fill(); c.stroke();
-                c.restore();
-                if (open) { c.fillStyle = '#8c3a3a'; c.beginPath(); c.moveTo(-31, -14); c.lineTo(-50, -15); c.lineTo(-48, -14 + open * 22); c.closePath(); c.fill(); }
-                c.fillStyle = gk; c.beginPath(); c.moveTo(-30, -27); c.bezierCurveTo(-40, -29, -54, -24, -60, -15); c.quadraticCurveTo(-46, -12, -31, -13); c.closePath(); c.fill(); c.stroke();
-                c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(-34, -24.5); c.quadraticCurveTo(-44, -24, -52, -19); c.stroke();
-                c.strokeStyle = 'rgba(60,62,80,.9)'; c.lineWidth = 1.1;
-                [[-30, -27, -38, -25], [-29, -25, -37, -22], [-30, -29, -36, -28.5]].forEach(([a, b, x2, y2]) => { c.beginPath(); c.moveTo(a, b); c.lineTo(x2, y2); c.stroke(); });
-
-                // 眼睛：黑鳥要看得到臉，眼睛外面一圈淺灰
-                const eyes = [[-21, -27], [-2, -26]];
-                eyes.forEach(([ex, ey]) => {
-                    if (face === 'smug') {
-                        c.strokeStyle = '#e6e6ee'; c.lineWidth = 2; c.beginPath(); c.arc(ex, ey + 2, 4.2, Math.PI * 1.1, Math.PI * 1.9); c.stroke();
-                    } else if (face === 'caw') {
-                        c.strokeStyle = '#e6e6ee'; c.lineWidth = 2;
-                        c.beginPath(); c.moveTo(ex - 4, ey - 3); c.lineTo(ex + 1, ey); c.lineTo(ex - 4, ey + 3); c.stroke();
-                    } else if (face === 'panic') {
-                        c.fillStyle = '#ffffff'; dot(c, ex, ey, 5.2); c.fillStyle = '#111'; dot(c, ex - 1, ey, 1.6);
-                    } else {
-                        c.fillStyle = '#5a5e78'; ell(c, ex, ey, 5.4, 6.2); c.fill();
-                        c.fillStyle = '#08080b'; ell(c, ex, ey, 3.8, 4.8); c.fill();
-                        c.fillStyle = '#ffffff'; dot(c, ex + 1.2, ey - 1.8, 1.6); dot(c, ex - 1.3, ey + 1.8, 0.7);
-                    }
-                });
-                // 腮紅（淡淡的）
-                [[-28, -15], [6, -15]].forEach(([cx, cy]) => {
-                    const g = c.createRadialGradient(cx, cy, 0.5, cx, cy, 6); g.addColorStop(0, 'rgba(240,120,110,.4)'); g.addColorStop(1, 'rgba(240,120,110,0)');
-                    c.fillStyle = g; ell(c, cx, cy, 6, 4); c.fill();
-                });
-                // 圓框眼鏡（金色鏡框）
-                if (glasses) {
-                    c.strokeStyle = '#d6ad5a'; c.lineWidth = 1.9;
-                    eyes.forEach(([ex, ey]) => { c.beginPath(); c.arc(ex, ey, 8.4, 0, TAU); c.stroke(); });
-                    c.beginPath(); c.moveTo(-12.8, -27.5); c.quadraticCurveTo(-11.5, -30, -10.2, -27.2); c.moveTo(6.3, -27); c.lineTo(10, -28.5); c.stroke();
-                    c.strokeStyle = 'rgba(255,255,255,.75)'; c.lineWidth = 1.4;
-                    eyes.forEach(([ex, ey]) => { c.beginPath(); c.moveTo(ex + 3, ey - 6); c.lineTo(ex + 5.6, ey - 3.2); c.stroke(); });
-                    if (face === 'smug') { c.fillStyle = '#fff6d0'; [[-25, -36], [6, -35]].forEach(([sx, sy]) => { c.beginPath(); c.moveTo(sx, sy - 4); c.quadraticCurveTo(sx, sy, sx + 4, sy); c.quadraticCurveTo(sx, sy, sx, sy + 4); c.quadraticCurveTo(sx, sy, sx - 4, sy); c.quadraticCurveTo(sx, sy, sx, sy - 4); c.fill(); }); }
-                }
-                // 慌張的汗
-                if (face === 'panic') {
-                    c.fillStyle = '#9cc7ea'; c.strokeStyle = '#5f97c8'; c.lineWidth = 1;
-                    [[12, -42, 1], [18, -32, 0.75]].forEach(([sx, sy, k]) => { c.beginPath(); c.moveTo(sx, sy - 7 * k); c.quadraticCurveTo(sx + 5 * k, sy, sx, sy + 3 * k); c.quadraticCurveTo(sx - 5 * k, sy, sx, sy - 7 * k); c.fill(); c.stroke(); });
-                }
-                c.restore();
-            }
 
             // 一層：一本典藏布面精裝書（甲一之一・原版）。看到的正面是圓書背：亞麻布紋、上亮下暗，
             // 左邊燙金卷數、兩端各一組燙金雙細線、中間燙金書名；頂面是封面板，右側是書口（書頁）。
@@ -352,7 +204,7 @@
                 c.fillStyle = '#fff'; c.font = `700 ${sz * 0.62}px "Noto Serif TC", "Noto Serif CJK TC", serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(ch, 0, sz * 0.03);
                 c.restore();
             }
-            window.Crow = { crow, layer, stamp, LAYERS };
+            window.Crow = { crow: (...a) => Avatar.crow(...a), layer, stamp, LAYERS };
         })();
 
     </script>
@@ -370,15 +222,15 @@
 
         // ---------- 書池：九個階段，一個階段一種顏色 ----------
         const STAGES = [
-          { name: '啟蒙', a: 1, b: 4, c: '#8a7458', pool: ['注音符號：打字還在用', '九九乘法：到現在還在用', 'ABC：後面的字母比較難', '作文：我的志願是當鴨', '珠心算：心算比計算機快，只到國小', '毛筆字：墨汁沾到制服'] },
-          { name: '自學', a: 5, b: 7, c: '#9a7636', pool: ['HTML：是不是程式語言，吵了二十年', 'CSS：置中到底怎麼做', 'JavaScript：[] + {} 等於什麼', 'Python：縮排錯一格就不跑', 'Excel 函數：VLOOKUP 是人生第一個程式', '部落格架站：架好了，沒寫文章', '無名小站：相簿還在嗎', '打字練習：注音打得比英文快'] },
-          { name: '大學', a: 8, b: 11, c: '#6b7a45', pool: ['PHP：還沒死，謝謝關心', '資料庫：忘了加 WHERE', 'Laravel：又出新版了', '正規表示式：每次都要重查', '資料結構：考完就忘', '演算法：白板題寫不出來', '計算機概論：打不開先重開', '畢業專題：組員只有名字'] },
-          { name: '新人', a: 12, b: 18, c: '#3f6a63', pool: ['Git：commit 訊息寫「修正」', 'Linux：sudo 解決一切', 'Vim：進得去，出不來', 'Stack Overflow：複製貼上也是一種技術', '寫測試：下次一定', 'Code Review：LGTM', '第一次上線：手在抖', '命名：變數叫 data2', '環境設定：裝了一整天', '註解：寫了跟沒寫一樣', '需求單：每看一次都不一樣', '加班：說好的準時下班'] },
-          { name: '工程師', a: 19, b: 26, c: '#3f5f7a', pool: ['Docker：把我的電腦一起寄過去', 'API：文件跟實際不一樣', '快取：清快取試試看', '時區：差了八小時', '半夜修 bug：越修越多', '估工時：乘以三', 'Apps Script：六分鐘就被砍', 'LINE 瀏覽器：在我手機可以跑', '手機版：在 iPhone 跑版', '金流串接：測試環境才會成功', '排程：凌晨三點跑的那支', 'Log：要用的時候沒印', '熱修：直接改正式機', '第三方套件：作者不維護了'] },
-          { name: '資深', a: 27, b: 35, c: '#43476e', pool: ['重構：改完跟原本一樣，只是比較好看', '技術債：利息比本金高', '資料庫遷移：先備份', '資安：密碼不要寫在程式裡', '效能調校：加一台機器', '帶新人：同一個問題第五次', '開會：這可以寫信就好', '寫文件：大家都卡在這本', '跟 PM 溝通：這個很簡單吧', '面試別人：題目自己也答不出來', '回滾：git revert 救一命', '值班：手機不敢靜音', '升級版本：一升就壞', '規格書：寫的人已經離職'] },
-          { name: '架構師', a: 36, b: 45, c: '#563f5e', pool: ['系統設計：畫框框連線', '微服務：一個 bug 變十個', '雲端帳單：月底才知道', '監控：半夜三點響', 'Kubernetes：名字都拼不對', '線上課程：買了沒看', 'AI 寫程式：寫得比我快，錯得也比我快', '舊系統：沒人敢動', '交接：前人只留一句「應該沒問題」', '估價：報低了', '高可用：可用到放假那天', '選型：選完就出新的', '資料備份：三份，都在同一台', '白板：擦不乾淨'] },
-          { name: '顧問', a: 46, b: 55, c: '#7a2e2a', pool: ['當顧問：看起來很懂', '簡報：字太多', '跟客戶溝通：可以再有質感一點嗎', '教課：講第三遍就會了', '退休計畫：再寫一個小專案就好', '審查報告：先誇再罵', '報價單：客戶問能不能打折', '出差：筆電沒帶充電器', '研討會：只為了便當', '合約：範圍寫不清楚', '教材：寫完課就改版了', '名片：頭銜比字還長'] },
-          { name: '傳說', a: 56, b: 9999, c: '#2c2a28', pool: ['開源專案：星星比 issue 少', '自己寫框架：只有自己在用', '出書：寫到第三章', '上台演講：投影片放不出來', '創業：先開 LINE 官方帳號', '民宿網站：27 樓的絆', '遊戲幣經濟：通膨了', '小吳鴨傳：我是鴨', '回老家種菜：菜園・拔', '全端：什麼都會一點', '十年後的自己：還在修 bug', '退休：又被找回去'] },
+          { name: '啟蒙', a: 1, b: 4, c: '#8a7458', pool: ['注音符號：打字還在用｜還是打不快', '九九乘法：到現在還在用｜七乘八還是要想一下', 'ABC：後面的字母比較難｜字母會了，單字不會', '作文：我的志願是當鴨｜志願改成退休', '珠心算：心算比計算機快，只到國小｜算盤收在哪裡了', '毛筆字：墨汁沾到制服｜現在只會簽名'] },
+          { name: '自學', a: 5, b: 7, c: '#9a7636', pool: ['HTML：是不是程式語言，吵了二十年｜終於確定不是了', 'CSS：置中到底怎麼做｜還是不會置中', 'JavaScript：[] + {} 等於什麼｜答案又變了', 'Python：縮排錯一格就不跑｜縮排改成四格了', 'Excel 函數：VLOOKUP 是人生第一個程式｜改用 XLOOKUP 了', '部落格架站：架好了，沒寫文章｜又架了一個，還是沒寫', '無名小站：相簿還在嗎｜相簿真的不見了', '打字練習：注音打得比英文快｜英文還是比較慢'] },
+          { name: '大學', a: 8, b: 11, c: '#6b7a45', pool: ['PHP：還沒死，謝謝關心｜還是沒死', '資料庫：忘了加 WHERE｜這次加了 WHERE，加錯欄', 'Laravel：又出新版了｜又又出新版了', '正規表示式：每次都要重查｜還是要重查', '資料結構：考完就忘｜又考一次，又忘了', '演算法：白板題寫不出來｜白板題換題目了', '計算機概論：打不開先重開｜重開還是打不開', '畢業專題：組員只有名字｜組員還是只有名字'] },
+          { name: '新人', a: 12, b: 18, c: '#3f6a63', pool: ['Git：commit 訊息寫「修正」｜commit 訊息改寫「修正２」', 'Linux：sudo 解決一切｜sudo 也救不了', 'Vim：進得去，出不來｜學會出來了，忘了怎麼進去', 'Stack Overflow：複製貼上也是一種技術｜答案是自己十年前寫的', '寫測試：下次一定｜下下次一定', 'Code Review：LGTM｜還是 LGTM', '第一次上線：手在抖｜第二次，手還在抖', '命名：變數叫 data2｜改叫 data_final', '環境設定：裝了一整天｜換電腦再裝一天', '註解：寫了跟沒寫一樣｜寫了，但是是錯的', '需求單：每看一次都不一樣｜又改了', '加班：說好的準時下班｜說好的週末'] },
+          { name: '工程師', a: 19, b: 26, c: '#3f5f7a', pool: ['Docker：把我的電腦一起寄過去｜連房子一起寄過去', 'API：文件跟實際不一樣｜文件改了，程式沒改', '快取：清快取試試看｜清了還是舊的', '時區：差了八小時｜夏令時間又來了', '半夜修 bug：越修越多｜白天又壞了', '估工時：乘以三｜乘以五', 'Apps Script：六分鐘就被砍｜六分鐘變五分五十九秒', 'LINE 瀏覽器：在我手機可以跑｜換一支手機就不行', '手機版：在 iPhone 跑版｜換在安卓跑版', '金流串接：測試環境才會成功｜正式環境還是失敗', '排程：凌晨三點跑的那支｜凌晨三點又沒跑', 'Log：要用的時候沒印｜印太多，找不到', '熱修：直接改正式機｜熱修的熱修', '第三方套件：作者不維護了｜換了一個，也不維護了'] },
+          { name: '資深', a: 27, b: 35, c: '#43476e', pool: ['重構：改完跟原本一樣，只是比較好看｜改完比原本醜', '技術債：利息比本金高｜利息又漲了', '資料庫遷移：先備份｜備份還原不回來', '資安：密碼不要寫在程式裡｜密碼寫在註解裡', '效能調校：加一台機器｜加兩台機器', '帶新人：同一個問題第五次｜新人開始帶新人', '開會：這可以寫信就好｜開會討論要不要開會', '寫文件：大家都卡在這本｜還是卡在這本', '跟 PM 溝通：這個很簡單吧｜這個應該更簡單吧', '面試別人：題目自己也答不出來｜被面試的人比較強', '回滾：git revert 救一命｜revert 的 revert', '值班：手機不敢靜音｜手機放枕頭旁邊', '升級版本：一升就壞｜降回來也壞', '規格書：寫的人已經離職｜寫的人回來問我'] },
+          { name: '架構師', a: 36, b: 45, c: '#563f5e', pool: ['系統設計：畫框框連線｜框框比線多', '微服務：一個 bug 變十個｜十個 bug 變一百個', '雲端帳單：月底才知道｜月初就知道了', '監控：半夜三點響｜半夜兩點就響', 'Kubernetes：名字都拼不對｜名字拼對了，設定還是錯', '線上課程：買了沒看｜又買了一堂', 'AI 寫程式：寫得比我快，錯得也比我快｜錯得比我有自信', '舊系統：沒人敢動｜你寫的那套也變舊系統了', '交接：前人只留一句「應該沒問題」｜這次換你留那句話', '估價：報低了｜報更低了', '高可用：可用到放假那天｜放假那天又掛了', '選型：選完就出新的｜選回最舊的那個', '資料備份：三份，都在同一台｜四份，還是同一台', '白板：擦不乾淨｜被別人擦掉了'] },
+          { name: '顧問', a: 46, b: 55, c: '#7a2e2a', pool: ['當顧問：看起來很懂｜看起來更懂了', '簡報：字太多｜字更多了', '跟客戶溝通：可以再有質感一點嗎｜可以回到第一版嗎', '教課：講第三遍就會了｜講第五遍還是不會', '退休計畫：再寫一個小專案就好｜再寫兩個小專案就好', '審查報告：先誇再罵｜先罵再誇', '報價單：客戶問能不能打折｜打完折還要贈品', '出差：筆電沒帶充電器｜連筆電都沒帶', '研討會：只為了便當｜便當比去年小', '合約：範圍寫不清楚｜範圍寫清楚了，客戶沒看', '教材：寫完課就改版了｜改版改到下一屆', '名片：頭銜比字還長｜換了頭銜，字更多'] },
+          { name: '傳說', a: 56, b: 9999, c: '#2c2a28', pool: ['開源專案：星星比 issue 少｜issue 比星星多了', '自己寫框架：只有自己在用｜自己也不用了', '出書：寫到第三章｜寫到第四章', '上台演講：投影片放不出來｜投影片放出來了，麥克風沒聲音', '創業：先開 LINE 官方帳號｜LINE 官方帳號沒人加', '民宿網站：27 樓的絆｜還是 27 樓的絆', '遊戲幣經濟：通膨了｜通膨更嚴重了', '小吳鴨傳：我是鴨｜我還是鴨', '回老家種菜：菜園・拔｜蘿蔔又被拔走了', '全端：什麼都會一點｜什麼都會兩點', '十年後的自己：還在修 bug｜還在修同一個 bug', '退休：又被找回去｜又又被找回去'] },
         ];
         const ED = ['', '（第二版）', '（第三版）', '（第四版）'];
         const stageOf = n => STAGES.find(s => n >= s.a && n <= s.b);
@@ -390,8 +242,8 @@
         function bookFor(n) {
           const st = stageOf(n);
           let d = deck[st.name]; if (!d || !d.left.length) { d = deck[st.name] = { left: shuffle(st.pool), round: d ? d.round + 1 : 0 }; }
-          const [name, joke] = d.left.shift().split('：');
-          const ed = ED[Math.min(d.round, ED.length - 1)];
+          const [name, rest] = d.left.shift().split('：'), [joke1, joke2] = rest.split('｜');
+          const ed = ED[Math.min(d.round, ED.length - 1)], joke = d.round ? joke2 || joke1 : joke1;   // 第二版起換另一句吐槽
           return { name: name + ed, short: name, joke: name + ed + '：' + joke, c: shade(st.c, n % 2 ? 0 : -0.1), stage: st.name, n };
         }
 
@@ -458,7 +310,7 @@
           if (Math.abs(c.x - t.x) <= PERFECT_TOL && !first || first && false) { perfect = true; nx = t.x; nw = t.w; }
           if (first) { perfect = true; nx = c.x; nw = c.w; } // 第一本直接放在冷氣機上，算對齊
           if (perfect) {
-            G.streak++; G.perfect++;
+            G.streak++; G.perfect++; G.maxStreak = Math.max(G.maxStreak || 0, G.streak);
             if (G.streak >= 3 && nw < FULL) { const add = Math.min(8, FULL - nw); nx -= add / 2; nw += add; SFX.grow(); joke = '融會貫通，寬度長回來一點'; }
             face('smug'); SFX.perfect(Math.min(G.streak, 6)); buzz(12);
           } else {
@@ -526,6 +378,7 @@
           if (G.phase !== 'play') return;
           G.phase = 'end'; G.ended = performance.now();
           if (G.cur) { const c = G.cur; G.debris.push({ x: c.x, y: worldTop() + LH * 1.6, w: c.w, book: c.book, vx: 0, vy: 0, rot: 0, vr: 1.5 }); G.stuck = c.book; G.cur = null; }
+          G.playMs = Math.round((ROUND - G.time) * 1000);
           calcWage(); SFX.end(); joke = '收工'; document.documentElement.classList.remove('dc-open'); showResult(); syncUI();
         }
 
@@ -663,8 +516,11 @@
           $('rTitle').textContent = n >= 56 ? '傳說' : n >= 11 ? `疊到 ${26 + Math.floor(n / 11)} 樓` : '還沒到 27 樓';
           $('rStats').textContent = `疊 ${n} 層・「正」${G.perfect} 次・沒疊到 ${G.miss} 次`;
           $('bill').innerHTML = G.bill.map(([k, v]) => `<li><span>${k}</span><span class="text-wabi-dark">$${v.toLocaleString('en-US')}</span></li>`).join('');
-          if (MAINTENANCE) $('payWallet').textContent = '監修中試玩，不發薪水';
-          else { Wallet.earn(G.wage, 'stack'); $('payWallet').textContent = '+$' + G.wage.toLocaleString('en-US'); }
+          if (MAINTENANCE) { $('payWallet').textContent = '監修中試玩，不發薪水'; $('syncNote').textContent = ''; }
+          else {
+            Wallet.earn(G.wage, 'stack'); $('payWallet').textContent = '+$' + G.wage.toLocaleString('en-US');
+            recordRound(); $('syncNote').textContent = '紀錄存到雲端中…'; uploadRounds().then(showSyncNote);
+          }
           $('rBest').textContent = MAINTENANCE ? '試玩不記錄最高紀錄' : isBest ? '這是你疊最高的一場' : `最高：${best.layers} 層・$${best.wage.toLocaleString('en-US')}`;
           const url = makeResume(); $('sheetImg').src = url;
           sheetFile = null;
@@ -675,6 +531,48 @@
           }).catch(() => { });
           $('result').classList.remove('hidden');
           setTimeout(() => $('result').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }), 900);
+        }
+
+        // ---------- 紀錄：這支手機的統計，也送到後端（Stacks 分頁）；監修中不記 ----------
+        const STATS_KEY = 'dongbuli-diechao-stats';
+        function loadStats() { let st = null; try { st = JSON.parse(localStorage.getItem(STATS_KEY)); } catch (e) { } st = st || { rounds: 0, best: 0, paid: 0, layers: 0 }; st.recent = st.recent || []; return st; }
+        function recordRound() {
+          const st = loadStats(), n = G.layers.length, last = G.layers[n - 1];
+          st.rounds++; st.paid += G.wage; st.best = Math.max(st.best, G.wage); st.layers = Math.max(st.layers, n);
+          st.recent.unshift({
+            at: new Date().toISOString(), ms: G.playMs || ROUND * 1000, len: ROUND, total: G.wage, layers: n, perfect: G.perfect, miss: G.miss,
+            rollback: 1 - G.rollback, tutor: Object.keys(G.tutorGot).length - G.tutor, max_streak: G.maxStreak || 0, min_w: Math.round(G.minW),
+            stage: n ? stageOf(n).name : '', last: last ? last.book.name : '', stuck: G.stuck ? G.stuck.name : '', login: !!(window.Line && Line.loggedIn),
+          });
+          st.recent = st.recent.slice(0, 50);
+          try { localStorage.setItem(STATS_KEY, JSON.stringify(st)); } catch (e) { }
+        }
+        const API_URL = (window.Line && Line.API_URL) || "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
+        function deviceId() {
+          let id = ''; try { id = localStorage.getItem('dongbuli-device') || ''; } catch (e) { }
+          if (!id) { id = window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'd-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12); try { localStorage.setItem('dongbuli-device', id); } catch (e) { } }
+          return id;
+        }
+        let uploading = null;
+        function uploadRounds() { if (!uploading) uploading = doUpload().finally(() => { uploading = null; }); return uploading; }
+        async function doUpload() {
+          const st = loadStats(), todo = st.recent.filter(r => !st.synced || r.at > st.synced).reverse().slice(0, 20);
+          if (!todo.length) return { ok: true, saved: 0 };
+          try {
+            let session = ''; try { session = localStorage.getItem('dongbuli-session') || ''; } catch (e) { }
+            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'stackLog', device: deviceId(), session, recs: todo }) });
+            const r = await res.json();
+            if (r.result !== 'success') return { ok: false, error: r.error || r.result || '後端沒回成功' };
+            const now = loadStats(); now.synced = todo[todo.length - 1].at; try { localStorage.setItem(STATS_KEY, JSON.stringify(now)); } catch (e) { }
+            if (todo.length === 20) setTimeout(uploadRounds, 1500);
+            return { ok: true, saved: r.saved };
+          } catch (e) { return { ok: false, error: '連不到後端' }; }
+        }
+        function showSyncNote(r) {
+          const el = $('syncNote');
+          if (r.ok) el.textContent = '這一場的紀錄存到雲端了';
+          else if (/不認得的請求/.test(r.error)) el.textContent = '紀錄先存在這支手機：後端還沒部署新版本，部署好下次打開會自己補送';
+          else el.textContent = `紀錄先存在這支手機（${r.error}），下次會補送`;
         }
 
         // ---------- 結果圖：履歷 ----------
@@ -729,6 +627,8 @@
 
         window.addEventListener('resize', fit);
         if (!CLOSED) $('closed').remove();
+        if (!MAINTENANCE) setTimeout(uploadRounds, 2500);
+        if (!MAINTENANCE) $('rankLink').classList.remove('hidden');
         newGame(); syncUI();
         if ('IntersectionObserver' in window) new IntersectionObserver(es => { cvSeen = es[es.length - 1].isIntersecting; if (cvSeen) startLoop(); }).observe(cv);
         (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(startLoop);
