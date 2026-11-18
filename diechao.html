@@ -56,6 +56,11 @@
             font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.1em; line-height: 1.3; touch-action: manipulation;
         }
         .shop-buy:disabled { background: transparent; color: rgb(var(--wabi-accent)); border-color: rgb(var(--wabi-sub)); }
+        /* 一般／無盡 */
+        .mode-seg { display: inline-flex; border: 1px solid rgb(var(--wabi-accent) / 0.5); border-radius: 9999px; overflow: hidden; }
+        .mode-seg button { min-height: 2.1rem; min-width: 4.6rem; padding: 0 0.9rem; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: 0.2em; color: rgb(var(--wabi-accent)); touch-action: manipulation; }
+        .mode-seg button[aria-pressed="true"] { background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); }
+        .mode-seg button:disabled { opacity: .5; }
         /* 監修中：整個畫布蓋起來 */
         .closed { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 2rem 1.5rem; text-align: center; background: rgb(var(--wabi-bg) / 0.86); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
         .closed-stamp { font-size: 1.9rem; letter-spacing: 0.25em; padding: 0.35rem 0.4rem 0.35rem 0.65rem; color: rgb(var(--wabi-shu)); border: 3px double rgb(var(--wabi-shu)); transform: rotate(-6deg); }
@@ -81,6 +86,7 @@
             <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">STACK</span>
             <h1 class="text-3xl font-light text-wabi-dark tracking-widest">疊・巢</h1>
             <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">小吳鴨的全端疊疊樂。基礎沒對齊，上面就越來越難。</p>
+            <div class="mode-seg mt-4" role="group" aria-label="模式"><button type="button" data-mode="normal" aria-pressed="true">一般</button><button type="button" data-mode="endless" aria-pressed="false">無盡</button></div>
         </div>
 
         <section id="stage" class="stage relative bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-3 pt-3 pb-4">
@@ -124,6 +130,7 @@
                 <li>小吳鴨抓著下一本書左右飛，點畫面任何地方就放下去。一場 <b class="font-normal text-wabi-dark">60 秒</b>（店面買咖啡可以多幾秒）。</li>
                 <li>跟下面那本沒對齊的部分會被切掉，上面就越來越窄。對得剛剛好蓋朱色的「正」（不切，「正」越多錢越多）。</li>
                 <li>完全沒疊到：書掉下去、<b class="font-normal text-wabi-shu">扣 3 秒</b>，下一本照原本的寬度繼續。</li>
+                <li><b class="font-normal text-wabi-dark">無盡模式</b>：不計時，書<b class="font-normal text-wabi-shu">掉三本</b>就收工（店面的咖啡可以多一、兩格）；塔窄到放不下、或 15 秒沒放書也會收工。工資照一般模式算，上無盡・榜。</li>
                 <li>右上角<b class="font-normal text-wabi-dark">店面</b>可以買工具：<b class="font-normal text-wabi-dark">回滾</b>把剛放歪的那本退回去重放（一場一、兩次）；<b class="font-normal text-wabi-dark">補習</b>疊到第 20（、40）層送一次，按了最上面那本寬度補回一截。</li>
                 <li>從 26 樓的冷氣外機往上疊，每 11 層一層樓。書從注音符號一路疊到當顧問，每場抽到的書不一樣。</li>
                 <li>工資：出勤費 $200；第 1–20 層每層 $75、第 21–40 層每層 $150、第 41 層起每層 $200；每個「正」$25；每滿 10 層 $100。</li>
@@ -305,7 +312,7 @@
           { key: 'tutor', name: '補習', sub: '補寬度', prices: [40000, 100000], vals: [[20], [20, 40]],
             tiers: ['', '補習班', '名師一對一'], fx: v => `疊到第 ${v.join('、')} 層各送一次補習：按了最上面那本寬度補回 30` },
           { key: 'coffee', name: '咖啡', sub: '加班', prices: [50000, 120000], vals: [5, 10],
-            tiers: ['', '超商美式', '手沖單品'], fx: v => `一場多 ${v} 秒（${ROUND + v} 秒）` },
+            tiers: ['', '超商美式', '手沖單品'], fx: v => `一場多 ${v} 秒（${ROUND + v} 秒）；無盡模式多 ${v === 5 ? 1 : 2} 格（掉 ${v === 5 ? 4 : 5} 本才收工）` },
           { key: 'headset', name: '降噪耳機', sub: '專心', prices: [30000, 80000], vals: [0.1, 0.2],
             tiers: ['', '有線耳機', '降噪耳機'], fx: v => `小吳鴨飛慢 ${Math.round(v * 100)}%，比較好對準` },
           { key: 'caliper', name: '遊標卡尺', sub: '「正」', prices: [25000, 70000], vals: [6, 8],
@@ -325,10 +332,14 @@
         const val = key => lv(key) ? SHOP_BY[key].vals[lv(key) - 1] : 0;
         const tutorAt = () => val('tutor') || [];
 
+        // 一般／無盡（使用者 2026-11-18 定的：無盡模式掉三本收工、咖啡多一格、錢照一般模式算，不加難度狀況）
+        const MODE_KEY = 'dongbuli-diechao-mode', NARROW = 24, IDLE_WARN = 8, IDLE_LIMIT = 15;
+        let mode = 'normal'; try { if (localStorage.getItem(MODE_KEY) === 'endless') mode = 'endless'; } catch (e) { }
+        const mss = ms => { const t = Math.floor(ms / 1000); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
         function newGame() {
           deck = {};
           shop = loadShop();
-          G = { phase: 'title', round: ROUND + (val('coffee') || 0), full: Math.round(FULL * (1 + (val('shelf') || 0))), tol: val('caliper') || PERFECT_TOL, time: ROUND + (val('coffee') || 0), layers: [], debris: [], cur: null, perfect: 0, miss: 0, streak: 0, rollback: val('revert') || 0, rollbackMax: val('revert') || 0, tutor: 0, tutorGot: {}, flash: 0, face: 'normal', faceT: 0, julieT: 0, shake: 0, ended: 0, minW: Math.round(FULL * (1 + (val('shelf') || 0))), wage: 0 };
+          G = { endless: mode === 'endless', lives: 3 + lv('coffee'), drops: 0, elapsed: 0, idle: 0, endWhy: '', phase: 'title', round: ROUND + (val('coffee') || 0), full: Math.round(FULL * (1 + (val('shelf') || 0))), tol: val('caliper') || PERFECT_TOL, time: ROUND + (val('coffee') || 0), layers: [], debris: [], cur: null, perfect: 0, miss: 0, streak: 0, rollback: val('revert') || 0, rollbackMax: val('revert') || 0, tutor: 0, tutorGot: {}, flash: 0, face: 'normal', faceT: 0, julieT: 0, shake: 0, ended: 0, minW: Math.round(FULL * (1 + (val('shelf') || 0))), wage: 0 };
           cam = 0; joke = '點一下開工';
           spawn(true);
         }
@@ -367,7 +378,7 @@
           audio();
           if (G.phase === 'title') { G.phase = 'play'; joke = '放好第一本'; SFX.caw(); document.documentElement.classList.add('dc-open'); syncUI(); return; }
           if (G.phase !== 'play' || !G.cur || G.cur.wait > 0) return;
-          drop();
+          G.idle = 0; drop();
         }
         function drop() {
           const c = G.cur, t = topLayer(), first = G.layers.length === 0;
@@ -375,7 +386,13 @@
           G.cur = null;
           if (ov <= 0) { // 完全沒疊到：掉下去、扣 3 秒
             G.debris.push({ x: c.x, y: worldTop() + LH * 1.6, w: c.w, book: c.book, vx: c.dir * 60, vy: 0, rot: 0, vr: c.dir * 3 });
-            G.time = Math.max(0, G.time - 3); G.miss++; G.streak = 0; G.flash = 0.5; face('panic'); SFX.miss(); setTimeout(SFX.caw, 160); buzz([60, 40, 120]);
+            G.miss++; G.streak = 0; G.flash = 0.5; face('panic'); SFX.miss(); setTimeout(SFX.caw, 160); buzz([60, 40, 120]);
+            if (G.endless) {   // 無盡模式：掉一本蓋一格，蓋滿收工
+              G.drops++;
+              if (G.drops >= G.lives) { G.stuck = c.book; G.endWhy = 'drop'; joke = `掉了第 ${G.drops} 本，收工`; endGame(); return; }
+              joke = `掉了第 ${G.drops} 本，還能掉 ${G.lives - G.drops} 本`; spawn(false, c.book); return;
+            }
+            G.time = Math.max(0, G.time - 3);
             joke = '沒疊到，扣 3 秒'; spawn(false, c.book); return;
           }
           let nx = l, nw = ov, perfect = false;
@@ -398,6 +415,7 @@
           if (n === 11) { G.julieT = 4; }
           if (tutorAt().includes(n) && !G.tutorGot[n]) { G.tutorGot[n] = 1; G.tutor++; joke = '拿到一次補習'; }
           calcWage(); syncUI();
+          if (G.endless && nw < NARROW) { G.endWhy = 'narrow'; joke = '書太窄了，小吳鴨抓不住'; endGame(); return; }
           spawn(false);
         }
         function face(f) { G.face = f; G.faceT = 0.6; }
@@ -432,7 +450,10 @@
         const sy = wy => BASE_Y - (wy - cam); // 世界座標（往上為正）→ 畫面
         let lastSec = 99;
         function step(dt) {
-          if (G.phase === 'play') {
+          if (G.phase === 'play' && G.endless) {
+            G.elapsed += dt; G.idle += dt;
+            if (G.idle >= IDLE_LIMIT) { G.endWhy = 'idle'; G.julieT = 4; joke = '茱莉鴨：你在發呆嗎？收工了。'; endGame(); }
+          } else if (G.phase === 'play') {
             G.time -= dt;
             const s = Math.ceil(G.time); if (s <= 10 && s !== lastSec && s > 0) SFX.tick(); lastSec = s;
             if (G.time <= 0) { G.time = 0; endGame(); }
@@ -455,8 +476,8 @@
           if (G.phase !== 'play') return;
           G.phase = 'end'; G.ended = performance.now();
           if (G.cur) { const c = G.cur; G.debris.push({ x: c.x, y: worldTop() + LH * 1.6, w: c.w, book: c.book, vx: 0, vy: 0, rot: 0, vr: 1.5 }); G.stuck = c.book; G.cur = null; }
-          G.playMs = Math.round((G.round - G.time) * 1000);
-          calcWage(); SFX.end(); joke = '收工'; document.documentElement.classList.remove('dc-open'); showResult(); syncUI();
+          G.playMs = Math.round((G.endless ? G.elapsed : G.round - G.time) * 1000);
+          calcWage(); SFX.end(); if (!G.endless) joke = '收工'; document.documentElement.classList.remove('dc-open'); showResult(); syncUI();
         }
 
         // ---------- 畫 ----------
@@ -540,11 +561,21 @@
           // 狀態列
           c.fillStyle = 'rgba(252,250,248,.92)'; c.fillRect(0, 0, W, 31); c.fillStyle = '#dcdcdc'; c.fillRect(0, 31, W, 1);
           txt(`第 ${G.layers.length} 層`, 12, 21, { size: 12, w: 500, color: '#2c2c2c', ls: 1 });
-          const sec = Math.ceil(G.time), low = G.phase === 'play' && G.time <= 10;
-          txt(String(sec), W / 2 - 3, 23, { size: 19, w: 500, color: low ? '#b33a2f' : '#2c2c2c', align: 'right' });
-          txt('秒', W / 2 + 1, 22, { size: 10, color: '#8e8070' });
-          txt('$' + G.wage.toLocaleString(), W - 12, 21, { size: 12, w: 500, color: '#2c2c2c', align: 'right' });
-          c.fillStyle = '#e6e0d6'; c.fillRect(0, 31, W, 3); c.fillStyle = low ? '#b33a2f' : '#8e8070'; c.fillRect(0, 31, W * G.time / G.round, 3);
+          if (G.endless) {
+            // 無盡模式：中間是還能掉幾本（掉了的蓋朱色）、旁邊撐了多久
+            const gap = 16, x0 = W / 2 - (G.lives - 1) * gap / 2;
+            for (let i = 0; i < G.lives; i++) { const on = i < G.drops; c.fillStyle = on ? '#b33a2f' : 'rgba(0,0,0,0)'; c.strokeStyle = on ? '#b33a2f' : '#8e8070'; c.lineWidth = 1.2; c.beginPath(); c.roundRect(x0 + i * gap - 5, 9, 10, 13, 1.5); c.fill(); c.stroke(); }
+            txt(mss(G.elapsed * 1000), W / 2 + (G.lives * gap) / 2 + 6, 20, { size: 11, color: '#8e8070' });
+            txt('$' + G.wage.toLocaleString(), W - 12, 21, { size: 12, w: 500, color: '#2c2c2c', align: 'right' });
+            c.fillStyle = '#e6e0d6'; c.fillRect(0, 31, W, 3);
+            if (G.phase === 'play' && G.idle >= IDLE_WARN) { c.fillStyle = 'rgba(179,58,47,.92)'; c.fillRect(0, 34, W, 22); txt(`發呆中・${Math.ceil(IDLE_LIMIT - G.idle)} 秒後收工`, W / 2, 50, { size: 11.5, w: 500, color: '#ffffff', align: 'center', ls: 2 }); }
+          } else {
+            const sec = Math.ceil(G.time), low = G.phase === 'play' && G.time <= 10;
+            txt(String(sec), W / 2 - 3, 23, { size: 19, w: 500, color: low ? '#b33a2f' : '#2c2c2c', align: 'right' });
+            txt('秒', W / 2 + 1, 22, { size: 10, color: '#8e8070' });
+            txt('$' + G.wage.toLocaleString(), W - 12, 21, { size: 12, w: 500, color: '#2c2c2c', align: 'right' });
+            c.fillStyle = '#e6e0d6'; c.fillRect(0, 31, W, 3); c.fillStyle = low ? '#b33a2f' : '#8e8070'; c.fillRect(0, 31, W * G.time / G.round, 3);
+          }
           // 吐槽條
           c.fillStyle = 'rgba(252,250,248,.94)'; c.fillRect(0, H - 30, W, 30); c.fillStyle = '#dcdcdc'; c.fillRect(0, H - 30, W, 1);
           c.font = `400 12.5px ${SERIF}`; let j = joke; while (c.measureText(j).width > W - 24 && j.length > 4) j = j.slice(0, -2) + '…';
@@ -553,7 +584,7 @@
           if (G.phase === 'title') {
             c.fillStyle = 'rgba(252,250,248,.78)'; c.fillRect(0, 150, W, 150);
             txt('疊・巢', W / 2, 205, { size: 30, font: SERIF, color: '#2c2c2c', align: 'center', ls: 8 });
-            txt(`${G.round} 秒，從 26 樓往上疊`, W / 2, 236, { size: 12, color: '#6b6158', align: 'center', ls: 2 });
+            txt(G.endless ? `無盡模式：不計時，掉 ${G.lives} 本收工` : `${G.round} 秒，從 26 樓往上疊`, W / 2, 236, { size: 12, color: '#6b6158', align: 'center', ls: 2 });
             const a = 0.55 + 0.45 * Math.sin(performance.now() / 300);
             txt('點一下開工', W / 2, 272, { size: 15, w: 500, color: `rgba(179,58,47,${a})`, align: 'center', ls: 4 });
           }
@@ -580,11 +611,17 @@
           $('rb').disabled = hasR && !(G.phase === 'play' && G.rollback && G.layers.length); $('rbN').textContent = hasR ? '×' + G.rollback : '店面買';
           $('tu').disabled = hasT && !(G.phase === 'play' && G.tutor); $('tuN').textContent = !hasT ? '店面買' : G.tutor ? '×' + G.tutor : nextT ? `第 ${nextT} 層送` : '用完了';
           renderShopLv();
+          document.querySelectorAll('[data-mode]').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.mode === mode)); b.disabled = G.phase === 'play'; });
         }
+        document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => {
+          if (G.phase === 'play' || b.dataset.mode === mode) return;
+          mode = b.dataset.mode; try { localStorage.setItem(MODE_KEY, mode); } catch (e) { }
+          $('result').classList.add('hidden'); newGame(); syncUI();
+        }));
         $('rb').addEventListener('click', doRollback);
         $('tu').addEventListener('click', doTutor);
         $('again').addEventListener('click', () => { $('result').classList.add('hidden'); newGame(); syncUI(); $('stage').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' }); });
-        $('shareBtn').addEventListener('click', async () => { if (sheetFile) await SaveImg.save(sheetFile, { title: '丼步喱・絆 小吳鴨的履歷', text: `我在疊・巢疊了 ${G.layers.length} 層` }); });
+        $('shareBtn').addEventListener('click', async () => { if (sheetFile) await SaveImg.save(sheetFile, { title: '丼步喱・絆 小吳鴨的履歷', text: `我在疊・巢${G.endless ? '無盡模式' : ''}疊了 ${G.layers.length} 層` }); });
 
         // ---------- 店面面板 ----------
         const fmtM = n => '$' + Math.round(n).toLocaleString('en-US');
@@ -682,12 +719,15 @@
         const BEST_KEY = 'dongbuli-diechao-best';
         let sheetFile = null;
         function showResult() {
-          let best = null; try { best = JSON.parse(localStorage.getItem(BEST_KEY) || 'null'); } catch (e) { }
+          const bestKey = G.endless ? BEST_KEY + '-endless' : BEST_KEY;
+          let best = null; try { best = JSON.parse(localStorage.getItem(bestKey) || 'null'); } catch (e) { }
           const n = G.layers.length, isBest = !best || n > best.layers;
-          if (isBest && !MAINTENANCE) { try { localStorage.setItem(BEST_KEY, JSON.stringify({ layers: n, wage: G.wage, at: Date.now() })); } catch (e) { } }
+          if (isBest && !MAINTENANCE) { try { localStorage.setItem(bestKey, JSON.stringify({ layers: n, wage: G.wage, ms: G.playMs, at: Date.now() })); } catch (e) { } }
           $('score').textContent = '$' + G.wage.toLocaleString('en-US');
-          $('rTitle').textContent = n >= 56 ? '傳說' : n >= 11 ? `疊到 ${26 + Math.floor(n / 11)} 樓` : '還沒到 27 樓';
-          $('rStats').textContent = `疊 ${n} 層・「正」${G.perfect} 次・沒疊到 ${G.miss} 次`;
+          $('rTitle').textContent = (G.endless ? '無盡模式・' : '') + (n >= 56 ? '傳說' : n >= 11 ? `疊到 ${26 + Math.floor(n / 11)} 樓` : '還沒到 27 樓');
+          $('rStats').textContent = G.endless ? `疊 ${n} 層・「正」${G.perfect} 次・撐了 ${mss(G.playMs)}・${G.endWhy === 'idle' ? '發呆被抓' : G.endWhy === 'narrow' ? '書太窄了' : `掉了 ${G.drops} 本`}` : `疊 ${n} 層・「正」${G.perfect} 次・沒疊到 ${G.miss} 次`;
+          $('rankLink').href = G.endless ? 'rank.html#endless-stack' : 'rank.html#stack';
+          $('rankLink').textContent = G.endless ? '看無盡・榜疊巢部' : '看疊巢部疊最高';
           $('bill').innerHTML = G.bill.map(([k, v]) => `<li><span>${k}</span><span class="text-wabi-dark">$${v.toLocaleString('en-US')}</span></li>`).join('');
           if (MAINTENANCE) { $('payWallet').textContent = '監修中試玩，不發薪水'; $('syncNote').textContent = ''; }
           else {
@@ -713,7 +753,7 @@
           const st = loadStats(), n = G.layers.length, last = G.layers[n - 1];
           st.rounds++; st.paid += G.wage; st.best = Math.max(st.best, G.wage); st.layers = Math.max(st.layers, n);
           st.recent.unshift({
-            at: new Date().toISOString(), ms: G.playMs || G.round * 1000, len: G.round, total: G.wage, layers: n, perfect: G.perfect, miss: G.miss,
+            at: new Date().toISOString(), ms: G.playMs || G.round * 1000, len: G.endless ? Math.round((G.playMs || 0) / 1000) : G.round, mode: G.endless ? 'endless' : 'normal', total: G.wage, layers: n, perfect: G.perfect, miss: G.miss,
             rollback: G.rollbackMax - G.rollback, tutor: Object.keys(G.tutorGot).length - G.tutor, max_streak: G.maxStreak || 0, min_w: Math.round(G.minW),
             stage: n ? stageOf(n).name : '', last: last ? last.book.name : '', stuck: G.stuck ? G.stuck.name : '', login: !!(window.Line && Line.loggedIn),
           });
@@ -755,7 +795,7 @@
           const T = (s, x, y, o = {}) => { c.save(); c.font = `${o.w || 400} ${o.size || 12}px ${o.font || SERIF}`; c.fillStyle = o.color || '#4a4a4a'; c.textAlign = o.align || 'left'; c.textBaseline = o.base || 'alphabetic'; if (o.ls) c.letterSpacing = o.ls + 'px'; c.fillText(s, x, y); c.restore(); };
           c.fillStyle = '#fbf8f2'; c.fillRect(0, 0, Wd, Hd);
           T('履 歷 表', Wd / 2, 92, { size: 30, w: 300, color: '#2c2c2c', align: 'center', ls: 10 });
-          T('丼步喱・絆　打工・疊巢', Wd / 2, 118, { size: 11, font: SANS, color: '#8e8070', align: 'center', ls: 4 });
+          T(G.endless ? `丼步喱・絆　打工・疊巢・無盡模式・撐了 ${mss(G.playMs || 0)}` : '丼步喱・絆　打工・疊巢', Wd / 2, 118, { size: 11, font: SANS, color: '#8e8070', align: 'center', ls: G.endless ? 2 : 4 });
           c.fillStyle = '#eef0f4'; c.fillRect(392, 146, 110, 136); c.strokeStyle = '#b8b0a2'; c.lineWidth = 1; c.strokeRect(392, 146, 110, 136);
           c.save(); c.beginPath(); c.rect(392, 146, 110, 136); c.clip(); crow(c, 452, 226, 1.25, { face: G.layers.length >= 11 ? 'smug' : 'panic' }); c.restore();
           const N = G.layers.length;
@@ -771,7 +811,7 @@
           if (!N) T('一本都還沒疊好', 62, RT + 20, { size: 13, color: '#8e8070' });
           c.fillStyle = '#e4e1da'; c.fillRect(TX - TW / 2 - 4, TB, TW + 8, 4);
           G.layers.forEach((L, i) => { const ww = L.w / G.full * TW, x = TX - TW / 2 + (L.x - (W - G.full) / 2 - 8) / G.full * TW, y = TB - (i + 1) * LHh; c.fillStyle = L.book.c; c.fillRect(x, y, ww, Math.max(0.8, LHh - 0.5)); if (L.perfect) { c.fillStyle = 'rgba(232,205,132,.85)'; c.fillRect(x, y, ww, 0.6); } });
-          if (G.stuck) { c.fillStyle = '#b33a2f'; c.fillRect(TX - 10, TB - N * LHh - 5, 20, 1.2); T(`時間到・第 ${N + 1} 本`, TX, TB - N * LHh - 10, { size: 8.5, font: SANS, color: '#b33a2f', align: 'center' }); }
+          if (G.stuck || G.endWhy) { c.fillStyle = '#b33a2f'; c.fillRect(TX - 10, TB - N * LHh - 5, 20, 1.2); T(G.endless ? (G.endWhy === 'idle' ? '發呆被抓' : G.endWhy === 'narrow' ? '太窄了' : `掉了第 ${G.drops} 本`) : `時間到・第 ${N + 1} 本`, TX, TB - N * LHh - 10, { size: 8.5, font: SANS, color: '#b33a2f', align: 'center' }); }
           reached.forEach((s, i) => {
             const y = RT + i * RH, cy = y + 15, segTop = TB - s.b2 * LHh, segBot = TB - (s.a - 1) * LHh, bx = TX - TW / 2 - 10;
             c.strokeStyle = 'rgba(142,128,112,.6)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(bx + 4, segTop + 1); c.lineTo(bx, segTop + 1); c.lineTo(bx, segBot - 1); c.lineTo(bx + 4, segBot - 1); c.stroke();
@@ -788,7 +828,7 @@
           const yk = TB + 44, lastB = G.layers[N - 1];
           c.strokeStyle = '#4a4a4a'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(58, yk - 20); c.lineTo(Wd - 58, yk - 20); c.stroke();
           T('最高學歷', 62, yk + 4, { size: 11.5, font: SANS, color: '#8e8070', ls: 2 }); T(lastB ? lastB.book.name : '還沒入學', 150, yk + 4, { size: 15, color: '#2c2c2c' });
-          T('卡在', 62, yk + 34, { size: 11.5, font: SANS, color: '#8e8070', ls: 2 }); T(G.stuck ? `第 ${N + 1} 層・${G.stuck.name}` : '—', 150, yk + 34, { size: 15, color: '#2c2c2c' });
+          T('卡在', 62, yk + 34, { size: 11.5, font: SANS, color: '#8e8070', ls: 2 }); T(G.endless && G.endWhy === 'idle' ? `第 ${N + 1} 層・發呆被茱莉鴨抓到` : G.endless && G.endWhy === 'narrow' ? `第 ${N} 層・書太窄了，放不下` : G.stuck ? `第 ${N + 1} 層・${G.endless ? '掉了第 ' + G.drops + ' 本：' : ''}${G.stuck.name}` : '—', 150, yk + 34, { size: 15, color: '#2c2c2c' });
           T('自傳', 62, yk + 64, { size: 11.5, font: SANS, color: '#8e8070', ls: 2 }); T('我是鴨，同音，不要計較。', 150, yk + 64, { size: 13, color: '#4a4a4a' });
           stamp(c, 446, yk + 26, 58, '疊', -0.12);
           const d = new Date(); T(`${d.getFullYear()}．${d.getMonth() + 1}．${d.getDate()}　27F 窗外`, Wd - 62, yk + 92, { size: 10, font: SANS, color: '#b0a698', align: 'right', ls: 2 });

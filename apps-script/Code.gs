@@ -71,7 +71,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-18b';
+var BACKEND_VERSION = '2026-11-18c';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1 };
 
@@ -1432,12 +1432,23 @@ var BOARD_SOURCES = {
     var b = best[id];
     if (!b || served > b.n || (served === b.n && (angry < b.angry || (angry === b.angry && total > b.total)))) best[id] = { n: served, items: Number(r[10]) || 0, angry: angry, total: total };
   } },
-  // 疊巢：每個 line_id 疊最高的一場（F layers），一樣高比「正」多（G perfect）、再比賺多（E total）
-  Stacks: { cols: 7, merge: function (best, r) {
-    var id = String(r[2] || ''), layers = Number(r[5]) || 0, perfect = Number(r[6]) || 0, total = Number(r[4]) || 0;
-    if (!id || !layers) return;
+  // 疊巢：一般模式疊最高的一場（F layers，一樣高比「正」多 G perfect、再比賺多 E total）和一場最多賺多少（best）；
+  // 無盡模式（S mode = endless）另外記疊最高（far）和一場最多賺多少（money），上無盡・榜
+  // 2026-11-18b 那版記的是 { n, perfect, total }（還沒有無盡模式），讀到就當一般模式
+  Stacks: { cols: 19, merge: function (best, r) {
+    var id = String(r[2] || ''), layers = Number(r[5]) || 0, perfect = Number(r[6]) || 0, total = Number(r[4]) || 0, ms = Number(r[15]) || 0;
+    if (!id) return;
     var b = best[id];
-    if (!b || layers > b.n || (layers === b.n && (perfect > b.perfect || (perfect === b.perfect && total > b.total)))) best[id] = { n: layers, perfect: perfect, total: total };
+    if (b && b.normal === undefined) b = { normal: b.n ? { n: b.n, perfect: b.perfect, total: b.total } : null, best: b.total || null, far: null, money: null };
+    b = best[id] = b || { normal: null, best: null, far: null, money: null };
+    var better = function (o) { return !o || layers > o.n || (layers === o.n && (perfect > o.perfect || (perfect === o.perfect && total > o.total))); };
+    if (r[18] !== 'endless') {
+      if (b.best == null || total > b.best) b.best = total;
+      if (layers && better(b.normal)) b.normal = { n: layers, perfect: perfect, total: total };
+      return;
+    }
+    if (layers && better(b.far)) b.far = { n: layers, perfect: perfect, total: total, ms: ms };
+    if (!b.money || total > b.money.total) b.money = { total: total, n: layers, ms: ms };
   } },
   // 甜點店：每個 line_id 出餐最多的一輪（I served），同樣多比氣走少（J angry）、再比報廢少（K scrapped）、再比賺多（E total）
   Desserts: { cols: 11, merge: function (best, r) {
@@ -1583,8 +1594,10 @@ function buildBoard() {
     var zc = { n: Number(ze.times) || 0, money: Number(ze.total) || 0, best: ze.best ? Number(ze.best) : null, ms: 0, served: served[id] || null };
     var de = earned.dessert || {};  // 甜點店：最高的一輪是 earned 的 best；served 是出餐最多的一輪
     var ds = { n: Number(de.times) || 0, money: Number(de.total) || 0, best: de.best ? Number(de.best) : null, ms: 0, served: desserts[id] || null };
-    var ke = earned.stack || {};  // 疊巢：最高的一場是 earned 的 best；layers 是疊最高的一場（從 Stacks 算）
-    var sk = { n: Number(ke.times) || 0, money: Number(ke.total) || 0, best: ke.best ? Number(ke.best) : null, ms: 0, layers: stacks[id] || null };
+    var ke = earned.stack || {}, kb = stacks[id] || {};  // 疊巢：最高分、疊最高只算一般模式（從 Stacks 算）；無盡模式疊最高、一場最多放 endless
+    if (kb.normal === undefined && kb.n) kb = { normal: { n: kb.n, perfect: kb.perfect, total: kb.total }, best: kb.total };  // 2026-11-18b 的舊格式
+    var sk = { n: Number(ke.times) || 0, money: Number(ke.total) || 0, best: kb.best || null, ms: 0, layers: kb.normal || null,
+      endless: { far: kb.far || null, money: kb.money || null } };
     var se = earned.ship || {}, sb = ships[id] || {};  // 貨運：最高分、最長連撈只算一般模式；無盡模式航最遠、一趟最多放 endless
     var sh = { n: Number(se.times) || 0, money: Number(se.total) || 0, best: sb.normal || null, ms: 0, combo: sb.combo || null,
       endless: { money: sb.money || null, far: sb.far || null } };
@@ -3093,7 +3106,7 @@ function dessertLog(input) {
 // --- 疊・巢（diechao.html）：小吳鴨疊書，每一場的紀錄 ---
 // 跟甜點店紀錄一樣：公開、appendRow 不排隊、不寄信不回資料；session 對就記 line_id。
 var STACK_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'total', 'layers', 'perfect', 'miss', 'rollback', 'tutor',
-  'max_streak', 'min_w', 'stage', 'last', 'stuck', 'ms', 'len', 'login'];
+  'max_streak', 'min_w', 'stage', 'last', 'stuck', 'ms', 'len', 'login', 'mode'];
 
 function stacksSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -3117,7 +3130,7 @@ function stackRow(r, now, lineId, device) {
     now, at, lineId || '', device,
     washNum(r.total, 0, 100000), n(r.layers), n(r.perfect), n(r.miss), n(r.rollback), n(r.tutor),
     n(r.max_streak), washNum(r.min_w, 0, 400), washText(r.stage, 6), washText(r.last, 24), washText(r.stuck, 24),
-    washNum(r.ms, 0, 3600000), washNum(r.len, 0, 3600), !!r.login
+    washNum(r.ms, 0, 3600000), washNum(r.len, 0, 3600), !!r.login, r.mode === 'endless' ? 'endless' : 'normal'
   ];
 }
 

@@ -326,6 +326,8 @@
                 <div class="seg" role="group" aria-label="哪個部門">
                     <button type="button" data-edept="wifi" aria-pressed="true">蹭網部</button>
                     <button type="button" data-edept="ship" aria-pressed="false">貨運部</button>
+                    <!-- 疊・巢還在監修中：開放時拿掉 hidden -->
+                    <button type="button" data-edept="stack" aria-pressed="false" class="hidden">疊巢部</button>
                 </div>
                 <div class="seg mt-2" role="group" aria-label="比什麼">
                     <button type="button" data-emetric="far" aria-pressed="true">撐最久</button>
@@ -415,13 +417,14 @@
         try { const s = JSON.parse(sessionStorage.getItem('dongbuli-rank-tab') || '{}'); if (s.book) book = s.book; if (s.metric) metric = s.metric; if (s.dept) dept = s.dept; if (s.cat) cat = s.cat; if (s.edept) edept = s.edept; if (s.emetric) emetric = s.emetric; } catch (e) { }
         if (metric === 'alive') { book = 'endless'; edept = 'wifi'; emetric = 'far'; metric = 'best'; }  // 以前「撐最久」在打工・榜，現在搬到無盡・榜
         if (!['work', 'spend', 'endless'].includes(book)) book = 'work';
-        if (!['wifi', 'ship'].includes(edept)) edept = 'wifi';
+        if (!['wifi', 'ship', 'stack'].includes(edept)) edept = 'wifi';
         if (!['far', 'money'].includes(emetric)) emetric = 'far';
         if (location.hash === '#spend') book = 'spend'; else if (location.hash === '#work') book = 'work';
         else if (location.hash === '#endless') book = 'endless';
         else if (location.hash === '#endless-ship') { book = 'endless'; edept = 'ship'; }
-        else if (location.hash === '#dessert') { book = 'work'; dept = 'dessert'; metric = 'served'; }
-        else if (location.hash === '#stack') { book = 'work'; dept = 'stack'; metric = 'layers'; }  // 疊巢結果區的連結：直接看疊最高  // 甜點店結果區的連結：直接看甜點部出餐最多
+        else if (location.hash === '#endless-stack') { book = 'endless'; edept = 'stack'; }   // 疊巢無盡模式結果區的連結
+        else if (location.hash === '#dessert') { book = 'work'; dept = 'dessert'; metric = 'served'; }   // 甜點店結果區的連結：直接看甜點部出餐最多
+        else if (location.hash === '#stack') { book = 'work'; dept = 'stack'; metric = 'layers'; }   // 疊巢結果區的連結：直接看疊最高
         else if (location.hash === '#endless-wifi') { book = 'endless'; edept = 'wifi'; }
         const BOOKS = {
             work: { title: '打工・榜', tag: '誰在二十七樓最勤勞，<br>牆上寫得清清楚楚。', go: [['xitou.html', '去坐洗部'], ['fangwu.html', '去房務部'], ['caiyuan.html', '去菜園部'], ['cengwang.html', '去蹭網部'], ['zaocan.html', '去早餐部'], ['huoyun.html', '去貨運部'], ['tiandian.html', '去甜點部']], join: '打工' },
@@ -432,6 +435,7 @@
         const ENDLESS = {
             wifi: { far: '撐最久', money: '一輪省最多', notes: { far: '蹭網無盡模式：比一輪裡真的連著 28 樓多久（放開、發呆的時間不算）。', money: '蹭網無盡模式：比一輪省最多少錢。' } },
             ship: { far: '航最遠', money: '一趟賺最多', notes: { far: '貨運無盡模式：比一趟開多遠（海里），一樣遠比運費多。', money: '貨運無盡模式：比一趟賺最多少錢。' } },
+            stack: { far: '疊最高', money: '一場賺最多', notes: { far: '疊巢無盡模式：比一場疊幾層（掉三本收工），一樣高比「正」多。', money: '疊巢無盡模式：比一場賺最多少錢。' } },
         };
         const ZN = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
         const zn = z => z <= 10 ? ZN[z] : String(z);
@@ -443,6 +447,11 @@
             if (edept === 'wifi') {
                 if (emetric === 'far') { const a = d.alive; return a && a.ms ? { v: a.ms, main: clock(a.ms), sub: `連著 28 樓・撐了 ${mss(a.all)}・第 ${a.season} 季・省 ${fmt(a.total)}` } : null; }
                 const m = d.money; return m && m.total ? { v: m.total, main: fmt(m.total), sub: `撐了 ${mss(m.ms)}・第 ${m.season} 季` } : null;
+            }
+            if (edept === 'stack') {
+                const fl = n => `${26 + Math.floor(n / 11)}F`;
+                if (emetric === 'far') { const f = d.far; return f && f.n ? { v: f.n, tie: -(f.perfect * 1e7 + f.total), main: `${f.n} 層`, sub: `${fl(f.n)}・「正」${f.perfect} 次・撐了 ${mss(f.ms)}・${fmt(f.total)}` } : null; }
+                const m = d.money; return m && m.total ? { v: m.total, main: fmt(m.total), sub: `疊 ${m.n} 層・撐了 ${mss(m.ms)}` } : null;
             }
             if (emetric === 'far') { const f = d.far; return f && f.dist ? { v: f.dist, tie: -f.total, main: nmi(f.dist), sub: `第${zn(f.zone)}海域・${mss(f.ms)}・運費 ${fmt(f.total)}` } : null; }
             const m = d.money; return m && m.total ? { v: m.total, main: fmt(m.total), sub: `${nmi(m.dist)}・第${zn(m.zone)}海域・${mss(m.ms)}` } : null;
@@ -542,7 +551,7 @@
         }
         // ===== 自己剛破的紀錄馬上出現：這支手機的錢包比榜上新，就先把自己那格換成錢包的數字（只會變大） =====
         const EARN_SRC = { xitou: 'xitou', clean: 'clean', farm: 'farm', wifi: 'wifi', zaocan: 'zaocan', ship: 'ship', dessert: 'dessert', stack: 'stack' };
-        const MONEY_BEST = ['farm', 'zaocan', 'dessert', 'stack'];   // 這三個部門的「最高」就是一輪賺最多（錢包的 best）；坐洗、房務比分數，蹭網、貨運只算一般模式，手機算不出來
+        const MONEY_BEST = ['farm', 'zaocan', 'dessert'];   // 這三個部門的「最高」就是一輪賺最多（錢包的 best）；坐洗、房務比分數，蹭網、貨運只算一般模式，手機算不出來
         function withMe(list) {
             if (!list || !Line.loggedIn) return list;
             let w; try { w = Wallet.stats(); } catch (e) { return list; }
@@ -603,8 +612,8 @@
             const skOld = dept === 'stack' && players && players.length && players.every(p => !('stack' in p));
             $('boardNote').textContent = book === 'spend' ? CATS[cat].note
                 : book === 'endless' ? (endOld ? '後端還是舊版，看不到無盡・榜：要把 Code.gs 貼上去、重新部署（新版本）。' : ENDLESS[edept].notes[emetric] + '要用 LINE 登入，剛玩完最多一分鐘才會上榜。')
-                : shipOld ? '後端還是舊版，看不到貨運部：要把 Code.gs 貼上去、重新部署（新版本）。' : dsOld ? '後端還是舊版，看不到甜點部：要把 Code.gs 貼上去、重新部署（新版本）。' : skOld ? '後端還是舊版，看不到疊巢部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'layers' ? '疊・巢一場疊最高幾層，一樣高比「正」多、再比賺多。要用 LINE 登入，剛收工最多一分鐘才會上榜。' : metric === 'served' && dept === 'dessert' ? '甜點店一輪出餐最多幾盤，同樣多比誰氣走的少、再比報廢少。要用 LINE 登入，剛打烊最多一分鐘才會上榜。' : metric === 'combo' ? '貨運一般模式一趟裡最長的連撈（連續撈到好東西、中間沒撈到垃圾也沒撞到），一樣長比運費多。要用 LINE 登入，剛靠港最多一分鐘才會上榜。' : zcOld ? '後端還是舊版，看不到早餐部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'served' ? '早餐店一天出餐最多幾位客人，同樣多比誰氣走的少。要用 LINE 登入，剛打烊最多一分鐘才會上榜。' : metric === 'best'
-                ? (dept === 'farm' ? '菜園比的是一輪賣最多少錢（單位跟坐洗、房務不同，「全部」那頁不算菜園）。' : dept === 'zaocan' ? '早餐店比的是一天賺最多少錢（單位跟坐洗、房務不同，「全部」那頁不算早餐店）。' : dept === 'dessert' ? '甜點店比的是一輪賺最多少錢（單位跟坐洗、房務不同，「全部」那頁不算甜點店）。' : dept === 'stack' ? '疊・巢比的是一場賺最多少錢（單位跟坐洗、房務不同，「全部」那頁不算疊巢）。' : dept === 'ship' ? '貨運比的是一般模式一趟賺最多少錢（無盡模式在「無盡・榜」；單位跟坐洗、房務不同，「全部」那頁不算貨運）。' : dept === 'wifi' ? '蹭網比的是一般模式一輪省最多少錢（無盡模式在「無盡・榜」；單位跟坐洗、房務不同，「全部」那頁不算蹭網）。' : '一場的最高分（爽度、乾淨度都是滿分 100），同分比誰快。從洗完、打掃完存到雲端開始算。')
+                : shipOld ? '後端還是舊版，看不到貨運部：要把 Code.gs 貼上去、重新部署（新版本）。' : dsOld ? '後端還是舊版，看不到甜點部：要把 Code.gs 貼上去、重新部署（新版本）。' : skOld ? '後端還是舊版，看不到疊巢部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'layers' ? '疊・巢一般模式一場疊最高幾層（無盡模式在「無盡・榜」），一樣高比「正」多、再比賺多。要用 LINE 登入，剛收工最多一分鐘才會上榜。' : metric === 'served' && dept === 'dessert' ? '甜點店一輪出餐最多幾盤，同樣多比誰氣走的少、再比報廢少。要用 LINE 登入，剛打烊最多一分鐘才會上榜。' : metric === 'combo' ? '貨運一般模式一趟裡最長的連撈（連續撈到好東西、中間沒撈到垃圾也沒撞到），一樣長比運費多。要用 LINE 登入，剛靠港最多一分鐘才會上榜。' : zcOld ? '後端還是舊版，看不到早餐部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'served' ? '早餐店一天出餐最多幾位客人，同樣多比誰氣走的少。要用 LINE 登入，剛打烊最多一分鐘才會上榜。' : metric === 'best'
+                ? (dept === 'farm' ? '菜園比的是一輪賣最多少錢（單位跟坐洗、房務不同，「全部」那頁不算菜園）。' : dept === 'zaocan' ? '早餐店比的是一天賺最多少錢（單位跟坐洗、房務不同，「全部」那頁不算早餐店）。' : dept === 'dessert' ? '甜點店比的是一輪賺最多少錢（單位跟坐洗、房務不同，「全部」那頁不算甜點店）。' : dept === 'stack' ? '疊・巢比的是一般模式一場賺最多少錢（無盡模式在「無盡・榜」；單位跟坐洗、房務不同，「全部」那頁不算疊巢）。' : dept === 'ship' ? '貨運比的是一般模式一趟賺最多少錢（無盡模式在「無盡・榜」；單位跟坐洗、房務不同，「全部」那頁不算貨運）。' : dept === 'wifi' ? '蹭網比的是一般模式一輪省最多少錢（無盡模式在「無盡・榜」；單位跟坐洗、房務不同，「全部」那頁不算蹭網）。' : '一場的最高分（爽度、乾淨度都是滿分 100），同分比誰快。從洗完、打掃完存到雲端開始算。')
                 : metric === 'money' ? '打工賺的錢加起來（工資、小費、失物招領、加成都算）。' : '洗幾顆頭、打掃幾間、拔幾輪、蹭幾輪、開幾天早餐店、跑幾趟貨運、轉幾輪甜點店、疊幾場書。';
             const box = $('board');
             if (!players) {
