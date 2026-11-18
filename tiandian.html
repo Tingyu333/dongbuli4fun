@@ -505,7 +505,14 @@
 
         // ===== 6. 畫（店裡的東西是實物，顏色固定）=====
         const cv = $('cv'), ctx = cv.getContext('2d');
-        function fit() { const d = Math.min(window.devicePixelRatio || 1, 3), w = cv.clientWidth || 340; cv.width = Math.round(w * d); cv.height = Math.round(w * H / W * d); }
+        // 捲動時手機網址列伸縮會一直觸發 resize：大小沒變就不動（重設 cv.width 會清空畫布，沒開店時下一張要 34ms 後才畫，就閃）；變了馬上重畫
+        let fitReady = false;
+        function fit() {
+            const d = Math.min(window.devicePixelRatio || 1, 3), w = cv.clientWidth || 340, cw = Math.round(w * d), ch = Math.round(w * H / W * d);
+            if (cv.width === cw && cv.height === ch) return;
+            cv.width = cw; cv.height = ch;
+            if (fitReady) draw(performance.now());
+        }
         const rr = (c, x, y, w, h, r) => { c.beginPath(); c.roundRect(x, y, w, h, r); };
 
         // 商標：蘋果鴨（使用者給概念、照概念畫的正式版，在 assets/avatar.js 的 Avatar.appleDuck）
@@ -1053,6 +1060,7 @@
         window.addEventListener('resize', fit);
         if (!CLOSED) $('closed').remove();
         newRound();
+        fitReady = true;
         renderShopLv();
         // 畫布整個捲出畫面（收工看結果、往下看說明）就先停，捲回來再接著畫：手機才不會一直燙、一直耗電
         let loopOn = false, cvSeen = true;
