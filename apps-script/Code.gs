@@ -1293,6 +1293,7 @@ function washLog(input) {
 // 快取一筆最多 100KB，榜大了就切成好幾段存（BOARD_CHUNK 個字一段，中文一字最多 3 bytes 也放得下）。
 // 存 10 分鐘：排程哪天停了，過期後有人打開就當場算（跟以前一樣），不會壞。
 var BOARD_CACHE_KEY = 'board:v13', BOARD_CACHE_SEC = 600, BOARD_CHUNK = 30000;
+var BOARD_FRESH_GAP = 30000;   // 「刷新」全站 30 秒最多重算一次
 function boardCachePut(board) {
   var s = JSON.stringify(board), n = Math.ceil(s.length / BOARD_CHUNK), m = {};
   for (var i = 0; i < n; i++) m[BOARD_CACHE_KEY + ':' + i] = s.slice(i * BOARD_CHUNK, (i + 1) * BOARD_CHUNK);
@@ -1526,11 +1527,17 @@ function buildBoard() {
 }
 
 function leaderboard(input) {
-  var board = boardCacheGet();
-  if (!board) { board = buildBoard(); boardCachePut(board); }   // 排程沒算到（剛部署、排程停了）才當場算
+  // 排行榜頁按「刷新」（fresh）：當場重算存回快取。全站 30 秒最多一次，太頻繁就給快取裡的（refreshed: false）
+  var board = null, refreshed = false;
+  if (input && input.fresh) {
+    var cache = CacheService.getScriptCache(), last = Number(cache.get('boardFreshAt') || 0);
+    if (Date.now() - last >= BOARD_FRESH_GAP) { cache.put('boardFreshAt', String(Date.now()), 600); board = buildBoard(); boardCachePut(board); refreshed = true; }
+  }
+  if (!board) board = boardCacheGet();
+  if (!board) { board = buildBoard(); boardCachePut(board); refreshed = true; }   // 排程沒算到（剛部署、排程停了）才當場算
   var me = input && input.session ? sessionUser(input.session) : null;
   return {
-    result: 'success', at: board.at,
+    result: 'success', at: board.at, refreshed: refreshed,
     players: board.players.map(function (p) {
       return { name: p.name, picture: p.picture, avatar: p.avatar || '', xitou: p.xitou, clean: p.clean, farm: p.farm, wifi: p.wifi, zaocan: p.zaocan, ship: p.ship, dessert: p.dessert, spend: p.spend, me: !!me && p.id === me };
     })
