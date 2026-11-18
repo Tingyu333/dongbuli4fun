@@ -67,7 +67,11 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 以前每個 POST 都排同一個隊，所有人一個一個來，洗頭、刮刮樂的人一多後台就擠不進來。
 // 現在只有這些整個排隊；錢包同步、LINE 登入只在寫 Players 那一下排隊（withLock）；
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
-var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockMine: 1, stockTrade: 1, stockCancel: 1, sportBet: 1 };
+// 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
+// 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
+var BACKEND_VERSION = '2026-11-18a';
+
+var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1 };
 
 function withLock(fn) {
   var lock = LockService.getScriptLock();
@@ -77,6 +81,23 @@ function withLock(fn) {
   } finally {
     lock.releaseLock();
   }
+}
+
+// 打工、功德紀錄的限流和擋重送：每支手機每種紀錄只佔一筆快取（這小時送了幾次＋最近送過的 80 輪時間）。
+// 以前一輪一筆、一小時一筆，人一多會把快取（總共最多 1,000 筆）塞滿，把通行證、排行榜的快取擠掉（2026-11-18 改）
+function logGate(kind, device, hour) {
+  var cache = CacheService.getScriptCache(), key = 'gate:' + kind + ':' + device, d = null;
+  try { d = JSON.parse(cache.get(key) || 'null'); } catch (e) { }
+  if (!d || !Array.isArray(d.t)) d = { h: hour, n: 0, t: [] };
+  if (d.h !== hour) { d.h = hour; d.n = 0; }
+  var seen = {};
+  d.t.forEach(function (x) { seen[x] = 1; });
+  return {
+    n: d.n,
+    count: function () { d.n++; this.save(); },
+    seen: function (t) { if (seen[t]) return true; seen[t] = 1; d.t.push(t); return false; },
+    save: function () { d.t = d.t.slice(-80); try { cache.put(key, JSON.stringify(d), 6 * 3600); } catch (e) { } }
+  };
 }
 
 function doPost(e) {
@@ -124,9 +145,12 @@ function route(type, input) {
     if (type === 'sportMine') return sportMine(input);
     if (type === 'sportBet') return sportBet(input);
 
+    if (type === 'ping') return { result: 'success', version: BACKEND_VERSION };   // 公開：只回版本
+
     // 以下只有後台能用，要帶登入拿到的通行證
-    if (type === 'updateStatus' || type === 'adminList' || type === 'bonusCreate' || type === 'bonusList' || type === 'bonusClose') {
+    if (type === 'updateStatus' || type === 'adminList' || type === 'bonusCreate' || type === 'bonusList' || type === 'bonusClose' || type === 'adminHealth') {
       if (!isAdmin(input.token)) return { result: 'unauthorized' };
+      if (type === 'adminHealth') return adminHealth();
       if (type === 'updateStatus') return updateStatus(input);
       if (type === 'bonusCreate') return bonusCreate(input);
       if (type === 'bonusList') return bonusList();
@@ -172,6 +196,22 @@ function isAdmin(token) {
 }
 
 // 後台的完整名單：含電話、Email、已經領票的人
+// 後台「後端・況」：版本、排程上次／下次、每張分頁幾列、試算表用了幾 %、今天寄了幾封信
+function adminHealth() {
+  var props = PropertiesService.getScriptProperties(), ss = SpreadsheetApp.getActiveSpreadsheet(), total = 0, sheets = [];
+  ss.getSheets().forEach(function (sh) { total += sh.getMaxRows() * sh.getMaxColumns(); sheets.push({ name: sh.getName(), rows: Math.max(0, sh.getLastRow() - 1) }); });
+  var crons = Object.keys(CRON_DAILY).map(function (fn) {
+    var next = Number(props.getProperty('cron:' + fn) || 0);
+    return { fn: fn, next: next ? new Date(next).toISOString() : '', last: props.getProperty('cronLast:' + fn) || '' };
+  });
+  var triggers = [];
+  try { triggers = ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); }); } catch (e) { }
+  var today = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd');
+  var mails = ['owner', 'guest'].map(function (k) { var v = String(props.getProperty('mailCount-' + k) || '').split('|'); return v[0] === today ? Number(v[1]) || 0 : 0; });
+  return { result: 'success', version: BACKEND_VERSION, crons: crons, triggers: triggers, sheets: sheets, cells: total, cellLimit: CELL_LIMIT,
+    mails: { owner: mails[0], guest: mails[1], ownerMax: MAIL_LIMITS.owner, guestMax: MAIL_LIMITS.guest } };
+}
+
 function adminList() {
   var tickets = readTickets();
   var bookings = readBookings(bookingsSheet()).map(function (b) {
@@ -293,10 +333,23 @@ function nextStatuses(b) {
   return [];
 }
 
+// 用電話查預約、取消的次數上限（2026-11-18：以前沒有限制，知道別人電話就能一直查、一直試）
+// 同一支電話每小時查 10 次、取消 5 次；同一筆預約電話打錯每小時 5 次；全站每小時查 300 次
+var LOOKUP_PER_PHONE = 10, LOOKUP_ALL = 300, CANCEL_PER_PHONE = 5, CANCEL_FAILS_PER_BOOKING = 5;
+function overHourLimit(key, max) {
+  var cache = CacheService.getScriptCache(), k = 'lim:' + key + ':' + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var n = Number(cache.get(k) || 0);
+  if (n >= max) return true;
+  cache.put(k, String(n + 1), 3600);
+  return false;
+}
+
 // 朋友用訂房時留的電話查自己的預約（只回日期和狀態，不含別人的資料）
 function lookupBookings(input) {
   var phone = normalizePhone(input.phone);
   if (phone.length < 8) return { result: 'error', error: '電話號碼不完整' };
+  if (overHourLimit('lookupAll', LOOKUP_ALL)) return { result: 'error', error: '這小時查的人太多了，晚點再來' };
+  if (overHourLimit('lookup:' + phone, LOOKUP_PER_PHONE)) return { result: 'error', error: '這支電話這小時查太多次了，晚點再查' };
   var tickets = readTickets();
 
   var mine = readBookings(bookingsSheet())
@@ -310,9 +363,15 @@ function lookupBookings(input) {
 
 // 朋友自己取消：電話要對得上，已經入住或住過的不能取消
 function cancelBooking(input) {
+  var phone = normalizePhone(input.phone), id = String(input.id || '').slice(0, 40);
+  if (overHourLimit('cancel:' + phone, CANCEL_PER_PHONE)) return { result: 'error', error: '這支電話這小時取消太多次了，晚點再試' };
+  var cache = CacheService.getScriptCache(), failKey = 'lim:cancelFail:' + id + ':' + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var fails = Number(cache.get(failKey) || 0);
+  if (fails >= CANCEL_FAILS_PER_BOOKING) return { result: 'error', error: '試太多次了，晚點再來' };
   var sheet = bookingsSheet();
-  var b = readBookings(sheet).filter(function (x) { return x.id === input.id; })[0];
-  if (!b || normalizePhone(b.phone) !== normalizePhone(input.phone)) {
+  var b = readBookings(sheet).filter(function (x) { return x.id === id; })[0];
+  if (!b || normalizePhone(b.phone) !== phone) {
+    cache.put(failKey, String(fails + 1), 3600);
     return { result: 'error', error: '找不到這筆預約' };
   }
   if (b.status === 'cancelled') return { result: 'success' };
@@ -537,10 +596,12 @@ function claimTicket(input) {
   var tickets = readTickets();
   var seats = seatsOf(b, tickets);
   var mine = seats.filter(function (s) { return s.name === name; })[0];
-  if (mine) { // 已經領過，同一張還給他；這次有留 Email 就補上
+  if (mine) { // 已經領過，同一張還給他；之前沒留 Email、這次有留才補上。已經有的不蓋掉（2026-11-18：以前用同一個名字再領一次就能把別人的 Email 換掉）
     var t = tickets.filter(function (x) { return x.booking_id === b.id && x.seat === mine.seat && x.name === name; })[0];
-    if (email && t) ticketsSheet().getRange(t.row, 5).setValue(email);
-    return ticketView(b, tickets, mine.seat);
+    var view = ticketView(b, tickets, mine.seat);
+    if (email && t && !t.email) ticketsSheet().getRange(t.row, 5).setValue(email);
+    else if (email && t && t.email && t.email !== email) view.emailKept = true;
+    return view;
   }
 
   var free = seats.filter(function (s) { return !s.name; })[0];
@@ -806,7 +867,16 @@ function bonusClaim(input) {
   if (claims.length >= b.max) return { result: 'empty' };
 
   bonusClaimsSheet().appendRow([new Date(), code, device]);
-  return { result: 'success', amount: b.amount, note: b.note, left: b.max - claims.length - 1 };
+  var out = { result: 'success', amount: b.amount, note: b.note, left: b.max - claims.length - 1 };
+  // 登入了：同一次排隊直接把錢加進帳號（2026-11-18；以前手機領到再送一次錢包同步，大家同時領會排兩次隊、後面的人「後端在忙」）
+  var lineId = input.session ? sessionUser(input.session) : null, p = lineId ? findPlayer(lineId) : null;
+  if (p) {
+    p.money = Math.min(WALLET_MAX, p.money + b.amount);
+    p.earned = addEarned(p.earned, { bonus: { times: 1, total: b.amount, best: b.amount } });
+    writeWallet(p);
+    out.credited = true; out.wallet = walletView(p);
+  }
+  return out;
 }
 
 // --- LINE 登入、小遊戲錢包 ---
@@ -1257,21 +1327,18 @@ function washLog(input) {
 
   var cache = CacheService.getScriptCache();
   var hour = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
-  var devKey = 'washLog:' + device + ':' + hour, allKey = 'washRows:' + hour;
-  var devCount = Number(cache.get(devKey) || 0), allCount = Number(cache.get(allKey) || 0);
+  var allKey = 'washRows' + ':' + hour, gate = logGate('wash', device, hour);
+  var devCount = gate.n, allCount = Number(cache.get(allKey) || 0);
   if (devCount >= WASH_LOGS_PER_HOUR) return { result: 'error', error: '這小時送太多次了' };
   if (allCount + recs.length > WASH_ROWS_PER_HOUR) return { result: 'error', error: '這小時全站洗太多頭了' };
-  cache.put(devKey, String(devCount + 1), 3600);
+  gate.count();
 
   var lineId = input.session ? sessionUser(input.session) : null;  // 通行證不對就當沒登入，照樣存
   var now = new Date(), rows = [], skipped = 0;
   recs.forEach(function (r) {
     var row = washRow(r, now, lineId, device);
     if (!row) { skipped++; return; }
-    // 同一支手機同一個時間的同一顆頭，重送不要存兩次
-    var dupKey = 'wash:' + device + ':' + row[1].getTime();
-    if (cache.get(dupKey)) { skipped++; return; }
-    cache.put(dupKey, '1', 6 * 3600);
+    if (gate.seen(row[1].getTime())) { skipped++; return; }   // 同一支手機重送的同一輪，不要存兩次
     rows.push(row);
   });
   if (rows.length) {
@@ -1280,6 +1347,7 @@ function washLog(input) {
     rows.forEach(function (row) { sheet.appendRow(row); });
     cache.put(allKey, String(allCount + rows.length), 3600);
   }
+  gate.save();
   return { result: 'success', saved: rows.length, skipped: skipped };
 }
 
@@ -2232,15 +2300,22 @@ function stockReply(p, nowMs, extra) {
   return out;
 }
 
-// 我的持股（要登入、排隊）。通知看過就清掉
+// 我的持股（要登入）。只是讀不排隊（2026-11-18：以前整個排隊，21:00 晚報一出大家同時開會塞住）；
+// 要補價格、寫晚報 stockEnsure 自己排隊；有通知要清（看過就清掉）才排隊，排進去重讀一次再清
 function stockMine(input) {
   var g = stockGuard(input);
   if (g.error) return g.error;
   var now = stockNow().getTime();
-  stockEnsure(now, true);
-  var p = stockLoad(findPlayer(g.lineId));
-  var out = stockReply(p, now);
-  if (p.stock.notes.length) { p.stock.notes = []; stockSave(p); }
+  stockEnsure(now, false);
+  var p = findPlayer(g.lineId);
+  if (!p) return { result: 'unauthorized' };
+  p = stockLoad(p);
+  var out = stockReply(p, now), seen = p.stock.notes.length;
+  if (seen) withLock(function () {
+    var q = stockLoad(findPlayer(g.lineId));
+    q.stock.notes = q.stock.notes.slice(seen);   // 排隊時剛好有新的通知（成交、取消）留著，下次再給
+    stockSave(q);
+  });
   return out;
 }
 
@@ -2743,20 +2818,18 @@ function farmLog(input) {
 
   var cache = CacheService.getScriptCache();
   var hour = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
-  var devKey = 'farmLog:' + device + ':' + hour, allKey = 'farmRows:' + hour;
-  var devCount = Number(cache.get(devKey) || 0), allCount = Number(cache.get(allKey) || 0);
+  var allKey = 'farmRows' + ':' + hour, gate = logGate('farm', device, hour);
+  var devCount = gate.n, allCount = Number(cache.get(allKey) || 0);
   if (devCount >= FARM_LOGS_PER_HOUR) return { result: 'error', error: '這小時送太多次了' };
   if (allCount + recs.length > FARM_ROWS_PER_HOUR) return { result: 'error', error: '這小時全站拔太多輪了' };
-  cache.put(devKey, String(devCount + 1), 3600);
+  gate.count();
 
   var lineId = input.session ? sessionUser(input.session) : null;
   var now = new Date(), rows = [], skipped = 0;
   recs.forEach(function (r) {
     var row = farmRow(r, now, lineId, device);
     if (!row) { skipped++; return; }
-    var dupKey = 'farm:' + device + ':' + row[1].getTime();
-    if (cache.get(dupKey)) { skipped++; return; }
-    cache.put(dupKey, '1', 6 * 3600);
+    if (gate.seen(row[1].getTime())) { skipped++; return; }   // 同一支手機重送的同一輪，不要存兩次
     rows.push(row);
   });
   if (rows.length) {
@@ -2764,6 +2837,7 @@ function farmLog(input) {
     rows.forEach(function (row) { sheet.appendRow(row); });
     cache.put(allKey, String(allCount + rows.length), 3600);
   }
+  gate.save();
   return { result: 'success', saved: rows.length, skipped: skipped };
 }
 
@@ -2820,20 +2894,18 @@ function wifiLog(input) {
 
   var cache = CacheService.getScriptCache();
   var hour = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
-  var devKey = 'wifiLog:' + device + ':' + hour, allKey = 'wifiRows:' + hour;
-  var devCount = Number(cache.get(devKey) || 0), allCount = Number(cache.get(allKey) || 0);
+  var allKey = 'wifiRows' + ':' + hour, gate = logGate('wifi', device, hour);
+  var devCount = gate.n, allCount = Number(cache.get(allKey) || 0);
   if (devCount >= WIFI_LOGS_PER_HOUR) return { result: 'error', error: '這小時送太多次了' };
   if (allCount + recs.length > WIFI_ROWS_PER_HOUR) return { result: 'error', error: '這小時全站蹭太多輪了' };
-  cache.put(devKey, String(devCount + 1), 3600);
+  gate.count();
 
   var lineId = input.session ? sessionUser(input.session) : null;
   var now = new Date(), rows = [], skipped = 0;
   recs.forEach(function (r) {
     var row = wifiRow(r, now, lineId, device);
     if (!row) { skipped++; return; }
-    var dupKey = 'wifi:' + device + ':' + row[1].getTime();
-    if (cache.get(dupKey)) { skipped++; return; }
-    cache.put(dupKey, '1', 6 * 3600);
+    if (gate.seen(row[1].getTime())) { skipped++; return; }   // 同一支手機重送的同一輪，不要存兩次
     rows.push(row);
   });
   if (rows.length) {
@@ -2841,6 +2913,7 @@ function wifiLog(input) {
     rows.forEach(function (row) { sheet.appendRow(row); });
     cache.put(allKey, String(allCount + rows.length), 3600);
   }
+  gate.save();
   return { result: 'success', saved: rows.length, skipped: skipped };
 }
 
@@ -2908,20 +2981,18 @@ function zaocanLog(input) {
 
   var cache = CacheService.getScriptCache();
   var hour = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
-  var devKey = 'zaocanLog:' + device + ':' + hour, allKey = 'zaocanRows:' + hour;
-  var devCount = Number(cache.get(devKey) || 0), allCount = Number(cache.get(allKey) || 0);
+  var allKey = 'zaocanRows' + ':' + hour, gate = logGate('zaocan', device, hour);
+  var devCount = gate.n, allCount = Number(cache.get(allKey) || 0);
   if (devCount >= ZAOCAN_LOGS_PER_HOUR) return { result: 'error', error: '這小時送太多次了' };
   if (allCount + recs.length > ZAOCAN_ROWS_PER_HOUR) return { result: 'error', error: '這小時全站開太多次店了' };
-  cache.put(devKey, String(devCount + 1), 3600);
+  gate.count();
 
   var lineId = input.session ? sessionUser(input.session) : null;
   var now = new Date(), rows = [], skipped = 0;
   recs.forEach(function (r) {
     var row = zaocanRow(r, now, lineId, device);
     if (!row) { skipped++; return; }
-    var dupKey = 'zaocan:' + device + ':' + row[1].getTime();
-    if (cache.get(dupKey)) { skipped++; return; }
-    cache.put(dupKey, '1', 6 * 3600);
+    if (gate.seen(row[1].getTime())) { skipped++; return; }   // 同一支手機重送的同一輪，不要存兩次
     rows.push(row);
   });
   if (rows.length) {
@@ -2929,6 +3000,7 @@ function zaocanLog(input) {
     rows.forEach(function (row) { sheet.appendRow(row); });
     cache.put(allKey, String(allCount + rows.length), 3600);
   }
+  gate.save();
   return { result: 'success', saved: rows.length, skipped: skipped };
 }
 
@@ -2984,19 +3056,17 @@ function dessertLog(input) {
   if (!recs.length) return { result: 'success', saved: 0 };
   var cache = CacheService.getScriptCache();
   var hour = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
-  var devKey = 'dessertLog:' + device + ':' + hour, allKey = 'dessertRows:' + hour;
-  var devCount = Number(cache.get(devKey) || 0), allCount = Number(cache.get(allKey) || 0);
+  var allKey = 'dessertRows' + ':' + hour, gate = logGate('dessert', device, hour);
+  var devCount = gate.n, allCount = Number(cache.get(allKey) || 0);
   if (devCount >= DESSERT_LOGS_PER_HOUR) return { result: 'error', error: '這小時送太多次了' };
   if (allCount + recs.length > DESSERT_ROWS_PER_HOUR) return { result: 'error', error: '這小時全站開太多次店了' };
-  cache.put(devKey, String(devCount + 1), 3600);
+  gate.count();
   var lineId = input.session ? sessionUser(input.session) : null;
   var now = new Date(), rows = [], skipped = 0;
   recs.forEach(function (r) {
     var row = dessertRow(r, now, lineId, device);
     if (!row) { skipped++; return; }
-    var dupKey = 'dessert:' + device + ':' + row[1].getTime();
-    if (cache.get(dupKey)) { skipped++; return; }
-    cache.put(dupKey, '1', 6 * 3600);
+    if (gate.seen(row[1].getTime())) { skipped++; return; }   // 同一支手機重送的同一輪，不要存兩次
     rows.push(row);
   });
   if (rows.length) {
@@ -3004,6 +3074,7 @@ function dessertLog(input) {
     rows.forEach(function (row) { sheet.appendRow(row); });
     cache.put(allKey, String(allCount + rows.length), 3600);
   }
+  gate.save();
   return { result: 'success', saved: rows.length, skipped: skipped };
 }
 
@@ -3063,20 +3134,18 @@ function shipLog(input) {
 
   var cache = CacheService.getScriptCache();
   var hour = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
-  var devKey = 'shipLog:' + device + ':' + hour, allKey = 'shipRows:' + hour;
-  var devCount = Number(cache.get(devKey) || 0), allCount = Number(cache.get(allKey) || 0);
+  var allKey = 'shipRows' + ':' + hour, gate = logGate('ship', device, hour);
+  var devCount = gate.n, allCount = Number(cache.get(allKey) || 0);
   if (devCount >= SHIP_LOGS_PER_HOUR) return { result: 'error', error: '這小時送太多次了' };
   if (allCount + recs.length > SHIP_ROWS_PER_HOUR) return { result: 'error', error: '這小時全站出航太多次了' };
-  cache.put(devKey, String(devCount + 1), 3600);
+  gate.count();
 
   var lineId = input.session ? sessionUser(input.session) : null;
   var now = new Date(), rows = [], skipped = 0;
   recs.forEach(function (r) {
     var row = shipRow(r, now, lineId, device);
     if (!row) { skipped++; return; }
-    var dupKey = 'ship:' + device + ':' + row[1].getTime();
-    if (cache.get(dupKey)) { skipped++; return; }
-    cache.put(dupKey, '1', 6 * 3600);
+    if (gate.seen(row[1].getTime())) { skipped++; return; }   // 同一支手機重送的同一輪，不要存兩次
     rows.push(row);
   });
   if (rows.length) {
@@ -3084,6 +3153,7 @@ function shipLog(input) {
     rows.forEach(function (row) { sheet.appendRow(row); });
     cache.put(allKey, String(allCount + rows.length), 3600);
   }
+  gate.save();
   return { result: 'success', saved: rows.length, skipped: skipped };
 }
 
@@ -3140,20 +3210,18 @@ function cleanLog(input) {
 
   var cache = CacheService.getScriptCache();
   var hour = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
-  var devKey = 'cleanLog:' + device + ':' + hour, allKey = 'cleanRows:' + hour;
-  var devCount = Number(cache.get(devKey) || 0), allCount = Number(cache.get(allKey) || 0);
+  var allKey = 'cleanRows' + ':' + hour, gate = logGate('clean', device, hour);
+  var devCount = gate.n, allCount = Number(cache.get(allKey) || 0);
   if (devCount >= CLEAN_LOGS_PER_HOUR) return { result: 'error', error: '這小時送太多次了' };
   if (allCount + recs.length > CLEAN_ROWS_PER_HOUR) return { result: 'error', error: '這小時全站打掃太多間了' };
-  cache.put(devKey, String(devCount + 1), 3600);
+  gate.count();
 
   var lineId = input.session ? sessionUser(input.session) : null;
   var now = new Date(), rows = [], skipped = 0;
   recs.forEach(function (r) {
     var row = cleanRow(r, now, lineId, device);
     if (!row) { skipped++; return; }
-    var dupKey = 'clean:' + device + ':' + row[1].getTime();
-    if (cache.get(dupKey)) { skipped++; return; }
-    cache.put(dupKey, '1', 6 * 3600);
+    if (gate.seen(row[1].getTime())) { skipped++; return; }   // 同一支手機重送的同一輪，不要存兩次
     rows.push(row);
   });
   if (rows.length) {
@@ -3161,6 +3229,7 @@ function cleanLog(input) {
     rows.forEach(function (row) { sheet.appendRow(row); });
     cache.put(allKey, String(allCount + rows.length), 3600);
   }
+  gate.save();
   return { result: 'success', saved: rows.length, skipped: skipped };
 }
 
@@ -3190,11 +3259,11 @@ function gongdeLog(input) {
 
   var cache = CacheService.getScriptCache();
   var hour = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
-  var devKey = 'gongdeLog:' + device + ':' + hour, allKey = 'gongdeRows:' + hour;
-  var devCount = Number(cache.get(devKey) || 0), allCount = Number(cache.get(allKey) || 0);
+  var allKey = 'gongdeRows' + ':' + hour, gate = logGate('gongde', device, hour);
+  var devCount = gate.n, allCount = Number(cache.get(allKey) || 0);
   if (devCount >= GONGDE_LOGS_PER_HOUR) return { result: 'error', error: '這小時送太多次了' };
   if (allCount + recs.length > GONGDE_ROWS_PER_HOUR) return { result: 'error', error: '這小時全站捐太多了' };
-  cache.put(devKey, String(devCount + 1), 3600);
+  gate.count();
 
   var lineId = input.session ? sessionUser(input.session) : null;
   var now = new Date(), saved = 0, skipped = 0, sheet = null;
@@ -3203,15 +3272,14 @@ function gongdeLog(input) {
     var kind = r && (r.kind === 'donate' || r.kind === 'lamp') ? r.kind : null;
     var amount = cleanMoney(r && r.amount, 1, WALLET_MAX);
     if (!kind || amount === null || isNaN(at.getTime()) || at.getTime() > now.getTime() + 86400000 || at.getTime() < now.getTime() - 90 * 86400000) { skipped++; return; }
-    var dupKey = 'gongde:' + device + ':' + at.getTime();
-    if (cache.get(dupKey)) { skipped++; return; }
-    cache.put(dupKey, '1', 6 * 3600);
+    if (gate.seen(at.getTime())) { skipped++; return; }   // 同一支手機重送的同一輪，不要存兩次
     sheet = sheet || gongdeSheet();
     sheet.appendRow([now, at, lineId || '', device, kind, amount, washNum(r.oil, 0, WALLET_MAX), washNum(r.total, 0, WALLET_MAX),
       washText(r.tier, 6), washText(r.wish, 30), kind === 'lamp' ? washKey(r.lamp || 'guangming') : '']);
     saved++;
   });
   if (saved) cache.put(allKey, String(allCount + saved), 3600);
+  gate.save();
   return { result: 'success', saved: saved, skipped: skipped };
 }
 
@@ -3225,7 +3293,7 @@ function gongdeLog(input) {
 //   cronBackup  每天 03:00：整份試算表匯出成 .xlsx 存到雲端硬碟「丼步喱備份」資料夾，只留最近 90 份（舊的丟垃圾桶，30 天內還救得回來）
 // 每日排程用「指定時間跑一次」的觸發器，跑的時候先排好明天的（Google 每日觸發器只能準到前後 15 分鐘）。
 // Google 不保證準到秒，通常晚幾十秒到幾分鐘。
-var CRON_DAILY = { cronNews: [20, 58], cronSport: [0, 0], cronBackup: [3, 0] };
+var CRON_DAILY = { cronNews: [20, 58], cronSport: [0, 0], cronBackup: [3, 0], cronMonthly: [4, 0, 1] };   // [時, 分, 每月幾號（沒寫就是每天）]
 var BACKUP_FOLDER = '丼步喱備份', BACKUP_PREFIX = '丼步喱備份-', BACKUP_KEEP = 90;
 
 function setupTriggers() {
@@ -3247,9 +3315,14 @@ function cronStatus() {
   });
   Logger.log(lines.join('\n'));
 }
-// 下一個台灣時間 h:m（已經過了或一分鐘內就排明天）
-function cronNextAt(h, m, nowMs) {
+// 下一個台灣時間 h:m（已經過了或一分鐘內就排明天）；有 dom 就是每月 dom 號
+function cronNextAt(h, m, nowMs, dom) {
   var tpe = new Date(nowMs + 8 * 3600000);
+  if (dom) {
+    var y = tpe.getUTCFullYear(), mo = tpe.getUTCMonth(), t2 = Date.UTC(y, mo, dom, h, m) - 8 * 3600000;
+    while (t2 <= nowMs + 60000) { mo++; t2 = Date.UTC(y, mo, dom, h, m) - 8 * 3600000; }
+    return t2;
+  }
   var t = Date.UTC(tpe.getUTCFullYear(), tpe.getUTCMonth(), tpe.getUTCDate(), h, m) - 8 * 3600000;
   while (t <= nowMs + 60000) t += 86400000;
   return t;
@@ -3257,7 +3330,7 @@ function cronNextAt(h, m, nowMs) {
 // 把 fn 的觸發器換成下一次的時間，記在指令碼屬性 cron:fn
 function cronSchedule(fn) {
   ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === fn) ScriptApp.deleteTrigger(t); });
-  var at = cronNextAt(CRON_DAILY[fn][0], CRON_DAILY[fn][1], Date.now());
+  var at = cronNextAt(CRON_DAILY[fn][0], CRON_DAILY[fn][1], Date.now(), CRON_DAILY[fn][2]);
   ScriptApp.newTrigger(fn).timeBased().at(new Date(at)).create();
   PropertiesService.getScriptProperties().setProperty('cron:' + fn, String(at));
 }
@@ -3290,6 +3363,66 @@ function cronSport() {
   cronRun('cronSport', function () { sportSync(Date.now(), true, false); return { msg: PropertiesService.getScriptProperties().getProperty('sportError') || 'OK' }; });
 }
 function cronBackup() { cronRun('cronBackup', backupSheet); }
+// 每月 1 號 04:00：運動舊注單搬家、舊通行證清掉。打工紀錄不封存（使用者 2026-11-18：資料量還不大，要的話在編輯器手動跑 archiveLogs）
+function cronMonthly() {
+  cronRun('cronMonthly', function () { var a = archiveBets(), b = pruneSessions(); return { msg: '運動注單搬走 ' + a + ' 張、通行證清掉 ' + b + ' 張' }; });
+}
+
+// 開獎（或退錢）超過 BETS_KEEP_DAYS 天的注單，搬到「丼步喱注單封存」這份試算表（只有一份，id 記在指令碼屬性 BETS_ARCHIVE_ID，被刪了會重建）。
+// 還沒開獎的一張都不動。運動頁只顯示最近 7 天開獎的，玩家看不出差別；Bets 不會一直變長，快取才放得下
+var BETS_KEEP_DAYS = 60, SESSIONS_KEEP_DAYS = 90;
+function isDate(v) { return Object.prototype.toString.call(v) === '[object Date]' && !isNaN(v.getTime()); }
+function betsArchiveSheet() {
+  var props = PropertiesService.getScriptProperties(), id = props.getProperty('BETS_ARCHIVE_ID'), ss = null;
+  if (id) { try { ss = SpreadsheetApp.openById(id); } catch (e) { ss = null; } }
+  if (!ss) { ss = SpreadsheetApp.create('丼步喱注單封存'); props.setProperty('BETS_ARCHIVE_ID', ss.getId()); }
+  var sheet = ss.getSheetByName('Bets') || ss.insertSheet('Bets');
+  if (sheet.getLastRow() < 1) sheet.appendRow(SPORT_BET_HEADERS);
+  return sheet;
+}
+// 把 rows 裡要刪的列（第幾列，從 1 算）一段一段從下往上刪：新加在最下面的列不會被刪到
+function deleteRowList(sheet, list) {
+  list = list.slice().sort(function (a, b) { return b - a; });
+  for (var i = 0; i < list.length;) {
+    var end = list[i], start = end;
+    while (i + 1 < list.length && list[i + 1] === start - 1) { i++; start--; }
+    sheet.deleteRows(start, end - start + 1);
+    i++;
+  }
+}
+function archiveBets(days) {
+  days = typeof days === 'number' && days > 0 ? days : BETS_KEEP_DAYS;
+  var cutoff = Date.now() - days * 864e5;
+  var r = withLock(function () {
+    var sheet = sportBetsSheet(), rows = sheet.getDataRange().getValues(), move = [], rowNos = [];
+    for (var i = 1; i < rows.length; i++) {
+      var st = String(rows[i][7] || 'open'), settled = isDate(rows[i][9]) ? rows[i][9].getTime() : 0;
+      if (st !== 'open' && settled && settled < cutoff) { move.push(rows[i]); rowNos.push(i + 1); }
+    }
+    if (!move.length) return 0;
+    var arc = betsArchiveSheet(), at = arc.getLastRow() + 1;
+    arc.getRange(at, 1, move.length, SPORT_BET_HEADERS.length).setNumberFormat('@');   // 「3:1」不要被當成時間
+    arc.getRange(at, 1, move.length, SPORT_BET_HEADERS.length).setValues(move.map(function (x) { return x.slice(0, SPORT_BET_HEADERS.length).map(function (v) { return isDate(v) ? Utilities.formatDate(v, 'Asia/Taipei', 'yyyy-MM-dd HH:mm:ss') : v; }); }));
+    deleteRowList(sheet, rowNos);
+    sportBump();
+    return move.length;
+  });
+  if (r && r.result === 'error') throw new Error(r.error);
+  return r;
+}
+// 超過 SESSIONS_KEEP_DAYS 天沒用的通行證刪掉（那支手機下次要重新登入；錢都在後端，不會不見）
+function pruneSessions(days) {
+  days = typeof days === 'number' && days > 0 ? days : SESSIONS_KEEP_DAYS;
+  var cutoff = Date.now() - days * 864e5, sheet = sessionsSheet(), n = sheet.getLastRow() - 1;
+  if (n < 1) return 0;
+  var rows = sheet.getRange(2, 1, n, 4).getValues(), del = [];
+  rows.forEach(function (r, i) {
+    var used = isDate(r[3]) ? r[3].getTime() : isDate(r[0]) ? r[0].getTime() : 0;
+    if (used && used < cutoff) del.push(i + 2);
+  });
+  if (del.length) deleteRowList(sheet, del);
+  return del.length;
+}
 
 function backupFolder() {
   var props = PropertiesService.getScriptProperties(), id = props.getProperty('BACKUP_FOLDER_ID');
@@ -3313,5 +3446,68 @@ function backupSheet() {
   files.sort(function (a, b) { return b.getDateCreated() - a.getDateCreated(); });
   files.slice(BACKUP_KEEP).forEach(function (f) { f.setTrashed(true); });
   return { msg: name + '（' + Math.round(res.getBlob().getBytes().length / 1024) + ' KB，資料夾裡 ' + Math.min(files.length, BACKUP_KEEP) + ' 份）' };
+}
+
+
+// ===== 真人工資對帳表（2026-11-18）=====
+// 在編輯器選 econReport 按「執行」：讀七個打工的紀錄分頁，算真人「一分鐘賺多少」，寫進「對帳」分頁（每次整頁重寫）。
+// 用中位數（不被一兩個特別快、特別慢的人拉偏）；一輪不到 10 秒的（沒玩完、亂按）不算。之後調工資照這張，不再只看機器人模擬。
+// econReport(30) 只算最近 30 天。只讀紀錄，不改任何東西，不用部署。
+var ECON_SOURCES = [
+  { sheet: 'Washes', name: '坐洗・泡', dur: 'ms', fallback: 0 },
+  { sheet: 'Cleans', name: '房務・淨', dur: 'ms', fallback: 0 },
+  { sheet: 'Farms', name: '菜園・拔', dur: 'len', fallback: 60 },
+  { sheet: 'Wifis', name: '蹭・網', dur: 'ms', fallback: 0, mode: true },
+  { sheet: 'Zaocans', name: '早餐・煎', dur: 'len', fallback: 75 },
+  { sheet: 'Ships', name: '貨運・航', dur: 'len', fallback: 60, mode: true },
+  { sheet: 'Desserts', name: '甜點・轉', dur: 'len', fallback: 75 }
+];
+function econMedian(a) { if (!a.length) return 0; a = a.slice().sort(function (x, y) { return x - y; }); var m = Math.floor(a.length / 2); return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }
+function econPct(a, p) { if (!a.length) return 0; a = a.slice().sort(function (x, y) { return x - y; }); return a[Math.min(a.length - 1, Math.floor(p * a.length))]; }
+function econReport(days) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet(), since = typeof days === 'number' && days > 0 ? Date.now() - days * 864e5 : 0, out = [], log = [];
+  ECON_SOURCES.forEach(function (src) {
+    var sheet = ss.getSheetByName(src.sheet);
+    if (!sheet || sheet.getLastRow() < 2) return;
+    var rows = sheet.getDataRange().getValues(), head = rows[0].map(String), col = function (n) { return head.indexOf(n); };
+    var cTotal = col('total'), cDur = col(src.dur), cMs = col('ms'), cShop = col('shop'), cMode = col('mode'), cLine = col('line_id'), cDev = col('device'), cAt = col('at');
+    var groups = {};
+    for (var i = 1; i < rows.length; i++) {
+      var r = rows[i], total = Number(r[cTotal]);
+      if (!isFinite(total)) continue;
+      var at = r[cAt] instanceof Date ? r[cAt].getTime() : 0;
+      if (since && at && at < since) continue;
+      var sec = src.dur === 'len' ? Number(r[cDur]) || 0 : (Number(r[cDur]) || 0) / 1000;
+      if (!sec && cMs >= 0 && src.dur === 'len') sec = (Number(r[cMs]) || 0) / 1000;
+      if (!sec) sec = src.fallback;
+      if (sec < 10) continue;
+      var lv = 0;
+      if (cShop >= 0) { try { var sh = JSON.parse(r[cShop] || '{}') || {}; Object.keys(sh).forEach(function (k) { lv += Number(sh[k]) || 0; }); } catch (e) { } }
+      var mode = src.mode && cMode >= 0 && String(r[cMode]) === 'endless' ? '無盡' : '一般';
+      var tier = cShop < 0 ? '（沒記）' : lv === 0 ? '沒升級' : lv <= 3 ? '升 1～3 級' : lv <= 7 ? '升 4～7 級' : '升 8 級以上';
+      var key = mode + '|' + tier, g = groups[key] || (groups[key] = { mode: mode, tier: tier, lv: lv, perMin: [], perRound: [], secs: [], who: {}, first: at, last: at });
+      g.perMin.push(total / sec * 60); g.perRound.push(total); g.secs.push(sec);
+      g.who[String(cLine >= 0 && r[cLine] || (cDev >= 0 ? r[cDev] : '') || '?')] = 1;
+      if (at) { g.first = g.first ? Math.min(g.first, at) : at; g.last = Math.max(g.last || 0, at); }
+    }
+    var order = ['沒升級', '升 1～3 級', '升 4～7 級', '升 8 級以上', '（沒記）'];
+    Object.keys(groups).map(function (k) { return groups[k]; })
+      .sort(function (a, b) { return a.mode === b.mode ? order.indexOf(a.tier) - order.indexOf(b.tier) : a.mode === '一般' ? -1 : 1; })
+      .forEach(function (g) {
+        var day = function (t) { return t ? Utilities.formatDate(new Date(t), 'Asia/Taipei', 'yyyy-MM-dd') : ''; };
+        out.push([src.name, src.mode ? g.mode : '', g.tier, g.perRound.length, Object.keys(g.who).length,
+          Math.round(econMedian(g.perMin)), Math.round(econMedian(g.perRound)), Math.round(econPct(g.perRound, 0.9)), Math.round(econMedian(g.secs)), day(g.first) + '～' + day(g.last)]);
+        log.push(src.name + (src.mode ? ' ' + g.mode : '') + ' ' + g.tier + '：' + g.perRound.length + ' 輪，每分鐘中位數 $' + Math.round(econMedian(g.perMin)));
+      });
+  });
+  var sheet = ss.getSheetByName('對帳') || ss.insertSheet('對帳');
+  sheet.clearContents();
+  var head = ['打工', '模式', '升級程度', '輪數', '幾個人', '每分鐘（中位數）', '每輪（中位數）', '每輪（前 10% 的門檻）', '一輪幾秒（中位數）', '期間'];
+  sheet.getRange(1, 1, 1, head.length).setValues([head]);
+  if (out.length) sheet.getRange(2, 1, out.length, head.length).setValues(out);
+  sheet.getRange(out.length + 3, 1, 1, 1).setValue('算的時間：' + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd HH:mm') + (since ? '（最近 ' + days + ' 天）' : '（全部）') + '。輪數少於 20 的那列參考就好。');
+  sheet.setFrozenRows(1);
+  Logger.log(log.join('\n') || '沒有紀錄');
+  return out;
 }
 

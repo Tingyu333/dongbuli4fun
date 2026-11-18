@@ -55,3 +55,15 @@
 
 每日的三個用「指定時間跑一次」的觸發器（`at()`）：跑的時候 `cronRun()` 先 `cronSchedule()` 排好明天的（記在指令碼屬性 `cron:函式名`），再做事，出錯也不會斷。不用 `atHour().nearMinute()` 是因為 Google 的每日觸發器只準到前後 15 分鐘。`at()` 也不保證準到秒，通常晚幾十秒到幾分鐘。觸發器每天總執行時間上限 90 分鐘（免費帳號），`cronBoard` 一天 288 次、每次幾秒，大約 10～20 分鐘。測試：`/home/claude/tw/cron_test.js`。
 
+## 2026-11-18 第二批（版本 `2026-11-18a`）
+
+- **後端版本**：`BACKEND_VERSION`（Code.gs 最上面）；公開 `{ type: 'ping' }` → `{ result, version }`（只回版本）。後台 `{ type: 'adminHealth', token }` → `{ version, crons: [{ fn, next, last }], triggers: [函式名], sheets: [{ name, rows }], cells, cellLimit, mails: { owner, guest, ownerMax, guestMax } }`，`admin_dashboard.html` 最下面「後端・況」顯示，跟頁內 `BACKEND_EXPECT` 比對。
+- **紀錄的限流和擋重送**（`logGate(kind, device, hour)`）：七個打工和功德紀錄，每支手機每種紀錄只佔一筆快取 `gate:<種類>:<裝置>`（`{ h: 這小時, n: 送了幾次, t: 最近 80 輪的時間 }`，6 小時）。以前一輪一筆 `wash:<裝置>:<時間>`、一小時一筆 `washLog:<裝置>:<小時>`，人多會把 CacheService（總共最多 1,000 筆）塞滿、把通行證和排行榜的快取擠掉。全站每小時的計數（`washRows:<小時>` 等）照舊。
+- **紅包只排一次隊**：`bonusClaim` 帶 `session`（登入了）就在同一次排隊直接把錢加進 `Players`（`earned.bonus`），回傳多 `credited: true`、`wallet`；網頁 `Wallet.adopt(wallet)`、不再 `Wallet.earn`，所以不用再送一次錢包同步。沒登入、通行證不對的照舊（手機自己加）。
+- **看持股不排隊**：`stockMine` 拿出 `LOCKED_TYPES`。`stockEnsure(now, false)`（要補價格、寫晚報才自己排隊）；有通知要清才排隊，排進去重讀一次、只清掉看過的那幾則（`slice(seen)`）。
+- **真人工資對帳表**：編輯器執行 `econReport()`（或 `econReport(30)` 只算最近 30 天），讀 Washes／Cleans／Farms／Wifis／Zaocans／Ships／Desserts，照「打工 × 模式（蹭網、貨運分一般／無盡）× 升級程度（shop 等級加總：沒升級、1～3、4～7、8 以上；坐洗、房務沒記）」分組，算輪數、幾個人、每分鐘（中位數）、每輪（中位數、前 10% 門檻）、一輪幾秒，整頁重寫「對帳」分頁。一輪幾秒：有 `len` 用 `len`，沒有用 `ms`，都沒有用預設（菜園 60、早餐甜點 75、貨運 60）；不到 10 秒的不算。只讀不改，不用部署。
+- **每月 1 號 04:00 `cronMonthly`**（`CRON_DAILY` 第三個數字是每月幾號，`cronNextAt(h, m, now, dom)`）：`archiveBets()` 把開獎或退錢超過 `BETS_KEEP_DAYS` 60 天的注單搬到「丼步喱注單封存」（只有一份，id 在指令碼屬性 `BETS_ARCHIVE_ID`，被刪會重建；搬過去的格子設成文字，「3:1」不會變時間），還沒開獎的不動，排隊做、做完 `sportBump()`；`pruneSessions()` 把 `last_used`（沒有就 `created`）超過 `SESSIONS_KEEP_DAYS` 90 天的通行證刪掉（那支手機要重新登入）。刪列用 `deleteRowList()` 一段一段從下往上刪，剛好新加在最下面的列不會被刪到。**打工紀錄不自動封存**（使用者 2026-11-18：資料量還不大），要的話手動 `archiveLogs()`。
+- **查預約、取消的次數上限**（`overHourLimit(key, max)`，快取 `lim:<key>:<小時>`）：同一支電話每小時查 `LOOKUP_PER_PHONE` 10 次、全站 `LOOKUP_ALL` 300 次；同一支電話每小時取消 `CANCEL_PER_PHONE` 5 次；同一筆預約電話打錯每小時 `CANCEL_FAILS_PER_BOOKING` 5 次（超過連對的也先擋）。
+- **領票不覆蓋 Email**：`claim` 同一個名字再領，之前沒留 Email 才補上；已經有的不換，回傳多 `emailKept: true`（票夾跳紙條「這張票之前已經留過 Email，沒有換掉」）。
+- 測試：`/home/claude/tw/econ_test.js`、`bonus_credit_test.js`、`hb_login_e2e.js`、`monthly_test.js`、`health_test.js`、`guard_test.js`、`cron_test.js`。
+

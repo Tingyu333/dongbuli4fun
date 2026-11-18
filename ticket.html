@@ -471,7 +471,8 @@
                 saveMine({ seat: result.seat, name: seatName });
                 render(result, true);
                 if (navigator.vibrate) navigator.vibrate(30);
-                showToast(result.seat === 1 ? '歡迎回來，訂房人' : `領到第${NUMERALS[result.seat - 1]}張，二十七樓見`);
+                showToast(result.emailKept ? '票還你了。這張票之前已經留過 Email，沒有換掉'
+                    : result.seat === 1 ? '歡迎回來，訂房人' : `領到第${NUMERALS[result.seat - 1]}張，二十七樓見`);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } catch (err) {
                 console.error('領票失敗:', err);

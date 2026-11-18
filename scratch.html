@@ -1946,8 +1946,9 @@
 
         // ===== 5. 錢包、架上 =====
         let shown = S.money;
-        function setMoney(to, delta, source) {
-            if (delta > 0) Wallet.earn(delta, source || 'scratch');
+        function setMoney(to, delta, source, credited) {
+            if (credited) { }   // 後端已經加進帳號了（紅包）：錢包照後端的，這裡只放動畫
+            else if (delta > 0) Wallet.earn(delta, source || 'scratch');
             else if (delta < 0) Wallet.spend(-delta);
             S.money = to = Wallet.money;
             save();
@@ -2704,12 +2705,14 @@
             hbBusy = true;
             showToast('正在拆紅包……');
             try {
-                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'bonusClaim', code, device: deviceId() }) });
+                let session = ''; try { session = window.Line && Line.loggedIn ? localStorage.getItem('dongbuli-session') || '' : ''; } catch (e) { }
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'bonusClaim', code, device: deviceId(), session: session || undefined }) });
                 const r = await res.json();
                 if (r.result === 'success') {
                     hbRemember(code);
                     document.querySelectorAll('.toast').forEach(t => t.remove());  // 「正在拆紅包」不要蓋在紅包上
-                    setMoney(S.money + r.amount, r.amount, 'bonus');
+                    if (r.credited && r.wallet) Wallet.adopt(r.wallet);   // 登入了：後端同一次就加進帳號，不用再同步一次
+                    setMoney(S.money + r.amount, r.amount, 'bonus', !!(r.credited && r.wallet));
                     sfx.cash();
                     bigWin(r.amount, '主人發紅包', r.note ? `「${r.note}」` : '主人說：不用謝。');
                     $('hbForm').classList.add('hidden');

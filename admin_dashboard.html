@@ -230,6 +230,12 @@
             <div id="bonusList" class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3"></div>
         </section>
 
+        <!-- 後端・況：部署的是不是新版、排程有沒有在跑、試算表用了多少（2026-11-18） -->
+        <section id="healthSection" class="mt-12 md:mt-16">
+            <h3 class="text-lg md:text-xl font-light text-wabi-dark mb-2 tracking-widest pl-4 border-l-2 border-wabi-shu">後端・況</h3>
+            <div id="health" class="bg-white border border-stone-100 rounded-sm p-4 md:p-6 font-sans text-xs tracking-wider text-stone-500 leading-relaxed">讀取中…</div>
+        </section>
+
     </main>
 
     <script>
@@ -721,8 +727,37 @@
             }
         });
 
+        // ===== 後端・況 =====
+        const BACKEND_EXPECT = '2026-11-18a';   // 跟 Code.gs 的 BACKEND_VERSION 一起換
+        const CRON_NAME = { cronNews: '20:58 晚報', cronSport: '00:00 運動派彩', cronBackup: '03:00 備份', cronMonthly: '每月 1 號 04:00 清舊注單、舊登入' };
+        async function loadHealth() {
+            const box = document.getElementById('health');
+            let r;
+            try { r = await callApi({ type: 'adminHealth', token: adminToken }); } catch (e) { box.textContent = '讀不到後端。'; return; }
+            if (r.result === 'unauthorized') return;
+            if (r.result !== 'success') {
+                box.innerHTML = `<p class="text-wabi-shu">後端還是舊版（沒有版本號）：把 <code>apps-script/Code.gs</code> 貼到 Apps Script，部署新版本。</p>`;
+                return;
+            }
+            const fresh = r.version === BACKEND_EXPECT;
+            const pct = r.cellLimit ? Math.round(r.cells / r.cellLimit * 1000) / 10 : 0;
+            const t = iso => { if (!iso) return '沒排'; const d = new Date(iso); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+            const noTrig = !(r.triggers || []).length;
+            box.innerHTML = `
+                <p class="${fresh ? 'text-wabi-dark' : 'text-wabi-shu'}">後端版本 ${esc(r.version)}${fresh ? '・是最新的' : `・網頁要的是 ${BACKEND_EXPECT}，要重新部署新版本`}</p>
+                ${noTrig ? '<p class="mt-2 text-wabi-shu">排程還沒設：在 Apps Script 編輯器執行一次 <code>setupTriggers</code>。</p>' : ''}
+                <ul class="mt-3 space-y-1">
+                    <li>排行榜每 5 分鐘：${(r.triggers || []).includes('cronBoard') ? '有在跑' : '沒有'}</li>
+                    ${(r.crons || []).map(c => `<li>${esc(CRON_NAME[c.fn] || c.fn)}：下次 ${t(c.next)}・上次 ${esc(c.last || '還沒跑過')}</li>`).join('')}
+                </ul>
+                <p class="mt-3">試算表用了 ${pct}%（${Number(r.cells).toLocaleString()} 格，上限 ${Number(r.cellLimit).toLocaleString()}）・今天寄信：給自己 ${r.mails.owner}/${r.mails.ownerMax}、給旅人 ${r.mails.guest}/${r.mails.guestMax}</p>
+                <details class="mt-2"><summary class="cursor-pointer text-stone-400">每張分頁幾列</summary>
+                    <p class="mt-2 text-stone-400">${(r.sheets || []).map(s => `${esc(s.name)} ${s.rows}`).join('・')}</p></details>`;
+        }
+
         fetchData();
         loadBonuses();
+        loadHealth();
 
     </script>
 </body>
