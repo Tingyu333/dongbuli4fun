@@ -249,8 +249,9 @@
 
         // ---------- 狀態 ----------
         const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
-        let dpr = 1;
-        function fit() { dpr = Math.min(3, window.devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; }
+        let dpr = 1, fitReady = false;
+        // 手機捲動時網址列伸縮會一直觸發 resize：畫布大小沒變就不要重設（重設會把畫布清空，下一張還沒畫好就會閃）
+        function fit() { const d = Math.min(3, window.devicePixelRatio || 1); if (d === dpr && cv.width === W * d && cv.height === H * d) return; dpr = d; cv.width = W * dpr; cv.height = H * dpr; if (fitReady) draw(); }
         fit();
         const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
         let G = null, cam = 0, last = performance.now(), joke = '點一下開工';
@@ -629,9 +630,13 @@
         if (!CLOSED) $('closed').remove();
         if (!MAINTENANCE) setTimeout(uploadRounds, 2500);
         if (!MAINTENANCE) $('rankLink').classList.remove('hidden');
-        newGame(); syncUI();
-        if ('IntersectionObserver' in window) new IntersectionObserver(es => { cvSeen = es[es.length - 1].isIntersecting; if (cvSeen) startLoop(); }).observe(cv);
-        (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(startLoop);
+        newGame(); syncUI(); fitReady = true;
+        // 監修中：畫一張靜止的就好，不要在模糊蓋板後面一直動（手機捲動時會閃）
+        if (CLOSED) (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => { step(0); draw(); });
+        else {
+            if ('IntersectionObserver' in window) new IntersectionObserver(es => { cvSeen = es[es.length - 1].isIntersecting; if (cvSeen) startLoop(); }).observe(cv);
+            (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(startLoop);
+        }
         window.__dc = { get G() { return G; }, tap, endGame };
         })();
 
