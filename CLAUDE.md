@@ -58,7 +58,7 @@
 | `zaocan.html` | 打工：早餐・煎，店面升級 | `docs/pages/zaocan.md` |
 | `huoyun.html` | 打工：貨運・航（開船撈蘿蔔），無盡模式、船廠 | `docs/pages/huoyun.md` |
 | `tiandian.html` | 打工：甜點・轉（蘋果鴨甜點店，轉盤），店面升級 | `docs/pages/tiandian.md` |
-| `diechao.html` | 打工：疊・巢（小吳鴨疊精裝書，60 秒），**監修中** | `docs/pages/diechao.md` |
+| `diechao.html` | 打工：疊・巢（小吳鴨疊精裝書，60 秒、無盡模式），店面 | `docs/pages/diechao.md` |
 | `rank.html` | 排行・榜：打工・榜、花錢・榜、無盡・榜 | `docs/pages/rank.md` |
 | `baoxian.html` | 保險・存：儲蓄險（後端算） | `docs/pages/baoxian.md` |
 | `gushi.html` | 股市・炒：十檔（含三檔妖股）、晚報、掛單 | `docs/pages/gushi.md` |

@@ -260,7 +260,7 @@
         // 疊・巢：小吳鴨的全端疊疊樂（2026-11-18 第一版，監修中）
         (function () {
         // 監修中：true 會蓋住畫布、不能開工；網址加 ?preview 可以先試玩（試玩不發薪水、不記錄）
-        const MAINTENANCE = true;
+        const MAINTENANCE = false;   // 2026-11-18 晚上開放（使用者說可以上線了）；改回 true 就又蓋起來，?preview 可以試玩
         const PREVIEW = /[?&]preview\b/.test(location.search);
         const CLOSED = MAINTENANCE && !PREVIEW;
         const { crow, layer, stamp } = Crow;

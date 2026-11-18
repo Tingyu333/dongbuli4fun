@@ -81,15 +81,15 @@
         .book button[aria-pressed="true"] { color: rgb(var(--wabi-dark)); border-bottom-color: rgb(var(--wabi-shu)); }
 
         /* 部門：七個一排擠不下，排成兩排（一排四個） */
-        .seg.is-small { display: grid; grid-template-columns: repeat(4, 1fr); }
+        .seg.is-small { display: grid; grid-template-columns: repeat(3, 1fr); }   /* 九個部門（含全部）：三個一排 */
         .seg.is-small button {
             min-height: 36px;
             font-size: 0.72rem;
             letter-spacing: 0.05em;
             border-left: 0;
         }
-        .seg.is-small button:not(:nth-child(4n+1)) { border-left: 1px solid rgb(var(--wabi-sub)); }
-        .seg.is-small button:nth-child(n+5) { border-top: 1px solid rgb(var(--wabi-sub)); }
+        .seg.is-small button:not(:nth-child(3n+1)) { border-left: 1px solid rgb(var(--wabi-sub)); }
+        .seg.is-small button:nth-child(n+4) { border-top: 1px solid rgb(var(--wabi-sub)); }
 
         /* 一列一個人 */
         .row {
@@ -318,16 +318,14 @@
                 <button type="button" data-dept="zaocan" aria-pressed="false">早餐部</button>
                 <button type="button" data-dept="ship" aria-pressed="false">貨運部</button>
                 <button type="button" data-dept="dessert" aria-pressed="false">甜點部</button>
-                <!-- 疊・巢還在監修中：開放時拿掉 hidden -->
-                <button type="button" data-dept="stack" aria-pressed="false" class="hidden">疊巢部</button>
+                <button type="button" data-dept="stack" aria-pressed="false">疊巢部</button>
             </div>
             </div>
             <div id="endCtl" class="hidden">
                 <div class="seg" role="group" aria-label="哪個部門">
                     <button type="button" data-edept="wifi" aria-pressed="true">蹭網部</button>
                     <button type="button" data-edept="ship" aria-pressed="false">貨運部</button>
-                    <!-- 疊・巢還在監修中：開放時拿掉 hidden -->
-                    <button type="button" data-edept="stack" aria-pressed="false" class="hidden">疊巢部</button>
+                    <button type="button" data-edept="stack" aria-pressed="false">疊巢部</button>
                 </div>
                 <div class="seg mt-2" role="group" aria-label="比什麼">
                     <button type="button" data-emetric="far" aria-pressed="true">撐最久</button>
@@ -427,9 +425,9 @@
         else if (location.hash === '#stack') { book = 'work'; dept = 'stack'; metric = 'layers'; }   // 疊巢結果區的連結：直接看疊最高
         else if (location.hash === '#endless-wifi') { book = 'endless'; edept = 'wifi'; }
         const BOOKS = {
-            work: { title: '打工・榜', tag: '誰在二十七樓最勤勞，<br>牆上寫得清清楚楚。', go: [['xitou.html', '去坐洗部'], ['fangwu.html', '去房務部'], ['caiyuan.html', '去菜園部'], ['cengwang.html', '去蹭網部'], ['zaocan.html', '去早餐部'], ['huoyun.html', '去貨運部'], ['tiandian.html', '去甜點部']], join: '打工' },
+            work: { title: '打工・榜', tag: '誰在二十七樓最勤勞，<br>牆上寫得清清楚楚。', go: [['xitou.html', '去坐洗部'], ['fangwu.html', '去房務部'], ['caiyuan.html', '去菜園部'], ['cengwang.html', '去蹭網部'], ['zaocan.html', '去早餐部'], ['huoyun.html', '去貨運部'], ['tiandian.html', '去甜點部'], ['diechao.html', '去疊巢部']], join: '打工' },
             spend: { title: '花錢・榜', tag: '錢不是賺來的，<br>是花出去才算數。', go: [['scratch.html', '去彩券行'], ['gongde.html', '去功德箱'], ['zaocan.html', '去早餐店']], join: '花錢' },
-            endless: { title: '無盡・榜', tag: '沒有時間限制，<br>撐得越久，名字寫得越大。', go: [['cengwang.html', '去蹭網部'], ['huoyun.html', '去貨運部']], join: '玩無盡模式' },
+            endless: { title: '無盡・榜', tag: '沒有時間限制，<br>撐得越久，名字寫得越大。', go: [['cengwang.html', '去蹭網部'], ['huoyun.html', '去貨運部'], ['diechao.html', '去疊巢部']], join: '玩無盡模式' },
         };
         // 無盡・榜：每個部門兩個分頁怎麼叫、小字寫什麼
         const ENDLESS = {
