@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>排行・榜 | 丼步喱</title>
     <!-- 分享到 LINE、FB 時的預覽（標題、介紹、圖片）。圖片要用完整網址 -->
-    <meta name="description" content="二十七樓排行榜：打工・榜（誰賺最多、分數最高、最勤勞）和花錢・榜（誰最會花）。">
+    <meta name="description" content="二十七樓排行榜：打工・榜（誰賺最多、分數最高、最勤勞）、花錢・榜（誰最會花）和無盡・榜（誰最撐得住）。">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="丼步喱・絆">
     <meta property="og:title" content="排行・榜｜丼步喱">
-    <meta property="og:description" content="二十七樓排行榜：打工・榜（誰賺最多、分數最高、最勤勞）和花錢・榜（誰最會花）。">
+    <meta property="og:description" content="二十七樓排行榜：打工・榜（誰賺最多、分數最高、最勤勞）、花錢・榜（誰最會花）和無盡・榜（誰最撐得住）。">
     <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="1200">
@@ -407,6 +407,7 @@
         const SCORE = { xitou: '爽度', clean: '乾淨度' };
 
         const badPic = new Set();  // 載不到的大頭貼，下次直接用字
+        let stale = false;         // 現在畫的是上次存在手機裡的榜，後端還沒回來
         let players = null, at = '', book = 'work', metric = 'money', dept = 'all', cat = 'all', edept = 'wifi', emetric = 'far', loading = false, failed = '';
         try { const s = JSON.parse(sessionStorage.getItem('dongbuli-rank-tab') || '{}'); if (s.book) book = s.book; if (s.metric) metric = s.metric; if (s.dept) dept = s.dept; if (s.cat) cat = s.cat; if (s.edept) edept = s.edept; if (s.emetric) emetric = s.emetric; } catch (e) { }
         if (metric === 'alive') { book = 'endless'; edept = 'wifi'; emetric = 'far'; metric = 'best'; }  // 以前「撐最久」在打工・榜，現在搬到無盡・榜
@@ -515,6 +516,52 @@
         }
 
         const clock = ms => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)} 分 ${String(s % 60).padStart(2, '0')} 秒`; };
+        // ===== 打開就有榜：上次讀到的榜存在這支手機（兩天內才用），先畫，後端回來再換 =====
+        const LAST_KEY = 'dongbuli-rank-last';
+        const sessionNow = () => { try { return localStorage.getItem('dongbuli-session') || ''; } catch (e) { return ''; } };
+        function saveLast(list, when) {
+            try { localStorage.setItem(LAST_KEY, JSON.stringify({ t: Date.now(), at: when, who: sessionNow().slice(0, 8), players: list })); } catch (e) { }
+        }
+        function loadLast() {
+            try {
+                const c = JSON.parse(localStorage.getItem(LAST_KEY) || 'null');
+                if (!c || !Array.isArray(c.players) || Date.now() - c.t > 2 * 86400000) return;
+                const same = !!c.who && c.who === sessionNow().slice(0, 8);   // 換了帳號（或登出了），「我」那格不算數
+                players = withMe(c.players.map(p => same ? p : { ...p, me: false })); at = c.at || ''; stale = true;
+            } catch (e) { }
+        }
+        // ===== 自己剛破的紀錄馬上出現：這支手機的錢包比榜上新，就先把自己那格換成錢包的數字（只會變大） =====
+        const EARN_SRC = { xitou: 'xitou', clean: 'clean', farm: 'farm', wifi: 'wifi', zaocan: 'zaocan', ship: 'ship', dessert: 'dessert' };
+        const MONEY_BEST = ['farm', 'zaocan', 'dessert'];   // 這三個部門的「最高」就是一輪賺最多（錢包的 best）；坐洗、房務比分數，蹭網、貨運只算一般模式，手機算不出來
+        function withMe(list) {
+            if (!list || !Line.loggedIn) return list;
+            let w; try { w = Wallet.stats(); } catch (e) { return list; }
+            const earned = w.earned || {}, num = v => Math.max(0, Math.round(Number(v) || 0));
+            let me = list.find(p => p.me), add = false;
+            if (!me) {
+                if (!Object.values(EARN_SRC).some(k => earned[k] && earned[k].times) && !num(w.spent)) return list;   // 什麼都還沒做：不用加
+                let nick = {}; try { nick = JSON.parse(localStorage.getItem('dongbuli-me') || 'null') || {}; } catch (e) { }
+                const pf = Line.profile || {};
+                me = { name: (nick.nick || pf.name || '你').slice(0, 20), avatar: nick.avatar || '', picture: !nick.avatar && /^https:\/\//.test(pf.picture || '') ? pf.picture : '', me: true };
+                add = true;
+            } else me = { ...me };
+            Object.entries(EARN_SRC).forEach(([dep, src]) => {
+                const e = earned[src], d = { n: 0, money: 0, best: null, ms: 0, ...(me[dep] || {}) };
+                if (e) {
+                    d.n = Math.max(d.n || 0, num(e.times)); d.money = Math.max(d.money || 0, num(e.total));
+                    if (MONEY_BEST.includes(dep) && num(e.best)) d.best = Math.max(d.best || 0, num(e.best));
+                }
+                me[dep] = d;
+            });
+            const g = w.gongde || {}, sh = w.shop || {}, sp = { total: 0, shop: 0, donate: 0, lamp: 0, scratch: 0, won: 0, ...(me.spend || {}) };
+            sp.total = Math.max(sp.total, num(w.spent)); sp.shop = Math.max(sp.shop, num(sh.spent));
+            sp.donate = Math.max(sp.donate, num(g.donated)); sp.lamp = Math.max(sp.lamp, num(g.lit));
+            sp.scratch = Math.max(0, sp.total - sp.shop - sp.donate - sp.lamp);
+            sp.won = Math.max(sp.won, num((earned.scratch || {}).total) + num((earned.caishen || {}).total));
+            me.spend = sp;
+            return add ? list.concat([me]) : list.map(p => p.me ? me : p);
+        }
+
         function renderBoard() {
             // 「出餐最多」只有早餐部有、「最長連撈」只有貨運部有；換到別的部門就回「最高分」
             if (metric === 'served' && dept !== 'zaocan' && dept !== 'dessert') metric = 'best';
@@ -594,7 +641,7 @@
                 box.insertAdjacentHTML('beforeend', `<p class="pt-3 text-center text-[11px] font-sans tracking-wider text-stone-400">你還沒上這個榜：${book === 'spend' ? '去花一點錢' : book === 'endless' ? '去玩一次無盡模式' : '去打一次工'}，最多五分鐘就會出現，也可以按下面的「刷新」。</p>`);
             }
             const d = at ? new Date(at) : null;
-            $('boardAt').textContent = d && !isNaN(d) ? `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')} 寫的榜` : '';
+            $('boardAt').textContent = (d && !isNaN(d) ? `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')} 寫的榜` : '') + (stale && loading ? '・更新中…' : stale && failed ? '・連不到後端，這是上次的' : '');
         }
 
         function renderJoin() {
@@ -612,7 +659,7 @@
             if (loading) return 'busy';
             loading = true; failed = '';
             let status = 'fail';
-            if (!players) renderBoard();
+            if (!players || stale) renderBoard();   // 先畫的是上次的榜：寫上「更新中」
             try {
                 let session = '';
                 try { session = localStorage.getItem('dongbuli-session') || ''; } catch (e) { }
@@ -620,7 +667,7 @@
                 const r = await res.json();
                 if (r.result !== 'success') {
                     failed = /不認得的請求/.test(r.error || '') ? '排行榜還沒開張：後端要重新部署「新版本」。' : `讀不到排行榜（${r.error || r.result}）。`;
-                } else { players = r.players || []; at = r.at || ''; status = r.refreshed === undefined ? 'old' : r.refreshed ? 'fresh' : 'cached'; }
+                } else { players = withMe(r.players || []); at = r.at || ''; stale = false; saveLast(r.players || [], at); status = r.refreshed === undefined ? 'old' : r.refreshed ? 'fresh' : 'cached'; }
             } catch (e) {
                 failed = '連不到後端，可能是網路不穩。';
             }
@@ -682,6 +729,7 @@
         document.addEventListener('visibilitychange', () => { if (!document.hidden && players) load(); });
 
         renderJoin();
+        loadLast();
         renderBoard();
         load();
     </script>

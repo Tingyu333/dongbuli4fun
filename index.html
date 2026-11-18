@@ -16,9 +16,10 @@
     <meta property="og:image:height" content="1200">
     <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/">
     <meta name="twitter:card" content="summary">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/zh-tw.js"></script>
+    <!-- 日曆元件 flatpickr 4.6.13（MIT，放在 assets/vendor/，不從外面的 CDN 抓）；defer：不擋畫面，DOMContentLoaded 前就載好 -->
+    <link rel="stylesheet" href="assets/vendor/flatpickr/flatpickr.min.css?v=4.6.13">
+    <script defer src="assets/vendor/flatpickr/flatpickr.min.js?v=4.6.13"></script>
+    <script defer src="assets/vendor/flatpickr/zh-tw.js?v=4.6.13"></script>
     <!-- 引入日系字體：Noto Serif TC (襯線) 與 Noto Sans TC (無襯線) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -865,7 +866,7 @@
         let bookedNights = new Set(); // 'yyyy-MM-dd'
         let checkInPicker, checkOutPicker;
 
-        const toKey = (date) => flatpickr.formatDate(date, 'Y-m-d');
+        const toKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;   // 不靠 flatpickr，它是 defer 載的
         const addDays = (key, n) => {
             const d = new Date(key + 'T00:00');
             d.setDate(d.getDate() + n);
@@ -891,8 +892,15 @@
             return [...bookedNights].filter(night => night > key).sort()[0];
         }
 
-        // 1. 初始化
-        window.addEventListener('load', () => {
+        // 1. 初始化：DOMContentLoaded 就開始抓房況（以前等 load，要等大圖、字型全部下載完）；flatpickr 是 defer，這時已經載好
+        // 從 LINE 的連結要去別頁（網址有 liff.state，LIFF 會把人轉走）：先不抓，等一下還在首頁才抓
+        const LIFF_HOP = (() => { const m = /[?&]liff\.state=([^&]*)/.exec(location.search); if (!m) return false; let t = ''; try { t = decodeURIComponent(m[1]); } catch (e) { } return !/^\/?(index\.html)?([?#].*)?$/.test(t); })();
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!LIFF_HOP) return startHome();
+            const later = () => setTimeout(startHome, 1500);
+            (window.Line && Line.ready ? Line.ready.then(later, later) : later());
+        });
+        function startHome() {
             loadBookedDates()
                 .then(() => {
                     initPickers();
@@ -909,7 +917,7 @@
                     document.getElementById('openModalBtn').disabled = false;
                     document.getElementById('openModalBtn').innerText = "立即預約";
                 });
-        });
+        }
 
         function initPickers() {
             const commonConfig = {
@@ -981,7 +989,7 @@
             const intro = document.getElementById('elevatorIntro');
             let seen = false;
             try { seen = sessionStorage.getItem('elevatorSeen') === '1'; } catch (e) { }
-            if (seen || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            if (seen || LIFF_HOP || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {   // 從 LINE 連結要轉去別頁的不播
                 intro.remove();
                 return;
             }

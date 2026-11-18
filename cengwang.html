@@ -1572,7 +1572,14 @@
         renderShopLv();
         // 畫布整個捲出畫面（收工看結果、往下看說明）就先停，捲回來再接著畫：手機才不會一直燙、一直耗電
         let loopOn = false, cvSeen = true;
-        function nextFrame() { if (cvSeen) requestAnimationFrame(frame); else loopOn = false; }
+        // 沒在玩（標題、結果畫面）每秒只畫約 20 張，剛收工的 2.5 秒照常畫（結算動畫）：手機比較不燙。dt 上限是 50ms，速度不會變
+        let wasPlaying = false, fullUntil = 0;
+        function nextFrame() {
+            if (!cvSeen) { loopOn = false; return; }
+            const t = performance.now(), p = !!(G && G.started && !G.ended);
+            if (p) wasPlaying = true; else if (wasPlaying) { wasPlaying = false; fullUntil = t + 2500; }
+            if (p || t < fullUntil) requestAnimationFrame(frame); else setTimeout(() => requestAnimationFrame(frame), 34);
+        }
         function startLoop() { if (loopOn) return; loopOn = true; lastNow = performance.now(); requestAnimationFrame(frame); }
         if ('IntersectionObserver' in window) new IntersectionObserver(es => { cvSeen = es[es.length - 1].isIntersecting; if (cvSeen) startLoop(); }).observe(cv);
         startLoop();
