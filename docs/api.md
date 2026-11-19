@@ -79,3 +79,12 @@
 
 - **疊・巢無盡模式**：`Stacks` 多 S 欄 `mode`。`BOARD_SOURCES.Stacks` 改成一般、無盡分開記：`{ normal: { n, perfect, total }, best: 一般模式一場最多, far: 無盡模式疊最高 { n, perfect, total, ms }, money: 無盡模式一場最多 { total, n, ms } }`；`2026-11-18b` 存在 Board 的舊格式 `{ n, perfect, total }` 讀到就當一般模式（不用加 `BOARD_STATE_VERSION`）。排行榜 `stack.best` 改成只算一般模式（以前讀 `earned.stack.best`，會混到無盡模式），`stack.layers` 一般模式疊最高，`stack.endless` 給無盡・榜。
 
+## 2026-11-19 許願池（版本 `2026-11-19a`）
+
+- **`Wishes`**：A `timestamp`、B `id`（`w`＋10 碼）、C `line_id`、D `kind`（`game`／`idea`／`bug`／`other`）、E `text`（過 `asText()`）、F `status`（`new`／`seen`／`doing`／`done`／`no`）、G `reply`、H `voters`（JSON，按「我也想要」的 line_id）、I `hidden`、J `replied_at`。不備份、不封存（量很小）。
+- `wishList`（公開，帶 `session` 會多 `me` 和每個願望的 `mine`／`voted`）：最近 80 個沒藏的，新的在前；`{ wishes: [{ id, at, kind, text, status, reply, repliedAt, votes, name, picture, avatar, mine, voted }], total, done, me: { today, left, rewarded, reward, perDay } | null, rules }`。名字、頭像跟排行榜一樣暱稱、指定頭像優先，**不回 line_id**。
+- `wishAdd`（要登入、排隊）：`{ kind, text }`，4～200 字、一天 3 個、同樣的字不能兩次、全站每小時 60 個；當天第一個 `reward` $1,000 加進帳號 `earned.wish`，回 `{ id, reward, wallet, me }`。
+- `wishVote`（要登入、排隊）：`{ id }` 切換「我也想要」，自己的、藏起來的不能按，一人每小時 60 次；回 `{ votes, voted }`。
+- 後台（帶 `token`）：`adminWishes`（全部含藏起來的，多 `hidden`）、`adminWishSet`（`{ id, status?, reply?, hidden? }`，有帶才改，回覆存了記 `replied_at`；回傳整份 `adminWishes`）。
+- 都不寄信。
+

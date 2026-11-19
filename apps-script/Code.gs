@@ -71,9 +71,9 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-18c';
+var BACKEND_VERSION = '2026-11-19a';
 
-var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1 };
+var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1 };
 
 function withLock(fn) {
   var lock = LockService.getScriptLock();
@@ -147,13 +147,18 @@ function route(type, input) {
     if (type === 'sportQuote') return sportQuote(input);
     if (type === 'sportMine') return sportMine(input);
     if (type === 'sportBet') return sportBet(input);
+    if (type === 'wishList') return wishList(input);
+    if (type === 'wishAdd') return wishAdd(input);
+    if (type === 'wishVote') return wishVote(input);
 
     if (type === 'ping') return { result: 'success', version: BACKEND_VERSION };   // 公開：只回版本
 
     // 以下只有後台能用，要帶登入拿到的通行證
-    if (type === 'updateStatus' || type === 'adminList' || type === 'bonusCreate' || type === 'bonusList' || type === 'bonusClose' || type === 'adminHealth') {
+    if (type === 'updateStatus' || type === 'adminList' || type === 'bonusCreate' || type === 'bonusList' || type === 'bonusClose' || type === 'adminHealth' || type === 'adminWishes' || type === 'adminWishSet') {
       if (!isAdmin(input.token)) return { result: 'unauthorized' };
       if (type === 'adminHealth') return adminHealth();
+      if (type === 'adminWishes') return adminWishes();
+      if (type === 'adminWishSet') return adminWishSet(input);
       if (type === 'updateStatus') return updateStatus(input);
       if (type === 'bonusCreate') return bonusCreate(input);
       if (type === 'bonusList') return bonusList();
@@ -3603,3 +3608,162 @@ function econReport(days) {
   return out;
 }
 
+
+// --- 許願池（2026-11-19）---
+// 旅人用 LINE 登入許願（網站想多什麼、哪裡壞了），每天第一個願望 +$1,000 直接加進帳號（earned.wish）。
+// 願望牆公開（暱稱、頭像、內容、主人的回覆、幾個人也想要），不回 line_id；主人在後台改狀態、回一句話、藏起來。
+// 不寄信（公開的動作不寄信給別人，也不寄給主人：願望在後台看）。
+// Wishes：A timestamp、B id、C line_id、D kind、E text、F status、G reply、H voters（JSON，line_id 陣列）、I hidden、J replied_at
+var WISH_REWARD = 1000;          // 每天第一個願望的獎金（遊戲幣）
+var WISH_PER_DAY = 3;            // 一個人一天最多許幾個（只有第一個有獎金）
+var WISH_MIN = 4, WISH_MAX = 200;
+var WISH_PER_HOUR = 60;          // 全站每小時最多幾個願望
+var WISH_VOTES_PER_HOUR = 60;    // 一個人每小時最多按幾次「我也想要」
+var WISH_LIST_MAX = 80;          // 願望牆最多回幾個
+var WISH_KINDS = ['game', 'idea', 'bug', 'other'];             // 新遊戲、點子、抓蟲、其他
+var WISH_STATUS = ['new', 'seen', 'doing', 'done', 'no'];      // 剛投、收到了、在做了、實現了、不行
+var WISH_HEADERS = ['timestamp', 'id', 'line_id', 'kind', 'text', 'status', 'reply', 'voters', 'hidden', 'replied_at'];
+
+function wishesSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Wishes');
+  if (!sheet) { sheet = ss.insertSheet('Wishes'); sheet.appendRow(WISH_HEADERS); }
+  return sheet;
+}
+
+function readWishes() {
+  var rows = wishesSheet().getDataRange().getValues(), out = [];
+  for (var i = 1; i < rows.length; i++) {
+    var r = rows[i];
+    if (!r[1]) continue;
+    var voters = [];
+    try { voters = JSON.parse(r[7] || '[]') || []; } catch (e) { }
+    var t = r[0], rt = r[9];
+    out.push({
+      row: i + 1, id: String(r[1]), lineId: String(r[2] || ''),
+      kind: WISH_KINDS.indexOf(r[3]) >= 0 ? r[3] : 'other',
+      text: String(r[4] || '').replace(/^'/, ''), status: WISH_STATUS.indexOf(r[5]) >= 0 ? r[5] : 'new',
+      reply: String(r[6] || '').replace(/^'/, ''), voters: Array.isArray(voters) ? voters : [],
+      hidden: r[8] === true || r[8] === 'TRUE' || r[8] === 'true',
+      at: t instanceof Date ? t.toISOString() : String(t || ''),
+      repliedAt: rt instanceof Date ? rt.toISOString() : String(rt || '')
+    });
+  }
+  return out;
+}
+
+// line_id → 顯示的名字、頭像（暱稱、指定頭像優先，跟排行榜一樣）
+function wishPeople() {
+  var rows = playersSheet().getDataRange().getValues(), map = {};
+  for (var i = 1; i < rows.length; i++) {
+    var nick = String(rows[i][12] || '').replace(/^'/, '').trim().slice(0, 12), av = String(rows[i][13] || '');
+    map[String(rows[i][1])] = { name: nick || String(rows[i][2] || '') || '旅人', picture: String(rows[i][3] || ''), avatar: AVATAR_KEYS.indexOf(av) >= 0 ? av : '' };
+  }
+  return map;
+}
+
+function wishDay(iso) { return Utilities.formatDate(iso ? new Date(iso) : new Date(), 'Asia/Taipei', 'yyyy-MM-dd'); }
+
+function wishView(w, people, me) {
+  var who = people[w.lineId] || { name: '旅人', picture: '', avatar: '' };
+  return {
+    id: w.id, at: w.at, kind: w.kind, text: w.text, status: w.status, reply: w.reply, repliedAt: w.repliedAt,
+    votes: w.voters.length, name: who.name, picture: who.picture, avatar: who.avatar,
+    mine: !!me && w.lineId === me, voted: !!me && w.voters.indexOf(me) >= 0
+  };
+}
+
+// 我今天許了幾個、拿過獎金沒
+function wishMe(all, me) {
+  if (!me) return null;
+  var today = wishDay(), n = all.filter(function (w) { return w.lineId === me && wishDay(w.at) === today; }).length;
+  return { today: n, left: Math.max(0, WISH_PER_DAY - n), rewarded: n > 0, reward: WISH_REWARD, perDay: WISH_PER_DAY };
+}
+
+// 公開：願望牆。{ type: 'wishList', session? }
+function wishList(input) {
+  var me = input.session ? sessionUser(input.session) : null;
+  var all = readWishes(), people = wishPeople();
+  var shown = all.filter(function (w) { return !w.hidden; });
+  var list = shown.slice(-WISH_LIST_MAX).reverse().map(function (w) { return wishView(w, people, me); });
+  return {
+    result: 'success', wishes: list, total: shown.length, done: shown.filter(function (w) { return w.status === 'done'; }).length,
+    me: wishMe(all, me), rules: { reward: WISH_REWARD, perDay: WISH_PER_DAY, min: WISH_MIN, max: WISH_MAX, kinds: WISH_KINDS }
+  };
+}
+
+function cleanWishText(v) {
+  return String(v == null ? '' : v).replace(/\r\n?/g, '\n').replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, '').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+// 要登入（排隊）：{ type: 'wishAdd', session, kind, text }
+function wishAdd(input) {
+  var lineId = sessionUser(input.session);
+  if (!lineId) return { result: 'unauthorized' };
+  var p = findPlayer(lineId);
+  if (!p) return { result: 'unauthorized' };
+  var text = cleanWishText(input.text), kind = WISH_KINDS.indexOf(input.kind) >= 0 ? input.kind : 'other';
+  if (text.length < WISH_MIN) return { result: 'error', error: '願望太短了，多說一點（至少 ' + WISH_MIN + ' 個字）' };
+  if (text.length > WISH_MAX) return { result: 'error', error: '願望太長了，' + WISH_MAX + ' 個字以內' };
+  var cache = CacheService.getScriptCache(), hourKey = 'wishes:' + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var hour = Number(cache.get(hourKey) || 0);
+  if (hour >= WISH_PER_HOUR) return { result: 'error', error: '池子這小時收太多願望了，晚點再來' };
+  var all = readWishes(), today = wishDay();
+  var mineToday = all.filter(function (w) { return w.lineId === lineId && wishDay(w.at) === today; });
+  if (mineToday.length >= WISH_PER_DAY) return { result: 'error', error: '今天許了 ' + WISH_PER_DAY + ' 個了，神明也要休息，明天再來' };
+  if (all.some(function (w) { return w.lineId === lineId && w.text === text; })) return { result: 'error', error: '這個願望你許過了，池子記得' };
+  cache.put(hourKey, String(hour + 1), 3600);
+
+  var id = 'w' + Utilities.getUuid().replace(/-/g, '').slice(0, 10), now = new Date();
+  wishesSheet().appendRow([now, id, lineId, kind, asText(text), 'new', '', '[]', false, '']);
+  var reward = mineToday.length === 0 ? WISH_REWARD : 0, out = { result: 'success', id: id, reward: reward };
+  if (reward) {
+    p.money = Math.min(WALLET_MAX, p.money + reward);
+    p.earned = addEarned(p.earned, { wish: { times: 1, total: reward, best: reward } });
+    writeWallet(p);
+  }
+  out.wallet = walletView(p);
+  out.me = { today: mineToday.length + 1, left: Math.max(0, WISH_PER_DAY - mineToday.length - 1), rewarded: true, reward: WISH_REWARD, perDay: WISH_PER_DAY };
+  return out;
+}
+
+// 要登入（排隊）：{ type: 'wishVote', session, id }：「我也想要」，再按一次收回；自己的不能按
+function wishVote(input) {
+  var lineId = sessionUser(input.session);
+  if (!lineId) return { result: 'unauthorized' };
+  var cache = CacheService.getScriptCache(), key = 'wishVotes:' + lineId + ':' + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var n = Number(cache.get(key) || 0);
+  if (n >= WISH_VOTES_PER_HOUR) return { result: 'error', error: '按太多次了，晚點再來' };
+  var w = readWishes().filter(function (x) { return x.id === String(input.id || '') && !x.hidden; })[0];
+  if (!w) return { result: 'error', error: '找不到這個願望' };
+  if (w.lineId === lineId) return { result: 'error', error: '自己的願望不用自己附議' };
+  cache.put(key, String(n + 1), 3600);
+  var i = w.voters.indexOf(lineId);
+  if (i >= 0) w.voters.splice(i, 1); else w.voters.push(lineId);
+  wishesSheet().getRange(w.row, 8).setValue(JSON.stringify(w.voters.slice(-2000)));
+  return { result: 'success', id: w.id, votes: w.voters.length, voted: i < 0 };
+}
+
+// 後台：全部的願望（含藏起來的），新的在前面
+function adminWishes() {
+  var people = wishPeople();
+  return { result: 'success', wishes: readWishes().reverse().map(function (w) { var v = wishView(w, people, null); v.hidden = w.hidden; return v; }) };
+}
+
+// 後台：{ type: 'adminWishSet', token, id, status?, reply?, hidden? }
+function adminWishSet(input) {
+  var w = readWishes().filter(function (x) { return x.id === String(input.id || ''); })[0];
+  if (!w) return { result: 'error', error: '找不到這個願望' };
+  var sheet = wishesSheet();
+  if (input.status !== undefined) {
+    if (WISH_STATUS.indexOf(input.status) < 0) return { result: 'error', error: '狀態不對' };
+    sheet.getRange(w.row, 6).setValue(input.status);
+  }
+  if (input.reply !== undefined) {
+    var reply = cleanWishText(input.reply).slice(0, WISH_MAX);
+    sheet.getRange(w.row, 7).setValue(reply ? asText(reply) : '');
+    sheet.getRange(w.row, 10).setValue(reply ? new Date() : '');
+  }
+  if (input.hidden !== undefined) sheet.getRange(w.row, 9).setValue(!!input.hidden);
+  return adminWishes();
+}

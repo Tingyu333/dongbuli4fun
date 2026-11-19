@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>許願・池 | 丼步喱</title>
+    <!-- 分享到 LINE、FB 時的預覽（標題、介紹、圖片）。圖片要用完整網址 -->
+    <meta name="description" content="丟一枚硬幣，說你想要丼步喱多什麼。主人會來撈。">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="丼步喱・絆">
+    <meta property="og:title" content="許願・池｜丼步喱">
+    <meta property="og:description" content="丟一枚硬幣，說你想要丼步喱多什麼。主人會來撈。">
+    <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
+    <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/xuyuan.html">
+    <meta name="twitter:card" content="summary">
+    <!-- 引入日系字體 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/theme.css?v=20261116d">
+    <script src="assets/theme.js?v=20261117c"></script>
+    <script src="assets/line.js?v=20261116d"></script>
+    <script src="assets/wallet.js?v=20261116d"></script>
+    <script src="assets/avatar.js?v=20261118a"></script>
+    <style>
+        .line-btn {
+            min-height: 44px;
+            padding: 0 1.4rem;
+            border-radius: 6px;
+            background: #06c755;
+            color: #fff;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-weight: 500;
+            font-size: 0.85rem;
+            letter-spacing: 0.1em;
+            touch-action: manipulation;
+        }
+
+        .btn {
+            min-height: 48px;
+            padding: 0 1rem;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.2em;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            transition: opacity .2s, transform .1s;
+        }
+
+        .btn:active { transform: scale(.98); }
+        .btn:disabled { opacity: .4; }
+        .btn-shu { background: rgb(var(--wabi-shu)); color: #fff; }
+
+        /* 池子 */
+        .pond { position: relative; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+        .pond canvas { display: block; width: 100%; height: auto; }
+
+        /* 願望的種類 */
+        .kinds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
+        .kinds button {
+            min-height: 40px;
+            border: 1px solid rgb(var(--wabi-sub));
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 12px;
+            letter-spacing: 0.15em;
+            color: rgb(var(--wabi-text));
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .kinds button[aria-pressed="true"] { border-color: rgb(var(--wabi-dark)); background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); }
+
+        .wish-input {
+            width: 100%;
+            min-height: 7.5rem;
+            padding: 0.8rem 0.9rem;
+            border: 1px solid rgb(var(--wabi-sub));
+            background: rgb(var(--wabi-bg));
+            color: rgb(var(--wabi-dark));
+            font-size: 16px;   /* iPhone 小於 16px 會自己放大 */
+            line-height: 1.7;
+            letter-spacing: 0.05em;
+            resize: vertical;
+            outline: none;
+        }
+        .wish-input:focus { border-color: rgb(var(--wabi-accent)); }
+
+        /* 願望牆 */
+        .tabs { display: flex; border-bottom: 1px solid rgb(var(--wabi-sub)); }
+        .tabs button {
+            flex: 1;
+            min-height: 44px;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 12px;
+            letter-spacing: 0.2em;
+            color: rgb(var(--wabi-accent));
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            touch-action: manipulation;
+        }
+        .tabs button[aria-pressed="true"] { color: rgb(var(--wabi-dark)); border-bottom-color: rgb(var(--wabi-shu)); }
+
+        .wish { position: relative; padding: 1.1rem 0 1rem; border-bottom: 1px solid rgb(var(--wabi-sub) / 0.7); }
+        .wish.is-new { animation: wishIn 1.2s ease-out; }
+        @keyframes wishIn { from { background: rgb(var(--wabi-shu) / 0.12); } to { background: transparent; } }
+        .wish-pic { width: 28px; height: 28px; border-radius: 9999px; flex-shrink: 0; object-fit: cover; border: 1px solid rgb(var(--wabi-sub)); }
+        .wish-pic.is-text { display: inline-flex; align-items: center; justify-content: center; font-size: 12px; color: rgb(var(--wabi-accent)); }
+        .kind-tag { flex-shrink: 0; padding: 1px 6px; border: 1px solid rgb(var(--wabi-accent) / 0.5); font-family: 'Noto Sans TC', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: rgb(var(--wabi-accent)); }
+        .wish-text { margin-top: 0.6rem; white-space: pre-line; word-break: break-word; font-size: 0.95rem; line-height: 1.8; letter-spacing: 0.05em; color: rgb(var(--wabi-dark)); }
+        .wish-reply { margin-top: 0.7rem; padding-left: 0.75rem; border-left: 2px solid rgb(var(--wabi-shu)); font-size: 0.85rem; line-height: 1.7; color: rgb(var(--wabi-text)); white-space: pre-line; word-break: break-word; }
+        .seal {
+            position: absolute; right: 0; top: 0.9rem;
+            width: 2.3rem; height: 2.3rem;
+            display: flex; align-items: center; justify-content: center;
+            border: 1.5px solid rgb(var(--wabi-shu)); border-radius: 4px;
+            color: rgb(var(--wabi-shu)); font-size: 1.05rem; font-weight: 600;
+            transform: rotate(-8deg); opacity: .9;
+        }
+        .seal.is-done { background: rgb(var(--wabi-shu)); color: #fff; }
+        .seal.is-no { border-color: rgb(var(--wabi-accent)); color: rgb(var(--wabi-accent)); }
+        .wish.has-seal .wish-text { padding-right: 2.8rem; }
+        .vote {
+            min-height: 36px;
+            padding: 0 0.8rem;
+            border: 1px solid rgb(var(--wabi-sub));
+            border-radius: 9999px;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            color: rgb(var(--wabi-text));
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .vote[aria-pressed="true"] { border-color: rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); }
+        .vote:disabled { opacity: .5; }
+
+        /* 許願成功：大大的朱印 */
+        .big-stamp { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; opacity: 0; }
+        .big-stamp.is-on { animation: stampFade 1.8s ease-out forwards; }
+        .big-stamp .s {
+            width: 7rem; height: 7rem; display: flex; align-items: center; justify-content: center;
+            border: 4px solid rgb(var(--wabi-shu)); border-radius: 10px; background: rgb(var(--wabi-bg) / 0.92);
+            color: rgb(var(--wabi-shu)); font-size: 3.6rem; font-weight: 700; transform: rotate(-8deg);
+        }
+        .big-stamp.is-on .s { animation: stampIn .45s cubic-bezier(.2, 1.6, .4, 1) both; }
+        .big-stamp .amt { margin-top: 1rem; font-family: 'Noto Sans TC', sans-serif; font-size: 1.4rem; letter-spacing: .1em; color: rgb(var(--wabi-shu)); background: rgb(var(--wabi-bg) / 0.92); padding: 0 .6rem; }
+        @keyframes stampIn { from { transform: rotate(-8deg) scale(2.2); opacity: 0; } to { transform: rotate(-8deg) scale(1); opacity: 1; } }
+        @keyframes stampFade { 0% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
+        @media (prefers-reduced-motion: reduce) { .big-stamp.is-on .s { animation: none; } .wish.is-new { animation: none; } }
+    </style>
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261119a">
+</head>
+
+<body class="bg-wabi-bg text-wabi-text font-serif antialiased min-h-screen flex flex-col">
+
+    <nav class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <a href="index.html" class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-3 md:gap-8">
+            <a href="index.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <a href="reviews.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <a href="about.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+            <a href="member.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">會員・我</a>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-md mx-auto pt-24 md:pt-32 pb-16 px-5 w-full">
+        <div class="text-center mb-6">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">WISHING POND</span>
+            <h1 class="text-3xl font-light text-wabi-dark tracking-widest">許願・池</h1>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">丟一枚硬幣，說你想要丼步喱多什麼。<br>主人會來撈，撈到的會在下面回你。</p>
+        </div>
+
+        <div class="pond" id="pond" aria-label="許願池，點一下水面會起漣漪">
+            <canvas id="cv" width="720" height="460"></canvas>
+        </div>
+        <p id="pondNote" class="mt-2 text-center text-[11px] font-sans tracking-widest text-stone-400">&nbsp;</p>
+
+        <!-- 許願 -->
+        <section class="mt-8" aria-labelledby="formTitle">
+            <h2 id="formTitle" class="text-sm tracking-[0.3em] text-wabi-dark mb-3">許一個願</h2>
+            <div class="kinds" role="group" aria-label="願望的種類">
+                <button type="button" data-kind="game" aria-pressed="true">新遊戲</button>
+                <button type="button" data-kind="idea" aria-pressed="false">點子</button>
+                <button type="button" data-kind="bug" aria-pressed="false">抓蟲</button>
+                <button type="button" data-kind="other" aria-pressed="false">其他</button>
+            </div>
+            <textarea id="wishText" class="wish-input mt-3" maxlength="200" rows="4" aria-label="你的願望" placeholder="例如：想要一個養小吳鴨的養成遊戲。"></textarea>
+            <div class="mt-1 flex justify-between text-[11px] font-sans tracking-wider text-stone-400">
+                <span id="kindHint">想玩什麼新遊戲，越具體越好撈</span>
+                <span><b id="count" class="font-normal">0</b>／200</span>
+            </div>
+            <div id="formAct" class="mt-4"></div>
+        </section>
+
+        <!-- 願望牆 -->
+        <section class="mt-12" aria-labelledby="wallTitle">
+            <div class="flex items-baseline justify-between mb-2">
+                <h2 id="wallTitle" class="text-sm tracking-[0.3em] text-wabi-dark">願望・牆</h2>
+                <span id="wallCount" class="text-[11px] font-sans tracking-widest text-stone-400"></span>
+            </div>
+            <div class="tabs" role="group" aria-label="怎麼排">
+                <button type="button" data-tab="new" aria-pressed="true">最新</button>
+                <button type="button" data-tab="hot" aria-pressed="false">最多人想要</button>
+                <button type="button" data-tab="done" aria-pressed="false">實現了</button>
+            </div>
+            <div id="wall" aria-live="polite"></div>
+        </section>
+
+        <section class="mt-12 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">
+            <p>規則：用 LINE 登入才能許願。每天第一個願望 <b class="font-normal text-wabi-shu">+$1,000</b> 進錢包，一天最多許三個（後兩個沒有獎金）。看到喜歡的願望可以按「我也想要」，主人會先撈人多的。</p>
+            <p class="mt-2">願望和你的暱稱、頭像會貼在願望牆上給大家看，不要寫電話、地址這些。亂寫的會被主人撈起來丟掉。</p>
+            <p class="mt-2">獎金是小遊戲的遊戲幣，不能儲值，也不能換成現金或獎品。</p>
+        </section>
+    </main>
+
+    <div id="bigStamp" class="big-stamp" aria-hidden="true"><div class="s">願</div><div class="amt"></div></div>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+        const fmt = Wallet.fmt;
+        const KINDS = { game: '新遊戲', idea: '點子', bug: '抓蟲', other: '其他' };
+        const HINTS = { game: '想玩什麼新遊戲，越具體越好撈', idea: '網站哪裡可以更好玩', bug: '哪一頁、做了什麼、壞成怎樣', other: '想說什麼都可以' };
+        const SEALS = { seen: ['收', ''], doing: ['做', ''], done: ['成', 'is-done'], no: ['否', 'is-no'] };
+        const STATUS_TEXT = { new: '', seen: '主人收到了', doing: '主人在做了', done: '實現了', no: '這個沒辦法' };
+
+        let state = 'loading', data = null, kind = 'game', tab = 'new', busy = false, freshId = '';
+
+        async function api(body) {
+            if (Line.loggedIn) return Line.call(body);
+            const res = await fetch(Line.API_URL, { method: 'POST', body: JSON.stringify(body) });
+            return res.json();
+        }
+
+        // ===== 池子（畫布 360×230，實物、顏色固定；背景跟紙一樣）=====
+        const cv = $('cv'), ctx = cv.getContext('2d');
+        const W = 360, H = 230, CX = 180, CY = 122, RX = 150, RY = 82;
+        let dpr = 1, fitReady = false;
+        function fit() {
+            const d = Math.min(3, window.devicePixelRatio || 1);
+            if (d === dpr && cv.width === W * d && cv.height === H * d) return;
+            dpr = d; cv.width = W * d; cv.height = H * d;
+            if (fitReady) draw(performance.now());
+        }
+        // 固定的亂數（硬幣、石頭每次畫在同一個地方）
+        const rnd = seed => { let s = seed * 9301 + 49297; return () => ((s = (s * 9301 + 49297) % 233280) / 233280); };
+        const STONES = (() => { const r = rnd(7), out = []; for (let i = 0; i < 26; i++) { const a = i / 26 * Math.PI * 2 + r() * 0.1; out.push({ a, w: 15 + r() * 9, h: 9 + r() * 5, t: r() }); } return out; })();
+        function coinAt(i) { const r = rnd(i + 3); const a = r() * Math.PI * 2, d = Math.sqrt(r()) * 0.78; return { x: CX + Math.cos(a) * RX * d, y: CY + Math.sin(a) * RY * d * 0.95, rot: r() * Math.PI, face: r() > 0.5 }; }
+        let coins = 0;                // 池底有幾枚（願望數，最多畫 48 枚）
+        const ripples = [], flying = [];
+        const fish = [
+            { r: 0.55, sp: 0.22, ph: 0, col: '#f4efe6', spot: '#b33a2f', len: 30 },
+            { r: 0.38, sp: -0.3, ph: 2.4, col: '#e2a33b', spot: '#f6e7c7', len: 24 },
+            { r: 0.68, sp: 0.16, ph: 4.2, col: '#2c2c2c', spot: '#c9c2b6', len: 22 },
+        ];
+        const pads = [{ x: CX - 92, y: CY + 26, r: 17, a: 0.6 }, { x: CX + 104, y: CY - 22, r: 13, a: 2.2 }, { x: CX + 82, y: CY - 6, r: 8, a: 4 }];
+        let lastNow = performance.now(), busyUntil = 0, t = 0;
+
+        function waterPath(c) { c.beginPath(); c.ellipse(CX, CY, RX, RY, 0, 0, Math.PI * 2); }
+        function drawCoin(c, x, y, s, rot, face, squash = 1) {
+            c.save(); c.translate(x, y); c.rotate(rot); c.scale(squash, 0.62);
+            c.beginPath(); c.arc(0, 0, 6.5 * s, 0, Math.PI * 2);
+            const g = c.createRadialGradient(-2 * s, -2 * s, 1, 0, 0, 7 * s); g.addColorStop(0, '#f3dc8c'); g.addColorStop(1, face ? '#b8892f' : '#a37725');
+            c.fillStyle = g; c.fill(); c.lineWidth = 0.8; c.strokeStyle = '#7a5a1c'; c.stroke();
+            c.fillStyle = '#5b4316'; c.fillRect(-1.8 * s, -1.8 * s, 3.6 * s, 3.6 * s);   // 古錢的方孔
+            c.restore();
+        }
+        function drawFish(c, f, time) {
+            const a = f.ph + time * f.sp, x = CX + Math.cos(a) * RX * f.r, y = CY + Math.sin(a) * RY * f.r;
+            const dir = a + (f.sp > 0 ? Math.PI / 2 : -Math.PI / 2), wig = Math.sin(time * 6 + f.ph) * 0.35;
+            c.save(); c.translate(x, y); c.scale(1, 0.62); c.rotate(dir); c.globalAlpha = 0.9;
+            const L = f.len;
+            c.fillStyle = f.col;
+            // 尾巴
+            c.save(); c.translate(-L * 0.45, 0); c.rotate(wig);
+            c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-L * 0.25, -L * 0.28, -L * 0.42, -L * 0.22); c.quadraticCurveTo(-L * 0.3, 0, -L * 0.42, L * 0.22); c.quadraticCurveTo(-L * 0.25, L * 0.28, 0, 0); c.fill();
+            c.restore();
+            // 身體
+            c.beginPath(); c.ellipse(0, 0, L * 0.5, L * 0.17, 0, 0, Math.PI * 2); c.fill();
+            // 胸鰭
+            c.beginPath(); c.ellipse(L * 0.12, -L * 0.18, L * 0.12, L * 0.05, -0.6, 0, Math.PI * 2); c.ellipse(L * 0.12, L * 0.18, L * 0.12, L * 0.05, 0.6, 0, Math.PI * 2); c.fill();
+            // 花紋
+            c.fillStyle = f.spot; c.beginPath(); c.ellipse(L * 0.15, -L * 0.02, L * 0.14, L * 0.09, 0.3, 0, Math.PI * 2); c.ellipse(-L * 0.18, L * 0.03, L * 0.1, L * 0.07, -0.2, 0, Math.PI * 2); c.fill();
+            c.restore();
+        }
+        function drawPad(c, p) {
+            c.save(); c.translate(p.x, p.y); c.scale(1, 0.6);
+            c.fillStyle = '#5f7f4a'; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, p.r, p.a + 0.35, p.a + Math.PI * 2 - 0.05); c.closePath(); c.fill();
+            c.strokeStyle = 'rgba(30,50,25,.35)'; c.lineWidth = 0.7;
+            for (let i = 1; i < 7; i++) { const a = p.a + 0.35 + i * (Math.PI * 2 - 0.4) / 7; c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(a) * p.r * 0.9, Math.sin(a) * p.r * 0.9); c.stroke(); }
+            c.restore();
+        }
+        function draw(now) {
+            const c = ctx; c.setTransform(dpr, 0, 0, dpr, 0, 0);
+            c.fillStyle = themeColor('--wabi-bg'); c.fillRect(0, 0, W, H);
+            // 影子
+            c.fillStyle = 'rgba(0,0,0,.08)'; c.beginPath(); c.ellipse(CX, CY + 10, RX + 22, RY + 18, 0, 0, Math.PI * 2); c.fill();
+            // 水
+            c.save(); waterPath(c); c.clip();
+            const g = c.createRadialGradient(CX - 30, CY - 30, 10, CX, CY, RX); g.addColorStop(0, '#5f8a8b'); g.addColorStop(0.6, '#3d6468'); g.addColorStop(1, '#253f45');
+            c.fillStyle = g; c.fillRect(CX - RX, CY - RY, RX * 2, RY * 2);
+            // 池底的硬幣（願望越多越多）
+            const n = Math.min(48, coins);
+            for (let i = 0; i < n; i++) { const p = coinAt(i); drawCoin(c, p.x, p.y, 0.9, p.rot, p.face); }
+            // 一層水蓋在硬幣上
+            c.fillStyle = 'rgba(37,63,69,.32)'; c.fillRect(CX - RX, CY - RY, RX * 2, RY * 2);
+            fish.forEach(f => drawFish(c, f, t));
+            // 水面反光
+            c.strokeStyle = 'rgba(255,255,255,.12)'; c.lineWidth = 1;
+            for (let i = 0; i < 5; i++) { const y = CY - RY * 0.6 + i * 22 + Math.sin(t * 0.8 + i) * 3, x = CX - 90 + ((i * 47 + t * 6) % 160); c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + 12, y - 2, x + 24, y); c.stroke(); }
+            // 漣漪
+            ripples.forEach(r => { if (r.age < 0) return; const k = r.age / r.life; c.strokeStyle = `rgba(255,255,255,${(0.55 * (1 - k)).toFixed(3)})`; c.lineWidth = 1.4 * (1 - k) + 0.4; c.beginPath(); c.ellipse(r.x, r.y, r.max * k + 2, (r.max * k + 2) * 0.55, 0, 0, Math.PI * 2); c.stroke(); });
+            pads.forEach(p => drawPad(c, p));
+            c.restore();
+            // 池邊的石頭
+            STONES.forEach(s => {
+                const x = CX + Math.cos(s.a) * (RX + 6), y = CY + Math.sin(s.a) * (RY + 5);
+                c.save(); c.translate(x, y); c.rotate(s.a + Math.PI / 2);
+                const sg = c.createLinearGradient(0, -s.h, 0, s.h); sg.addColorStop(0, s.t > 0.5 ? '#bdb6aa' : '#a9a296'); sg.addColorStop(1, '#7c766c');
+                c.fillStyle = sg; c.beginPath(); c.ellipse(0, 0, s.w / 2, s.h / 2, 0, 0, Math.PI * 2); c.fill();
+                c.strokeStyle = 'rgba(0,0,0,.18)'; c.lineWidth = 0.6; c.stroke();
+                c.restore();
+            });
+            // 飛進去的硬幣
+            flying.forEach(f => { const k = Math.min(1, f.age / f.life), x = f.x0 + (f.x1 - f.x0) * k, y = f.y0 + (f.y1 - f.y0) * k - Math.sin(k * Math.PI) * 70, s = 1.6 - k * 0.5; drawCoin(c, x, y, s, 0, true, Math.cos(f.age * 18)); });
+        }
+        function update(dt) {
+            t += dt;
+            for (let i = ripples.length - 1; i >= 0; i--) { const r = ripples[i]; r.age += dt; if (r.age >= r.life) ripples.splice(i, 1); }
+            for (let i = flying.length - 1; i >= 0; i--) {
+                const f = flying[i]; f.age += dt;
+                if (f.age >= f.life) { flying.splice(i, 1); splash(f.x1, f.y1, 3); coins++; f.done && f.done(); }
+            }
+            // 魚偶爾冒個泡
+            if (Math.random() < dt * 0.25) { const f = fish[Math.floor(Math.random() * fish.length)], a = f.ph + t * f.sp; ripples.push({ x: CX + Math.cos(a) * RX * f.r, y: CY + Math.sin(a) * RY * f.r, age: 0, life: 1.6, max: 12 }); }
+        }
+        function splash(x, y, n) { for (let i = 0; i < n; i++) ripples.push({ x, y, age: -i * 0.22, life: 1.8, max: 34 + i * 10 }); busyUntil = performance.now() + 2500; }
+        function toss(done) {
+            const p = coinAt(coins);
+            flying.push({ x0: W / 2, y0: H + 10, x1: p.x, y1: p.y, age: 0, life: 0.9, done });
+            busyUntil = performance.now() + 3500; startLoop();
+        }
+
+        // 畫面迴圈：照網站規矩，捲出畫面就停；沒在動的時候每秒約 20 張
+        let running = false, visible = true, raf = 0, tmo = 0;
+        function frame(now) {
+            raf = 0;
+            const dt = Math.min(0.05, (now - lastNow) / 1000); lastNow = now;
+            update(dt); draw(now);
+            nextFrame();
+        }
+        function nextFrame() {
+            if (!visible || document.hidden) { running = false; return; }
+            running = true;
+            if (performance.now() < busyUntil) raf = requestAnimationFrame(frame);
+            else tmo = setTimeout(() => { tmo = 0; raf = requestAnimationFrame(frame); }, 34);
+        }
+        function startLoop() { if (running) return; lastNow = performance.now(); running = true; raf = requestAnimationFrame(frame); }
+        new IntersectionObserver(es => { visible = es[0].isIntersecting; if (visible) startLoop(); }, { threshold: 0 }).observe(cv);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && visible) startLoop(); });
+        $('pond').addEventListener('pointerdown', e => {
+            const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * W, y = (e.clientY - r.top) / r.height * H;
+            if (((x - CX) / RX) ** 2 + ((y - CY) / RY) ** 2 > 1) return;
+            splash(x, y, 2); startLoop();
+        });
+        $('pond').addEventListener('contextmenu', e => e.preventDefault());
+
+        // ===== 許願 =====
+        function renderKinds() {
+            document.querySelectorAll('[data-kind]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.kind === kind)));
+            $('kindHint').textContent = HINTS[kind];
+        }
+        function textLen() { return $('wishText').value.trim().length; }
+        function renderForm() {
+            $('count').textContent = $('wishText').value.length;
+            const box = $('formAct');
+            if (state === 'loading') { box.innerHTML = '<p class="text-xs font-sans tracking-widest text-stone-400 text-center py-3">池子在看你是誰…</p>'; return; }
+            if (state === 'guest') {
+                box.innerHTML = `<button type="button" data-login class="line-btn w-full">用 LINE 登入才能許願</button>
+                    <p class="mt-2 text-[11px] font-sans tracking-wider text-stone-400 text-center">登入後每天第一個願望 +$1,000，願望牆不用登入也看得到。</p>`;
+                return;
+            }
+            if (state === 'old') { box.innerHTML = '<p class="text-xs font-sans tracking-wider text-wabi-shu text-center py-3">後端還是舊版，要重新部署「新版本」才許得了願。</p>'; return; }
+            if (state === 'error') { box.innerHTML = `<p class="text-xs font-sans tracking-wider text-stone-500 text-center py-2">連不到池子，可能是網路不穩。</p><button type="button" data-retry class="btn w-full border border-stone-300">再試一次</button>`; return; }
+            const me = data && data.me, left = me ? me.left : 3, full = left <= 0;
+            const note = !me ? '' : full ? '今天許滿三個了，神明也要休息，明天再來。'
+                : me.rewarded ? `今天的獎金領過了，還能再許 ${left} 個（沒有獎金）。` : `今天第一個願望 <b class="font-normal text-wabi-shu">+${fmt(me.reward)}</b>。`;
+            const len = textLen(), ok = !full && !busy && len >= 4;
+            box.innerHTML = `<button type="button" id="wishGo" class="btn btn-shu w-full" ${ok ? '' : 'disabled'}>${busy ? '硬幣飛出去了…' : full ? '明天再來' : '投一枚硬幣・許願'}</button>
+                <p class="mt-2 text-[11px] font-sans tracking-wider text-stone-500 text-center">${note}${!full && len > 0 && len < 4 ? '（再多寫幾個字）' : ''}</p>`;
+        }
+
+        async function makeWish() {
+            const text = $('wishText').value.trim();
+            if (busy || text.length < 4) return;
+            busy = true; renderForm();
+            let r = null;
+            try {
+                await Wallet.settle();
+                r = await Line.call({ type: 'wishAdd', kind, text });
+            } catch (e) { r = { result: 'error', error: '連不到池子，可能是網路不穩' }; }
+            if (r.result !== 'success') {
+                busy = false;
+                if (r.result === 'unauthorized') { state = 'guest'; showToast('登入過期了，再登入一次'); }
+                else showToast(/不認得的請求/.test(r.error || '') ? '後端還是舊版，要重新部署「新版本」' : (r.error || '池子沒有回應'));
+                renderForm(); return;
+            }
+            Wallet.adopt(r.wallet);
+            if (data) data.me = r.me;
+            $('wishText').value = '';
+            freshId = r.id;
+            $('pond').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => toss(() => {
+                if (r.reward) bigStamp(r.reward);
+                showToast(r.reward ? `願望沉下去了，獎金 ${fmt(r.reward)} 進錢包` : '願望沉下去了');
+                busy = false; tab = 'new'; renderTabs(); renderForm();
+                load().then(() => { const el = document.querySelector(`.wish[data-id="${r.id}"]`); if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 900); });
+            }), 350);
+        }
+
+        function bigStamp(amount) {
+            const el = $('bigStamp');
+            el.querySelector('.amt').textContent = `+${fmt(amount)}`;
+            el.classList.remove('is-on'); void el.offsetWidth; el.classList.add('is-on');
+            clearTimeout(bigStamp.t); bigStamp.t = setTimeout(() => el.classList.remove('is-on'), 1900);
+        }
+
+        // ===== 願望牆 =====
+        function ago(iso) {
+            const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);
+            if (!isFinite(s)) return '';
+            if (s < 60) return '剛剛';
+            if (s < 3600) return `${Math.floor(s / 60)} 分鐘前`;
+            if (s < 86400) return `${Math.floor(s / 3600)} 小時前`;
+            if (s < 86400 * 30) return `${Math.floor(s / 86400)} 天前`;
+            const d = new Date(iso); return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+        }
+        function pic(w) {
+            const src = w.avatar && Avatar.has(w.avatar) ? Avatar.url(w.avatar, 64) : w.picture;
+            return src ? `<img class="wish-pic" src="${esc(src)}" alt="" referrerpolicy="no-referrer" data-initial="${esc((w.name || '旅')[0])}">`
+                : `<span class="wish-pic is-text">${esc((w.name || '旅')[0])}</span>`;
+        }
+        function renderTabs() { document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tab === tab))); }
+        function renderWall() {
+            const box = $('wall');
+            if (!data) {
+                box.innerHTML = state === 'error' || state === 'old'
+                    ? `<p class="py-10 text-center text-xs font-sans tracking-widest text-stone-400">${state === 'old' ? '後端還是舊版，願望牆要重新部署才看得到。' : '願望牆撈不上來。'}</p>`
+                    : '<p class="py-10 text-center text-xs font-sans tracking-widest text-stone-400">撈願望中…</p>';
+                $('wallCount').textContent = ''; return;
+            }
+            $('wallCount').textContent = `${data.total} 個願望・實現 ${data.done} 個`;
+            let list = data.wishes.slice();
+            if (tab === 'hot') list = list.filter(w => w.votes > 0).sort((a, b) => b.votes - a.votes || Date.parse(b.at) - Date.parse(a.at));
+            if (tab === 'done') list = list.filter(w => w.status === 'done');
+            if (!list.length) {
+                const empty = { new: '池子還是空的。第一個願望，主人一定會看到。', hot: '還沒有人按「我也想要」。', done: '還沒有實現的。主人在努力了（大概）。' }[tab];
+                box.innerHTML = `<p class="py-10 text-center text-xs font-sans tracking-widest text-stone-400">${empty}</p>`; return;
+            }
+            box.innerHTML = list.map(w => {
+                const seal = SEALS[w.status];
+                return `<article class="wish ${seal ? 'has-seal' : ''} ${w.id === freshId ? 'is-new' : ''}" data-id="${esc(w.id)}">
+                    ${seal ? `<span class="seal ${seal[1]}" title="${esc(STATUS_TEXT[w.status])}" aria-label="${esc(STATUS_TEXT[w.status])}">${seal[0]}</span>` : ''}
+                    <div class="flex items-center gap-2 ${seal ? 'pr-12' : ''}">
+                        ${pic(w)}
+                        <span class="text-xs font-sans tracking-wider text-wabi-dark truncate">${esc(w.name)}</span>
+                        ${w.mine ? '<span class="text-[10px] font-sans text-wabi-shu border border-wabi-shu px-1">我</span>' : ''}
+                        <span class="text-[11px] font-sans text-stone-400 shrink-0">${ago(w.at)}</span>
+                        <span class="kind-tag ml-auto">${esc(KINDS[w.kind] || '其他')}</span>
+                    </div>
+                    <p class="wish-text">${esc(w.text)}</p>
+                    ${w.reply ? `<div class="wish-reply"><span class="text-[11px] font-sans tracking-widest text-wabi-shu">主人${w.repliedAt ? `・${ago(w.repliedAt)}` : ''}</span><br>${esc(w.reply)}</div>` : ''}
+                    <div class="mt-3 flex items-center gap-3">
+                        <button type="button" class="vote" data-vote="${esc(w.id)}" aria-pressed="${w.voted ? 'true' : 'false'}" ${w.mine ? 'disabled' : ''}>${w.mine ? '我許的' : w.voted ? '我也想要・已按' : '我也想要'}${w.votes ? `・${w.votes}` : ''}</button>
+                        ${w.status !== 'new' ? `<span class="text-[11px] font-sans tracking-widest ${w.status === 'done' ? 'text-wabi-shu' : 'text-stone-400'}">${esc(STATUS_TEXT[w.status])}</span>` : ''}
+                    </div>
+                </article>`;
+            }).join('');
+        }
+        function renderPond() {
+            if (!data) return;
+            coins = Math.max(coins, data.total - flying.length);
+            $('pondNote').textContent = data.total ? `池底沉了 ${data.total} 枚硬幣，點水面會起漣漪` : '池子還是空的，點水面會起漣漪';
+        }
+        function render() { renderForm(); renderWall(); renderPond(); }
+
+        async function load() {
+            try {
+                const r = await api({ type: 'wishList' });
+                if (r.result === 'success') { data = r; state = Line.loggedIn ? 'ready' : 'guest'; }
+                else if (r.result === 'unauthorized') { state = 'guest'; return load(); }
+                else if (/不認得的請求/.test(r.error || '')) state = 'old';
+                else state = 'error';
+            } catch (e) { state = 'error'; }
+            render();
+        }
+
+        async function vote(id) {
+            if (!Line.loggedIn) { showToast('用 LINE 登入才能按「我也想要」'); return; }
+            const w = data && data.wishes.find(x => x.id === id);
+            if (!w || w.mine) return;
+            // 先在畫面上改，後端回來再對
+            w.voted = !w.voted; w.votes += w.voted ? 1 : -1; renderWall();
+            try {
+                const r = await Line.call({ type: 'wishVote', id });
+                if (r.result === 'success') { w.votes = r.votes; w.voted = r.voted; }
+                else { w.voted = !w.voted; w.votes += w.voted ? 1 : -1; showToast(r.result === 'unauthorized' ? '登入過期了，再登入一次' : (r.error || '池子沒有回應')); }
+            } catch (e) { w.voted = !w.voted; w.votes += w.voted ? 1 : -1; showToast('連不到池子，可能是網路不穩'); }
+            renderWall();
+        }
+
+        // ===== 事件 =====
+        document.addEventListener('click', e => {
+            const t = e.target;
+            if (t.closest('[data-login]')) return Line.login();
+            if (t.closest('[data-retry]')) { state = 'loading'; render(); return load(); }
+            const k = t.closest('[data-kind]'); if (k) { kind = k.dataset.kind; return renderKinds(); }
+            const tb = t.closest('[data-tab]'); if (tb) { tab = tb.dataset.tab; renderTabs(); return renderWall(); }
+            if (t.closest('#wishGo')) return makeWish();
+            const v = t.closest('[data-vote]'); if (v) return vote(v.dataset.vote);
+        });
+        $('wishText').addEventListener('input', renderForm);
+        // 大頭貼載不到就換成名字第一個字
+        document.addEventListener('error', e => {
+            const img = e.target;
+            if (!(img instanceof HTMLImageElement) || !img.classList.contains('wish-pic')) return;
+            const s = document.createElement('span'); s.className = 'wish-pic is-text'; s.textContent = img.dataset.initial || '旅'; img.replaceWith(s);
+        }, true);
+
+        Wallet.on(type => {
+            if (type === 'login') { state = 'loading'; render(); setTimeout(load, 1200); }
+            else if (type === 'logout') { state = 'guest'; load(); }
+        });
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && data && !busy) load(); });
+
+        fit(); fitReady = true;
+        window.addEventListener('resize', fit);
+        renderKinds(); render(); draw(performance.now()); startLoop();
+        Line.ready.then(load, load);
+    </script>
+</body>
+
+</html>

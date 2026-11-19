@@ -111,7 +111,7 @@
         .av-opt.on { border-color: rgb(var(--wabi-shu)); box-shadow: 0 0 0 1px rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261117b">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261119a">
 </head>
 
 <body
@@ -279,6 +279,14 @@
                     </span>
                     <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
                 </a>
+                <a href="xuyuan.html" class="game">
+                    <span class="game-mark">願</span>
+                    <span class="flex-1 min-w-0">
+                    <span class="block text-wabi-dark tracking-widest">許願・池</span>
+                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">說你想要網站多什麼，主人會來撈。每天第一個願望 +$1,000</span>
+                    </span>
+                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                </a>
             </div>
             <div class="game-group">
                 <h3 class="group-h"><span class="group-no">肆</span><span class="group-name">公告欄</span><span class="group-desc">誰最會賺、誰最會花</span></h3>
@@ -345,8 +353,10 @@
             zaocan: e => `開了 ${e.times} 天店，賺 ${fmt(e.total)}（最多一天 ${fmt(e.best)}）`,
             ship: e => `出航 ${e.times} 趟，賺 ${fmt(e.total)}（最多一趟 ${fmt(e.best)}）`,
             dessert: e => `開店 ${e.times} 輪，賺 ${fmt(e.total)}（最多一輪 ${fmt(e.best)}）`,
+            stack: e => `疊了 ${e.times} 場，賺 ${fmt(e.total)}（最多一場 ${fmt(e.best)}）`,
+            wish: e => `許了 ${e.times} 天的願，${fmt(e.total)}`,
         };
-        const LABELS = { xitou: '坐洗部', clean: '房務部', scratch: '彩券行', bonus: '主人紅包', caishen: '財神燈', insure: '丼步喱人壽', farm: '菜園部', wifi: '蹭網部', zaocan: '早餐店', ship: '長蘿貨運', dessert: '甜點店' };
+        const LABELS = { xitou: '坐洗部', clean: '房務部', scratch: '彩券行', bonus: '主人紅包', caishen: '財神燈', insure: '丼步喱人壽', farm: '菜園部', wifi: '蹭網部', zaocan: '早餐店', ship: '長蘿貨運', dessert: '甜點店', stack: '疊巢部', wish: '許願池' };
 
         function renderWho() {
             const box = $('who');
