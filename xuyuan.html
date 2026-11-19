@@ -212,7 +212,7 @@
         </section>
 
         <section class="mt-12 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">
-            <p>規則：用 LINE 登入才能許願。每天第一個願望 <b class="font-normal text-wabi-shu">+$1,000</b> 進錢包，一天最多許三個（後兩個沒有獎金）。看到喜歡的願望可以按「我也想要」，主人會先撈人多的。</p>
+            <p>規則：用 LINE 登入才能許願。每天第一個願望有<b class="font-normal text-wabi-shu">獎金</b>進錢包（多少看池子的心情），一天最多許三個（後兩個沒有獎金）。看到喜歡的願望可以按「我也想要」，主人會先撈人多的。</p>
             <p class="mt-2">願望和你的暱稱、頭像會貼在願望牆上給大家看，不要寫電話、地址這些。亂寫的會被主人撈起來丟掉。</p>
             <p class="mt-2">獎金是小遊戲的遊戲幣，不能儲值，也不能換成現金或獎品。</p>
         </section>
@@ -382,14 +382,14 @@
             if (state === 'loading') { box.innerHTML = '<p class="text-xs font-sans tracking-widest text-stone-400 text-center py-3">池子在看你是誰…</p>'; return; }
             if (state === 'guest') {
                 box.innerHTML = `<button type="button" data-login class="line-btn w-full">用 LINE 登入才能許願</button>
-                    <p class="mt-2 text-[11px] font-sans tracking-wider text-stone-400 text-center">登入後每天第一個願望 +$1,000，願望牆不用登入也看得到。</p>`;
+                    <p class="mt-2 text-[11px] font-sans tracking-wider text-stone-400 text-center">登入後每天第一個願望有獎金，願望牆不用登入也看得到。</p>`;
                 return;
             }
             if (state === 'old') { box.innerHTML = '<p class="text-xs font-sans tracking-wider text-wabi-shu text-center py-3">後端還是舊版，要重新部署「新版本」才許得了願。</p>'; return; }
             if (state === 'error') { box.innerHTML = `<p class="text-xs font-sans tracking-wider text-stone-500 text-center py-2">連不到池子，可能是網路不穩。</p><button type="button" data-retry class="btn w-full border border-stone-300">再試一次</button>`; return; }
             const me = data && data.me, left = me ? me.left : 3, full = left <= 0;
             const note = !me ? '' : full ? '今天許滿三個了，神明也要休息，明天再來。'
-                : me.rewarded ? `今天的獎金領過了，還能再許 ${left} 個（沒有獎金）。` : `今天第一個願望 <b class="font-normal text-wabi-shu">+${fmt(me.reward)}</b>。`;
+                : me.rewarded ? `今天的獎金領過了，還能再許 ${left} 個（沒有獎金）。` : '今天第一個願望有<b class="font-normal text-wabi-shu">獎金</b>，多少看池子的心情。';
             const len = textLen(), ok = !full && !busy && len >= 4;
             box.innerHTML = `<button type="button" id="wishGo" class="btn btn-shu w-full" ${ok ? '' : 'disabled'}>${busy ? '硬幣飛出去了…' : full ? '明天再來' : '投一枚硬幣・許願'}</button>
                 <p class="mt-2 text-[11px] font-sans tracking-wider text-stone-500 text-center">${note}${!full && len > 0 && len < 4 ? '（再多寫幾個字）' : ''}</p>`;

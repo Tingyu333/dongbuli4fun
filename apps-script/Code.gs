@@ -71,7 +71,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-19a';
+var BACKEND_VERSION = '2026-11-19c';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1 };
 
@@ -3614,7 +3614,7 @@ function econReport(days) {
 // 願望牆公開（暱稱、頭像、內容、主人的回覆、幾個人也想要），不回 line_id；主人在後台改狀態、回一句話、藏起來。
 // 不寄信（公開的動作不寄信給別人，也不寄給主人：願望在後台看）。
 // Wishes：A timestamp、B id、C line_id、D kind、E text、F status、G reply、H voters（JSON，line_id 陣列）、I hidden、J replied_at
-var WISH_REWARD = 1000;          // 每天第一個願望的獎金（遊戲幣）
+var WISH_REWARD_MIN = 3000, WISH_REWARD_MAX = 6666;   // 每天第一個願望的獎金，隨機（遊戲幣；2026-11-19 使用者定的：$1,000 → $3,000 → 隨機 3,000～6,666，網頁上不寫金額）
 var WISH_PER_DAY = 3;            // 一個人一天最多許幾個（只有第一個有獎金）
 var WISH_MIN = 4, WISH_MAX = 200;
 var WISH_PER_HOUR = 60;          // 全站每小時最多幾個願望
@@ -3677,7 +3677,7 @@ function wishView(w, people, me) {
 function wishMe(all, me) {
   if (!me) return null;
   var today = wishDay(), n = all.filter(function (w) { return w.lineId === me && wishDay(w.at) === today; }).length;
-  return { today: n, left: Math.max(0, WISH_PER_DAY - n), rewarded: n > 0, reward: WISH_REWARD, perDay: WISH_PER_DAY };
+  return { today: n, left: Math.max(0, WISH_PER_DAY - n), rewarded: n > 0, perDay: WISH_PER_DAY };
 }
 
 // 公開：願望牆。{ type: 'wishList', session? }
@@ -3688,7 +3688,7 @@ function wishList(input) {
   var list = shown.slice(-WISH_LIST_MAX).reverse().map(function (w) { return wishView(w, people, me); });
   return {
     result: 'success', wishes: list, total: shown.length, done: shown.filter(function (w) { return w.status === 'done'; }).length,
-    me: wishMe(all, me), rules: { reward: WISH_REWARD, perDay: WISH_PER_DAY, min: WISH_MIN, max: WISH_MAX, kinds: WISH_KINDS }
+    me: wishMe(all, me), rules: { perDay: WISH_PER_DAY, min: WISH_MIN, max: WISH_MAX, kinds: WISH_KINDS }
   };
 }
 
@@ -3716,14 +3716,14 @@ function wishAdd(input) {
 
   var id = 'w' + Utilities.getUuid().replace(/-/g, '').slice(0, 10), now = new Date();
   wishesSheet().appendRow([now, id, lineId, kind, asText(text), 'new', '', '[]', false, '']);
-  var reward = mineToday.length === 0 ? WISH_REWARD : 0, out = { result: 'success', id: id, reward: reward };
+  var reward = mineToday.length === 0 ? WISH_REWARD_MIN + Math.floor(Math.random() * (WISH_REWARD_MAX - WISH_REWARD_MIN + 1)) : 0, out = { result: 'success', id: id, reward: reward };
   if (reward) {
     p.money = Math.min(WALLET_MAX, p.money + reward);
     p.earned = addEarned(p.earned, { wish: { times: 1, total: reward, best: reward } });
     writeWallet(p);
   }
   out.wallet = walletView(p);
-  out.me = { today: mineToday.length + 1, left: Math.max(0, WISH_PER_DAY - mineToday.length - 1), rewarded: true, reward: WISH_REWARD, perDay: WISH_PER_DAY };
+  out.me = { today: mineToday.length + 1, left: Math.max(0, WISH_PER_DAY - mineToday.length - 1), rewarded: true, perDay: WISH_PER_DAY };
   return out;
 }
 

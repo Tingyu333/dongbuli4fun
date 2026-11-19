@@ -83,7 +83,7 @@
 
 - **`Wishes`**：A `timestamp`、B `id`（`w`＋10 碼）、C `line_id`、D `kind`（`game`／`idea`／`bug`／`other`）、E `text`（過 `asText()`）、F `status`（`new`／`seen`／`doing`／`done`／`no`）、G `reply`、H `voters`（JSON，按「我也想要」的 line_id）、I `hidden`、J `replied_at`。不備份、不封存（量很小）。
 - `wishList`（公開，帶 `session` 會多 `me` 和每個願望的 `mine`／`voted`）：最近 80 個沒藏的，新的在前；`{ wishes: [{ id, at, kind, text, status, reply, repliedAt, votes, name, picture, avatar, mine, voted }], total, done, me: { today, left, rewarded, reward, perDay } | null, rules }`。名字、頭像跟排行榜一樣暱稱、指定頭像優先，**不回 line_id**。
-- `wishAdd`（要登入、排隊）：`{ kind, text }`，4～200 字、一天 3 個、同樣的字不能兩次、全站每小時 60 個；當天第一個 `reward` $1,000 加進帳號 `earned.wish`，回 `{ id, reward, wallet, me }`。
+- `wishAdd`（要登入、排隊）：`{ kind, text }`，4～200 字、一天 3 個、同樣的字不能兩次、全站每小時 60 個；當天第一個 `reward` 隨機 $3,000～6,666（2026-11-19c 起；a 版 $1,000、b 版 $3,000），`wishList` 和 `me` 不回金額加進帳號 `earned.wish`，回 `{ id, reward, wallet, me }`。
 - `wishVote`（要登入、排隊）：`{ id }` 切換「我也想要」，自己的、藏起來的不能按，一人每小時 60 次；回 `{ votes, voted }`。
 - 後台（帶 `token`）：`adminWishes`（全部含藏起來的，多 `hidden`）、`adminWishSet`（`{ id, status?, reply?, hidden? }`，有帶才改，回覆存了記 `replied_at`；回傳整份 `adminWishes`）。
 - 都不寄信。
