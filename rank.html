@@ -359,6 +359,7 @@
             <a id="go5" href="zaocan.html" class="block py-4 border border-stone-300 text-center text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">去早餐部</a>
             <a id="go6" href="huoyun.html" class="block py-4 border border-stone-300 text-center text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">去貨運部</a>
             <a id="go7" href="tiandian.html" class="block py-4 border border-stone-300 text-center text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">去甜點部</a>
+            <a id="go8" href="diechao.html" class="block py-4 border border-stone-300 text-center text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">去疊巢部</a>
         </div>
 
         <p class="mt-10 text-[11px] font-sans tracking-widest text-stone-400 leading-relaxed text-center">
@@ -596,7 +597,7 @@
             const B = BOOKS[book];
             $('title').textContent = B.title; $('tagline').innerHTML = B.tag;
             $('workCtl').classList.toggle('hidden', book !== 'work'); $('spendCtl').classList.toggle('hidden', book !== 'spend'); $('endCtl').classList.toggle('hidden', book !== 'endless');
-            [$('go1'), $('go2'), $('go3'), $('go4'), $('go5'), $('go6'), $('go7')].forEach((a, i) => {
+            [$('go1'), $('go2'), $('go3'), $('go4'), $('go5'), $('go6'), $('go7'), $('go8')].forEach((a, i) => {   // 新增部門：這裡和上面的 <a id="goN"> 都要加
                 const g = B.go[i]; a.classList.toggle('hidden', !g);
                 a.classList.toggle('col-span-2', B.go.length !== 3 && B.go.length % 2 === 1 && i === B.go.length - 1);  // 單數顆：最後一顆佔一整排
                 if (g) { a.href = g[0]; a.textContent = g[1]; }
