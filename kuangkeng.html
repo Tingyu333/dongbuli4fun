@@ -240,7 +240,7 @@
         // 工資（計劃書：破關一局約 $13,500，一分鐘約 $1,050）：每打完一關出勤費、過關照關數、破關獎金
         const PAY = { show: 100, clear: n => 500 + 100 * n, final: 2000 };
         // 監修中：會員中心的入口蓋章、畫布蓋起來；網址加 ?preview 可以試玩（不發工資、不記錄，店面滿級借你用）
-        const MAINTENANCE = true;   // 2026-11-20 上線但先監修中（使用者說的）；改成 false 就開工
+        const MAINTENANCE = false;   // 2026-11-20 晚上開工（使用者說「開工」）；改回 true 就又蓋起來，?preview 可以試玩
         const PREVIEW = /[?&]preview\b/.test(location.search);
         const CLOSED = MAINTENANCE && !PREVIEW;
         // 店面（花錢包的錢，永久；key 跟別家店不重複）。全部買滿 $44.5 萬

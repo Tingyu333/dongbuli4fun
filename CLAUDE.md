@@ -60,7 +60,7 @@
 | `huoyun.html` | 打工：貨運・航（開船撈蘿蔔），無盡模式、船廠 | `docs/pages/huoyun.md` |
 | `tiandian.html` | 打工：甜點・轉（蘋果鴨甜點店，轉盤），店面升級 | `docs/pages/tiandian.md` |
 | `diechao.html` | 打工：疊・巢（小吳鴨疊精裝書，60 秒、無盡模式），店面 | `docs/pages/diechao.md` |
-| `kuangkeng.html` | 打工：礦坑・挖（黃金礦工的丼步喱版，浣熊大王當礦工）。**上線但監修中**（`MAINTENANCE = true`，會員中心那格蓋「監修中」章、`?preview` 才能試玩，試玩不發工資不記錄）；十關、礦坑商店、工資進錢包、店面、結局、日報和結業證書、排行榜礦坑部（挖最深） | `docs/pages/kuangkeng.md` |
+| `kuangkeng.html` | 打工：礦坑・挖（黃金礦工的丼步喱版，浣熊大王當礦工）。2026-11-20 晚上開工（頁內 `MAINTENANCE` 開關，改 `true` 會蓋「監修中」、`?preview` 試玩不發工資不記錄）；十關、礦坑商店、工資進錢包、店面、結局、日報和結業證書、排行榜礦坑部（挖最深） | `docs/pages/kuangkeng.md` |
 | `xuyuan.html` | 許願・池：搜集提案，每天第一個願隨機 $3,000～6,666（網頁不寫金額），願望牆、主人回覆 | `docs/pages/xuyuan.md` |
 | `rank.html` | 排行・榜：打工・榜、花錢・榜、無盡・榜 | `docs/pages/rank.md` |
 | `baoxian.html` | 保險・存：儲蓄險（後端算） | `docs/pages/baoxian.md` |
