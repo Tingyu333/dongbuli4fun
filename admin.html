@@ -89,6 +89,7 @@
             <div class="tabs" role="group" aria-label="分頁">
                 <button type="button" data-tab="players" aria-pressed="true">玩家</button>
                 <button type="button" data-tab="perks" aria-pressed="false">道具</button>
+                <button type="button" data-tab="lib" aria-pressed="false">道具庫</button>
                 <button type="button" data-tab="econ" aria-pressed="false">經濟</button>
             </div>
             <p id="state" class="mt-6 text-xs font-sans tracking-widest text-stone-400 text-center"></p>
@@ -113,7 +114,7 @@
             <div id="tab-perks" class="mt-5" hidden>
                 <div class="card">
                     <h3 class="text-sm tracking-[0.3em] text-wabi-dark">發專屬道具</h3>
-                    <p class="mt-1 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">現在只有發放和紀錄，<b class="font-normal text-wabi-shu">道具的效果還沒做</b>，玩家那邊還感覺不到。</p>
+                    <p class="mt-1 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">從道具庫挑一個發出去。要新的道具、改名字，去<button type="button" class="underline" data-goto="lib">道具庫</button>。拿到的人只有自己看得到。</p>
                     <div class="mt-4 space-y-4">
                         <label class="block text-[11px] font-sans tracking-[0.2em] text-stone-500">給誰
                             <select id="gWho" class="field mt-1"></select></label>
@@ -137,6 +138,34 @@
                 <div id="perkActive" class="mt-3 space-y-3"></div>
                 <h3 class="mt-8 text-sm tracking-[0.3em] text-wabi-dark">收回、過期的</h3>
                 <div id="perkOld" class="mt-3 space-y-2"></div>
+            </div>
+
+            <!-- 道具庫：主人自己取名字，每個道具掛一種效果 -->
+            <div id="tab-lib" class="mt-5" hidden>
+                <div class="card" id="libForm">
+                    <h3 id="libFormTitle" class="text-sm tracking-[0.3em] text-wabi-dark">新增道具</h3>
+                    <p class="mt-1 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">名字你取，效果從做好的裡面挑。同一種效果可以有很多個名字（例如「許願池大獎」「生日禮」都是六折）。</p>
+                    <div class="mt-4 space-y-4">
+                        <label class="block text-[11px] font-sans tracking-[0.2em] text-stone-500">名字（最多 12 字）
+                            <input id="lName" class="field mt-1" maxlength="12" placeholder="例如：許願池大獎"></label>
+                        <label class="block text-[11px] font-sans tracking-[0.2em] text-stone-500">效果
+                            <select id="lEffect" class="field mt-1"></select></label>
+                        <p id="lEffectDesc" class="text-[11px] font-sans tracking-wider text-stone-400 -mt-2"></p>
+                        <label class="block text-[11px] font-sans tracking-[0.2em] text-stone-500">一句話（可以不寫，拿到的人看得到，最多 30 字）
+                            <input id="lLine" class="field mt-1" maxlength="30" placeholder="例如：主人說：拿去花，不用還"></label>
+                        <div>
+                            <span class="block text-[11px] font-sans tracking-[0.2em] text-stone-500">拿到的人在商店會看到</span>
+                            <div id="lPreview" class="mt-1"></div>
+                        </div>
+                        <div class="flex gap-3">
+                            <button id="libCancel" type="button" class="btn btn-line" hidden>取消</button>
+                            <button id="libSave" type="button" class="btn btn-dark flex-1">加進道具庫</button>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="mt-8 text-sm tracking-[0.3em] text-wabi-dark">道具庫</h3>
+                <p class="mt-1 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">改名字，已經拿到的人下次開商店就看到新名字。停用：不能再發，已經發出去的照樣有效（要收回去「道具」那邊）。</p>
+                <div id="libList" class="mt-3 space-y-3"></div>
             </div>
 
             <!-- 經濟 -->
@@ -212,10 +241,11 @@
         function setTab(t) {
             tab = t;
             document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tab === t)));
-            ['players', 'perks', 'econ'].forEach(k => $('tab-' + k).hidden = k !== t);
+            ['players', 'perks', 'lib', 'econ'].forEach(k => $('tab-' + k).hidden = k !== t);
             if (t === 'econ' && !econ) loadEcon();
         }
         document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
+        document.addEventListener('click', e => { const b = e.target.closest('[data-goto]'); if (b) { setTab(b.dataset.goto); window.scrollTo({ top: 0, behavior: 'smooth' }); } });
 
         // ===== 玩家 =====
         function pic(p) {
@@ -266,16 +296,17 @@
             const who = $('gWho').value;
             $('gWho').innerHTML = '<option value="">選一個玩家</option>' + data.players.slice().sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant')).map(p => `<option value="${esc(p.key)}">${esc(p.name)}${p.nick && p.lineName && p.nick !== p.lineName ? `（${esc(p.lineName)}）` : ''}</option>`).join('');
             if (who) $('gWho').value = who;
-            const perk = $('gPerk').value;
-            $('gPerk').innerHTML = data.perkTypes.map(t => `<option value="${esc(t.key)}">${esc(t.name)}${t.live ? '' : '（效果還沒做）'}</option>`).join('');
-            if (perk) $('gPerk').value = perk;
-            const t = data.perkTypes.find(x => x.key === $('gPerk').value);
-            $('gPerkDesc').textContent = t ? t.desc : '';
+            const perk = $('gPerk').value, items = libItems().filter(x => !x.retired);
+            $('gPerk').innerHTML = items.map(t => `<option value="${esc(t.id)}">${esc(t.name)}${t.name !== t.effectName ? `（${esc(t.effectName)}）` : ''}${t.live ? '' : '・效果還沒做'}</option>`).join('') || '<option value="">道具庫是空的</option>';
+            if (perk && items.some(x => x.id === perk)) $('gPerk').value = perk;
+            const t = items.find(x => x.id === $('gPerk').value);
+            $('gPerkDesc').textContent = t ? t.effectDesc + (t.line ? `。附一句：${t.line}` : '') : '';
             const act = data.perks.filter(x => x.active), old = data.perks.filter(x => !x.active);
             $('perkActive').innerHTML = act.map(x => `
                 <div class="card flex items-start gap-3">
                     <div class="min-w-0 flex-1">
                         <p class="text-sm text-wabi-dark"><span class="chip mr-2">${esc(x.perkName)}</span>${esc(x.who)}</p>
+                        ${x.effectName && x.effectName !== x.perkName ? `<p class="mt-1 text-[11px] font-sans tracking-wider text-stone-500">效果：${esc(x.effectName)}</p>` : ''}
                         <p class="mt-1 text-[11px] font-sans tracking-wider text-stone-400">${day(x.at)} 發・${x.expires ? '到 ' + day(x.expires) : '永久'}${x.note ? '・' + esc(x.note) : ''}${x.live ? '' : '・效果還沒做'}</p>
                     </div>
                     <button type="button" class="btn btn-line" style="min-height:36px;padding:0 .7rem;font-size:12px;letter-spacing:.1em" data-revoke="${esc(x.id)}">收回</button>
@@ -286,10 +317,11 @@
         $('gPerk').addEventListener('change', renderPerks);
         $('grantBtn').addEventListener('click', async () => {
             const key = $('gWho').value; if (!key) { showToast('先選要給誰'); return; }
-            const p = data.players.find(x => x.key === key), t = data.perkTypes.find(x => x.key === $('gPerk').value);
+            const p = data.players.find(x => x.key === key), t = libItems().find(x => x.id === $('gPerk').value);
+            if (!t) { showToast('先去道具庫做一個道具'); return; }
             if (!confirm(`把「${t.name}」發給 ${p.name}？期限：${$('gDays').selectedOptions[0].textContent}`)) return;
             $('grantBtn').disabled = true;
-            try { data = await call({ type: 'gaPerkGrant', key, perk: t.key, days: Number($('gDays').value), note: $('gNote').value }); $('gNote').value = ''; render(); showToast(`發給 ${p.name} 了`); }
+            try { data = await call({ type: 'gaPerkGrant', key, perk: t.id, days: Number($('gDays').value), note: $('gNote').value }); $('gNote').value = ''; render(); showToast(`發給 ${p.name} 了`); }
             catch (err) { showToast(err.message); }
             $('grantBtn').disabled = false;
         });
@@ -300,6 +332,87 @@
             b.disabled = true;
             try { data = await call({ type: 'gaPerkRevoke', id: x.id }); render(); showToast('收回了'); }
             catch (err) { showToast(err.message); b.disabled = false; }
+        });
+
+        // ===== 道具庫 =====
+        // 舊版後端沒有 lib：拿效果當道具（id＝效果 key）
+        const libItems = () => data.lib || (data.perkTypes || []).map(t => ({ id: t.key, name: t.name, effect: t.key, effectName: t.name, effectDesc: t.desc, live: t.live, line: '', retired: false, active: 0, total: 0 }));
+        const STAMP = { shop60: '專屬<br>六折' };
+        let editing = null;   // 正在改的道具 id
+        // 跟 wallet.js 的 saleBanner() 長一樣（預覽用）
+        function banner(name, line, effect) {
+            const what = effect === 'shop60' ? '七家打工店的升級都打六折。' : '';
+            return `<div style="display:flex;align-items:center;gap:.6rem;padding:.55rem .7rem;border:1px solid rgb(var(--wabi-shu) / .45);border-radius:4px;background:rgb(var(--wabi-shu) / .05)">`
+                + `<span style="flex-shrink:0;width:2.6rem;height:2.6rem;display:flex;align-items:center;justify-content:center;border:1.5px solid rgb(var(--wabi-shu));border-radius:4px;color:rgb(var(--wabi-shu));font-size:.72rem;line-height:1.15;text-align:center;transform:rotate(-6deg);font-weight:600">${STAMP[effect] || '專屬'}</span>`
+                + `<span style="font-family:'Noto Sans TC',sans-serif;font-size:11px;letter-spacing:.06em;line-height:1.6;color:rgb(var(--wabi-text))">你有專屬道具「${esc(name || '（名字）')}」：${what}${line ? `<span style="display:block;margin-top:.15rem;color:rgb(var(--wabi-accent))">${esc(line)}</span>` : ''}</span></div>`;
+        }
+        function renderLibForm() {
+            if (!data) return;
+            const eff = $('lEffect').value;
+            $('lEffect').innerHTML = (data.effects || data.perkTypes || []).map(t => `<option value="${esc(t.key)}">${esc(t.name)}${t.live ? '' : '（效果還沒做）'}</option>`).join('');
+            if (eff) $('lEffect').value = eff;
+            const it = editing && libItems().find(x => x.id === editing);
+            if (it) $('lEffect').value = it.effect;
+            $('lEffect').disabled = !!it;
+            const t = (data.effects || data.perkTypes || []).find(x => x.key === $('lEffect').value);
+            $('lEffectDesc').textContent = (t ? t.desc : '') + (it ? '。效果建了就不能改（發出去的會跟著變），要別的效果就新增一個。' : '');
+            $('lPreview').innerHTML = banner($('lName').value.trim(), $('lLine').value.trim(), $('lEffect').value);
+            $('libFormTitle').textContent = it ? `改「${it.name}」` : '新增道具';
+            $('libSave').textContent = it ? '存起來' : '加進道具庫';
+            $('libCancel').hidden = !it;
+        }
+        function renderLib() {
+            if (!data) return;
+            renderLibForm();
+            if (!data.lib) { $('libList').innerHTML = '<p class="text-xs font-sans tracking-wider text-wabi-shu">後端還是舊版：部署新版本（2026-11-20c 以後）才有道具庫。</p>'; return; }
+            const sm = 'style="min-height:36px;padding:0 .7rem;font-size:12px;letter-spacing:.1em"';
+            $('libList').innerHTML = data.lib.map(x => `
+                <div class="card${x.retired ? ' opacity-60' : ''}">
+                    <div class="flex items-start gap-3">
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm text-wabi-dark"><span class="chip${x.retired ? ' is-off' : ''} mr-2">${esc(x.name)}</span>${x.retired ? '<span class="text-[11px] font-sans text-stone-400">停用</span>' : ''}</p>
+                            <p class="mt-1 text-[11px] font-sans tracking-wider text-stone-500">效果：${esc(x.effectName)}${x.live ? '' : '・效果還沒做'}</p>
+                            ${x.line ? `<p class="mt-1 text-[12px] text-wabi-accent">「${esc(x.line)}」</p>` : ''}
+                            <p class="mt-1 text-[11px] font-sans tracking-wider text-stone-400">有效 ${x.active} 個・發過 ${x.total} 次</p>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex gap-2 justify-end">
+                        ${x.retired ? '' : `<button type="button" class="btn btn-line" ${sm} data-lib-give="${esc(x.id)}">發這個</button>`}
+                        <button type="button" class="btn btn-line" ${sm} data-lib-edit="${esc(x.id)}">改</button>
+                        <button type="button" class="btn btn-line" ${sm} data-lib-retire="${esc(x.id)}" data-on="${x.retired ? '' : '1'}">${x.retired ? '恢復' : '停用'}</button>
+                    </div>
+                </div>`).join('') || '<p class="text-xs font-sans tracking-widest text-stone-400">還沒有。</p>';
+        }
+        ['lName', 'lLine'].forEach(id => $(id).addEventListener('input', renderLibForm));
+        $('lEffect').addEventListener('change', renderLibForm);
+        function resetLibForm() { editing = null; $('lName').value = ''; $('lLine').value = ''; renderLibForm(); }
+        $('libCancel').addEventListener('click', resetLibForm);
+        $('libSave').addEventListener('click', async () => {
+            if (!data.lib) { showToast('後端還是舊版，先部署新版本'); return; }
+            const name = $('lName').value.trim(), line = $('lLine').value.trim();
+            if (!name) { showToast('道具要有名字'); $('lName').focus(); return; }
+            $('libSave').disabled = true;
+            try {
+                data = await call({ type: 'gaLibSave', id: editing || undefined, name, line, effect: $('lEffect').value });
+                showToast(editing ? '改好了' : `「${name}」加進道具庫了`); resetLibForm(); render();
+            } catch (err) { showToast(err.message); }
+            $('libSave').disabled = false;
+        });
+        $('libList').addEventListener('click', async e => {
+            const g = e.target.closest('[data-lib-give]'), ed = e.target.closest('[data-lib-edit]'), rt = e.target.closest('[data-lib-retire]');
+            if (g) { setTab('perks'); renderPerks(); $('gPerk').value = g.dataset.libGive; renderPerks(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+            if (ed) {
+                const x = data.lib.find(y => y.id === ed.dataset.libEdit); editing = x.id;
+                $('lName').value = x.name; $('lLine').value = x.line; renderLibForm();
+                $('libForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); return;
+            }
+            if (rt) {
+                const x = data.lib.find(y => y.id === rt.dataset.libRetire), on = !!rt.dataset.on;
+                if (on && !confirm(`停用「${x.name}」？之後不能再發，已經發出去的 ${x.active} 個照樣有效。`)) return;
+                rt.disabled = true;
+                try { data = await call({ type: 'gaLibRetire', id: x.id, retired: on }); if (editing === x.id) resetLibForm(); render(); showToast(on ? '停用了' : '恢復了'); }
+                catch (err) { showToast(err.message); rt.disabled = false; }
+            }
         });
 
         // ===== 經濟 =====
@@ -347,7 +460,7 @@
         });
 
         // ===== 載入 =====
-        function render() { renderPlayers(); renderPerks(); }
+        function render() { renderPlayers(); renderPerks(); renderLib(); }
         async function loadPlayers() {
             $('state').textContent = '讀玩家中……';
             try { data = await call({ type: 'gaPlayers' }); $('state').textContent = ''; render(); }

@@ -71,9 +71,9 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-20b';
+var BACKEND_VERSION = '2026-11-20c';
 
-var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1 };
+var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1 };
 
 function withLock(fn) {
   var lock = LockService.getScriptLock();
@@ -160,6 +160,8 @@ function route(type, input) {
       if (type === 'gaPlayers') return gaPlayers();
       if (type === 'gaPerkGrant') return gaPerkGrant(input);
       if (type === 'gaPerkRevoke') return gaPerkRevoke(input);
+      if (type === 'gaLibSave') return gaLibSave(input);
+      if (type === 'gaLibRetire') return gaLibRetire(input);
       if (type === 'gaEcon') return gaEcon();
       if (type === 'gaWage') return gaWage(input);
       return { result: 'error', error: '不認得的請求' };
@@ -3791,11 +3793,16 @@ function adminWishSet(input) {
 // 使用者要的「另一個後台」：玩家列表、專屬道具（先做架子：發、收回、到期，還沒有效果）、經濟體檢。
 // 密碼是另一組：指令碼屬性 GAME_ADMIN_PASSWORD（跟預約後台的 ADMIN_PASSWORD 分開），通行證也分開（cache 'gadmin:'）。
 // 不回 line_id：玩家用 key（line_id 的雜湊，前 12 碼）認，發道具時後端再對回 line_id。
-// Perks：A timestamp、B id、C line_id、D perk、E note、F expires（空白＝永久）、G revoked_at、H key
+// Perks：A timestamp、B id、C line_id、D perk（道具庫的 id；舊的直接寫效果 key）、E note、F expires（空白＝永久）、G revoked_at、H key
+// 道具庫（2026-11-20c）：主人自己取名字的道具，每一個掛一種「效果」（PERK_TYPES）。發道具是從道具庫挑。
+// PerkLib：A created、B id、C name（12 字）、D effect、E line（給拿到的人看的一句話，30 字）、F retired_at（停用：不能再發，已經發的照樣有效）、G updated
+// PERK_TYPES 是「效果」：寫在程式裡，有程式才有效果；名字是道具庫取的
 var PERK_TYPES = {
   shop60: { name: '全店六折', desc: '七家打工店面升級打六折（刮刮樂、功德、股市、保險照原價）', live: true }   // 2026-11-20b 起生效；live: false 的只記錄、不送給玩家
 };
 var PERK_HEADERS = ['timestamp', 'id', 'line_id', 'perk', 'note', 'expires', 'revoked_at', 'key'];
+var LIB_HEADERS = ['created', 'id', 'name', 'effect', 'line', 'retired_at', 'updated'];
+var LIB_NAME_MAX = 12, LIB_LINE_MAX = 30;
 
 function gameAdminLogin(input) {
   var cache = CacheService.getScriptCache();
@@ -3842,6 +3849,47 @@ function readPerks() {
   return out;
 }
 
+// 道具庫分頁：第一次用的時候開，順便把原本的「全店六折」放進去（id 就叫 shop60，以前發的 perk 欄就是 shop60，直接對得上）
+function libSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('PerkLib');
+  if (!sheet) {
+    sheet = ss.insertSheet('PerkLib'); sheet.appendRow(LIB_HEADERS);
+    var now = new Date();
+    Object.keys(PERK_TYPES).forEach(function (k) { sheet.appendRow([now, k, PERK_TYPES[k].name, k, '', '', now]); });
+  }
+  return sheet;
+}
+
+function libClean(v, max) {
+  return String(v == null ? '' : v).replace(/^'/, '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+// { id: { row, id, name, effect, line, retiredAt, created } }；create=false 時分頁還沒有就用 PERK_TYPES 當預設（玩家同步時不要開分頁）
+function readLib(create) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet(), sheet = create ? libSheet() : ss.getSheetByName('PerkLib'), out = {};
+  if (!sheet) {
+    Object.keys(PERK_TYPES).forEach(function (k) { out[k] = { row: 0, id: k, name: PERK_TYPES[k].name, effect: k, line: '', retiredAt: 0, created: 0 }; });
+    return out;
+  }
+  var rows = sheet.getDataRange().getValues(), t = function (v) { return v instanceof Date ? v.getTime() : (v ? Date.parse(v) || 0 : 0); };
+  for (var i = 1; i < rows.length; i++) {
+    var r = rows[i], id = String(r[1] || '');
+    if (!id) continue;
+    out[id] = { row: i + 1, id: id, name: libClean(r[2], LIB_NAME_MAX) || id, effect: String(r[3] || ''), line: libClean(r[4], LIB_LINE_MAX),
+      retiredAt: t(r[5]), created: t(r[0]) };
+  }
+  return out;
+}
+
+// 發出去的那筆是什麼：道具庫有就用道具庫的名字；沒有（舊資料）就看是不是效果 key
+function perkInfo(perk, lib) {
+  var x = lib[perk];
+  if (x) return { name: x.name, effect: x.effect, line: x.line };
+  if (PERK_TYPES[perk]) return { name: PERK_TYPES[perk].name, effect: perk, line: '' };
+  return { name: perk, effect: '', line: '' };
+}
+
 // 玩家：暱稱、頭像、錢、賺、花、店面、功德、最近同步；外加他身上的道具
 function gaPlayerRows() {
   var rows = playersSheet().getDataRange().getValues(), out = [];
@@ -3866,42 +3914,87 @@ function gaPlayerRows() {
   return out;
 }
 
-function gaPerkView(x, names) {
-  var t = PERK_TYPES[x.perk] || { name: x.perk, desc: '', live: false };
-  return { id: x.id, key: x.key, who: names[x.lineId] || '（找不到這個玩家）', perk: x.perk, perkName: t.name, live: !!t.live, note: x.note,
+function gaPerkView(x, names, lib) {
+  var info = perkInfo(x.perk, lib), t = PERK_TYPES[info.effect] || { name: '（沒有這種效果）', live: false };
+  return { id: x.id, key: x.key, who: names[x.lineId] || '（找不到這個玩家）', perk: x.perk, perkName: info.name, effect: info.effect, effectName: t.name, live: !!t.live, note: x.note,
     at: x.at, expires: x.expires, revokedAt: x.revokedAt, active: x.active };
 }
 
 function gaPlayers() {
-  var players = gaPlayerRows(), perks = readPerks(), names = {};
+  var players = gaPlayerRows(), perks = readPerks(), lib = readLib(true), names = {};
   players.forEach(function (p) { names[p.lineId] = p.name; });
-  var active = {};
-  perks.forEach(function (x) { if (x.active) (active[x.lineId] = active[x.lineId] || []).push(PERK_TYPES[x.perk] ? PERK_TYPES[x.perk].name : x.perk); });
+  var active = {}, count = {};
+  perks.forEach(function (x) {
+    var c = count[x.perk] || (count[x.perk] = { active: 0, total: 0 }); c.total++;
+    if (x.active) { c.active++; (active[x.lineId] = active[x.lineId] || []).push(perkInfo(x.perk, lib).name); }
+  });
+  var effects = Object.keys(PERK_TYPES).map(function (k) { return { key: k, name: PERK_TYPES[k].name, desc: PERK_TYPES[k].desc, live: !!PERK_TYPES[k].live }; });
   return {
     result: 'success', now: Date.now(),
     players: players.map(function (p) { var o = {}; Object.keys(p).forEach(function (k) { if (k !== 'lineId') o[k] = p[k]; }); o.perks = active[p.lineId] || []; return o; }),
-    perks: perks.slice().reverse().map(function (x) { return gaPerkView(x, names); }),
-    perkTypes: Object.keys(PERK_TYPES).map(function (k) { return { key: k, name: PERK_TYPES[k].name, desc: PERK_TYPES[k].desc, live: !!PERK_TYPES[k].live }; })
+    perks: perks.slice().reverse().map(function (x) { return gaPerkView(x, names, lib); }),
+    lib: Object.keys(lib).map(function (id) {
+      var x = lib[id], t = PERK_TYPES[x.effect] || { name: '（沒有這種效果）', desc: '', live: false }, c = count[id] || { active: 0, total: 0 };
+      return { id: id, name: x.name, effect: x.effect, effectName: t.name, effectDesc: t.desc, live: !!t.live, line: x.line, retired: !!x.retiredAt, created: x.created, active: c.active, total: c.total };
+    }).sort(function (a, b) { return (a.retired - b.retired) || (a.created - b.created); }),
+    effects: effects,
+    perkTypes: effects   // 舊版 admin.html 用的
   };
 }
 
-// 發道具：{ key（玩家）, perk, days（0 或沒帶＝永久，最多 3650）, note? }。同一個人同一種道具還有效的話不重發
+// 道具庫：新增或改名 { id?, name, effect（新增才看）, line? }。名字 1～12 字、不能跟其他還在用的撞名；效果建了就不能改（發出去的會跟著變）
+function gaLibSave(input) {
+  var lib = readLib(true), id = String(input.id || ''), name = libClean(input.name, 40), line = libClean(input.line, 40);
+  if (!name) return { result: 'error', error: '道具要有名字' };
+  if (name.length > LIB_NAME_MAX) return { result: 'error', error: '名字最多 ' + LIB_NAME_MAX + ' 個字' };
+  if (line.length > LIB_LINE_MAX) return { result: 'error', error: '那句話最多 ' + LIB_LINE_MAX + ' 個字' };
+  var clash = Object.keys(lib).some(function (k) { return k !== id && !lib[k].retiredAt && lib[k].name === name; });
+  if (clash) return { result: 'error', error: '道具庫已經有「' + name + '」了' };
+  var sheet = libSheet(), now = new Date(), out;
+  if (id) {
+    var x = lib[id];
+    if (!x || !x.row) return { result: 'error', error: '道具庫找不到這個道具' };
+    sheet.getRange(x.row, 3).setValue(asText(name));
+    sheet.getRange(x.row, 5).setValue(line ? asText(line) : '');
+    sheet.getRange(x.row, 7).setValue(now);
+    CacheService.getScriptCache().remove('perks:v1');   // 改名：拿到的人下次同步就看到新名字
+    out = gaPlayers(); out.saved = id; return out;
+  }
+  if (!PERK_TYPES[input.effect]) return { result: 'error', error: '沒有這種效果' };
+  if (Object.keys(lib).length >= 100) return { result: 'error', error: '道具庫最多 100 個' };
+  id = 'p' + Utilities.getUuid().replace(/-/g, '').slice(0, 9);
+  sheet.appendRow([now, id, asText(name), input.effect, line ? asText(line) : '', '', now]);
+  out = gaPlayers(); out.saved = id; return out;
+}
+
+// 停用／恢復 { id, retired }：停用的不能再發，已經發出去的照樣有效（要收回去「道具」那邊收）
+function gaLibRetire(input) {
+  var lib = readLib(true), x = lib[String(input.id || '')];
+  if (!x || !x.row) return { result: 'error', error: '道具庫找不到這個道具' };
+  if (!input.retired && Object.keys(lib).some(function (k) { return k !== x.id && !lib[k].retiredAt && lib[k].name === x.name; })) return { result: 'error', error: '道具庫已經有同名的「' + x.name + '」，先改名再恢復' };
+  libSheet().getRange(x.row, 6).setValue(input.retired ? new Date() : '');
+  return gaPlayers();
+}
+
+// 發道具：{ key（玩家）, perk（道具庫的 id）, days（0 或沒帶＝永久，最多 3650）, note? }。同一個人同一個道具還有效的話不重發
 function gaPerkGrant(input) {
-  if (!PERK_TYPES[input.perk]) return { result: 'error', error: '沒有這種道具' };
+  var lib = readLib(true), item = lib[String(input.perk || '')];
+  if (!item || !PERK_TYPES[item.effect]) return { result: 'error', error: '道具庫沒有這個道具' };
+  if (item.retiredAt) return { result: 'error', error: '「' + item.name + '」停用了，不能再發' };
   var key = String(input.key || ''), who = null;
   gaPlayerRows().forEach(function (p) { if (p.key === key) who = p; });
   if (!who) return { result: 'error', error: '找不到這個玩家' };
-  if (readPerks().some(function (x) { return x.active && x.lineId === who.lineId && x.perk === input.perk; })) return { result: 'error', error: who.name + ' 已經有這個道具了' };
+  if (readPerks().some(function (x) { return x.active && x.lineId === who.lineId && x.perk === item.id; })) return { result: 'error', error: who.name + ' 已經有「' + item.name + '」了' };
   var days = Math.floor(Number(input.days) || 0);
   if (days < 0 || days > 3650) return { result: 'error', error: '期限要在 0～3650 天' };
   var note = String(input.note || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 60);
   var now = new Date(), id = 'k' + Utilities.getUuid().replace(/-/g, '').slice(0, 10);
-  perksSheet().appendRow([now, id, who.lineId, input.perk, note ? asText(note) : '', days ? new Date(now.getTime() + days * 864e5) : '', '', who.key]);
+  perksSheet().appendRow([now, id, who.lineId, item.id, note ? asText(note) : '', days ? new Date(now.getTime() + days * 864e5) : '', '', who.key]);
   CacheService.getScriptCache().remove('perks:v1');
   var out = gaPlayers(); out.granted = id; return out;
 }
 
-// 玩家自己的道具（錢包回傳時帶著，只給本人）：[{ perk, expires }]，只回 live 的、還沒過期的。
+// 玩家自己的道具（錢包回傳時帶著，只給本人）：[{ perk（效果 key）, name（道具庫的名字）, line, expires }]，只回 live 的、還沒過期的。
 // 整份名單快取 10 分鐘（'perks:v1'），發、收回時清掉；Perks 分頁還沒有就是沒有人有
 function perksFor(lineId) {
   if (!lineId) return [];
@@ -3910,7 +4003,12 @@ function perksFor(lineId) {
   if (!map) {
     map = {};
     if (SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Perks')) {
-      readPerks().forEach(function (x) { if (x.active) (map[x.lineId] = map[x.lineId] || []).push({ perk: x.perk, expires: x.expires }); });
+      var lib = readLib(false);
+      readPerks().forEach(function (x) {
+        if (!x.active) return;
+        var info = perkInfo(x.perk, lib);
+        (map[x.lineId] = map[x.lineId] || []).push({ perk: info.effect, name: info.name, line: info.line, expires: x.expires });
+      });
     }
     try { cache.put('perks:v1', JSON.stringify(map), 600); } catch (e) { }
   }

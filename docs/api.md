@@ -101,3 +101,12 @@
 - `walletView()`（`lineLogin` 的 `player`、`walletSync` 的 `wallet`）多一個 `perks: [{ perk, expires（0＝永久） }]`：**只有本人的**、只有 `PERK_TYPES` 裡 `live: true` 而且還沒過期、沒收回的（`perksFor(line_id)`）。整張 `Perks` 讀一次做成 `{ line_id: [...] }` 放 cache `perks:v1` 10 分鐘，`gaPerkGrant`／`gaPerkRevoke` 寫完就清掉，所以發了下一次同步就有；快取裡的也會再看一次到期。沒有 `Perks` 分頁就是空的。
 - 後端不管價錢（店面升級的錢本來就是前端扣、`walletSync` 送差額），六折只在前端算。
 
+## 2026-11-20 道具庫（版本 `2026-11-20c`）
+
+- **`PerkLib`** 分頁：A `created`、B `id`（`p` + 9 碼；預設的那個叫 `shop60`）、C `name`（12 字，`asText`）、D `effect`（`PERK_TYPES` 的 key）、E `line`（30 字）、F `retired_at`（停用）、G `updated`。第一次用（`libSheet()`）自動開，把 `PERK_TYPES` 每一種放一個進去。`Perks` 的 D 欄 `perk` 現在寫道具庫的 id；舊資料寫效果 key 的也認（`perkInfo()`：道具庫有就用道具庫的，沒有就看是不是效果 key）。
+- `gaPlayers` 多回 `lib: [{ id, name, effect, effectName, effectDesc, live, line, retired, created, active, total }]`（還在用的在前）、`effects`（＝`PERK_TYPES`；`perkTypes` 留著給舊版頁面）；`perks` 每筆多 `effect`、`effectName`，`perkName` 是道具庫的名字；玩家卡上的道具也是道具庫的名字。
+- `gaLibSave`（排隊）：`{ id?, name, effect（新增才看）, line? }`，沒 `id` 是新增（最多 100 個），有 `id` 是改名字和那句話（效果不能改）。名字不能跟還在用的撞。→ 跟 `gaPlayers` 一樣再加 `saved`。改名會清 `perks:v1`。
+- `gaLibRetire`（排隊）：`{ id, retired }` 停用／恢復；恢復時撞名就擋。
+- `gaPerkGrant` 的 `perk` 改成道具庫的 id，停用的不能發；同一人同一個道具還有效不能重發（不同名字、同效果可以）。
+- 錢包的 `perks` 每筆多 `name`、`line`（`perk` 還是效果 key，前端照效果判斷）。玩家同步時不會開 `PerkLib` 分頁（`readLib(false)`，沒有就用預設）。
+

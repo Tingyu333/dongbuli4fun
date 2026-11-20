@@ -8,7 +8,7 @@
 // 坐洗部的店面升級也在這裡：Wallet.shop = { lv: { shampoo: 2, … }, spent }、Wallet.setShop(shop)。
 //   等級只會升不會降，同步時送整份，後端每一項取比較高的（兩支手機各買各的也不會蓋掉）
 // 專屬道具（主人在 admin 後台發的，2026-11-20）：後端只送給本人（錢包回傳裡的 perks: [{ perk, expires }]），存在錢包裡。
-//   Wallet.perk('shop60') 有沒有；七家打工店的升級價錢一律過 Wallet.shopPrice(原價)，按鈕用 Wallet.priceTag(原價)、清單最上面放 Wallet.saleBanner()。
+//   Wallet.perk('shop60') 有沒有、Wallet.perks('shop60') 是哪幾個（名字是主人在道具庫取的，2026-11-20c）；七家打工店的升級價錢一律過 Wallet.shopPrice(原價)，按鈕用 Wallet.priceTag(原價)、清單最上面放 Wallet.saleBanner()。
 //   不公開：排行榜、別人的畫面都看不到；花錢照實際付的記（shop.spent、spent 都是六折後的）。
 (function () {
     const KEY = 'dongbuli-wallet';
@@ -40,7 +40,9 @@
         return out;
     };
     const blank = () => ({ money: START, spent: 0, earned: {}, gongde: noGongde(), shop: noShop(), perks: [] });
-    const cleanPerks = a => Array.isArray(a) ? a.filter(x => x && /^[a-z0-9]{1,16}$/.test(x.perk)).map(x => ({ perk: x.perk, expires: Math.max(0, Number(x.expires) || 0) })).slice(0, 20) : [];
+    const txt = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, n);
+    const cleanPerks = a => Array.isArray(a) ? a.filter(x => x && /^[a-z0-9]{1,16}$/.test(x.perk)).map(x => ({ perk: x.perk, name: txt(x.name, 12), line: txt(x.line, 30), expires: Math.max(0, Number(x.expires) || 0) })).slice(0, 20) : [];
+    const escH = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
     const SHOP_OFF = 0.6;   // 專屬道具「全店六折」
     const noPending = () => ({ money: 0, spent: 0, earned: {}, gongde: noGongde() });
     const cleanGongde = g => ({ donated: pos(g && g.donated), oil: pos(g && g.oil), lamps: pos(g && g.lamps), lit: pos(g && g.lit), oils: cleanOils(g && g.oils) });
@@ -214,10 +216,12 @@
             return cleanShop(w.shop);
         },
         // 專屬道具：有沒有（要登入、還沒過期）
-        perk(key) {
-            if (!logged()) return false;
+        perk(key) { return Wallet.perks(key).length > 0; },
+        // 身上還有效的道具（可以只看某種效果）：[{ perk（效果）, name（主人在道具庫取的名字）, line, expires }]
+        perks(key) {
+            if (!logged()) return [];
             const now = Date.now();
-            return cleanPerks(load().perks).some(x => x.perk === key && (!x.expires || x.expires > now));
+            return cleanPerks(load().perks).filter(x => (!key || x.perk === key) && (!x.expires || x.expires > now));
         },
         // 七家打工店的升級價錢：有「全店六折」就打六折（十位數以下四捨五入）
         shopPrice(base) { base = Number(base) || 0; return Wallet.perk('shop60') ? Math.round(base * SHOP_OFF / 10) * 10 : base; },
@@ -228,10 +232,13 @@
         },
         // 商店清單最上面的朱印說明（沒有道具就是空字串）
         saleBanner() {
-            if (!Wallet.perk('shop60')) return '';
+            const own = Wallet.perks('shop60');
+            if (!own.length) return '';
+            const names = own.map(x => '「' + escH(x.name || '全店六折') + '」').join('');
+            const lines = own.filter(x => x.line).map(x => `<span style="display:block;margin-top:.15rem;color:rgb(var(--wabi-accent))">${escH(x.line)}</span>`).join('');
             return '<div style="display:flex;align-items:center;gap:.6rem;margin:.6rem 0 .2rem;padding:.55rem .7rem;border:1px solid rgb(var(--wabi-shu) / .45);border-radius:4px;background:rgb(var(--wabi-shu) / .05)">'
                 + '<span style="flex-shrink:0;width:2.6rem;height:2.6rem;display:flex;align-items:center;justify-content:center;border:1.5px solid rgb(var(--wabi-shu));border-radius:4px;color:rgb(var(--wabi-shu));font-size:.72rem;line-height:1.15;text-align:center;transform:rotate(-6deg);font-weight:600">專屬<br>六折</span>'
-                + '<span style="font-family:\'Noto Sans TC\',sans-serif;font-size:11px;letter-spacing:.06em;line-height:1.6;color:rgb(var(--wabi-text))">你有專屬道具「全店六折」：七家打工店的升級都打六折。</span></div>';
+                + '<span style="font-family:\'Noto Sans TC\',sans-serif;font-size:11px;letter-spacing:.06em;line-height:1.6;color:rgb(var(--wabi-text))">你有專屬道具' + names + '：七家打工店的升級都打六折。' + lines + '</span></div>';
         },
         oilOf(kind) { const g = load().gongde; return !kind || kind === 'guangming' ? g.oil : (g.oils[kind] || 0); },
         // 用掉燈油（不夠就用到 0），回傳實際用掉多少
