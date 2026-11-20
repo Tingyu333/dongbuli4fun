@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 試玩中：還沒有入口，不給搜尋引擎收（開放時拿掉） -->
+    <meta name="robots" content="noindex">
+    <title>礦坑・挖 | 丼步喱</title>
+    <meta name="description" content="鼴鼠戴上工地帽下礦坑：鉤子左右擺，點一下放出去，金塊越大拉越久。六十秒挖到目標就過關。">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="丼步喱・絆">
+    <meta property="og:title" content="礦坑・挖｜丼步喱">
+    <meta property="og:description" content="鼴鼠戴上工地帽下礦坑：鉤子左右擺，點一下放出去，金塊越大拉越久。六十秒挖到目標就過關。">
+    <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
+    <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/kuangkeng.html">
+    <meta name="twitter:card" content="summary">
+    <!-- 礦坑・挖：黃金礦工的丼步喱版（2026-11-20 試玩第一步：只有第一關，不發薪水、沒有入口）。計劃在 Claude 文件「礦坑・挖 開發計劃書」；網站不放 emoji -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="assets/theme.css?v=20261116d">
+    <script src="assets/theme.js?v=20261117c"></script>
+    <style>
+        /* 整塊都是要點的地方：長按不能跳系統選單、不能選字 */
+        .stage { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+        #cv { display: block; width: 100%; aspect-ratio: 360 / 560; touch-action: manipulation; border-radius: 4px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        /* 炸藥鈕：右下角，拇指按得到；按它不算放鉤 */
+        .boom {
+            position: absolute; right: 22px; bottom: 26px; width: 64px; height: 64px; border-radius: 9999px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+            background: rgba(252, 250, 248, .93); border: 1.5px solid rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu));
+            box-shadow: 0 4px 14px rgba(0, 0, 0, .18); touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+            transition: transform .08s, opacity .15s;
+        }
+        .boom b { font-family: 'Noto Serif TC', serif; font-weight: 600; font-size: 20px; line-height: 1; }
+        .boom span { font-family: 'Noto Sans TC', sans-serif; font-size: 11px; line-height: 1; letter-spacing: .05em; }
+        .boom:active { transform: scale(.92); }
+        .boom.off { opacity: .45; }
+        .trial { display: inline-block; padding: .1rem .5rem; border: 1.5px solid rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); font-size: 11px; letter-spacing: .2em; transform: rotate(-4deg); border-radius: 3px; }
+        html.kk-open .theme-toggle { opacity: 0; pointer-events: none; transition: opacity .2s; }
+    </style>
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261120a">
+</head>
+
+<body class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white min-h-screen flex flex-col overflow-x-hidden">
+
+    <nav class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <a href="index.html" class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-3 md:gap-8">
+            <a href="index.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <a href="reviews.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <a href="about.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+            <a href="member.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">會員・我</a>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-md mx-auto pt-24 md:pt-32 pb-16 px-5 w-full">
+        <div class="text-center mb-6">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">MINE</span>
+            <h1 class="text-3xl font-light text-wabi-dark tracking-widest">礦坑・挖</h1>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">鼴鼠戴上工地帽下礦坑。金塊越大，拉得越久。</p>
+            <p class="mt-3"><span class="trial font-sans">試玩</span></p>
+        </div>
+
+        <section id="stage" class="stage relative bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-3 pt-3 pb-4">
+            <div class="relative">
+                <canvas id="cv" aria-label="礦坑・挖：鉤子左右擺，點一下放出去"></canvas>
+                <button type="button" id="boom" class="boom off" aria-label="丟炸藥"><b>炸</b><span id="boomN">×0</span></button>
+            </div>
+            <p class="mt-3 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed text-center">點畫面放鉤；拉到不想要的，按右下角「炸」。</p>
+        </section>
+
+        <section class="mt-10 px-1">
+            <h2 class="text-sm tracking-[0.3em] text-wabi-dark">怎麼挖</h2>
+            <ol class="mt-3 list-decimal pl-5 space-y-1.5 text-xs font-sans tracking-wide text-stone-500 leading-relaxed">
+                <li>鉤子在鼴鼠下面左右擺，點畫面任何地方就朝那個方向放出去（電腦按 ↓ 或空白鍵）。</li>
+                <li>鉤到東西就往回拉，<b class="font-normal text-wabi-dark">越重拉越慢</b>：大金塊、大石頭都很花時間，空鉤收得最快。</li>
+                <li>拉到不想要的，按右下角<b class="font-normal text-wabi-shu">「炸」</b>（電腦按 ↑）：東西炸掉不算錢，鉤子快速收回。</li>
+                <li>一關 <b class="font-normal text-wabi-dark">60 秒</b>，挖到目標的「兩」就過關；時間到時鉤上還在拉的不算。</li>
+                <li>切去別的 App 會自動暫停。</li>
+            </ol>
+            <p class="mt-6 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">試玩版：只有第一關，送兩根炸藥試手感；不發薪水、不記錄、不上排行榜。</p>
+        </section>
+    </main>
+
+    <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
+        <p>&copy; 2026 DONGBULI · 27 樓地底</p>
+    </footer>
+
+    <script>
+        // 礦坑・挖（2026-11-20 試玩第一步）：只有第一關。之後的十關、礦坑商店、錢包、店面照計劃書一步一步加。
+        (function () {
+        const SERIF = '"Noto Serif TC", "Noto Serif CJK TC", serif', SANS = '"Noto Sans TC", "Noto Sans CJK TC", sans-serif';
+        const TAU = Math.PI * 2;
+        const W = 360, H = 560, GROUND = 112, PIVOT = { x: 180, y: 116 }, ROUND = 60;
+        // 手感（試玩要調的就是這幾個）：擺幅、擺速、放出去和收回的速度、重量讓收回變慢多少
+        const TUNE = { amp: 1.22, swing: 2.0, shoot: 400, back: 440, heavy: 0.75 };
+        const back = w => TUNE.back / (1 + w * TUNE.heavy);   // 拉著重量 w 的收回速度（px/秒）
+        // 物件：價值（兩）、重量、碰撞半徑；跟規格書一樣
+        const KIND = {
+          gold1: { name: '小金塊', v: 50, w: 2, r: 10, draw: 'gold' },
+          gold2: { name: '中金塊', v: 100, w: 3, r: 17, draw: 'gold' },
+          gold3: { name: '大金塊', v: 250, w: 5, r: 26, draw: 'gold' },
+          gold4: { name: '特大金塊', v: 500, w: 8, r: 36, draw: 'gold' },
+          rock1: { name: '小石頭', v: 11, w: 4, r: 13, draw: 'rock' },
+          rock2: { name: '大石頭', v: 20, w: 7, r: 24, draw: 'rock' },
+          skull: { name: '頭骨', v: 20, w: 2, r: 12, draw: 'skull' },
+          bone: { name: '骨頭', v: 7, w: 1.5, r: 12, draw: 'bone' },
+        };
+        // 第一關：目標 650 兩，地上的總價值要明顯高於目標（金 1,250）；前兩關沒有鑽石、火藥桶、雞塊
+        const LEVEL = { n: 1, target: 650, items: { gold4: 1, gold3: 1, gold2: 3, gold1: 4, rock2: 3, rock1: 4, skull: 1, bone: 2 },
+          depth: { gold1: [160, 380], gold2: [190, 450], gold3: [280, 510], gold4: [400, 510], rock1: [160, 520], rock2: [180, 515], skull: [170, 520], bone: [160, 520] } };
+
+        const cv = document.getElementById('cv'), c = cv.getContext('2d');
+        let dpr = 0, fitReady = false;
+        function fit() { const d = Math.min(3, window.devicePixelRatio || 1); if (d === dpr && cv.width === W * d && cv.height === H * d) return; dpr = d; cv.width = W * dpr; cv.height = H * dpr; if (fitReady) draw(); }
+        fit();
+        const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let G = null, last = performance.now();
+
+        // ---------- 地圖 ----------
+        function makeMap() {
+          const out = [], order = Object.keys(LEVEL.items).sort((a, b) => KIND[b].r - KIND[a].r);   // 大的先放
+          order.forEach(k => {
+            for (let i = 0; i < LEVEL.items[k]; i++) {
+              const K = KIND[k], [y0, y1] = LEVEL.depth[k];
+              for (let tries = 0; tries < 300; tries++) {
+                const x = K.r + 8 + Math.random() * (W - 2 * K.r - 16), y = y0 + Math.random() * (y1 - y0);
+                if (Math.hypot(x - PIVOT.x, y - PIVOT.y) < 60) continue;
+                if (out.some(o => Math.hypot(o.x - x, o.y - y) < o.r + K.r + 10)) continue;
+                out.push({ k, x, y, r: K.r, v: K.v, w: K.w, seed: Math.random() * 10, rot: (Math.random() - .5) * 1.6 }); break;
+              }
+            }
+          });
+          return out;
+        }
+        function newGame() {
+          G = { phase: 'title', t: ROUND, total: 0, items: makeMap(), hook: { st: 'swing', ang: 0, len: 22, item: null }, swingT: Math.random() * 3,
+            booms: 2, fx: [], pops: [], winch: 0, tug: 0, endWhy: '', pausedAt: 0 };
+          document.documentElement.classList.remove('kk-open'); syncBoom();
+        }
+
+        // ---------- 操作 ----------
+        function tap() {
+          if (G.phase === 'title') { G.phase = 'play'; document.documentElement.classList.add('kk-open'); syncBoom(); return; }
+          if (G.phase === 'pause') { G.phase = 'play'; last = performance.now(); syncBoom(); return; }
+          if (G.phase === 'end') { if (performance.now() - G.endAt > 700) newGame(); return; }
+          if (G.phase === 'play' && G.hook.st === 'swing') G.hook.st = 'out';
+        }
+        function boom() {
+          const h = G.hook;
+          if (G.phase !== 'play' || h.st !== 'back' || !h.item || G.booms <= 0) return;
+          G.booms--; const p = tip(); burst(p.x, p.y, h.item.r);
+          h.item = null; syncBoom();
+        }
+        function syncBoom() {
+          const b = document.getElementById('boom'); document.getElementById('boomN').textContent = '×' + (G ? G.booms : 0);
+          const on = G && G.phase === 'play' && G.hook.st === 'back' && G.hook.item && G.booms > 0;
+          b.classList.toggle('off', !on);
+        }
+        cv.addEventListener('pointerdown', e => { e.preventDefault(); tap(); });
+        const bt = document.getElementById('boom');
+        bt.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); boom(); });
+        document.getElementById('stage').addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('keydown', e => {
+          if (e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); tap(); }
+          else if (e.key === 'ArrowUp') { e.preventDefault(); boom(); }
+        });
+        // 切出去（LINE 回訊息、鎖螢幕）自動暫停
+        function autoPause() { if (G && G.phase === 'play') { G.phase = 'pause'; syncBoom(); draw(); } }
+        document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
+        window.addEventListener('pagehide', autoPause);
+        window.addEventListener('blur', autoPause);
+
+        // ---------- 更新 ----------
+        const tip = () => ({ x: PIVOT.x + Math.sin(G.hook.ang) * G.hook.len, y: PIVOT.y + Math.cos(G.hook.ang) * G.hook.len });
+        function burst(x, y, r) { for (let i = 0; i < 16; i++) { const a = Math.random() * TAU, s = 60 + Math.random() * 160; G.fx.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0, life: .5 + Math.random() * .3, r: 2 + Math.random() * 3 }); } G.fx.push({ ring: true, x, y, t: 0, life: .35, r }); }
+        function step(dt) {
+          G.fx = G.fx.filter(f => (f.t += dt) < f.life); G.fx.forEach(f => { if (!f.ring) { f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 260 * dt; } });
+          G.pops = G.pops.filter(p => (p.t += dt) < 1.1);
+          if (G.phase !== 'play' && G.phase !== 'title') return;
+          const h = G.hook;
+          if (h.st === 'swing') { G.swingT += dt; h.ang = TUNE.amp * Math.sin(G.swingT * TUNE.swing); }
+          if (G.phase !== 'play') return;
+          G.t -= dt;
+          if (h.st === 'out') {
+            h.len += TUNE.shoot * dt;
+            const p = tip();
+            const hit = G.items.find(o => Math.hypot(o.x - p.x, o.y - p.y) < o.r + 4);
+            if (hit) { G.items.splice(G.items.indexOf(hit), 1); h.item = hit; h.st = 'back'; syncBoom(); }
+            else if (p.x < -4 || p.x > W + 4 || p.y > H + 4) h.st = 'back';
+          } else if (h.st === 'back') {
+            const sp = h.item ? back(h.item.w) : TUNE.back;
+            h.len -= sp * dt; G.winch += sp * dt / 9; G.tug = h.item ? Math.min(1, h.item.w / 8) : 0;
+            if (h.len <= 22) {
+              h.len = 22; h.st = 'swing';
+              if (h.item) { G.total += h.item.v; G.pops.push({ x: PIVOT.x + 34, y: GROUND - 40, txt: '+' + h.item.v, big: h.item.v >= 250, t: 0 }); h.item = null; }
+              G.tug = 0; syncBoom();
+            }
+          }
+          if (G.t <= 0) endGame();
+        }
+        function endGame() {
+          G.t = 0; const h = G.hook;
+          if (h.item) { G.lost = h.item.v; h.item = null; }   // 時間到還在拉的不算
+          h.st = 'swing'; h.len = 22;
+          G.phase = 'end'; G.endAt = performance.now(); G.win = G.total >= LEVEL.target;
+          document.documentElement.classList.remove('kk-open'); syncBoom();
+        }
+
+        // ---------- 畫 ----------
+        const txt = (s, x, y, o = {}) => {
+          c.font = `${o.w || 400} ${o.size || 14}px ${o.font || SANS}`; c.fillStyle = o.color || '#2c2c2c'; c.textAlign = o.align || 'left'; c.textBaseline = o.base || 'middle';
+          if ('letterSpacing' in c) c.letterSpacing = (o.ls || 0) + 'px'; c.fillText(s, x, y); if ('letterSpacing' in c) c.letterSpacing = '0px';
+        };
+        function blob(x, y, r, seed) {
+          const n = 9; c.beginPath();
+          for (let i = 0; i <= n; i++) {
+            const a = i / n * TAU, k = 0.82 + 0.18 * Math.abs(Math.sin(seed * 7.3 + i * 2.1));
+            const px = x + Math.cos(a) * r * k * 1.12, py = y + Math.sin(a) * r * k * 0.9;
+            i ? c.quadraticCurveTo(x + Math.cos(a - TAU / n / 2) * r * 1.18, y + Math.sin(a - TAU / n / 2) * r * 0.96, px, py) : c.moveTo(px, py);
+          }
+          c.closePath();
+        }
+        const shadow = (x, y, r) => { c.fillStyle = 'rgba(60,35,20,.18)'; c.beginPath(); c.ellipse(x + 2, y + r * .78, r * 1.05, r * .3, 0, 0, TAU); c.fill(); };
+        const DRAW = {
+          gold(o, x, y, carried) {
+            const r = o.r; if (!carried) shadow(x, y, r);
+            c.fillStyle = '#e2a33f'; blob(x, y, r, o.seed); c.fill();
+            c.fillStyle = '#c6852a'; [[-.45, -.2, .14], [.35, -.3, .11], [.5, .3, .13], [-.3, .4, .1]].forEach(([a, b, s]) => { c.beginPath(); c.arc(x + a * r, y + b * r, Math.max(1.2, s * r), 0, TAU); c.fill(); });
+            c.fillStyle = '#f6cd72'; c.beginPath(); c.ellipse(x - r * .25, y - r * .35, r * .42, r * .2, -.35, 0, TAU); c.fill();
+            if (r >= 26) { const a = (performance.now() / 900 + o.seed) % 3; if (a < .5) { const s = 1 - Math.abs(a - .25) * 4; c.fillStyle = `rgba(255,255,255,${s})`; star(x + r * .55, y - r * .55, 5 * s); } }
+          },
+          rock(o, x, y, carried) {
+            const r = o.r; if (!carried) shadow(x, y, r);
+            c.fillStyle = '#a49e94'; blob(x, y, r, o.seed + 3); c.fill();
+            c.fillStyle = '#8b857c'; c.beginPath(); c.ellipse(x + r * .2, y + r * .3, r * .7, r * .38, 0, 0, TAU); c.fill();
+            c.strokeStyle = '#77716a'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(x - r * .3, y - r * .5); c.lineTo(x - r * .05, y - r * .1); c.lineTo(x - r * .3, y + r * .15); c.stroke();
+            c.fillStyle = '#c4beb4'; c.beginPath(); c.ellipse(x - r * .35, y - r * .4, r * .3, r * .14, -.4, 0, TAU); c.fill();
+          },
+          bone(o, x, y) {
+            const r = o.r; c.save(); c.translate(x, y); c.rotate(o.rot); c.fillStyle = '#efe7d6'; c.strokeStyle = '#c9bea8'; c.lineWidth = 1;
+            [[-r * .8, -r * .22], [-r * .8, r * .22], [r * .8, -r * .22], [r * .8, r * .22]].forEach(([a, b]) => { c.beginPath(); c.arc(a, b, r * .28, 0, TAU); c.fill(); c.stroke(); });
+            c.fillRect(-r * .8, -r * .17, r * 1.6, r * .34); c.restore();
+          },
+          skull(o, x, y, carried) {
+            const r = o.r; if (!carried) shadow(x, y, r);
+            c.fillStyle = '#ece4d2'; c.beginPath(); c.arc(x, y - r * .15, r * .85, 0, TAU); c.fill(); c.fillRect(x - r * .5, y + r * .3, r, r * .45);
+            c.fillStyle = '#5a4a3e'; c.beginPath(); c.arc(x - r * .33, y - r * .1, r * .22, 0, TAU); c.arc(x + r * .33, y - r * .1, r * .22, 0, TAU); c.fill();
+            c.beginPath(); c.moveTo(x, y + r * .08); c.lineTo(x - r * .1, y + r * .25); c.lineTo(x + r * .1, y + r * .25); c.fill();
+            c.strokeStyle = '#b8ad98'; c.lineWidth = 1; [-.25, 0, .25].forEach(d => { c.beginPath(); c.moveTo(x + d * r, y + r * .42); c.lineTo(x + d * r, y + r * .72); c.stroke(); });
+          },
+        };
+        function star(x, y, s) { c.beginPath(); c.moveTo(x, y - s * 2); c.lineTo(x + s * .5, y - s * .5); c.lineTo(x + s * 2, y); c.lineTo(x + s * .5, y + s * .5); c.lineTo(x, y + s * 2); c.lineTo(x - s * .5, y + s * .5); c.lineTo(x - s * 2, y); c.lineTo(x - s * .5, y - s * .5); c.closePath(); c.fill(); }
+        function mole(x, y, s, tug) {
+          c.save(); c.translate(x, y); c.rotate(tug * 0.12); c.scale(s, s);
+          c.fillStyle = 'rgba(60,35,20,.2)'; c.beginPath(); c.ellipse(0, 30, 26, 6, 0, 0, TAU); c.fill();
+          c.fillStyle = '#6e5040'; c.beginPath(); c.ellipse(0, 6, 24, 26, 0, 0, TAU); c.fill();
+          c.fillStyle = '#86624f'; c.beginPath(); c.ellipse(0, 14, 15, 15, 0, 0, TAU); c.fill();
+          c.fillStyle = '#1e1714';
+          if (tug > 0.55) { c.strokeStyle = '#1e1714'; c.lineWidth = 1.6; [[-8], [8]].forEach(([e]) => { c.beginPath(); c.moveTo(e - 3, -6); c.lineTo(e + 3, -4); c.stroke(); }); }
+          else { c.beginPath(); c.arc(-8, -5, 2, 0, TAU); c.arc(8, -5, 2, 0, TAU); c.fill(); }
+          c.fillStyle = '#ee8fa0'; c.beginPath(); c.ellipse(0, 3, 7, 5.2, 0, 0, TAU); c.fill();
+          c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = .9; [[-6, 4, -19, 1], [-6, 6, -19, 8], [6, 4, 19, 1], [6, 6, 19, 8]].forEach(([a, b, p, q]) => { c.beginPath(); c.moveTo(a, b); c.lineTo(p, q); c.stroke(); });
+          // 爪子：拉的時候伸到右邊的絞盤
+          c.fillStyle = '#ee8fa0';
+          if (tug > 0) { c.beginPath(); c.ellipse(-16, 20, 6.5, 4.5, 0, 0, TAU); c.fill(); c.beginPath(); c.ellipse(24, 4, 6.5, 4.5, -0.5, 0, TAU); c.fill(); }
+          else [[-16, 20], [16, 20]].forEach(([a, b]) => { c.beginPath(); c.ellipse(a, b, 6.5, 4.5, 0, 0, TAU); c.fill(); });
+          if (tug > 0.55) { c.fillStyle = 'rgba(150,200,230,.85)'; c.beginPath(); c.ellipse(22, -16, 2.2, 3.2, 0, 0, TAU); c.fill(); }
+          // 工地帽
+          c.fillStyle = '#f0c14b'; c.beginPath(); c.arc(0, -13, 17, Math.PI, TAU); c.fill(); c.fillRect(-21, -14, 42, 4);
+          c.fillStyle = '#d9a632'; c.fillRect(-2, -29, 4, 16);
+          c.fillStyle = '#fff6d8'; c.beginPath(); c.arc(0, -21, 3.4, 0, TAU); c.fill();
+          c.restore();
+        }
+        function scene() {
+          let g = c.createLinearGradient(0, 0, 0, GROUND); g.addColorStop(0, '#d9e7ef'); g.addColorStop(1, '#eef3f2'); c.fillStyle = g; c.fillRect(0, 0, W, GROUND);
+          c.fillStyle = '#cdd8dd'; [[0, 70, 34], [30, 58, 26], [60, 76, 30], [250, 64, 30], [282, 50, 24], [306, 72, 54]].forEach(([x, y, w]) => c.fillRect(x, y, w, GROUND - y));
+          c.fillStyle = 'rgba(255,255,255,.8)'; const cx = 90 + Math.sin(performance.now() / 9000) * 14; c.beginPath(); c.ellipse(cx, 30, 26, 7, 0, 0, TAU); c.ellipse(cx + 20, 26, 15, 7, 0, 0, TAU); c.fill();
+          g = c.createLinearGradient(0, GROUND, 0, H); g.addColorStop(0, '#c9a27a'); g.addColorStop(.45, '#a97f58'); g.addColorStop(1, '#7c5a3f'); c.fillStyle = g; c.fillRect(0, GROUND, W, H - GROUND);
+          c.strokeStyle = 'rgba(255,255,255,.07)'; c.lineWidth = 6; [190, 300, 430].forEach(y => { c.beginPath(); c.moveTo(0, y); c.bezierCurveTo(120, y - 16, 240, y + 16, 360, y - 4); c.stroke(); });
+          c.fillStyle = 'rgba(60,35,20,.18)'; for (let i = 0; i < 80; i++) { const x = (i * 97.3) % W, y = GROUND + 10 + (i * 53.7) % (H - GROUND - 14); c.beginPath(); c.arc(x, y, 1 + (i % 3) * .6, 0, TAU); c.fill(); }
+          c.fillStyle = '#8fa36a'; c.fillRect(0, GROUND - 4, W, 6); c.fillStyle = '#7a8f58'; c.fillRect(0, GROUND + 1, W, 2);
+          // 絞盤（拉的時候會轉）
+          c.fillStyle = '#9b7550'; c.fillRect(200, GROUND - 26, 30, 4); c.fillRect(212, GROUND - 40, 6, 38);
+          c.strokeStyle = '#7b5a3c'; c.lineWidth = 3; c.beginPath(); c.arc(215, GROUND - 36, 11, 0, TAU); c.stroke();
+          [0, 1, 2].forEach(i => { const a = i * TAU / 3 + G.winch; c.beginPath(); c.moveTo(215, GROUND - 36); c.lineTo(215 + Math.cos(a) * 11, GROUND - 36 + Math.sin(a) * 11); c.stroke(); });
+          c.strokeStyle = '#5a4636'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(215, GROUND - 36); c.lineTo(PIVOT.x, PIVOT.y - 6); c.stroke();
+        }
+        function hook() {
+          const h = G.hook, p = tip();
+          c.strokeStyle = '#5a4636'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(PIVOT.x, PIVOT.y - 6); c.lineTo(p.x, p.y); c.stroke();
+          if (h.item) { const o = h.item, d = o.r * 0.85; DRAW[KIND[o.k].draw](o, p.x + Math.sin(h.ang) * d, p.y + Math.cos(h.ang) * d, true); }
+          c.save(); c.translate(p.x, p.y); c.rotate(-h.ang);
+          const open = h.item ? 0.35 : 1;
+          c.strokeStyle = '#6d6a66'; c.lineWidth = 3; c.lineCap = 'round';
+          c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-13 * open - 4, 4, -10 * open - 2, 16); c.moveTo(0, 0); c.quadraticCurveTo(13 * open + 4, 4, 10 * open + 2, 16); c.stroke();
+          c.fillStyle = '#6d6a66'; c.beginPath(); c.arc(0, 0, 3.4, 0, TAU); c.fill(); c.restore();
+        }
+        function pill(x, y, w, s, color) { c.fillStyle = 'rgba(44,44,44,.72)'; c.beginPath(); c.roundRect(x, y, w, 28, 14); c.fill(); txt(s, x + w / 2, y + 14.5, { size: 13.5, w: 500, color: color || '#fcfaf8', align: 'center' }); }
+        function hud() {
+          const s = Math.ceil(Math.max(0, G.t)); pill(10, 10, 58, `0:${String(s).padStart(2, '0')}`, s <= 10 && G.phase === 'play' ? '#f2a093' : null);
+          const label = `${G.total.toLocaleString('zh-TW')}／${LEVEL.target.toLocaleString('zh-TW')} 兩`; c.font = `500 13.5px ${SANS}`; const w = c.measureText(label).width + 26;
+          pill(W - 10 - w, 10, w, label, G.total >= LEVEL.target ? '#f6cd72' : null);
+          txt(`第 ${LEVEL.n} 關`, (68 + W - 10 - w) / 2 + 5, 24, { size: 11.5, color: '#4a4a4a', align: 'center', ls: 2 });
+        }
+        function card(y, h) { c.fillStyle = 'rgba(252,250,248,.92)'; c.beginPath(); c.roundRect(36, y, W - 72, h, 8); c.fill(); c.strokeStyle = 'rgba(142,128,112,.35)'; c.lineWidth = 1; c.stroke(); }
+        function stamp(x, y, s, word, rot) { c.save(); c.translate(x, y); c.rotate(rot); c.strokeStyle = '#b33a2f'; c.lineWidth = 2.2; c.strokeRect(-s / 2, -s / 2, s, s); txt(word, 0, 1, { size: s * .5, font: SERIF, w: 600, color: '#b33a2f', align: 'center' }); c.restore(); }
+        function draw() {
+          c.setTransform(dpr, 0, 0, dpr, 0, 0);
+          scene();
+          G.items.forEach(o => DRAW[KIND[o.k].draw](o, o.x, o.y, false));
+          hook();
+          mole(158, 82, 0.95, G.tug);
+          G.fx.forEach(f => {
+            const k = f.t / f.life;
+            if (f.ring) { c.strokeStyle = `rgba(242,176,60,${1 - k})`; c.lineWidth = 4; c.beginPath(); c.arc(f.x, f.y, f.r + k * 40, 0, TAU); c.stroke(); }
+            else { c.fillStyle = `rgba(${k < .4 ? '242,176,60' : '120,100,85'},${1 - k})`; c.beginPath(); c.arc(f.x, f.y, f.r, 0, TAU); c.fill(); }
+          });
+          G.pops.forEach(p => { const k = p.t / 1.1; txt(p.txt, p.x, p.y - k * 26, { size: p.big ? 22 : 17, w: 600, font: SERIF, color: `rgba(${p.big ? '179,58,47' : '74,74,74'},${1 - k * k})`, align: 'center' }); });
+          hud();
+          if (G.phase === 'title') {
+            card(196, 150);
+            txt('礦坑・挖', W / 2, 232, { size: 28, font: SERIF, color: '#2c2c2c', align: 'center', ls: 8 });
+            txt(`第 1 關・60 秒挖到 ${LEVEL.target} 兩`, W / 2, 266, { size: 12, color: '#6b6158', align: 'center', ls: 2 });
+            const a = reduce ? 1 : 0.55 + 0.45 * Math.sin(performance.now() / 300);
+            txt('點一下開挖', W / 2, 306, { size: 15, w: 500, color: `rgba(179,58,47,${a})`, align: 'center', ls: 4 });
+          } else if (G.phase === 'pause') {
+            c.fillStyle = 'rgba(44,44,44,.35)'; c.fillRect(0, 0, W, H); card(220, 110);
+            txt('暫停中', W / 2, 255, { size: 22, font: SERIF, color: '#2c2c2c', align: 'center', ls: 6 });
+            txt('點一下繼續挖', W / 2, 295, { size: 13, color: '#b33a2f', align: 'center', ls: 3 });
+          } else if (G.phase === 'end') {
+            card(176, 210);
+            txt(G.win ? '過關' : '沒挖夠', W / 2, 214, { size: 26, font: SERIF, color: '#2c2c2c', align: 'center', ls: 8 });
+            txt(`挖到 ${G.total.toLocaleString('zh-TW')} 兩・目標 ${LEVEL.target} 兩`, W / 2, 252, { size: 12.5, color: '#4a4a4a', align: 'center', ls: 1 });
+            txt(G.win ? '試玩只有第一關，下一步才有第二關和礦坑商店。' : `差 ${(LEVEL.target - G.total).toLocaleString('zh-TW')} 兩。正式版會重打這一關。`, W / 2, 280, { size: 11, color: '#8e8070', align: 'center' });
+            if (G.lost) txt(`時間到時鉤上的 ${G.lost} 兩不算`, W / 2, 302, { size: 11, color: '#8e8070', align: 'center' });
+            if (G.win) stamp(W / 2 + 78, 212, 40, '過', -0.15);
+            txt('點一下再挖一次', W / 2, 346, { size: 14, w: 500, color: '#b33a2f', align: 'center', ls: 3 });
+          }
+        }
+
+        // 畫布整個捲出畫面就停；沒在玩（標題、暫停、結果）每秒只畫約 20 張，剛收工的 2.5 秒照常畫
+        let loopOn = false, cvSeen = true, wasPlaying = false, fullUntil = 0;
+        function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; step(dt); draw(); nextFrame(); }
+        function nextFrame() {
+          if (!cvSeen) { loopOn = false; return; }
+          const t = performance.now(), p = G.phase === 'play';
+          if (p) wasPlaying = true; else if (wasPlaying) { wasPlaying = false; fullUntil = t + 2500; }
+          if (p || t < fullUntil) requestAnimationFrame(frame); else setTimeout(() => requestAnimationFrame(frame), 34);
+        }
+        function startLoop() { if (loopOn) return; loopOn = true; last = performance.now(); requestAnimationFrame(frame); }
+
+        window.addEventListener('resize', fit);
+        newGame(); fitReady = true;
+        if ('IntersectionObserver' in window) new IntersectionObserver(es => { cvSeen = es[es.length - 1].isIntersecting; if (cvSeen) startLoop(); }).observe(cv);
+        (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(startLoop);
+        window.__kk = { get G() { return G; }, tap, boom, endGame, TUNE };
+        })();
+    </script>
+</body>
+
+</html>

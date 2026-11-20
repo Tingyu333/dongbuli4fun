@@ -60,6 +60,7 @@
 | `huoyun.html` | 打工：貨運・航（開船撈蘿蔔），無盡模式、船廠 | `docs/pages/huoyun.md` |
 | `tiandian.html` | 打工：甜點・轉（蘋果鴨甜點店，轉盤），店面升級 | `docs/pages/tiandian.md` |
 | `diechao.html` | 打工：疊・巢（小吳鴨疊精裝書，60 秒、無盡模式），店面 | `docs/pages/diechao.md` |
+| `kuangkeng.html` | 打工：礦坑・挖（黃金礦工的丼步喱版，鼴鼠當礦工）。**試玩中：沒有入口、不碰錢包**，只有第一關 | `docs/pages/kuangkeng.md` |
 | `xuyuan.html` | 許願・池：搜集提案，每天第一個願隨機 $3,000～6,666（網頁不寫金額），願望牆、主人回覆 | `docs/pages/xuyuan.md` |
 | `rank.html` | 排行・榜：打工・榜、花錢・榜、無盡・榜 | `docs/pages/rank.md` |
 | `baoxian.html` | 保險・存：儲蓄險（後端算） | `docs/pages/baoxian.md` |
@@ -93,7 +94,7 @@
 - 字體：Noto Serif TC（`font-serif`，內文預設）與 Noto Sans TC（`font-sans`，標籤、按鈕、數字）。使用者不要手寫字體／手寫吐槽註解，不要再加回來。
 - **不用 emoji**，跟侘寂風衝突。改用漢字或朱色印章樣式；提示訊息用 `showToast()`（紙條樣式）。
 - 常用元素：寬字距（`tracking-widest`、`tracking-[0.2em]`）、細字重（`font-light`）、底線式 input、`.vertical-rl` 直書標題、「XX・X」格式的標題（如「首頁・歸」「留言・絆」）。
-- 導覽列四項：首頁・歸、留言・絆、關於・絆、會員・我（擲杯拿掉了，從會員中心進）。在 `index.html`、`reviews.html`、`jiaobei.html`、`about.html`、`ticket.html`、`member.html`、`quede.html`、`xitou.html`、`scratch.html`、`gongde.html`、`fangwu.html`、`rank.html`、`baoxian.html`、`caiyuan.html`、`cengwang.html`、`zaocan.html`、`huoyun.html`、`tiandian.html`、`diechao.html`、`gushi.html`、`yuncai.html`、`xuyuan.html` 各自重複，改了要每頁一起改；目前頁面用 `<span>` 加底線標示、其他用 `<a>`（不在導覽列的頁，四個都用 `<a>`）。四個連結在 375px 寬已經很擠（手機上 `px-4`、`gap-3`、連結 `tracking-normal`、Logo `tracking-[0.1em]`，只剩約 12px；320px 寬最右邊那項會被切掉一點），要再加第五項得改版面（例如收進選單）。以前右下角的會員圓鈕（`.member-fab`）已經拿掉。
+- 導覽列四項：首頁・歸、留言・絆、關於・絆、會員・我（擲杯拿掉了，從會員中心進）。在 `index.html`、`reviews.html`、`jiaobei.html`、`about.html`、`ticket.html`、`member.html`、`quede.html`、`xitou.html`、`scratch.html`、`gongde.html`、`fangwu.html`、`rank.html`、`baoxian.html`、`caiyuan.html`、`cengwang.html`、`zaocan.html`、`huoyun.html`、`tiandian.html`、`diechao.html`、`gushi.html`、`yuncai.html`、`xuyuan.html`、`kuangkeng.html` 各自重複，改了要每頁一起改；目前頁面用 `<span>` 加底線標示、其他用 `<a>`（不在導覽列的頁，四個都用 `<a>`）。四個連結在 375px 寬已經很擠（手機上 `px-4`、`gap-3`、連結 `tracking-normal`、Logo `tracking-[0.1em]`，只剩約 12px；320px 寬最右邊那項會被切掉一點），要再加第五項得改版面（例如收進選單）。以前右下角的會員圓鈕（`.member-fab`）已經拿掉。
 
 ## 開發注意事項
 
@@ -103,7 +104,7 @@
 - 動態內容（留言、後台列表）以 template string 塞入 `innerHTML`；別人輸入的字（名字、留言、Email）先過頁內的 `esc()`。
 - `.DS_Store` 未列入 `.gitignore`，不要提交它。
 - **字型**：Google Fonts 的 Noto Serif TC、Noto Sans TC，每頁連結前面有兩行 `preconnect`（`fonts.googleapis.com`、`fonts.gstatic.com crossorigin`），新頁面照抄。粗細查過（2026-11-17）：畫面和 canvas 幾乎每一種都有用到，瀏覽器只下載真的用到的粗細，所以連結裡多列的粗細不太花流量，不用再砍。
-- **遊戲畫布的動畫迴圈**（坐洗、房務、菜園、蹭網、早餐、貨運、甜點）：`frame()` 最後叫 `nextFrame()`、一開始叫 `startLoop()`；`IntersectionObserver` 看畫布 `#cv`，**整個捲出畫面就停**（收工看結果時不用一直畫，手機才不會燙），捲回來再接著畫、`lastNow` 重設。**沒在玩的時候（標題、結果畫面）每秒只畫約 20 張**（2026-11-18：`nextFrame()` 裡 `setTimeout(…, 34)` 再 `requestAnimationFrame`；剛收工的 2.5 秒照常 60 張，給結算動畫；坐洗、房務看 `stage` 0～4，其他看 `G.started && !G.ended`），量過標題畫面主執行緒忙碌從 8～18% 降到 3～8%；dt 上限 50ms，所以動畫速度不變。新遊戲照這個寫，不要在 `frame()` 裡直接 `requestAnimationFrame(frame)`。**畫布跟著 `resize` 調大小的話，大小沒變就不要重設 `cv.width`／`cv.height`**（重設會清空畫布；手機捲動時網址列伸縮會一直觸發 `resize`，疊・巢、甜點店都因為這樣捲動時狂閃，2026-11-19 修好），變了就馬上重畫一張。
+- **遊戲畫布的動畫迴圈**（坐洗、房務、菜園、蹭網、早餐、貨運、甜點、礦坑）：`frame()` 最後叫 `nextFrame()`、一開始叫 `startLoop()`；`IntersectionObserver` 看畫布 `#cv`，**整個捲出畫面就停**（收工看結果時不用一直畫，手機才不會燙），捲回來再接著畫、`lastNow` 重設。**沒在玩的時候（標題、結果畫面）每秒只畫約 20 張**（2026-11-18：`nextFrame()` 裡 `setTimeout(…, 34)` 再 `requestAnimationFrame`；剛收工的 2.5 秒照常 60 張，給結算動畫；坐洗、房務看 `stage` 0～4，其他看 `G.started && !G.ended`），量過標題畫面主執行緒忙碌從 8～18% 降到 3～8%；dt 上限 50ms，所以動畫速度不變。新遊戲照這個寫，不要在 `frame()` 裡直接 `requestAnimationFrame(frame)`。**畫布跟著 `resize` 調大小的話，大小沒變就不要重設 `cv.width`／`cv.height`**（重設會清空畫布；手機捲動時網址列伸縮會一直觸發 `resize`，疊・巢、甜點店都因為這樣捲動時狂閃，2026-11-19 修好），變了就馬上重畫一張。
 - **說明書分成很多份**：這份只留規則和索引，每一頁的細節在 `docs/pages/`、錢包、登入、API、LINE bot 在 `docs/`。改了功能就改對應的那一份；新增頁面就新增一份 `docs/pages/<頁名>.md`，並在上面的表加一列。
 - **版本紀錄 `changelog/年-月.md`**（例如 `changelog/2026-11.md`，**每個月一個檔案**）：給使用者看的流水帳，**一定要用繁體中文寫**（使用者看不懂英文；程式裡的名字可以照原樣放在 `` ` `` 裡）。每次改完（commit 前）在**這個月的檔案最後面加一段**，用 `cat >> changelog/2026-11.md <<'EOF'` 直接附加，**不用先讀、也不改以前寫的**。這個月的檔案還沒有就新開一個，第一行寫 `# 版本紀錄・2026 年 12 月`、空一行、`給自己看的流水帳。新的寫在最下面，只加不改。`（月份看台灣時間）。每一筆的格式：`## 日期 時間（台灣）　一句標題`，下面幾條白話的 `-`（改了什麼、玩家感覺得到什麼、要不要重新部署後端或 LINE bot）。
 - commit message 目前多為簡短英文（如 `update admin page`、`add 404 page`）。
