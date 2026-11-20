@@ -225,10 +225,12 @@
             c.fillStyle = rad(c, -10, -14, 4, 0, 2, 40, '#f8cd70', '#cf8a2e'); shape(); c.fill();
             c.strokeStyle = '#b8762a'; c.lineWidth = 1.6; shape(); c.stroke();
             c.save(); shape(); c.clip();
-            for (let i = 0; i < 70; i++) {
-                const a = i * 2.39996, r = 4 + Math.sqrt(i / 70) * 32, x = Math.cos(a) * r, y = Math.sin(a) * r * 0.95 + 2;
-                c.fillStyle = i % 3 ? 'rgba(180,105,30,.55)' : 'rgba(255,225,150,.75)';
-                c.beginPath(); c.ellipse(x, y, 1.2 + (i % 4) * 0.35, 0.9 + (i % 3) * 0.3, a, 0, TAU); c.fill();
+            // 麵衣顆粒：使用者說太多（2026-11-20），從 70 顆減到 24 顆、淡一點，避開臉
+            for (let i = 0; i < 24; i++) {
+                const a = i * 2.39996, r = 8 + Math.sqrt(i / 24) * 26, x = Math.cos(a) * r, y = Math.sin(a) * r * 0.95 + 2;
+                if (Math.abs(x) < 16 && y > -6 && y < 16) continue;
+                c.fillStyle = i % 3 ? 'rgba(180,105,30,.4)' : 'rgba(255,225,150,.6)';
+                c.beginPath(); c.ellipse(x, y, 1.1 + (i % 3) * 0.3, 0.8 + (i % 2) * 0.3, a, 0, TAU); c.fill();
             }
             c.restore();
             c.fillStyle = 'rgba(255,255,255,.38)'; ellipse(c, -10, -14, 11, 5, -0.4); c.fill();
