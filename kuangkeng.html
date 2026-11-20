@@ -113,6 +113,7 @@
                         <p class="text-lg text-wabi-dark tracking-widest">礦坑商店</p>
                         <p class="text-xs font-sans tracking-widest text-stone-500">手上 <b id="msHave" class="font-normal text-wabi-shu"></b></p>
                     </div>
+                    <p id="msPay" class="mt-1 text-xs font-sans tracking-wider text-wabi-shu leading-relaxed"></p>
                     <p id="msSub" class="mt-1 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed"></p>
                     <div id="msList" class="mt-2 flex-1 overflow-y-auto overscroll-contain"></div>
                     <p id="msBag" class="mt-2 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed"></p>
@@ -345,7 +346,7 @@
           if (G.phase === 'title') { G.phase = 'play'; G.resumed = false; closeShop(); document.documentElement.classList.add('kk-open'); syncBoom(); syncUI(); return; }
           if (G.phase === 'pause') { G.phase = 'play'; last = performance.now(); syncBoom(); return; }
           if (G.phase === 'end') {
-            if (performance.now() - G.endAt < 600) return;
+            if (performance.now() - G.endAt < 1000) return;   // 收工前狂點的那一下不要直接跳過結果（工資寫在這張卡上）
             if (!G.win) resetLevel();
             else if (G.lv >= LAST) { G.phase = 'clear'; G.clearT = 0; clearRun(); syncUI(); }
             else openShop();
@@ -400,6 +401,9 @@
         function renderMShop() {
           const need = TARGET[G.lv + 1];
           $('msHave').textContent = fmt(G.total) + ' 兩';
+          // 剛發的工資：結束卡片一點就換成商店，所以這裡再寫一次（2026-11-20 使用者說打完一關沒看到賺多少）
+          const r = G.report, paid = r && r.win && r.lv === G.lv && r.pay;
+          $('msPay').textContent = paid ? `第 ${r.lv} 關工資 +$${r.pay.toLocaleString('en-US')} 進錢包（${r.payBill.map(x => x[0] + ' ' + x[1].toLocaleString('en-US')).join('、')}）・錢包 ${Wallet.fmt(Wallet.money)}` : `錢包 ${Wallet.fmt(Wallet.money)}`;
           $('msSub').textContent = `${G.resumed ? '接著上次的礦坑商店。' : ''}第 ${G.lv} 關過關。下一關目標累積 ${fmt(need)} 兩（還差 ${fmt(Math.max(0, need - G.total))}），買東西會從兩扣掉。`;
           $('msList').innerHTML = G.shop.map(g => `
             <div class="mrow">
@@ -434,6 +438,7 @@
           $('shopBtn').setAttribute('aria-label', total ? `店面，升級了 ${total} 次` : '店面升級');
           $('giveUp').classList.toggle('hidden', !(G && (G.phase === 'title' || G.phase === 'shop') && (G.lv > 1 || G.phase === 'shop')));
           if (G && G.phase === 'play') $('payNote').textContent = '';
+          $('boom').style.visibility = G && G.phase === 'clear' ? 'hidden' : '';   // 結局的卡片會被「炸」蓋到
           const r = G && G.report, show = !!r && (G.phase === 'end' || G.phase === 'shop' || G.phase === 'clear' || (G.phase === 'title' && !r.win && r.lv === G.lv));
           $('reportBtn').classList.toggle('hidden', !show);
           if (show) $('reportBtn').textContent = (SaveImg.inApp ? '存' : navigator.canShare ? '分享' : '下載') + `第 ${r.lv} 關的礦坑日報` + (SaveImg.inApp ? '圖片' : '');
@@ -879,11 +884,12 @@
             c.restore();
           }
           if (t > 3.0) {
-            c.globalAlpha = ease((t - 3.0) / 0.6); card(392, 132);
+            c.globalAlpha = ease((t - 3.0) / 0.6); card(392, 150);
             txt('破關', W / 2, 420, { size: 24, font: SERIF, color: '#2c2c2c', align: 'center', ls: 10 });
             txt('浣熊大王挖到 27 樓「絆」房的房卡。', W / 2, 452, { size: 12.5, color: '#4a4a4a', align: 'center' });
             txt(`十關挖完，累積 ${fmt(G.total)} 兩`, W / 2, 474, { size: 11.5, color: '#8e8070', align: 'center' });
-            txt('點一下領結業證書', W / 2, 503, { size: 14, w: 500, color: `rgba(179,58,47,${blink()})`, align: 'center', ls: 3 });
+            if (G.pay) txt(`這關工資 +$${G.pay.toLocaleString('en-US')} 進錢包（含破關獎金）`, W / 2, 496, { size: 11.5, w: 500, color: '#b33a2f', align: 'center' });
+            txt('點一下領結業證書', W / 2, 522, { size: 14, w: 500, color: `rgba(179,58,47,${blink()})`, align: 'center', ls: 3 });
             c.globalAlpha = 1;
           } else if (t > 0.6) txt('點一下跳過', W - 14, H - 14, { size: 10, color: 'rgba(255,255,255,.6)', align: 'right' });
         }
@@ -951,13 +957,15 @@
           hud();
           const target = TARGET[G.lv];
           if (G.phase === 'title') {
-            card(190, 172);
+            card(190, 180);
             txt(G.resumed ? `接著挖・第 ${G.lv} 關` : `第 ${G.lv} 關`, W / 2, 226, { size: G.resumed ? 22 : 26, font: SERIF, color: '#2c2c2c', align: 'center', ls: G.resumed ? 4 : 6 });
             txt(`${G.round} 秒，累積到 ${fmt(target)} 兩`, W / 2, 260, { size: 12.5, color: '#4a4a4a', align: 'center', ls: 1 });
             txt(G.total ? `手上 ${fmt(G.total)} 兩，還差 ${fmt(Math.max(0, target - G.total))} 兩` : (G.lv === 1 ? '十關挖完有結局' : ''), W / 2, 284, { size: 11.5, color: '#8e8070', align: 'center' });
             const on = Object.keys(G.buff).map(k => BUFF[k]); if (G.dyn) on.unshift(`炸藥 ×${G.dyn}`);
             if (on.length) txt('帶著：' + on.join('、'), W / 2, 306, { size: 11.5, color: '#8e8070', align: 'center' });
-            txt('點一下開挖', W / 2, 340, { size: 15, w: 500, color: `rgba(179,58,47,${blink()})`, align: 'center', ls: 4 });
+            const r = G.report;   // 剛剛沒挖夠：出勤費還是有發，寫在這裡（結束卡片一點就不見了）
+            if (r && !r.win && r.lv === G.lv && r.pay) txt(`剛剛那次出勤費 +$${r.pay.toLocaleString('en-US')} 已進錢包`, W / 2, on.length ? 328 : 312, { size: 11.5, w: 500, color: '#b33a2f', align: 'center' });
+            txt('點一下開挖', W / 2, 350, { size: 15, w: 500, color: `rgba(179,58,47,${blink()})`, align: 'center', ls: 4 });
           } else if (G.phase === 'pause') {
             c.fillStyle = 'rgba(44,44,44,.35)'; c.fillRect(0, 0, W, H); card(220, 110);
             txt('暫停中', W / 2, 255, { size: 22, font: SERIF, color: '#2c2c2c', align: 'center', ls: 6 });
