@@ -25,6 +25,7 @@
         rel="stylesheet">
     <link rel="stylesheet" href="assets/theme.css?v=20261116d">
     <script src="assets/theme.js?v=20261117c"></script>
+    <script src="assets/saveimg.js?v=20261116d"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
     <style>
@@ -46,12 +47,12 @@
         .trial { display: inline-block; padding: .1rem .5rem; border: 1.5px solid rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); font-size: 11px; letter-spacing: .2em; transform: rotate(-4deg); border-radius: 3px; }
         html.kk-open .theme-toggle { opacity: 0; pointer-events: none; transition: opacity .2s; }
         /* 礦坑商店：過關後蓋在畫布上（花的是礦坑裡的兩，不是錢包） */
-        .mshop { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; padding: 18px 16px 16px; border-radius: 4px; background: rgba(252, 250, 248, .97); color: #4a4a4a; }
+        .mshop { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; padding: 18px 16px 16px; border-radius: 4px; background: rgb(var(--wabi-bg) / .97); color: rgb(var(--wabi-text)); }
         .mshop[hidden] { display: none; }
-        .mrow { display: flex; align-items: center; gap: .7rem; padding: .65rem 0; border-bottom: 1px solid rgba(220, 220, 220, .8); }
+        .mrow { display: flex; align-items: center; gap: .7rem; padding: .65rem 0; border-bottom: 1px solid rgb(var(--wabi-sub) / .8); }
         .mrow canvas { flex: none; width: 46px; height: 46px; border-radius: 6px; background: #efe6da; }
-        .mbuy { flex: none; min-width: 5rem; min-height: 44px; padding: 0 .6rem; background: #2c2c2c; color: #fcfaf8; border: 1px solid #2c2c2c; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: .08em; touch-action: manipulation; }
-        .mbuy:disabled { background: transparent; color: #8e8070; border-color: #dcdcdc; }
+        .mbuy { flex: none; min-width: 5rem; min-height: 44px; padding: 0 .6rem; background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); border: 1px solid rgb(var(--wabi-dark)); font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: .08em; touch-action: manipulation; }
+        .mbuy:disabled { background: transparent; color: rgb(var(--wabi-accent)); border-color: rgb(var(--wabi-sub)); }
         /* 店面（花錢包的錢，永久升級）：照疊巢的底部面板 */
         .shop-btn {
             display: inline-flex; align-items: center; height: 1.9rem; padding: 0 0.75rem;
@@ -75,7 +76,7 @@
             font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.1em; line-height: 1.3; touch-action: manipulation;
         }
         .shop-buy:disabled { background: transparent; color: rgb(var(--wabi-accent)); border-color: rgb(var(--wabi-sub)); }
-        .mnext { min-height: 48px; background: #2c2c2c; color: #fcfaf8; font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: .25em; touch-action: manipulation; }
+        .mnext { min-height: 48px; background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: .25em; touch-action: manipulation; }
     </style>
     <link rel="stylesheet" href="assets/tailwind.css?v=20261120a">
 </head>
@@ -118,7 +119,19 @@
             </div>
             <p class="mt-3 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed text-center">點畫面放鉤；拉到不想要的，按右下角「炸」。</p>
             <p id="payNote" class="mt-1 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed text-center min-h-[1.2rem]"></p>
+            <button id="reportBtn" type="button" class="hidden mt-2 w-full py-3 border border-stone-300 text-wabi-dark tracking-[0.2em] font-sans text-xs">分享礦坑日報</button>
             <button id="giveUp" type="button" class="hidden mt-1 w-full py-2 text-stone-400 underline underline-offset-4 tracking-[0.15em] font-sans text-[11px]">放棄這一局，從第一關開始</button>
+        </section>
+
+        <!-- 破關：結業證書 -->
+        <section id="cert" class="hidden mt-10 text-center scroll-mt-24">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent">破關了</span>
+            <p class="mt-2 text-2xl font-light text-wabi-dark tracking-widest">礦坑結業</p>
+            <img id="certImg" alt="礦坑結業證書" class="mt-6 w-full border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]">
+            <div class="mt-6 flex flex-col gap-3">
+                <button id="certShare" type="button" class="w-full bg-wabi-dark text-wabi-bg py-4 px-8 tracking-[0.2em] font-sans text-xs shadow-lg">分享結業證書</button>
+                <button id="certAgain" type="button" class="w-full py-4 px-8 border border-stone-300 text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">從第一關再挖</button>
+            </div>
         </section>
 
         <section class="mt-10 px-1">
@@ -134,7 +147,7 @@
                 <li>工資進錢包：每打完一關出勤費 <b class="font-normal text-wabi-dark">$100</b>，過第 n 關再給 $500＋$100×n（第 1 關 $600、第 10 關 $1,500），破關獎金 <b class="font-normal text-wabi-dark">$2,000</b>。十關打完約 $13,500。</li>
                 <li>右上角<b class="font-normal text-wabi-dark">店面</b>用錢包的錢買永久的工具：電動絞盤、防晃鉤、炸藥箱、礦燈、沙漏、老顧客卡。</li>
             </ol>
-            <p class="mt-6 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">試玩版：工資會進錢包、店面可以買了；結局還沒畫，還不上排行榜。遊戲幣，不能儲值也不能換現金。</p>
+            <p class="mt-6 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">試玩版：工資會進錢包、店面可以買了；每關結束可以分享礦坑日報，破關有結局和結業證書；還不上排行榜。遊戲幣，不能儲值也不能換現金。</p>
         </section>
     </main>
 
@@ -160,7 +173,7 @@
     </footer>
 
     <script>
-        // 礦坑・挖（2026-11-20 試玩第三步）：十關、礦坑商店、錢包工資、店面升級、中途離開從那關重來。結局、結果圖、夜間模式、入口是下一步。
+        // 礦坑・挖（2026-11-20 試玩第四步）：十關、礦坑商店、錢包工資、店面、中途離開從那關重來、結局、礦坑日報、結業證書、夜間的天空。入口、排行榜是下一步。
         (function () {
         const SERIF = '"Noto Serif TC", "Noto Serif CJK TC", serif', SANS = '"Noto Sans TC", "Noto Sans CJK TC", sans-serif';
         const TAU = Math.PI * 2;
@@ -236,7 +249,9 @@
         const lvOf = key => upg.lv[key] || 0;
         const val = key => lvOf(key) ? UPG_BY[key].vals[lvOf(key) - 1] : 0;
 
-        const cv = document.getElementById('cv'), c = cv.getContext('2d');
+        const cv = document.getElementById('cv');
+        let c = cv.getContext('2d');   // 畫結果圖時會暫時換成別張畫布（withCtx）
+        function withCtx(x, fn) { const s = c, s2 = ctx; c = x; ctx = x; try { fn(); } finally { c = s; ctx = s2; } }
         const $ = id => document.getElementById(id);
         let dpr = 0, fitReady = false;
         function fit() { const d = Math.min(3, window.devicePixelRatio || 1); if (d === dpr && cv.width === W * d && cv.height === H * d) return; dpr = d; cv.width = W * dpr; cv.height = H * dpr; if (fitReady) draw(); }
@@ -305,7 +320,7 @@
         }
         function resetLevel() {
           G.total = G.snap.total; G.dyn = G.snap.dyn; G.buff = Object.assign({}, G.snap.buff);
-          G.power = !!G.buff.power; G.round = ROUND + val('sandglass'); G.t = G.round; G.items = makeMap(G.lv); G.lost = 0; G.pay = 0;
+          G.power = !!G.buff.power; G.round = ROUND + val('sandglass'); G.t = G.round; G.items = makeMap(G.lv); G.lost = 0; G.pay = 0; G.haul = {}; G.levelStart = G.total;
           Object.assign(G.hook, { st: 'swing', len: 22, item: null }); G.tug = 0; G.fx = []; G.pops = [];
           G.phase = 'title'; $('mshop').hidden = true;
           document.documentElement.classList.remove('kk-open'); syncBoom(); syncUI();
@@ -318,11 +333,11 @@
           if (G.phase === 'end') {
             if (performance.now() - G.endAt < 600) return;
             if (!G.win) resetLevel();
-            else if (G.lv >= LAST) { G.phase = 'clear'; clearRun(); syncUI(); }
+            else if (G.lv >= LAST) { G.phase = 'clear'; G.clearT = 0; clearRun(); syncUI(); }
             else openShop();
             return;
           }
-          if (G.phase === 'clear') { if (performance.now() - G.endAt > 900) newRun(false); return; }
+          if (G.phase === 'clear') { if (G.clearT < 3.2) G.clearT = 3.2; else showCert(); return; }
           if (G.phase === 'play' && G.hook.st === 'swing') G.hook.st = 'out';
         }
         function boom() {
@@ -401,6 +416,9 @@
           $('shopBtn').setAttribute('aria-label', total ? `店面，升級了 ${total} 次` : '店面升級');
           $('giveUp').classList.toggle('hidden', !(G && (G.phase === 'title' || G.phase === 'shop') && (G.lv > 1 || G.phase === 'shop')));
           if (G && G.phase === 'play') $('payNote').textContent = '';
+          const r = G && G.report, show = !!r && (G.phase === 'end' || G.phase === 'shop' || G.phase === 'clear' || (G.phase === 'title' && !r.win && r.lv === G.lv));
+          $('reportBtn').classList.toggle('hidden', !show);
+          if (show) $('reportBtn').textContent = (SaveImg.inApp ? '存' : navigator.canShare ? '分享' : '下載') + `第 ${r.lv} 關的礦坑日報` + (SaveImg.inApp ? '圖片' : '');
         }
         function shopIcon(el, key) {
           el.width = 112; el.height = 112; const x = el.getContext('2d'); x.setTransform(4, 0, 0, 4, 0, 0);
@@ -492,6 +510,7 @@
         function step(dt) {
           G.fx = G.fx.filter(f => (f.t += dt) < f.life); G.fx.forEach(f => { if (!f.ring) { f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 260 * dt; } });
           G.pops = G.pops.filter(p => (p.t += dt) < 1.2);
+          if (G.phase === 'clear') G.clearT = (G.clearT || 0) + dt;
           if (G.phase !== 'play' && G.phase !== 'title') return;
           const h = G.hook;
           if (h.st === 'swing') { G.swingT += dt; h.ang = TUNE.amp * Math.sin(G.swingT * TUNE.swing * (1 - val('steady'))); }
@@ -512,7 +531,7 @@
             h.len -= sp * dt; G.winch += sp * dt / 9; G.tug = h.item ? Math.min(1, h.item.w / 8) * (G.power ? .5 : 1) : 0;
             if (h.len <= 22) {
               h.len = 22; h.st = 'swing';
-              if (h.item) { const got = cash(h.item); G.total += got.v; G.pops.push({ x: PIVOT.x + 34, y: GROUND - 40, txt: got.txt, big: got.v >= 250 || !got.v, t: 0 }); h.item = null; }
+              if (h.item) { const got = cash(h.item); G.total += got.v; G.haul[h.item.k] = (G.haul[h.item.k] || 0) + 1; G.pops.push({ x: PIVOT.x + 34, y: GROUND - 40, txt: got.txt, big: got.v >= 250 || !got.v, t: 0 }); h.item = null; }
               G.tug = 0; syncBoom();
             }
           }
@@ -521,7 +540,7 @@
         function endLevel() {
           if (G.phase !== 'play') return;
           G.t = 0; const h = G.hook;
-          G.lost = h.item ? cash(h.item).v : 0; h.item = null;   // 時間到還在拉的不算
+          G.lost = h.item && h.item.k !== 'bag' ? cash(h.item).v : 0; h.item = null;   // 時間到還在拉的不算（福袋不開，免得白送炸藥）
           h.st = 'swing'; h.len = 22;
           G.phase = 'end'; G.endAt = performance.now(); G.win = G.total >= TARGET[G.lv];
           // 工資馬上進錢包（中途離開也不會不見）
@@ -531,8 +550,93 @@
           G.pay = G.payBill.reduce((t, x) => t + x[1], 0);
           Wallet.earn(G.pay, 'mine');
           $('payNote').textContent = `錢包 +$${G.pay.toLocaleString('en-US')}（${G.payBill.map(x => x[0] + ' ' + x[1].toLocaleString('en-US')).join('、')}）・現在 ${Wallet.fmt(Wallet.money)}`;
+          G.report = { lv: G.lv, win: G.win, gain: G.total - G.levelStart, total: G.total, target: TARGET[G.lv], haul: { ...G.haul }, pay: G.pay, payBill: G.payBill.slice(), lost: G.lost };
           document.documentElement.classList.remove('kk-open'); syncBoom(); syncUI();
         }
+
+        // ---------- 礦坑日報、結業證書（紙本，固定白天的顏色）----------
+        const canShareFile = f => !!(navigator.canShare && navigator.canShare({ files: [f] }));
+        const who = () => { const p = window.Line && Line.loggedIn && Line.profile; return (p && (p.nick || p.name)) || '旅人'; };
+        const today = () => { const d = new Date(); return `${d.getFullYear()}．${d.getMonth() + 1}．${d.getDate()}`; };
+        function paper(Wd, Hd) {
+          const k = 2, rc = document.createElement('canvas'); rc.width = Wd * k; rc.height = Hd * k;
+          const x = rc.getContext('2d'); x.scale(k, k); x.fillStyle = '#fbf8f2'; x.fillRect(0, 0, Wd, Hd);
+          const T = (s, px, py, o = {}) => { x.save(); x.font = `${o.w || 400} ${o.size || 12}px ${o.font || SERIF}`; x.fillStyle = o.color || '#4a4a4a'; x.textAlign = o.align || 'left'; x.textBaseline = 'middle'; if ('letterSpacing' in x) x.letterSpacing = (o.ls || 0) + 'px'; x.fillText(s, px, py); x.restore(); };
+          const seal = (px, py, size, words, rot) => {
+            x.save(); x.translate(px, py); x.rotate(rot); x.strokeStyle = '#b33a2f'; x.lineWidth = 2.4; x.strokeRect(-size / 2, -size / 2, size, size); x.lineWidth = 0.8; x.strokeRect(-size / 2 + 4, -size / 2 + 4, size - 8, size - 8);
+            if (words.length === 4) { const q = size / 4.6; [[words[0], q, -q], [words[1], q, q], [words[2], -q, -q], [words[3], -q, q]].forEach(([w, a, b]) => T(w, a, b + 1, { size: size * .3, w: 600, color: '#b33a2f', align: 'center' })); }
+            else T(words, 0, 1, { size: size * (words.length > 1 ? .3 : .42), w: 600, color: '#b33a2f', align: 'center', ls: 1 });
+            x.restore();
+          };
+          const frame = h => { x.strokeStyle = '#4a4a4a'; x.lineWidth = 1.2; x.strokeRect(28, 28, Wd - 56, h - 56); x.lineWidth = 0.6; x.strokeRect(34, 34, Wd - 68, h - 68); };
+          const portrait = (px, py, w, h, s, tug) => {
+            x.fillStyle = '#e9eef1'; x.fillRect(px, py, w, h); x.strokeStyle = '#b8b0a2'; x.lineWidth = 1; x.strokeRect(px, py, w, h);
+            x.save(); x.beginPath(); x.rect(px, py, w, h); x.clip(); const sp = G.power; G.power = false; withCtx(x, () => raccoon(px + w / 2, py + h * 0.62, s, tug)); G.power = sp; x.restore();
+          };
+          const crop = h => { const out = document.createElement('canvas'); out.width = Wd * k; out.height = h * k; out.getContext('2d').drawImage(rc, 0, 0); return out; };
+          return { x, T, seal, frame, portrait, crop };
+        }
+        function makeReport(r) {
+          const Wd = 560, P = paper(Wd, 900), { x, T } = P;
+          T('礦 坑 日 報', Wd / 2, 92, { size: 30, w: 300, color: '#2c2c2c', align: 'center', ls: 10 });
+          T(`丼步喱・絆　打工・礦坑・第 ${r.lv} 關`, Wd / 2, 120, { size: 11, font: SANS, color: '#8e8070', align: 'center', ls: 3 });
+          P.portrait(392, 146, 110, 136, 1.55, r.win ? 0 : 0.8);
+          [['礦工', '浣熊大王'], ['記錄', who()], ['這關挖到', fmt(r.gain) + ' 兩'], ['累積', `${fmt(r.total)}／${fmt(r.target)} 兩`]].forEach(([kk, v], i) => {
+            const y = 146 + i * 34; x.strokeStyle = '#d4ccbf'; x.lineWidth = 0.8; x.beginPath(); x.moveTo(58, y + 34); x.lineTo(376, y + 34); x.stroke();
+            T(kk, 62, y + 23, { size: 11.5, font: SANS, color: '#8e8070', ls: 2 }); T(v, 150, y + 23, { size: 15, color: '#2c2c2c' });
+          });
+          let y = 320;
+          T('挖 到 的 東 西', 62, y, { size: 13, color: '#2c2c2c', ls: 4 }); y += 14;
+          const order = ['diamond', 'cat', 'gold4', 'gold3', 'gold2', 'gold1', 'bag', 'skull', 'bone', 'rock2', 'rock1', 'nugget'];
+          const list = order.filter(k => r.haul[k]);
+          if (!list.length) { y += 22; T('什麼都沒挖到，鉤子空空的回來。', 62, y, { size: 13, color: '#6b6158' }); y += 12; }
+          list.forEach((k, i) => {
+            const col = i % 2, row = Math.floor(i / 2), px = 62 + col * 220, py = y + 22 + row * 52;
+            withCtx(x, () => DRAW[KIND[k].draw]({ k, r: Math.min(k === 'cat' ? 11 : 18, KIND[k].r), seed: i + 1, rot: 0.3, vx: 1 }, px + 18, py, true));
+            T(KIND[k].name + (k === 'cat' ? '叼鑽石' : ''), px + 46, py, { size: 14, color: '#2c2c2c' });
+            T('×' + r.haul[k], px + 190, py, { size: 14, font: SANS, color: '#8e8070', align: 'right' });
+          });
+          y += 22 + Math.ceil(list.length / 2) * 52 + 10;
+          x.strokeStyle = '#d4ccbf'; x.lineWidth = 0.8; x.beginPath(); x.moveTo(58, y); x.lineTo(Wd - 58, y); x.stroke(); y += 28;
+          T('工 資', 62, y, { size: 13, color: '#2c2c2c', ls: 4 }); y += 6;
+          r.payBill.forEach(([kk, v]) => { y += 26; T(kk, 62, y, { size: 13, color: '#4a4a4a' }); T('$' + v.toLocaleString('en-US'), Wd - 62, y, { size: 13, font: SANS, color: '#2c2c2c', align: 'right' }); });
+          y += 30; T('進錢包', 62, y, { size: 13, color: '#8e8070' }); T('$' + r.pay.toLocaleString('en-US'), Wd - 62, y, { size: 18, font: SANS, w: 500, color: '#b33a2f', align: 'right' });
+          if (r.lost) { y += 26; T(`時間到時鉤上的 ${r.lost} 兩不算`, 62, y, { size: 11, font: SANS, color: '#8e8070' }); }
+          y += 56;
+          P.seal(Wd - 110, y, 62, r.win ? '過關' : '再挖', r.win ? -0.12 : 0.08);
+          T(r.win ? (r.lv >= LAST ? '十關挖完了。' : `明天繼續挖第 ${r.lv + 1} 關。`) : '差一點，重挖這一關。', 62, y - 8, { size: 13, color: '#4a4a4a' });
+          T(`${today()}　27F 地底`, 62, y + 18, { size: 10, font: SANS, color: '#b0a698', ls: 2 });
+          const h = y + 76; P.frame(h); return P.crop(h).toDataURL('image/png');
+        }
+        function makeCert() {
+          const Wd = 560, P = paper(Wd, 760), { x, T } = P;
+          T('結 業 證 書', Wd / 2, 100, { size: 32, w: 300, color: '#2c2c2c', align: 'center', ls: 12 });
+          T('丼步喱・絆　打工・礦坑・挖', Wd / 2, 130, { size: 11, font: SANS, color: '#8e8070', align: 'center', ls: 3 });
+          P.portrait(Wd / 2 - 60, 160, 120, 140, 1.6, 0);
+          let y = 342;
+          T(`茲證明　${who()}`, Wd / 2, y, { size: 19, color: '#2c2c2c', align: 'center', ls: 3 }); y += 46;
+          ['率領浣熊大王下礦坑，十關全數挖畢，', `累積 ${fmt(G.total)} 兩，`, '並在第十關底下挖到 27 樓「絆」房的房卡一張。', '特頒此證，以資鼓勵。'].forEach(l => { T(l, Wd / 2, y, { size: 14, color: '#4a4a4a', align: 'center', ls: 1 }); y += 30; });
+          y += 40;
+          T('礦坑・挖　礦長', Wd / 2 - 36, y, { size: 13, color: '#4a4a4a', align: 'right', ls: 2 }); T('浣熊大王', Wd / 2 - 24, y, { size: 18, color: '#2c2c2c', ls: 4 });
+          P.seal(Wd / 2 + 150, y - 4, 72, '礦坑之印', -0.1);
+          y += 64; T(today(), Wd / 2, y, { size: 11, font: SANS, color: '#b0a698', align: 'center', ls: 3 });
+          const h = y + 70; P.frame(h); return P.crop(h).toDataURL('image/png');
+        }
+        async function fileOf(url, name) { const b = await (await fetch(url)).blob(); return new File([b], name, { type: 'image/png' }); }
+        let certFile = null;
+        function showCert() {
+          const url = makeCert(); $('certImg').src = url; certFile = null;
+          fileOf(url, 'dongbuli-kuangkeng-cert.png').then(f => { certFile = f; $('certShare').textContent = SaveImg.inApp ? '存結業證書圖片' : canShareFile(f) ? '分享結業證書' : '下載結業證書'; }).catch(() => { });
+          $('cert').classList.remove('hidden');
+          setTimeout(() => $('cert').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }), 100);
+        }
+        $('certShare').addEventListener('click', async () => { if (certFile) await SaveImg.save(certFile, { title: '丼步喱・絆 礦坑結業證書', text: `我在礦坑・挖十關挖完了，累積 ${fmt(G.total)} 兩。` }); });
+        $('certAgain').addEventListener('click', () => { $('cert').classList.add('hidden'); newRun(false); $('payNote').textContent = ''; $('cv').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' }); });
+        $('reportBtn').addEventListener('click', async () => {
+          const r = G.report; if (!r) return;
+          const f = await fileOf(makeReport(r), `dongbuli-kuangkeng-${r.lv}.png`);
+          await SaveImg.save(f, { title: '丼步喱・絆 礦坑日報', text: `礦坑・挖第 ${r.lv} 關${r.win ? '過關' : '差一點'}，挖到 ${fmt(r.gain)} 兩。` });
+        });
 
         // ---------- 畫 ----------
         let ctx = c;   // 商店圖示借用同一套畫法
@@ -673,16 +777,69 @@
           if (G.power && G.phase === 'play') { c.strokeStyle = 'rgba(179,58,47,.7)'; c.lineWidth = 2; [[-30, -10, -38, -14], [-30, 0, -40, 0], [30, -10, 38, -14]].forEach(([a, b, p, q]) => { c.beginPath(); c.moveTo(a, b); c.lineTo(p, q); c.stroke(); }); }
           c.restore();
         }
+        // 結局：第十關底下挖出一個寫著「絆」的木箱，打開是 27 樓「絆」房的房卡
+        function ending(t) {
+          const ease = v => 1 - Math.pow(1 - Math.min(1, Math.max(0, v)), 3);
+          c.fillStyle = `rgba(30,24,20,${0.55 * ease(t / 0.8)})`; c.fillRect(0, 0, W, H);
+          const by = H + 60 - ease(t / 1.4) * (H + 60 - 320), open = ease((t - 1.5) / 0.6);
+          c.strokeStyle = '#5a4636'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(PIVOT.x, PIVOT.y - 6); c.lineTo(180, by - 36); c.stroke();
+          if (open > 0) {
+            c.save(); c.translate(180, by - 22); const a = 0.35 * open;
+            for (let i = 0; i < 9; i++) { c.rotate(TAU / 9); c.fillStyle = `rgba(255,226,150,${a})`; c.beginPath(); c.moveTo(0, 0); c.lineTo(-10, -170); c.lineTo(10, -170); c.closePath(); c.fill(); }
+            c.restore();
+          }
+          // 木箱
+          c.save(); c.translate(180, by);
+          c.fillStyle = '#8a5a34'; c.beginPath(); c.roundRect(-46, -22, 92, 50, 4); c.fill();
+          c.strokeStyle = '#5e3c22'; c.lineWidth = 2; [-10, 6].forEach(y => { c.beginPath(); c.moveTo(-46, y); c.lineTo(46, y); c.stroke(); });
+          c.fillStyle = '#c9a25c'; c.fillRect(-46, -22, 6, 50); c.fillRect(40, -22, 6, 50);
+          c.fillStyle = '#fcfaf8'; c.font = `600 22px ${SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('絆', 0, 4);
+          c.save(); c.translate(-46, -22); c.rotate(-open * 1.9);
+          c.fillStyle = '#9b6a3f'; c.beginPath(); c.roundRect(0, -14, 92, 14, 3); c.fill(); c.strokeStyle = '#5e3c22'; c.lineWidth = 1.5; c.stroke();
+          c.restore(); c.restore();
+          // 房卡
+          const k = ease((t - 2.0) / 0.9);
+          if (k > 0) {
+            const cy = by - 30 - k * 150; c.save(); c.translate(180, cy); c.rotate((1 - k) * 0.5 - 0.06); c.scale(0.6 + 0.4 * k, 0.6 + 0.4 * k);
+            c.fillStyle = 'rgba(0,0,0,.2)'; c.beginPath(); c.roundRect(-64, -38, 132, 82, 8); c.fill();
+            c.fillStyle = '#fcfaf8'; c.beginPath(); c.roundRect(-66, -42, 132, 82, 8); c.fill(); c.strokeStyle = '#d4ccbf'; c.lineWidth = 1; c.stroke();
+            c.fillStyle = '#2c2c2c'; c.beginPath(); c.roundRect(-66, -42, 132, 16, [8, 8, 0, 0]); c.fill();
+            txt('DONGBULI　27F', 0, -34, { size: 8.5, color: '#fcfaf8', align: 'center', ls: 2 });
+            c.strokeStyle = '#b33a2f'; c.lineWidth = 2; c.strokeRect(-52, -18, 36, 36); txt('絆', -34, 1, { size: 22, font: SERIF, w: 600, color: '#b33a2f', align: 'center' });
+            txt('房 卡', 22, -6, { size: 14, font: SERIF, color: '#2c2c2c', align: 'center', ls: 3 });
+            txt('ROOM 2701', 22, 14, { size: 9, color: '#8e8070', align: 'center', ls: 1 });
+            c.fillStyle = '#e2b13c'; c.fillRect(-58, 26, 22, 8);
+            c.restore();
+          }
+          if (t > 3.0) {
+            c.globalAlpha = ease((t - 3.0) / 0.6); card(392, 132);
+            txt('破關', W / 2, 420, { size: 24, font: SERIF, color: '#2c2c2c', align: 'center', ls: 10 });
+            txt('浣熊大王挖到 27 樓「絆」房的房卡。', W / 2, 452, { size: 12.5, color: '#4a4a4a', align: 'center' });
+            txt(`十關挖完，累積 ${fmt(G.total)} 兩`, W / 2, 474, { size: 11.5, color: '#8e8070', align: 'center' });
+            txt('點一下領結業證書', W / 2, 503, { size: 14, w: 500, color: `rgba(179,58,47,${blink()})`, align: 'center', ls: 3 });
+            c.globalAlpha = 1;
+          } else if (t > 0.6) txt('點一下跳過', W - 14, H - 14, { size: 10, color: 'rgba(255,255,255,.6)', align: 'right' });
+        }
         function scene() {
-          let g = c.createLinearGradient(0, 0, 0, GROUND); g.addColorStop(0, '#d9e7ef'); g.addColorStop(1, '#eef3f2'); c.fillStyle = g; c.fillRect(0, 0, W, GROUND);
-          c.fillStyle = '#cdd8dd'; [[0, 70, 34], [30, 58, 26], [60, 76, 30], [250, 64, 30], [282, 50, 24], [306, 72, 54]].forEach(([x, y, w]) => c.fillRect(x, y, w, GROUND - y));
-          c.fillStyle = 'rgba(255,255,255,.8)'; const cx = 90 + Math.sin(performance.now() / 9000) * 14; c.beginPath(); c.ellipse(cx, 30, 26, 7, 0, 0, TAU); c.ellipse(cx + 20, 26, 15, 7, 0, 0, TAU); c.fill();
+          const night = document.documentElement.classList.contains('night');   // 夜間模式：天空換成 27 樓的夜景
+          let g = c.createLinearGradient(0, 0, 0, GROUND);
+          if (night) { g.addColorStop(0, '#18213a'); g.addColorStop(1, '#3a4766'); } else { g.addColorStop(0, '#d9e7ef'); g.addColorStop(1, '#eef3f2'); }
+          c.fillStyle = g; c.fillRect(0, 0, W, GROUND);
+          if (night) {
+            const t = performance.now() / 1000;
+            [[22, 14], [64, 30], [118, 10], [150, 40], [232, 18], [270, 36], [330, 12], [300, 44], [96, 52], [190, 22]].forEach(([x, y], i) => { c.fillStyle = `rgba(255,248,220,${0.45 + 0.4 * Math.sin(t * 1.3 + i * 1.7)})`; c.beginPath(); c.arc(x, y, i % 3 ? 0.9 : 1.4, 0, TAU); c.fill(); });
+            c.fillStyle = '#f4ecd0'; c.beginPath(); c.arc(236, 58, 10, 0, TAU); c.fill(); c.fillStyle = '#25304d'; c.beginPath(); c.arc(241, 54, 9, 0, TAU); c.fill();
+          }
+          const towers = [[0, 70, 34], [30, 58, 26], [60, 76, 30], [250, 64, 30], [282, 50, 24], [306, 72, 54]];
+          c.fillStyle = night ? '#232c44' : '#cdd8dd'; towers.forEach(([x, y, w]) => c.fillRect(x, y, w, GROUND - y));
+          if (night) { towers.forEach(([x, y, w], i) => { for (let wy = y + 6; wy < GROUND - 8; wy += 9) for (let wx = x + 4; wx < x + w - 4; wx += 7) { if ((wx * 7 + wy * 3 + i) % 5 < 2) { c.fillStyle = 'rgba(255,214,140,.75)'; c.fillRect(wx, wy, 3, 4); } } }); }
+          c.fillStyle = night ? 'rgba(255,255,255,0)' : 'rgba(255,255,255,.8)'; const cx = 90 + Math.sin(performance.now() / 9000) * 14; c.beginPath(); c.ellipse(cx, 30, 26, 7, 0, 0, TAU); c.ellipse(cx + 20, 26, 15, 7, 0, 0, TAU); c.fill();
           // 越深的關，土越暗
           const dk = (G.lv - 1) / 9;
           g = c.createLinearGradient(0, GROUND, 0, H); g.addColorStop(0, mix('#c9a27a', '#a8825e', dk)); g.addColorStop(.45, mix('#a97f58', '#86603f', dk)); g.addColorStop(1, mix('#7c5a3f', '#57402c', dk)); c.fillStyle = g; c.fillRect(0, GROUND, W, H - GROUND);
           c.strokeStyle = 'rgba(255,255,255,.07)'; c.lineWidth = 6; [190, 300, 430].forEach(y => { c.beginPath(); c.moveTo(0, y); c.bezierCurveTo(120, y - 16, 240, y + 16, 360, y - 4); c.stroke(); });
           c.fillStyle = 'rgba(60,35,20,.18)'; for (let i = 0; i < 80; i++) { const x = (i * 97.3) % W, y = GROUND + 10 + (i * 53.7) % (H - GROUND - 14); c.beginPath(); c.arc(x, y, 1 + (i % 3) * .6, 0, TAU); c.fill(); }
-          c.fillStyle = '#8fa36a'; c.fillRect(0, GROUND - 4, W, 6); c.fillStyle = '#7a8f58'; c.fillRect(0, GROUND + 1, W, 2);
+          c.fillStyle = night ? '#4f5f3e' : '#8fa36a'; c.fillRect(0, GROUND - 4, W, 6); c.fillStyle = night ? '#3f4d31' : '#7a8f58'; c.fillRect(0, GROUND + 1, W, 2);
           c.fillStyle = '#9b7550'; c.fillRect(200, GROUND - 26, 30, 4); c.fillRect(212, GROUND - 40, 6, 38);
           c.strokeStyle = '#7b5a3c'; c.lineWidth = 3; c.beginPath(); c.arc(215, GROUND - 36, 11, 0, TAU); c.stroke();
           [0, 1, 2].forEach(i => { const a = i * TAU / 3 + G.winch; c.beginPath(); c.moveTo(215, GROUND - 36); c.lineTo(215 + Math.cos(a) * 11, GROUND - 36 + Math.sin(a) * 11); c.stroke(); });
@@ -704,7 +861,7 @@
           const s = Math.ceil(Math.max(0, G.t)); pill(10, 10, 58, `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`, s <= 10 && G.phase === 'play' ? '#f2a093' : null);
           const target = TARGET[G.lv], label = `${fmt(G.total)}／${fmt(target)} 兩`; c.font = `500 13.5px ${SANS}`; const w = c.measureText(label).width + 26;
           pill(W - 10 - w, 10, w, label, G.total >= target ? '#f6cd72' : null);
-          txt(`第 ${G.lv} 關`, (68 + W - 10 - w) / 2 + 5, 24, { size: 11.5, color: '#4a4a4a', align: 'center', ls: 2 });
+          txt(`第 ${G.lv} 關`, (68 + W - 10 - w) / 2 + 5, 24, { size: 11.5, color: document.documentElement.classList.contains('night') ? '#d6dbe6' : '#4a4a4a', align: 'center', ls: 2 });
           // 這關生效的東西
           const on = Object.keys(BUFF).filter(k => k === 'power' ? G.power : G.buff[k]);
           let x = 10; on.forEach(k => { c.fillStyle = 'rgba(179,58,47,.85)'; c.beginPath(); c.roundRect(x, 44, 36, 18, 9); c.fill(); txt(BUFF[k], x + 18, 53.5, { size: 10.5, w: 500, color: '#fcfaf8', align: 'center', ls: 1 }); x += 40; });
@@ -747,16 +904,7 @@
             if (G.pay) txt(`錢包 +$${G.pay.toLocaleString('en-US')}`, W / 2, G.lost ? 322 : 308, { size: 13, w: 500, color: '#b33a2f', align: 'center', ls: 1 });
             if (G.win) stamp(W / 2 + 78, 212, 40, '過', -0.15);
             txt(G.win ? (G.lv >= LAST ? '點一下看結局' : '點一下進商店') : `點一下重打第 ${G.lv} 關`, W / 2, 346, { size: 14, w: 500, color: '#b33a2f', align: 'center', ls: 3 });
-          } else if (G.phase === 'clear') {
-            c.fillStyle = 'rgba(44,44,44,.25)'; c.fillRect(0, 0, W, H); card(150, 270);
-            txt('破關', W / 2, 192, { size: 30, font: SERIF, color: '#2c2c2c', align: 'center', ls: 10 });
-            stamp(W / 2 + 84, 190, 44, '業', -0.18);
-            txt(`十關挖完，累積 ${fmt(G.total)} 兩`, W / 2, 236, { size: 13, color: '#4a4a4a', align: 'center', ls: 1 });
-            txt('浣熊大王在第十關底下挖到一個木箱，', W / 2, 272, { size: 12, color: '#6b6158', align: 'center' });
-            txt('上面寫著一個「絆」字……', W / 2, 294, { size: 12, color: '#6b6158', align: 'center' });
-            txt('（結局的畫面還在畫）', W / 2, 324, { size: 11, color: '#8e8070', align: 'center' });
-            txt('點一下從第一關再挖', W / 2, 382, { size: 14, w: 500, color: `rgba(179,58,47,${blink()})`, align: 'center', ls: 3 });
-          }
+          } else if (G.phase === 'clear') ending(G.clearT || 0);
         }
 
         // 畫布整個捲出畫面就停；沒在玩（標題、暫停、結果、商店）每秒只畫約 20 張，剛收工的 2.5 秒照常畫
@@ -775,7 +923,7 @@
         if ('IntersectionObserver' in window) new IntersectionObserver(es => { cvSeen = es[es.length - 1].isIntersecting; if (cvSeen) startLoop(); }).observe(cv);
         (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(startLoop);
         // 測試用（模擬玩家）
-        window.__kk = { get G() { return G; }, tap, boom, buy, nextLevel, step, endLevel, newRun, startLevel, resetLevel, openShop, buyUpgrade, saveRun, loadRun, val, TUNE, KIND, TARGET, PIVOT, W, H, back, cash };
+        window.__kk = { get G() { return G; }, makeReport, makeCert, showCert, tap, boom, buy, nextLevel, step, endLevel, newRun, startLevel, resetLevel, openShop, buyUpgrade, saveRun, loadRun, val, TUNE, KIND, TARGET, PIVOT, W, H, back, cash };
         })();
     </script>
 </body>

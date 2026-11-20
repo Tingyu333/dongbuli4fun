@@ -27,7 +27,7 @@
   - 載入時網址後面帶 `?v=日期`（例如 `assets/line.js?v=20261113`）：LINE 內建瀏覽器和 GitHub Pages 都會快取舊的 js／css，**改了 `assets/` 裡的檔案，要把所有頁面的 `?v=` 一起換新**（`sed` 全部取代即可）。
   - **導覽列不要加 `mix-blend-mode`**：iPhone（尤其 LINE 內建瀏覽器）捲動時固定導覽列會卡在畫面中間（about 頁跟首頁都踩過）。
   - `theme.js`：夜間模式切換、`showToast()`、`themeColor()`（給 canvas 讀 CSS 變數）。
-  - `saveimg.js`（`index`、`xitou`、`fangwu`、`caiyuan`、`cengwang`、`zaocan`、`huoyun`、`tiandian`、`diechao`、`scratch`、`yuncai` 載）：`SaveImg.save(file, { title, text })` 存結果圖片（入住通知書、洗頭證明、房務檢查表、收成單、蹭網日報、早餐店日報、貨運提單、刮刮樂兌獎單、疊巢履歷）。能分享檔案就叫分享選單；**在 LINE／IG／FB 的 App 內瀏覽器（UA 有 `Line/`、`FBAN`、`Instagram`、`; wv)`），下載連結按了沒反應**（安卓使用者回報過），改成全螢幕放大圖片（data URL、`-webkit-touch-callout: default`）請他長按存、或截圖；分享失敗（不是自己取消）也走放大；其他直接下載。按鈕字：能分享寫「分享…」、App 內寫「存…圖片」、其他寫「下載…」（`SaveImg.inApp`）。新的結果圖片也用這支，不要自己寫 `a.download`。
+  - `saveimg.js`（`index`、`xitou`、`fangwu`、`caiyuan`、`cengwang`、`zaocan`、`huoyun`、`tiandian`、`diechao`、`scratch`、`yuncai`、`kuangkeng` 載）：`SaveImg.save(file, { title, text })` 存結果圖片（入住通知書、洗頭證明、房務檢查表、收成單、蹭網日報、早餐店日報、貨運提單、刮刮樂兌獎單、疊巢履歷、礦坑日報、礦坑結業證書）。能分享檔案就叫分享選單；**在 LINE／IG／FB 的 App 內瀏覽器（UA 有 `Line/`、`FBAN`、`Instagram`、`; wv)`），下載連結按了沒反應**（安卓使用者回報過），改成全螢幕放大圖片（data URL、`-webkit-touch-callout: default`）請他長按存、或截圖；分享失敗（不是自己取消）也走放大；其他直接下載。按鈕字：能分享寫「分享…」、App 內寫「存…圖片」、其他寫「下載…」（`SaveImg.inApp`）。新的結果圖片也用這支，不要自己寫 `a.download`。
   - `avatar.js`（`member`、`rank`、`tiandian`、`diechao`、`xuyuan`、`admin` 載）：**指定頭像**，只能從網站的角色挑（`Avatar.LIST`：茱莉鴨、蘋果鴨、浣熊大王、青江菜船長、店貓、坐洗部的狗、鼴鼠、雞塊、小吳鴨；後端 `AVATAR_KEYS` 要一樣），canvas 畫；蘋果鴨（`Avatar.appleDuck`）和小吳鴨（`Avatar.crow`，疊・巢的主角）的全身畫法也在這裡、`Avatar.url(key)` 給圖片網址（快取），角色是實物、顏色固定。不收上傳的照片（使用者選的做法 A）。2026-11-20 使用者要其他頭像「對標」小吳鴨、茱莉鴨的精緻度：浣熊大王（皇冠三顆寶石、紅披風白毛領）、青江菜船長（跟貨運・航的船長同一套畫法：白頂黑簷船長帽）、店貓（虎斑 M 字紋、睫毛）、坐洗部的狗（頭上頂洗頭泡泡）、鼴鼠（戴礦坑的工地帽）、雞塊（麵衣顆粒，24 顆、避開臉；第一版 70 顆使用者說太多）都重畫成漸層＋亮點的畫法（`rad()` 放射漸層，光從左上來）。
   - `vendor/flatpickr/`：首頁的日曆元件 flatpickr **4.6.13**（MIT，附 LICENSE；2026-11-18 從外面的 CDN 搬進來、鎖版本、`defer` 載入，不擋畫面）。
   - `404.html` 沒有接主題，仍在頁內自己宣告 `tailwind.config`（404 在 GitHub Pages 的子路徑下相對路徑會失效）。後台也有晝夜切換鈕，跟前台共用同一個 sessionStorage 設定。
@@ -60,7 +60,7 @@
 | `huoyun.html` | 打工：貨運・航（開船撈蘿蔔），無盡模式、船廠 | `docs/pages/huoyun.md` |
 | `tiandian.html` | 打工：甜點・轉（蘋果鴨甜點店，轉盤），店面升級 | `docs/pages/tiandian.md` |
 | `diechao.html` | 打工：疊・巢（小吳鴨疊精裝書，60 秒、無盡模式），店面 | `docs/pages/diechao.md` |
-| `kuangkeng.html` | 打工：礦坑・挖（黃金礦工的丼步喱版，浣熊大王當礦工）。**試玩中：沒有入口、還不上排行榜**；十關、礦坑商店、工資進錢包、店面 | `docs/pages/kuangkeng.md` |
+| `kuangkeng.html` | 打工：礦坑・挖（黃金礦工的丼步喱版，浣熊大王當礦工）。**試玩中：沒有入口、還不上排行榜**；十關、礦坑商店、工資進錢包、店面、結局、日報和結業證書 | `docs/pages/kuangkeng.md` |
 | `xuyuan.html` | 許願・池：搜集提案，每天第一個願隨機 $3,000～6,666（網頁不寫金額），願望牆、主人回覆 | `docs/pages/xuyuan.md` |
 | `rank.html` | 排行・榜：打工・榜、花錢・榜、無盡・榜 | `docs/pages/rank.md` |
 | `baoxian.html` | 保險・存：儲蓄險（後端算） | `docs/pages/baoxian.md` |
