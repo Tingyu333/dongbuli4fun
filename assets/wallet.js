@@ -7,6 +7,9 @@
 //   Wallet.donate(金額)、Wallet.lightLamp(價錢, 燈油, 哪種燈)、Wallet.useOil(多少, 哪種燈)；登入時一樣送「變了多少」給後端
 // 坐洗部的店面升級也在這裡：Wallet.shop = { lv: { shampoo: 2, … }, spent }、Wallet.setShop(shop)。
 //   等級只會升不會降，同步時送整份，後端每一項取比較高的（兩支手機各買各的也不會蓋掉）
+// 專屬道具（主人在 admin 後台發的，2026-11-20）：後端只送給本人（錢包回傳裡的 perks: [{ perk, expires }]），存在錢包裡。
+//   Wallet.perk('shop60') 有沒有；七家打工店的升級價錢一律過 Wallet.shopPrice(原價)，按鈕用 Wallet.priceTag(原價)、清單最上面放 Wallet.saleBanner()。
+//   不公開：排行榜、別人的畫面都看不到；花錢照實際付的記（shop.spent、spent 都是六折後的）。
 (function () {
     const KEY = 'dongbuli-wallet';
     const GUEST_KEY = 'dongbuli-wallet-guest';  // 登入時把這支手機原本的（訪客）錢包收起來，登出再拿回來
@@ -36,7 +39,9 @@
         Object.keys(o || {}).forEach(k => { if (/^[a-z]{1,16}$/.test(k)) { const v = Number(o[k]) || 0; if (v) out[k] = keepNeg ? v : Math.max(0, v); } });
         return out;
     };
-    const blank = () => ({ money: START, spent: 0, earned: {}, gongde: noGongde(), shop: noShop() });
+    const blank = () => ({ money: START, spent: 0, earned: {}, gongde: noGongde(), shop: noShop(), perks: [] });
+    const cleanPerks = a => Array.isArray(a) ? a.filter(x => x && /^[a-z0-9]{1,16}$/.test(x.perk)).map(x => ({ perk: x.perk, expires: Math.max(0, Number(x.expires) || 0) })).slice(0, 20) : [];
+    const SHOP_OFF = 0.6;   // 專屬道具「全店六折」
     const noPending = () => ({ money: 0, spent: 0, earned: {}, gongde: noGongde() });
     const cleanGongde = g => ({ donated: pos(g && g.donated), oil: pos(g && g.oil), lamps: pos(g && g.lamps), lit: pos(g && g.lit), oils: cleanOils(g && g.oils) });
     const read = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
@@ -120,9 +125,16 @@
             w.shop = merged;
             writeShopMirror(merged);
         }
+        let perksChanged = false;
+        if (Array.isArray(server.perks)) {   // 舊版後端沒有 perks：不動
+            const np = cleanPerks(server.perks);
+            perksChanged = JSON.stringify(np) !== JSON.stringify(cleanPerks(w.perks));
+            w.perks = np;
+        }
         save(w);
         if (w.money !== before) emit('server', { diff: w.money - before });
         if (shopChanged) emit('shop');
+        if (perksChanged) emit('perks');
     }
 
     function schedule(ms = 1500) {
@@ -200,6 +212,26 @@
             writeShopMirror(w.shop);
             schedule();
             return cleanShop(w.shop);
+        },
+        // 專屬道具：有沒有（要登入、還沒過期）
+        perk(key) {
+            if (!logged()) return false;
+            const now = Date.now();
+            return cleanPerks(load().perks).some(x => x.perk === key && (!x.expires || x.expires > now));
+        },
+        // 七家打工店的升級價錢：有「全店六折」就打六折（十位數以下四捨五入）
+        shopPrice(base) { base = Number(base) || 0; return Wallet.perk('shop60') ? Math.round(base * SHOP_OFF / 10) * 10 : base; },
+        // 按鈕上的價錢：打折時原價劃掉、下一行寫六折價
+        priceTag(base) {
+            const p = Wallet.shopPrice(base);
+            return p === base ? Wallet.fmt(base) : `<s style="opacity:.55;font-size:.86em">${Wallet.fmt(base)}</s><br>${Wallet.fmt(p)}`;
+        },
+        // 商店清單最上面的朱印說明（沒有道具就是空字串）
+        saleBanner() {
+            if (!Wallet.perk('shop60')) return '';
+            return '<div style="display:flex;align-items:center;gap:.6rem;margin:.6rem 0 .2rem;padding:.55rem .7rem;border:1px solid rgb(var(--wabi-shu) / .45);border-radius:4px;background:rgb(var(--wabi-shu) / .05)">'
+                + '<span style="flex-shrink:0;width:2.6rem;height:2.6rem;display:flex;align-items:center;justify-content:center;border:1.5px solid rgb(var(--wabi-shu));border-radius:4px;color:rgb(var(--wabi-shu));font-size:.72rem;line-height:1.15;text-align:center;transform:rotate(-6deg);font-weight:600">專屬<br>六折</span>'
+                + '<span style="font-family:\'Noto Sans TC\',sans-serif;font-size:11px;letter-spacing:.06em;line-height:1.6;color:rgb(var(--wabi-text))">你有專屬道具「全店六折」：七家打工店的升級都打六折。</span></div>';
         },
         oilOf(kind) { const g = load().gongde; return !kind || kind === 'guangming' ? g.oil : (g.oils[kind] || 0); },
         // 用掉燈油（不夠就用到 0），回傳實際用掉多少
@@ -279,7 +311,7 @@
                 const shop = data.player.shop ? mergeShop(data.player.shop, local.shop) : local.shop;
                 const pending = noPending();
                 if (data.player.shop && !sameShop(shop, data.player.shop)) pending.shop = true;
-                save({ money: data.player.money, spent: data.player.spent, earned: data.player.earned || {}, gongde: cleanGongde(data.player.gongde || (data.player.isNew ? local.gongde : null)), shop, pending });
+                save({ money: data.player.money, spent: data.player.spent, earned: data.player.earned || {}, gongde: cleanGongde(data.player.gongde || (data.player.isNew ? local.gongde : null)), shop, pending, perks: cleanPerks(data.player.perks) });
                 writeShopMirror(shop);
                 if (pending.shop) schedule();
                 emit('login', { isNew: data.player.isNew, name: data.player.name, left: local.money });
@@ -288,7 +320,7 @@
                 if (data && data.expired) { emit('logout', data); return; }  // 通行證過期：錢包先留著，重新登入會拿回帳號的
                 const guest = read(GUEST_KEY) || blank();
                 try { localStorage.removeItem(GUEST_KEY); } catch (e) { }
-                save({ money: guest.money, spent: guest.spent || 0, earned: guest.earned || {}, gongde: cleanGongde(guest.gongde), shop: cleanShop(guest.shop), pending: noPending() });
+                save({ money: guest.money, spent: guest.spent || 0, earned: guest.earned || {}, gongde: cleanGongde(guest.gongde), shop: cleanShop(guest.shop), pending: noPending(), perks: [] });
                 writeShopMirror(guest.shop);
                 emit('logout', data);
             }

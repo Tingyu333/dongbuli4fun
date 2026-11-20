@@ -27,7 +27,7 @@
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/saveimg.js?v=20261116d"></script>
     <script src="assets/line.js?v=20261116d"></script>
-    <script src="assets/wallet.js?v=20261116d"></script>
+    <script src="assets/wallet.js?v=20261120a"></script>
     <style>
         /* 洗頭台：手指在上面搓、拉，不能捲動頁面，長按也不能跳出系統選單 */
         .salon {
@@ -1140,9 +1140,9 @@
 
         function renderShop() {
             $('shopMoney').textContent = Wallet.fmt(Wallet.money);
-            $('shopList').innerHTML = SHOP.map(u => {
+            $('shopList').innerHTML = Wallet.saleBanner() + SHOP.map(u => {
                 const now = lv(u.key), max = u.prices.length, next = now < max ? now + 1 : null;
-                const price = next ? u.prices[now] : 0;
+                const base = next ? u.prices[now] : 0, price = Wallet.shopPrice(base);   // 專屬道具「全店六折」
                 const dots = Array.from({ length: max }, (_, i) => `<i class="${i < now ? 'on' : ''}"></i>`).join('');
                 const cur = now ? u.fx(u.vals[now - 1]) : '還沒買';
                 const nxt = next ? u.fx(u.vals[next - 1]) : '';
@@ -1154,7 +1154,7 @@
                         <p class="mt-0.5 text-[10px] font-sans tracking-wider text-stone-400">${tier}</p>
                         <p class="mt-1 text-[11px] font-sans leading-relaxed text-stone-600">${now ? '現在：' + cur : ''}${next ? `${now ? '<br>' : ''}升級：${nxt}` : '<br>已經是最高級'}</p>
                     </div>
-                    <button type="button" class="shop-buy" data-buy="${u.key}" ${!next || Wallet.money < price ? 'disabled' : ''}>${next ? `${now ? '升級' : '買'}<br>${Wallet.fmt(price)}` : '滿級'}</button>
+                    <button type="button" class="shop-buy" data-buy="${u.key}" ${!next || Wallet.money < price ? 'disabled' : ''}>${next ? `${now ? '升級' : '買'}<br>${Wallet.priceTag(base)}` : '滿級'}</button>
                 </div>`;
             }).join('');
             $('shopList').querySelectorAll('[data-icon]').forEach(cv => shopIcon(cv, SHOP_BY[cv.dataset.icon], Number(cv.dataset.lv)));
@@ -1179,7 +1179,7 @@
             shop = loadShop();  // 用錢包裡最新的（菜園的農具也記在同一份 spent）
             const u = SHOP_BY[key], now = lv(key);
             if (now >= u.prices.length) return;
-            const price = u.prices[now];
+            const price = Wallet.shopPrice(u.prices[now]);   // 專屬道具「全店六折」：扣、記都是六折後的
             if (!Wallet.spend(price)) { showToast('錢包不夠，先去洗幾顆頭'); return; }
             shop.lv[key] = now + 1;
             shop.spent += price;

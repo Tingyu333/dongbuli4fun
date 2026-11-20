@@ -71,7 +71,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-20a';
+var BACKEND_VERSION = '2026-11-20b';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1 };
 
@@ -1105,7 +1105,7 @@ function addEarned(base, more) {
 }
 
 function walletView(p) {
-  return { money: p.money, spent: p.spent, earned: p.earned, gongde: p.gongde, shop: p.shop };
+  return { money: p.money, spent: p.spent, earned: p.earned, gongde: p.gongde, shop: p.shop, perks: perksFor(p.lineId) };
 }
 
 function writeWallet(p) {
@@ -3793,7 +3793,7 @@ function adminWishSet(input) {
 // 不回 line_id：玩家用 key（line_id 的雜湊，前 12 碼）認，發道具時後端再對回 line_id。
 // Perks：A timestamp、B id、C line_id、D perk、E note、F expires（空白＝永久）、G revoked_at、H key
 var PERK_TYPES = {
-  shop60: { name: '全店六折', desc: '七家打工店面升級打六折', live: false }   // live: false＝效果還沒做，只是記錄
+  shop60: { name: '全店六折', desc: '七家打工店面升級打六折（刮刮樂、功德、股市、保險照原價）', live: true }   // 2026-11-20b 起生效；live: false 的只記錄、不送給玩家
 };
 var PERK_HEADERS = ['timestamp', 'id', 'line_id', 'perk', 'note', 'expires', 'revoked_at', 'key'];
 
@@ -3897,13 +3897,32 @@ function gaPerkGrant(input) {
   var note = String(input.note || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 60);
   var now = new Date(), id = 'k' + Utilities.getUuid().replace(/-/g, '').slice(0, 10);
   perksSheet().appendRow([now, id, who.lineId, input.perk, note ? asText(note) : '', days ? new Date(now.getTime() + days * 864e5) : '', '', who.key]);
+  CacheService.getScriptCache().remove('perks:v1');
   var out = gaPlayers(); out.granted = id; return out;
+}
+
+// 玩家自己的道具（錢包回傳時帶著，只給本人）：[{ perk, expires }]，只回 live 的、還沒過期的。
+// 整份名單快取 10 分鐘（'perks:v1'），發、收回時清掉；Perks 分頁還沒有就是沒有人有
+function perksFor(lineId) {
+  if (!lineId) return [];
+  var cache = CacheService.getScriptCache(), map = null, raw = cache.get('perks:v1');
+  if (raw) { try { map = JSON.parse(raw); } catch (e) { } }
+  if (!map) {
+    map = {};
+    if (SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Perks')) {
+      readPerks().forEach(function (x) { if (x.active) (map[x.lineId] = map[x.lineId] || []).push({ perk: x.perk, expires: x.expires }); });
+    }
+    try { cache.put('perks:v1', JSON.stringify(map), 600); } catch (e) { }
+  }
+  var now = Date.now();
+  return (map[lineId] || []).filter(function (x) { return PERK_TYPES[x.perk] && PERK_TYPES[x.perk].live && (!x.expires || x.expires > now); });
 }
 
 function gaPerkRevoke(input) {
   var x = readPerks().filter(function (y) { return y.id === String(input.id || ''); })[0];
   if (!x) return { result: 'error', error: '找不到這筆道具' };
   if (!x.revokedAt) perksSheet().getRange(x.row, 7).setValue(new Date());
+  CacheService.getScriptCache().remove('perks:v1');
   return gaPlayers();
 }
 

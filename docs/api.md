@@ -92,7 +92,12 @@
 
 - **另一組密碼**：`{ type: 'gameAdminLogin', password }`，對指令碼屬性 `GAME_ADMIN_PASSWORD`（沒設定回「還沒設定」），錯十次鎖十分鐘（`gaLoginFails`）→ `{ token }`（cache `gadmin:`，6 小時）。`ga` 開頭的請求都要帶這張 `token`（`isGameAdmin()`），預約後台的 `adminToken` 不能用，反過來也一樣。
 - `gaPlayers` → `{ players: [{ key, name, lineName, nick, picture, avatar, money, spent, earned（各來源加總）, sources: { 來源: { total, times, best } }, shopLv, shopItems, shopSpent, donated, lit, created, updated, perks: [還有效的道具名] }], perks: [{ id, key, who, perk, perkName, live, note, at, expires, revokedAt, active }]（新的在前）, perkTypes }`。**不回 line_id**；`key` = line_id 的 HMAC-SHA256（金鑰 `dongbuli-player-key`）前 12 碼（`playerKey()`）。
-- `gaPerkGrant`（排隊）：`{ key, perk, days（0＝永久，最多 3650）, note? }`，同一人同一種還有效的不能重發 → 跟 `gaPlayers` 一樣再加 `granted`。`gaPerkRevoke`（排隊）：`{ id }` 記 `revoked_at`。**`Perks`** 分頁：A `timestamp`、B `id`、C `line_id`（之後做效果要用）、D `perk`、E `note`、F `expires`（空白＝永久）、G `revoked_at`、H `key`。`PERK_TYPES` 現在只有 `shop60`（全店六折，`live: false`＝效果還沒做）。
+- `gaPerkGrant`（排隊）：`{ key, perk, days（0＝永久，最多 3650）, note? }`，同一人同一種還有效的不能重發 → 跟 `gaPlayers` 一樣再加 `granted`。`gaPerkRevoke`（排隊）：`{ id }` 記 `revoked_at`。**`Perks`** 分頁：A `timestamp`、B `id`、C `line_id`（之後做效果要用）、D `perk`、E `note`、F `expires`（空白＝永久）、G `revoked_at`、H `key`。`PERK_TYPES` 現在只有 `shop60`（全店六折；`live: false` 的種類＝效果還沒做，不會送到前端）。
 - `gaEcon`：只讀 `Players`，回玩家數、上線數、錢的總量和中位數、第一名對中位數倍數、賺／花、店面升級、功德、各來源（`ECON_NAMES`）、前五名、要看一下的帳號（`flags`）。
 - `gaWage`：`{ days? }` → `{ head, rows }`，`econReport()` 拆成 `econCompute()`（算）＋寫「對帳」分頁；`gaWage` 只用前面那段，不寫分頁。
+
+## 2026-11-20 專屬道具生效（版本 `2026-11-20b`）
+
+- `walletView()`（`lineLogin` 的 `player`、`walletSync` 的 `wallet`）多一個 `perks: [{ perk, expires（0＝永久） }]`：**只有本人的**、只有 `PERK_TYPES` 裡 `live: true` 而且還沒過期、沒收回的（`perksFor(line_id)`）。整張 `Perks` 讀一次做成 `{ line_id: [...] }` 放 cache `perks:v1` 10 分鐘，`gaPerkGrant`／`gaPerkRevoke` 寫完就清掉，所以發了下一次同步就有；快取裡的也會再看一次到期。沒有 `Perks` 分頁就是空的。
+- 後端不管價錢（店面升級的錢本來就是前端扣、`walletSync` 送差額），六折只在前端算。
 
