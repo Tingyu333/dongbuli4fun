@@ -7,17 +7,17 @@
     <!-- 試玩中：還沒有入口，不給搜尋引擎收（開放時拿掉） -->
     <meta name="robots" content="noindex">
     <title>礦坑・挖 | 丼步喱</title>
-    <meta name="description" content="鼴鼠戴上工地帽下礦坑：鉤子左右擺，點一下放出去，金塊越大拉越久。六十秒挖到目標就過關。">
+    <meta name="description" content="鼴鼠戴上工地帽下礦坑：鉤子左右擺，點一下放出去，金塊越大拉越久。十關，每關六十秒挖到目標就過關。">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="丼步喱・絆">
     <meta property="og:title" content="礦坑・挖｜丼步喱">
-    <meta property="og:description" content="鼴鼠戴上工地帽下礦坑：鉤子左右擺，點一下放出去，金塊越大拉越久。六十秒挖到目標就過關。">
+    <meta property="og:description" content="鼴鼠戴上工地帽下礦坑：鉤子左右擺，點一下放出去，金塊越大拉越久。十關，每關六十秒挖到目標就過關。">
     <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="1200">
     <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/kuangkeng.html">
     <meta name="twitter:card" content="summary">
-    <!-- 礦坑・挖：黃金礦工的丼步喱版（2026-11-20 試玩第一步：只有第一關，不發薪水、沒有入口）。計劃在 Claude 文件「礦坑・挖 開發計劃書」；網站不放 emoji -->
+    <!-- 礦坑・挖：黃金礦工的丼步喱版（2026-11-20 試玩第二步：十關＋礦坑商店，不發薪水、沒有入口）。計劃在 Claude 文件「礦坑・挖 開發計劃書」；網站不放 emoji -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -33,16 +33,24 @@
         .boom {
             position: absolute; right: 22px; bottom: 26px; width: 64px; height: 64px; border-radius: 9999px;
             display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-            background: rgba(252, 250, 248, .93); border: 1.5px solid rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu));
+            background: rgba(252, 250, 248, .93); border: 1.5px solid #b33a2f; color: #b33a2f;
             box-shadow: 0 4px 14px rgba(0, 0, 0, .18); touch-action: manipulation; -webkit-tap-highlight-color: transparent;
             transition: transform .08s, opacity .15s;
         }
         .boom b { font-family: 'Noto Serif TC', serif; font-weight: 600; font-size: 20px; line-height: 1; }
         .boom span { font-family: 'Noto Sans TC', sans-serif; font-size: 11px; line-height: 1; letter-spacing: .05em; }
         .boom:active { transform: scale(.92); }
-        .boom.off { opacity: .45; }
+        .boom.off { opacity: .4; }
         .trial { display: inline-block; padding: .1rem .5rem; border: 1.5px solid rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); font-size: 11px; letter-spacing: .2em; transform: rotate(-4deg); border-radius: 3px; }
         html.kk-open .theme-toggle { opacity: 0; pointer-events: none; transition: opacity .2s; }
+        /* 礦坑商店：過關後蓋在畫布上（花的是礦坑裡的兩，不是錢包） */
+        .mshop { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; padding: 18px 16px 16px; border-radius: 4px; background: rgba(252, 250, 248, .97); color: #4a4a4a; }
+        .mshop[hidden] { display: none; }
+        .mrow { display: flex; align-items: center; gap: .7rem; padding: .65rem 0; border-bottom: 1px solid rgba(220, 220, 220, .8); }
+        .mrow canvas { flex: none; width: 46px; height: 46px; border-radius: 6px; background: #efe6da; }
+        .mbuy { flex: none; min-width: 5rem; min-height: 44px; padding: 0 .6rem; background: #2c2c2c; color: #fcfaf8; border: 1px solid #2c2c2c; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: .08em; touch-action: manipulation; }
+        .mbuy:disabled { background: transparent; color: #8e8070; border-color: #dcdcdc; }
+        .mnext { min-height: 48px; background: #2c2c2c; color: #fcfaf8; font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: .25em; touch-action: manipulation; }
     </style>
     <link rel="stylesheet" href="assets/tailwind.css?v=20261120a">
 </head>
@@ -71,6 +79,16 @@
             <div class="relative">
                 <canvas id="cv" aria-label="礦坑・挖：鉤子左右擺，點一下放出去"></canvas>
                 <button type="button" id="boom" class="boom off" aria-label="丟炸藥"><b>炸</b><span id="boomN">×0</span></button>
+                <div id="mshop" class="mshop" hidden role="dialog" aria-label="礦坑商店">
+                    <div class="flex items-baseline justify-between">
+                        <p class="text-lg text-wabi-dark tracking-widest">礦坑商店</p>
+                        <p class="text-xs font-sans tracking-widest text-stone-500">手上 <b id="msHave" class="font-normal text-wabi-shu"></b></p>
+                    </div>
+                    <p id="msSub" class="mt-1 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed"></p>
+                    <div id="msList" class="mt-2 flex-1 overflow-y-auto overscroll-contain"></div>
+                    <p id="msBag" class="mt-2 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed"></p>
+                    <button type="button" id="msNext" class="mnext mt-3 w-full">下一關</button>
+                </div>
             </div>
             <p class="mt-3 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed text-center">點畫面放鉤；拉到不想要的，按右下角「炸」。</p>
         </section>
@@ -80,11 +98,13 @@
             <ol class="mt-3 list-decimal pl-5 space-y-1.5 text-xs font-sans tracking-wide text-stone-500 leading-relaxed">
                 <li>鉤子在鼴鼠下面左右擺，點畫面任何地方就朝那個方向放出去（電腦按 ↓ 或空白鍵）。</li>
                 <li>鉤到東西就往回拉，<b class="font-normal text-wabi-dark">越重拉越慢</b>：大金塊、大石頭都很花時間，空鉤收得最快。</li>
-                <li>拉到不想要的，按右下角<b class="font-normal text-wabi-shu">「炸」</b>（電腦按 ↑）：東西炸掉不算錢，鉤子快速收回。</li>
-                <li>一關 <b class="font-normal text-wabi-dark">60 秒</b>，挖到目標的「兩」就過關；時間到時鉤上還在拉的不算。</li>
+                <li>拉到不想要的，按右下角<b class="font-normal text-wabi-shu">「炸」</b>（電腦按 ↑）：東西炸掉不算錢，鉤子快速收回。炸藥在礦坑商店買，福袋也會開到。</li>
+                <li>一共 <b class="font-normal text-wabi-dark">10 關</b>，每關 60 秒。「兩」跨關累積，時間到時累積到目標就過關；鉤上還在拉的不算。沒挖夠就重打那一關，兩回到那關開始時。</li>
+                <li>過關後進<b class="font-normal text-wabi-dark">礦坑商店</b>，用兩買下一關的東西：炸藥、大力丸（拉兩倍快）、御守（福袋開到好東西）、鑽石拋光劑（鑽石變 900）、石頭圖鑑（石頭值三倍）。買了會從兩扣掉。</li>
+                <li><b class="font-normal text-wabi-dark">福袋</b>開出隨機的兩、一根炸藥，或這一關力氣變大。<b class="font-normal text-wabi-shu">火藥桶</b>一鉤到就爆，旁邊的東西全炸光。<b class="font-normal text-wabi-dark">雞塊</b>長得像金塊，只值 2 兩。<b class="font-normal text-wabi-dark">店貓</b>叼著鑽石走來走去，抓到值 602 兩。</li>
                 <li>切去別的 App 會自動暫停。</li>
             </ol>
-            <p class="mt-6 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">試玩版：只有第一關，送兩根炸藥試手感；不發薪水、不記錄、不上排行榜。</p>
+            <p class="mt-6 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">試玩版：十關和礦坑商店都在了，結局還沒畫；不發薪水、不記錄、不上排行榜，重新整理就從第一關開始。</p>
         </section>
     </main>
 
@@ -93,55 +113,106 @@
     </footer>
 
     <script>
-        // 礦坑・挖（2026-11-20 試玩第一步）：只有第一關。之後的十關、礦坑商店、錢包、店面照計劃書一步一步加。
+        // 礦坑・挖（2026-11-20 試玩第二步）：十關、礦坑商店、福袋、火藥桶、雞塊、店貓、鑽石。錢包、店面、存進度是下一步。
         (function () {
         const SERIF = '"Noto Serif TC", "Noto Serif CJK TC", serif', SANS = '"Noto Sans TC", "Noto Sans CJK TC", sans-serif';
         const TAU = Math.PI * 2;
-        const W = 360, H = 560, GROUND = 112, PIVOT = { x: 180, y: 116 }, ROUND = 60;
-        // 手感（試玩要調的就是這幾個）：擺幅、擺速、放出去和收回的速度、重量讓收回變慢多少
+        const W = 360, H = 560, GROUND = 112, PIVOT = { x: 180, y: 116 }, ROUND = 60, LAST = 10;
+        // 手感：擺幅、擺速（使用者 2026-11-20 說再慢一點：2.0 → 1.5）、放出去和收回的速度、重量讓收回變慢多少
         const TUNE = { amp: 1.22, swing: 1.5, shoot: 400, back: 440, heavy: 0.75 };
-        const back = w => TUNE.back / (1 + w * TUNE.heavy);   // 拉著重量 w 的收回速度（px/秒）
-        // 物件：價值（兩）、重量、碰撞半徑；跟規格書一樣
+        const back = (w, power) => TUNE.back / (1 + w * TUNE.heavy) * (power ? 2 : 1);   // 拉著重量 w 的收回速度（px/秒）
+        // 跨關累積的目標（第 1～5 關是規格書的數字，之後每關要多賺的每次多 270）
+        const TARGET = [0, 650, 1195, 2010, 3095, 4450, 6075, 7970, 10135, 12570, 15275];
+        // 物件：價值（兩）、重量、碰撞半徑；跟規格書一樣（名字換成丼步喱版）
         const KIND = {
           gold1: { name: '小金塊', v: 50, w: 2, r: 10, draw: 'gold' },
           gold2: { name: '中金塊', v: 100, w: 3, r: 17, draw: 'gold' },
           gold3: { name: '大金塊', v: 250, w: 5, r: 26, draw: 'gold' },
           gold4: { name: '特大金塊', v: 500, w: 8, r: 36, draw: 'gold' },
-          rock1: { name: '小石頭', v: 11, w: 4, r: 13, draw: 'rock' },
-          rock2: { name: '大石頭', v: 20, w: 7, r: 24, draw: 'rock' },
+          rock1: { name: '小石頭', v: 11, w: 4, r: 13, draw: 'rock', rock: true },
+          rock2: { name: '大石頭', v: 20, w: 7, r: 24, draw: 'rock', rock: true },
           skull: { name: '頭骨', v: 20, w: 2, r: 12, draw: 'skull' },
           bone: { name: '骨頭', v: 7, w: 1.5, r: 12, draw: 'bone' },
+          diamond: { name: '鑽石', v: 600, w: 1, r: 9, draw: 'diamond' },
+          bag: { name: '福袋', v: 0, w: 1.5, r: 14, draw: 'bag' },
+          barrel: { name: '火藥桶', v: 0, w: 1.5, r: 14, draw: 'barrel' },
+          nugget: { name: '雞塊', v: 2, w: 1.5, r: 13, draw: 'nugget', walk: 30 },
+          cat: { name: '店貓', v: 602, w: 1.5, r: 15, draw: 'cat', walk: 40 },
         };
-        // 第一關：目標 650 兩，地上的總價值要明顯高於目標（金 1,250）；前兩關沒有鑽石、火藥桶、雞塊
-        const LEVEL = { n: 1, target: 650, items: { gold4: 1, gold3: 1, gold2: 3, gold1: 4, rock2: 3, rock1: 4, skull: 1, bone: 2 },
-          depth: { gold1: [160, 380], gold2: [190, 450], gold3: [280, 510], gold4: [400, 510], rock1: [160, 520], rock2: [180, 515], skull: [170, 520], bone: [160, 520] } };
+        // 每一關放什麼：地上值錢的東西約是「這關要多賺」的 1.6 倍（福袋算 280）；前兩關沒有鑽石、火藥桶、雞塊；第 5 關開始有店貓；越後面石頭越多
+        const LEVELS = [null,
+          { gold3: 2, gold2: 2, gold1: 5, rock2: 3, rock1: 4, skull: 1, bone: 2 },
+          { gold3: 1, gold2: 2, gold1: 3, bag: 1, rock2: 4, rock1: 4, skull: 1, bone: 2 },
+          { gold4: 1, gold2: 2, gold1: 1, diamond: 1, barrel: 1, rock2: 4, rock1: 5, skull: 1, bone: 1 },
+          { gold4: 1, gold3: 1, gold2: 1, diamond: 1, bag: 1, barrel: 1, nugget: 2, rock2: 5, rock1: 5, bone: 1 },
+          { gold4: 1, gold3: 1, diamond: 1, cat: 1, bag: 1, barrel: 2, nugget: 2, rock2: 5, rock1: 5, skull: 1 },
+          { gold4: 2, gold3: 1, gold1: 2, diamond: 1, cat: 1, bag: 1, barrel: 2, nugget: 2, rock2: 6, rock1: 5 },
+          { gold4: 1, gold3: 2, gold1: 2, diamond: 2, cat: 1, bag: 1, barrel: 2, nugget: 3, rock2: 6, rock1: 6 },
+          { gold4: 2, gold3: 1, gold1: 2, diamond: 2, cat: 1, bag: 2, barrel: 2, nugget: 3, rock2: 7, rock1: 6 },
+          { gold4: 2, gold3: 2, gold1: 2, diamond: 2, cat: 1, bag: 2, barrel: 3, nugget: 3, rock2: 7, rock1: 6 },
+          { gold4: 2, gold3: 2, gold1: 2, diamond: 3, cat: 1, bag: 2, barrel: 3, nugget: 3, rock2: 8, rock1: 7 },
+        ];
+        // 放多深：越值錢越深，關卡越後面再往下一點
+        function depth(k, n) {
+          const d = (n - 1) / 9;
+          return { gold1: [160, 360], gold2: [190, 440], gold3: [260 + d * 60, 510], gold4: [380 + d * 40, 515], diamond: [330 + d * 80, 525],
+            cat: [440, 520], nugget: [220, 470], bag: [200, 500], barrel: [220, 500] }[k] || [160, 520];
+        }
+        // 礦坑商店（花礦坑裡的兩）：價格區間照規格書，關卡越後面越貴
+        const GOODS = [
+          { key: 'dyn', name: '炸藥', fx: '多一根，按「炸」用', lo: 50, hi: 150 },
+          { key: 'power', name: '大力丸', fx: '下一關拉東西兩倍快', lo: 100, hi: 400 },
+          { key: 'luck', name: '御守', fx: '下一關福袋至少開到 300 兩', lo: 50, hi: 200 },
+          { key: 'polish', name: '鑽石拋光劑', fx: '下一關鑽石 600 → 900 兩', lo: 200, hi: 600 },
+          { key: 'book', name: '石頭圖鑑', fx: '下一關石頭值三倍', lo: 10, hi: 150 },
+        ];
+        const BUFF = { power: '大力', luck: '御守', polish: '拋光', book: '圖鑑' };
 
         const cv = document.getElementById('cv'), c = cv.getContext('2d');
+        const $ = id => document.getElementById(id);
         let dpr = 0, fitReady = false;
         function fit() { const d = Math.min(3, window.devicePixelRatio || 1); if (d === dpr && cv.width === W * d && cv.height === H * d) return; dpr = d; cv.width = W * dpr; cv.height = H * dpr; if (fitReady) draw(); }
         fit();
         const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const fmt = n => Math.round(n).toLocaleString('zh-TW');
         let G = null, last = performance.now();
 
         // ---------- 地圖 ----------
-        function makeMap() {
-          const out = [], order = Object.keys(LEVEL.items).sort((a, b) => KIND[b].r - KIND[a].r);   // 大的先放
+        function makeMap(n) {
+          const want = LEVELS[n], out = [], order = Object.keys(want).sort((a, b) => KIND[b].r - KIND[a].r);   // 大的先放
           order.forEach(k => {
-            for (let i = 0; i < LEVEL.items[k]; i++) {
-              const K = KIND[k], [y0, y1] = LEVEL.depth[k];
+            for (let i = 0; i < want[k]; i++) {
+              const K = KIND[k], [y0, y1] = depth(k, n);
               for (let tries = 0; tries < 300; tries++) {
                 const x = K.r + 8 + Math.random() * (W - 2 * K.r - 16), y = y0 + Math.random() * (y1 - y0);
                 if (Math.hypot(x - PIVOT.x, y - PIVOT.y) < 60) continue;
-                if (out.some(o => Math.hypot(o.x - x, o.y - y) < o.r + K.r + 10)) continue;
-                out.push({ k, x, y, r: K.r, v: K.v, w: K.w, seed: Math.random() * 10, rot: (Math.random() - .5) * 1.6 }); break;
+                if (x > 245 && y > 435) continue;   // 右下角是炸藥鈕，不放東西
+                if (out.some(o => Math.hypot(o.x - x, o.y - y) < o.r + K.r + (K.walk || KIND[o.k].walk ? 4 : 10))) continue;
+                out.push({ k, x, y, r: K.r, w: K.w, seed: Math.random() * 10, rot: (Math.random() - .5) * 1.6,
+                  vx: K.walk ? (Math.random() < .5 ? -1 : 1) * K.walk * (0.8 + Math.random() * 0.4) : 0 });
+                break;
               }
             }
           });
           return out;
         }
-        function newGame() {
-          G = { phase: 'title', t: ROUND, total: 0, items: makeMap(), hook: { st: 'swing', ang: 0, len: 22, item: null }, swingT: Math.random() * 3,
-            booms: 2, fx: [], pops: [], winch: 0, tug: 0, endWhy: '', pausedAt: 0 };
+        // 一整局（十關）
+        function newRun() {
+          G = { lv: 1, total: 0, dyn: 0, next: {}, buff: {}, power: false, phase: 'title', fx: [], pops: [], winch: 0, tug: 0, swingT: Math.random() * 3,
+            hook: { st: 'swing', ang: 0, len: 22, item: null }, t: ROUND, items: [] };
+          startLevel(1);
+        }
+        // 開一關：上一關商店買的東西這關生效；記下開始時的樣子（沒挖夠重打就回到這裡）
+        function startLevel(n) {
+          G.lv = n; G.buff = G.next; G.next = {};
+          G.snap = { total: G.total, dyn: G.dyn, buff: Object.assign({}, G.buff) };
+          resetLevel();
+        }
+        function resetLevel() {
+          G.total = G.snap.total; G.dyn = G.snap.dyn; G.buff = Object.assign({}, G.snap.buff);
+          G.power = !!G.buff.power; G.t = ROUND; G.items = makeMap(G.lv); G.lost = 0;
+          Object.assign(G.hook, { st: 'swing', len: 22, item: null }); G.tug = 0; G.fx = []; G.pops = [];
+          G.phase = 'title'; $('mshop').hidden = true;
           document.documentElement.classList.remove('kk-open'); syncBoom();
         }
 
@@ -149,25 +220,32 @@
         function tap() {
           if (G.phase === 'title') { G.phase = 'play'; document.documentElement.classList.add('kk-open'); syncBoom(); return; }
           if (G.phase === 'pause') { G.phase = 'play'; last = performance.now(); syncBoom(); return; }
-          if (G.phase === 'end') { if (performance.now() - G.endAt > 700) newGame(); return; }
+          if (G.phase === 'end') {
+            if (performance.now() - G.endAt < 600) return;
+            if (!G.win) resetLevel();
+            else if (G.lv >= LAST) G.phase = 'clear';
+            else openShop();
+            return;
+          }
+          if (G.phase === 'clear') { if (performance.now() - G.endAt > 900) newRun(); return; }
           if (G.phase === 'play' && G.hook.st === 'swing') G.hook.st = 'out';
         }
         function boom() {
           const h = G.hook;
-          if (G.phase !== 'play' || h.st !== 'back' || !h.item || G.booms <= 0) return;
-          G.booms--; const p = tip(); burst(p.x, p.y, h.item.r);
+          if (G.phase !== 'play' || h.st !== 'back' || !h.item || G.dyn <= 0) return;
+          G.dyn--; const p = tip(); burst(p.x, p.y, h.item.r);
           h.item = null; syncBoom();
         }
         function syncBoom() {
-          const b = document.getElementById('boom'); document.getElementById('boomN').textContent = '×' + (G ? G.booms : 0);
-          const on = G && G.phase === 'play' && G.hook.st === 'back' && G.hook.item && G.booms > 0;
-          b.classList.toggle('off', !on);
+          $('boomN').textContent = '×' + (G ? G.dyn : 0);
+          const on = G && G.phase === 'play' && G.hook.st === 'back' && G.hook.item && G.dyn > 0;
+          $('boom').classList.toggle('off', !on);
         }
         cv.addEventListener('pointerdown', e => { e.preventDefault(); tap(); });
-        const bt = document.getElementById('boom');
-        bt.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); boom(); });
-        document.getElementById('stage').addEventListener('contextmenu', e => e.preventDefault());
+        $('boom').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); boom(); });
+        $('stage').addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('keydown', e => {
+          if (G.phase === 'shop') return;
           if (e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); tap(); }
           else if (e.key === 'ArrowUp') { e.preventDefault(); boom(); }
         });
@@ -177,49 +255,122 @@
         window.addEventListener('pagehide', autoPause);
         window.addEventListener('blur', autoPause);
 
+        // ---------- 礦坑商店 ----------
+        function openShop() {
+          const n = G.lv, k = 1 + 0.15 * (n - 1), pick = GOODS.slice().sort(() => Math.random() - .5).slice(0, 1 + Math.floor(Math.random() * 5));
+          G.shop = GOODS.filter(g => pick.includes(g)).map(g => ({ ...g, price: Math.round((g.lo + Math.random() * (g.hi - g.lo)) * k / 5) * 5, sold: false }));
+          G.phase = 'shop'; renderShop(); $('mshop').hidden = false;
+        }
+        function buy(key) {
+          const g = G.shop && G.shop.find(x => x.key === key);
+          if (!g || g.sold || G.total < g.price) return false;
+          G.total -= g.price; g.sold = true;
+          if (key === 'dyn') G.dyn++; else G.next[key] = true;
+          renderShop(); return true;
+        }
+        function nextLevel() { if (G.phase !== 'shop') return; startLevel(G.lv + 1); }
+        function renderShop() {
+          const need = TARGET[G.lv + 1];
+          $('msHave').textContent = fmt(G.total) + ' 兩';
+          $('msSub').textContent = `第 ${G.lv} 關過關。下一關目標累積 ${fmt(need)} 兩（還差 ${fmt(Math.max(0, need - G.total))}），買東西會從兩扣掉。`;
+          $('msList').innerHTML = G.shop.map(g => `
+            <div class="mrow">
+              <canvas data-icon="${g.key}" width="92" height="92"></canvas>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm text-wabi-dark tracking-wider">${g.name}</p>
+                <p class="text-[11px] font-sans tracking-wide text-stone-500 leading-snug">${g.fx}</p>
+              </div>
+              <button type="button" class="mbuy" data-buy="${g.key}" ${g.sold || G.total < g.price ? 'disabled' : ''}>${g.sold ? '買了' : fmt(g.price) + ' 兩'}</button>
+            </div>`).join('');
+          const bag = [`炸藥 ×${G.dyn}`].concat(Object.keys(G.next).map(k => BUFF[k]));
+          $('msBag').textContent = '帶進下一關：' + bag.join('、');
+          document.querySelectorAll('#msList canvas[data-icon]').forEach(drawIcon);
+        }
+        $('msList').addEventListener('click', e => { const b = e.target.closest('[data-buy]'); if (b) buy(b.dataset.buy); });
+        $('msNext').addEventListener('click', nextLevel);
+        function drawIcon(el) {
+          const x = el.getContext('2d'), k = el.dataset.icon; x.setTransform(2, 0, 0, 2, 0, 0); const save = c; ctx = x;
+          if (k === 'dyn') { x.fillStyle = '#a8553f'; x.fillRect(14, 12, 8, 22); x.fillRect(24, 12, 8, 22); x.strokeStyle = '#5a4636'; x.lineWidth = 1.4; x.beginPath(); x.moveTo(23, 12); x.quadraticCurveTo(26, 6, 30, 5); x.stroke(); x.fillStyle = '#f2b03c'; x.beginPath(); x.arc(30, 5, 2.2, 0, TAU); x.fill(); }
+          else if (k === 'power') { x.fillStyle = '#6e5040'; x.beginPath(); x.arc(23, 25, 11, 0, TAU); x.fill(); x.fillStyle = '#c69a5a'; x.beginPath(); x.arc(20, 21, 3, 0, TAU); x.fill(); txtOn(x, '力', 23, 26, 10, '#fcfaf8'); }
+          else if (k === 'luck') { x.fillStyle = '#b33a2f'; x.beginPath(); x.roundRect(14, 10, 18, 26, 3); x.fill(); x.strokeStyle = '#f2d39a'; x.lineWidth = 1; x.strokeRect(16, 18, 14, 15); txtOn(x, '守', 23, 26, 9, '#f2d39a'); x.strokeStyle = '#f2d39a'; x.beginPath(); x.moveTo(23, 10); x.lineTo(23, 5); x.stroke(); }
+          else if (k === 'polish') { DRAW.diamond({ r: 10 }, 23, 24); }
+          else if (k === 'book') { x.fillStyle = '#8b857c'; x.fillRect(12, 12, 22, 24); x.fillStyle = '#c4beb4'; x.fillRect(14, 12, 3, 24); txtOn(x, '石', 25, 24, 10, '#fcfaf8'); }
+          ctx = save;
+        }
+        function txtOn(x, s, px, py, size, color) { x.font = `600 ${size}px ${SERIF}`; x.fillStyle = color; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(s, px, py); }
+
         // ---------- 更新 ----------
         const tip = () => ({ x: PIVOT.x + Math.sin(G.hook.ang) * G.hook.len, y: PIVOT.y + Math.cos(G.hook.ang) * G.hook.len });
-        function burst(x, y, r) { for (let i = 0; i < 16; i++) { const a = Math.random() * TAU, s = 60 + Math.random() * 160; G.fx.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0, life: .5 + Math.random() * .3, r: 2 + Math.random() * 3 }); } G.fx.push({ ring: true, x, y, t: 0, life: .35, r }); }
+        function burst(x, y, r, big) {
+          for (let i = 0; i < (big ? 26 : 16); i++) { const a = Math.random() * TAU, s = 60 + Math.random() * (big ? 240 : 160); G.fx.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0, life: .5 + Math.random() * .3, r: 2 + Math.random() * 3 }); }
+          G.fx.push({ ring: true, x, y, t: 0, life: big ? .5 : .35, r, big });
+        }
+        // 火藥桶：炸掉半徑內的東西，碰到別的火藥桶就連環爆
+        const BLAST = 85;
+        function explode(x, y) {
+          burst(x, y, 20, true);
+          const hit = G.items.filter(o => Math.hypot(o.x - x, o.y - y) < BLAST + o.r * 0.5);
+          G.items = G.items.filter(o => !hit.includes(o));
+          hit.forEach(o => { if (o.k === 'barrel') explode(o.x, o.y); else burst(o.x, o.y, o.r); });
+        }
+        // 拉回來值多少（福袋現開）
+        function cash(o) {
+          if (o.k === 'bag') {
+            const r = Math.random();
+            if (r < 0.70) { const lo = G.buff.luck ? 300 : 1, v = Math.round(lo + Math.random() * (800 - lo)); return { v, txt: '+' + v }; }
+            if (r < 0.85) { G.dyn++; return { v: 0, txt: '炸藥 +1' }; }
+            G.power = true; return { v: 0, txt: '力氣變大' };
+          }
+          let v = KIND[o.k].v;
+          if (G.buff.polish && (o.k === 'diamond' || o.k === 'cat')) v += 300;
+          if (G.buff.book && KIND[o.k].rock) v *= 3;
+          return { v, txt: '+' + v };
+        }
         function step(dt) {
           G.fx = G.fx.filter(f => (f.t += dt) < f.life); G.fx.forEach(f => { if (!f.ring) { f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 260 * dt; } });
-          G.pops = G.pops.filter(p => (p.t += dt) < 1.1);
+          G.pops = G.pops.filter(p => (p.t += dt) < 1.2);
           if (G.phase !== 'play' && G.phase !== 'title') return;
           const h = G.hook;
           if (h.st === 'swing') { G.swingT += dt; h.ang = TUNE.amp * Math.sin(G.swingT * TUNE.swing); }
+          G.items.forEach(o => { if (o.vx) { o.x += o.vx * dt; if (o.x < o.r + 6 || o.x > W - o.r - 6) { o.vx = -o.vx; o.x = Math.max(o.r + 6, Math.min(W - o.r - 6, o.x)); } } });
           if (G.phase !== 'play') return;
           G.t -= dt;
           if (h.st === 'out') {
             h.len += TUNE.shoot * dt;
             const p = tip();
             const hit = G.items.find(o => Math.hypot(o.x - p.x, o.y - p.y) < o.r + 4);
-            if (hit) { G.items.splice(G.items.indexOf(hit), 1); h.item = hit; h.st = 'back'; syncBoom(); }
-            else if (p.x < -4 || p.x > W + 4 || p.y > H + 4) h.st = 'back';
+            if (hit) {
+              if (hit.k === 'barrel') { explode(hit.x, hit.y); h.st = 'back'; }
+              else { G.items.splice(G.items.indexOf(hit), 1); h.item = hit; h.st = 'back'; }
+              syncBoom();
+            } else if (p.x < -4 || p.x > W + 4 || p.y > H + 4) h.st = 'back';
           } else if (h.st === 'back') {
-            const sp = h.item ? back(h.item.w) : TUNE.back;
-            h.len -= sp * dt; G.winch += sp * dt / 9; G.tug = h.item ? Math.min(1, h.item.w / 8) : 0;
+            const sp = h.item ? back(h.item.w, G.power) : TUNE.back;
+            h.len -= sp * dt; G.winch += sp * dt / 9; G.tug = h.item ? Math.min(1, h.item.w / 8) * (G.power ? .5 : 1) : 0;
             if (h.len <= 22) {
               h.len = 22; h.st = 'swing';
-              if (h.item) { G.total += h.item.v; G.pops.push({ x: PIVOT.x + 34, y: GROUND - 40, txt: '+' + h.item.v, big: h.item.v >= 250, t: 0 }); h.item = null; }
+              if (h.item) { const got = cash(h.item); G.total += got.v; G.pops.push({ x: PIVOT.x + 34, y: GROUND - 40, txt: got.txt, big: got.v >= 250 || !got.v, t: 0 }); h.item = null; }
               G.tug = 0; syncBoom();
             }
           }
-          if (G.t <= 0) endGame();
+          if (G.t <= 0) endLevel();
         }
-        function endGame() {
+        function endLevel() {
           G.t = 0; const h = G.hook;
-          if (h.item) { G.lost = h.item.v; h.item = null; }   // 時間到還在拉的不算
+          G.lost = h.item ? cash(h.item).v : 0; h.item = null;   // 時間到還在拉的不算
           h.st = 'swing'; h.len = 22;
-          G.phase = 'end'; G.endAt = performance.now(); G.win = G.total >= LEVEL.target;
+          G.phase = 'end'; G.endAt = performance.now(); G.win = G.total >= TARGET[G.lv];
           document.documentElement.classList.remove('kk-open'); syncBoom();
         }
 
         // ---------- 畫 ----------
+        let ctx = c;   // 商店圖示借用同一套畫法
         const txt = (s, x, y, o = {}) => {
           c.font = `${o.w || 400} ${o.size || 14}px ${o.font || SANS}`; c.fillStyle = o.color || '#2c2c2c'; c.textAlign = o.align || 'left'; c.textBaseline = o.base || 'middle';
           if ('letterSpacing' in c) c.letterSpacing = (o.ls || 0) + 'px'; c.fillText(s, x, y); if ('letterSpacing' in c) c.letterSpacing = '0px';
         };
         function blob(x, y, r, seed) {
-          const n = 9; c.beginPath();
+          const c = ctx, n = 9; c.beginPath();
           for (let i = 0; i <= n; i++) {
             const a = i / n * TAU, k = 0.82 + 0.18 * Math.abs(Math.sin(seed * 7.3 + i * 2.1));
             const px = x + Math.cos(a) * r * k * 1.12, py = y + Math.sin(a) * r * k * 0.9;
@@ -227,71 +378,125 @@
           }
           c.closePath();
         }
-        const shadow = (x, y, r) => { c.fillStyle = 'rgba(60,35,20,.18)'; c.beginPath(); c.ellipse(x + 2, y + r * .78, r * 1.05, r * .3, 0, 0, TAU); c.fill(); };
+        const shadow = (x, y, r) => { ctx.fillStyle = 'rgba(60,35,20,.18)'; ctx.beginPath(); ctx.ellipse(x + 2, y + r * .78, r * 1.05, r * .3, 0, 0, TAU); ctx.fill(); };
+        function star(x, y, s) { const c = ctx; c.beginPath(); c.moveTo(x, y - s * 2); c.lineTo(x + s * .5, y - s * .5); c.lineTo(x + s * 2, y); c.lineTo(x + s * .5, y + s * .5); c.lineTo(x, y + s * 2); c.lineTo(x - s * .5, y + s * .5); c.lineTo(x - s * 2, y); c.lineTo(x - s * .5, y - s * .5); c.closePath(); c.fill(); }
         const DRAW = {
           gold(o, x, y, carried) {
-            const r = o.r; if (!carried) shadow(x, y, r);
+            const c = ctx, r = o.r; if (!carried) shadow(x, y, r);
             c.fillStyle = '#e2a33f'; blob(x, y, r, o.seed); c.fill();
             c.fillStyle = '#c6852a'; [[-.45, -.2, .14], [.35, -.3, .11], [.5, .3, .13], [-.3, .4, .1]].forEach(([a, b, s]) => { c.beginPath(); c.arc(x + a * r, y + b * r, Math.max(1.2, s * r), 0, TAU); c.fill(); });
             c.fillStyle = '#f6cd72'; c.beginPath(); c.ellipse(x - r * .25, y - r * .35, r * .42, r * .2, -.35, 0, TAU); c.fill();
             if (r >= 26) { const a = (performance.now() / 900 + o.seed) % 3; if (a < .5) { const s = 1 - Math.abs(a - .25) * 4; c.fillStyle = `rgba(255,255,255,${s})`; star(x + r * .55, y - r * .55, 5 * s); } }
           },
           rock(o, x, y, carried) {
-            const r = o.r; if (!carried) shadow(x, y, r);
+            const c = ctx, r = o.r; if (!carried) shadow(x, y, r);
             c.fillStyle = '#a49e94'; blob(x, y, r, o.seed + 3); c.fill();
             c.fillStyle = '#8b857c'; c.beginPath(); c.ellipse(x + r * .2, y + r * .3, r * .7, r * .38, 0, 0, TAU); c.fill();
             c.strokeStyle = '#77716a'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(x - r * .3, y - r * .5); c.lineTo(x - r * .05, y - r * .1); c.lineTo(x - r * .3, y + r * .15); c.stroke();
             c.fillStyle = '#c4beb4'; c.beginPath(); c.ellipse(x - r * .35, y - r * .4, r * .3, r * .14, -.4, 0, TAU); c.fill();
           },
           bone(o, x, y) {
-            const r = o.r; c.save(); c.translate(x, y); c.rotate(o.rot); c.fillStyle = '#efe7d6'; c.strokeStyle = '#c9bea8'; c.lineWidth = 1;
+            const c = ctx, r = o.r; c.save(); c.translate(x, y); c.rotate(o.rot); c.fillStyle = '#efe7d6'; c.strokeStyle = '#c9bea8'; c.lineWidth = 1;
             [[-r * .8, -r * .22], [-r * .8, r * .22], [r * .8, -r * .22], [r * .8, r * .22]].forEach(([a, b]) => { c.beginPath(); c.arc(a, b, r * .28, 0, TAU); c.fill(); c.stroke(); });
             c.fillRect(-r * .8, -r * .17, r * 1.6, r * .34); c.restore();
           },
           skull(o, x, y, carried) {
-            const r = o.r; if (!carried) shadow(x, y, r);
+            const c = ctx, r = o.r; if (!carried) shadow(x, y, r);
             c.fillStyle = '#ece4d2'; c.beginPath(); c.arc(x, y - r * .15, r * .85, 0, TAU); c.fill(); c.fillRect(x - r * .5, y + r * .3, r, r * .45);
             c.fillStyle = '#5a4a3e'; c.beginPath(); c.arc(x - r * .33, y - r * .1, r * .22, 0, TAU); c.arc(x + r * .33, y - r * .1, r * .22, 0, TAU); c.fill();
             c.beginPath(); c.moveTo(x, y + r * .08); c.lineTo(x - r * .1, y + r * .25); c.lineTo(x + r * .1, y + r * .25); c.fill();
             c.strokeStyle = '#b8ad98'; c.lineWidth = 1; [-.25, 0, .25].forEach(d => { c.beginPath(); c.moveTo(x + d * r, y + r * .42); c.lineTo(x + d * r, y + r * .72); c.stroke(); });
           },
+          diamond(o, x, y) {
+            const c = ctx, r = o.r;
+            c.fillStyle = '#d6eef5'; c.strokeStyle = '#7fb6c9'; c.lineWidth = 1.2; c.lineJoin = 'round';
+            c.beginPath(); c.moveTo(x - r, y - r * .35); c.lineTo(x - r * .55, y - r * .85); c.lineTo(x + r * .55, y - r * .85); c.lineTo(x + r, y - r * .35); c.lineTo(x, y + r); c.closePath(); c.fill(); c.stroke();
+            c.beginPath(); c.moveTo(x - r, y - r * .35); c.lineTo(x + r, y - r * .35); c.moveTo(x - r * .3, y - r * .35); c.lineTo(x, y + r); c.lineTo(x + r * .3, y - r * .35); c.stroke();
+            const a = (performance.now() / 700 + (o.seed || 0)) % 2.4; if (a < .6) { const s = Math.sin(a / .6 * Math.PI); c.fillStyle = `rgba(255,255,255,${s})`; star(x + r * 1.1, y - r * .9, 2.6 * s + .4); }
+          },
+          bag(o, x, y, carried) {
+            const c = ctx, r = o.r; if (!carried) shadow(x, y + 2, r);
+            c.fillStyle = '#cdb07c'; c.beginPath(); c.moveTo(x - r * .35, y - r * .55);
+            c.bezierCurveTo(x - r * 1.2, y - r * .2, x - r * 1.15, y + r, x, y + r); c.bezierCurveTo(x + r * 1.15, y + r, x + r * 1.2, y - r * .2, x + r * .35, y - r * .55); c.closePath(); c.fill();
+            c.beginPath(); c.moveTo(x - r * .35, y - r * .55); c.lineTo(x - r * .6, y - r * 1.05); c.lineTo(x, y - r * .8); c.lineTo(x + r * .6, y - r * 1.05); c.lineTo(x + r * .35, y - r * .55); c.fill();
+            c.strokeStyle = '#b33a2f'; c.lineWidth = 2; c.beginPath(); c.moveTo(x - r * .42, y - r * .55); c.lineTo(x + r * .42, y - r * .55); c.stroke();
+            c.font = `600 ${r * .95}px ${SERIF}`; c.fillStyle = '#8e5a2a'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('福', x, y + r * .25);
+          },
+          barrel(o, x, y, carried) {
+            const c = ctx, r = o.r; if (!carried) shadow(x, y + 3, r);
+            c.fillStyle = '#a8553f'; c.beginPath(); c.roundRect(x - r * .85, y - r, r * 1.7, r * 2, r * .35); c.fill();
+            c.fillStyle = '#8a4231'; c.fillRect(x - r * .85, y - r * .55, r * 1.7, r * .16); c.fillRect(x - r * .85, y + r * .4, r * 1.7, r * .16);
+            c.font = `600 ${r * .8}px ${SANS}`; c.fillStyle = '#fcfaf8'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('爆', x, y);
+            c.strokeStyle = '#5a4636'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(x + r * .3, y - r); c.quadraticCurveTo(x + r * .6, y - r * 1.5, x + r * .2, y - r * 1.7); c.stroke();
+            const fl = 0.6 + 0.4 * Math.sin(performance.now() / 90 + (o.seed || 0)); c.fillStyle = `rgba(242,176,60,${fl})`; c.beginPath(); c.arc(x + r * .2, y - r * 1.75, 2.4, 0, TAU); c.fill();
+          },
+          // 雞塊：站上的角色，長得像金塊，只值 2 兩
+          nugget(o, x, y, carried) {
+            const c = ctx, s = o.r / 34; if (!carried) shadow(x, y + 2, o.r);
+            c.save(); c.translate(x, y); if (o.vx < 0) c.scale(-1, 1); c.scale(s, s);
+            const hop = carried ? 0 : Math.abs(Math.sin(performance.now() / 180 + (o.seed || 0))) * -3; c.translate(0, hop / s * 0.3);
+            c.fillStyle = '#e2a33f';
+            c.beginPath(); c.moveTo(-30, 0); c.bezierCurveTo(-34, -26, -10, -34, 4, -28); c.bezierCurveTo(26, -34, 38, -12, 32, 6);
+            c.bezierCurveTo(38, 26, 18, 38, 0, 34); c.bezierCurveTo(-20, 38, -36, 22, -30, 0); c.closePath(); c.fill();
+            c.fillStyle = '#c6852a'; [[-16, -16, 3], [14, -18, 2.5], [22, 14, 3], [-20, 18, 2.5], [4, 26, 2], [-4, -24, 2]].forEach(([a, b, r]) => { c.beginPath(); c.arc(a, b, r, 0, TAU); c.fill(); });
+            c.fillStyle = '#f0c063'; c.beginPath(); c.ellipse(-6, -10, 12, 6, -0.3, 0, TAU); c.fill();
+            c.fillStyle = '#3a2410'; c.beginPath(); c.arc(-4, 2, 3, 0, TAU); c.arc(14, 2, 3, 0, TAU); c.fill();
+            c.strokeStyle = '#3a2410'; c.lineWidth = 2; c.lineCap = 'round'; c.beginPath(); c.arc(5, 8, 8, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke();
+            c.restore();
+          },
+          // 店貓叼著鑽石走來走去
+          cat(o, x, y, carried) {
+            const c = ctx, r = o.r; if (!carried) { c.fillStyle = 'rgba(60,35,20,.18)'; c.beginPath(); c.ellipse(x, y + r * .7, r * 1.3, r * .25, 0, 0, TAU); c.fill(); }
+            c.save(); c.translate(x, y); if (o.vx > 0) c.scale(-1, 1);
+            const leg = carried ? 0 : Math.sin(performance.now() / 110 + (o.seed || 0)) * r * .12;
+            c.strokeStyle = '#d9894a'; c.lineWidth = r * .28; c.lineCap = 'round'; c.beginPath(); c.moveTo(r * 1.05, 0); c.quadraticCurveTo(r * 1.7, -r * .2, r * 1.5, -r * .9); c.stroke();
+            c.fillStyle = '#e8a25c'; c.beginPath(); c.ellipse(r * .2, r * .05, r, r * .62, 0, 0, TAU); c.fill();
+            c.fillRect(-r * .25 - r * .12 + leg, r * .3, r * .26, r * .42); c.fillRect(r * .65 - r * .12 - leg, r * .3, r * .26, r * .42);
+            c.beginPath(); c.arc(-r * .75, -r * .3, r * .55, 0, TAU); c.fill();
+            c.beginPath(); c.moveTo(-r * 1.18, -r * .55); c.lineTo(-r * 1.1, -r * 1.05); c.lineTo(-r * .85, -r * .78); c.fill();
+            c.beginPath(); c.moveTo(-r * .62, -r * .78); c.lineTo(-r * .42, -r * 1.08); c.lineTo(-r * .3, -r * .58); c.fill();
+            c.strokeStyle = '#c97a3f'; c.lineWidth = 1.2; [0, .35].forEach(d => { c.beginPath(); c.moveTo(d * r, -r * .5); c.lineTo(d * r + r * .1, -r * .15); c.stroke(); });
+            c.fillStyle = '#3a2a20'; c.beginPath(); c.arc(-r * .92, -r * .38, 1.6, 0, TAU); c.arc(-r * .58, -r * .38, 1.6, 0, TAU); c.fill();
+            DRAW.diamond({ r: r * .38 }, -r * 1.35, -r * .02);
+            c.restore();
+          },
         };
-        function star(x, y, s) { c.beginPath(); c.moveTo(x, y - s * 2); c.lineTo(x + s * .5, y - s * .5); c.lineTo(x + s * 2, y); c.lineTo(x + s * .5, y + s * .5); c.lineTo(x, y + s * 2); c.lineTo(x - s * .5, y + s * .5); c.lineTo(x - s * 2, y); c.lineTo(x - s * .5, y - s * .5); c.closePath(); c.fill(); }
         function mole(x, y, s, tug) {
           c.save(); c.translate(x, y); c.rotate(tug * 0.12); c.scale(s, s);
           c.fillStyle = 'rgba(60,35,20,.2)'; c.beginPath(); c.ellipse(0, 30, 26, 6, 0, 0, TAU); c.fill();
           c.fillStyle = '#6e5040'; c.beginPath(); c.ellipse(0, 6, 24, 26, 0, 0, TAU); c.fill();
           c.fillStyle = '#86624f'; c.beginPath(); c.ellipse(0, 14, 15, 15, 0, 0, TAU); c.fill();
           c.fillStyle = '#1e1714';
-          if (tug > 0.55) { c.strokeStyle = '#1e1714'; c.lineWidth = 1.6; [[-8], [8]].forEach(([e]) => { c.beginPath(); c.moveTo(e - 3, -6); c.lineTo(e + 3, -4); c.stroke(); }); }
+          if (tug > 0.55) { c.strokeStyle = '#1e1714'; c.lineWidth = 1.6; [-8, 8].forEach(e => { c.beginPath(); c.moveTo(e - 3, -6); c.lineTo(e + 3, -4); c.stroke(); }); }
           else { c.beginPath(); c.arc(-8, -5, 2, 0, TAU); c.arc(8, -5, 2, 0, TAU); c.fill(); }
           c.fillStyle = '#ee8fa0'; c.beginPath(); c.ellipse(0, 3, 7, 5.2, 0, 0, TAU); c.fill();
           c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = .9; [[-6, 4, -19, 1], [-6, 6, -19, 8], [6, 4, 19, 1], [6, 6, 19, 8]].forEach(([a, b, p, q]) => { c.beginPath(); c.moveTo(a, b); c.lineTo(p, q); c.stroke(); });
-          // 爪子：拉的時候伸到右邊的絞盤
           c.fillStyle = '#ee8fa0';
           if (tug > 0) { c.beginPath(); c.ellipse(-16, 20, 6.5, 4.5, 0, 0, TAU); c.fill(); c.beginPath(); c.ellipse(24, 4, 6.5, 4.5, -0.5, 0, TAU); c.fill(); }
           else [[-16, 20], [16, 20]].forEach(([a, b]) => { c.beginPath(); c.ellipse(a, b, 6.5, 4.5, 0, 0, TAU); c.fill(); });
           if (tug > 0.55) { c.fillStyle = 'rgba(150,200,230,.85)'; c.beginPath(); c.ellipse(22, -16, 2.2, 3.2, 0, 0, TAU); c.fill(); }
-          // 工地帽
           c.fillStyle = '#f0c14b'; c.beginPath(); c.arc(0, -13, 17, Math.PI, TAU); c.fill(); c.fillRect(-21, -14, 42, 4);
           c.fillStyle = '#d9a632'; c.fillRect(-2, -29, 4, 16);
           c.fillStyle = '#fff6d8'; c.beginPath(); c.arc(0, -21, 3.4, 0, TAU); c.fill();
+          if (G.power && G.phase === 'play') { c.strokeStyle = 'rgba(179,58,47,.7)'; c.lineWidth = 2; [[-30, -10, -38, -14], [-30, 0, -40, 0], [30, -10, 38, -14]].forEach(([a, b, p, q]) => { c.beginPath(); c.moveTo(a, b); c.lineTo(p, q); c.stroke(); }); }
           c.restore();
         }
         function scene() {
           let g = c.createLinearGradient(0, 0, 0, GROUND); g.addColorStop(0, '#d9e7ef'); g.addColorStop(1, '#eef3f2'); c.fillStyle = g; c.fillRect(0, 0, W, GROUND);
           c.fillStyle = '#cdd8dd'; [[0, 70, 34], [30, 58, 26], [60, 76, 30], [250, 64, 30], [282, 50, 24], [306, 72, 54]].forEach(([x, y, w]) => c.fillRect(x, y, w, GROUND - y));
           c.fillStyle = 'rgba(255,255,255,.8)'; const cx = 90 + Math.sin(performance.now() / 9000) * 14; c.beginPath(); c.ellipse(cx, 30, 26, 7, 0, 0, TAU); c.ellipse(cx + 20, 26, 15, 7, 0, 0, TAU); c.fill();
-          g = c.createLinearGradient(0, GROUND, 0, H); g.addColorStop(0, '#c9a27a'); g.addColorStop(.45, '#a97f58'); g.addColorStop(1, '#7c5a3f'); c.fillStyle = g; c.fillRect(0, GROUND, W, H - GROUND);
+          // 越深的關，土越暗
+          const dk = (G.lv - 1) / 9;
+          g = c.createLinearGradient(0, GROUND, 0, H); g.addColorStop(0, mix('#c9a27a', '#a8825e', dk)); g.addColorStop(.45, mix('#a97f58', '#86603f', dk)); g.addColorStop(1, mix('#7c5a3f', '#57402c', dk)); c.fillStyle = g; c.fillRect(0, GROUND, W, H - GROUND);
           c.strokeStyle = 'rgba(255,255,255,.07)'; c.lineWidth = 6; [190, 300, 430].forEach(y => { c.beginPath(); c.moveTo(0, y); c.bezierCurveTo(120, y - 16, 240, y + 16, 360, y - 4); c.stroke(); });
           c.fillStyle = 'rgba(60,35,20,.18)'; for (let i = 0; i < 80; i++) { const x = (i * 97.3) % W, y = GROUND + 10 + (i * 53.7) % (H - GROUND - 14); c.beginPath(); c.arc(x, y, 1 + (i % 3) * .6, 0, TAU); c.fill(); }
           c.fillStyle = '#8fa36a'; c.fillRect(0, GROUND - 4, W, 6); c.fillStyle = '#7a8f58'; c.fillRect(0, GROUND + 1, W, 2);
-          // 絞盤（拉的時候會轉）
           c.fillStyle = '#9b7550'; c.fillRect(200, GROUND - 26, 30, 4); c.fillRect(212, GROUND - 40, 6, 38);
           c.strokeStyle = '#7b5a3c'; c.lineWidth = 3; c.beginPath(); c.arc(215, GROUND - 36, 11, 0, TAU); c.stroke();
           [0, 1, 2].forEach(i => { const a = i * TAU / 3 + G.winch; c.beginPath(); c.moveTo(215, GROUND - 36); c.lineTo(215 + Math.cos(a) * 11, GROUND - 36 + Math.sin(a) * 11); c.stroke(); });
           c.strokeStyle = '#5a4636'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(215, GROUND - 36); c.lineTo(PIVOT.x, PIVOT.y - 6); c.stroke();
         }
+        function mix(a, b, k) { const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); const A = p(a), B = p(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * k)).join(',')})`; }
         function hook() {
           const h = G.hook, p = tip();
           c.strokeStyle = '#5a4636'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(PIVOT.x, PIVOT.y - 6); c.lineTo(p.x, p.y); c.stroke();
@@ -305,31 +510,38 @@
         function pill(x, y, w, s, color) { c.fillStyle = 'rgba(44,44,44,.72)'; c.beginPath(); c.roundRect(x, y, w, 28, 14); c.fill(); txt(s, x + w / 2, y + 14.5, { size: 13.5, w: 500, color: color || '#fcfaf8', align: 'center' }); }
         function hud() {
           const s = Math.ceil(Math.max(0, G.t)); pill(10, 10, 58, `0:${String(s).padStart(2, '0')}`, s <= 10 && G.phase === 'play' ? '#f2a093' : null);
-          const label = `${G.total.toLocaleString('zh-TW')}／${LEVEL.target.toLocaleString('zh-TW')} 兩`; c.font = `500 13.5px ${SANS}`; const w = c.measureText(label).width + 26;
-          pill(W - 10 - w, 10, w, label, G.total >= LEVEL.target ? '#f6cd72' : null);
-          txt(`第 ${LEVEL.n} 關`, (68 + W - 10 - w) / 2 + 5, 24, { size: 11.5, color: '#4a4a4a', align: 'center', ls: 2 });
+          const target = TARGET[G.lv], label = `${fmt(G.total)}／${fmt(target)} 兩`; c.font = `500 13.5px ${SANS}`; const w = c.measureText(label).width + 26;
+          pill(W - 10 - w, 10, w, label, G.total >= target ? '#f6cd72' : null);
+          txt(`第 ${G.lv} 關`, (68 + W - 10 - w) / 2 + 5, 24, { size: 11.5, color: '#4a4a4a', align: 'center', ls: 2 });
+          // 這關生效的東西
+          const on = Object.keys(BUFF).filter(k => k === 'power' ? G.power : G.buff[k]);
+          let x = 10; on.forEach(k => { c.fillStyle = 'rgba(179,58,47,.85)'; c.beginPath(); c.roundRect(x, 44, 36, 18, 9); c.fill(); txt(BUFF[k], x + 18, 53.5, { size: 10.5, w: 500, color: '#fcfaf8', align: 'center', ls: 1 }); x += 40; });
         }
-        function card(y, h) { c.fillStyle = 'rgba(252,250,248,.92)'; c.beginPath(); c.roundRect(36, y, W - 72, h, 8); c.fill(); c.strokeStyle = 'rgba(142,128,112,.35)'; c.lineWidth = 1; c.stroke(); }
+        function card(y, h) { c.fillStyle = 'rgba(252,250,248,.93)'; c.beginPath(); c.roundRect(36, y, W - 72, h, 8); c.fill(); c.strokeStyle = 'rgba(142,128,112,.35)'; c.lineWidth = 1; c.stroke(); }
         function stamp(x, y, s, word, rot) { c.save(); c.translate(x, y); c.rotate(rot); c.strokeStyle = '#b33a2f'; c.lineWidth = 2.2; c.strokeRect(-s / 2, -s / 2, s, s); txt(word, 0, 1, { size: s * .5, font: SERIF, w: 600, color: '#b33a2f', align: 'center' }); c.restore(); }
+        const blink = () => reduce ? 1 : 0.55 + 0.45 * Math.sin(performance.now() / 300);
         function draw() {
-          c.setTransform(dpr, 0, 0, dpr, 0, 0);
+          c.setTransform(dpr, 0, 0, dpr, 0, 0); ctx = c;
           scene();
           G.items.forEach(o => DRAW[KIND[o.k].draw](o, o.x, o.y, false));
           hook();
           mole(158, 82, 0.95, G.tug);
           G.fx.forEach(f => {
             const k = f.t / f.life;
-            if (f.ring) { c.strokeStyle = `rgba(242,176,60,${1 - k})`; c.lineWidth = 4; c.beginPath(); c.arc(f.x, f.y, f.r + k * 40, 0, TAU); c.stroke(); }
+            if (f.ring) { c.strokeStyle = `rgba(242,176,60,${1 - k})`; c.lineWidth = f.big ? 6 : 4; c.beginPath(); c.arc(f.x, f.y, f.r + k * (f.big ? BLAST : 40), 0, TAU); c.stroke(); }
             else { c.fillStyle = `rgba(${k < .4 ? '242,176,60' : '120,100,85'},${1 - k})`; c.beginPath(); c.arc(f.x, f.y, f.r, 0, TAU); c.fill(); }
           });
-          G.pops.forEach(p => { const k = p.t / 1.1; txt(p.txt, p.x, p.y - k * 26, { size: p.big ? 22 : 17, w: 600, font: SERIF, color: `rgba(${p.big ? '179,58,47' : '74,74,74'},${1 - k * k})`, align: 'center' }); });
+          G.pops.forEach(p => { const k = p.t / 1.2; txt(p.txt, p.x, p.y - k * 26, { size: p.big ? 21 : 17, w: 600, font: SERIF, color: `rgba(${p.big ? '179,58,47' : '74,74,74'},${1 - k * k})`, align: 'center' }); });
           hud();
+          const target = TARGET[G.lv];
           if (G.phase === 'title') {
-            card(196, 150);
-            txt('礦坑・挖', W / 2, 232, { size: 28, font: SERIF, color: '#2c2c2c', align: 'center', ls: 8 });
-            txt(`第 1 關・60 秒挖到 ${LEVEL.target} 兩`, W / 2, 266, { size: 12, color: '#6b6158', align: 'center', ls: 2 });
-            const a = reduce ? 1 : 0.55 + 0.45 * Math.sin(performance.now() / 300);
-            txt('點一下開挖', W / 2, 306, { size: 15, w: 500, color: `rgba(179,58,47,${a})`, align: 'center', ls: 4 });
+            card(190, 172);
+            txt(`第 ${G.lv} 關`, W / 2, 226, { size: 26, font: SERIF, color: '#2c2c2c', align: 'center', ls: 6 });
+            txt(`60 秒，累積到 ${fmt(target)} 兩`, W / 2, 260, { size: 12.5, color: '#4a4a4a', align: 'center', ls: 1 });
+            txt(G.total ? `手上 ${fmt(G.total)} 兩，還差 ${fmt(Math.max(0, target - G.total))} 兩` : (G.lv === 1 ? '十關挖完有結局' : ''), W / 2, 284, { size: 11.5, color: '#8e8070', align: 'center' });
+            const on = Object.keys(G.buff).map(k => BUFF[k]); if (G.dyn) on.unshift(`炸藥 ×${G.dyn}`);
+            if (on.length) txt('帶著：' + on.join('、'), W / 2, 306, { size: 11.5, color: '#8e8070', align: 'center' });
+            txt('點一下開挖', W / 2, 340, { size: 15, w: 500, color: `rgba(179,58,47,${blink()})`, align: 'center', ls: 4 });
           } else if (G.phase === 'pause') {
             c.fillStyle = 'rgba(44,44,44,.35)'; c.fillRect(0, 0, W, H); card(220, 110);
             txt('暫停中', W / 2, 255, { size: 22, font: SERIF, color: '#2c2c2c', align: 'center', ls: 6 });
@@ -337,15 +549,24 @@
           } else if (G.phase === 'end') {
             card(176, 210);
             txt(G.win ? '過關' : '沒挖夠', W / 2, 214, { size: 26, font: SERIF, color: '#2c2c2c', align: 'center', ls: 8 });
-            txt(`挖到 ${G.total.toLocaleString('zh-TW')} 兩・目標 ${LEVEL.target} 兩`, W / 2, 252, { size: 12.5, color: '#4a4a4a', align: 'center', ls: 1 });
-            txt(G.win ? '試玩只有第一關，下一步才有第二關和礦坑商店。' : `差 ${(LEVEL.target - G.total).toLocaleString('zh-TW')} 兩。正式版會重打這一關。`, W / 2, 280, { size: 11, color: '#8e8070', align: 'center' });
+            txt(`累積 ${fmt(G.total)} 兩・目標 ${fmt(target)} 兩`, W / 2, 252, { size: 12.5, color: '#4a4a4a', align: 'center', ls: 1 });
+            txt(G.win ? (G.lv >= LAST ? '十關都挖完了。' : '過關後可以進礦坑商店。') : `差 ${fmt(target - G.total)} 兩。兩回到這關開始時（${fmt(G.snap.total)} 兩）。`, W / 2, 280, { size: 11, color: '#8e8070', align: 'center' });
             if (G.lost) txt(`時間到時鉤上的 ${G.lost} 兩不算`, W / 2, 302, { size: 11, color: '#8e8070', align: 'center' });
             if (G.win) stamp(W / 2 + 78, 212, 40, '過', -0.15);
-            txt('點一下再挖一次', W / 2, 346, { size: 14, w: 500, color: '#b33a2f', align: 'center', ls: 3 });
+            txt(G.win ? (G.lv >= LAST ? '點一下看結局' : '點一下進商店') : `點一下重打第 ${G.lv} 關`, W / 2, 346, { size: 14, w: 500, color: '#b33a2f', align: 'center', ls: 3 });
+          } else if (G.phase === 'clear') {
+            c.fillStyle = 'rgba(44,44,44,.25)'; c.fillRect(0, 0, W, H); card(150, 270);
+            txt('破關', W / 2, 192, { size: 30, font: SERIF, color: '#2c2c2c', align: 'center', ls: 10 });
+            stamp(W / 2 + 84, 190, 44, '業', -0.18);
+            txt(`十關挖完，累積 ${fmt(G.total)} 兩`, W / 2, 236, { size: 13, color: '#4a4a4a', align: 'center', ls: 1 });
+            txt('鼴鼠在第十關底下挖到一個木箱，', W / 2, 272, { size: 12, color: '#6b6158', align: 'center' });
+            txt('上面寫著一個「絆」字……', W / 2, 294, { size: 12, color: '#6b6158', align: 'center' });
+            txt('（結局的畫面還在畫）', W / 2, 324, { size: 11, color: '#8e8070', align: 'center' });
+            txt('點一下從第一關再挖', W / 2, 382, { size: 14, w: 500, color: `rgba(179,58,47,${blink()})`, align: 'center', ls: 3 });
           }
         }
 
-        // 畫布整個捲出畫面就停；沒在玩（標題、暫停、結果）每秒只畫約 20 張，剛收工的 2.5 秒照常畫
+        // 畫布整個捲出畫面就停；沒在玩（標題、暫停、結果、商店）每秒只畫約 20 張，剛收工的 2.5 秒照常畫
         let loopOn = false, cvSeen = true, wasPlaying = false, fullUntil = 0;
         function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; step(dt); draw(); nextFrame(); }
         function nextFrame() {
@@ -357,10 +578,11 @@
         function startLoop() { if (loopOn) return; loopOn = true; last = performance.now(); requestAnimationFrame(frame); }
 
         window.addEventListener('resize', fit);
-        newGame(); fitReady = true;
+        newRun(); fitReady = true;
         if ('IntersectionObserver' in window) new IntersectionObserver(es => { cvSeen = es[es.length - 1].isIntersecting; if (cvSeen) startLoop(); }).observe(cv);
         (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(startLoop);
-        window.__kk = { get G() { return G; }, tap, boom, endGame, TUNE };
+        // 測試用（模擬玩家）
+        window.__kk = { get G() { return G; }, tap, boom, buy, nextLevel, step, endLevel, newRun, startLevel, resetLevel, openShop, TUNE, KIND, TARGET, PIVOT, W, H, back, cash };
         })();
     </script>
 </body>
