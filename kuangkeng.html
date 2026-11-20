@@ -233,7 +233,7 @@
           { key: 'dyn', name: '炸藥', fx: '多一根，按「炸」用', lo: 50, hi: 150 },
           { key: 'power', name: '大力丸', fx: '下一關拉東西兩倍快', lo: 100, hi: 400 },
           { key: 'luck', name: '御守', fx: '下一關福袋至少開到 300 兩', lo: 50, hi: 200 },
-          { key: 'polish', name: '鑽石拋光劑', fx: '下一關鑽石 600 → 900 兩', lo: 200, hi: 600 },
+          { key: 'polish', name: '鑽石拋光劑', fx: '下一關鑽石 600 → 900 兩', lo: 80, hi: 160, per: true },   // 價錢照下一關有幾顆鑽石（含店貓叼的），一顆 80～160（模擬過：120～220 時第 7 關以後連熟手都虧）（2026-11-20 使用者選甲：以前 200～600 幾乎買了都虧）
           { key: 'book', name: '石頭圖鑑', fx: '下一關石頭值三倍', lo: 10, hi: 150 },
         ];
         const BUFF = { power: '大力', luck: '御守', polish: '拋光', book: '圖鑑' };
@@ -381,8 +381,10 @@
 
         // ---------- 礦坑商店 ----------
         function openShop() {
-          const n = G.lv, k = (1 + 0.15 * (n - 1)) * (1 - val('regular')), pick = GOODS.slice().sort(() => Math.random() - .5).slice(0, 1 + Math.floor(Math.random() * 5));
-          G.shop = GOODS.filter(g => pick.includes(g)).map(g => ({ ...g, price: Math.round((g.lo + Math.random() * (g.hi - g.lo)) * k / 5) * 5, sold: false }));
+          const n = G.lv, k = (1 + 0.15 * (n - 1)) * (1 - val('regular')), gems = gemsIn(n + 1);
+          const pick = GOODS.filter(g => !g.per || gems).sort(() => Math.random() - .5).slice(0, 1 + Math.floor(Math.random() * 5));
+          // 拋光劑不乘關數：價錢 = 下一關鑽石顆數 × 一顆 80～160（老顧客卡照樣九折）
+          G.shop = GOODS.filter(g => pick.includes(g)).map(g => ({ ...g, price: Math.round((g.lo + Math.random() * (g.hi - g.lo)) * (g.per ? gems * (1 - val('regular')) : k) / 5) * 5, sold: false }));
           G.phase = 'shop'; renderMShop(); $('mshop').hidden = false; saveRun(); syncUI();
         }
         function buy(key) {
@@ -392,6 +394,8 @@
           if (key === 'dyn') G.dyn++; else G.next[key] = true;
           renderMShop(); saveRun(); return true;
         }
+        const gemsIn = n => { const m = LEVELS[n] || {}; return (m.diamond || 0) + (m.cat || 0); };   // 那一關有幾顆鑽石（店貓叼的也算）
+        const goodsFx = g => g.key === 'polish' ? `下一關有 ${gemsIn(G.lv + 1)} 顆鑽石${(LEVELS[G.lv + 1] || {}).cat ? '（含店貓叼的）' : ''}，每顆多 300 兩` : g.fx;
         function nextLevel() { if (G.phase !== 'shop') return; startLevel(G.lv + 1); }
         function renderMShop() {
           const need = TARGET[G.lv + 1];
@@ -402,7 +406,7 @@
               <canvas data-icon="${g.key}" width="92" height="92"></canvas>
               <div class="flex-1 min-w-0">
                 <p class="text-sm text-wabi-dark tracking-wider">${g.name}</p>
-                <p class="text-[11px] font-sans tracking-wide text-stone-500 leading-snug">${g.fx}</p>
+                <p class="text-[11px] font-sans tracking-wide text-stone-500 leading-snug">${goodsFx(g)}</p>
               </div>
               <button type="button" class="mbuy" data-buy="${g.key}" ${g.sold || G.total < g.price ? 'disabled' : ''}>${g.sold ? '買了' : fmt(g.price) + ' 兩'}</button>
             </div>`).join('');
