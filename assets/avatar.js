@@ -1,5 +1,5 @@
 // 指定頭像：只能從網站的角色挑（後端 Code.gs 的 AVATAR_KEYS 要跟 LIST 一樣）
-// 用法：Avatar.LIST（[{ key, name }]）、Avatar.url(key)（畫好的圖片網址，可以直接放進 <img src>）、Avatar.draw(ctx, key, cx, cy, r)
+// 用法：Avatar.LIST（[{ key, name }]）、Avatar.url(key)（畫好的圖片網址，可以直接放進 <img src>）、Avatar.draw(ctx, key, cx, cy, r, { noBg })
 // 角色都是實物，顏色固定、不跟晝夜切換。
 (function () {
     const TAU = Math.PI * 2;
@@ -386,11 +386,13 @@
         c.restore();
     }
 
-    function draw(c, key, cx, cy, r) {
+    // o.noBg：不塗底色（礦坑・挖把頭像當礦工的頭，2026-11-20）
+    function draw(c, key, cx, cy, r, o = {}) {
         if (!DRAW[key]) return;
         c.save(); c.translate(cx, cy);
         c.beginPath(); c.arc(0, 0, r, 0, TAU); c.closePath();
-        c.fillStyle = BG[key] || '#eee'; c.fill(); c.clip();
+        if (!o.noBg) { c.fillStyle = BG[key] || '#eee'; c.fill(); }
+        c.clip();
         c.scale(r / 48, r / 48);
         DRAW[key](c);
         c.restore();

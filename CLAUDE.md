@@ -28,7 +28,7 @@
   - **導覽列不要加 `mix-blend-mode`**：iPhone（尤其 LINE 內建瀏覽器）捲動時固定導覽列會卡在畫面中間（about 頁跟首頁都踩過）。
   - `theme.js`：夜間模式切換、`showToast()`、`themeColor()`（給 canvas 讀 CSS 變數）。
   - `saveimg.js`（`index`、`xitou`、`fangwu`、`caiyuan`、`cengwang`、`zaocan`、`huoyun`、`tiandian`、`diechao`、`scratch`、`yuncai` 載）：`SaveImg.save(file, { title, text })` 存結果圖片（入住通知書、洗頭證明、房務檢查表、收成單、蹭網日報、早餐店日報、貨運提單、刮刮樂兌獎單、疊巢履歷）。能分享檔案就叫分享選單；**在 LINE／IG／FB 的 App 內瀏覽器（UA 有 `Line/`、`FBAN`、`Instagram`、`; wv)`），下載連結按了沒反應**（安卓使用者回報過），改成全螢幕放大圖片（data URL、`-webkit-touch-callout: default`）請他長按存、或截圖；分享失敗（不是自己取消）也走放大；其他直接下載。按鈕字：能分享寫「分享…」、App 內寫「存…圖片」、其他寫「下載…」（`SaveImg.inApp`）。新的結果圖片也用這支，不要自己寫 `a.download`。
-  - `avatar.js`（`member`、`rank`、`tiandian`、`diechao`、`xuyuan`、`admin` 載）：**指定頭像**，只能從網站的角色挑（`Avatar.LIST`：茱莉鴨、蘋果鴨、浣熊大王、青江菜船長、店貓、坐洗部的狗、鼴鼠、雞塊、小吳鴨；後端 `AVATAR_KEYS` 要一樣），canvas 畫；蘋果鴨（`Avatar.appleDuck`）和小吳鴨（`Avatar.crow`，疊・巢的主角）的全身畫法也在這裡、`Avatar.url(key)` 給圖片網址（快取），角色是實物、顏色固定。不收上傳的照片（使用者選的做法 A）。
+  - `avatar.js`（`member`、`rank`、`tiandian`、`diechao`、`xuyuan`、`admin`、`kuangkeng` 載）：**指定頭像**，只能從網站的角色挑（`Avatar.LIST`：茱莉鴨、蘋果鴨、浣熊大王、青江菜船長、店貓、坐洗部的狗、鼴鼠、雞塊、小吳鴨；後端 `AVATAR_KEYS` 要一樣），canvas 畫（`Avatar.draw(ctx, key, x, y, r, { noBg })`，礦坑・挖拿頭像當礦工的頭）；蘋果鴨（`Avatar.appleDuck`）和小吳鴨（`Avatar.crow`，疊・巢的主角）的全身畫法也在這裡、`Avatar.url(key)` 給圖片網址（快取），角色是實物、顏色固定。不收上傳的照片（使用者選的做法 A）。
   - `vendor/flatpickr/`：首頁的日曆元件 flatpickr **4.6.13**（MIT，附 LICENSE；2026-11-18 從外面的 CDN 搬進來、鎖版本、`defer` 載入，不擋畫面）。
   - `404.html` 沒有接主題，仍在頁內自己宣告 `tailwind.config`（404 在 GitHub Pages 的子路徑下相對路徑會失效）。後台也有晝夜切換鈕，跟前台共用同一個 sessionStorage 設定。
 - **Tailwind CSS**：**只用先打包好的 `assets/tailwind.css`**，每頁 `</head>` 前面載入（2026-11-17 拿掉了 Play CDN `cdn.tailwindcss.com`：每頁都要在手機上現場編譯 CSS，很慢）。打包設定在 `tools/tailwind.config.js`。**新增或改了頁面裡的 Tailwind class 一定要重新產生**，不然那個 class 沒有樣式、排版會跑掉：`npx tailwindcss@3 -c tools/tailwind.config.js -i tools/tailwind.in.css -o assets/tailwind.css --minify`（在專案根目錄跑），再把所有頁面 `tailwind.css?v=` 換新。用字串拼出來的 class（例如 `'text-' + x`）打包抓不到，要寫完整的 class 名（寫在 JS 字串裡的完整 class 名抓得到）。`404.html` 用完整網址載入、自己在 `<style>` 補了 `--wabi-*` 變數。不能用 `@apply`、`<style type="text/tailwindcss">`（那是 CDN 才有的）。
@@ -60,7 +60,7 @@
 | `huoyun.html` | 打工：貨運・航（開船撈蘿蔔），無盡模式、船廠 | `docs/pages/huoyun.md` |
 | `tiandian.html` | 打工：甜點・轉（蘋果鴨甜點店，轉盤），店面升級 | `docs/pages/tiandian.md` |
 | `diechao.html` | 打工：疊・巢（小吳鴨疊精裝書，60 秒、無盡模式），店面 | `docs/pages/diechao.md` |
-| `kuangkeng.html` | 打工：礦坑・挖（黃金礦工的丼步喱版，鼴鼠當礦工）。**試玩中：沒有入口、還不上排行榜**；十關、礦坑商店、工資進錢包、店面 | `docs/pages/kuangkeng.md` |
+| `kuangkeng.html` | 打工：礦坑・挖（黃金礦工的丼步喱版，鼴鼠當礦工）。**試玩中：沒有入口、還不上排行榜**；十關、礦坑商店、工資進錢包、店面、換礦工 | `docs/pages/kuangkeng.md` |
 | `xuyuan.html` | 許願・池：搜集提案，每天第一個願隨機 $3,000～6,666（網頁不寫金額），願望牆、主人回覆 | `docs/pages/xuyuan.md` |
 | `rank.html` | 排行・榜：打工・榜、花錢・榜、無盡・榜 | `docs/pages/rank.md` |
 | `baoxian.html` | 保險・存：儲蓄險（後端算） | `docs/pages/baoxian.md` |

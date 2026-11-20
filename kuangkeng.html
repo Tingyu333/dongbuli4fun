@@ -27,6 +27,7 @@
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
+    <script src="assets/avatar.js?v=20261120a"></script>
     <style>
         /* 整塊都是要點的地方：長按不能跳系統選單、不能選字 */
         .stage { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
@@ -75,6 +76,9 @@
             font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.1em; line-height: 1.3; touch-action: manipulation;
         }
         .shop-buy:disabled { background: transparent; color: rgb(var(--wabi-accent)); border-color: rgb(var(--wabi-sub)); }
+        .shop-buy.on { background: transparent; color: rgb(var(--wabi-shu)); border-color: rgb(var(--wabi-shu)); }
+        .shop-head { margin-top: 1.2rem; padding-bottom: .3rem; border-bottom: 1px solid rgb(var(--wabi-sub)); font-size: 13px; letter-spacing: .3em; color: rgb(var(--wabi-dark)); }
+        .miner-pic { flex: none; width: 56px; height: 56px; border-radius: 9999px; }
         .mnext { min-height: 48px; background: #2c2c2c; color: #fcfaf8; font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: .25em; touch-action: manipulation; }
     </style>
     <link rel="stylesheet" href="assets/tailwind.css?v=20261120a">
@@ -132,7 +136,7 @@
                 <li><b class="font-normal text-wabi-dark">福袋</b>開出隨機的兩、一根炸藥，或這一關力氣變大。<b class="font-normal text-wabi-shu">火藥桶</b>一鉤到就爆，旁邊的東西全炸光。<b class="font-normal text-wabi-dark">雞塊</b>長得像金塊，只值 2 兩。<b class="font-normal text-wabi-dark">店貓</b>叼著鑽石走來走去，抓到值 602 兩。</li>
                 <li>切去別的 App 會自動暫停；中途離開，下次打開從那一關重來（兩、炸藥回到那關開始時）。</li>
                 <li>工資進錢包：每打完一關出勤費 <b class="font-normal text-wabi-dark">$100</b>，過第 n 關再給 $500＋$100×n（第 1 關 $600、第 10 關 $1,500），破關獎金 <b class="font-normal text-wabi-dark">$2,000</b>。十關打完約 $13,500。</li>
-                <li>右上角<b class="font-normal text-wabi-dark">店面</b>用錢包的錢買永久的工具：電動絞盤、防晃鉤、炸藥箱、礦燈、沙漏、老顧客卡。</li>
+                <li>右上角<b class="font-normal text-wabi-dark">店面</b>用錢包的錢買永久的工具：電動絞盤、防晃鉤、炸藥箱、礦燈、沙漏、老顧客卡。也可以<b class="font-normal text-wabi-dark">換礦工</b>：買站上的角色下礦坑，只換樣子。</li>
             </ol>
             <p class="mt-6 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">試玩版：工資會進錢包、店面可以買了；結局還沒畫，還不上排行榜。遊戲幣，不能儲值也不能換現金。</p>
         </section>
@@ -226,6 +230,23 @@
           { key: 'regular', name: '老顧客卡', sub: '礦坑商店', prices: [30000], vals: [0.1], tiers: ['', '老顧客卡'], fx: () => '礦坑商店的東西打九折（花的是兩）' },
         ];
         const UPG_BY = Object.fromEntries(UPG.map(u => [u.key, u]));
+        // 換礦工（使用者 2026-11-20 要的）：站上的角色，買了可以換上，只換樣子、不影響玩法。
+        // 買過的記在共用錢包的 shop.lv（key = 'kk' + 角色 key，跟著帳號走）；現在用哪一隻記在這支手機。
+        const MINERS = [
+          { key: 'mole', price: 0, line: '原本的礦工，工地帽是公司發的' },
+          { key: 'dog', price: 40000, line: '挖洞是本能，坐洗部下班兼差' },
+          { key: 'nugget', price: 20000, line: '下礦坑找失散的親戚' },
+          { key: 'julie', price: 50000, line: '死魚眼盯著金子，一樣沒表情' },
+          { key: 'appleduck', price: 50000, line: '頭上的蘋果戴了帽子也不會掉' },
+          { key: 'raccoon', price: 50000, line: '翻垃圾的經驗終於派上用場' },
+          { key: 'captain', price: 50000, line: '從貨運部借調，暈船換暈坑' },
+          { key: 'cat', price: 60000, line: '同事叼著鑽石跑來跑去，有點尷尬' },
+          { key: 'xiaowu', price: 80000, line: '網站製作者親自下礦坑，順便修 bug' },
+        ];
+        const MINER_KEY = 'dongbuli-kuangkeng-miner';
+        const owns = k => k === 'mole' || (upg.lv['kk' + k] || 0) > 0;
+        function minerNow() { let k = 'mole'; try { k = localStorage.getItem(MINER_KEY) || 'mole'; } catch (e) { } return MINERS.some(m => m.key === k) && owns(k) && (k === 'mole' || window.Avatar) ? k : 'mole'; }
+        function setMiner(k) { try { localStorage.setItem(MINER_KEY, k); } catch (e) { } }
         function loadUpg() {
           let d = null; try { d = Wallet.shop; } catch (e) { }
           d = d && typeof d === 'object' ? { lv: { ...(d.lv || {}) }, spent: Number(d.spent) || 0 } : { lv: {}, spent: 0 };
@@ -429,7 +450,32 @@
               <button type="button" class="shop-buy" data-buy="${u.key}" ${!next || Wallet.money < pr ? 'disabled' : ''}>${next ? `${now ? '升級' : '買'}<br>${Wallet.priceTag(base)}` : '滿級'}</button>
             </div>`;
           }).join('');
+          const cur = minerNow();
+          $('shopList').insertAdjacentHTML('beforeend', '<p class="shop-head">換礦工<span class="ml-2 text-[10px] font-sans tracking-wider text-stone-400">只換樣子，不影響玩法</span></p>' + MINERS.map(m => {
+            const own = owns(m.key), on = cur === m.key, pr = Wallet.shopPrice(m.price);
+            const pic = window.Avatar ? Avatar.url(m.key, 112) : '';
+            return `<div class="shop-row">
+              ${pic ? `<img class="miner-pic" src="${pic}" alt="">` : '<span class="miner-pic bg-stone-100"></span>'}
+              <div class="min-w-0 flex-1">
+                <p class="text-sm text-wabi-dark tracking-widest">${Avatar.name(m.key)}</p>
+                <p class="mt-1 text-[11px] font-sans leading-relaxed text-stone-600">${m.line}</p>
+              </div>
+              <button type="button" class="shop-buy${on ? ' on' : ''}" data-miner="${m.key}" ${on || (!own && Wallet.money < pr) ? 'disabled' : ''}>${on ? '下礦坑中' : own ? '換上' : `買<br>${Wallet.priceTag(m.price)}`}</button>
+            </div>`;
+          }).join(''));
           $('shopList').querySelectorAll('[data-icon]').forEach(el => shopIcon(el, el.dataset.icon));
+        }
+        function pickMiner(key) {
+          if (G.phase === 'play') return;
+          const m = MINERS.find(x => x.key === key); if (!m) return;
+          upg = loadUpg();
+          if (!owns(key)) {
+            const pr = Wallet.shopPrice(m.price);   // 專屬道具「全店六折」也算
+            if (!Wallet.spend(pr)) { showToast('錢包不夠，先多挖幾關'); return; }
+            upg.lv['kk' + key] = 1; upg.spent += pr; Wallet.setShop(upg);
+            showToast(`${Avatar.name(key)}入職礦坑了`);
+          } else showToast(`換${Avatar.name(key)}下礦坑`);
+          setMiner(key); renderShop(); draw();
         }
         function openUpg() {
           if (G.phase === 'play') { showToast('收工再去店面'); return; }
@@ -453,6 +499,8 @@
         $('shop').addEventListener('click', e => {
           const b = e.target.closest('[data-buy]');
           if (b && !b.disabled) { buyUpgrade(b.dataset.buy); return; }
+          const mb = e.target.closest('[data-miner]');
+          if (mb && !mb.disabled) { pickMiner(mb.dataset.miner); return; }
           if (e.target.closest('[data-shop-close]') || e.target.id === 'shop') closeShop();
         });
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeShop(); });
@@ -652,6 +700,30 @@
           if (G.power && G.phase === 'play') { c.strokeStyle = 'rgba(179,58,47,.7)'; c.lineWidth = 2; [[-30, -10, -38, -14], [-30, 0, -40, 0], [30, -10, 38, -14]].forEach(([a, b, p, q]) => { c.beginPath(); c.moveTo(a, b); c.lineTo(p, q); c.stroke(); }); }
           c.restore();
         }
+        function miner(x, y, s, tug) {
+          const k = minerNow();
+          if (k === 'mole') { mole(x, y, s, tug); return; }
+          c.save(); c.translate(x, y); c.rotate(tug * 0.12); c.scale(s, s);
+          c.fillStyle = 'rgba(60,35,20,.2)'; c.beginPath(); c.ellipse(0, 30, 26, 6, 0, 0, TAU); c.fill();
+          // 工作服
+          c.fillStyle = '#5f6f7d'; c.beginPath(); c.ellipse(0, 16, 19, 15, 0, 0, TAU); c.fill();
+          c.fillStyle = '#f0a23a'; c.fillRect(-17, 17, 34, 3.5);
+          c.fillStyle = '#4d5b67'; c.fillRect(-6, 4, 12, 24);
+          // 手套：拉的時候伸到右邊的絞盤
+          c.fillStyle = '#d9a632';
+          if (tug > 0) { c.beginPath(); c.ellipse(-19, 20, 6, 4.5, 0, 0, TAU); c.fill(); c.beginPath(); c.ellipse(25, 6, 6, 4.5, -0.5, 0, TAU); c.fill(); }
+          else [[-19, 20], [19, 20]].forEach(([a, b]) => { c.beginPath(); c.ellipse(a, b, 6, 4.5, 0, 0, TAU); c.fill(); });
+          // 頭（站上的頭像）
+          c.fillStyle = 'rgba(0,0,0,.12)'; c.beginPath(); c.arc(0, -5, 20.5, 0, TAU); c.fill();
+          Avatar.draw(c, k, 0, -6, 20, { noBg: k !== 'nugget' && k !== 'xiaowu' && k !== 'appleduck' });
+          if (tug > 0.55) { c.fillStyle = 'rgba(150,200,230,.85)'; c.beginPath(); c.ellipse(22, -14, 2.2, 3.2, 0, 0, TAU); c.fill(); }
+          // 工地帽
+          c.fillStyle = '#f0c14b'; c.beginPath(); c.arc(0, -20, 15, Math.PI, TAU); c.fill(); c.fillRect(-19, -21, 38, 4);
+          c.fillStyle = '#d9a632'; c.fillRect(-2, -34, 4, 14);
+          c.fillStyle = '#fff6d8'; c.beginPath(); c.arc(0, -27, 3.2, 0, TAU); c.fill();
+          if (G.power && G.phase === 'play') { c.strokeStyle = 'rgba(179,58,47,.7)'; c.lineWidth = 2; [[-30, -10, -38, -14], [-30, 0, -40, 0], [30, -10, 38, -14]].forEach(([a, b, p, q]) => { c.beginPath(); c.moveTo(a, b); c.lineTo(p, q); c.stroke(); }); }
+          c.restore();
+        }
         function scene() {
           let g = c.createLinearGradient(0, 0, 0, GROUND); g.addColorStop(0, '#d9e7ef'); g.addColorStop(1, '#eef3f2'); c.fillStyle = g; c.fillRect(0, 0, W, GROUND);
           c.fillStyle = '#cdd8dd'; [[0, 70, 34], [30, 58, 26], [60, 76, 30], [250, 64, 30], [282, 50, 24], [306, 72, 54]].forEach(([x, y, w]) => c.fillRect(x, y, w, GROUND - y));
@@ -696,7 +768,7 @@
           scene();
           G.items.forEach(o => DRAW[KIND[o.k].draw](o, o.x, o.y, false));
           hook();
-          mole(158, 82, 0.95, G.tug);
+          miner(158, 82, 0.95, G.tug);
           G.fx.forEach(f => {
             const k = f.t / f.life;
             if (f.ring) { c.strokeStyle = `rgba(242,176,60,${1 - k})`; c.lineWidth = f.big ? 6 : 4; c.beginPath(); c.arc(f.x, f.y, f.r + k * (f.big ? BLAST : 40), 0, TAU); c.stroke(); }
@@ -754,7 +826,7 @@
         if ('IntersectionObserver' in window) new IntersectionObserver(es => { cvSeen = es[es.length - 1].isIntersecting; if (cvSeen) startLoop(); }).observe(cv);
         (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(startLoop);
         // 測試用（模擬玩家）
-        window.__kk = { get G() { return G; }, tap, boom, buy, nextLevel, step, endLevel, newRun, startLevel, resetLevel, openShop, buyUpgrade, saveRun, loadRun, val, TUNE, KIND, TARGET, PIVOT, W, H, back, cash };
+        window.__kk = { get G() { return G; }, pickMiner, setMiner, minerNow, MINERS, draw, tap, boom, buy, nextLevel, step, endLevel, newRun, startLevel, resetLevel, openShop, buyUpgrade, saveRun, loadRun, val, TUNE, KIND, TARGET, PIVOT, W, H, back, cash };
         })();
     </script>
 </body>
