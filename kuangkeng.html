@@ -7,11 +7,11 @@
     <!-- 試玩中：還沒有入口，不給搜尋引擎收（開放時拿掉） -->
     <meta name="robots" content="noindex">
     <title>礦坑・挖 | 丼步喱</title>
-    <meta name="description" content="鼴鼠戴上工地帽下礦坑：鉤子左右擺，點一下放出去，金塊越大拉越久。十關，每關六十秒挖到目標就過關。">
+    <meta name="description" content="浣熊大王戴上工地帽下礦坑：鉤子左右擺，點一下放出去，金塊越大拉越久。十關，每關六十秒挖到目標就過關。">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="丼步喱・絆">
     <meta property="og:title" content="礦坑・挖｜丼步喱">
-    <meta property="og:description" content="鼴鼠戴上工地帽下礦坑：鉤子左右擺，點一下放出去，金塊越大拉越久。十關，每關六十秒挖到目標就過關。">
+    <meta property="og:description" content="浣熊大王戴上工地帽下礦坑：鉤子左右擺，點一下放出去，金塊越大拉越久。十關，每關六十秒挖到目標就過關。">
     <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="1200">
@@ -97,7 +97,7 @@
             <button id="shopBtn" type="button" class="shop-btn absolute right-0 top-0" aria-haspopup="dialog">店面<b id="shopLv"></b></button>
             <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">MINE</span>
             <h1 class="text-3xl font-light text-wabi-dark tracking-widest">礦坑・挖</h1>
-            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">鼴鼠戴上工地帽下礦坑。金塊越大，拉得越久。</p>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">浣熊大王戴上工地帽下礦坑。金塊越大，拉得越久。</p>
             <p class="mt-3"><span class="trial font-sans">試玩</span></p>
         </div>
 
@@ -124,7 +124,7 @@
         <section class="mt-10 px-1">
             <h2 class="text-sm tracking-[0.3em] text-wabi-dark">怎麼挖</h2>
             <ol class="mt-3 list-decimal pl-5 space-y-1.5 text-xs font-sans tracking-wide text-stone-500 leading-relaxed">
-                <li>鉤子在鼴鼠下面左右擺，點畫面任何地方就朝那個方向放出去（電腦按 ↓ 或空白鍵）。</li>
+                <li>鉤子在浣熊大王下面左右擺，點畫面任何地方就朝那個方向放出去（電腦按 ↓ 或空白鍵）。</li>
                 <li>鉤到東西就往回拉，<b class="font-normal text-wabi-dark">越重拉越慢</b>：大金塊、大石頭都很花時間，空鉤收得最快。</li>
                 <li>拉到不想要的，按右下角<b class="font-normal text-wabi-shu">「炸」</b>（電腦按 ↑）：東西炸掉不算錢，鉤子快速收回。炸藥在礦坑商店買，福袋也會開到。</li>
                 <li>一共 <b class="font-normal text-wabi-dark">10 關</b>，每關 60 秒。「兩」跨關累積，時間到時累積到目標就過關；鉤上還在拉的不算。沒挖夠就重打那一關，兩回到那關開始時。</li>
@@ -144,7 +144,7 @@
             <div class="px-5 pt-5 pb-2 flex items-baseline justify-between border-b border-stone-200">
                 <div>
                     <p class="text-lg text-wabi-dark tracking-widest">店面・升</p>
-                    <p class="mt-1 text-[10px] font-sans tracking-widest text-stone-400">鼴鼠說：工具錢你出，金子我來挖</p>
+                    <p class="mt-1 text-[10px] font-sans tracking-widest text-stone-400">浣熊大王說：工具錢你出，金子本王來挖</p>
                 </div>
                 <p class="text-xs font-sans tracking-widest text-stone-500">錢包 <b id="shopMoney" class="font-normal text-wabi-shu"></b></p>
             </div>
@@ -632,23 +632,44 @@
             c.restore();
           },
         };
-        function mole(x, y, s, tug) {
-          c.save(); c.translate(x, y); c.rotate(tug * 0.12); c.scale(s, s);
-          c.fillStyle = 'rgba(60,35,20,.2)'; c.beginPath(); c.ellipse(0, 30, 26, 6, 0, 0, TAU); c.fill();
-          c.fillStyle = '#6e5040'; c.beginPath(); c.ellipse(0, 6, 24, 26, 0, 0, TAU); c.fill();
-          c.fillStyle = '#86624f'; c.beginPath(); c.ellipse(0, 14, 15, 15, 0, 0, TAU); c.fill();
-          c.fillStyle = '#1e1714';
-          if (tug > 0.55) { c.strokeStyle = '#1e1714'; c.lineWidth = 1.6; [-8, 8].forEach(e => { c.beginPath(); c.moveTo(e - 3, -6); c.lineTo(e + 3, -4); c.stroke(); }); }
-          else { c.beginPath(); c.arc(-8, -5, 2, 0, TAU); c.arc(8, -5, 2, 0, TAU); c.fill(); }
-          c.fillStyle = '#ee8fa0'; c.beginPath(); c.ellipse(0, 3, 7, 5.2, 0, 0, TAU); c.fill();
-          c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = .9; [[-6, 4, -19, 1], [-6, 6, -19, 8], [6, 4, 19, 1], [6, 6, 19, 8]].forEach(([a, b, p, q]) => { c.beginPath(); c.moveTo(a, b); c.lineTo(p, q); c.stroke(); });
-          c.fillStyle = '#ee8fa0';
-          if (tug > 0) { c.beginPath(); c.ellipse(-16, 20, 6.5, 4.5, 0, 0, TAU); c.fill(); c.beginPath(); c.ellipse(24, 4, 6.5, 4.5, -0.5, 0, TAU); c.fill(); }
-          else [[-16, 20], [16, 20]].forEach(([a, b]) => { c.beginPath(); c.ellipse(a, b, 6.5, 4.5, 0, 0, TAU); c.fill(); });
-          if (tug > 0.55) { c.fillStyle = 'rgba(150,200,230,.85)'; c.beginPath(); c.ellipse(22, -16, 2.2, 3.2, 0, 0, TAU); c.fill(); }
-          c.fillStyle = '#f0c14b'; c.beginPath(); c.arc(0, -13, 17, Math.PI, TAU); c.fill(); c.fillRect(-21, -14, 42, 4);
-          c.fillStyle = '#d9a632'; c.fillRect(-2, -29, 4, 16);
-          c.fillStyle = '#fff6d8'; c.beginPath(); c.arc(0, -21, 3.4, 0, TAU); c.fill();
+        // 礦工：浣熊大王（使用者 2026-11-20 把主角從鼴鼠換成浣熊）。灰色身體、環紋尾巴、黑眼罩，戴工地帽，帽子正面貼一個小金皇冠
+        function raccoon(x, y, s, tug) {
+          c.save(); c.translate(x, y); c.rotate(tug * 0.12); c.scale(s, s); c.lineJoin = 'round'; c.lineCap = 'round';
+          c.fillStyle = 'rgba(60,35,20,.2)'; c.beginPath(); c.ellipse(0, 30, 28, 6, 0, 0, TAU); c.fill();
+          // 環紋尾巴（在身體後面，拉的時候翹起來）
+          const wag = tug ? 0.25 : Math.sin(performance.now() / 600) * 0.12;
+          c.save(); c.translate(-16, 20); c.rotate(-0.5 - wag);
+          for (let i = 0; i < 6; i++) { c.fillStyle = i % 2 ? '#3a3840' : '#8e8b95'; c.beginPath(); c.ellipse(-6 - i * 5.2, -i * 2.2, 7 - i * 0.35, 6.2 - i * 0.3, -0.3, 0, TAU); c.fill(); }
+          c.restore();
+          // 身體
+          let g = c.createRadialGradient(-6, 2, 2, 0, 10, 26); g.addColorStop(0, '#b4b1ba'); g.addColorStop(1, '#78757f');
+          c.fillStyle = g; c.beginPath(); c.ellipse(0, 12, 21, 20, 0, 0, TAU); c.fill();
+          c.fillStyle = '#e4e1e6'; c.beginPath(); c.ellipse(0, 17, 12, 12, 0, 0, TAU); c.fill();
+          // 耳朵
+          [-1, 1].forEach(k => { c.fillStyle = '#7c7984'; c.beginPath(); c.arc(k * 14, -22, 7, 0, TAU); c.fill(); c.fillStyle = '#3a3840'; c.beginPath(); c.arc(k * 14, -21.5, 4, 0, TAU); c.fill(); });
+          // 頭
+          g = c.createRadialGradient(-5, -14, 2, 0, -8, 22); g.addColorStop(0, '#c4c1c9'); g.addColorStop(1, '#85828c');
+          c.fillStyle = g; c.beginPath(); c.moveTo(-18, -12); c.quadraticCurveTo(-16, -26, 0, -26); c.quadraticCurveTo(16, -26, 18, -12);
+          c.lineTo(23, -6); c.lineTo(18, -3); c.lineTo(21, 2); c.quadraticCurveTo(10, 9, 0, 9); c.quadraticCurveTo(-10, 9, -21, 2); c.lineTo(-18, -3); c.lineTo(-23, -6); c.closePath(); c.fill();
+          c.fillStyle = '#f6f4f0'; c.beginPath(); c.ellipse(0, -14, 13, 3.6, 0, 0, TAU); c.fill();
+          [-1, 1].forEach(k => { c.fillStyle = '#2f2d35'; c.beginPath(); c.ellipse(k * 7.5, -8, 8, 5.5, k * 0.25, 0, TAU); c.fill(); });
+          if (tug > 0.55) { c.strokeStyle = '#f6f4f0'; c.lineWidth = 1.6; [-1, 1].forEach(k => { c.beginPath(); c.moveTo(k * 7.5 - 3, -9); c.lineTo(k * 7.5 + 3, -7.5); c.stroke(); }); }
+          else [-1, 1].forEach(k => { c.fillStyle = '#fff'; c.beginPath(); c.arc(k * 7, -8.3, 2.8, 0, TAU); c.fill(); c.fillStyle = '#16151a'; c.beginPath(); c.arc(k * 7 + 0.4, -8, 1.8, 0, TAU); c.fill(); c.fillStyle = '#fff'; c.beginPath(); c.arc(k * 7 + 1.1, -8.9, 0.7, 0, TAU); c.fill(); });
+          c.fillStyle = '#f7f5f1'; c.beginPath(); c.ellipse(0, 0, 8.5, 6, 0, 0, TAU); c.fill();
+          c.fillStyle = '#232127'; c.beginPath(); c.moveTo(-3.5, -3.5); c.quadraticCurveTo(0, -5.5, 3.5, -3.5); c.quadraticCurveTo(0, 0.5, -3.5, -3.5); c.fill();
+          c.strokeStyle = '#26252a'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(0, -1); c.lineTo(0, 1.5); c.moveTo(-3.5, 2.5); c.quadraticCurveTo(-1.5, 4.5, 0, 1.5); c.quadraticCurveTo(2, 4.5, 4.5, 2); c.stroke();
+          c.fillStyle = 'rgba(232,140,150,.35)'; c.beginPath(); c.ellipse(-14, -2, 3.6, 2.2, 0, 0, TAU); c.ellipse(14, -2, 3.6, 2.2, 0, 0, TAU); c.fill();
+          // 爪子：拉的時候伸到右邊的絞盤
+          c.fillStyle = '#3a3840';
+          if (tug > 0) { c.beginPath(); c.ellipse(-16, 22, 6, 4.5, 0, 0, TAU); c.fill(); c.beginPath(); c.ellipse(24, 6, 6, 4.5, -0.5, 0, TAU); c.fill(); }
+          else [[-16, 22], [16, 22]].forEach(([a, b]) => { c.beginPath(); c.ellipse(a, b, 6, 4.5, 0, 0, TAU); c.fill(); });
+          if (tug > 0.55) { c.fillStyle = 'rgba(150,200,230,.85)'; c.beginPath(); c.ellipse(22, -18, 2.2, 3.2, 0, 0, TAU); c.fill(); }
+          // 工地帽＋小金皇冠
+          c.fillStyle = '#f0c14b'; c.beginPath(); c.arc(0, -24, 15, Math.PI, TAU); c.fill(); c.fillRect(-19, -25, 38, 4);
+          c.fillStyle = '#d9a632'; c.fillRect(-2, -38, 4, 13);
+          c.fillStyle = '#fff6d8'; c.beginPath(); c.arc(0, -31, 3.2, 0, TAU); c.fill();
+          c.fillStyle = '#c48d2b'; c.beginPath(); c.moveTo(-9.5, -27); c.lineTo(-10, -33); c.lineTo(-7.5, -30.5); c.lineTo(-6, -34.5); c.lineTo(-4.5, -30.5); c.lineTo(-2.5, -33); c.lineTo(-3, -27); c.closePath(); c.fill();
+          c.fillStyle = '#b33a2f'; c.beginPath(); c.arc(-6.2, -28.8, 0.9, 0, TAU); c.fill();
           if (G.power && G.phase === 'play') { c.strokeStyle = 'rgba(179,58,47,.7)'; c.lineWidth = 2; [[-30, -10, -38, -14], [-30, 0, -40, 0], [30, -10, 38, -14]].forEach(([a, b, p, q]) => { c.beginPath(); c.moveTo(a, b); c.lineTo(p, q); c.stroke(); }); }
           c.restore();
         }
@@ -696,7 +717,7 @@
           scene();
           G.items.forEach(o => DRAW[KIND[o.k].draw](o, o.x, o.y, false));
           hook();
-          mole(158, 82, 0.95, G.tug);
+          raccoon(158, 82, 0.95, G.tug);
           G.fx.forEach(f => {
             const k = f.t / f.life;
             if (f.ring) { c.strokeStyle = `rgba(242,176,60,${1 - k})`; c.lineWidth = f.big ? 6 : 4; c.beginPath(); c.arc(f.x, f.y, f.r + k * (f.big ? BLAST : 40), 0, TAU); c.stroke(); }
@@ -731,7 +752,7 @@
             txt('破關', W / 2, 192, { size: 30, font: SERIF, color: '#2c2c2c', align: 'center', ls: 10 });
             stamp(W / 2 + 84, 190, 44, '業', -0.18);
             txt(`十關挖完，累積 ${fmt(G.total)} 兩`, W / 2, 236, { size: 13, color: '#4a4a4a', align: 'center', ls: 1 });
-            txt('鼴鼠在第十關底下挖到一個木箱，', W / 2, 272, { size: 12, color: '#6b6158', align: 'center' });
+            txt('浣熊大王在第十關底下挖到一個木箱，', W / 2, 272, { size: 12, color: '#6b6158', align: 'center' });
             txt('上面寫著一個「絆」字……', W / 2, 294, { size: 12, color: '#6b6158', align: 'center' });
             txt('（結局的畫面還在畫）', W / 2, 324, { size: 11, color: '#8e8070', align: 'center' });
             txt('點一下從第一關再挖', W / 2, 382, { size: 14, w: 500, color: `rgba(179,58,47,${blink()})`, align: 'center', ls: 3 });
