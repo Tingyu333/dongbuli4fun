@@ -99,7 +99,7 @@
         const TAU = Math.PI * 2;
         const W = 360, H = 560, GROUND = 112, PIVOT = { x: 180, y: 116 }, ROUND = 60;
         // 手感（試玩要調的就是這幾個）：擺幅、擺速、放出去和收回的速度、重量讓收回變慢多少
-        const TUNE = { amp: 1.22, swing: 2.0, shoot: 400, back: 440, heavy: 0.75 };
+        const TUNE = { amp: 1.22, swing: 1.5, shoot: 400, back: 440, heavy: 0.75 };
         const back = w => TUNE.back / (1 + w * TUNE.heavy);   // 拉著重量 w 的收回速度（px/秒）
         // 物件：價值（兩）、重量、碰撞半徑；跟規格書一樣
         const KIND = {
