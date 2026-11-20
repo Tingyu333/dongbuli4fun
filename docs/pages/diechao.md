@@ -28,3 +28,4 @@
 
 **無盡模式**（2026-11-18 使用者定的：掉三本收工、咖啡多一格、錢照一般模式算不打折、**不加「越疊越難」的狀況**）：標題下面「一般／無盡」切換（`.mode-seg`、`data-mode`，存 localStorage `dongbuli-diechao-mode`，開工中鎖住）。無盡模式不計時（`G.elapsed` 往上算），HUD 中間是幾格書（`G.lives` = 3＋咖啡等級，掉一本蓋一格朱色）、旁邊撐了多久。三種收工：掉滿格（`endWhy: 'drop'`）、塔窄到 24px 以下（`NARROW`，`'narrow'`）、15 秒沒放書（`IDLE_LIMIT`，8 秒起上面出現朱色「發呆中・N 秒後收工」，`'idle'`，茱莉鴨吐槽）。注意塔還寬的時候（約 110px 以上）飛行範圍內根本放不空，所以前面幾乎不會掉，越窄越容易掉。工資一樣 `calcWage()`。結果區標題前面加「無盡模式・」、小字寫撐了多久和怎麼收工，排行榜連結換成 `rank.html#endless-stack`（「看無盡・榜疊巢部」）；最高紀錄另外存 `dongbuli-diechao-best-endless`；履歷副標寫「無盡模式・撐了 m:ss」、卡在寫掉了第幾本／發呆被抓／書太窄。紀錄多 `mode`（`normal`／`endless`），無盡模式的 `len` 是撐了幾秒。分享文字寫「疊・巢無盡模式」。
 
+**分享預覽**（2026-11-20 補上）：`<head>` 有 `description` 和 Open Graph（`og:title`「疊・巢｜丼步喱」、`og:description`、`og:image` 用 `assets/og.png?v=2`、`og:url`）。以前沒寫，LINE 會抓頁面開頭的字（導覽列、標題）當介紹。
