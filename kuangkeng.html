@@ -25,6 +25,8 @@
         rel="stylesheet">
     <link rel="stylesheet" href="assets/theme.css?v=20261116d">
     <script src="assets/theme.js?v=20261117c"></script>
+    <script src="assets/line.js?v=20261116d"></script>
+    <script src="assets/wallet.js?v=20261120c"></script>
     <style>
         /* 整塊都是要點的地方：長按不能跳系統選單、不能選字 */
         .stage { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
@@ -50,6 +52,29 @@
         .mrow canvas { flex: none; width: 46px; height: 46px; border-radius: 6px; background: #efe6da; }
         .mbuy { flex: none; min-width: 5rem; min-height: 44px; padding: 0 .6rem; background: #2c2c2c; color: #fcfaf8; border: 1px solid #2c2c2c; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: .08em; touch-action: manipulation; }
         .mbuy:disabled { background: transparent; color: #8e8070; border-color: #dcdcdc; }
+        /* 店面（花錢包的錢，永久升級）：照疊巢的底部面板 */
+        .shop-btn {
+            display: inline-flex; align-items: center; height: 1.9rem; padding: 0 0.75rem;
+            border: 1px solid rgb(var(--wabi-accent) / 0.5); border-radius: 9999px;
+            font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.15em; color: rgb(var(--wabi-dark));
+            white-space: nowrap; touch-action: manipulation;
+        }
+        .shop-btn b { margin-left: 0.3rem; font-weight: 400; color: rgb(var(--wabi-shu)); }
+        #shop { background: rgba(0, 0, 0, 0); transition: background 0.22s; }
+        #shop.on { background: rgba(0, 0, 0, 0.45); }
+        #shop .shop-sheet { transform: translateY(100%); transition: transform 0.22s ease-out; }
+        #shop.on .shop-sheet { transform: none; }
+        @media (prefers-reduced-motion: reduce) { #shop, #shop .shop-sheet { transition: none; } }
+        .shop-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 0; border-bottom: 1px solid rgb(var(--wabi-sub) / 0.6); }
+        .shop-icon { flex: none; width: 56px; height: 56px; border-radius: 6px; background: #ece8e0; }
+        .shop-dots i { display: inline-block; width: 6px; height: 6px; margin-left: 3px; border-radius: 50%; border: 1px solid rgb(var(--wabi-accent)); }
+        .shop-dots i.on { background: rgb(var(--wabi-shu)); border-color: rgb(var(--wabi-shu)); }
+        .shop-buy {
+            flex: none; min-width: 5.6rem; min-height: 44px; padding: 0 0.6rem;
+            border: 1px solid rgb(var(--wabi-dark)); background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg));
+            font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.1em; line-height: 1.3; touch-action: manipulation;
+        }
+        .shop-buy:disabled { background: transparent; color: rgb(var(--wabi-accent)); border-color: rgb(var(--wabi-sub)); }
         .mnext { min-height: 48px; background: #2c2c2c; color: #fcfaf8; font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: .25em; touch-action: manipulation; }
     </style>
     <link rel="stylesheet" href="assets/tailwind.css?v=20261120a">
@@ -68,7 +93,8 @@
     </nav>
 
     <main class="flex-grow max-w-md mx-auto pt-24 md:pt-32 pb-16 px-5 w-full">
-        <div class="text-center mb-6">
+        <div class="text-center mb-6 relative">
+            <button id="shopBtn" type="button" class="shop-btn absolute right-0 top-0" aria-haspopup="dialog">店面<b id="shopLv"></b></button>
             <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">MINE</span>
             <h1 class="text-3xl font-light text-wabi-dark tracking-widest">礦坑・挖</h1>
             <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">鼴鼠戴上工地帽下礦坑。金塊越大，拉得越久。</p>
@@ -91,6 +117,8 @@
                 </div>
             </div>
             <p class="mt-3 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed text-center">點畫面放鉤；拉到不想要的，按右下角「炸」。</p>
+            <p id="payNote" class="mt-1 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed text-center min-h-[1.2rem]"></p>
+            <button id="giveUp" type="button" class="hidden mt-1 w-full py-2 text-stone-400 underline underline-offset-4 tracking-[0.15em] font-sans text-[11px]">放棄這一局，從第一關開始</button>
         </section>
 
         <section class="mt-10 px-1">
@@ -102,25 +130,44 @@
                 <li>一共 <b class="font-normal text-wabi-dark">10 關</b>，每關 60 秒。「兩」跨關累積，時間到時累積到目標就過關；鉤上還在拉的不算。沒挖夠就重打那一關，兩回到那關開始時。</li>
                 <li>過關後進<b class="font-normal text-wabi-dark">礦坑商店</b>，用兩買下一關的東西：炸藥、大力丸（拉兩倍快）、御守（福袋開到好東西）、鑽石拋光劑（鑽石變 900）、石頭圖鑑（石頭值三倍）。買了會從兩扣掉。</li>
                 <li><b class="font-normal text-wabi-dark">福袋</b>開出隨機的兩、一根炸藥，或這一關力氣變大。<b class="font-normal text-wabi-shu">火藥桶</b>一鉤到就爆，旁邊的東西全炸光。<b class="font-normal text-wabi-dark">雞塊</b>長得像金塊，只值 2 兩。<b class="font-normal text-wabi-dark">店貓</b>叼著鑽石走來走去，抓到值 602 兩。</li>
-                <li>切去別的 App 會自動暫停。</li>
+                <li>切去別的 App 會自動暫停；中途離開，下次打開從那一關重來（兩、炸藥回到那關開始時）。</li>
+                <li>工資進錢包：每打完一關出勤費 <b class="font-normal text-wabi-dark">$100</b>，過第 n 關再給 $500＋$100×n（第 1 關 $600、第 10 關 $1,500），破關獎金 <b class="font-normal text-wabi-dark">$2,000</b>。十關打完約 $13,500。</li>
+                <li>右上角<b class="font-normal text-wabi-dark">店面</b>用錢包的錢買永久的工具：電動絞盤、防晃鉤、炸藥箱、礦燈、沙漏、老顧客卡。</li>
             </ol>
-            <p class="mt-6 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">試玩版：十關和礦坑商店都在了，結局還沒畫；不發薪水、不記錄、不上排行榜，重新整理就從第一關開始。</p>
+            <p class="mt-6 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">試玩版：工資會進錢包、店面可以買了；結局還沒畫，還不上排行榜。遊戲幣，不能儲值也不能換現金。</p>
         </section>
     </main>
+
+    <!-- 店面：花錢包的錢，永久升級（存在共用錢包的 shop，key 跟別家店不重複） -->
+    <div id="shop" class="hidden fixed inset-0 z-[80] flex items-end justify-center" role="dialog" aria-modal="true" aria-label="礦坑店面">
+        <div class="shop-sheet w-full max-w-md bg-wabi-bg rounded-t-xl">
+            <div class="px-5 pt-5 pb-2 flex items-baseline justify-between border-b border-stone-200">
+                <div>
+                    <p class="text-lg text-wabi-dark tracking-widest">店面・升</p>
+                    <p class="mt-1 text-[10px] font-sans tracking-widest text-stone-400">鼴鼠說：工具錢你出，金子我來挖</p>
+                </div>
+                <p class="text-xs font-sans tracking-widest text-stone-500">錢包 <b id="shopMoney" class="font-normal text-wabi-shu"></b></p>
+            </div>
+            <div id="shopList" class="px-5 max-h-[60vh] overflow-y-auto overscroll-contain"></div>
+            <div class="px-5 py-4">
+                <button type="button" data-shop-close class="w-full py-3 border border-stone-300 text-wabi-dark tracking-[0.2em] font-sans text-xs">回去挖礦</button>
+            </div>
+        </div>
+    </div>
 
     <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
         <p>&copy; 2026 DONGBULI · 27 樓地底</p>
     </footer>
 
     <script>
-        // 礦坑・挖（2026-11-20 試玩第二步）：十關、礦坑商店、福袋、火藥桶、雞塊、店貓、鑽石。錢包、店面、存進度是下一步。
+        // 礦坑・挖（2026-11-20 試玩第三步）：十關、礦坑商店、錢包工資、店面升級、中途離開從那關重來。結局、結果圖、夜間模式、入口是下一步。
         (function () {
         const SERIF = '"Noto Serif TC", "Noto Serif CJK TC", serif', SANS = '"Noto Sans TC", "Noto Sans CJK TC", sans-serif';
         const TAU = Math.PI * 2;
         const W = 360, H = 560, GROUND = 112, PIVOT = { x: 180, y: 116 }, ROUND = 60, LAST = 10;
         // 手感：擺幅、擺速（使用者 2026-11-20 說再慢一點：2.0 → 1.5）、放出去和收回的速度、重量讓收回變慢多少
         const TUNE = { amp: 1.22, swing: 1.5, shoot: 400, back: 440, heavy: 0.75 };
-        const back = (w, power) => TUNE.back / (1 + w * TUNE.heavy) * (power ? 2 : 1);   // 拉著重量 w 的收回速度（px/秒）
+        const back = (w, power) => TUNE.back / (1 + w * TUNE.heavy) * (power ? 2 : 1) * (1 + val('winch'));   // 拉著重量 w 的收回速度（px/秒）；店面的電動絞盤再加快
         // 跨關累積的目標（第 1～5 關是規格書的數字，之後每關要多賺的每次多 270）
         const TARGET = [0, 650, 1195, 2010, 3095, 4450, 6075, 7970, 10135, 12570, 15275];
         // 物件：價值（兩）、重量、碰撞半徑；跟規格書一樣（名字換成丼步喱版）
@@ -167,6 +214,27 @@
           { key: 'book', name: '石頭圖鑑', fx: '下一關石頭值三倍', lo: 10, hi: 150 },
         ];
         const BUFF = { power: '大力', luck: '御守', polish: '拋光', book: '圖鑑' };
+        // 工資（計劃書：破關一局約 $13,500，一分鐘約 $1,050）：每打完一關出勤費、過關照關數、破關獎金
+        const PAY = { show: 100, clear: n => 500 + 100 * n, final: 2000 };
+        // 店面（花錢包的錢，永久；key 跟別家店不重複）。全部買滿 $44.5 萬
+        const UPG = [
+          { key: 'winch', name: '電動絞盤', sub: '拉得快', prices: [20000, 60000], vals: [0.15, 0.3], tiers: ['', '手搖改電動', '雙馬達'], fx: v => `拉回速度快 ${Math.round(v * 100)}%` },
+          { key: 'steady', name: '防晃鉤', sub: '好瞄', prices: [30000], vals: [0.2], tiers: ['', '防晃鉤'], fx: v => `鉤子擺動慢 ${Math.round(v * 100)}%，比較好瞄` },
+          { key: 'crate', name: '炸藥箱', sub: '開場送', prices: [25000, 70000], vals: [1, 2], tiers: ['', '一箱', '兩箱'], fx: v => `每關開場送 ${v} 根炸藥` },
+          { key: 'minelamp', name: '礦燈', sub: '福袋', prices: [40000], vals: [150], tiers: ['', '礦燈'], fx: v => `福袋開到兩的話至少 ${v} 兩（御守是 300）` },
+          { key: 'sandglass', name: '沙漏', sub: '加時', prices: [50000, 120000], vals: [5, 10], tiers: ['', '小沙漏', '大沙漏'], fx: v => `每關 ${ROUND + v} 秒（多 ${v} 秒）` },
+          { key: 'regular', name: '老顧客卡', sub: '礦坑商店', prices: [30000], vals: [0.1], tiers: ['', '老顧客卡'], fx: () => '礦坑商店的東西打九折（花的是兩）' },
+        ];
+        const UPG_BY = Object.fromEntries(UPG.map(u => [u.key, u]));
+        function loadUpg() {
+          let d = null; try { d = Wallet.shop; } catch (e) { }
+          d = d && typeof d === 'object' ? { lv: { ...(d.lv || {}) }, spent: Number(d.spent) || 0 } : { lv: {}, spent: 0 };
+          UPG.forEach(u => { d.lv[u.key] = Math.max(0, Math.min(u.prices.length, Math.floor(Number(d.lv[u.key]) || 0))); });
+          return d;
+        }
+        let upg = loadUpg();
+        const lvOf = key => upg.lv[key] || 0;
+        const val = key => lvOf(key) ? UPG_BY[key].vals[lvOf(key) - 1] : 0;
 
         const cv = document.getElementById('cv'), c = cv.getContext('2d');
         const $ = id => document.getElementById(id);
@@ -197,37 +265,64 @@
           return out;
         }
         // 一整局（十關）
-        function newRun() {
+        function newRun(resume) {
           G = { lv: 1, total: 0, dyn: 0, next: {}, buff: {}, power: false, phase: 'title', fx: [], pops: [], winch: 0, tug: 0, swingT: Math.random() * 3,
-            hook: { st: 'swing', ang: 0, len: 22, item: null }, t: ROUND, items: [] };
-          startLevel(1);
+            hook: { st: 'swing', ang: 0, len: 22, item: null }, t: ROUND, round: ROUND, items: [] };
+          const d = resume ? loadRun() : null;
+          if (d && d.shop) {   // 上次停在礦坑商店：回到同一間店
+            G.lv = d.lv; G.total = d.total; G.dyn = d.dyn; G.next = d.next; G.snap = { total: d.total, dyn: d.dyn, buff: {} };
+            G.items = makeMap(G.lv); G.shop = d.shop; G.phase = 'shop'; G.resumed = true; renderMShop(); $('mshop').hidden = false; syncUI();
+          } else if (d) {      // 上次停在某一關：從那一關重來
+            G.lv = d.lv; G.snap = d.snap; G.resumed = true; resetLevel();
+          } else { clearRun(); startLevel(1); }
+        }
+        // 進度存在這支手機（中途離開從那關重來）；一關開始、進商店、在商店買東西時存
+        const RUN_KEY = 'dongbuli-kuangkeng-run';
+        const num = (v, max) => Math.max(0, Math.min(max, Math.floor(Number(v) || 0)));
+        function saveRun() {
+          const d = G.phase === 'shop' ? { v: 1, lv: G.lv, total: G.total, dyn: G.dyn, next: G.next, shop: G.shop } : { v: 1, lv: G.lv, snap: G.snap };
+          try { localStorage.setItem(RUN_KEY, JSON.stringify(d)); } catch (e) { }
+        }
+        function clearRun() { try { localStorage.removeItem(RUN_KEY); } catch (e) { } }
+        function loadRun() {
+          let d = null; try { d = JSON.parse(localStorage.getItem(RUN_KEY) || 'null'); } catch (e) { }
+          if (!d || d.v !== 1 || !(d.lv >= 1 && d.lv <= LAST)) return null;
+          const buffs = o => { const b = {}; Object.keys(BUFF).forEach(k => { if (o && o[k]) b[k] = true; }); return b; };
+          if (d.shop) {
+            if (!Array.isArray(d.shop) || d.lv >= LAST) return null;
+            const shop = d.shop.map(g => { const base = GOODS.find(x => x.key === g.key); return base ? { ...base, price: num(g.price, 99999), sold: !!g.sold } : null; }).filter(Boolean);
+            return { lv: d.lv, total: num(d.total, 1e6), dyn: num(d.dyn, 99), next: buffs(d.next), shop };
+          }
+          if (!d.snap) return null;
+          return { lv: d.lv, snap: { total: num(d.snap.total, 1e6), dyn: num(d.snap.dyn, 99), buff: buffs(d.snap.buff) } };
         }
         // 開一關：上一關商店買的東西這關生效；記下開始時的樣子（沒挖夠重打就回到這裡）
         function startLevel(n) {
-          G.lv = n; G.buff = G.next; G.next = {};
+          G.lv = n; G.buff = G.next; G.next = {}; G.resumed = false;
+          G.dyn += val('crate');   // 店面的炸藥箱：每關開場送
           G.snap = { total: G.total, dyn: G.dyn, buff: Object.assign({}, G.buff) };
-          resetLevel();
+          resetLevel(); saveRun();
         }
         function resetLevel() {
           G.total = G.snap.total; G.dyn = G.snap.dyn; G.buff = Object.assign({}, G.snap.buff);
-          G.power = !!G.buff.power; G.t = ROUND; G.items = makeMap(G.lv); G.lost = 0;
+          G.power = !!G.buff.power; G.round = ROUND + val('sandglass'); G.t = G.round; G.items = makeMap(G.lv); G.lost = 0; G.pay = 0;
           Object.assign(G.hook, { st: 'swing', len: 22, item: null }); G.tug = 0; G.fx = []; G.pops = [];
           G.phase = 'title'; $('mshop').hidden = true;
-          document.documentElement.classList.remove('kk-open'); syncBoom();
+          document.documentElement.classList.remove('kk-open'); syncBoom(); syncUI();
         }
 
         // ---------- 操作 ----------
         function tap() {
-          if (G.phase === 'title') { G.phase = 'play'; document.documentElement.classList.add('kk-open'); syncBoom(); return; }
+          if (G.phase === 'title') { G.phase = 'play'; G.resumed = false; closeShop(); document.documentElement.classList.add('kk-open'); syncBoom(); syncUI(); return; }
           if (G.phase === 'pause') { G.phase = 'play'; last = performance.now(); syncBoom(); return; }
           if (G.phase === 'end') {
             if (performance.now() - G.endAt < 600) return;
             if (!G.win) resetLevel();
-            else if (G.lv >= LAST) G.phase = 'clear';
+            else if (G.lv >= LAST) { G.phase = 'clear'; clearRun(); syncUI(); }
             else openShop();
             return;
           }
-          if (G.phase === 'clear') { if (performance.now() - G.endAt > 900) newRun(); return; }
+          if (G.phase === 'clear') { if (performance.now() - G.endAt > 900) newRun(false); return; }
           if (G.phase === 'play' && G.hook.st === 'swing') G.hook.st = 'out';
         }
         function boom() {
@@ -245,7 +340,7 @@
         $('boom').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); boom(); });
         $('stage').addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('keydown', e => {
-          if (G.phase === 'shop') return;
+          if (G.phase === 'shop' || !$('shop').classList.contains('hidden')) return;
           if (e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); tap(); }
           else if (e.key === 'ArrowUp') { e.preventDefault(); boom(); }
         });
@@ -257,22 +352,22 @@
 
         // ---------- 礦坑商店 ----------
         function openShop() {
-          const n = G.lv, k = 1 + 0.15 * (n - 1), pick = GOODS.slice().sort(() => Math.random() - .5).slice(0, 1 + Math.floor(Math.random() * 5));
+          const n = G.lv, k = (1 + 0.15 * (n - 1)) * (1 - val('regular')), pick = GOODS.slice().sort(() => Math.random() - .5).slice(0, 1 + Math.floor(Math.random() * 5));
           G.shop = GOODS.filter(g => pick.includes(g)).map(g => ({ ...g, price: Math.round((g.lo + Math.random() * (g.hi - g.lo)) * k / 5) * 5, sold: false }));
-          G.phase = 'shop'; renderShop(); $('mshop').hidden = false;
+          G.phase = 'shop'; renderMShop(); $('mshop').hidden = false; saveRun(); syncUI();
         }
         function buy(key) {
           const g = G.shop && G.shop.find(x => x.key === key);
           if (!g || g.sold || G.total < g.price) return false;
           G.total -= g.price; g.sold = true;
           if (key === 'dyn') G.dyn++; else G.next[key] = true;
-          renderShop(); return true;
+          renderMShop(); saveRun(); return true;
         }
         function nextLevel() { if (G.phase !== 'shop') return; startLevel(G.lv + 1); }
-        function renderShop() {
+        function renderMShop() {
           const need = TARGET[G.lv + 1];
           $('msHave').textContent = fmt(G.total) + ' 兩';
-          $('msSub').textContent = `第 ${G.lv} 關過關。下一關目標累積 ${fmt(need)} 兩（還差 ${fmt(Math.max(0, need - G.total))}），買東西會從兩扣掉。`;
+          $('msSub').textContent = `${G.resumed ? '接著上次的礦坑商店。' : ''}第 ${G.lv} 關過關。下一關目標累積 ${fmt(need)} 兩（還差 ${fmt(Math.max(0, need - G.total))}），買東西會從兩扣掉。`;
           $('msList').innerHTML = G.shop.map(g => `
             <div class="mrow">
               <canvas data-icon="${g.key}" width="92" height="92"></canvas>
@@ -299,6 +394,74 @@
         }
         function txtOn(x, s, px, py, size, color) { x.font = `600 ${size}px ${SERIF}`; x.fillStyle = color; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(s, px, py); }
 
+        // ---------- 店面（錢包的錢）----------
+        function syncUI() {
+          const total = UPG.reduce((t, u) => t + lvOf(u.key), 0);
+          $('shopLv').textContent = total ? total : '';
+          $('shopBtn').setAttribute('aria-label', total ? `店面，升級了 ${total} 次` : '店面升級');
+          $('giveUp').classList.toggle('hidden', !(G && (G.phase === 'title' || G.phase === 'shop') && (G.lv > 1 || G.phase === 'shop')));
+          if (G && G.phase === 'play') $('payNote').textContent = '';
+        }
+        function shopIcon(el, key) {
+          el.width = 112; el.height = 112; const x = el.getContext('2d'); x.setTransform(4, 0, 0, 4, 0, 0);
+          const save = ctx; ctx = x;
+          if (key === 'winch') { x.strokeStyle = '#7b5a3c'; x.lineWidth = 2.4; x.beginPath(); x.arc(14, 13, 8, 0, TAU); x.stroke(); [0, 1, 2].forEach(i => { const a = i * TAU / 3; x.beginPath(); x.moveTo(14, 13); x.lineTo(14 + Math.cos(a) * 8, 13 + Math.sin(a) * 8); x.stroke(); }); x.fillStyle = '#f2b03c'; x.beginPath(); x.moveTo(17, 3); x.lineTo(13, 11); x.lineTo(16, 11); x.lineTo(12, 19); x.lineTo(20, 9); x.lineTo(17, 9); x.closePath(); x.fill(); }
+          else if (key === 'steady') { x.strokeStyle = '#6d6a66'; x.lineWidth = 2.4; x.lineCap = 'round'; x.beginPath(); x.moveTo(14, 4); x.lineTo(14, 13); x.moveTo(14, 13); x.quadraticCurveTo(6, 15, 8, 23); x.moveTo(14, 13); x.quadraticCurveTo(22, 15, 20, 23); x.stroke(); x.strokeStyle = '#8e8070'; x.lineWidth = 1; [[4, 8], [24, 8]].forEach(([a, b]) => { x.beginPath(); x.arc(a, b, 2.5, 0, TAU); x.stroke(); }); }
+          else if (key === 'crate') { x.fillStyle = '#9b7550'; x.fillRect(4, 10, 20, 14); x.strokeStyle = '#7b5a3c'; x.lineWidth = 1; x.strokeRect(4, 10, 20, 14); x.fillStyle = '#a8553f'; x.fillRect(8, 5, 4, 8); x.fillRect(14, 5, 4, 8); txtOn(x, '炸', 14, 18, 8, '#fcfaf8'); }
+          else if (key === 'minelamp') { x.fillStyle = '#f0c14b'; x.beginPath(); x.arc(14, 17, 9, Math.PI, TAU); x.fill(); x.fillRect(4, 16, 20, 3); x.fillStyle = '#fff6d8'; x.beginPath(); x.arc(14, 12, 3, 0, TAU); x.fill(); x.fillStyle = 'rgba(255,240,180,.6)'; x.beginPath(); x.moveTo(14, 12); x.lineTo(2, 2); x.lineTo(26, 2); x.closePath(); x.fill(); }
+          else if (key === 'sandglass') { x.strokeStyle = '#7b5a3c'; x.lineWidth = 1.6; x.beginPath(); x.moveTo(7, 4); x.lineTo(21, 4); x.moveTo(7, 24); x.lineTo(21, 24); x.stroke(); x.fillStyle = 'rgba(200,220,230,.7)'; x.beginPath(); x.moveTo(8, 5); x.lineTo(20, 5); x.lineTo(14, 14); x.lineTo(20, 23); x.lineTo(8, 23); x.lineTo(14, 14); x.closePath(); x.fill(); x.fillStyle = '#e2a33f'; x.beginPath(); x.moveTo(10, 23); x.lineTo(18, 23); x.lineTo(14, 18); x.closePath(); x.fill(); }
+          else if (key === 'regular') { x.fillStyle = '#fcfaf8'; x.strokeStyle = '#8e8070'; x.lineWidth = 1; x.fillRect(3, 7, 22, 15); x.strokeRect(3, 7, 22, 15); x.strokeStyle = '#b33a2f'; x.lineWidth = 1.4; x.strokeRect(15, 10, 8, 8); txtOn(x, '常', 19, 14.5, 6, '#b33a2f'); x.fillStyle = '#c4beb4'; x.fillRect(6, 11, 7, 1.5); x.fillRect(6, 15, 6, 1.5); }
+          ctx = save;
+        }
+        function renderShop() {
+          $('shopMoney').textContent = Wallet.fmt(Wallet.money);
+          $('shopList').innerHTML = Wallet.saleBanner() + UPG.map(u => {
+            const now = lvOf(u.key), max = u.prices.length, next = now < max ? now + 1 : null, base = next ? u.prices[now] : 0, pr = Wallet.shopPrice(base);   // 專屬道具「全店六折」
+            const dots = Array.from({ length: max }, (_, i) => `<i class="${i < now ? 'on' : ''}"></i>`).join('');
+            const tier = next ? `${u.tiers[now] ? u.tiers[now] + ' → ' : ''}${u.tiers[next]}` : u.tiers[now];
+            return `<div class="shop-row">
+              <canvas class="shop-icon" data-icon="${u.key}"></canvas>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm text-wabi-dark tracking-widest">${u.name}<span class="ml-1 text-[10px] font-sans text-stone-400">${u.sub}</span><span class="shop-dots ml-1">${dots}</span></p>
+                <p class="mt-0.5 text-[10px] font-sans tracking-wider text-stone-400">${tier}</p>
+                <p class="mt-1 text-[11px] font-sans leading-relaxed text-stone-600">${now ? '現在：' + u.fx(u.vals[now - 1]) : ''}${next ? `${now ? '<br>' : ''}升級：${u.fx(u.vals[next - 1])}` : '<br>已經是最高級'}</p>
+              </div>
+              <button type="button" class="shop-buy" data-buy="${u.key}" ${!next || Wallet.money < pr ? 'disabled' : ''}>${next ? `${now ? '升級' : '買'}<br>${Wallet.priceTag(base)}` : '滿級'}</button>
+            </div>`;
+          }).join('');
+          $('shopList').querySelectorAll('[data-icon]').forEach(el => shopIcon(el, el.dataset.icon));
+        }
+        function openUpg() {
+          if (G.phase === 'play') { showToast('收工再去店面'); return; }
+          upg = loadUpg(); renderShop();
+          const el = $('shop'); el.classList.remove('hidden'); requestAnimationFrame(() => el.classList.add('on'));
+        }
+        function closeShop() { const el = $('shop'); if (el.classList.contains('hidden')) return; el.classList.remove('on'); setTimeout(() => el.classList.add('hidden'), reduce ? 0 : 220); }
+        function buyUpgrade(key) {
+          if (G.phase === 'play') return;
+          upg = loadUpg();   // 用錢包裡最新的（別家店可能也買過，spent 要接著加）
+          const u = UPG_BY[key], now = lvOf(key);
+          if (now >= u.prices.length) return;
+          const pr = Wallet.shopPrice(u.prices[now]);   // 專屬道具「全店六折」：扣、記都是六折後的
+          if (!Wallet.spend(pr)) { showToast('錢包不夠，先多挖幾關'); return; }
+          upg.lv[key] = now + 1; upg.spent += pr; Wallet.setShop(upg);
+          showToast(`${u.name}升級了：${u.tiers[now + 1]}`);
+          if (G.phase === 'title') { G.round = ROUND + val('sandglass'); G.t = G.round; }   // 沙漏馬上算進這關
+          renderShop(); syncUI();
+        }
+        $('shopBtn').addEventListener('click', openUpg);
+        $('shop').addEventListener('click', e => {
+          const b = e.target.closest('[data-buy]');
+          if (b && !b.disabled) { buyUpgrade(b.dataset.buy); return; }
+          if (e.target.closest('[data-shop-close]') || e.target.id === 'shop') closeShop();
+        });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeShop(); });
+        Wallet.on(() => { if (G.phase !== 'play') { upg = loadUpg(); syncUI(); if (!$('shop').classList.contains('hidden')) renderShop(); } });
+        $('giveUp').addEventListener('click', () => {
+          if (!confirm('放棄這一局？兩和礦坑商店買的東西都不見，從第一關開始（錢包領過的工資不會扣）。')) return;
+          clearRun(); newRun(false); $('payNote').textContent = '';
+        });
+
         // ---------- 更新 ----------
         const tip = () => ({ x: PIVOT.x + Math.sin(G.hook.ang) * G.hook.len, y: PIVOT.y + Math.cos(G.hook.ang) * G.hook.len });
         function burst(x, y, r, big) {
@@ -317,7 +480,7 @@
         function cash(o) {
           if (o.k === 'bag') {
             const r = Math.random();
-            if (r < 0.70) { const lo = G.buff.luck ? 300 : 1, v = Math.round(lo + Math.random() * (800 - lo)); return { v, txt: '+' + v }; }
+            if (r < 0.70) { const lo = G.buff.luck ? 300 : val('minelamp') || 1, v = Math.round(lo + Math.random() * (800 - lo)); return { v, txt: '+' + v }; }
             if (r < 0.85) { G.dyn++; return { v: 0, txt: '炸藥 +1' }; }
             G.power = true; return { v: 0, txt: '力氣變大' };
           }
@@ -331,7 +494,7 @@
           G.pops = G.pops.filter(p => (p.t += dt) < 1.2);
           if (G.phase !== 'play' && G.phase !== 'title') return;
           const h = G.hook;
-          if (h.st === 'swing') { G.swingT += dt; h.ang = TUNE.amp * Math.sin(G.swingT * TUNE.swing); }
+          if (h.st === 'swing') { G.swingT += dt; h.ang = TUNE.amp * Math.sin(G.swingT * TUNE.swing * (1 - val('steady'))); }
           G.items.forEach(o => { if (o.vx) { o.x += o.vx * dt; if (o.x < o.r + 6 || o.x > W - o.r - 6) { o.vx = -o.vx; o.x = Math.max(o.r + 6, Math.min(W - o.r - 6, o.x)); } } });
           if (G.phase !== 'play') return;
           G.t -= dt;
@@ -345,7 +508,7 @@
               syncBoom();
             } else if (p.x < -4 || p.x > W + 4 || p.y > H + 4) h.st = 'back';
           } else if (h.st === 'back') {
-            const sp = h.item ? back(h.item.w, G.power) : TUNE.back;
+            const sp = h.item ? back(h.item.w, G.power) : TUNE.back * (1 + val('winch'));
             h.len -= sp * dt; G.winch += sp * dt / 9; G.tug = h.item ? Math.min(1, h.item.w / 8) * (G.power ? .5 : 1) : 0;
             if (h.len <= 22) {
               h.len = 22; h.st = 'swing';
@@ -356,11 +519,19 @@
           if (G.t <= 0) endLevel();
         }
         function endLevel() {
+          if (G.phase !== 'play') return;
           G.t = 0; const h = G.hook;
           G.lost = h.item ? cash(h.item).v : 0; h.item = null;   // 時間到還在拉的不算
           h.st = 'swing'; h.len = 22;
           G.phase = 'end'; G.endAt = performance.now(); G.win = G.total >= TARGET[G.lv];
-          document.documentElement.classList.remove('kk-open'); syncBoom();
+          // 工資馬上進錢包（中途離開也不會不見）
+          G.payBill = [['出勤', PAY.show]];
+          if (G.win) G.payBill.push([`過第 ${G.lv} 關`, PAY.clear(G.lv)]);
+          if (G.win && G.lv >= LAST) G.payBill.push(['破關獎金', PAY.final]);
+          G.pay = G.payBill.reduce((t, x) => t + x[1], 0);
+          Wallet.earn(G.pay, 'mine');
+          $('payNote').textContent = `錢包 +$${G.pay.toLocaleString('en-US')}（${G.payBill.map(x => x[0] + ' ' + x[1].toLocaleString('en-US')).join('、')}）・現在 ${Wallet.fmt(Wallet.money)}`;
+          document.documentElement.classList.remove('kk-open'); syncBoom(); syncUI();
         }
 
         // ---------- 畫 ----------
@@ -509,7 +680,7 @@
         }
         function pill(x, y, w, s, color) { c.fillStyle = 'rgba(44,44,44,.72)'; c.beginPath(); c.roundRect(x, y, w, 28, 14); c.fill(); txt(s, x + w / 2, y + 14.5, { size: 13.5, w: 500, color: color || '#fcfaf8', align: 'center' }); }
         function hud() {
-          const s = Math.ceil(Math.max(0, G.t)); pill(10, 10, 58, `0:${String(s).padStart(2, '0')}`, s <= 10 && G.phase === 'play' ? '#f2a093' : null);
+          const s = Math.ceil(Math.max(0, G.t)); pill(10, 10, 58, `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`, s <= 10 && G.phase === 'play' ? '#f2a093' : null);
           const target = TARGET[G.lv], label = `${fmt(G.total)}／${fmt(target)} 兩`; c.font = `500 13.5px ${SANS}`; const w = c.measureText(label).width + 26;
           pill(W - 10 - w, 10, w, label, G.total >= target ? '#f6cd72' : null);
           txt(`第 ${G.lv} 關`, (68 + W - 10 - w) / 2 + 5, 24, { size: 11.5, color: '#4a4a4a', align: 'center', ls: 2 });
@@ -536,8 +707,8 @@
           const target = TARGET[G.lv];
           if (G.phase === 'title') {
             card(190, 172);
-            txt(`第 ${G.lv} 關`, W / 2, 226, { size: 26, font: SERIF, color: '#2c2c2c', align: 'center', ls: 6 });
-            txt(`60 秒，累積到 ${fmt(target)} 兩`, W / 2, 260, { size: 12.5, color: '#4a4a4a', align: 'center', ls: 1 });
+            txt(G.resumed ? `接著挖・第 ${G.lv} 關` : `第 ${G.lv} 關`, W / 2, 226, { size: G.resumed ? 22 : 26, font: SERIF, color: '#2c2c2c', align: 'center', ls: G.resumed ? 4 : 6 });
+            txt(`${G.round} 秒，累積到 ${fmt(target)} 兩`, W / 2, 260, { size: 12.5, color: '#4a4a4a', align: 'center', ls: 1 });
             txt(G.total ? `手上 ${fmt(G.total)} 兩，還差 ${fmt(Math.max(0, target - G.total))} 兩` : (G.lv === 1 ? '十關挖完有結局' : ''), W / 2, 284, { size: 11.5, color: '#8e8070', align: 'center' });
             const on = Object.keys(G.buff).map(k => BUFF[k]); if (G.dyn) on.unshift(`炸藥 ×${G.dyn}`);
             if (on.length) txt('帶著：' + on.join('、'), W / 2, 306, { size: 11.5, color: '#8e8070', align: 'center' });
@@ -552,6 +723,7 @@
             txt(`累積 ${fmt(G.total)} 兩・目標 ${fmt(target)} 兩`, W / 2, 252, { size: 12.5, color: '#4a4a4a', align: 'center', ls: 1 });
             txt(G.win ? (G.lv >= LAST ? '十關都挖完了。' : '過關後可以進礦坑商店。') : `差 ${fmt(target - G.total)} 兩。兩回到這關開始時（${fmt(G.snap.total)} 兩）。`, W / 2, 280, { size: 11, color: '#8e8070', align: 'center' });
             if (G.lost) txt(`時間到時鉤上的 ${G.lost} 兩不算`, W / 2, 302, { size: 11, color: '#8e8070', align: 'center' });
+            if (G.pay) txt(`錢包 +$${G.pay.toLocaleString('en-US')}`, W / 2, G.lost ? 322 : 308, { size: 13, w: 500, color: '#b33a2f', align: 'center', ls: 1 });
             if (G.win) stamp(W / 2 + 78, 212, 40, '過', -0.15);
             txt(G.win ? (G.lv >= LAST ? '點一下看結局' : '點一下進商店') : `點一下重打第 ${G.lv} 關`, W / 2, 346, { size: 14, w: 500, color: '#b33a2f', align: 'center', ls: 3 });
           } else if (G.phase === 'clear') {
@@ -578,11 +750,11 @@
         function startLoop() { if (loopOn) return; loopOn = true; last = performance.now(); requestAnimationFrame(frame); }
 
         window.addEventListener('resize', fit);
-        newRun(); fitReady = true;
+        newRun(true); fitReady = true;
         if ('IntersectionObserver' in window) new IntersectionObserver(es => { cvSeen = es[es.length - 1].isIntersecting; if (cvSeen) startLoop(); }).observe(cv);
         (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(startLoop);
         // 測試用（模擬玩家）
-        window.__kk = { get G() { return G; }, tap, boom, buy, nextLevel, step, endLevel, newRun, startLevel, resetLevel, openShop, TUNE, KIND, TARGET, PIVOT, W, H, back, cash };
+        window.__kk = { get G() { return G; }, tap, boom, buy, nextLevel, step, endLevel, newRun, startLevel, resetLevel, openShop, buyUpgrade, saveRun, loadRun, val, TUNE, KIND, TARGET, PIVOT, W, H, back, cash };
         })();
     </script>
 </body>

@@ -8,7 +8,7 @@
 // 坐洗部的店面升級也在這裡：Wallet.shop = { lv: { shampoo: 2, … }, spent }、Wallet.setShop(shop)。
 //   等級只會升不會降，同步時送整份，後端每一項取比較高的（兩支手機各買各的也不會蓋掉）
 // 專屬道具（主人在 admin 後台發的，2026-11-20）：後端只送給本人（錢包回傳裡的 perks: [{ perk, expires }]），存在錢包裡。
-//   Wallet.perk('shop60') 有沒有、Wallet.perks('shop60') 是哪幾個（名字是主人在道具庫取的，2026-11-20c）；七家打工店的升級價錢一律過 Wallet.shopPrice(原價)，按鈕用 Wallet.priceTag(原價)、清單最上面放 Wallet.saleBanner()。
+//   Wallet.perk('shop60') 有沒有、Wallet.perks('shop60') 是哪幾個（名字是主人在道具庫取的，2026-11-20c）；打工店的店面升級價錢一律過 Wallet.shopPrice(原價)，按鈕用 Wallet.priceTag(原價)、清單最上面放 Wallet.saleBanner()。
 //   不公開：排行榜、別人的畫面都看不到；花錢照實際付的記（shop.spent、spent 都是六折後的）。
 (function () {
     const KEY = 'dongbuli-wallet';
@@ -223,7 +223,7 @@
             const now = Date.now();
             return cleanPerks(load().perks).filter(x => (!key || x.perk === key) && (!x.expires || x.expires > now));
         },
-        // 七家打工店的升級價錢：有「全店六折」就打六折（十位數以下四捨五入）
+        // 打工店的店面升級價錢：有「全店六折」就打六折（十位數以下四捨五入）
         shopPrice(base) { base = Number(base) || 0; return Wallet.perk('shop60') ? Math.round(base * SHOP_OFF / 10) * 10 : base; },
         // 按鈕上的價錢：打折時原價劃掉、下一行寫六折價
         priceTag(base) {
@@ -238,7 +238,7 @@
             const lines = own.filter(x => x.line).map(x => `<span style="display:block;margin-top:.15rem;color:rgb(var(--wabi-accent))">${escH(x.line)}</span>`).join('');
             return '<div style="display:flex;align-items:center;gap:.6rem;margin:.6rem 0 .2rem;padding:.55rem .7rem;border:1px solid rgb(var(--wabi-shu) / .45);border-radius:4px;background:rgb(var(--wabi-shu) / .05)">'
                 + '<span style="flex-shrink:0;width:2.6rem;height:2.6rem;display:flex;align-items:center;justify-content:center;border:1.5px solid rgb(var(--wabi-shu));border-radius:4px;color:rgb(var(--wabi-shu));font-size:.72rem;line-height:1.15;text-align:center;transform:rotate(-6deg);font-weight:600">專屬<br>六折</span>'
-                + '<span style="font-family:\'Noto Sans TC\',sans-serif;font-size:11px;letter-spacing:.06em;line-height:1.6;color:rgb(var(--wabi-text))">你有專屬道具' + names + '：七家打工店的升級都打六折。' + lines + '</span></div>';
+                + '<span style="font-family:\'Noto Sans TC\',sans-serif;font-size:11px;letter-spacing:.06em;line-height:1.6;color:rgb(var(--wabi-text))">你有專屬道具' + names + '：打工店的店面升級都打六折。' + lines + '</span></div>';
         },
         oilOf(kind) { const g = load().gongde; return !kind || kind === 'guangming' ? g.oil : (g.oils[kind] || 0); },
         // 用掉燈油（不夠就用到 0），回傳實際用掉多少

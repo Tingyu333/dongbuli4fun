@@ -341,7 +341,7 @@
         let editing = null;   // 正在改的道具 id
         // 跟 wallet.js 的 saleBanner() 長一樣（預覽用）
         function banner(name, line, effect) {
-            const what = effect === 'shop60' ? '七家打工店的升級都打六折。' : '';
+            const what = effect === 'shop60' ? '打工店的店面升級都打六折。' : '';
             return `<div style="display:flex;align-items:center;gap:.6rem;padding:.55rem .7rem;border:1px solid rgb(var(--wabi-shu) / .45);border-radius:4px;background:rgb(var(--wabi-shu) / .05)">`
                 + `<span style="flex-shrink:0;width:2.6rem;height:2.6rem;display:flex;align-items:center;justify-content:center;border:1.5px solid rgb(var(--wabi-shu));border-radius:4px;color:rgb(var(--wabi-shu));font-size:.72rem;line-height:1.15;text-align:center;transform:rotate(-6deg);font-weight:600">${STAMP[effect] || '專屬'}</span>`
                 + `<span style="font-family:'Noto Sans TC',sans-serif;font-size:11px;letter-spacing:.06em;line-height:1.6;color:rgb(var(--wabi-text))">你有專屬道具「${esc(name || '（名字）')}」：${what}${line ? `<span style="display:block;margin-top:.15rem;color:rgb(var(--wabi-accent))">${esc(line)}</span>` : ''}</span></div>`;
