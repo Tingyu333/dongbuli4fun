@@ -81,15 +81,15 @@
         .book button[aria-pressed="true"] { color: rgb(var(--wabi-dark)); border-bottom-color: rgb(var(--wabi-shu)); }
 
         /* 部門：七個一排擠不下，排成兩排（一排四個） */
-        .seg.is-small { display: grid; grid-template-columns: repeat(3, 1fr); }   /* 九個部門（含全部）：三個一排 */
+        .seg.is-small { display: grid; grid-template-columns: repeat(5, 1fr); }   /* 九個部門加「全部」：五個一排，兩排 */
         .seg.is-small button {
             min-height: 36px;
             font-size: 0.72rem;
             letter-spacing: 0.05em;
             border-left: 0;
         }
-        .seg.is-small button:not(:nth-child(3n+1)) { border-left: 1px solid rgb(var(--wabi-sub)); }
-        .seg.is-small button:nth-child(n+4) { border-top: 1px solid rgb(var(--wabi-sub)); }
+        .seg.is-small button:not(:nth-child(5n+1)) { border-left: 1px solid rgb(var(--wabi-sub)); }
+        .seg.is-small button:nth-child(n+6) { border-top: 1px solid rgb(var(--wabi-sub)); }
 
         /* 一列一個人 */
         .row {
@@ -319,6 +319,7 @@
                 <button type="button" data-dept="ship" aria-pressed="false">貨運部</button>
                 <button type="button" data-dept="dessert" aria-pressed="false">甜點部</button>
                 <button type="button" data-dept="stack" aria-pressed="false">疊巢部</button>
+                <button type="button" data-dept="mine" aria-pressed="false">礦坑部</button>
             </div>
             </div>
             <div id="endCtl" class="hidden">
@@ -360,6 +361,7 @@
             <a id="go6" href="huoyun.html" class="block py-4 border border-stone-300 text-center text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">去貨運部</a>
             <a id="go7" href="tiandian.html" class="block py-4 border border-stone-300 text-center text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">去甜點部</a>
             <a id="go8" href="diechao.html" class="block py-4 border border-stone-300 text-center text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">去疊巢部</a>
+            <a id="go9" href="kuangkeng.html" class="block py-4 border border-stone-300 text-center text-wabi-dark hover:border-wabi-dark transition-colors tracking-[0.2em] font-sans text-xs">去礦坑部</a>
         </div>
 
         <p class="mt-10 text-[11px] font-sans tracking-widest text-stone-400 leading-relaxed text-center">
@@ -398,7 +400,7 @@
         const fmt = n => '$' + Number(n || 0).toLocaleString('en-US');
         const secs = ms => ms ? `${(ms / 1000).toFixed(1)} 秒` : '';
         const TOP = ['壹', '貳', '參'];
-        const DEPT = { xitou: '坐洗部', clean: '房務部', farm: '菜園部', wifi: '蹭網部', zaocan: '早餐部', ship: '貨運部', dessert: '甜點部', stack: '疊巢部' };
+        const DEPT = { xitou: '坐洗部', clean: '房務部', farm: '菜園部', wifi: '蹭網部', zaocan: '早餐部', ship: '貨運部', dessert: '甜點部', stack: '疊巢部', mine: '礦坑部' };
         // 第一名頭上的王冠（金色，畫在大頭貼上面）
         const CROWN = '<svg class="crown" viewBox="0 0 26 18" aria-hidden="true"><defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3b0"/><stop offset=".5" stop-color="#e8c252"/><stop offset="1" stop-color="#a77b0c"/></linearGradient></defs><path d="M2 16 L1 5 L7.5 10 L13 1.5 L18.5 10 L25 5 L24 16 Z" fill="url(#cg)" stroke="#8a6408" stroke-width="1" stroke-linejoin="round"/><circle cx="13" cy="11" r="1.8" fill="#b33a2f"/><circle cx="1" cy="5" r="1.3" fill="#e8c252"/><circle cx="25" cy="5" r="1.3" fill="#e8c252"/><circle cx="13" cy="1.5" r="1.3" fill="#e8c252"/></svg>';
         // 金粉：第一名七顆、第二名四顆、第三名三顆，位置隨機，避開最左邊的名次章
@@ -424,9 +426,10 @@
         else if (location.hash === '#endless-stack') { book = 'endless'; edept = 'stack'; }   // 疊巢無盡模式結果區的連結
         else if (location.hash === '#dessert') { book = 'work'; dept = 'dessert'; metric = 'served'; }   // 甜點店結果區的連結：直接看甜點部出餐最多
         else if (location.hash === '#stack') { book = 'work'; dept = 'stack'; metric = 'layers'; }   // 疊巢結果區的連結：直接看疊最高
+        else if (location.hash === '#mine') { book = 'work'; dept = 'mine'; metric = 'best'; }   // 礦坑的連結：直接看挖最深
         else if (location.hash === '#endless-wifi') { book = 'endless'; edept = 'wifi'; }
         const BOOKS = {
-            work: { title: '打工・榜', tag: '誰在二十七樓最勤勞，<br>牆上寫得清清楚楚。', go: [['xitou.html', '去坐洗部'], ['fangwu.html', '去房務部'], ['caiyuan.html', '去菜園部'], ['cengwang.html', '去蹭網部'], ['zaocan.html', '去早餐部'], ['huoyun.html', '去貨運部'], ['tiandian.html', '去甜點部'], ['diechao.html', '去疊巢部']], join: '打工' },
+            work: { title: '打工・榜', tag: '誰在二十七樓最勤勞，<br>牆上寫得清清楚楚。', go: [['xitou.html', '去坐洗部'], ['fangwu.html', '去房務部'], ['caiyuan.html', '去菜園部'], ['cengwang.html', '去蹭網部'], ['zaocan.html', '去早餐部'], ['huoyun.html', '去貨運部'], ['tiandian.html', '去甜點部'], ['diechao.html', '去疊巢部'], ['kuangkeng.html', '去礦坑部']], join: '打工' },
             spend: { title: '花錢・榜', tag: '錢不是賺來的，<br>是花出去才算數。', go: [['scratch.html', '去彩券行'], ['gongde.html', '去功德箱'], ['zaocan.html', '去早餐店']], join: '花錢' },
             endless: { title: '無盡・榜', tag: '沒有時間限制，<br>撐得越久，名字寫得越大。', go: [['cengwang.html', '去蹭網部'], ['huoyun.html', '去貨運部'], ['diechao.html', '去疊巢部']], join: '玩無盡模式' },
         };
@@ -485,15 +488,15 @@
         function entry(p) {
             if (book === 'spend') return spendEntry(p);
             if (book === 'endless') return endlessEntry(p);
-            const x = p.xitou || {}, c = p.clean || {}, fm = p.farm || {}, wf = p.wifi || {}, zc = p.zaocan || {}, sh = p.ship || {}, ds = p.dessert || {}, sk = p.stack || {};
-            const UNIT = { xitou: ['洗', '顆頭', '顆'], clean: ['掃', '間', '間'], farm: ['拔', '輪', '輪'], wifi: ['蹭', '輪', '輪'], zaocan: ['煎', '天', '天'], ship: ['運', '趟', '趟'], dessert: ['轉', '輪', '輪'], stack: ['疊', '場', '場'] };
+            const x = p.xitou || {}, c = p.clean || {}, fm = p.farm || {}, wf = p.wifi || {}, zc = p.zaocan || {}, sh = p.ship || {}, ds = p.dessert || {}, sk = p.stack || {}, mn = p.mine || {};
+            const UNIT = { xitou: ['洗', '顆頭', '顆'], clean: ['掃', '間', '間'], farm: ['拔', '輪', '輪'], wifi: ['蹭', '輪', '輪'], zaocan: ['煎', '天', '天'], ship: ['運', '趟', '趟'], dessert: ['轉', '輪', '輪'], stack: ['疊', '場', '場'], mine: ['挖', '關', '關'] };
             if (metric === 'money') {
-                if (dept === 'all') { const v = (x.money || 0) + (c.money || 0) + (fm.money || 0) + (wf.money || 0) + (zc.money || 0) + (sh.money || 0) + (ds.money || 0) + (sk.money || 0); return v ? { v, main: fmt(v), sub: [x.money ? `洗 ${fmt(x.money)}` : '', c.money ? `掃 ${fmt(c.money)}` : '', fm.money ? `拔 ${fmt(fm.money)}` : '', wf.money ? `蹭 ${fmt(wf.money)}` : '', zc.money ? `煎 ${fmt(zc.money)}` : '', sh.money ? `運 ${fmt(sh.money)}` : '', ds.money ? `甜 ${fmt(ds.money)}` : '', sk.money ? `疊 ${fmt(sk.money)}` : ''].filter(Boolean).join('・') } : null; }
+                if (dept === 'all') { const v = (x.money || 0) + (c.money || 0) + (fm.money || 0) + (wf.money || 0) + (zc.money || 0) + (sh.money || 0) + (ds.money || 0) + (sk.money || 0) + (mn.money || 0); return v ? { v, main: fmt(v), sub: [x.money ? `洗 ${fmt(x.money)}` : '', c.money ? `掃 ${fmt(c.money)}` : '', fm.money ? `拔 ${fmt(fm.money)}` : '', wf.money ? `蹭 ${fmt(wf.money)}` : '', zc.money ? `煎 ${fmt(zc.money)}` : '', sh.money ? `運 ${fmt(sh.money)}` : '', ds.money ? `甜 ${fmt(ds.money)}` : '', sk.money ? `疊 ${fmt(sk.money)}` : '', mn.money ? `挖 ${fmt(mn.money)}` : ''].filter(Boolean).join('・') } : null; }
                 const d = p[dept] || {};
-                return d.money ? { v: d.money, main: fmt(d.money), sub: dept === 'xitou' ? `洗了 ${d.n} 顆頭` : dept === 'clean' ? `打掃了 ${d.n} 間` : dept === 'wifi' ? `蹭了 ${d.n} 輪` : dept === 'zaocan' ? `開了 ${d.n} 天店` : dept === 'ship' ? `出航 ${d.n} 趟` : dept === 'dessert' ? `開了 ${d.n} 輪店` : dept === 'stack' ? `疊了 ${d.n} 場` : `拔了 ${d.n} 輪` } : null;
+                return d.money ? { v: d.money, main: fmt(d.money), sub: dept === 'xitou' ? `洗了 ${d.n} 顆頭` : dept === 'clean' ? `打掃了 ${d.n} 間` : dept === 'wifi' ? `蹭了 ${d.n} 輪` : dept === 'zaocan' ? `開了 ${d.n} 天店` : dept === 'ship' ? `出航 ${d.n} 趟` : dept === 'dessert' ? `開了 ${d.n} 輪店` : dept === 'stack' ? `疊了 ${d.n} 場` : dept === 'mine' ? `挖了 ${d.n} 關` : `拔了 ${d.n} 輪` } : null;
             }
             if (metric === 'count') {
-                if (dept === 'all') { const v = (x.n || 0) + (c.n || 0) + (fm.n || 0) + (wf.n || 0) + (zc.n || 0) + (sh.n || 0) + (ds.n || 0) + (sk.n || 0); return v ? { v, main: `${v} 次`, sub: [x.n ? `洗 ${x.n} 顆頭` : '', c.n ? `掃 ${c.n} 間` : '', fm.n ? `拔 ${fm.n} 輪` : '', wf.n ? `蹭 ${wf.n} 輪` : '', zc.n ? `煎 ${zc.n} 天` : '', sh.n ? `運 ${sh.n} 趟` : '', ds.n ? `甜 ${ds.n} 輪` : '', sk.n ? `疊 ${sk.n} 場` : ''].filter(Boolean).join('・') } : null; }
+                if (dept === 'all') { const v = (x.n || 0) + (c.n || 0) + (fm.n || 0) + (wf.n || 0) + (zc.n || 0) + (sh.n || 0) + (ds.n || 0) + (sk.n || 0) + (mn.n || 0); return v ? { v, main: `${v} 次`, sub: [x.n ? `洗 ${x.n} 顆頭` : '', c.n ? `掃 ${c.n} 間` : '', fm.n ? `拔 ${fm.n} 輪` : '', wf.n ? `蹭 ${wf.n} 輪` : '', zc.n ? `煎 ${zc.n} 天` : '', sh.n ? `運 ${sh.n} 趟` : '', ds.n ? `甜 ${ds.n} 輪` : '', sk.n ? `疊 ${sk.n} 場` : '', mn.n ? `挖 ${mn.n} 關` : ''].filter(Boolean).join('・') } : null; }
                 const d = p[dept] || {};
                 return d.n ? { v: d.n, main: `${d.n} ${UNIT[dept][2]}`, sub: `賺 ${fmt(d.money)}` } : null;
             }
@@ -512,6 +515,8 @@
                 return ly && ly.n ? { v: ly.n, tie: -(ly.perfect * 100000 + ly.total), main: `${ly.n} 層`, sub: `「正」${ly.perfect} 次・那場 ${fmt(ly.total)}` } : null;
             }
             if (dept === 'stack') return sk.best != null && sk.best ? { v: sk.best, main: fmt(sk.best), sub: '一場賺最多' } : null;
+            // 礦坑：挖最深（過到第幾關），一樣深比那時累積的兩多
+            if (dept === 'mine') { const dp = mn.deep; return dp && dp.lv ? { v: dp.lv, tie: -dp.liang, main: dp.lv >= 10 ? '破關' : `第 ${dp.lv} 關`, sub: [`${dp.liang.toLocaleString('zh-TW')} 兩`, mn.clears ? `破關 ${mn.clears} 次` : ''].filter(Boolean).join('・') } : null; }
             // 早餐店：出餐最多的一天（只有早餐部有這個分頁）；最高分是一天賺最多
             if (metric === 'served') {
                 const sv = zc.served;
@@ -549,7 +554,7 @@
             } catch (e) { }
         }
         // ===== 自己剛破的紀錄馬上出現：這支手機的錢包比榜上新，就先把自己那格換成錢包的數字（只會變大） =====
-        const EARN_SRC = { xitou: 'xitou', clean: 'clean', farm: 'farm', wifi: 'wifi', zaocan: 'zaocan', ship: 'ship', dessert: 'dessert', stack: 'stack' };
+        const EARN_SRC = { xitou: 'xitou', clean: 'clean', farm: 'farm', wifi: 'wifi', zaocan: 'zaocan', ship: 'ship', dessert: 'dessert', stack: 'stack', mine: 'mine' };
         const MONEY_BEST = ['farm', 'zaocan', 'dessert'];   // 這三個部門的「最高」就是一輪賺最多（錢包的 best）；坐洗、房務比分數，蹭網、貨運只算一般模式，手機算不出來
         function withMe(list) {
             if (!list || !Line.loggedIn) return list;
@@ -597,7 +602,7 @@
             const B = BOOKS[book];
             $('title').textContent = B.title; $('tagline').innerHTML = B.tag;
             $('workCtl').classList.toggle('hidden', book !== 'work'); $('spendCtl').classList.toggle('hidden', book !== 'spend'); $('endCtl').classList.toggle('hidden', book !== 'endless');
-            [$('go1'), $('go2'), $('go3'), $('go4'), $('go5'), $('go6'), $('go7'), $('go8')].forEach((a, i) => {   // 新增部門：這裡和上面的 <a id="goN"> 都要加
+            [$('go1'), $('go2'), $('go3'), $('go4'), $('go5'), $('go6'), $('go7'), $('go8'), $('go9')].forEach((a, i) => {   // 新增部門：這裡和上面的 <a id="goN"> 都要加
                 const g = B.go[i]; a.classList.toggle('hidden', !g);
                 a.classList.toggle('col-span-2', B.go.length !== 3 && B.go.length % 2 === 1 && i === B.go.length - 1);  // 單數顆：最後一顆佔一整排
                 if (g) { a.href = g[0]; a.textContent = g[1]; }
@@ -609,11 +614,12 @@
             const shipOld = dept === 'ship' && players && players.length && players.every(p => !('ship' in p));
             const dsOld = dept === 'dessert' && players && players.length && players.every(p => !('dessert' in p));
             const skOld = dept === 'stack' && players && players.length && players.every(p => !('stack' in p));
+            const mnOld = dept === 'mine' && players && players.length && players.every(p => !('mine' in p));
             $('boardNote').textContent = book === 'spend' ? CATS[cat].note
                 : book === 'endless' ? (endOld ? '後端還是舊版，看不到無盡・榜：要把 Code.gs 貼上去、重新部署（新版本）。' : ENDLESS[edept].notes[emetric] + '要用 LINE 登入，剛玩完最多一分鐘才會上榜。')
-                : shipOld ? '後端還是舊版，看不到貨運部：要把 Code.gs 貼上去、重新部署（新版本）。' : dsOld ? '後端還是舊版，看不到甜點部：要把 Code.gs 貼上去、重新部署（新版本）。' : skOld ? '後端還是舊版，看不到疊巢部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'layers' ? '疊・巢一般模式一場疊最高幾層（無盡模式在「無盡・榜」），一樣高比「正」多、再比賺多。要用 LINE 登入，剛收工最多一分鐘才會上榜。' : metric === 'served' && dept === 'dessert' ? '甜點店一輪出餐最多幾盤，同樣多比誰氣走的少、再比報廢少。要用 LINE 登入，剛打烊最多一分鐘才會上榜。' : metric === 'combo' ? '貨運一般模式一趟裡最長的連撈（連續撈到好東西、中間沒撈到垃圾也沒撞到），一樣長比運費多。要用 LINE 登入，剛靠港最多一分鐘才會上榜。' : zcOld ? '後端還是舊版，看不到早餐部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'served' ? '早餐店一天出餐最多幾位客人，同樣多比誰氣走的少。要用 LINE 登入，剛打烊最多一分鐘才會上榜。' : metric === 'best'
-                ? (dept === 'farm' ? '菜園比的是一輪賣最多少錢（單位跟坐洗、房務不同，「全部」那頁不算菜園）。' : dept === 'zaocan' ? '早餐店比的是一天賺最多少錢（單位跟坐洗、房務不同，「全部」那頁不算早餐店）。' : dept === 'dessert' ? '甜點店比的是一輪賺最多少錢（單位跟坐洗、房務不同，「全部」那頁不算甜點店）。' : dept === 'stack' ? '疊・巢比的是一般模式一場賺最多少錢（無盡模式在「無盡・榜」；單位跟坐洗、房務不同，「全部」那頁不算疊巢）。' : dept === 'ship' ? '貨運比的是一般模式一趟賺最多少錢（無盡模式在「無盡・榜」；單位跟坐洗、房務不同，「全部」那頁不算貨運）。' : dept === 'wifi' ? '蹭網比的是一般模式一輪省最多少錢（無盡模式在「無盡・榜」；單位跟坐洗、房務不同，「全部」那頁不算蹭網）。' : '一場的最高分（爽度、乾淨度都是滿分 100），同分比誰快。從洗完、打掃完存到雲端開始算。')
-                : metric === 'money' ? '打工賺的錢加起來（工資、小費、失物招領、加成都算）。' : '洗幾顆頭、打掃幾間、拔幾輪、蹭幾輪、開幾天早餐店、跑幾趟貨運、轉幾輪甜點店、疊幾場書。';
+                : shipOld ? '後端還是舊版，看不到貨運部：要把 Code.gs 貼上去、重新部署（新版本）。' : dsOld ? '後端還是舊版，看不到甜點部：要把 Code.gs 貼上去、重新部署（新版本）。' : skOld ? '後端還是舊版，看不到疊巢部：要把 Code.gs 貼上去、重新部署（新版本）。' : mnOld ? '後端還是舊版，看不到礦坑部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'layers' ? '疊・巢一般模式一場疊最高幾層（無盡模式在「無盡・榜」），一樣高比「正」多、再比賺多。要用 LINE 登入，剛收工最多一分鐘才會上榜。' : metric === 'served' && dept === 'dessert' ? '甜點店一輪出餐最多幾盤，同樣多比誰氣走的少、再比報廢少。要用 LINE 登入，剛打烊最多一分鐘才會上榜。' : metric === 'combo' ? '貨運一般模式一趟裡最長的連撈（連續撈到好東西、中間沒撈到垃圾也沒撞到），一樣長比運費多。要用 LINE 登入，剛靠港最多一分鐘才會上榜。' : zcOld ? '後端還是舊版，看不到早餐部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'served' ? '早餐店一天出餐最多幾位客人，同樣多比誰氣走的少。要用 LINE 登入，剛打烊最多一分鐘才會上榜。' : metric === 'best'
+                ? (dept === 'farm' ? '菜園比的是一輪賣最多少錢（單位跟坐洗、房務不同，「全部」那頁不算菜園）。' : dept === 'zaocan' ? '早餐店比的是一天賺最多少錢（單位跟坐洗、房務不同，「全部」那頁不算早餐店）。' : dept === 'dessert' ? '甜點店比的是一輪賺最多少錢（單位跟坐洗、房務不同，「全部」那頁不算甜點店）。' : dept === 'mine' ? '礦坑比的是挖最深：過到第幾關（十關挖完叫破關），一樣深比那時累積的兩多。要用 LINE 登入，收工後最多五分鐘上榜（或按刷新）。' : dept === 'stack' ? '疊・巢比的是一般模式一場賺最多少錢（無盡模式在「無盡・榜」；單位跟坐洗、房務不同，「全部」那頁不算疊巢）。' : dept === 'ship' ? '貨運比的是一般模式一趟賺最多少錢（無盡模式在「無盡・榜」；單位跟坐洗、房務不同，「全部」那頁不算貨運）。' : dept === 'wifi' ? '蹭網比的是一般模式一輪省最多少錢（無盡模式在「無盡・榜」；單位跟坐洗、房務不同，「全部」那頁不算蹭網）。' : '一場的最高分（爽度、乾淨度都是滿分 100），同分比誰快。從洗完、打掃完存到雲端開始算。')
+                : metric === 'money' ? '打工賺的錢加起來（工資、小費、失物招領、加成都算）。' : '洗幾顆頭、打掃幾間、拔幾輪、蹭幾輪、開幾天早餐店、跑幾趟貨運、轉幾輪甜點店、疊幾場書、挖幾關礦。';
             const box = $('board');
             if (!players) {
                 box.innerHTML = failed
@@ -654,6 +660,7 @@
                 : dept === 'ship' && players.length && players.every(p => !('ship' in p)) ? '貨運部要等後端重新部署「新版本」才有。'
                 : dept === 'dessert' && players.length && players.every(p => !('dessert' in p)) ? '甜點部要等後端重新部署「新版本」才有。'
                 : dept === 'stack' && players.length && players.every(p => !('stack' in p)) ? '疊巢部要等後端重新部署「新版本」才有。'
+                : dept === 'mine' && players.length && players.every(p => !('mine' in p)) ? '礦坑部要等後端重新部署「新版本」才有。'
                 : `${DEPT[dept] || '二十七樓'}還沒有人上榜。<br>第一名在等你。`}</p>`;
             box.querySelectorAll('img.avatar').forEach(img => img.addEventListener('error', () => {
                 badPic.add(img.getAttribute('src'));

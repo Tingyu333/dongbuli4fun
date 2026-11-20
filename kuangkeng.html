@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- 試玩中：還沒有入口，不給搜尋引擎收（開放時拿掉） -->
-    <meta name="robots" content="noindex">
     <title>礦坑・挖 | 丼步喱</title>
     <meta name="description" content="浣熊大王戴上工地帽下礦坑：鉤子左右擺，點一下放出去，金塊越大拉越久。十關，每關六十秒挖到目標就過關。">
     <meta property="og:type" content="website">
@@ -44,6 +43,9 @@
         .boom span { font-family: 'Noto Sans TC', sans-serif; font-size: 11px; line-height: 1; letter-spacing: .05em; }
         .boom:active { transform: scale(.92); }
         .boom.off { opacity: .4; }
+        /* 監修中：整個畫布蓋起來 */
+        .closed { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 2rem 1.5rem; text-align: center; background: rgb(var(--wabi-bg) / 0.86); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+        .closed-stamp { font-size: 1.9rem; letter-spacing: 0.25em; padding: 0.35rem 0.4rem 0.35rem 0.65rem; color: rgb(var(--wabi-shu)); border: 3px double rgb(var(--wabi-shu)); transform: rotate(-6deg); }
         .trial { display: inline-block; padding: .1rem .5rem; border: 1.5px solid rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); font-size: 11px; letter-spacing: .2em; transform: rotate(-4deg); border-radius: 3px; }
         html.kk-open .theme-toggle { opacity: 0; pointer-events: none; transition: opacity .2s; }
         /* 礦坑商店：過關後蓋在畫布上（花的是礦坑裡的兩，不是錢包） */
@@ -99,7 +101,7 @@
             <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2">MINE</span>
             <h1 class="text-3xl font-light text-wabi-dark tracking-widest">礦坑・挖</h1>
             <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">浣熊大王戴上工地帽下礦坑。金塊越大，拉得越久。</p>
-            <p class="mt-3"><span class="trial font-sans">試玩</span></p>
+            <p id="trialTag" class="mt-3"><span class="trial font-sans">監修中試玩</span></p>
         </div>
 
         <section id="stage" class="stage relative bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-3 pt-3 pb-4">
@@ -116,11 +118,19 @@
                     <p id="msBag" class="mt-2 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed"></p>
                     <button type="button" id="msNext" class="mnext mt-3 w-full">下一關</button>
                 </div>
+                <!-- 監修中（CLOSED）：蓋住畫布，不能開工；網址加 ?preview 可以試玩 -->
+                <div id="closed" class="closed">
+                    <span class="closed-stamp">監修中</span>
+                    <p class="text-sm text-wabi-dark tracking-widest leading-loose">浣熊大王還在巡礦坑。<br>礦坑・挖還沒開工，過幾天再來。</p>
+                    <a href="member.html" class="mt-2 py-3 px-8 border border-stone-300 text-wabi-dark font-sans text-xs tracking-[0.2em]">回會員中心</a>
+                </div>
             </div>
             <p class="mt-3 text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed text-center">點畫面放鉤；拉到不想要的，按右下角「炸」。</p>
             <p id="payNote" class="mt-1 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed text-center min-h-[1.2rem]"></p>
             <button id="reportBtn" type="button" class="hidden mt-2 w-full py-3 border border-stone-300 text-wabi-dark tracking-[0.2em] font-sans text-xs">分享礦坑日報</button>
+            <p id="syncNote" class="mt-1 text-[10px] font-sans tracking-wider text-stone-400 leading-relaxed text-center"></p>
             <button id="giveUp" type="button" class="hidden mt-1 w-full py-2 text-stone-400 underline underline-offset-4 tracking-[0.15em] font-sans text-[11px]">放棄這一局，從第一關開始</button>
+            <a id="rankLink" href="rank.html#mine" class="hidden block mt-1 py-2 text-center text-stone-400 underline underline-offset-4 tracking-[0.15em] font-sans text-[11px]">看礦坑部排行榜</a>
         </section>
 
         <!-- 破關：結業證書 -->
@@ -147,7 +157,7 @@
                 <li>工資進錢包：每打完一關出勤費 <b class="font-normal text-wabi-dark">$100</b>，過第 n 關再給 $500＋$100×n（第 1 關 $600、第 10 關 $1,500），破關獎金 <b class="font-normal text-wabi-dark">$2,000</b>。十關打完約 $13,500。</li>
                 <li>右上角<b class="font-normal text-wabi-dark">店面</b>用錢包的錢買永久的工具：電動絞盤、防晃鉤、炸藥箱、礦燈、沙漏、老顧客卡。</li>
             </ol>
-            <p class="mt-6 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">試玩版：工資會進錢包、店面可以買了；每關結束可以分享礦坑日報，破關有結局和結業證書；還不上排行榜。遊戲幣，不能儲值也不能換現金。</p>
+            <p class="mt-6 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">用 LINE 登入，挖過的關會上排行榜的礦坑部（比挖最深）。每關結束可以分享礦坑日報，破關有結局和結業證書。<span id="trialNote">現在監修中試玩：不發工資、不記錄，店面滿級先借你用。</span>遊戲幣，不能儲值也不能換現金。</p>
         </section>
     </main>
 
@@ -157,7 +167,7 @@
             <div class="px-5 pt-5 pb-2 flex items-baseline justify-between border-b border-stone-200">
                 <div>
                     <p class="text-lg text-wabi-dark tracking-widest">店面・升</p>
-                    <p class="mt-1 text-[10px] font-sans tracking-widest text-stone-400">浣熊大王說：工具錢你出，金子本王來挖</p>
+                    <p id="shopSub" class="mt-1 text-[10px] font-sans tracking-widest text-stone-400">浣熊大王說：工具錢你出，金子本王來挖</p>
                 </div>
                 <p class="text-xs font-sans tracking-widest text-stone-500">錢包 <b id="shopMoney" class="font-normal text-wabi-shu"></b></p>
             </div>
@@ -229,6 +239,10 @@
         const BUFF = { power: '大力', luck: '御守', polish: '拋光', book: '圖鑑' };
         // 工資（計劃書：破關一局約 $13,500，一分鐘約 $1,050）：每打完一關出勤費、過關照關數、破關獎金
         const PAY = { show: 100, clear: n => 500 + 100 * n, final: 2000 };
+        // 監修中：會員中心的入口蓋章、畫布蓋起來；網址加 ?preview 可以試玩（不發工資、不記錄，店面滿級借你用）
+        const MAINTENANCE = true;   // 2026-11-20 上線但先監修中（使用者說的）；改成 false 就開工
+        const PREVIEW = /[?&]preview\b/.test(location.search);
+        const CLOSED = MAINTENANCE && !PREVIEW;
         // 店面（花錢包的錢，永久；key 跟別家店不重複）。全部買滿 $44.5 萬
         const UPG = [
           { key: 'winch', name: '電動絞盤', sub: '拉得快', prices: [20000, 60000], vals: [0.15, 0.3], tiers: ['', '手搖改電動', '雙馬達'], fx: v => `拉回速度快 ${Math.round(v * 100)}%` },
@@ -246,7 +260,7 @@
           return d;
         }
         let upg = loadUpg();
-        const lvOf = key => upg.lv[key] || 0;
+        const lvOf = key => MAINTENANCE ? UPG_BY[key].prices.length : upg.lv[key] || 0;   // 監修中試玩：滿級借你用
         const val = key => lvOf(key) ? UPG_BY[key].vals[lvOf(key) - 1] : 0;
 
         const cv = document.getElementById('cv');
@@ -292,7 +306,7 @@
           } else { clearRun(); startLevel(1); }
         }
         // 進度存在這支手機（中途離開從那關重來）；一關開始、進商店、在商店買東西時存
-        const RUN_KEY = 'dongbuli-kuangkeng-run';
+        const RUN_KEY = MAINTENANCE ? 'dongbuli-kuangkeng-preview' : 'dongbuli-kuangkeng-run';   // 試玩的進度跟正式的分開放
         const num = (v, max) => Math.max(0, Math.min(max, Math.floor(Number(v) || 0)));
         function saveRun() {
           const d = G.phase === 'shop' ? { v: 1, lv: G.lv, total: G.total, dyn: G.dyn, next: G.next, shop: G.shop } : { v: 1, lv: G.lv, snap: G.snap };
@@ -320,7 +334,7 @@
         }
         function resetLevel() {
           G.total = G.snap.total; G.dyn = G.snap.dyn; G.buff = Object.assign({}, G.snap.buff);
-          G.power = !!G.buff.power; G.round = ROUND + val('sandglass'); G.t = G.round; G.items = makeMap(G.lv); G.lost = 0; G.pay = 0; G.haul = {}; G.levelStart = G.total;
+          G.dynUsed = 0; G.power = !!G.buff.power; G.round = ROUND + val('sandglass'); G.t = G.round; G.items = makeMap(G.lv); G.lost = 0; G.pay = 0; G.haul = {}; G.levelStart = G.total;
           Object.assign(G.hook, { st: 'swing', len: 22, item: null }); G.tug = 0; G.fx = []; G.pops = [];
           G.phase = 'title'; $('mshop').hidden = true;
           document.documentElement.classList.remove('kk-open'); syncBoom(); syncUI();
@@ -343,7 +357,7 @@
         function boom() {
           const h = G.hook;
           if (G.phase !== 'play' || h.st !== 'back' || !h.item || G.dyn <= 0) return;
-          G.dyn--; const p = tip(); burst(p.x, p.y, h.item.r);
+          G.dyn--; G.dynUsed = (G.dynUsed || 0) + 1; const p = tip(); burst(p.x, p.y, h.item.r);
           h.item = null; syncBoom();
         }
         function syncBoom() {
@@ -351,11 +365,11 @@
           const on = G && G.phase === 'play' && G.hook.st === 'back' && G.hook.item && G.dyn > 0;
           $('boom').classList.toggle('off', !on);
         }
-        cv.addEventListener('pointerdown', e => { e.preventDefault(); tap(); });
+        cv.addEventListener('pointerdown', e => { e.preventDefault(); if (!CLOSED) tap(); });
         $('boom').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); boom(); });
         $('stage').addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('keydown', e => {
-          if (G.phase === 'shop' || !$('shop').classList.contains('hidden')) return;
+          if (CLOSED || G.phase === 'shop' || !$('shop').classList.contains('hidden')) return;
           if (e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); tap(); }
           else if (e.key === 'ArrowUp') { e.preventDefault(); boom(); }
         });
@@ -411,7 +425,7 @@
 
         // ---------- 店面（錢包的錢）----------
         function syncUI() {
-          const total = UPG.reduce((t, u) => t + lvOf(u.key), 0);
+          const total = MAINTENANCE ? 0 : UPG.reduce((t, u) => t + lvOf(u.key), 0);
           $('shopLv').textContent = total ? total : '';
           $('shopBtn').setAttribute('aria-label', total ? `店面，升級了 ${total} 次` : '店面升級');
           $('giveUp').classList.toggle('hidden', !(G && (G.phase === 'title' || G.phase === 'shop') && (G.lv > 1 || G.phase === 'shop')));
@@ -432,6 +446,7 @@
           ctx = save;
         }
         function renderShop() {
+          if (MAINTENANCE) $('shopSub').textContent = '監修中試玩：滿級先借你用，還不能買';
           $('shopMoney').textContent = Wallet.fmt(Wallet.money);
           $('shopList').innerHTML = Wallet.saleBanner() + UPG.map(u => {
             const now = lvOf(u.key), max = u.prices.length, next = now < max ? now + 1 : null, base = next ? u.prices[now] : 0, pr = Wallet.shopPrice(base);   // 專屬道具「全店六折」
@@ -450,13 +465,14 @@
           $('shopList').querySelectorAll('[data-icon]').forEach(el => shopIcon(el, el.dataset.icon));
         }
         function openUpg() {
+          if (CLOSED) { showToast('礦坑・挖監修中，店面也先不賣'); return; }
           if (G.phase === 'play') { showToast('收工再去店面'); return; }
           upg = loadUpg(); renderShop();
           const el = $('shop'); el.classList.remove('hidden'); requestAnimationFrame(() => el.classList.add('on'));
         }
         function closeShop() { const el = $('shop'); if (el.classList.contains('hidden')) return; el.classList.remove('on'); setTimeout(() => el.classList.add('hidden'), reduce ? 0 : 220); }
         function buyUpgrade(key) {
-          if (G.phase === 'play') return;
+          if (MAINTENANCE || G.phase === 'play') return;
           upg = loadUpg();   // 用錢包裡最新的（別家店可能也買過，spent 要接著加）
           const u = UPG_BY[key], now = lvOf(key);
           if (now >= u.prices.length) return;
@@ -548,10 +564,57 @@
           if (G.win) G.payBill.push([`過第 ${G.lv} 關`, PAY.clear(G.lv)]);
           if (G.win && G.lv >= LAST) G.payBill.push(['破關獎金', PAY.final]);
           G.pay = G.payBill.reduce((t, x) => t + x[1], 0);
-          Wallet.earn(G.pay, 'mine');
-          $('payNote').textContent = `錢包 +$${G.pay.toLocaleString('en-US')}（${G.payBill.map(x => x[0] + ' ' + x[1].toLocaleString('en-US')).join('、')}）・現在 ${Wallet.fmt(Wallet.money)}`;
+          if (MAINTENANCE) {   // 監修中試玩：工資照算給你看，但不進錢包、不記錄
+            G.pay = 0; $('payNote').textContent = '監修中試玩，不發工資'; $('syncNote').textContent = '';
+          } else {
+            Wallet.earn(G.pay, 'mine');
+            $('payNote').textContent = `錢包 +$${G.pay.toLocaleString('en-US')}（${G.payBill.map(x => x[0] + ' ' + x[1].toLocaleString('en-US')).join('、')}）・現在 ${Wallet.fmt(Wallet.money)}`;
+          }
           G.report = { lv: G.lv, win: G.win, gain: G.total - G.levelStart, total: G.total, target: TARGET[G.lv], haul: { ...G.haul }, pay: G.pay, payBill: G.payBill.slice(), lost: G.lost };
+          if (!MAINTENANCE) { recordRound(); $('syncNote').textContent = '紀錄存到雲端中…'; uploadRounds().then(showSyncNote); }
           document.documentElement.classList.remove('kk-open'); syncBoom(); syncUI();
+        }
+
+        // ---------- 紀錄：一關一筆，存在這支手機，也送到後端（Mines 分頁，排行榜、真人工資表用）；監修中不記 ----------
+        const STATS_KEY = 'dongbuli-kuangkeng-stats';
+        function loadStats() { let st = null; try { st = JSON.parse(localStorage.getItem(STATS_KEY)); } catch (e) { } st = st && typeof st === 'object' ? st : {}; st.recent = Array.isArray(st.recent) ? st.recent : []; return st; }
+        function recordRound() {
+          const st = loadStats(), r = G.report;
+          st.recent.unshift({
+            at: new Date().toISOString(), lv: r.lv, win: r.win, total: r.pay, gain: r.gain, liang: r.total, target: r.target, lost: r.lost,
+            dyn_used: G.dynUsed || 0, dyn_left: G.dyn, items: Object.values(r.haul).reduce((t, v) => t + v, 0),
+            buff: Object.keys(G.buff).map(k => BUFF[k]).join(','), haul: r.haul, shop: { ...upg.lv },
+            ms: G.round * 1000, len: G.round, final: r.win && r.lv >= LAST, login: !!(window.Line && Line.loggedIn),
+          });
+          st.recent = st.recent.slice(0, 50);
+          try { localStorage.setItem(STATS_KEY, JSON.stringify(st)); } catch (e) { }
+        }
+        const API_URL = (window.Line && Line.API_URL) || "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
+        function deviceId() {
+          let id = ''; try { id = localStorage.getItem('dongbuli-device') || ''; } catch (e) { }
+          if (!id) { id = window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'd-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12); try { localStorage.setItem('dongbuli-device', id); } catch (e) { } }
+          return id;
+        }
+        let uploading = null;
+        function uploadRounds() { if (!uploading) uploading = doUpload().finally(() => { uploading = null; }); return uploading; }
+        async function doUpload() {
+          const st = loadStats(), todo = st.recent.filter(r => !st.synced || r.at > st.synced).reverse().slice(0, 20);
+          if (!todo.length) return { ok: true, saved: 0 };
+          try {
+            let session = ''; try { session = localStorage.getItem('dongbuli-session') || ''; } catch (e) { }
+            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'mineLog', device: deviceId(), session, recs: todo }) });
+            const r = await res.json();
+            if (r.result !== 'success') return { ok: false, error: r.error || r.result || '後端沒回成功' };
+            const now = loadStats(); now.synced = todo[todo.length - 1].at; try { localStorage.setItem(STATS_KEY, JSON.stringify(now)); } catch (e) { }
+            if (todo.length === 20) setTimeout(uploadRounds, 1500);
+            return { ok: true, saved: r.saved };
+          } catch (e) { return { ok: false, error: '連不到後端' }; }
+        }
+        function showSyncNote(r) {
+          const el = $('syncNote');
+          if (r.ok) el.textContent = window.Line && Line.loggedIn ? '這一關的紀錄存到雲端了，最多五分鐘上排行榜' : '這一關的紀錄存到雲端了（用 LINE 登入才上排行榜）';
+          else if (/不認得的請求/.test(r.error)) el.textContent = '紀錄先存在這支手機：後端還沒部署新版本，部署好下次打開會自己補送';
+          else el.textContent = `紀錄先存在這支手機（${r.error}），下次會補送`;
         }
 
         // ---------- 礦坑日報、結業證書（紙本，固定白天的顏色）----------
@@ -600,7 +663,7 @@
           x.strokeStyle = '#d4ccbf'; x.lineWidth = 0.8; x.beginPath(); x.moveTo(58, y); x.lineTo(Wd - 58, y); x.stroke(); y += 28;
           T('工 資', 62, y, { size: 13, color: '#2c2c2c', ls: 4 }); y += 6;
           r.payBill.forEach(([kk, v]) => { y += 26; T(kk, 62, y, { size: 13, color: '#4a4a4a' }); T('$' + v.toLocaleString('en-US'), Wd - 62, y, { size: 13, font: SANS, color: '#2c2c2c', align: 'right' }); });
-          y += 30; T('進錢包', 62, y, { size: 13, color: '#8e8070' }); T('$' + r.pay.toLocaleString('en-US'), Wd - 62, y, { size: 18, font: SANS, w: 500, color: '#b33a2f', align: 'right' });
+          y += 30; T(MAINTENANCE ? '進錢包（監修中試玩不發）' : '進錢包', 62, y, { size: 13, color: '#8e8070' }); T('$' + r.pay.toLocaleString('en-US'), Wd - 62, y, { size: 18, font: SANS, w: 500, color: '#b33a2f', align: 'right' });
           if (r.lost) { y += 26; T(`時間到時鉤上的 ${r.lost} 兩不算`, 62, y, { size: 11, font: SANS, color: '#8e8070' }); }
           y += 56;
           P.seal(Wd - 110, y, 62, r.win ? '過關' : '再挖', r.win ? -0.12 : 0.08);
@@ -919,11 +982,13 @@
         function startLoop() { if (loopOn) return; loopOn = true; last = performance.now(); requestAnimationFrame(frame); }
 
         window.addEventListener('resize', fit);
+        if (!CLOSED) $('closed').remove();
+        if (!MAINTENANCE) { $('trialTag').remove(); $('trialNote').remove(); $('rankLink').classList.remove('hidden'); setTimeout(uploadRounds, 2500); }
         newRun(true); fitReady = true;
         if ('IntersectionObserver' in window) new IntersectionObserver(es => { cvSeen = es[es.length - 1].isIntersecting; if (cvSeen) startLoop(); }).observe(cv);
         (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(startLoop);
         // 測試用（模擬玩家）
-        window.__kk = { get G() { return G; }, makeReport, makeCert, showCert, tap, boom, buy, nextLevel, step, endLevel, newRun, startLevel, resetLevel, openShop, buyUpgrade, saveRun, loadRun, val, TUNE, KIND, TARGET, PIVOT, W, H, back, cash };
+        window.__kk = { get G() { return G; }, makeReport, makeCert, showCert, tap, boom, buy, nextLevel, step, endLevel, newRun, startLevel, resetLevel, openShop, buyUpgrade, saveRun, loadRun, val, loadStats, MAINTENANCE, TUNE, KIND, TARGET, PIVOT, W, H, back, cash };
         })();
     </script>
 </body>

@@ -61,6 +61,8 @@ var DESSERT_LOGS_PER_HOUR = 60;  // 一支手機每小時最多送幾次甜點�
 var DESSERT_ROWS_PER_HOUR = 2000;
 var STACK_LOGS_PER_HOUR = 60;    // 一支手機每小時最多送幾次疊巢紀錄
 var STACK_ROWS_PER_HOUR = 2000;
+var MINE_LOGS_PER_HOUR = 60;     // 一支手機每小時最多送幾次礦坑紀錄（一關一筆，一次最多 20 關）
+var MINE_ROWS_PER_HOUR = 3000;
 var SHIP_LOGS_PER_HOUR = 60;     // 一支手機每小時最多送幾次貨運紀錄
 var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 
@@ -71,7 +73,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-20c';
+var BACKEND_VERSION = '2026-11-20d';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1 };
 
@@ -133,6 +135,7 @@ function route(type, input) {
     if (type === 'zaocanLog') return zaocanLog(input);
     if (type === 'dessertLog') return dessertLog(input);
     if (type === 'stackLog') return stackLog(input);
+    if (type === 'mineLog') return mineLog(input);
     if (type === 'shipLog') return shipLog(input);
     if (type === 'gongdeLog') return gongdeLog(input);
     if (type === 'leaderboard') return leaderboard(input);
@@ -1469,6 +1472,15 @@ var BOARD_SOURCES = {
     if (layers && better(b.far)) b.far = { n: layers, perfect: perfect, total: total, ms: ms };
     if (!b.money || total > b.money.total) b.money = { total: total, n: layers, ms: ms };
   } },
+  // 礦坑：每個 line_id 挖最深的一次（G win 的 F lv 最大，一樣深比 I liang 那時累積的兩多），破關幾次（T final）
+  // 監修中試玩不送紀錄，所以這裡只會有正式開工後的
+  Mines: { cols: 20, merge: function (best, r) {
+    var id = String(r[2] || ''), lv = Number(r[5]) || 0, liang = Number(r[8]) || 0;
+    if (!id || r[6] !== true) return;
+    var b = best[id] = best[id] || { lv: 0, liang: 0, clears: 0 };
+    if (lv > b.lv || (lv === b.lv && liang > b.liang)) { b.lv = lv; b.liang = liang; }
+    if (r[19] === true) b.clears++;
+  } },
   // 甜點店：每個 line_id 出餐最多的一輪（I served），同樣多比氣走少（J angry）、再比報廢少（K scrapped）、再比賺多（E total）
   Desserts: { cols: 11, merge: function (best, r) {
     var id = String(r[2] || ''), served = Number(r[8]) || 0, angry = Number(r[9]) || 0, scrapped = Number(r[10]) || 0, total = Number(r[4]) || 0;
@@ -1483,7 +1495,7 @@ var BOARD_SOURCES = {
 // 下次只讀 row 後面新增的列、跟記下的比。紀錄被 archiveLogs() 搬走也沒關係：成績已經記在 Board，搬走幾列 row 就減幾。
 // 改了 merge 的規則要重算：把 BOARD_STATE_VERSION 加一（會從頭讀一次；已經封存走的紀錄就不算了，要小心）。
 var BOARD_STATE_VERSION = 3;  // 2：多了 Ships（欄位位置變了，從頭讀一次）；3：一般模式、無盡模式分開記（無盡・榜）
-var BOARD_STATE_COLS = ['Washes', 'Cleans', 'Wifis', 'Zaocans', 'Ships', 'Desserts', 'Stacks'];
+var BOARD_STATE_COLS = ['Washes', 'Cleans', 'Wifis', 'Zaocans', 'Ships', 'Desserts', 'Stacks', 'Mines'];
 // Board 分頁照第一列的標題找欄（加新的表只多一欄，舊的照樣接著讀，不用從頭讀）
 function boardStateSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -1546,7 +1558,7 @@ function boardScan(st, name) {
 // 執行 archiveLogs() 把 90 天以前的紀錄搬到新的一份試算表（檔名「丼步喱紀錄封存 日期」，在你的雲端硬碟），這份裡的刪掉。
 // 排行榜的最好成績先記進 Board 再搬，所以搬走的那幾場還是算數。第一次執行會跳出授權（要能建新的試算表）。
 var CELL_LIMIT = 10000000;
-var ARCHIVE_SHEETS = ['Washes', 'Cleans', 'Farms', 'Wifis', 'Zaocans', 'Ships', 'Desserts', 'Stacks', 'Gongde'];
+var ARCHIVE_SHEETS = ['Washes', 'Cleans', 'Farms', 'Wifis', 'Zaocans', 'Ships', 'Desserts', 'Stacks', 'Mines', 'Gongde'];
 function logSize() {
   var ss = SpreadsheetApp.getActiveSpreadsheet(), total = 0, lines = [];
   ss.getSheets().forEach(function (sh) {
@@ -1591,7 +1603,7 @@ function archiveLogs(days) {
 
 function buildBoard() {
   var st = loadBoardState();
-  var washBest = boardScan(st, 'Washes'), cleanBest = boardScan(st, 'Cleans'), wifis = boardScan(st, 'Wifis'), served = boardScan(st, 'Zaocans'), ships = boardScan(st, 'Ships'), desserts = boardScan(st, 'Desserts'), stacks = boardScan(st, 'Stacks');
+  var washBest = boardScan(st, 'Washes'), cleanBest = boardScan(st, 'Cleans'), wifis = boardScan(st, 'Wifis'), served = boardScan(st, 'Zaocans'), ships = boardScan(st, 'Ships'), desserts = boardScan(st, 'Desserts'), stacks = boardScan(st, 'Stacks'), mines = boardScan(st, 'Mines');
   try { saveBoardState(st); } catch (e) { console.warn('Board 分頁存不進去：' + e); }
   var rows = playersSheet().getDataRange().getValues(), out = [];
   for (var i = 1; i < rows.length; i++) {
@@ -1617,6 +1629,8 @@ function buildBoard() {
     if (kb.normal === undefined && kb.n) kb = { normal: { n: kb.n, perfect: kb.perfect, total: kb.total }, best: kb.total };  // 2026-11-18b 的舊格式
     var sk = { n: Number(ke.times) || 0, money: Number(ke.total) || 0, best: kb.best || null, ms: 0, layers: kb.normal || null,
       endless: { far: kb.far || null, money: kb.money || null } };
+    var me = earned.mine || {}, mb = mines[id] || {};  // 礦坑：挖最深（從 Mines 算），破關幾次
+    var mn = { n: Number(me.times) || 0, money: Number(me.total) || 0, best: mb.lv || null, ms: 0, deep: mb.lv ? { lv: mb.lv, liang: mb.liang } : null, clears: mb.clears || 0 };
     var se = earned.ship || {}, sb = ships[id] || {};  // 貨運：最高分、最長連撈只算一般模式；無盡模式航最遠、一趟最多放 endless
     var sh = { n: Number(se.times) || 0, money: Number(se.total) || 0, best: sb.normal || null, ms: 0, combo: sb.combo || null,
       endless: { money: sb.money || null, far: sb.far || null } };
@@ -1627,12 +1641,12 @@ function buildBoard() {
     var sp = { total: num(rows[i][5]), shop: num(shop.spent), donate: num(gd.donated), lamp: num(gd.lit) };
     sp.scratch = Math.max(0, sp.total - sp.shop - sp.donate - sp.lamp);
     sp.won = num((earned.scratch || {}).total) + num((earned.caishen || {}).total);  // 刮中的（含財神加碼）
-    if (!x.n && !c.n && !fm.n && !wf.n && !zc.n && !sh.n && !ds.n && !sk.n && x.best == null && c.best == null && !sp.total) continue;
+    if (!x.n && !c.n && !fm.n && !wf.n && !zc.n && !sh.n && !ds.n && !sk.n && !mn.n && x.best == null && c.best == null && !sp.total) continue;
     // 有暱稱、指定頭像就用它，沒有才用 LINE 的
     var nick = String(rows[i][12] || '').replace(/^'/, '').trim().slice(0, 12), avatar = String(rows[i][13] || '');
     if (AVATAR_KEYS.indexOf(avatar) < 0) avatar = '';
     out.push({ id: id, name: nick || String(rows[i][2] || '旅人').slice(0, 20), avatar: avatar,
-      picture: !avatar && /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c, farm: fm, wifi: wf, zaocan: zc, ship: sh, dessert: ds, stack: sk, spend: sp });
+      picture: !avatar && /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c, farm: fm, wifi: wf, zaocan: zc, ship: sh, dessert: ds, stack: sk, mine: mn, spend: sp });
   }
   return { at: new Date().toISOString(), players: out };
 }
@@ -1647,7 +1661,7 @@ function leaderboard(input) {
   return {
     result: 'success', at: board.at, refreshed: refreshed,
     players: board.players.map(function (p) {
-      return { name: p.name, picture: p.picture, avatar: p.avatar || '', xitou: p.xitou, clean: p.clean, farm: p.farm, wifi: p.wifi, zaocan: p.zaocan, ship: p.ship, dessert: p.dessert, stack: p.stack, spend: p.spend, me: !!me && p.id === me };
+      return { name: p.name, picture: p.picture, avatar: p.avatar || '', xitou: p.xitou, clean: p.clean, farm: p.farm, wifi: p.wifi, zaocan: p.zaocan, ship: p.ship, dessert: p.dessert, stack: p.stack, mine: p.mine, spend: p.spend, me: !!me && p.id === me };
     })
   };
 }
@@ -3188,6 +3202,78 @@ function stackLog(input) {
   return { result: 'success', saved: rows.length, skipped: skipped };
 }
 
+// --- 礦坑・挖（kuangkeng.html）：每一關的紀錄 ---
+// 跟疊巢紀錄一樣：公開、appendRow 不排隊、不寄信不回資料；session 對就記 line_id。一關一筆（過關、沒挖夠都記）。
+// total 是那關發的工資（真人工資表用），liang 是那關結束時累積的兩（排行榜挖最深用），final 是這關打完破了十關。
+var MINE_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'total', 'lv', 'win', 'gain', 'liang', 'target',
+  'lost', 'dyn_used', 'dyn_left', 'items', 'buff', 'haul', 'shop', 'ms', 'len', 'final', 'login'];
+
+function minesSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Mines');
+  if (!sheet) {
+    sheet = ss.insertSheet('Mines');
+    sheet.appendRow(MINE_HEADERS);
+    sheet.setFrozenRows(1);
+  } else if (sheet.getLastColumn() < MINE_HEADERS.length) {
+    sheet.getRange(1, 1, 1, MINE_HEADERS.length).setValues([MINE_HEADERS]);
+  }
+  return sheet;
+}
+
+var MINE_HAUL = ['gold1', 'gold2', 'gold3', 'gold4', 'nugget', 'rock1', 'rock2', 'diamond', 'cat', 'bag', 'skull', 'bone', 'barrel'];
+function mineRow(r, now, lineId, device) {
+  if (!r || typeof r !== 'object') return null;
+  var at = new Date(r.at);
+  if (isNaN(at.getTime()) || at.getTime() > now.getTime() + 86400000 || at.getTime() < now.getTime() - 90 * 86400000) return null;
+  var n = function (v) { return washNum(v, 0, 999); };
+  var lv = washNum(r.lv, 1, 10), win = !!r.win;
+  var shop = {}, haul = {};
+  if (r.shop && typeof r.shop === 'object') Object.keys(r.shop).slice(0, 20).forEach(function (k) { if (/^[a-z]{1,16}$/.test(k)) shop[k] = washNum(r.shop[k], 0, 10); });
+  if (r.haul && typeof r.haul === 'object') MINE_HAUL.forEach(function (k) { if (r.haul[k]) haul[k] = n(r.haul[k]); });
+  return [
+    now, at, lineId || '', device,
+    washNum(r.total, 0, 10000), lv, win, washNum(r.gain, 0, 100000), washNum(r.liang, 0, 1000000), washNum(r.target, 0, 1000000),
+    washNum(r.lost, 0, 10000), n(r.dyn_used), n(r.dyn_left), n(r.items), washText(r.buff, 24), JSON.stringify(haul), JSON.stringify(shop),
+    washNum(r.ms, 0, 3600000), washNum(r.len, 0, 3600), win && lv === 10 && !!r.final, !!r.login
+  ];
+}
+
+// 在編輯器選這個按「執行」：先把 Mines 分頁建出來
+function setupMines() {
+  var sheet = minesSheet();
+  Logger.log('Mines 分頁好了，目前有 ' + (sheet.getLastRow() - 1) + ' 關。網頁要能存，還要「部署 → 管理部署作業 → 編輯 → 版本選新版本 → 部署」。');
+}
+
+function mineLog(input) {
+  var device = String(input.device || '').replace(/[^A-Za-z0-9-]/g, '').slice(0, 40);
+  if (device.length < 8) return { result: 'error', error: '沒有裝置代號' };
+  var recs = Array.isArray(input.recs) ? input.recs.slice(0, 20) : [];
+  if (!recs.length) return { result: 'success', saved: 0 };
+  var cache = CacheService.getScriptCache();
+  var hour = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var allKey = 'mineRows' + ':' + hour, gate = logGate('mine', device, hour);
+  var devCount = gate.n, allCount = Number(cache.get(allKey) || 0);
+  if (devCount >= MINE_LOGS_PER_HOUR) return { result: 'error', error: '這小時送太多次了' };
+  if (allCount + recs.length > MINE_ROWS_PER_HOUR) return { result: 'error', error: '這小時全站挖太多次了' };
+  gate.count();
+  var lineId = input.session ? sessionUser(input.session) : null;
+  var now = new Date(), rows = [], skipped = 0;
+  recs.forEach(function (r) {
+    var row = mineRow(r, now, lineId, device);
+    if (!row) { skipped++; return; }
+    if (gate.seen(row[1].getTime())) { skipped++; return; }   // 同一支手機重送的同一關，不要存兩次
+    rows.push(row);
+  });
+  if (rows.length) {
+    var sheet = minesSheet();
+    rows.forEach(function (row) { sheet.appendRow(row); });
+    cache.put(allKey, String(allCount + rows.length), 3600);
+  }
+  gate.save();
+  return { result: 'success', saved: rows.length, skipped: skipped };
+}
+
 // --- 貨運・航（huoyun.html）：每一趟的紀錄 ---
 // 跟早餐店紀錄一樣：公開、appendRow 不排隊、不寄信不回資料；session 對就記 line_id。欄位收齊，之後排行榜、升級都從這裡算。
 var SHIP_HEADERS = ['timestamp', 'at', 'line_id', 'device', 'total', 'sales', 'grade', 'sank', 'hull',
@@ -3571,7 +3657,8 @@ var ECON_SOURCES = [
   { sheet: 'Zaocans', name: '早餐・煎', dur: 'len', fallback: 75 },
   { sheet: 'Ships', name: '貨運・航', dur: 'len', fallback: 60, mode: true },
   { sheet: 'Desserts', name: '甜點・轉', dur: 'len', fallback: 75 },
-  { sheet: 'Stacks', name: '疊・巢', dur: 'len', fallback: 60 }
+  { sheet: 'Stacks', name: '疊・巢', dur: 'len', fallback: 60 },
+  { sheet: 'Mines', name: '礦坑・挖', dur: 'len', fallback: 60 }
 ];
 function econMedian(a) { if (!a.length) return 0; a = a.slice().sort(function (x, y) { return x - y; }); var m = Math.floor(a.length / 2); return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }
 function econPct(a, p) { if (!a.length) return 0; a = a.slice().sort(function (x, y) { return x - y; }); return a[Math.min(a.length - 1, Math.floor(p * a.length))]; }
@@ -3798,7 +3885,7 @@ function adminWishSet(input) {
 // PerkLib：A created、B id、C name（12 字）、D effect、E line（給拿到的人看的一句話，30 字）、F retired_at（停用：不能再發，已經發的照樣有效）、G updated
 // PERK_TYPES 是「效果」：寫在程式裡，有程式才有效果；名字是道具庫取的
 var PERK_TYPES = {
-  shop60: { name: '全店六折', desc: '七家打工店面升級打六折（刮刮樂、功德、股市、保險照原價）', live: true }   // 2026-11-20b 起生效；live: false 的只記錄、不送給玩家
+  shop60: { name: '全店六折', desc: '八家打工店面升級打六折（刮刮樂、功德、股市、保險照原價）', live: true }   // 2026-11-20b 起生效；live: false 的只記錄、不送給玩家
 };
 var PERK_HEADERS = ['timestamp', 'id', 'line_id', 'perk', 'note', 'expires', 'revoked_at', 'key'];
 var LIB_HEADERS = ['created', 'id', 'name', 'effect', 'line', 'retired_at', 'updated'];
@@ -4053,7 +4140,7 @@ function gaEcon() {
     top: top, flags: flags.slice(0, 30)
   };
 }
-var ECON_NAMES = { xitou: '坐洗・泡', clean: '房務・淨', farm: '菜園・拔', wifi: '蹭・網', zaocan: '早餐・煎', ship: '貨運・航', dessert: '甜點・轉', stack: '疊・巢',
+var ECON_NAMES = { xitou: '坐洗・泡', clean: '房務・淨', farm: '菜園・拔', wifi: '蹭・網', zaocan: '早餐・煎', ship: '貨運・航', dessert: '甜點・轉', stack: '疊・巢', mine: '礦坑・挖',
   scratch: '刮刮樂', bonus: '紅包', caishen: '財神燈', insure: '保險', wish: '許願池' };
 
 // 真人工資：照紀錄分頁算（跟 econReport 一樣，但只回傳、不寫「對帳」分頁）。{ days?: 30 }

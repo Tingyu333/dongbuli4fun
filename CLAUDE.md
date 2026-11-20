@@ -32,7 +32,7 @@
   - `vendor/flatpickr/`：首頁的日曆元件 flatpickr **4.6.13**（MIT，附 LICENSE；2026-11-18 從外面的 CDN 搬進來、鎖版本、`defer` 載入，不擋畫面）。
   - `404.html` 沒有接主題，仍在頁內自己宣告 `tailwind.config`（404 在 GitHub Pages 的子路徑下相對路徑會失效）。後台也有晝夜切換鈕，跟前台共用同一個 sessionStorage 設定。
 - **Tailwind CSS**：**只用先打包好的 `assets/tailwind.css`**，每頁 `</head>` 前面載入（2026-11-17 拿掉了 Play CDN `cdn.tailwindcss.com`：每頁都要在手機上現場編譯 CSS，很慢）。打包設定在 `tools/tailwind.config.js`。**新增或改了頁面裡的 Tailwind class 一定要重新產生**，不然那個 class 沒有樣式、排版會跑掉：`npx tailwindcss@3 -c tools/tailwind.config.js -i tools/tailwind.in.css -o assets/tailwind.css --minify`（在專案根目錄跑），再把所有頁面 `tailwind.css?v=` 換新。用字串拼出來的 class（例如 `'text-' + x`）打包抓不到，要寫完整的 class 名（寫在 JS 字串裡的完整 class 名抓得到）。`404.html` 用完整網址載入、自己在 `<style>` 補了 `--wabi-*` 變數。不能用 `@apply`、`<style type="text/tailwindcss">`（那是 CDN 才有的）。
-- **後端**：Google Apps Script Web App（`API_URL`，在 `index.html`、`reviews.html`、`ticket.html`、`scratch.html`、`xitou.html`、`fangwu.html`、`caiyuan.html`、`cengwang.html`、`zaocan.html`、`huoyun.html`、`tiandian.html`、`diechao.html`、`gushi.html`、`yuncai.html`、`admin_login.html`、`admin_dashboard.html`、`admin.html` 中各自寫死同一個網址；`xuyuan.html` 用 `Line.API_URL`）。資料存在對應的 Google Sheet。後端程式碼備份在 `apps-script/Code.gs`，改完要由使用者貼到 Apps Script 編輯器並「部署 → 管理部署作業 → 編輯 → 新版本」才會生效（Claude 無法代為部署）。**每次改 `Code.gs` 要把最上面的 `BACKEND_VERSION`（日期＋字母，例如 `2026-11-18a`）換新，`admin_dashboard.html` 的 `BACKEND_EXPECT` 一起換**：後台「後端・況」會比對，看得出部署的是不是新版。
+- **後端**：Google Apps Script Web App（`API_URL`，在 `index.html`、`reviews.html`、`ticket.html`、`scratch.html`、`xitou.html`、`fangwu.html`、`caiyuan.html`、`cengwang.html`、`zaocan.html`、`huoyun.html`、`tiandian.html`、`diechao.html`、`kuangkeng.html`、`gushi.html`、`yuncai.html`、`admin_login.html`、`admin_dashboard.html`、`admin.html` 中各自寫死同一個網址；`xuyuan.html` 用 `Line.API_URL`）。資料存在對應的 Google Sheet。後端程式碼備份在 `apps-script/Code.gs`，改完要由使用者貼到 Apps Script 編輯器並「部署 → 管理部署作業 → 編輯 → 新版本」才會生效（Claude 無法代為部署）。**每次改 `Code.gs` 要把最上面的 `BACKEND_VERSION`（日期＋字母，例如 `2026-11-18a`）換新，`admin_dashboard.html` 的 `BACKEND_EXPECT` 一起換**：後台「後端・況」會比對，看得出部署的是不是新版。
 - **部署**：GitHub repo `Tingyu333/dongbuli4fun`，有 `404.html`，推測透過 GitHub Pages 發布。
 - **分享預覽**：前台五頁的 `<head>` 都有 `description` 和 Open Graph（`og:title`、`og:description`、`og:image`）。圖是 `assets/og.png`（1200×1200 正方形，使用者指定），`og:image`／`og:url` 要寫完整網址 `https://tingyu333.github.io/dongbuli4fun/…`。沒寫的話 LINE 會抓網頁開頭的文字當介紹（電梯開場的「▲ 1F 點擊略過」）。新增前台頁面、小遊戲頁面記得一起加（疊・巢、甜點・轉一開始漏了，LINE 預覽變成導覽列的字，2026-11-20 補上）。LINE 會快取預覽一段時間，改了不會馬上變；**圖片是用圖片網址另外快取的**，換圖時要把 `og:image` 後面的 `?v=` 數字加一（五頁一起改），不然只有文字會更新。
 - **LINE bot**：`line-bot/Code.gs`，獨立的 Apps Script 專案（設定步驟在 `line-bot/README.md`），用 `SpreadsheetApp.openById(SHEET_ID)` 讀同一份 Sheet 的 Bookings E～G 欄。
@@ -60,7 +60,7 @@
 | `huoyun.html` | 打工：貨運・航（開船撈蘿蔔），無盡模式、船廠 | `docs/pages/huoyun.md` |
 | `tiandian.html` | 打工：甜點・轉（蘋果鴨甜點店，轉盤），店面升級 | `docs/pages/tiandian.md` |
 | `diechao.html` | 打工：疊・巢（小吳鴨疊精裝書，60 秒、無盡模式），店面 | `docs/pages/diechao.md` |
-| `kuangkeng.html` | 打工：礦坑・挖（黃金礦工的丼步喱版，浣熊大王當礦工）。**試玩中：沒有入口、還不上排行榜**；十關、礦坑商店、工資進錢包、店面、結局、日報和結業證書 | `docs/pages/kuangkeng.md` |
+| `kuangkeng.html` | 打工：礦坑・挖（黃金礦工的丼步喱版，浣熊大王當礦工）。**上線但監修中**（`MAINTENANCE = true`，會員中心那格蓋「監修中」章、`?preview` 才能試玩，試玩不發工資不記錄）；十關、礦坑商店、工資進錢包、店面、結局、日報和結業證書、排行榜礦坑部（挖最深） | `docs/pages/kuangkeng.md` |
 | `xuyuan.html` | 許願・池：搜集提案，每天第一個願隨機 $3,000～6,666（網頁不寫金額），願望牆、主人回覆 | `docs/pages/xuyuan.md` |
 | `rank.html` | 排行・榜：打工・榜、花錢・榜、無盡・榜 | `docs/pages/rank.md` |
 | `baoxian.html` | 保險・存：儲蓄險（後端算） | `docs/pages/baoxian.md` |

@@ -225,6 +225,15 @@
                     </span>
                     <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
                 </a>
+                <!-- 礦坑・挖：監修中。開放時換回 <a href="kuangkeng.html" class="game">、監修中的章換回 › 箭頭 -->
+                <div class="game is-closed" aria-disabled="true">
+                    <span class="game-mark">挖</span>
+                    <span class="flex-1 min-w-0">
+                    <span class="block text-wabi-dark tracking-widest">礦坑・挖</span>
+                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">浣熊大王下礦坑，十關挖到底有一把房卡</span>
+                    </span>
+                    <span class="closed-tag font-sans">監修中</span>
+                </div>
             </div>
             <div class="game-group">
                 <h3 class="group-h"><span class="group-no">貳</span><span class="group-name">錢的去處</span><span class="group-desc">花掉，或存起來</span></h3>
@@ -354,9 +363,10 @@
             ship: e => `出航 ${e.times} 趟，賺 ${fmt(e.total)}（最多一趟 ${fmt(e.best)}）`,
             dessert: e => `開店 ${e.times} 輪，賺 ${fmt(e.total)}（最多一輪 ${fmt(e.best)}）`,
             stack: e => `疊了 ${e.times} 場，賺 ${fmt(e.total)}（最多一場 ${fmt(e.best)}）`,
+            mine: e => `挖了 ${e.times} 關，賺 ${fmt(e.total)}（最多一關 ${fmt(e.best)}）`,
             wish: e => `許了 ${e.times} 天的願，${fmt(e.total)}`,
         };
-        const LABELS = { xitou: '坐洗部', clean: '房務部', scratch: '彩券行', bonus: '主人紅包', caishen: '財神燈', insure: '丼步喱人壽', farm: '菜園部', wifi: '蹭網部', zaocan: '早餐店', ship: '長蘿貨運', dessert: '甜點店', stack: '疊巢部', wish: '許願池' };
+        const LABELS = { xitou: '坐洗部', clean: '房務部', scratch: '彩券行', bonus: '主人紅包', caishen: '財神燈', insure: '丼步喱人壽', farm: '菜園部', wifi: '蹭網部', zaocan: '早餐店', ship: '長蘿貨運', dessert: '甜點店', stack: '疊巢部', mine: '礦坑部', wish: '許願池' };
 
         function renderWho() {
             const box = $('who');
