@@ -60,7 +60,7 @@
         #historyToggle[aria-expanded="true"] .toggle-mark { transform: rotate(180deg); }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261119a">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261120a">
 </head>
 
 <body
@@ -249,6 +249,9 @@
             <h3 class="text-lg md:text-xl font-light text-wabi-dark mb-2 tracking-widest pl-4 border-l-2 border-wabi-shu">後端・況</h3>
             <div id="health" class="bg-white border border-stone-100 rounded-sm p-4 md:p-6 font-sans text-xs tracking-wider text-stone-500 leading-relaxed">讀取中…</div>
         </section>
+
+        <!-- 另一個後台：玩家、專屬道具、經濟體檢（另一組密碼，2026-11-20） -->
+        <p class="mt-12 text-center font-sans text-xs tracking-widest text-stone-400"><a href="admin.html" class="underline hover:text-wabi-dark">admin 後台：玩家・道具・經濟</a>（另一組密碼）</p>
 
     </main>
 
@@ -742,7 +745,7 @@
         });
 
         // ===== 後端・況 =====
-        const BACKEND_EXPECT = '2026-11-19c';   // 跟 Code.gs 的 BACKEND_VERSION 一起換
+        const BACKEND_EXPECT = '2026-11-20a';   // 跟 Code.gs 的 BACKEND_VERSION 一起換
         const CRON_NAME = { cronNews: '20:58 晚報', cronSport: '00:00 運動派彩', cronBackup: '03:00 備份', cronMonthly: '每月 1 號 04:00 清舊注單、舊登入' };
         // ===== 許願池 =====
         const WISH_KIND = { game: '新遊戲', idea: '點子', bug: '抓蟲', other: '其他' };

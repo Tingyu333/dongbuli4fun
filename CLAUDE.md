@@ -9,7 +9,7 @@
 **專案定位：純粹做好玩，不是真的要對外營運。優先順序是「有趣」＞ 功能 ＞ 資安。** 不需要主動提出資安強化（`innerHTML` 等都是刻意從簡），除非使用者問起。新功能與文案歡迎玩梗、維持幽默感。
 
 **例外：會「對外發訊息」或碰到個資的部分不能從簡。** 網站會用部署者的 Gmail 寄信給別人，被濫用的後果在站外（帳號被當垃圾信來源、配額被燒光、朋友收到釣魚信）。規則：
-- 金鑰、密碼放 Apps Script 的指令碼屬性（`PropertiesService`），不寫進程式碼或 HTML（repo 是公開的）。目前有 `ADMIN_PASSWORD`（後台密碼）和 `OWNER_EMAIL`（通知信寄給誰；沒設定會試著用 `Session.getEffectiveUser()`，但部署常常沒有 `userinfo.email` 權限而拿不到，所以一定要設）。
+- 金鑰、密碼放 Apps Script 的指令碼屬性（`PropertiesService`），不寫進程式碼或 HTML（repo 是公開的）。目前有 `ADMIN_PASSWORD`（預約後台密碼）、`GAME_ADMIN_PASSWORD`（admin 後台密碼，2026-11-20）和 `OWNER_EMAIL`（通知信寄給誰；沒設定會試著用 `Session.getEffectiveUser()`，但部署常常沒有 `userinfo.email` 權限而拿不到，所以一定要設）。
 - 公開的動作（訂房、領票、取消、留言）**不寄信給別人**，只能寄給部署者自己。寄給旅人的信只能由後台（帶通行證）或之後的排程觸發。
 - 公開 API 不回電話、Email；要完整資料走後台的 `adminList`。
 - 寄信一律走 `sendMail()`（有每日上限）；信件內容用固定模板，使用者填的名字經過 `mailName()`（像網址的就換成「旅人」），不放使用者給的連結。
@@ -28,11 +28,11 @@
   - **導覽列不要加 `mix-blend-mode`**：iPhone（尤其 LINE 內建瀏覽器）捲動時固定導覽列會卡在畫面中間（about 頁跟首頁都踩過）。
   - `theme.js`：夜間模式切換、`showToast()`、`themeColor()`（給 canvas 讀 CSS 變數）。
   - `saveimg.js`（`index`、`xitou`、`fangwu`、`caiyuan`、`cengwang`、`zaocan`、`huoyun`、`tiandian`、`diechao`、`scratch`、`yuncai` 載）：`SaveImg.save(file, { title, text })` 存結果圖片（入住通知書、洗頭證明、房務檢查表、收成單、蹭網日報、早餐店日報、貨運提單、刮刮樂兌獎單、疊巢履歷）。能分享檔案就叫分享選單；**在 LINE／IG／FB 的 App 內瀏覽器（UA 有 `Line/`、`FBAN`、`Instagram`、`; wv)`），下載連結按了沒反應**（安卓使用者回報過），改成全螢幕放大圖片（data URL、`-webkit-touch-callout: default`）請他長按存、或截圖；分享失敗（不是自己取消）也走放大；其他直接下載。按鈕字：能分享寫「分享…」、App 內寫「存…圖片」、其他寫「下載…」（`SaveImg.inApp`）。新的結果圖片也用這支，不要自己寫 `a.download`。
-  - `avatar.js`（`member`、`rank`、`tiandian`、`diechao`、`xuyuan` 載）：**指定頭像**，只能從網站的角色挑（`Avatar.LIST`：茱莉鴨、蘋果鴨、浣熊大王、青江菜船長、店貓、坐洗部的狗、鼴鼠、雞塊、小吳鴨；後端 `AVATAR_KEYS` 要一樣），canvas 畫；蘋果鴨（`Avatar.appleDuck`）和小吳鴨（`Avatar.crow`，疊・巢的主角）的全身畫法也在這裡、`Avatar.url(key)` 給圖片網址（快取），角色是實物、顏色固定。不收上傳的照片（使用者選的做法 A）。
+  - `avatar.js`（`member`、`rank`、`tiandian`、`diechao`、`xuyuan`、`admin` 載）：**指定頭像**，只能從網站的角色挑（`Avatar.LIST`：茱莉鴨、蘋果鴨、浣熊大王、青江菜船長、店貓、坐洗部的狗、鼴鼠、雞塊、小吳鴨；後端 `AVATAR_KEYS` 要一樣），canvas 畫；蘋果鴨（`Avatar.appleDuck`）和小吳鴨（`Avatar.crow`，疊・巢的主角）的全身畫法也在這裡、`Avatar.url(key)` 給圖片網址（快取），角色是實物、顏色固定。不收上傳的照片（使用者選的做法 A）。
   - `vendor/flatpickr/`：首頁的日曆元件 flatpickr **4.6.13**（MIT，附 LICENSE；2026-11-18 從外面的 CDN 搬進來、鎖版本、`defer` 載入，不擋畫面）。
   - `404.html` 沒有接主題，仍在頁內自己宣告 `tailwind.config`（404 在 GitHub Pages 的子路徑下相對路徑會失效）。後台也有晝夜切換鈕，跟前台共用同一個 sessionStorage 設定。
 - **Tailwind CSS**：**只用先打包好的 `assets/tailwind.css`**，每頁 `</head>` 前面載入（2026-11-17 拿掉了 Play CDN `cdn.tailwindcss.com`：每頁都要在手機上現場編譯 CSS，很慢）。打包設定在 `tools/tailwind.config.js`。**新增或改了頁面裡的 Tailwind class 一定要重新產生**，不然那個 class 沒有樣式、排版會跑掉：`npx tailwindcss@3 -c tools/tailwind.config.js -i tools/tailwind.in.css -o assets/tailwind.css --minify`（在專案根目錄跑），再把所有頁面 `tailwind.css?v=` 換新。用字串拼出來的 class（例如 `'text-' + x`）打包抓不到，要寫完整的 class 名（寫在 JS 字串裡的完整 class 名抓得到）。`404.html` 用完整網址載入、自己在 `<style>` 補了 `--wabi-*` 變數。不能用 `@apply`、`<style type="text/tailwindcss">`（那是 CDN 才有的）。
-- **後端**：Google Apps Script Web App（`API_URL`，在 `index.html`、`reviews.html`、`ticket.html`、`scratch.html`、`xitou.html`、`fangwu.html`、`caiyuan.html`、`cengwang.html`、`zaocan.html`、`huoyun.html`、`tiandian.html`、`diechao.html`、`gushi.html`、`yuncai.html`、`admin_login.html`、`admin_dashboard.html` 中各自寫死同一個網址；`xuyuan.html` 用 `Line.API_URL`）。資料存在對應的 Google Sheet。後端程式碼備份在 `apps-script/Code.gs`，改完要由使用者貼到 Apps Script 編輯器並「部署 → 管理部署作業 → 編輯 → 新版本」才會生效（Claude 無法代為部署）。**每次改 `Code.gs` 要把最上面的 `BACKEND_VERSION`（日期＋字母，例如 `2026-11-18a`）換新，`admin_dashboard.html` 的 `BACKEND_EXPECT` 一起換**：後台「後端・況」會比對，看得出部署的是不是新版。
+- **後端**：Google Apps Script Web App（`API_URL`，在 `index.html`、`reviews.html`、`ticket.html`、`scratch.html`、`xitou.html`、`fangwu.html`、`caiyuan.html`、`cengwang.html`、`zaocan.html`、`huoyun.html`、`tiandian.html`、`diechao.html`、`gushi.html`、`yuncai.html`、`admin_login.html`、`admin_dashboard.html`、`admin.html` 中各自寫死同一個網址；`xuyuan.html` 用 `Line.API_URL`）。資料存在對應的 Google Sheet。後端程式碼備份在 `apps-script/Code.gs`，改完要由使用者貼到 Apps Script 編輯器並「部署 → 管理部署作業 → 編輯 → 新版本」才會生效（Claude 無法代為部署）。**每次改 `Code.gs` 要把最上面的 `BACKEND_VERSION`（日期＋字母，例如 `2026-11-18a`）換新，`admin_dashboard.html` 的 `BACKEND_EXPECT` 一起換**：後台「後端・況」會比對，看得出部署的是不是新版。
 - **部署**：GitHub repo `Tingyu333/dongbuli4fun`，有 `404.html`，推測透過 GitHub Pages 發布。
 - **分享預覽**：前台五頁的 `<head>` 都有 `description` 和 Open Graph（`og:title`、`og:description`、`og:image`）。圖是 `assets/og.png`（1200×1200 正方形，使用者指定），`og:image`／`og:url` 要寫完整網址 `https://tingyu333.github.io/dongbuli4fun/…`。沒寫的話 LINE 會抓網頁開頭的文字當介紹（電梯開場的「▲ 1F 點擊略過」）。新增前台頁面、小遊戲頁面記得一起加（疊・巢、甜點・轉一開始漏了，LINE 預覽變成導覽列的字，2026-11-20 補上）。LINE 會快取預覽一段時間，改了不會馬上變；**圖片是用圖片網址另外快取的**，換圖時要把 `og:image` 後面的 `?v=` 數字加一（五頁一起改），不然只有文字會更新。
 - **LINE bot**：`line-bot/Code.gs`，獨立的 Apps Script 專案（設定步驟在 `line-bot/README.md`），用 `SpreadsheetApp.openById(SHEET_ID)` 讀同一份 Sheet 的 Bookings E～G 欄。
@@ -68,6 +68,7 @@
 | `404.html` | 找不到頁面 | `docs/pages/404.md` |
 | `admin_login.html` | 後台登入 | `docs/pages/admin_login.md` |
 | `admin_dashboard.html` | 後台預約列表、發紅包 | `docs/pages/admin_dashboard.md` |
+| `admin.html` | admin 後台（另一組密碼 `GAME_ADMIN_PASSWORD`）：玩家列表、專屬道具（架子）、經濟體檢 | `docs/pages/admin.md` |
 
 ## 其他說明（也在 docs/）
 

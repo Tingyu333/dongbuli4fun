@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>admin・後台 | 丼步喱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/theme.css?v=20261116d">
+    <script src="assets/theme.js?v=20261117c"></script>
+    <script src="assets/avatar.js?v=20261118a"></script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; }
+        .sans { font-family: 'Noto Sans TC', sans-serif; }
+        .tabs { display: flex; border-bottom: 1px solid rgb(var(--wabi-sub)); }
+        .tabs button {
+            flex: 1; min-height: 46px; font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: 0.25em;
+            color: rgb(var(--wabi-accent)); border-bottom: 2px solid transparent; margin-bottom: -1px; touch-action: manipulation;
+        }
+        .tabs button[aria-pressed="true"] { color: rgb(var(--wabi-dark)); border-bottom-color: rgb(var(--wabi-shu)); }
+        .field {
+            width: 100%; min-height: 44px; padding: 0 0.2rem; background: transparent; border: 0; border-bottom: 1px solid rgb(var(--wabi-sub));
+            color: rgb(var(--wabi-dark)); font-size: 16px; outline: none; border-radius: 0;
+        }
+        .field:focus { border-bottom-color: rgb(var(--wabi-dark)); }
+        select.field { -webkit-appearance: none; appearance: none; background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238e8070'/%3E%3C/svg%3E") no-repeat right 0.3rem center; padding-right: 1.4rem; }
+        .btn { min-height: 44px; padding: 0 1rem; font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: 0.2em; touch-action: manipulation; }
+        .btn:disabled { opacity: .4; }
+        .btn-dark { background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); }
+        .btn-line { border: 1px solid rgb(var(--wabi-sub)); color: rgb(var(--wabi-text)); }
+        .card { border: 1px solid rgb(var(--wabi-sub) / 0.8); background: rgb(var(--wabi-bg)); border-radius: 4px; padding: 0.9rem 1rem; }
+        .pic { width: 34px; height: 34px; border-radius: 9999px; object-fit: cover; flex-shrink: 0; border: 1px solid rgb(var(--wabi-sub)); }
+        .pic.is-text { display: inline-flex; align-items: center; justify-content: center; font-size: 13px; color: rgb(var(--wabi-accent)); }
+        .kv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem 0.75rem; margin-top: 0.7rem; }
+        .kv b { display: block; font-weight: 500; font-size: 14px; color: rgb(var(--wabi-dark)); font-family: 'Noto Sans TC', sans-serif; letter-spacing: 0.02em; }
+        .kv span { font-size: 10px; letter-spacing: 0.15em; color: rgb(var(--wabi-accent)); font-family: 'Noto Sans TC', sans-serif; }
+        .chip { display: inline-block; padding: 0 0.5rem; border: 1px solid rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); font-size: 11px; letter-spacing: 0.1em; border-radius: 3px; font-family: 'Noto Sans TC', sans-serif; }
+        .chip.is-off { border-color: rgb(var(--wabi-sub)); color: rgb(var(--wabi-accent)); }
+        .stat { border-top: 1px solid rgb(var(--wabi-sub)); padding: 0.7rem 0; }
+        .stat span { display: block; font-size: 11px; letter-spacing: 0.15em; color: rgb(var(--wabi-accent)); font-family: 'Noto Sans TC', sans-serif; }
+        .stat b { font-weight: 400; font-size: 1.35rem; color: rgb(var(--wabi-dark)); font-family: 'Noto Sans TC', sans-serif; }
+        .bar { height: 6px; background: rgb(var(--wabi-sub) / 0.6); border-radius: 3px; overflow: hidden; }
+        .bar i { display: block; height: 100%; background: rgb(var(--wabi-accent)); }
+        .wage { width: 100%; border-collapse: collapse; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; }
+        .wage th, .wage td { padding: 0.45rem 0.4rem; border-bottom: 1px solid rgb(var(--wabi-sub) / 0.7); text-align: right; white-space: nowrap; }
+        .wage th:first-child, .wage td:first-child, .wage th:nth-child(2), .wage td:nth-child(2) { text-align: left; }
+        .wage th { font-weight: 400; color: rgb(var(--wabi-accent)); font-size: 11px; letter-spacing: 0.1em; }
+        .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        [hidden] { display: none !important; }
+    </style>
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261120a">
+</head>
+
+<body class="bg-wabi-bg text-wabi-text font-serif antialiased min-h-screen">
+
+    <nav class="fixed top-0 w-full px-4 py-4 md:p-6 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <div class="flex items-center gap-3">
+            <h1 class="text-base md:text-lg font-bold tracking-widest uppercase text-wabi-dark border-r border-stone-200 pr-3">Admin</h1>
+            <span class="text-xs tracking-widest text-stone-500">玩家・遊戲</span>
+        </div>
+        <button id="logoutBtn" hidden class="py-2 text-xs tracking-widest hover:text-wabi-dark transition-colors text-stone-400">登出・離</button>
+    </nav>
+
+    <main class="max-w-3xl mx-auto pt-24 pb-16 px-4 md:pt-28">
+
+        <!-- 登入：另一組密碼（指令碼屬性 GAME_ADMIN_PASSWORD），跟預約後台分開 -->
+        <section id="loginView" hidden class="max-w-sm mx-auto pt-10">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-2 text-center">ADMIN</span>
+            <h2 class="text-2xl font-light text-wabi-dark tracking-widest text-center">admin・後台</h2>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-wider text-center leading-relaxed">玩家、專屬道具、經濟體檢。<br>密碼跟預約後台不一樣。</p>
+            <form id="loginForm" class="mt-10 space-y-6">
+                <input id="pw" type="password" autocomplete="current-password" class="field" placeholder="admin 後台密碼" aria-label="admin 後台密碼">
+                <button id="loginBtn" type="submit" class="btn btn-dark w-full">進入</button>
+                <p id="loginMsg" class="text-xs font-sans tracking-wider text-wabi-shu text-center min-h-[1.2rem]"></p>
+            </form>
+        </section>
+
+        <section id="appView" hidden>
+            <div class="mb-6">
+                <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-1">PLAYERS & GAMES</span>
+                <h2 class="text-2xl font-light text-wabi-dark tracking-widest">admin・後台</h2>
+            </div>
+            <div class="tabs" role="group" aria-label="分頁">
+                <button type="button" data-tab="players" aria-pressed="true">玩家</button>
+                <button type="button" data-tab="perks" aria-pressed="false">道具</button>
+                <button type="button" data-tab="econ" aria-pressed="false">經濟</button>
+            </div>
+            <p id="state" class="mt-6 text-xs font-sans tracking-widest text-stone-400 text-center"></p>
+
+            <!-- 玩家 -->
+            <div id="tab-players" class="mt-5">
+                <div class="grid grid-cols-[1fr_auto] gap-3 items-end">
+                    <input id="q" class="field" placeholder="找暱稱或 LINE 名字" aria-label="找玩家">
+                    <select id="sort" class="field" aria-label="排序" style="width:auto">
+                        <option value="money">錢最多</option>
+                        <option value="earned">賺最多</option>
+                        <option value="spent">花最多</option>
+                        <option value="updated">最近上線</option>
+                        <option value="created">最新加入</option>
+                    </select>
+                </div>
+                <p id="playerCount" class="mt-3 text-[11px] font-sans tracking-widest text-stone-400"></p>
+                <div id="playerList" class="mt-2 space-y-3"></div>
+            </div>
+
+            <!-- 道具 -->
+            <div id="tab-perks" class="mt-5" hidden>
+                <div class="card">
+                    <h3 class="text-sm tracking-[0.3em] text-wabi-dark">發專屬道具</h3>
+                    <p class="mt-1 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">現在只有發放和紀錄，<b class="font-normal text-wabi-shu">道具的效果還沒做</b>，玩家那邊還感覺不到。</p>
+                    <div class="mt-4 space-y-4">
+                        <label class="block text-[11px] font-sans tracking-[0.2em] text-stone-500">給誰
+                            <select id="gWho" class="field mt-1"></select></label>
+                        <label class="block text-[11px] font-sans tracking-[0.2em] text-stone-500">什麼道具
+                            <select id="gPerk" class="field mt-1"></select></label>
+                        <p id="gPerkDesc" class="text-[11px] font-sans tracking-wider text-stone-400 -mt-2"></p>
+                        <label class="block text-[11px] font-sans tracking-[0.2em] text-stone-500">期限
+                            <select id="gDays" class="field mt-1">
+                                <option value="0">永久</option>
+                                <option value="7">7 天</option>
+                                <option value="30" selected>30 天</option>
+                                <option value="90">90 天</option>
+                                <option value="365">一年</option>
+                            </select></label>
+                        <label class="block text-[11px] font-sans tracking-[0.2em] text-stone-500">備註（只有後台看得到）
+                            <input id="gNote" class="field mt-1" maxlength="60" placeholder="例如：願望實現獎"></label>
+                        <button id="grantBtn" type="button" class="btn btn-dark w-full">發出去</button>
+                    </div>
+                </div>
+                <h3 class="mt-8 text-sm tracking-[0.3em] text-wabi-dark">還有效的</h3>
+                <div id="perkActive" class="mt-3 space-y-3"></div>
+                <h3 class="mt-8 text-sm tracking-[0.3em] text-wabi-dark">收回、過期的</h3>
+                <div id="perkOld" class="mt-3 space-y-2"></div>
+            </div>
+
+            <!-- 經濟 -->
+            <div id="tab-econ" class="mt-5" hidden>
+                <div id="econBody"></div>
+                <div class="mt-10">
+                    <h3 class="text-sm tracking-[0.3em] text-wabi-dark">真人工資</h3>
+                    <p class="mt-1 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">照每一輪的紀錄算真人一分鐘賺多少（中位數）。要讀全部紀錄，比較慢，按了才算。</p>
+                    <div class="mt-3 grid grid-cols-[1fr_auto] gap-3 items-end">
+                        <select id="wageDays" class="field" aria-label="期間">
+                            <option value="7">最近 7 天</option>
+                            <option value="30" selected>最近 30 天</option>
+                            <option value="0">全部</option>
+                        </select>
+                        <button id="wageBtn" type="button" class="btn btn-line">算一次</button>
+                    </div>
+                    <div id="wageBody" class="mt-4"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
+        const TOKEN_KEY = 'gameAdminToken';   // 跟預約後台的 adminToken 分開
+        const $ = id => document.getElementById(id);
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+        const fmt = n => '$' + Math.round(Number(n) || 0).toLocaleString('zh-TW');
+        const short = n => { n = Number(n) || 0; return n >= 1e8 ? (n / 1e8).toFixed(n >= 1e9 ? 0 : 1) + ' 億' : n >= 1e4 ? (n / 1e4).toFixed(n >= 1e5 ? 0 : 1) + ' 萬' : Math.round(n).toLocaleString('zh-TW'); };
+        const ago = t => {
+            if (!t) return '—';
+            const s = (Date.now() - t) / 1000;
+            if (s < 3600) return Math.max(1, Math.floor(s / 60)) + ' 分鐘前';
+            if (s < 86400) return Math.floor(s / 3600) + ' 小時前';
+            if (s < 86400 * 60) return Math.floor(s / 86400) + ' 天前';
+            const d = new Date(t); return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+        };
+        const day = t => { if (!t) return ''; const d = new Date(t); return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`; };
+        let token = null; try { token = localStorage.getItem(TOKEN_KEY); } catch (e) { }
+        let data = null, econ = null, tab = 'players';
+
+        async function call(body) {
+            let res;
+            try { res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ ...body, token }) }); }
+            catch (e) { throw new Error('網路連不到 Google，等一下再試'); }
+            const text = await res.text();
+            let r; try { r = JSON.parse(text); } catch (e) { throw new Error(`後端回了一頁錯誤（HTTP ${res.status}），可能要重新部署或授權`); }
+            if (r.result === 'unauthorized') { logout('通行證過期了，再登入一次'); throw new Error('通行證過期了'); }
+            if (r.result !== 'success') throw new Error(r.error === '不認得的請求' ? '後端還是舊版：部署新版本（2026-11-20a 以後）才用得了 admin 後台' : (r.error || '失敗了'));
+            return r;
+        }
+
+        // ===== 登入 =====
+        function showLogin(msg) { $('loginView').hidden = false; $('appView').hidden = true; $('logoutBtn').hidden = true; $('loginMsg').textContent = msg || ''; setTimeout(() => $('pw').focus(), 50); }
+        function showApp() { $('loginView').hidden = true; $('appView').hidden = false; $('logoutBtn').hidden = false; }
+        function logout(msg) { token = null; try { localStorage.removeItem(TOKEN_KEY); } catch (e) { } data = econ = null; showLogin(msg); }
+        $('logoutBtn').addEventListener('click', () => logout(''));
+        $('loginForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const pw = $('pw').value; if (!pw) return;
+            $('loginBtn').disabled = true; $('loginMsg').textContent = '';
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'gameAdminLogin', password: pw }) });
+                const r = JSON.parse(await res.text());
+                if (r.result !== 'success') throw new Error(/不認得的請求/.test(r.error || '') ? '後端還是舊版：部署新版本（2026-11-20a 以後）' : (r.error || '登入失敗'));
+                token = r.token; try { localStorage.setItem(TOKEN_KEY, token); } catch (e) { }
+                $('pw').value = ''; showApp(); loadPlayers();
+            } catch (err) { $('loginMsg').textContent = err.message || '登入失敗'; }
+            $('loginBtn').disabled = false;
+        });
+
+        // ===== 分頁 =====
+        function setTab(t) {
+            tab = t;
+            document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tab === t)));
+            ['players', 'perks', 'econ'].forEach(k => $('tab-' + k).hidden = k !== t);
+            if (t === 'econ' && !econ) loadEcon();
+        }
+        document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
+
+        // ===== 玩家 =====
+        function pic(p) {
+            const src = p.avatar && window.Avatar && Avatar.has(p.avatar) ? Avatar.url(p.avatar, 68) : p.picture;
+            return src ? `<img class="pic" src="${esc(src)}" alt="" referrerpolicy="no-referrer" data-initial="${esc((p.name || '旅')[0])}">` : `<span class="pic is-text">${esc((p.name || '旅')[0])}</span>`;
+        }
+        document.addEventListener('error', e => {
+            const img = e.target; if (!(img instanceof HTMLImageElement) || !img.classList.contains('pic')) return;
+            const s = document.createElement('span'); s.className = 'pic is-text'; s.textContent = img.dataset.initial || '旅'; img.replaceWith(s);
+        }, true);
+        function renderPlayers() {
+            if (!data) return;
+            const q = $('q').value.trim().toLowerCase(), key = $('sort').value;
+            let list = data.players.filter(p => !q || (p.name + ' ' + p.lineName).toLowerCase().includes(q));
+            list.sort((a, b) => (b[key] || 0) - (a[key] || 0));
+            $('playerCount').textContent = `${data.players.length} 個玩家` + (q ? `・找到 ${list.length} 個` : '');
+            $('playerList').innerHTML = list.map(p => `
+                <article class="card">
+                    <div class="flex items-center gap-3">
+                        ${pic(p)}
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm text-wabi-dark truncate">${esc(p.name)}${p.nick && p.lineName && p.nick !== p.lineName ? `<span class="ml-2 text-[11px] font-sans text-stone-400">LINE：${esc(p.lineName)}</span>` : ''}</p>
+                            <p class="text-[11px] font-sans tracking-wider text-stone-400">上線 ${ago(p.updated)}・加入 ${day(p.created)}</p>
+                        </div>
+                        <button type="button" class="btn btn-line" style="min-height:36px;padding:0 .7rem;font-size:12px;letter-spacing:.1em" data-give="${esc(p.key)}">發道具</button>
+                    </div>
+                    ${p.perks.length ? `<div class="mt-2 flex flex-wrap gap-1">${p.perks.map(n => `<span class="chip">${esc(n)}</span>`).join('')}</div>` : ''}
+                    <div class="kv">
+                        <div><span>錢包</span><b>${short(p.money)}</b></div>
+                        <div><span>賺過</span><b>${short(p.earned)}</b></div>
+                        <div><span>花過</span><b>${short(p.spent)}</b></div>
+                        <div><span>店面</span><b>${p.shopLv} 級</b></div>
+                        <div><span>升級花</span><b>${short(p.shopSpent)}</b></div>
+                        <div><span>功德</span><b>${short(p.donated + p.lit)}</b></div>
+                    </div>
+                </article>`).join('') || '<p class="py-10 text-center text-xs font-sans tracking-widest text-stone-400">找不到</p>';
+        }
+        $('q').addEventListener('input', renderPlayers);
+        $('sort').addEventListener('change', renderPlayers);
+        $('playerList').addEventListener('click', e => {
+            const b = e.target.closest('[data-give]'); if (!b) return;
+            setTab('perks'); $('gWho').value = b.dataset.give; window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // ===== 道具 =====
+        function renderPerks() {
+            if (!data) return;
+            const who = $('gWho').value;
+            $('gWho').innerHTML = '<option value="">選一個玩家</option>' + data.players.slice().sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant')).map(p => `<option value="${esc(p.key)}">${esc(p.name)}${p.nick && p.lineName && p.nick !== p.lineName ? `（${esc(p.lineName)}）` : ''}</option>`).join('');
+            if (who) $('gWho').value = who;
+            const perk = $('gPerk').value;
+            $('gPerk').innerHTML = data.perkTypes.map(t => `<option value="${esc(t.key)}">${esc(t.name)}${t.live ? '' : '（效果還沒做）'}</option>`).join('');
+            if (perk) $('gPerk').value = perk;
+            const t = data.perkTypes.find(x => x.key === $('gPerk').value);
+            $('gPerkDesc').textContent = t ? t.desc : '';
+            const act = data.perks.filter(x => x.active), old = data.perks.filter(x => !x.active);
+            $('perkActive').innerHTML = act.map(x => `
+                <div class="card flex items-start gap-3">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm text-wabi-dark"><span class="chip mr-2">${esc(x.perkName)}</span>${esc(x.who)}</p>
+                        <p class="mt-1 text-[11px] font-sans tracking-wider text-stone-400">${day(x.at)} 發・${x.expires ? '到 ' + day(x.expires) : '永久'}${x.note ? '・' + esc(x.note) : ''}${x.live ? '' : '・效果還沒做'}</p>
+                    </div>
+                    <button type="button" class="btn btn-line" style="min-height:36px;padding:0 .7rem;font-size:12px;letter-spacing:.1em" data-revoke="${esc(x.id)}">收回</button>
+                </div>`).join('') || '<p class="text-xs font-sans tracking-widest text-stone-400">還沒有。</p>';
+            $('perkOld').innerHTML = old.slice(0, 50).map(x => `
+                <p class="text-[12px] font-sans tracking-wide text-stone-400"><span class="chip is-off mr-2">${esc(x.perkName)}</span>${esc(x.who)}・${day(x.at)} 發・${x.revokedAt ? day(x.revokedAt) + ' 收回' : day(x.expires) + ' 過期'}${x.note ? '・' + esc(x.note) : ''}</p>`).join('') || '<p class="text-xs font-sans tracking-widest text-stone-400">還沒有。</p>';
+        }
+        $('gPerk').addEventListener('change', renderPerks);
+        $('grantBtn').addEventListener('click', async () => {
+            const key = $('gWho').value; if (!key) { showToast('先選要給誰'); return; }
+            const p = data.players.find(x => x.key === key), t = data.perkTypes.find(x => x.key === $('gPerk').value);
+            if (!confirm(`把「${t.name}」發給 ${p.name}？期限：${$('gDays').selectedOptions[0].textContent}`)) return;
+            $('grantBtn').disabled = true;
+            try { data = await call({ type: 'gaPerkGrant', key, perk: t.key, days: Number($('gDays').value), note: $('gNote').value }); $('gNote').value = ''; render(); showToast(`發給 ${p.name} 了`); }
+            catch (err) { showToast(err.message); }
+            $('grantBtn').disabled = false;
+        });
+        $('perkActive').addEventListener('click', async e => {
+            const b = e.target.closest('[data-revoke]'); if (!b) return;
+            const x = data.perks.find(y => y.id === b.dataset.revoke);
+            if (!confirm(`收回 ${x.who} 的「${x.perkName}」？`)) return;
+            b.disabled = true;
+            try { data = await call({ type: 'gaPerkRevoke', id: x.id }); render(); showToast('收回了'); }
+            catch (err) { showToast(err.message); b.disabled = false; }
+        });
+
+        // ===== 經濟 =====
+        function renderEcon() {
+            if (!econ) { $('econBody').innerHTML = '<p class="py-10 text-center text-xs font-sans tracking-widest text-stone-400">算帳中……</p>'; return; }
+            const e = econ, max = Math.max(1, ...e.sources.map(s => s.total));
+            $('econBody').innerHTML = `
+                <div class="grid grid-cols-2 gap-x-6">
+                    <div class="stat"><span>玩家</span><b>${e.players}</b><span>24 小時內 ${e.active1}・7 天內 ${e.active7}</span></div>
+                    <div class="stat"><span>全站的錢</span><b>${short(e.money)}</b><span>中位數 ${short(e.median)}</span></div>
+                    <div class="stat"><span>大家賺過</span><b>${short(e.earned)}</b><span>花掉 ${short(e.spent)}</span></div>
+                    <div class="stat"><span>第一名是中位數的</span><b>${e.topRatio} 倍</b><span>超過 3 倍要注意</span></div>
+                    <div class="stat"><span>店面升級花</span><b>${short(e.shopSpent)}</b></div>
+                    <div class="stat"><span>功德（捐＋點燈）</span><b>${short(e.donated + e.lit)}</b></div>
+                </div>
+                <h3 class="mt-8 text-sm tracking-[0.3em] text-wabi-dark">錢從哪裡來</h3>
+                <div class="mt-3 space-y-3">${e.sources.map(s => `
+                    <div>
+                        <div class="flex justify-between text-[12px] font-sans tracking-wide"><span class="text-wabi-dark">${esc(s.name)}</span><span class="text-stone-400">${short(s.total)}・${s.share}%・${s.people} 人・${s.times.toLocaleString('zh-TW')} 次</span></div>
+                        <div class="bar mt-1"><i style="width:${(s.total / max * 100).toFixed(1)}%"></i></div>
+                    </div>`).join('') || '<p class="text-xs font-sans text-stone-400">還沒有人賺錢。</p>'}</div>
+                <h3 class="mt-8 text-sm tracking-[0.3em] text-wabi-dark">最有錢的五個</h3>
+                <div class="mt-2">${e.top.map((p, i) => `
+                    <div class="flex justify-between items-baseline py-2 border-b border-stone-100 text-sm"><span class="text-wabi-dark"><span class="font-sans text-xs text-stone-400 mr-2">${i + 1}</span>${esc(p.name)}</span><span class="font-sans text-xs text-stone-500">錢包 ${short(p.money)}・賺 ${short(p.earned)}・花 ${short(p.spent)}</span></div>`).join('')}</div>
+                <h3 class="mt-8 text-sm tracking-[0.3em] text-wabi-dark">要看一下的</h3>
+                <p class="mt-1 text-[11px] font-sans tracking-wider text-stone-400">錢包快到上限、錢是中位數 10 倍以上、某個遊戲一場賺的是大家中位數 4 倍以上。不一定是作弊，可能只是升級買滿了。</p>
+                <div class="mt-2">${e.flags.map(f => `<p class="py-2 border-b border-stone-100 text-[13px]"><span class="text-wabi-shu mr-2">${esc(f.name)}</span><span class="font-sans text-xs text-stone-500">${esc(f.why)}</span></p>`).join('') || '<p class="text-xs font-sans tracking-widest text-stone-400 py-2">沒有。</p>'}</div>
+                <p class="mt-6 text-[11px] font-sans tracking-wider text-stone-400">${new Date(e.now).toLocaleString('zh-TW', { hour12: false })} 算的・<button type="button" id="econReload" class="underline">重算</button></p>`;
+        }
+        async function loadEcon() {
+            econ = null; renderEcon();
+            try { econ = await call({ type: 'gaEcon' }); renderEcon(); }
+            catch (err) { $('econBody').innerHTML = `<p class="py-10 text-center text-xs font-sans tracking-wider text-wabi-shu">${esc(err.message)}</p>`; }
+        }
+        $('econBody').addEventListener('click', e => { if (e.target.id === 'econReload') loadEcon(); });
+        $('wageBtn').addEventListener('click', async () => {
+            $('wageBtn').disabled = true; $('wageBody').innerHTML = '<p class="text-xs font-sans tracking-widest text-stone-400">讀紀錄中，可能要十幾秒……</p>';
+            try {
+                const r = await call({ type: 'gaWage', days: Number($('wageDays').value) });
+                const cols = [0, 1, 2, 3, 4, 5, 6, 8];   // 打工、模式、升級、輪數、人數、每分鐘、每輪、幾秒
+                const head = ['打工', '模式', '升級', '輪', '人', '每分鐘', '每輪', '秒'];
+                $('wageBody').innerHTML = r.rows.length ? `<div class="scroll-x"><table class="wage"><thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${r.rows.map(row => `<tr>${cols.map((c, i) => `<td>${i >= 5 && i <= 6 ? fmt(row[c]) : esc(row[c])}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="mt-2 text-[11px] font-sans tracking-wider text-stone-400">輪數少於 20 的那列參考就好。</p>` : '<p class="text-xs font-sans tracking-widest text-stone-400">這段期間沒有紀錄。</p>';
+            } catch (err) { $('wageBody').innerHTML = `<p class="text-xs font-sans tracking-wider text-wabi-shu">${esc(err.message)}</p>`; }
+            $('wageBtn').disabled = false;
+        });
+
+        // ===== 載入 =====
+        function render() { renderPlayers(); renderPerks(); }
+        async function loadPlayers() {
+            $('state').textContent = '讀玩家中……';
+            try { data = await call({ type: 'gaPlayers' }); $('state').textContent = ''; render(); }
+            catch (err) { $('state').textContent = err.message; }
+        }
+        if (token) { showApp(); loadPlayers(); } else showLogin('');
+    </script>
+</body>
+
+</html>

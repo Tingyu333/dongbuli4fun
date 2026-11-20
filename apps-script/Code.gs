@@ -71,9 +71,9 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-19c';
+var BACKEND_VERSION = '2026-11-20a';
 
-var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1 };
+var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1 };
 
 function withLock(fn) {
   var lock = LockService.getScriptLock();
@@ -152,6 +152,18 @@ function route(type, input) {
     if (type === 'wishVote') return wishVote(input);
 
     if (type === 'ping') return { result: 'success', version: BACKEND_VERSION };   // 公開：只回版本
+
+    // admin 後台（admin.html，2026-11-20）：另一組密碼 GAME_ADMIN_PASSWORD、另一種通行證，跟預約後台互不通用
+    if (type === 'gameAdminLogin') return gameAdminLogin(input);
+    if (/^ga[A-Z]/.test(type)) {
+      if (!isGameAdmin(input.token)) return { result: 'unauthorized' };
+      if (type === 'gaPlayers') return gaPlayers();
+      if (type === 'gaPerkGrant') return gaPerkGrant(input);
+      if (type === 'gaPerkRevoke') return gaPerkRevoke(input);
+      if (type === 'gaEcon') return gaEcon();
+      if (type === 'gaWage') return gaWage(input);
+      return { result: 'error', error: '不認得的請求' };
+    }
 
     // 以下只有後台能用，要帶登入拿到的通行證
     if (type === 'updateStatus' || type === 'adminList' || type === 'bonusCreate' || type === 'bonusList' || type === 'bonusClose' || type === 'adminHealth' || type === 'adminWishes' || type === 'adminWishSet') {
@@ -3562,6 +3574,20 @@ var ECON_SOURCES = [
 function econMedian(a) { if (!a.length) return 0; a = a.slice().sort(function (x, y) { return x - y; }); var m = Math.floor(a.length / 2); return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }
 function econPct(a, p) { if (!a.length) return 0; a = a.slice().sort(function (x, y) { return x - y; }); return a[Math.min(a.length - 1, Math.floor(p * a.length))]; }
 function econReport(days) {
+  var r = econCompute(days), ss = SpreadsheetApp.getActiveSpreadsheet(), out = r.out, since = r.since;
+  var sheet = ss.getSheetByName('對帳') || ss.insertSheet('對帳');
+  sheet.clearContents();
+  var head = ECON_HEAD;
+  sheet.getRange(1, 1, 1, head.length).setValues([head]);
+  if (out.length) sheet.getRange(2, 1, out.length, head.length).setValues(out);
+  sheet.getRange(out.length + 3, 1, 1, 1).setValue('算的時間：' + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd HH:mm') + (since ? '（最近 ' + days + ' 天）' : '（全部）') + '。輪數少於 20 的那列參考就好。');
+  sheet.setFrozenRows(1);
+  Logger.log(r.log.join('\n') || '沒有紀錄');
+  return out;
+}
+var ECON_HEAD = ['打工', '模式', '升級程度', '輪數', '幾個人', '每分鐘（中位數）', '每輪（中位數）', '每輪（前 10% 的門檻）', '一輪幾秒（中位數）', '期間'];
+// 只算、不寫（admin 後台的「真人工資」也用這個）
+function econCompute(days) {
   var ss = SpreadsheetApp.getActiveSpreadsheet(), since = typeof days === 'number' && days > 0 ? Date.now() - days * 864e5 : 0, out = [], log = [];
   ECON_SOURCES.forEach(function (src) {
     var sheet = ss.getSheetByName(src.sheet);
@@ -3597,15 +3623,7 @@ function econReport(days) {
         log.push(src.name + (src.mode ? ' ' + g.mode : '') + ' ' + g.tier + '：' + g.perRound.length + ' 輪，每分鐘中位數 $' + Math.round(econMedian(g.perMin)));
       });
   });
-  var sheet = ss.getSheetByName('對帳') || ss.insertSheet('對帳');
-  sheet.clearContents();
-  var head = ['打工', '模式', '升級程度', '輪數', '幾個人', '每分鐘（中位數）', '每輪（中位數）', '每輪（前 10% 的門檻）', '一輪幾秒（中位數）', '期間'];
-  sheet.getRange(1, 1, 1, head.length).setValues([head]);
-  if (out.length) sheet.getRange(2, 1, out.length, head.length).setValues(out);
-  sheet.getRange(out.length + 3, 1, 1, 1).setValue('算的時間：' + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd HH:mm') + (since ? '（最近 ' + days + ' 天）' : '（全部）') + '。輪數少於 20 的那列參考就好。');
-  sheet.setFrozenRows(1);
-  Logger.log(log.join('\n') || '沒有紀錄');
-  return out;
+  return { out: out, log: log, since: since };
 }
 
 
@@ -3767,3 +3785,164 @@ function adminWishSet(input) {
   if (input.hidden !== undefined) sheet.getRange(w.row, 9).setValue(!!input.hidden);
   return adminWishes();
 }
+
+
+// ===== admin 後台（admin.html，2026-11-20）=====
+// 使用者要的「另一個後台」：玩家列表、專屬道具（先做架子：發、收回、到期，還沒有效果）、經濟體檢。
+// 密碼是另一組：指令碼屬性 GAME_ADMIN_PASSWORD（跟預約後台的 ADMIN_PASSWORD 分開），通行證也分開（cache 'gadmin:'）。
+// 不回 line_id：玩家用 key（line_id 的雜湊，前 12 碼）認，發道具時後端再對回 line_id。
+// Perks：A timestamp、B id、C line_id、D perk、E note、F expires（空白＝永久）、G revoked_at、H key
+var PERK_TYPES = {
+  shop60: { name: '全店六折', desc: '七家打工店面升級打六折', live: false }   // live: false＝效果還沒做，只是記錄
+};
+var PERK_HEADERS = ['timestamp', 'id', 'line_id', 'perk', 'note', 'expires', 'revoked_at', 'key'];
+
+function gameAdminLogin(input) {
+  var cache = CacheService.getScriptCache();
+  var fails = Number(cache.get('gaLoginFails') || 0);
+  if (fails >= LOGIN_FAILS_LIMIT) return { result: 'error', error: '試太多次了，十分鐘後再來' };
+  var password = PropertiesService.getScriptProperties().getProperty('GAME_ADMIN_PASSWORD');
+  if (!password) return { result: 'error', error: 'admin 後台的密碼還沒設定（指令碼屬性 GAME_ADMIN_PASSWORD）' };
+  if (String(input.password || '') !== password) {
+    cache.put('gaLoginFails', String(fails + 1), 600);
+    return { result: 'error', error: '密碼不對' };
+  }
+  var token = Utilities.getUuid();
+  cache.put('gadmin:' + token, '1', ADMIN_TOKEN_SECONDS);
+  return { result: 'success', token: token };
+}
+
+function isGameAdmin(token) {
+  return !!token && CacheService.getScriptCache().get('gadmin:' + String(token)) === '1';
+}
+
+function playerKey(lineId) {
+  return Utilities.computeHmacSha256Signature(String(lineId), 'dongbuli-player-key')
+    .map(function (b) { return ('0' + (b & 255).toString(16)).slice(-2); }).join('').slice(0, 12);
+}
+
+function perksSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Perks');
+  if (!sheet) { sheet = ss.insertSheet('Perks'); sheet.appendRow(PERK_HEADERS); }
+  return sheet;
+}
+
+function readPerks() {
+  var rows = perksSheet().getDataRange().getValues(), now = Date.now(), out = [];
+  for (var i = 1; i < rows.length; i++) {
+    var r = rows[i];
+    if (!r[1]) continue;
+    var ex = r[5] instanceof Date ? r[5].getTime() : (r[5] ? Date.parse(r[5]) : 0), rv = r[6] instanceof Date ? r[6].getTime() : (r[6] ? Date.parse(r[6]) : 0);
+    var at = r[0] instanceof Date ? r[0].getTime() : Date.parse(r[0]) || 0;
+    out.push({ row: i + 1, id: String(r[1]), lineId: String(r[2]), perk: String(r[3]), note: String(r[4] || '').replace(/^'/, ''),
+      at: at, expires: ex || 0, revokedAt: rv || 0, key: String(r[7] || ''),
+      active: !rv && (!ex || ex > now) });
+  }
+  return out;
+}
+
+// 玩家：暱稱、頭像、錢、賺、花、店面、功德、最近同步；外加他身上的道具
+function gaPlayerRows() {
+  var rows = playersSheet().getDataRange().getValues(), out = [];
+  for (var i = 1; i < rows.length; i++) {
+    var r = rows[i], lineId = String(r[1] || '');
+    if (!lineId) continue;
+    var earned = {}, gongde = {}, shop = {};
+    try { earned = cleanEarned(JSON.parse(r[6] || '{}')) || {}; } catch (e) { }
+    try { gongde = JSON.parse(r[8] || '{}') || {}; } catch (e) { }
+    try { shop = JSON.parse(r[9] || '{}') || {}; } catch (e) { }
+    var earnedTotal = 0, bySource = {};
+    Object.keys(earned).forEach(function (k) { var t = Number(earned[k] && earned[k].total) || 0; earnedTotal += t; bySource[k] = { total: t, times: Number(earned[k].times) || 0, best: Number(earned[k].best) || 0 }; });
+    var lv = 0, items = 0; Object.keys(shop.lv || {}).forEach(function (k) { lv += Number(shop.lv[k]) || 0; items++; });
+    var nick = String(r[12] || '').replace(/^'/, '').trim().slice(0, 12), av = String(r[13] || '');
+    var t = function (v) { return v instanceof Date ? v.getTime() : (Date.parse(v) || 0); };
+    out.push({ lineId: lineId, key: playerKey(lineId), name: nick || String(r[2] || '') || '旅人', lineName: String(r[2] || ''), nick: nick,
+      picture: String(r[3] || ''), avatar: AVATAR_KEYS.indexOf(av) >= 0 ? av : '',
+      money: Number(r[4]) || 0, spent: Number(r[5]) || 0, earned: earnedTotal, sources: bySource,
+      shopLv: lv, shopItems: items, shopSpent: Number(shop.spent) || 0, donated: Number(gongde.donated) || 0, lit: Number(gongde.lit) || 0,
+      created: t(r[0]), updated: t(r[7]) });
+  }
+  return out;
+}
+
+function gaPerkView(x, names) {
+  var t = PERK_TYPES[x.perk] || { name: x.perk, desc: '', live: false };
+  return { id: x.id, key: x.key, who: names[x.lineId] || '（找不到這個玩家）', perk: x.perk, perkName: t.name, live: !!t.live, note: x.note,
+    at: x.at, expires: x.expires, revokedAt: x.revokedAt, active: x.active };
+}
+
+function gaPlayers() {
+  var players = gaPlayerRows(), perks = readPerks(), names = {};
+  players.forEach(function (p) { names[p.lineId] = p.name; });
+  var active = {};
+  perks.forEach(function (x) { if (x.active) (active[x.lineId] = active[x.lineId] || []).push(PERK_TYPES[x.perk] ? PERK_TYPES[x.perk].name : x.perk); });
+  return {
+    result: 'success', now: Date.now(),
+    players: players.map(function (p) { var o = {}; Object.keys(p).forEach(function (k) { if (k !== 'lineId') o[k] = p[k]; }); o.perks = active[p.lineId] || []; return o; }),
+    perks: perks.slice().reverse().map(function (x) { return gaPerkView(x, names); }),
+    perkTypes: Object.keys(PERK_TYPES).map(function (k) { return { key: k, name: PERK_TYPES[k].name, desc: PERK_TYPES[k].desc, live: !!PERK_TYPES[k].live }; })
+  };
+}
+
+// 發道具：{ key（玩家）, perk, days（0 或沒帶＝永久，最多 3650）, note? }。同一個人同一種道具還有效的話不重發
+function gaPerkGrant(input) {
+  if (!PERK_TYPES[input.perk]) return { result: 'error', error: '沒有這種道具' };
+  var key = String(input.key || ''), who = null;
+  gaPlayerRows().forEach(function (p) { if (p.key === key) who = p; });
+  if (!who) return { result: 'error', error: '找不到這個玩家' };
+  if (readPerks().some(function (x) { return x.active && x.lineId === who.lineId && x.perk === input.perk; })) return { result: 'error', error: who.name + ' 已經有這個道具了' };
+  var days = Math.floor(Number(input.days) || 0);
+  if (days < 0 || days > 3650) return { result: 'error', error: '期限要在 0～3650 天' };
+  var note = String(input.note || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 60);
+  var now = new Date(), id = 'k' + Utilities.getUuid().replace(/-/g, '').slice(0, 10);
+  perksSheet().appendRow([now, id, who.lineId, input.perk, note ? asText(note) : '', days ? new Date(now.getTime() + days * 864e5) : '', '', who.key]);
+  var out = gaPlayers(); out.granted = id; return out;
+}
+
+function gaPerkRevoke(input) {
+  var x = readPerks().filter(function (y) { return y.id === String(input.id || ''); })[0];
+  if (!x) return { result: 'error', error: '找不到這筆道具' };
+  if (!x.revokedAt) perksSheet().getRange(x.row, 7).setValue(new Date());
+  return gaPlayers();
+}
+
+// 經濟體檢：只讀 Players，很快
+function gaEcon() {
+  var ps = gaPlayerRows(), now = Date.now(), sum = function (a) { return a.reduce(function (x, y) { return x + y; }, 0); };
+  var money = ps.map(function (p) { return p.money; }), med = econMedian(money);
+  var sources = {};
+  ps.forEach(function (p) { Object.keys(p.sources).forEach(function (k) { var s = sources[k] || (sources[k] = { total: 0, times: 0, people: 0, bests: [] }); s.total += p.sources[k].total; s.times += p.sources[k].times; if (p.sources[k].total) s.people++; if (p.sources[k].best) s.bests.push(p.sources[k].best); }); });
+  var top = ps.slice().sort(function (a, b) { return b.money - a.money; }).slice(0, 5).map(function (p) { return { name: p.name, money: p.money, earned: p.earned, spent: p.spent }; });
+  var flags = [];
+  ps.forEach(function (p) {
+    if (p.money >= WALLET_MAX * 0.9) flags.push({ name: p.name, why: '錢包快到上限（一兆）' });
+    else if (med > 0 && p.money > med * 10 && p.money > 100000) flags.push({ name: p.name, why: '錢是全站中位數的 ' + Math.round(p.money / med) + ' 倍' });
+    Object.keys(p.sources).forEach(function (k) {
+      var b = p.sources[k].best, mb = econMedian(sources[k].bests);
+      if (sources[k].bests.length >= 3 && mb > 0 && b > mb * 4 && b > 20000) flags.push({ name: p.name, why: (ECON_NAMES[k] || k) + ' 一場賺 $' + Math.round(b) + '，是大家中位數的 ' + Math.round(b / mb) + ' 倍' });
+    });
+  });
+  var earnedAll = sum(ps.map(function (p) { return p.earned; }));
+  return {
+    result: 'success', now: now,
+    players: ps.length, active7: ps.filter(function (p) { return p.updated && now - p.updated < 7 * 864e5; }).length,
+    active1: ps.filter(function (p) { return p.updated && now - p.updated < 864e5; }).length,
+    money: sum(money), median: med, topRatio: med > 0 ? Math.round(Math.max.apply(null, money) / med * 10) / 10 : 0,
+    earned: earnedAll, spent: sum(ps.map(function (p) { return p.spent; })),
+    shopSpent: sum(ps.map(function (p) { return p.shopSpent; })), donated: sum(ps.map(function (p) { return p.donated; })), lit: sum(ps.map(function (p) { return p.lit; })),
+    sources: Object.keys(sources).map(function (k) { return { key: k, name: ECON_NAMES[k] || k, total: sources[k].total, times: sources[k].times, people: sources[k].people, share: earnedAll ? Math.round(sources[k].total / earnedAll * 1000) / 10 : 0 }; })
+      .sort(function (a, b) { return b.total - a.total; }),
+    top: top, flags: flags.slice(0, 30)
+  };
+}
+var ECON_NAMES = { xitou: '坐洗・泡', clean: '房務・淨', farm: '菜園・拔', wifi: '蹭・網', zaocan: '早餐・煎', ship: '貨運・航', dessert: '甜點・轉', stack: '疊・巢',
+  scratch: '刮刮樂', bonus: '紅包', caishen: '財神燈', insure: '保險', wish: '許願池' };
+
+// 真人工資：照紀錄分頁算（跟 econReport 一樣，但只回傳、不寫「對帳」分頁）。{ days?: 30 }
+function gaWage(input) {
+  var days = Math.floor(Number(input.days) || 0);
+  var r = econCompute(days > 0 ? days : 0);
+  return { result: 'success', head: ECON_HEAD, rows: r.out, days: days };
+}
+
