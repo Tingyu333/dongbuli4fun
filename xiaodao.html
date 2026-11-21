@@ -45,6 +45,16 @@
         .sub { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: .08em; color: rgb(var(--wabi-accent)); white-space: nowrap; overflow: hidden; }
         .seal { display: inline-block; padding: 1px 6px 1px 8px; border: 1.5px solid rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); font-family: 'Noto Serif TC', serif; font-size: 12px; letter-spacing: .25em; transform: rotate(-3deg); border-radius: 2px; }
         .sub b { font-weight: 400; color: rgb(var(--wabi-dark)); }
+        .zoomtip { display: block; width: 100%; margin-top: 8px; padding: 6px 8px; border: 1px solid rgb(var(--wabi-shu)); border-radius: 3px; background: rgb(var(--wabi-shu) / .08); color: rgb(var(--wabi-shu)); font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: .06em; text-align: left; line-height: 1.5; }
+        .zoomtip small { display: block; font-size: 10.5px; color: rgb(var(--wabi-accent)); }
+        /* 很窄的時候（小手機、或瀏覽器放大過）：上面那列縮小，東西不會被切掉 */
+        @media (max-width: 350px) {
+            .back { min-width: 28px; } .back span { display: none; }
+            .title { font-size: 16px; letter-spacing: .15em; }
+            .money { min-width: 0; font-size: 12px; }
+            .sub { gap: 6px; font-size: 10px; } .trial { flex-wrap: wrap; }
+            .tab img { width: 30px; height: 30px; }
+        }
         .trial { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding: 5px 8px; border: 1px dashed rgb(var(--wabi-shu) / .6); border-radius: 3px; font-family: 'Noto Sans TC', sans-serif; font-size: 10.5px; letter-spacing: .06em; color: rgb(var(--wabi-shu)); }
         .trial button { flex: none; font: inherit; color: rgb(var(--wabi-dark)); border: 1px solid rgb(var(--wabi-accent) / .5); border-radius: 999px; padding: 3px 9px; background: transparent; min-height: 28px; }
         /* 島 */
@@ -151,7 +161,7 @@
     <div id="app" class="app" hidden>
         <div class="top">
             <div class="bar">
-                <a class="back" href="member.html">← 會員・我</a>
+                <a class="back" href="member.html">←<span> 會員・我</span></a>
                 <h1 class="title">我的小島</h1>
                 <span id="money" class="money"></span>
             </div>
@@ -160,6 +170,7 @@
                 <span><b id="nPlots">0</b> 塊地</span>
                 <span id="nextTier"></span>
             </div>
+            <button type="button" id="zoomTip" class="zoomtip" hidden>畫面被放大了・點這裡縮回<small>還是很大的話：瀏覽器右上「⋯」→「縮放」→ 100%</small></button>
             <div id="trial" class="trial" hidden>
                 <span>監修中試玩・試玩錢包，不會動到真的錢包</span>
                 <span style="display:flex;gap:6px"><button type="button" id="addMoney">＋1000 萬</button><button type="button" id="resetTrial">重來</button></span>
@@ -213,8 +224,20 @@
                 vp.setAttribute('content', 'width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
                 setTimeout(() => { vp.setAttribute('content', base); busy = false; window.scrollTo(0, 0); }, 120);
             }
-            if (window.visualViewport) { visualViewport.addEventListener('resize', unzoom); visualViewport.addEventListener('scroll', unzoom); }
-            window.addEventListener('pageshow', unzoom);
+            // 還是放大著的話（擋不掉的放大方式、或縮不回去）：整個 App 塞進看得到的那一塊（不會有東西被切掉、按鈕跑到外面），上面跳一條提示
+            // 也抓瀏覽器自己的「縮放」（Chrome 選單裡的，視窗變窄但 scale 還是 1）
+            function fitApp() {
+                const vv = window.visualViewport, z = vv && vv.scale > 1.02, narrow = screen.width && window.innerWidth < screen.width * 0.86;
+                const tip = document.getElementById('zoomTip'); if (tip) tip.hidden = !(z || narrow);
+                ['app', 'sheet', 'up'].forEach(id => { const el = document.getElementById(id); if (!el) return;
+                    if (z) Object.assign(el.style, { top: vv.offsetTop + 'px', left: vv.offsetLeft + 'px', width: vv.width + 'px', height: vv.height + 'px', right: 'auto', bottom: 'auto', margin: '0', maxWidth: 'none' });
+                    else ['top', 'left', 'width', 'height', 'right', 'bottom', 'margin', 'maxWidth'].forEach(k => el.style[k] = ''); });
+            }
+            window.__fitApp = fitApp;
+            const both = () => { unzoom(); fitApp(); };
+            if (window.visualViewport) { visualViewport.addEventListener('resize', both); visualViewport.addEventListener('scroll', both); }
+            window.addEventListener('resize', fitApp); window.addEventListener('pageshow', both);
+            document.addEventListener('DOMContentLoaded', () => { fitApp(); const tip = document.getElementById('zoomTip'); if (tip) tip.onclick = () => { busy = false; unzoom(); setTimeout(fitApp, 300); if (window.visualViewport && visualViewport.scale <= 1.02) showToast('如果還是很大：瀏覽器右上「⋯」→「縮放」→ 100%'); }; });
         })();
         const OPEN = false;
         const PREVIEW = /[?&]preview\b/.test(location.search);
