@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>家園：藏品圖鑑</title>
-<!-- 家園・築的設計圖（2026-11-21）：藏品圖鑑 29 款（使用者說全做）：公仔 9 用扭蛋，礦坑標本、海上撿到的、和風小物、27 樓的梗直接買；分普通／稀有／傳說。還不是遊戲本身。 -->
+<!-- 家園・築的設計圖（2026-11-21）：藏品圖鑑 29 款（使用者說全做）：全部放進扭蛋機（「絆」房的鑰匙機率最低）；分普通／稀有／傳說。還不是遊戲本身。 -->
 <style>
   :root { --bg: #fcfaf8; --text: #4a4a4a; --dark: #2c2c2c; --accent: #8e8070; --sub: #dcdcdc; --shu: #b33a2f; }
   * { box-sizing: border-box; }
@@ -52,8 +52,12 @@
 <body>
 <main>
   <h1>藏品・圖鑑</h1>
-  <p class="sub">家園・築的設計圖（放在展示櫃裡；正面看，一件 24 × 24 顆）<br><span id="count"></span> 款：公仔用扭蛋，其他直接買；框的顏色是稀有度</p>
+  <p class="sub">家園・築的設計圖（放在展示櫃裡；正面看，一件 24 × 24 顆）<br><span id="count"></span> 款全部放進扭蛋機；框的顏色是稀有度，下面是每一款的機率（草案）</p>
   <p class="legend"><span class="lg r-n">普通</span><span class="lg r-r">稀有</span><span class="lg r-l">傳說（放進展示櫃會閃）</span></p>
+  <section class="card">
+    <div class="h"><span class="no">扭</span><span class="name">扭蛋機</span><span class="tag">29 款全在裡面</span></div>
+    <div class="gacha"><canvas id="gacha" width="40" height="48"></canvas><dl><dt>怎麼拿</dt><dd>藏品全部只能扭（使用者定的），一次隨機出一件，價錢之後定</dd><dt>機率</dt><dd>普通 60%（12 款，各 5%）、稀有 32%（12 款，各約 2.67%）、傳說 7.5%（4 款，各約 1.88%）、「絆」房的鑰匙 0.5%（最低）</dd><dt>重複</dt><dd>疊起來記數量（× 2），展示櫃放一件；之後可以考慮重複的換東西</dd><dt>聲明</dt><dd>只能用遊戲幣扭，頁面要放「不能儲值、不能換現金」那句</dd></dl></div>
+  </section>
   <div id="groups"></div>
   <section class="card">
     <div class="h"><span class="no">櫃</span><span class="name">展示櫃打開</span><span class="tag">一格一件</span></div>
@@ -188,11 +192,14 @@ const D = {
 const RARE = { n: ['普通', '#c9c2b4'], r: ['稀有', '#c9a24a'], l: ['傳說', '#b33a2f'] };
 const GROUPS = [
   ['公仔', '扭蛋', [['茱莉鴨', 'julie', 'r'], ['蘋果鴨', 'appleduck', 'r'], ['浣熊大王', 'raccoon', 'l'], ['小吳鴨', 'xiaowu', 'r'], ['青江菜船長', 'captain', 'r'], ['店貓', 'cat', 'n'], ['坐洗部的狗', 'dog', 'n'], ['鼴鼠', 'mole', 'n'], ['雞塊', 'nugget', 'n']]],
-  ['礦坑標本', '直接買', [['金塊標本', 'goldspec', 'n'], ['三葉蟲化石', 'trilobite', 'n'], ['紫水晶洞', 'geode', 'r'], ['鑽石原石', 'diamond', 'r'], ['隕石碎片', 'meteor', 'l']]],
-  ['海上撿到的', '直接買', [['貝殼標本', 'shell', 'n'], ['伊藤的漂流瓶', 'bottle', 'n'], ['紅珊瑚', 'coral', 'r'], ['長蘿號瓶中船', 'shipbottle', 'r'], ['金蘿蔔', 'goldcarrot', 'l']]],
-  ['和風小物', '直接買', [['御守', 'omamori', 'n'], ['扇子', 'fan', 'n'], ['風鈴', 'furin', 'n'], ['達摩不倒翁', 'daruma', 'r'], ['小盆景', 'bonsai', 'r'], ['金繼茶碗', 'kintsugi', 'l']]],
-  ['27 樓的梗', '直接買', [['28 樓的舊路由器', 'router', 'n'], ['泛黃的入住券', 'oldticket', 'r'], ['27 樓大樓模型', 'tower', 'r'], ['「絆」房的鑰匙', 'key', 'l', '非賣品']]],
+  ['礦坑標本', '扭蛋', [['金塊標本', 'goldspec', 'n'], ['三葉蟲化石', 'trilobite', 'n'], ['紫水晶洞', 'geode', 'r'], ['鑽石原石', 'diamond', 'r'], ['隕石碎片', 'meteor', 'l']]],
+  ['海上撿到的', '扭蛋', [['貝殼標本', 'shell', 'n'], ['伊藤的漂流瓶', 'bottle', 'n'], ['紅珊瑚', 'coral', 'r'], ['長蘿號瓶中船', 'shipbottle', 'r'], ['金蘿蔔', 'goldcarrot', 'l']]],
+  ['和風小物', '扭蛋', [['御守', 'omamori', 'n'], ['扇子', 'fan', 'n'], ['風鈴', 'furin', 'n'], ['達摩不倒翁', 'daruma', 'r'], ['小盆景', 'bonsai', 'r'], ['金繼茶碗', 'kintsugi', 'l']]],
+  ['27 樓的梗', '扭蛋', [['28 樓的舊路由器', 'router', 'n'], ['泛黃的入住券', 'oldticket', 'r'], ['27 樓大樓模型', 'tower', 'r'], ['「絆」房的鑰匙', 'key', 'l', '機率最低']]],
 ];
+// 機率（草案）：普通 60%（12 款平分）、稀有 32%（12 款平分）、傳說 7.5%（4 款平分）、「絆」房的鑰匙 0.5%（全部裡面最低）
+const ODDS = { n: 60, r: 32, l: 7.5, key: 0.5 };
+function odds(key, r) { if (key === 'key') return ODDS.key + '%'; const cnt = GROUPS.flatMap(g => g[2]).filter(x => x[2] === r && x[1] !== 'key').length; return (ODDS[r] / cnt).toFixed(r === 'n' ? 0 : 2).replace(/\.?0+$/, '') + '%'; }
 function icon(key) { const cv = document.createElement('canvas'); cv.width = CW; cv.height = CH; const x = cv.getContext('2d'); x.imageSmoothingEnabled = false; D[key].pre(x); shade(x); D[key].post(x); return cv; }
 function tile(name, key, r, how) {
   const d = document.createElement('div'); d.className = 'it r-' + r; d.appendChild(icon(key));
@@ -202,8 +209,7 @@ function sheet() {
   const box = document.getElementById('groups'); let n = 0;
   GROUPS.forEach(([g, how, items]) => {
     const sec = document.createElement('section'); sec.className = 'card'; sec.innerHTML = `<div class="h"><span class="name">${g}</span><span class="tag">${how}・${items.length} 款</span></div><div class="grid"></div>`; box.appendChild(sec);
-    if (g === '公仔') sec.insertAdjacentHTML('beforeend', '<div class="gacha"><canvas id="gacha" width="40" height="48"></canvas><dl><dt>扭蛋機</dt><dd>9 款公仔隨機出一隻（價錢之後定）</dd><dt>機率</dt><dd>普通 60%、稀有 32%、傳說 8%（草案；稀有 4 款、傳說只有浣熊大王）</dd><dt>重複</dt><dd>疊起來記數量（× 2），展示櫃放一隻；之後可以考慮重複的換東西</dd><dt>聲明</dt><dd>只能用遊戲幣扭，頁面要放「不能儲值、不能換現金」那句</dd></dl></div>');
-    items.forEach(([name, key, r, how2]) => { sec.querySelector('.grid').appendChild(tile(name, key, r, how2)); n++; });
+    items.forEach(([name, key, r, how2]) => { sec.querySelector('.grid').appendChild(tile(name, key, r, (how2 ? how2 + '・' : '') + odds(key, r))); n++; });
   });
   document.getElementById('count').textContent = n;
   // 扭蛋機
