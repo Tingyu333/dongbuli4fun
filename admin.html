@@ -20,7 +20,7 @@
         .sans { font-family: 'Noto Sans TC', sans-serif; }
         .tabs { display: flex; border-bottom: 1px solid rgb(var(--wabi-sub)); }
         .tabs button {
-            flex: 1; min-width: 0; min-height: 46px; font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: 0.12em; white-space: nowrap;
+            flex: 1; min-width: 0; min-height: 46px; font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: 0.06em; white-space: nowrap;
             color: rgb(var(--wabi-accent)); border-bottom: 2px solid transparent; margin-bottom: -1px; touch-action: manipulation;
         }
         .tabs button[aria-pressed="true"] { color: rgb(var(--wabi-dark)); border-bottom-color: rgb(var(--wabi-shu)); }
@@ -106,6 +106,7 @@
                 <button type="button" data-tab="econ" aria-pressed="false">經濟</button>
                 <button type="button" data-tab="wish" aria-pressed="false">許願池</button>
                 <button type="button" data-tab="ann" aria-pressed="false">公告</button>
+                <button type="button" data-tab="bonus" aria-pressed="false">紅包</button>
             </div>
             <p id="state" class="mt-6 text-xs font-sans tracking-widest text-stone-400 text-center"></p>
 
@@ -233,6 +234,34 @@
                 </div>
             </div>
 
+            <!-- 發紅包（2026-11-21：admin 後台也能發；跟預約後台同一份，兩邊都看得到、都能收回） -->
+            <div id="tab-bonus" class="mt-5" hidden>
+                <p class="text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">發小遊戲用的錢。發出去會有一個連結，貼到群組，點進去的人錢包就多這一筆（一支手機一包領一次）。預約後台發的也列在這裡。</p>
+                <form id="bonusForm" class="mt-4 space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="block text-[10px] font-sans tracking-[0.2em] text-stone-400">每人金額
+                            <input id="bonusAmount" type="number" inputmode="numeric" min="1" max="20000000" step="1" value="1000" required class="field mt-1">
+                        </label>
+                        <label class="block text-[10px] font-sans tracking-[0.2em] text-stone-400">幾份
+                            <input id="bonusMax" type="number" inputmode="numeric" min="1" max="100" step="1" value="5" required class="field mt-1">
+                        </label>
+                    </div>
+                    <div id="bonusQuick" class="flex flex-wrap gap-2">
+                        <button type="button" class="wtab" data-amount="500">$500</button>
+                        <button type="button" class="wtab" data-amount="2000">$2,000</button>
+                        <button type="button" class="wtab" data-amount="10000">$10,000</button>
+                        <button type="button" class="wtab" data-amount="1000000">$100 萬</button>
+                    </div>
+                    <label class="block text-[10px] font-sans tracking-[0.2em] text-stone-400">附一句話（選填，30 字）
+                        <input id="bonusNote" type="text" maxlength="30" placeholder="例如：謝謝幫忙搬沙發" class="field mt-1">
+                    </label>
+                    <p id="bonusSum" class="text-[11px] font-sans tracking-wider text-stone-400"></p>
+                    <button id="bonusSubmit" type="submit" class="btn btn-dark w-full">發出去</button>
+                </form>
+                <p id="bonusState" class="mt-6 text-xs font-sans tracking-widest text-stone-400"></p>
+                <div id="bonusList" class="mt-3 space-y-3"></div>
+            </div>
+
             <!-- 許願池（2026-11-21 從預約後台搬過來）：改狀態、回一句話、藏起來 -->
             <div id="tab-wish" class="mt-5" hidden>
                 <p class="text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">旅人在許願・池許的願。狀態和回覆會貼在願望牆上；亂寫的按「藏起來」，願望牆就看不到（獎金不會收回）。</p>
@@ -265,7 +294,7 @@
         };
         const day = t => { if (!t) return ''; const d = new Date(t); return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`; };
         let token = null; try { token = localStorage.getItem(TOKEN_KEY); } catch (e) { }
-        let data = null, econ = null, wishes = null, ann = null, tab = 'players';
+        let data = null, econ = null, wishes = null, ann = null, bonuses = null, tab = 'players';
 
         async function call(body) {
             let res;
@@ -281,7 +310,7 @@
         // ===== 登入 =====
         function showLogin(msg) { $('loginView').hidden = false; $('appView').hidden = true; $('logoutBtn').hidden = true; $('loginMsg').textContent = msg || ''; setTimeout(() => $('pw').focus(), 50); }
         function showApp() { $('loginView').hidden = true; $('appView').hidden = false; $('logoutBtn').hidden = false; }
-        function logout(msg) { token = null; try { localStorage.removeItem(TOKEN_KEY); } catch (e) { } data = econ = wishes = ann = null; showLogin(msg); }
+        function logout(msg) { token = null; try { localStorage.removeItem(TOKEN_KEY); } catch (e) { } data = econ = wishes = ann = bonuses = null; showLogin(msg); }
         $('logoutBtn').addEventListener('click', () => logout(''));
         $('loginForm').addEventListener('submit', async e => {
             e.preventDefault();
@@ -301,8 +330,9 @@
         function setTab(t) {
             tab = t;
             document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tab === t)));
-            ['players', 'perks', 'lib', 'econ', 'wish', 'ann'].forEach(k => $('tab-' + k).hidden = k !== t);
+            ['players', 'perks', 'lib', 'econ', 'wish', 'ann', 'bonus'].forEach(k => $('tab-' + k).hidden = k !== t);
             if (t === 'ann' && !ann) loadAnn();
+            if (t === 'bonus' && !bonuses) loadBonuses();
             if (t === 'econ' && !econ) loadEcon();
             if (t === 'wish' && !wishes) loadWishes();
         }
@@ -620,6 +650,70 @@
             try { ann = await call({ type: 'gaAnnounceSet', text: '' }); renderAnn(); showToast('撤下來了'); }
             catch (e) { showToast(e.message); }
             $('annOff').disabled = false;
+        });
+
+        // ===== 發紅包（2026-11-21；後端 gaBonusList／gaBonusCreate／gaBonusClose，跟預約後台的 bonus* 同一份 Bonuses）=====
+        // 走 LIFF：在 LINE 裡點開會自動用 LINE 登入，紅包直接進帳號
+        const bonusLink = b => `https://liff.line.me/2012419790-otENqBBj/scratch.html?hb=${b.code}`;
+        const bonusText = b => `二十七樓主人發紅包：每人 ${fmt(b.amount)}，共 ${b.max} 份${b.note ? `（${b.note}）` : ''}，先搶先贏\n${bonusLink(b)}`;
+        function bonusCard(b) {
+            const closed = b.status === 'closed', done = b.claimed >= b.max, open = !closed && !done, d = new Date(b.timestamp);
+            const when = isNaN(d) ? '' : `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+            return `<div class="card ${open ? '' : 'opacity-60'}" data-bonus="${esc(b.code)}">
+                <div class="flex items-baseline justify-between gap-2">
+                    <p class="text-lg text-wabi-dark">${fmt(b.amount)} <span class="text-xs text-stone-400 font-sans">× ${b.max} 份</span></p>
+                    <span class="text-[10px] font-sans tracking-widest ${open ? 'text-wabi-shu' : 'text-stone-400'}">${closed ? '已收回' : done ? '領完了' : '發放中'}</span>
+                </div>
+                ${b.note ? `<p class="mt-1 text-xs text-stone-500">${esc(b.note)}</p>` : ''}
+                <p class="mt-2 text-[11px] font-sans tracking-wider text-stone-400">已領 ${b.claimed} / ${b.max}・紅包碼 <span class="text-wabi-dark tracking-widest">${esc(b.code)}</span>${when ? '・' + when : ''}</p>
+                ${open ? `<p class="mt-2 text-[10px] font-sans text-stone-400 break-all select-all">${esc(bonusLink(b))}</p>
+                <div class="mt-3 grid grid-cols-2 gap-2">
+                    <button type="button" class="btn btn-dark" data-bonus-share="${esc(b.code)}">${navigator.share ? '分享連結' : '複製連結'}</button>
+                    <button type="button" class="btn btn-line" data-bonus-close="${esc(b.code)}">收回</button>
+                </div>` : ''}
+            </div>`;
+        }
+        function renderBonuses() {
+            $('bonusState').textContent = bonuses.length ? `發過 ${bonuses.length} 包・還在發的 ${bonuses.filter(b => b.status !== 'closed' && b.claimed < b.max).length} 包` : '還沒發過紅包。';
+            $('bonusList').innerHTML = bonuses.map(bonusCard).join('');
+        }
+        async function loadBonuses() {
+            $('bonusState').textContent = '正在數紅包……';
+            try { bonuses = (await call({ type: 'gaBonusList' })).bonuses || []; renderBonuses(); }
+            catch (e) { bonuses = null; $('bonusState').textContent = /舊版/.test(e.message) ? '後端還是舊版：部署新版本（2026-11-21c 以後）才能在這裡發紅包' : e.message; }
+        }
+        function bonusSum() { const a = Math.round(Number($('bonusAmount').value)) || 0, m = Math.round(Number($('bonusMax').value)) || 0; $('bonusSum').textContent = a && m ? `總共最多發出 ${fmt(a * m)}` : ''; }
+        $('bonusAmount').addEventListener('input', bonusSum); $('bonusMax').addEventListener('input', bonusSum); bonusSum();
+        $('bonusQuick').addEventListener('click', e => { const b = e.target.closest('[data-amount]'); if (b) { $('bonusAmount').value = b.dataset.amount; bonusSum(); } });
+        $('bonusForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const amount = Math.round(Number($('bonusAmount').value)), max = Math.round(Number($('bonusMax').value)), note = $('bonusNote').value.trim();
+            if (!(amount >= 1 && amount <= 20000000)) return showToast('金額要 1 到 2000 萬');
+            if (!(max >= 1 && max <= 100)) return showToast('份數要 1 到 100');
+            if (amount * max >= 1000000 && !confirm(`每人 ${fmt(amount)} × ${max} 份，總共 ${fmt(amount * max)}。確定要發？`)) return;
+            $('bonusSubmit').disabled = true; $('bonusSubmit').textContent = '包紅包中……';
+            try {
+                const r = await call({ type: 'gaBonusCreate', amount, max, note });
+                bonuses = r.bonuses || []; renderBonuses(); $('bonusNote').value = '';
+                showToast('紅包包好了，把連結貼到群組');
+                document.querySelector(`[data-bonus="${r.code}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } catch (err) { showToast(/舊版/.test(err.message) ? '後端還是舊版，要先部署' : err.message); }
+            $('bonusSubmit').disabled = false; $('bonusSubmit').textContent = '發出去';
+        });
+        $('bonusList').addEventListener('click', async e => {
+            const share = e.target.closest('[data-bonus-share]'), close = e.target.closest('[data-bonus-close]');
+            if (share) {
+                const b = bonuses.find(x => x.code === share.dataset.bonusShare);
+                if (navigator.share) { try { await navigator.share({ text: bonusText(b) }); } catch (err) { } return; }   // 取消分享不用講
+                try { await navigator.clipboard.writeText(bonusText(b)); showToast('連結複製好了'); } catch (err) { showToast('複製不了，長按上面那行連結自己複製'); }
+            }
+            if (close) {
+                const b = bonuses.find(x => x.code === close.dataset.bonusClose);
+                if (!confirm(`收回這包紅包？還沒領的 ${b.max - b.claimed} 份就不能領了，已經領走的不會扣回來。`)) return;
+                close.disabled = true;
+                try { bonuses = (await call({ type: 'gaBonusClose', code: b.code })).bonuses || []; renderBonuses(); showToast('收回來了'); }
+                catch (err) { close.disabled = false; showToast(err.message); }
+            }
         });
 
         if (token) { showApp(); loadPlayers(); loadWishes(); } else showLogin('');
