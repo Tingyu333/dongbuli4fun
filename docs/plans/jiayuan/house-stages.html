@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家園：家的五個階段</title>
+<!-- 家園・築的設計圖（2026-11-21）：家一路升級的五個樣子，正上方、精緻像素風（規矩見 README.md）。還不是遊戲本身。 -->
+<style>
+  :root { --bg: #fcfaf8; --text: #4a4a4a; --dark: #2c2c2c; --accent: #8e8070; --sub: #dcdcdc; --shu: #b33a2f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', 'PingFang TC', sans-serif; }
+  main { max-width: 390px; margin: 0 auto; padding: 22px 16px 28px; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 300; font-size: 22px; letter-spacing: .3em; color: var(--dark); margin: 0; text-align: center; }
+  .sub { text-align: center; font-size: 11px; letter-spacing: .12em; color: var(--accent); margin: 6px 0 10px; line-height: 1.7; }
+  .card { border: 1px solid var(--sub); border-radius: 4px; padding: 12px; background: #fff; margin-top: 12px; }
+  .h { display: flex; align-items: baseline; gap: 8px; }
+  .no { font-size: 12px; color: var(--shu); border: 1px solid var(--shu); padding: 0 5px; line-height: 1.5; font-family: 'Noto Serif TC', serif; }
+  .name { font-family: 'Noto Serif TC', serif; font-size: 16px; letter-spacing: .2em; color: var(--dark); }
+  .tag { margin-left: auto; font-size: 10px; letter-spacing: .1em; color: var(--accent); }
+  canvas { display: block; width: 100%; border-radius: 3px; margin-top: 10px; image-rendering: pixelated; image-rendering: crisp-edges; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 8px 0 0; font-size: 11.5px; letter-spacing: .04em; line-height: 1.6; }
+  dt { color: var(--accent); } dd { margin: 0; }
+  .arrow { text-align: center; color: var(--accent); font-size: 12px; letter-spacing: .3em; margin-top: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>家・五個階段</h1>
+  <p class="sub">家園・築的設計圖（正上方、精緻像素）<br>越高的房子影子越長；數字都還沒定</p>
+
+  <section class="card">
+    <div class="h"><span class="no">壹</span><span class="name">帳篷</span><span class="tag">起點・送你</span></div>
+    <canvas id="c1" width="200" height="120"></canvas>
+    <dl><dt>占地</dt><dd>2 × 2 格</dd><dt>屋內</dt><dd>1 個角落（睡袋、行李）</dd><dt>旁邊</dt><dd>營火、木頭椅、提燈</dd></dl>
+  </section>
+  <p class="arrow">↓ 升級</p>
+
+  <section class="card">
+    <div class="h"><span class="no">貳</span><span class="name">木屋</span><span class="tag">第一棟房子</span></div>
+    <canvas id="c2" width="200" height="120"></canvas>
+    <dl><dt>占地</dt><dd>3 × 3 格</dd><dt>屋內</dt><dd>1 間（床、桌、衣櫃）</dd><dt>旁邊</dt><dd>木頭門廊、搖椅、柴堆、石頭煙囪、小菜圃</dd></dl>
+  </section>
+  <p class="arrow">↓ 升級</p>
+
+  <section class="card">
+    <div class="h"><span class="no">參</span><span class="name">紅瓦平房</span><span class="tag">島上那一棟</span></div>
+    <canvas id="c3" width="200" height="120"></canvas>
+    <dl><dt>占地</dt><dd>4 × 3 格</dd><dt>屋內</dt><dd>2 間（臥室、客廳）</dd><dt>旁邊</dt><dd>籬笆、花圃、信箱、曬衣繩（晾著的衣服＝衣櫃裡的）</dd></dl>
+  </section>
+  <p class="arrow">↓ 升級</p>
+
+  <section class="card">
+    <div class="h"><span class="no">肆</span><span class="name">兩層洋房</span><span class="tag">有二樓</span></div>
+    <canvas id="c4" width="200" height="120"></canvas>
+    <dl><dt>占地</dt><dd>5 × 4 格（L 型）</dd><dt>屋內</dt><dd>4 間（一樓客廳、廚房；二樓臥室、書房）</dd><dt>旁邊</dt><dd>石板屋頂、老虎窗、二樓陽台、樹籬、噴水池、鐵門</dd></dl>
+  </section>
+  <p class="arrow">↓ 升級</p>
+
+  <section class="card">
+    <div class="h"><span class="no">伍</span><span class="name">海景別墅</span><span class="tag">最後一階</span></div>
+    <canvas id="c5" width="200" height="120"></canvas>
+    <dl><dt>占地</dt><dd>7 × 5 格（要蓋在海邊）</dd><dt>屋內</dt><dd>6 間（加衣帽間、收藏室）</dd><dt>旁邊</dt><dd>平屋頂、屋頂花園、太陽能板、無邊際泳池、木甲板、躺椅、陽傘、椰子樹</dd></dl>
+  </section>
+</main>
+<script>
+// ===== 小工具（跟 style-mockup.html 同一套：硬邊、整數座標）=====
+const TAU = Math.PI * 2;
+function make(id) { const c = document.getElementById(id), x = c.getContext('2d'); x.imageSmoothingEnabled = false; return { c, x, W: c.width, H: c.height }; }
+const hash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+function P(x, a, b, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), 1, 1); }
+function R(x, a, b, w, h, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), Math.round(w), Math.round(h)); }
+function circ(x, cx, cy, r, col) { for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r + r * .6) P(x, cx + xx, cy + yy, col); }
+function poly(x, pts, col) {
+  const ys = pts.map(p => p[1]), xs = pts.map(p => p[0]);
+  const y0 = Math.floor(Math.min(...ys)), y1 = Math.ceil(Math.max(...ys)), x0 = Math.floor(Math.min(...xs)), x1 = Math.ceil(Math.max(...xs));
+  x.fillStyle = col;
+  for (let y = y0; y <= y1; y++) for (let X = x0; X <= x1; X++) {
+    const px = X + .5, py = y + .5; let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside; }
+    if (inside) x.fillRect(X, y, 1, 1);
+  }
+}
+const K = {
+  g1: '#97ad6f', g2: '#86a061', g3: '#a6bb7c', g4: '#738d51', sand: '#e6d3a3', sand2: '#d8c18b', sand3: '#efe0b8',
+  sea: '#6b97a6', sea2: '#7ea9b5', shallow: '#9cc5c8', foam: '#e3efed', deep: '#4f7d8f',
+  leaf1: '#5d7c43', leaf2: '#4a6634', leaf3: '#7a9a55', leafHi: '#9cb96f', trunk: '#6e4528',
+  roof: '#b33a2f', roofHi: '#cf5a46', roofLo: '#8f2c23', roofLine: '#7a241d',
+  wall: '#efe4cf', wall2: '#d9c9aa', wall3: '#c2ae8b', door: '#5e3c22', win: '#f6cd72', frame: '#6e4528',
+  conc: '#c4beb3', conc2: '#aea79b', conc3: '#d6d1c7', stone: '#a39b8e', stone2: '#8b8377', stone3: '#bdb6aa',
+  wood: '#9a6a40', wood2: '#7c5230', wood3: '#b07f50', post: '#5e3c22',
+  canvas: '#dcc9a0', canvasHi: '#ece0c1', canvasLo: '#bba77c', canvasLine: '#9c8a62',
+  shingle: '#8a6440', shingleHi: '#a57a50', shingleLo: '#6c4c30', shingleLine: '#553a24',
+  slate: '#76828c', slateHi: '#8f9ba5', slateLo: '#626d77', slateLine: '#4f5962',
+  white: '#f3f1ec', white2: '#dedad1', white3: '#c9c4b9', glass: '#a8cdd6', glassHi: '#e2f1f3',
+  pool: '#5fb3c4', poolHi: '#9fdce4', poolLo: '#3f93a6', fire: '#e8873a', fire2: '#f6cd72', fire3: '#c4462e',
+  hedge: '#557a3e', hedge2: '#43652f', flowerA: '#f0b8b0', flowerB: '#f1d36b', flowerC: '#c9a0dc',
+  shadow: 'rgba(30,40,30,.24)'
+};
+
+// 共用：草地底、石板路、樹、影子
+function lawn(x, W, H, seed = 0) { for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) { const n = hash(a + seed, b); P(x, a, b, n > .9 ? K.g3 : n > .74 ? K.g2 : n < .05 ? K.g4 : K.g1); } }
+function stones(x, pts) { pts.forEach(([a, b]) => { R(x, a, b, 6, 3, K.conc3); R(x, a, b + 2, 6, 1, K.conc2); P(x, a, b, '#e4e0d8'); }); }
+function tree(x, a, b, r) {
+  x.fillStyle = K.shadow; for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r) x.fillRect(a + xx + 3, b + yy + 3, 1, 1);
+  circ(x, a, b, r, K.leaf2); circ(x, a - 1, b - 1, r - 1, K.leaf1); circ(x, a - 2, b - 2, Math.max(1, r - 3), K.leaf3); P(x, a - r / 2, b - r / 2, K.leafHi); P(x, a - r / 2 + 1, b - r / 2, K.leafHi);
+  for (let i = 0; i < r * 2; i++) { const t = hash(a + i, b) * TAU, rr = hash(b, a + i) * r; P(x, a + Math.cos(t) * rr, b + Math.sin(t) * rr, i % 2 ? K.leaf2 : K.leaf3); }
+}
+function palm(x, a, b) {   // 椰子樹：六片葉子，每片兩顆寬、尾巴往下垂，葉子比草地深才看得出來
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3; for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); P(x, u + 3, v + 3, K.shadow); } }
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3, nx = -Math.sin(t), ny = Math.cos(t); for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); const wdt = s < 4 ? 1 : s < 9 ? 2 : 1; for (let q = -wdt; q <= wdt; q++) P(x, u + nx * q, v + ny * q, q === wdt ? '#3d5f2c' : (q === -wdt ? '#8fb35a' : '#6f9a45')); } }
+  circ(x, a, b, 2, '#7a5a3a'); P(x, a - 1, b - 1, '#a07a50'); P(x, a + 1, b + 1, '#5e4228'); }
+function shadowPoly(x, pts, dx, dy) { poly(x, pts.map(([a, b]) => [a + dx, b + dy]), K.shadow); }
+// 四面坡（上亮、左亮、右暗、下暗），屋脊沿水平方向；line 是瓦片的橫線間距
+function hipRoof(x, a, b, w, h, c, opts = {}) {
+  const inset = Math.min(h / 2, opts.inset ?? h / 2), ry = b + h / 2;
+  const ridgeL = a + inset, ridgeR = a + w - inset;
+  shadowPoly(x, [[a, b], [a + w, b], [a + w, b + h], [a, b + h]], opts.sh || 4, opts.sh || 4);
+  poly(x, [[a, b], [a + w, b], [ridgeR, ry], [ridgeL, ry]], c.hi);           // 上坡（迎光）
+  poly(x, [[a, b + h], [a + w, b + h], [ridgeR, ry], [ridgeL, ry]], c.lo);   // 下坡
+  poly(x, [[a, b], [ridgeL, ry], [a, b + h]], c.mid);                        // 左坡
+  poly(x, [[a + w, b], [ridgeR, ry], [a + w, b + h]], c.lo);                  // 右坡
+  // 瓦片橫線＋錯開的直縫
+  for (let yy = b + 2; yy < b + h - 1; yy += c.step || 3) for (let xx = a + 1; xx < a + w - 1; xx++) {
+    const dTop = yy - b, dBot = b + h - yy, dl = xx - a, dr = a + w - xx;
+    if (dl > Math.min(dTop, dBot) + 1 && dr > Math.min(dTop, dBot) + 1 || true) { const px = x.getImageData(xx, yy, 1, 1).data; if (px[3]) P(x, xx, yy, c.line); }
+  }
+  for (let yy = b + 1; yy < b + h - 1; yy++) for (let xx = a + 1 + ((Math.floor((yy - b) / (c.step || 3)) % 2) * 2); xx < a + w - 1; xx += 4) if ((yy - b) % (c.step || 3)) P(x, xx, yy, c.seam || c.line);
+  R(x, ridgeL, ry - 1, ridgeR - ridgeL, 2, c.ridge || c.line);
+  // 四條斜脊
+  const diag = (x0, y0, x1, y1) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, c.ridge || c.line); };
+  diag(a, b, ridgeL, ry); diag(a, b + h, ridgeL, ry); diag(a + w, b, ridgeR, ry); diag(a + w, b + h, ridgeR, ry);
+  // 外框
+  R(x, a, b, w, 1, c.edge || c.line); R(x, a, b + h - 1, w, 1, c.edge || c.line); R(x, a, b, 1, h, c.edge || c.line); R(x, a + w - 1, b, 1, h, c.edge || c.line);
+}
+function chimney(x, a, b, w, h, top, side, sh = 3) { R(x, a + sh, b + sh, w, h, K.shadow); R(x, a, b, w, h, side); R(x, a, b, w, 2, top); R(x, a + 1, b + 1, w - 2, 1, '#4a3f36'); for (let i = 0; i < 3; i++) P(x, a + 1 + i, b - 2 - i * 2, i % 2 ? '#ece8e2' : '#e0dbd2'); }
+
+// ===== 壹 帳篷 =====
+(() => {
+  const { x, W, H } = make('c1'); lawn(x, W, H, 11);
+  // 一塊踩平的沙地
+  for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) { const dx = (a - 92) / 70, dy = (b - 62) / 44; if (dx * dx + dy * dy < 1 && hash(a, b + 3) > .25) P(x, a, b, hash(b, a) > .8 ? K.sand2 : K.sand); }
+  // 帳篷：屋脊直的，左坡亮右坡暗，前面（下）開口
+  const a = 70, b = 34, w = 36, h = 40, mid = a + w / 2;
+  shadowPoly(x, [[a, b], [a + w, b], [a + w, b + h], [a, b + h]], 3, 3);
+  poly(x, [[a, b + 2], [mid, b], [mid, b + h], [a, b + h - 2]], K.canvasHi);
+  poly(x, [[mid, b], [a + w, b + 2], [a + w, b + h - 2], [mid, b + h]], K.canvasLo);
+  for (let yy = b + 4; yy < b + h - 2; yy += 6) { R(x, a + 1, yy, w / 2 - 1, 1, K.canvas); R(x, mid, yy, w / 2 - 1, 1, K.canvasLine); }
+  R(x, mid - 1, b, 2, h, K.canvasLine);
+  // 開口（掀起的門簾、裡面暗暗的，看得到睡袋一角）
+  poly(x, [[mid - 7, b + h], [mid, b + h - 12], [mid + 7, b + h]], '#4d4236');
+  R(x, mid - 3, b + h - 4, 6, 3, '#6d8fb0'); R(x, mid - 3, b + h - 4, 6, 1, '#8fb0cf');
+  poly(x, [[mid - 7, b + h], [mid - 10, b + h - 6], [mid - 4, b + h - 6]], K.canvasHi);
+  // 營繩和營釘
+  [[a - 8, b - 4, a, b + 2], [a + w + 8, b - 4, a + w, b + 2], [a - 8, b + h + 4, a, b + h - 2], [a + w + 8, b + h + 4, a + w, b + h - 2]].forEach(([x0, y0, x1, y1]) => { for (let i = 0; i <= 10; i++) P(x, x0 + (x1 - x0) * i / 10, y0 + (y1 - y0) * i / 10, '#e8e0cc'); R(x, x0 - 1, y0 - 1, 2, 2, K.post); });
+  // 營火：一圈石頭、木柴、火
+  const fx = 124, fy = 92;
+  for (let i = 0; i < 10; i++) { const t = i / 10 * TAU; R(x, fx + Math.cos(t) * 7 - 1, fy + Math.sin(t) * 6 - 1, 3, 2, i % 2 ? K.stone : K.stone2); }
+  R(x, fx - 5, fy - 1, 10, 2, K.wood2); R(x, fx - 1, fy - 4, 2, 8, K.wood);
+  [[0, -1, K.fire3], [-1, -2, K.fire], [1, -2, K.fire], [0, -3, K.fire2], [-2, 0, K.fire], [2, 0, K.fire3], [0, -5, K.fire2], [1, -4, K.fire]].forEach(([u, v, c]) => P(x, fx + u, fy + v, c));
+  for (let i = 0; i < 4; i++) P(x, fx + 2 + i, fy - 8 - i * 2, i % 2 ? '#d8d2c8' : '#e9e5de');
+  // 木頭椅（橫倒的圓木）、提燈、背包
+  R(x, 136, 100, 16, 5, K.wood); R(x, 136, 100, 16, 1, K.wood3); R(x, 136, 104, 16, 1, K.wood2); R(x, 151, 100, 2, 5, '#c99b6a'); P(x, 152, 102, K.wood2);
+  R(x, 110, 72, 3, 4, '#3d3d3d'); P(x, 111, 73, K.fire2); P(x, 111, 74, K.fire2); for (let i = -3; i <= 3; i++) for (let j = -3; j <= 3; j++) if (i * i + j * j < 10 && hash(i + 9, j) > .5) P(x, 111 + i, 74 + j, 'rgba(246,205,114,.35)');
+  R(x, 56, 64, 8, 10, '#6b7d5a'); R(x, 57, 65, 6, 3, '#7f936b'); R(x, 58, 70, 4, 2, K.wood2);
+  // 樹
+  tree(x, 24, 26, 8); tree(x, 172, 30, 9); tree(x, 30, 98, 7); palm(x, 178, 98);
+})();
+
+// ===== 貳 木屋 =====
+(() => {
+  const { x, W, H } = make('c2'); lawn(x, W, H, 23);
+  stones(x, [[92, 92], [94, 99], [91, 106], [94, 113]]);
+  // 屋頂：木片瓦，雙坡（屋脊水平），左右兩端看得到圓木頭的截面
+  const a = 62, b = 26, w = 66, h = 44;
+  shadowPoly(x, [[a, b], [a + w, b], [a + w, b + h], [a, b + h]], 4, 4);
+  for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) {
+    const top = yy < h / 2; let c = top ? K.shingleHi : K.shingle;
+    const row = Math.floor(yy / 4), off = (row % 2) * 3;
+    if (yy % 4 === 3) c = top ? K.shingle : K.shingleLo;
+    else if ((xx + off) % 6 === 0) c = top ? K.shingle : K.shingleLo;
+    if (hash(xx + a, yy + b) > .93) c = top ? '#b48a5d' : K.shingleLo;
+    P(x, a + xx, b + yy, c);
+  }
+  R(x, a, b + h / 2 - 1, w, 2, K.shingleLine); R(x, a, b, w, 1, K.shingleLine); R(x, a, b + h - 1, w, 1, K.shingleLine);
+  for (let yy = b + 2; yy < b + h - 1; yy += 5) { circ(x, a - 1, yy, 2, '#c99b6a'); P(x, a - 1, yy, K.wood2); circ(x, a + w, yy, 2, '#b8895a'); P(x, a + w, yy, K.wood2); }
+  // 石頭煙囪
+  const cx = a + 48, cy = b + 6; R(x, cx + 3, cy + 3, 9, 9, K.shadow);
+  for (let yy = 0; yy < 9; yy++) for (let xx = 0; xx < 9; xx++) P(x, cx + xx, cy + yy, hash(xx + cx, yy) > .5 ? K.stone : (hash(yy, xx) > .5 ? K.stone3 : K.stone2));
+  R(x, cx + 2, cy + 2, 5, 5, '#3d342c'); for (let i = 0; i < 4; i++) P(x, cx + 4 + (i % 2), cy - 2 - i * 2, i % 2 ? '#ece8e2' : '#ddd8cf');
+  // 門廊（木頭平台）＋搖椅＋門口
+  const pa = a + 14, pb = b + h, pw = 38, ph = 14;
+  R(x, pa + 3, pb + 3, pw, ph, K.shadow);
+  for (let xx = 0; xx < pw; xx++) R(x, pa + xx, pb, 1, ph, xx % 4 === 3 ? K.wood2 : (xx % 4 === 0 ? K.wood3 : K.wood));
+  R(x, pa, pb + ph - 1, pw, 1, K.post); [[pa, pb], [pa + pw - 2, pb], [pa, pb + ph - 2], [pa + pw - 2, pb + ph - 2]].forEach(([u, v]) => R(x, u, v, 2, 2, K.post));
+  R(x, pa + 16, pb, 6, 3, K.door);   // 門檻
+  R(x, pa + 5, pb + 4, 7, 6, K.wood2); R(x, pa + 6, pb + 5, 5, 3, '#c94f3d'); R(x, pa + 4, pb + 10, 9, 1, K.post);  // 搖椅＋紅坐墊
+  R(x, pa + 28, pb + 5, 4, 4, '#6e8f4e'); P(x, pa + 29, pb + 4, '#e9a6a0');   // 盆栽
+  // 柴堆（右邊牆）
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) { circ(x, a + w + 6 + i * 4, b + 18 + j * 4, 1, '#c99b6a'); P(x, a + w + 6 + i * 4, b + 18 + j * 4, K.wood2); }
+  R(x, a + w + 3, b + 15, 17, 1, K.post);
+  // 小菜圃
+  const va = 22, vb = 74; R(x, va - 2, vb - 2, 34, 24, K.wood2); R(x, va, vb, 30, 20, '#7c5a3c');
+  for (let r = 0; r < 3; r++) for (let k = 0; k < 6; k++) { const u = va + 2 + k * 5, v = vb + 3 + r * 6; P(x, u, v, K.leaf3); P(x, u + 1, v, K.leaf1); P(x, u, v + 1, K.leaf1); if (r === 1 && k % 2) P(x, u + 1, v + 1, '#e07a3c'); }
+  tree(x, 20, 30, 9); tree(x, 172, 82, 8); tree(x, 160, 22, 6);
+})();
+
+// ===== 參 紅瓦平房 =====
+(() => {
+  const { x, W, H } = make('c3'); lawn(x, W, H, 37);
+  stones(x, [[98, 82], [96, 89], [99, 96], [96, 103], [98, 110]]);
+  const a = 60, b = 18, w = 80, h = 50;
+  shadowPoly(x, [[a, b], [a + w, b], [a + w, b + h], [a, b + h]], 5, 5);
+  for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) {
+    const top = yy < h / 2; let c = top ? K.roofHi : K.roof;
+    if (yy % 4 === 3) c = top ? K.roof : K.roofLo;
+    if (((xx + (Math.floor(yy / 4) % 2) * 3) % 6) === 0 && yy % 4 !== 3) c = top ? K.roof : K.roofLo;
+    if (yy === Math.floor(h / 2) || yy === Math.floor(h / 2) - 1) c = K.roofLine;
+    if (xx === 0 || xx === w - 1 || yy === 0 || yy === h - 1) c = K.roofLine;
+    P(x, a + xx, b + yy, c);
+  }
+  chimney(x, a + 60, b + 6, 8, 10, K.wall2, K.wall3);
+  R(x, a + 34, b + h, 14, 5, K.roofLo); R(x, a + 34, b + h + 4, 14, 1, K.roofLine); R(x, a + 37, b + h + 5, 8, 2, '#b07f50');   // 門口小屋簷＋門墊
+  // 花圃
+  for (let i = 0; i < 14; i++) { P(x, a + 2 + i * 2, b + h + 3, [K.flowerA, K.flowerB, K.flowerC][i % 3]); P(x, a + 3 + i * 2, b + h + 4, K.leaf1); P(x, a + 2 + i * 2, b + h + 5, K.leaf3); }
+  // 籬笆（白色）
+  for (let xx = 30; xx < 172; xx++) { P(x, xx, 112, '#efe9dd'); if (xx % 4 === 0) { R(x, xx, 110, 1, 4, '#f6f2ea'); P(x, xx + 1, 113, K.shadow); } }
+  for (let xx = 96; xx < 106; xx++) P(x, xx, 112, K.g1);   // 門口留空
+  // 信箱
+  R(x, 110, 104, 1, 6, K.post); R(x, 108, 101, 6, 4, '#b33a2f'); R(x, 108, 101, 6, 1, '#cf5a46');
+  // 曬衣繩：兩根桿子＋晾著的衣服（之後衣櫃裡的衣服會晾在這）
+  R(x, 18, 24, 2, 2, K.post); R(x, 46, 24, 2, 2, K.post); for (let xx = 20; xx < 46; xx++) P(x, xx, 25 + Math.round(Math.sin((xx - 20) / 26 * Math.PI) * 2), '#ddd6c8');
+  [[22, '#6d8fb0', 5, 6], [29, '#f3f1ec', 4, 7], [35, '#c94f3d', 5, 5], [41, '#e6c35a', 3, 4]].forEach(([u, c, ww, hh]) => { const v = 26 + Math.round(Math.sin((u - 20) / 26 * Math.PI) * 2); R(x, u + 2, v + 2, ww, hh, K.shadow); R(x, u, v, ww, hh, c); R(x, u, v, ww, 1, '#ffffff55'); });
+  tree(x, 22, 70, 9); tree(x, 176, 36, 9); tree(x, 168, 84, 6);
+})();
+
+// ===== 肆 兩層洋房 =====
+(() => {
+  const { x, W, H } = make('c4'); lawn(x, W, H, 51);
+  // 石板車道＋鐵門
+  for (let b = 92; b < 120; b++) for (let a = 90; a < 112; a++) P(x, a, b, hash(a, b) > .8 ? K.stone3 : ((a + b) % 7 ? K.conc3 : K.conc2));
+  for (let a = 86; a < 116; a++) { P(x, a, 116, '#3d3d3d'); if (a % 3 === 0) R(x, a, 113, 1, 4, '#4a4a4a'); } R(x, 84, 112, 3, 5, K.stone2); R(x, 115, 112, 3, 5, K.stone2);
+  // 樹籬
+  for (let a = 10; a < 190; a++) if (a < 84 || a > 118) { const c = hash(a, 3) > .5 ? K.hedge : K.hedge2; R(x, a, 113, 1, 5, c); P(x, a, 112, hash(a, 9) > .6 ? K.leaf3 : c); P(x, a + 2, 118, K.shadow); }
+  // 主屋（石板瓦、四面坡）＋側翼，影子比較長（兩層樓）
+  const S = { hi: K.slateHi, mid: K.slate, lo: K.slateLo, line: K.slateLine, step: 3, ridge: '#3a4148', edge: '#3a4148', sh: 8 };
+  hipRoof(x, 54, 14, 72, 48, S);
+  hipRoof(x, 112, 34, 40, 52, { ...S, sh: 7 });
+  // 老虎窗（屋頂上凸出來的小窗）
+  [[66, 50], [90, 50]].forEach(([u, v]) => { R(x, u + 2, v + 2, 10, 8, K.shadow); R(x, u, v, 10, 8, K.slateLo); R(x, u + 1, v + 3, 8, 5, K.white); R(x, u + 2, v + 4, 6, 3, K.win); R(x, u + 4, v + 4, 1, 3, K.frame); poly(x, [[u - 1, v + 3], [u + 5, v - 1], [u + 11, v + 3]], K.slateHi); });
+  chimney(x, 62, 20, 7, 10, '#c1b8a8', '#a99c88', 6); chimney(x, 116, 22, 7, 10, '#c1b8a8', '#a99c88', 6);
+  // 二樓陽台（側翼前面）
+  R(x, 118, 86, 30, 9, K.shadow); R(x, 114, 84, 30, 9, K.white2); R(x, 114, 84, 30, 1, K.white); for (let a = 114; a < 144; a += 3) R(x, a, 92, 1, 2, '#3d3d3d'); R(x, 114, 93, 30, 1, '#3d3d3d');
+  R(x, 120, 86, 6, 4, '#8fb0cf'); R(x, 132, 86, 4, 3, K.wood);   // 陽台上的椅子
+  // 大門（主屋正面）
+  R(x, 82, 62, 16, 6, K.white2); R(x, 82, 62, 16, 1, K.white); R(x, 86, 64, 8, 4, K.door); P(x, 92, 66, K.win); R(x, 80, 68, 20, 2, K.stone3);
+  // 噴水池
+  const fx = 40, fy = 92; circ(x, fx + 2, fy + 2, 11, K.shadow); circ(x, fx, fy, 11, K.stone3); circ(x, fx, fy, 9, '#5fb3c4'); circ(x, fx, fy, 3, K.stone); P(x, fx, fy - 1, '#ffffff');
+  [[-5, -3], [5, 2], [-3, 5], [6, -4], [0, -7]].forEach(([u, v]) => P(x, fx + u, fy + v, '#9fdce4'));
+  // 小花園
+  for (let i = 0; i < 12; i++) { P(x, 14 + i * 3, 70, [K.flowerA, K.flowerB, K.flowerC][i % 3]); P(x, 15 + i * 3, 71, K.leaf1); }
+  tree(x, 20, 30, 9); tree(x, 176, 26, 10); tree(x, 172, 72, 7); tree(x, 158, 104, 5);
+})();
+
+// ===== 伍 海景別墅 =====
+(() => {
+  const { x, W, H } = make('c5');
+  // 上面草地、下面沙灘接海
+  for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) {
+    const shore = 96 + Math.round(Math.sin(a / 13) * 2 + Math.sin(a / 5) * 1), n = hash(a + 70, b);
+    let c;
+    if (b < shore - 12) c = n > .9 ? K.g3 : n > .74 ? K.g2 : n < .05 ? K.g4 : K.g1;
+    else if (b < shore) c = n > .85 ? K.sand2 : n < .08 ? K.sand3 : K.sand;
+    else { const t = b - shore; c = t < 2 && n > .2 ? K.foam : t < 6 ? K.shallow : t < 14 ? K.sea2 : K.sea; if (n > .985) c = K.foam; }
+    if (b >= shore - 13 && b < shore - 11 && (a + b) % 2) c = K.sand2;
+    P(x, a, b, c);
+  }
+  // 木甲板
+  const da = 40, db = 60, dw = 124, dh = 28;
+  R(x, da + 3, db + 3, dw, dh, K.shadow);
+  for (let a = 0; a < dw; a++) R(x, da + a, db, 1, dh, a % 5 === 4 ? K.wood2 : (a % 5 === 0 ? K.wood3 : K.wood));
+  R(x, da, db + dh - 1, dw, 1, K.post);
+  // 無邊際泳池（玻璃邊朝海）
+  const pa = 92, pb = 64, pw = 62, ph = 20;
+  R(x, pa - 1, pb - 1, pw + 2, ph + 2, K.white2);
+  for (let b = 0; b < ph; b++) for (let a = 0; a < pw; a++) { const wave = Math.sin(a / 3 + b / 2) > .7; P(x, pa + a, pb + b, b < 2 ? K.poolLo : wave ? K.poolHi : K.pool); }
+  R(x, pa - 1, pb + ph, pw + 2, 1, K.glassHi); R(x, pa - 1, pb + ph + 1, pw + 2, 1, K.glass);
+  R(x, pa + 4, pb + 2, 1, 6, '#e9eef0'); R(x, pa + 6, pb + 2, 1, 6, '#e9eef0'); R(x, pa + 4, pb + 3, 3, 1, '#e9eef0'); R(x, pa + 4, pb + 6, 3, 1, '#e9eef0');   // 泳池梯
+  // 躺椅、陽傘
+  [[46, 66], [62, 66]].forEach(([u, v]) => { R(x, u + 2, v + 2, 8, 16, K.shadow); R(x, u, v, 8, 16, K.white); R(x, u, v, 8, 5, '#e9e5dc'); R(x, u + 1, v + 6, 6, 9, '#6d8fb0'); });
+  { const u = 80, v = 70, r = 9; for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r) { x.fillStyle = K.shadow; x.fillRect(u + xx + 4, v + yy + 4, 1, 1); }
+    for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r) { const t = Math.atan2(yy, xx); P(x, u + xx, v + yy, (Math.floor((t + Math.PI) / (TAU / 8)) % 2) ? '#f3f1ec' : '#c94f3d'); } P(x, u, v, K.post); }
+  // 平屋頂別墅：兩個高低不同的方塊（白色），屋頂花園＋太陽能板
+  const box = (a, b, w, h, sh) => { R(x, a + sh, b + sh, w, h, K.shadow); R(x, a, b, w, h, K.white); R(x, a, b, w, 1, '#ffffff'); R(x, a, b + h - 1, w, 1, K.white3); R(x, a + w - 1, b, 1, h, K.white3); R(x, a + 1, b + 1, w - 2, 1, K.white2); };
+  box(36, 10, 78, 48, 7);    // 低的那一棟（一層）
+  box(102, 4, 64, 54, 11);   // 高的那一棟（兩層），影子比較長
+  // 屋頂花園（低的那棟）
+  R(x, 42, 16, 30, 20, '#7c5a3c'); for (let b = 17; b < 35; b++) for (let a = 43; a < 71; a++) if (hash(a, b) > .35) P(x, a, b, hash(b, a) > .5 ? K.leaf3 : K.leaf1);
+  [[48, 22], [60, 28], [66, 20]].forEach(([u, v]) => { P(x, u, v, K.flowerA); P(x, u + 1, v, K.flowerB); });
+  R(x, 78, 16, 30, 3, K.glass); R(x, 78, 16, 30, 1, K.glassHi);   // 天窗
+  // 太陽能板（高的那棟）
+  for (let r = 0; r < 2; r++) for (let k = 0; k < 4; k++) { const u = 110 + k * 13, v = 12 + r * 14; R(x, u + 1, v + 1, 11, 11, K.shadow); R(x, u, v, 11, 11, '#3d5a73'); for (let i = 0; i < 11; i += 3) { R(x, u, v + i, 11, 1, '#5d7d96'); R(x, u + i, v, 1, 11, '#5d7d96'); } P(x, u + 1, v + 1, '#9fc0d6'); }
+  R(x, 112, 42, 40, 8, K.white2); R(x, 112, 42, 40, 1, K.white3);   // 屋頂露台
+  // 玻璃欄杆（高棟前緣）
+  R(x, 102, 57, 64, 1, K.glassHi); R(x, 102, 58, 64, 1, K.glass);
+  palm(x, 22, 72); palm(x, 178, 74); palm(x, 182, 30); tree(x, 18, 22, 8);
+  // 海上的小浪
+  for (let i = 0; i < 12; i++) { const u = hash(i, 5) * 200 | 0, v = 106 + (hash(5, i) * 12 | 0); R(x, u, v, 3, 1, K.foam); }
+})();
+</script>
+</body>
+</html>
