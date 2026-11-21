@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家園：屋內</title>
+<!-- 家園・築的設計圖（2026-11-21）：屋內樣張，兩層洋房四間房、擺放模式、衣櫃。正上方把屋頂拿掉，北牆看得到牆面。家具格子自由擺（點家具→點一格、旋轉鈕、不用拖曳）、家具純收藏（使用者定的）。還不是遊戲本身。 -->
+<style>
+  :root { --bg: #fcfaf8; --text: #4a4a4a; --dark: #2c2c2c; --accent: #8e8070; --sub: #dcdcdc; --shu: #b33a2f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', 'PingFang TC', sans-serif; }
+  main { max-width: 390px; margin: 0 auto; padding: 22px 16px 28px; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 300; font-size: 22px; letter-spacing: .3em; color: var(--dark); margin: 0; text-align: center; }
+  .sub { text-align: center; font-size: 11px; letter-spacing: .12em; color: var(--accent); margin: 6px 0 10px; line-height: 1.7; }
+  .card { border: 1px solid var(--sub); border-radius: 4px; padding: 12px; background: #fff; margin-top: 12px; }
+  .h { display: flex; align-items: baseline; gap: 8px; }
+  .no { font-size: 12px; color: var(--shu); border: 1px solid var(--shu); padding: 0 5px; line-height: 1.5; font-family: 'Noto Serif TC', serif; }
+  .name { font-family: 'Noto Serif TC', serif; font-size: 16px; letter-spacing: .2em; color: var(--dark); }
+  .tag { margin-left: auto; font-size: 10px; letter-spacing: .1em; color: var(--accent); }
+  canvas { display: block; width: 100%; border-radius: 3px; margin-top: 10px; image-rendering: pixelated; image-rendering: crisp-edges; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 8px 0 0; font-size: 11.5px; letter-spacing: .04em; line-height: 1.6; }
+  dt { color: var(--accent); } dd { margin: 0; }
+  .arrow { text-align: center; color: var(--accent); font-size: 12px; letter-spacing: .3em; margin-top: 12px; }
+  .labels { display: grid; gap: 4px; margin-top: 6px; text-align: center; }
+  .labels b { display: block; font-weight: 500; font-size: 11.5px; color: var(--dark); letter-spacing: .04em; }
+  .labels span { display: block; font-size: 9.5px; color: var(--accent); line-height: 1.4; margin-top: 1px; }
+  .stack canvas { margin-top: 10px; }
+  .gold { border-color: #c9a24a; }
+  .tray { margin-top: 10px; border-top: 1px solid var(--sub); padding-top: 8px; }
+  .chips, .btns { display: flex; flex-wrap: wrap; gap: 6px; }
+  .btns { margin-top: 8px; justify-content: flex-end; }
+  .chips span, .btns span { font-size: 11px; letter-spacing: .1em; padding: 3px 9px; border: 1px solid var(--sub); border-radius: 2px; color: var(--text); }
+  .chips .on { border-color: var(--dark); color: var(--dark); background: #f3efe8; }
+  .btns .ok { background: var(--dark); color: #fff; border-color: var(--dark); }
+  .closet { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 10px; }
+  .slot { position: relative; border: 1px solid var(--sub); border-radius: 2px; padding: 4px 2px 2px; text-align: center; background: #f6f1e8; }
+  .slot.empty { background: transparent; border-style: dashed; min-height: 52px; }
+  .slot canvas { width: 36px; margin: 0 auto; }
+  .slot .nm { display: block; font-size: 9px; color: var(--accent); letter-spacing: 0; }
+  .slot .qty { position: absolute; top: 1px; right: 2px; font-size: 9px; font-weight: 500; color: var(--shu); }
+</style>
+</head>
+<body>
+<main>
+  <h1>屋內・樣張</h1>
+  <p class="sub">家園・築的設計圖（正上方、把屋頂拿掉）<br>兩層洋房：一樓客廳、廚房；二樓臥室、書房；一格 10 顆</p>
+
+  <section class="card">
+    <div class="h"><span class="no">一</span><span class="name">一樓</span><span class="tag">客廳・廚房</span></div>
+    <canvas id="f1" width="240" height="150"></canvas>
+    <dl><dt>客廳</dt><dd>條紋壁紙、木地板；電視櫃、玻璃茶几、三人沙發、單人椅、立燈、紅地毯、盆栽、樓梯</dd><dt>廚房</dt><dd>薄荷綠壁紙、格子磁磚；流理台、水槽、瓦斯爐、冰箱、四人餐桌</dd><dt>牆上</dt><dd>北邊的牆看得到牆面：壁紙、窗（陽光照在地上）、掛畫</dd></dl>
+  </section>
+  <section class="card">
+    <div class="h"><span class="no">二</span><span class="name">二樓</span><span class="tag">臥室・書房</span></div>
+    <canvas id="f2" width="240" height="150"></canvas>
+    <dl><dt>臥室</dt><dd>金點壁紙、淺色地板；雙人床、兩個床頭櫃（小燈）、直放的衣櫃（轉過 90 度）、紫地毯、立燈、樓梯口欄杆</dd><dt>書房</dt><dd>深藍壁紙、深色地板；書桌（筆電、紙）、椅子、兩個書櫃、展示櫃（寶石、小獎盃）、單人椅、圓地毯</dd></dl>
+  </section>
+  <section class="card">
+    <div class="h"><span class="no">擺</span><span class="name">擺放模式</span><span class="tag">點家具→點一格</span></div>
+    <canvas id="fp" width="130" height="150" style="width:62%;margin:10px auto 0"></canvas>
+    <div class="tray">
+      <div class="chips"><span>床</span><span>床頭櫃</span><span>衣櫃</span><span class="on">盆栽</span><span>地毯</span><span>立燈</span></div>
+      <div class="btns"><span>旋轉</span><span>收回</span><span class="ok">放這裡</span></div>
+    </div>
+    <dl><dt>格子</dt><dd>白點是格子；淡紅＝已經有東西；白框＝選好的盆栽要放的地方（半透明預覽）</dd><dt>操作</dt><dd>點下面的家具 → 點一格 → 「放這裡」；「旋轉」轉 90 度；點已經放好的家具可以移走或收回倉庫。不用拖曳</dd></dl>
+  </section>
+  <section class="card">
+    <div class="h"><span class="no">衣</span><span class="name">衣櫃打開</span><span class="tag">12 格</span></div>
+    <div id="closet" class="closet"></div>
+    <dl><dt>疊起來</dt><dd>一模一樣的衣服放同一格、記數量（白T × 6 只佔一格）；顏色不同算不同種</dd><dt>曬衣繩</dt><dd>平房以上的曬衣繩，隨機晾幾件衣櫃裡的</dd></dl>
+  </section>
+</main>
+<script>
+
+// ===== 小工具（跟 style-mockup.html 同一套：硬邊、整數座標）=====
+const TAU = Math.PI * 2;
+function make(id) { const c = document.getElementById(id), x = c.getContext('2d'); x.imageSmoothingEnabled = false; return { c, x, W: c.width, H: c.height }; }
+const hash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+function P(x, a, b, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), 1, 1); }
+function R(x, a, b, w, h, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), Math.round(w), Math.round(h)); }
+function circ(x, cx, cy, r, col) { for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r + r * .6) P(x, cx + xx, cy + yy, col); }
+function poly(x, pts, col) {
+  const ys = pts.map(p => p[1]), xs = pts.map(p => p[0]);
+  const y0 = Math.floor(Math.min(...ys)), y1 = Math.ceil(Math.max(...ys)), x0 = Math.floor(Math.min(...xs)), x1 = Math.ceil(Math.max(...xs));
+  x.fillStyle = col;
+  for (let y = y0; y <= y1; y++) for (let X = x0; X <= x1; X++) {
+    const px = X + .5, py = y + .5; let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside; }
+    if (inside) x.fillRect(X, y, 1, 1);
+  }
+}
+const K = {
+  g1: '#97ad6f', g2: '#86a061', g3: '#a6bb7c', g4: '#738d51', sand: '#e6d3a3', sand2: '#d8c18b', sand3: '#efe0b8',
+  sea: '#6b97a6', sea2: '#7ea9b5', shallow: '#9cc5c8', foam: '#e3efed', deep: '#4f7d8f',
+  leaf1: '#5d7c43', leaf2: '#4a6634', leaf3: '#7a9a55', leafHi: '#9cb96f', trunk: '#6e4528',
+  roof: '#b33a2f', roofHi: '#cf5a46', roofLo: '#8f2c23', roofLine: '#7a241d',
+  wall: '#efe4cf', wall2: '#d9c9aa', wall3: '#c2ae8b', door: '#5e3c22', win: '#f6cd72', frame: '#6e4528',
+  conc: '#c4beb3', conc2: '#aea79b', conc3: '#d6d1c7', stone: '#a39b8e', stone2: '#8b8377', stone3: '#bdb6aa',
+  wood: '#9a6a40', wood2: '#7c5230', wood3: '#b07f50', post: '#5e3c22',
+  canvas: '#dcc9a0', canvasHi: '#ece0c1', canvasLo: '#bba77c', canvasLine: '#9c8a62',
+  shingle: '#8a6440', shingleHi: '#a57a50', shingleLo: '#6c4c30', shingleLine: '#553a24',
+  slate: '#76828c', slateHi: '#8f9ba5', slateLo: '#626d77', slateLine: '#4f5962',
+  white: '#f3f1ec', white2: '#dedad1', white3: '#c9c4b9', glass: '#a8cdd6', glassHi: '#e2f1f3',
+  pool: '#5fb3c4', poolHi: '#9fdce4', poolLo: '#3f93a6', fire: '#e8873a', fire2: '#f6cd72', fire3: '#c4462e',
+  hedge: '#557a3e', hedge2: '#43652f', flowerA: '#f0b8b0', flowerB: '#f1d36b', flowerC: '#c9a0dc',
+  shadow: 'rgba(30,40,30,.24)'
+};
+
+// 共用：草地底、石板路、樹、影子
+function lawn(x, W, H, seed = 0) { for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) { const n = hash(a + seed, b); P(x, a, b, n > .9 ? K.g3 : n > .74 ? K.g2 : n < .05 ? K.g4 : K.g1); } }
+function stones(x, pts) { pts.forEach(([a, b]) => { R(x, a, b, 6, 3, K.conc3); R(x, a, b + 2, 6, 1, K.conc2); P(x, a, b, '#e4e0d8'); }); }
+function tree(x, a, b, r) {
+  x.fillStyle = K.shadow; for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r) x.fillRect(a + xx + 3, b + yy + 3, 1, 1);
+  circ(x, a, b, r, K.leaf2); circ(x, a - 1, b - 1, r - 1, K.leaf1); circ(x, a - 2, b - 2, Math.max(1, r - 3), K.leaf3); P(x, a - r / 2, b - r / 2, K.leafHi); P(x, a - r / 2 + 1, b - r / 2, K.leafHi);
+  for (let i = 0; i < r * 2; i++) { const t = hash(a + i, b) * TAU, rr = hash(b, a + i) * r; P(x, a + Math.cos(t) * rr, b + Math.sin(t) * rr, i % 2 ? K.leaf2 : K.leaf3); }
+}
+function palm(x, a, b) {   // 椰子樹：六片葉子，每片兩顆寬、尾巴往下垂，葉子比草地深才看得出來
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3; for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); P(x, u + 3, v + 3, K.shadow); } }
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3, nx = -Math.sin(t), ny = Math.cos(t); for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); const wdt = s < 4 ? 1 : s < 9 ? 2 : 1; for (let q = -wdt; q <= wdt; q++) P(x, u + nx * q, v + ny * q, q === wdt ? '#3d5f2c' : (q === -wdt ? '#8fb35a' : '#6f9a45')); } }
+  circ(x, a, b, 2, '#7a5a3a'); P(x, a - 1, b - 1, '#a07a50'); P(x, a + 1, b + 1, '#5e4228'); }
+function shadowPoly(x, pts, dx, dy) { poly(x, pts.map(([a, b]) => [a + dx, b + dy]), K.shadow); }
+// 四面坡（上亮、左亮、右暗、下暗），屋脊沿水平方向；line 是瓦片的橫線間距
+function hipRoof(x, a, b, w, h, c, opts = {}) {
+  const inset = Math.min(h / 2, opts.inset ?? h / 2), ry = b + h / 2;
+  const ridgeL = a + inset, ridgeR = a + w - inset;
+  shadowPoly(x, [[a, b], [a + w, b], [a + w, b + h], [a, b + h]], opts.sh || 4, opts.sh || 4);
+  poly(x, [[a, b], [a + w, b], [ridgeR, ry], [ridgeL, ry]], c.hi);           // 上坡（迎光）
+  poly(x, [[a, b + h], [a + w, b + h], [ridgeR, ry], [ridgeL, ry]], c.lo);   // 下坡
+  poly(x, [[a, b], [ridgeL, ry], [a, b + h]], c.mid);                        // 左坡
+  poly(x, [[a + w, b], [ridgeR, ry], [a + w, b + h]], c.lo);                  // 右坡
+  // 瓦片橫線＋錯開的直縫
+  for (let yy = b + 2; yy < b + h - 1; yy += c.step || 3) for (let xx = a + 1; xx < a + w - 1; xx++) {
+    const dTop = yy - b, dBot = b + h - yy, dl = xx - a, dr = a + w - xx;
+    if (dl > Math.min(dTop, dBot) + 1 && dr > Math.min(dTop, dBot) + 1 || true) { const px = x.getImageData(xx, yy, 1, 1).data; if (px[3]) P(x, xx, yy, c.line); }
+  }
+  for (let yy = b + 1; yy < b + h - 1; yy++) for (let xx = a + 1 + ((Math.floor((yy - b) / (c.step || 3)) % 2) * 2); xx < a + w - 1; xx += 4) if ((yy - b) % (c.step || 3)) P(x, xx, yy, c.seam || c.line);
+  R(x, ridgeL, ry - 1, ridgeR - ridgeL, 2, c.ridge || c.line);
+  // 四條斜脊
+  const diag = (x0, y0, x1, y1) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, c.ridge || c.line); };
+  diag(a, b, ridgeL, ry); diag(a, b + h, ridgeL, ry); diag(a + w, b, ridgeR, ry); diag(a + w, b + h, ridgeR, ry);
+  // 外框
+  R(x, a, b, w, 1, c.edge || c.line); R(x, a, b + h - 1, w, 1, c.edge || c.line); R(x, a, b, 1, h, c.edge || c.line); R(x, a + w - 1, b, 1, h, c.edge || c.line);
+}
+function chimney(x, a, b, w, h, top, side, sh = 3) { R(x, a + sh, b + sh, w, h, K.shadow); R(x, a, b, w, h, side); R(x, a, b, w, 2, top); R(x, a + 1, b + 1, w - 2, 1, '#4a3f36'); for (let i = 0; i < 3; i++) P(x, a + 1 + i, b - 2 - i * 2, i % 2 ? '#ece8e2' : '#e0dbd2'); }
+
+// ===== 屋內：正上方、把屋頂拿掉；北邊的牆看得到牆面（壁紙、窗、掛畫），其他牆只看到牆頂。一格 10 顆 =====
+const T = 10, SH = 'rgba(40,30,20,.22)';
+const WALLTOP = '#6e5a46', WALLTOP2 = '#5a4838';
+function shadowR(x, a, b, w, h, d = 2) { R(x, a + d, b + d, w, h, SH); }
+// 地板
+function floorWood(x, a, b, w, h, pal = ['#c89b6a', '#bb8d5c', '#d3a776', '#9a6a40']) {
+  for (let j = 0; j < h; j++) { const row = Math.floor(j / 5), off = hash(row, 7) * 30; for (let i = 0; i < w; i++) { const n = hash(a + i, b + j), seam = (j % 5 === 4) || ((i + off) % 30 < 1); P(x, a + i, b + j, seam ? pal[3] : n > .9 ? pal[2] : n < .12 ? pal[1] : pal[0]); } }
+}
+function floorTile(x, a, b, w, h) { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const c = (Math.floor(i / 8) + Math.floor(j / 8)) % 2, edge = i % 8 === 7 || j % 8 === 7; P(x, a + i, b + j, edge ? '#c9c2b4' : c ? '#ebe6dc' : '#ddd6c8'); } }
+// 北牆：牆頂 4 顆＋牆面（壁紙）＋踢腳板
+const PAPER = {
+  stripe: (i, j) => (i % 6 < 3) ? '#efe4cf' : '#e4d5b6',
+  mint: (i, j) => (hash(i, j) > .93) ? '#cfdcd3' : '#dfe8e1',
+  dot: (i, j) => (i % 6 === 2 && j % 6 === 2) || (i % 6 === 5 && j % 6 === 5) ? '#c9a24a' : '#f1e9dc',
+  navy: (i, j) => (i % 8 === 0) ? '#2a3a5a' : (hash(i, j) > .95 ? '#3d5078' : '#33456a'),
+};
+function northWall(x, a, w, face, paper) { R(x, a, 0, w, 4, WALLTOP); R(x, a, 3, w, 1, WALLTOP2); for (let j = 0; j < face; j++) for (let i = 0; i < w; i++) P(x, a + i, 4 + j, PAPER[paper](a + i, j)); R(x, a, 4 + face - 2, w, 2, '#8a6a4a'); R(x, a, 4 + face, w, 1, 'rgba(40,30,20,.25)'); }
+function vWall(x, a, b, h) { R(x, a, b, 4, h, WALLTOP); R(x, a + 3, b, 1, h, WALLTOP2); }
+function hWall(x, a, b, w) { R(x, a, b, w, 4, WALLTOP); R(x, a, b + 3, w, 1, WALLTOP2); }
+function windowN(x, a, w, face) { R(x, a, 6, w, face - 6, '#f3f1ec'); R(x, a + 1, 7, w - 2, face - 8, '#a8cdd6'); R(x, a + 1, 7, 3, face - 8, '#e2f1f3'); R(x, a + Math.floor(w / 2), 7, 1, face - 8, '#f3f1ec');
+  poly(x, [[a + 1, 4 + face], [a + w - 1, 4 + face], [a + w + 6, 4 + face + 22], [a + 8, 4 + face + 22]], 'rgba(255,240,200,.18)'); }   // 窗光落在地上
+function painting(x, a, w, col) { R(x, a, 7, w, 9, '#9a7a32'); R(x, a + 1, 8, w - 2, 7, col[0]); R(x, a + 1, 12, w - 2, 3, col[1]); circ(x, a + w - 4, 10, 1, '#f6cd72'); }
+// 家具（左上亮、右下暗，影子往右下 2 顆）
+function rug(x, a, b, w, h, c1, c2, c3) { R(x, a, b, w, h, c1); R(x, a + 2, b + 2, w - 4, h - 4, c2); R(x, a + 4, b + 4, w - 8, h - 8, c1); for (let i = 6; i < w - 6; i += 4) { P(x, a + i, b + h / 2, c3); P(x, a + i + 2, b + h / 2 - 2, c3); P(x, a + i + 2, b + h / 2 + 2, c3); } for (let i = 0; i < w; i += 2) { P(x, a + i, b - 1, c2); P(x, a + i, b + h, c2); } }
+function roundRug(x, cx, cy, r, c1, c2) { circ(x, cx, cy, r, c2); circ(x, cx, cy, r - 2, c1); circ(x, cx, cy, r - 6, c2); circ(x, cx, cy, r - 8, c1); }
+function bed(x, a, b, w, h, blanket) {   // 床頭在上面
+  shadowR(x, a, b, w, h); R(x, a, b, w, h, '#7c5230'); R(x, a, b, w, 3, '#9a6a40'); R(x, a + 1, b + 3, w - 2, h - 4, '#f3f1ec');
+  const pw = Math.floor((w - 6) / 2); R(x, a + 2, b + 4, pw, 6, '#ffffff'); R(x, a + 2, b + 9, pw, 1, '#dedad1'); R(x, a + w - 2 - pw, b + 4, pw, 6, '#ffffff'); R(x, a + w - 2 - pw, b + 9, pw, 1, '#dedad1');
+  R(x, a + 1, b + 13, w - 2, h - 14, blanket[0]); R(x, a + 1, b + 13, w - 2, 2, blanket[1]); R(x, a + 1, b + 15, 2, h - 16, blanket[1]); R(x, a + w - 3, b + 15, 2, h - 16, blanket[2]); R(x, a + 1, b + 13, w - 2, 1, '#f3f1ec');
+}
+function nightstand(x, a, b) { shadowR(x, a, b, 8, 8); R(x, a, b, 8, 8, '#9a6a40'); R(x, a, b, 8, 1, '#b07f50'); R(x, a + 7, b, 1, 8, '#7c5230'); circ(x, a + 4, b + 4, 2, '#f6e7b8'); P(x, a + 3, b + 3, '#ffffff'); }
+function wardrobe(x, a, b, w, h, vertical) { shadowR(x, a, b, w, h, 3); R(x, a, b, w, h, '#8a5a34'); R(x, a, b, w, 1, '#a87448'); R(x, a, b, 1, h, '#a87448'); R(x, a + w - 1, b, 1, h, '#6a4426'); R(x, a, b + h - 1, w, 1, '#6a4426');
+  if (vertical) { R(x, a + 1, b + Math.floor(h / 2), w - 2, 1, '#6a4426'); P(x, a + w - 3, b + Math.floor(h / 2) - 2, '#c9a24a'); P(x, a + w - 3, b + Math.floor(h / 2) + 2, '#c9a24a'); }
+  else { R(x, a + Math.floor(w / 2), b + 1, 1, h - 2, '#6a4426'); P(x, a + Math.floor(w / 2) - 2, b + h - 3, '#c9a24a'); P(x, a + Math.floor(w / 2) + 2, b + h - 3, '#c9a24a'); }
+  for (let i = 3; i < (vertical ? h : w) - 3; i += 5) vertical ? P(x, a + 3, b + i, '#7a4e2c') : P(x, a + i, b + 3, '#7a4e2c'); }
+function bookshelf(x, a, b, w, h, vertical) {   // 從上面看：書背的頂端一排排
+  shadowR(x, a, b, w, h, 3); R(x, a, b, w, h, '#5e3c22'); const cols = ['#b33a2f', '#3d5078', '#c9a24a', '#5d7c43', '#efe4cf', '#8e8070', '#6a4f7a'];
+  if (vertical) for (let j = 1; j < h - 1; j++) { const c = cols[Math.floor(hash(a, b + j * 3) * cols.length)]; R(x, a + 1, b + j, w - 2 - Math.floor(hash(j, a) * 2), 1, c); if (hash(j, b) > .8) j++; }
+  else for (let i = 1; i < w - 1; i++) { const c = cols[Math.floor(hash(a + i * 3, b) * cols.length)]; R(x, a + i, b + 1, 1, h - 2 - Math.floor(hash(i, b) * 2), c); if (hash(i, a) > .8) i++; } }
+function displayCase(x, a, b, w, h) { shadowR(x, a, b, w, h, 3); R(x, a, b, w, h, '#c9a24a'); R(x, a + 1, b + 1, w - 2, h - 2, '#cfe6ea'); R(x, a + 1, b + 1, w - 2, 1, '#eef7f8');
+  circ(x, a + 4, b + h / 2, 1, '#4aa3c9'); P(x, a + 3, b + h / 2 - 1, '#d8f0fa'); R(x, a + 8, b + 3, 3, 4, '#e2a62e'); R(x, a + 7, b + 3, 5, 1, '#f4c75a'); P(x, a + 9, b + 7, '#977630');   // 寶石、小獎盃
+  R(x, a + 14, b + 3, 4, 4, '#b33a2f'); P(x, a + 15, b + 4, '#ffffff'); R(x, a + 20, b + 3, 1, 4, '#3d3d3d'); for (let i = 2; i < w - 2; i += 4) P(x, a + i, b + h - 2, '#eef7f8'); }
+function desk(x, a, b, w, h) { shadowR(x, a, b, w, h); R(x, a, b, w, h, '#a8764a'); R(x, a, b, w, 1, '#c48d5c'); R(x, a + w - 1, b, 1, h, '#7c5230');
+  R(x, a + 4, b + 3, 9, 6, '#5a5d62'); R(x, a + 5, b + 4, 7, 4, '#9fc0cc'); R(x, a + 15, b + 2, 6, 8, '#f3f1ec'); R(x, a + 16, b + 4, 4, 1, '#c9c4ba'); R(x, a + 16, b + 6, 4, 1, '#c9c4ba'); circ(x, a + w - 4, b + 4, 1, '#f3f1ec'); P(x, a + w - 4, b + 4, '#6e4528'); }
+function chair(x, cx, cy, col = '#7c5230') { circ(x, cx + 1, cy + 1, 3, SH); circ(x, cx, cy, 3, col); circ(x, cx - 1, cy - 1, 1, '#c48d5c'); }
+function sofa(x, a, b, w, h, col) {   // 背在下面（面向上）
+  shadowR(x, a, b, w, h, 3); R(x, a, b, w, h, col[2]); R(x, a, b + h - 4, w, 4, col[2]); R(x, a, b, 4, h, col[1]); R(x, a + w - 4, b, 4, h, col[2]);
+  const n = 3, cw = Math.floor((w - 8) / n); for (let k = 0; k < n; k++) { R(x, a + 4 + k * cw, b + 1, cw - 1, h - 5, col[0]); R(x, a + 4 + k * cw, b + 1, cw - 1, 1, col[3]); }
+  R(x, a, b, w, 1, col[3]); }
+function armchair(x, a, b, col) { shadowR(x, a, b, 12, 12, 3); R(x, a, b, 12, 12, col[2]); R(x, a + 3, b + 1, 6, 7, col[0]); R(x, a + 3, b + 1, 6, 1, col[3]); R(x, a, b, 3, 12, col[1]); R(x, a + 9, b, 3, 12, col[2]); }
+function coffeeTable(x, a, b, w, h) { shadowR(x, a, b, w, h); R(x, a, b, w, h, '#7c5230'); R(x, a + 1, b + 1, w - 2, h - 2, '#cfe6ea'); R(x, a + 1, b + 1, w - 2, 1, '#eef7f8'); R(x, a + 3, b + 3, 5, 4, '#b33a2f'); circ(x, a + w - 5, b + h / 2, 1, '#f3f1ec'); }
+function floorLamp(x, cx, cy) { circ(x, cx + 2, cy + 2, 4, SH); circ(x, cx, cy, 4, '#e9dcb8'); circ(x, cx - 1, cy - 1, 2, '#fbf3dc'); P(x, cx, cy, '#8e8070'); }
+function plant(x, cx, cy, r = 5) { circ(x, cx + 2, cy + 2, r, SH); circ(x, cx, cy, r - 2, '#9a5a3a'); for (let k = 0; k < 7; k++) { const t = k / 7 * TAU, u = cx + Math.cos(t) * (r - 1), v = cy + Math.sin(t) * (r - 1); circ(x, u, v, 2, k % 2 ? '#5d7c43' : '#4a6634'); P(x, u - 1, v - 1, '#9cb96f'); } circ(x, cx, cy, 2, '#7a9a55'); }
+function tvStand(x, a, b, w) { shadowR(x, a, b, w, 7); R(x, a, b, w, 7, '#5e3c22'); R(x, a, b, w, 1, '#7c5230'); R(x, a + 4, b + 1, w - 8, 2, '#1f2124'); R(x, a + 5, b + 1, 6, 1, '#3d4a55'); }
+function stairs(x, a, b, w, h, up) { R(x, a, b, w, h, '#9a6a40'); for (let j = 0; j < h; j += 4) { R(x, a, b + j, w, 1, '#c48d5c'); R(x, a, b + j + 3, w, 1, '#6e4528'); } R(x, a - 1, b, 1, h, '#5e3c22'); R(x, a + w, b, 1, h, '#5e3c22');
+  const cx = a + w / 2; for (let k = 0; k < 5; k++) { P(x, cx - k, b + 6 + k, '#f3f1ec'); P(x, cx + k, b + 6 + k, '#f3f1ec'); } if (!up) R(x, a, b, w, h, 'rgba(20,20,20,.18)'); }
+function counter(x, a, b, w, h) { shadowR(x, a, b, w, h); R(x, a, b, w, h, '#d6d1c7'); R(x, a, b + h - 1, w, 1, '#a39b8e'); for (let i = 0; i < w; i++) if (hash(a + i, b) > .9) P(x, a + i, b + 2 + Math.floor(hash(i, b) * (h - 3)), '#e4e0d8'); }
+function sink(x, a, b) { R(x, a, b, 12, 7, '#a9b2b6'); R(x, a + 1, b + 1, 10, 5, '#c7cfd2'); R(x, a + 2, b + 2, 8, 3, '#8e989c'); P(x, a + 6, b, '#5a5d62'); }
+function stove(x, a, b) { R(x, a, b, 14, 8, '#2f3236'); [[3, 2], [10, 2], [3, 6], [10, 6]].forEach(([u, v]) => { P(x, a + u - 1, b + v - 1, '#6a6d70'); P(x, a + u, b + v - 1, '#6a6d70'); }); circ(x, a + 10, b + 3, 2, '#c0392b'); P(x, a + 9, b + 2, '#e8873a'); }
+function fridge(x, a, b) { shadowR(x, a, b, 12, 12, 3); R(x, a, b, 12, 12, '#f3f1ec'); R(x, a, b, 12, 1, '#ffffff'); R(x, a + 11, b, 1, 12, '#c9c4ba'); R(x, a + 2, b + 9, 6, 1, '#a9b2b6'); P(x, a + 3, b + 3, '#b33a2f'); P(x, a + 6, b + 4, '#f1d36b'); }
+function diningTable(x, a, b, w, h) { [[a + 6, b - 3], [a + w - 7, b - 3], [a + 6, b + h + 3], [a + w - 7, b + h + 3]].forEach(([u, v]) => chair(x, u, v)); shadowR(x, a, b, w, h); R(x, a, b, w, h, '#b07f50'); R(x, a, b, w, 1, '#c99b6a'); R(x, a + w - 1, b, 1, h, '#7c5230');
+  circ(x, a + w / 2, b + h / 2, 3, '#efe4cf'); P(x, a + w / 2 - 1, b + h / 2 - 1, '#c0392b'); P(x, a + w / 2 + 1, b + h / 2, '#f1d36b'); P(x, a + w / 2, b + h / 2 + 1, '#7a9a55'); }
+function doormat(x, a, b, w) { R(x, a, b, w, 5, '#8e8070'); for (let i = 1; i < w - 1; i += 2) P(x, a + i, b + 2, '#a99c88'); }
+function railing(x, a, b, w, h) { for (let i = 0; i < w; i++) { P(x, a + i, b, '#5e3c22'); } for (let j = 0; j < h; j++) P(x, a, b + j, '#5e3c22'); for (let i = 0; i < w; i += 4) P(x, a + i, b + 1, '#3d2614'); }
+
+// ===== 一樓：客廳＋廚房 =====
+function floor1(x) {
+  const F = 16;
+  floorWood(x, 4, 20, 136, 126); floorTile(x, 144, 20, 92, 126);
+  northWall(x, 0, 140, F, 'stripe'); northWall(x, 140, 100, F, 'mint');
+  windowN(x, 16, 22, F); windowN(x, 98, 22, F); windowN(x, 160, 22, F); painting(x, 58, 22, ['#6b97a6', '#5d7c43']);
+  vWall(x, 0, 0, 150); vWall(x, 236, 0, 150); vWall(x, 140, 20, 66); vWall(x, 140, 110, 40); hWall(x, 0, 146, 60); hWall(x, 76, 146, 164); floorWood(x, 140, 86, 4, 24); R(x, 140, 86, 4, 1, WALLTOP2); R(x, 140, 109, 4, 1, WALLTOP2); R(x, 60, 146, 16, 4, '#7c6a58'); R(x, 60, 146, 16, 1, '#a99c88');
+  // 客廳
+  rug(x, 22, 52, 84, 56, '#b33a2f', '#efe4cf', '#c9a24a');
+  tvStand(x, 46, 21, 36); coffeeTable(x, 52, 70, 24, 14); sofa(x, 36, 96, 56, 14, ['#6f8fa8', '#8fb0c8', '#4f6f88', '#a9c6da']);
+  armchair(x, 104, 66, ['#c9a24a', '#e0bd6a', '#977630', '#f4dc95']); floorLamp(x, 24, 104); plant(x, 128, 32, 6); plant(x, 12, 30, 5);
+  stairs(x, 112, 104, 22, 38, true); doormat(x, 60, 141, 16);
+  // 廚房
+  counter(x, 144, 21, 76, 10); sink(x, 166, 22); stove(x, 196, 22); fridge(x, 222, 21);
+  diningTable(x, 168, 72, 40, 18); plant(x, 226, 136, 5);
+}
+// ===== 二樓：臥室＋書房 =====
+function floor2(x) {
+  const F = 16;
+  floorWood(x, 4, 20, 126, 126, ['#d8b892', '#c9a882', '#e4c8a4', '#a8865e']); floorWood(x, 134, 20, 102, 126, ['#a8764a', '#986a40', '#b98656', '#6e4528']);
+  northWall(x, 0, 130, F, 'dot'); northWall(x, 130, 110, F, 'navy');
+  windowN(x, 12, 20, F); windowN(x, 162, 26, F); painting(x, 196, 18, ['#c9a24a', '#8e8070']);
+  vWall(x, 0, 0, 150); vWall(x, 236, 0, 150); vWall(x, 130, 20, 66); vWall(x, 130, 110, 40); hWall(x, 0, 146, 240); floorWood(x, 130, 86, 4, 24, ['#d8b892', '#c9a882', '#e4c8a4', '#a8865e']); R(x, 130, 86, 4, 1, WALLTOP2); R(x, 130, 109, 4, 1, WALLTOP2);
+  // 臥室
+  rug(x, 34, 50, 64, 40, '#c9a0dc', '#f3f1ec', '#b33a2f');
+  bed(x, 50, 21, 32, 40, ['#b33a2f', '#cf5a46', '#8f2c23']); nightstand(x, 40, 22); nightstand(x, 84, 22);
+  wardrobe(x, 6, 58, 10, 30, true); plant(x, 120, 30, 5); floorLamp(x, 18, 120);
+  stairs(x, 104, 104, 22, 38, false); railing(x, 102, 102, 26, 42);
+  // 書房
+  roundRug(x, 184, 84, 20, '#3d5078', '#c9a24a');
+  desk(x, 158, 21, 30, 12); chair(x, 172, 40); bookshelf(x, 226, 26, 8, 30, true); bookshelf(x, 226, 60, 8, 30, true);
+  displayCase(x, 140, 132, 26, 11); armchair(x, 196, 112, ['#5d7c43', '#7a9a55', '#4a6634', '#9cb96f']); floorLamp(x, 214, 106); plant(x, 140, 28, 5);
+}
+// ===== 擺放模式：臥室放大，格子＋選好的盆栽要放的那一格 =====
+function placing(x) {
+  x.save(); x.translate(-4, -0); 
+  floorWood(x, 4, 20, 126, 126, ['#d8b892', '#c9a882', '#e4c8a4', '#a8865e']); northWall(x, 0, 134, 16, 'dot'); windowN(x, 12, 20, 16);
+  vWall(x, 0, 0, 150); vWall(x, 130, 0, 150); hWall(x, 0, 146, 134);
+  rug(x, 34, 50, 64, 40, '#c9a0dc', '#f3f1ec', '#b33a2f'); bed(x, 50, 21, 32, 40, ['#b33a2f', '#cf5a46', '#8f2c23']); nightstand(x, 40, 22); nightstand(x, 84, 22);
+  wardrobe(x, 6, 58, 10, 30, true); floorLamp(x, 18, 120);
+  // 格子（一格 10 顆）
+  for (let j = 20; j < 146; j += T) for (let i = 4; i < 130; i += T) { P(x, i, j, 'rgba(255,255,255,.7)'); }
+  // 被佔的格子淡淡的紅、選好的那一格白框
+  const take = [[4, 50, 10, 40], [40, 20, 50, 40]]; take.forEach(([a, b, w, h]) => R(x, a, b, w, h, 'rgba(179,58,47,.12)'));
+  R(x, 94, 100, 20, 20, 'rgba(255,255,255,.35)'); for (let k = 0; k < 20; k++) if (k % 4 < 2) { P(x, 94 + k, 100, '#ffffff'); P(x, 94 + k, 119, '#ffffff'); P(x, 94, 100 + k, '#ffffff'); P(x, 113, 100 + k, '#ffffff'); }
+  x.globalAlpha = .8; plant(x, 104, 110, 7); x.globalAlpha = 1;
+  x.restore();
+}
+// ===== 衣櫃打開：一格一種衣服，一模一樣的疊起來記數量 =====
+function shirt(x, a, b, c, kind) {
+  const [c0, c1, c2] = c;
+  if (kind === 'yukata') { poly(x, [[a + 3, b + 2], [a + 13, b + 2], [a + 16, b + 6], [a + 13, b + 7], [a + 13, b + 18], [a + 3, b + 18], [a + 3, b + 7], [a, b + 6]], c0); R(x, a + 3, b + 10, 10, 3, '#c9a24a'); poly(x, [[a + 6, b + 2], [a + 8, b + 8], [a + 10, b + 2]], c2); for (let i = 4; i < 13; i += 3) P(x, a + i, b + 15, c1); return; }
+  poly(x, [[a + 4, b + 2], [a + 12, b + 2], [a + 16, b + 6], [a + 13, b + 8], [a + 13, b + 18], [a + 3, b + 18], [a + 3, b + 8], [a, b + 6]], c0);
+  R(x, a + 3, b + 8, 1, 10, c1); R(x, a + 12, b + 8, 1, 10, c2); poly(x, [[a + 6, b + 2], [a + 8, b + 5], [a + 10, b + 2]], c2);
+  if (kind === 'hoodie') { R(x, a + 5, b + 1, 6, 3, c2); R(x, a + 5, b + 12, 6, 3, c1); }
+  if (kind === 'logo') circ(x, a + 8, b + 10, 2, '#b33a2f');
+}
+const CLOTHES = [['白T', ['#f3f1ec', '#ffffff', '#c9c4ba'], 'tee', 6], ['藍T', ['#4f6f88', '#6f8fa8', '#3a5468'], 'tee', 2], ['丼步喱T', ['#f3f1ec', '#ffffff', '#c9c4ba'], 'logo', 1], ['連帽', ['#8e8070', '#a99c88', '#6e6252'], 'hoodie', 1], ['浴衣', ['#2f4166', '#566c94', '#1f2c47'], 'yukata', 1], ['朱浴衣', ['#b33a2f', '#cf5a46', '#8f2c23'], 'yukata', 1], ['綠T', ['#5d7c43', '#7a9a55', '#4a6634'], 'tee', 3]];
+
+function sheet() {
+  [['f1', floor1], ['f2', floor2], ['fp', placing]].forEach(([id, fn]) => { const c = document.getElementById(id), x = c.getContext('2d'); x.imageSmoothingEnabled = false; fn(x); });
+  const box = document.getElementById('closet'); for (let k = 0; k < 12; k++) {
+    const d = document.createElement('div'); d.className = 'slot'; const c = document.createElement('canvas'); c.width = 18; c.height = 20; d.appendChild(c); const it = CLOTHES[k];
+    if (it) { const x = c.getContext('2d'); x.imageSmoothingEnabled = false; shirt(x, 1, 0, it[1], it[2]); const s = document.createElement('span'); s.className = 'nm'; s.textContent = it[0]; d.appendChild(s); if (it[3] > 1) { const q = document.createElement('b'); q.className = 'qty'; q.textContent = '× ' + it[3]; d.appendChild(q); } }
+    else d.classList.add('empty');
+    box.appendChild(d);
+  }
+}
+sheet(); document.body.dataset.done = 1;
+</script>
+</body>
+</html>
