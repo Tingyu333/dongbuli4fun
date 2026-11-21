@@ -1071,7 +1071,11 @@
         function sizeShelf() {
             shelfCv.classList.toggle('hidden', !shelfVisible());
             const w = shelfCv.clientWidth || 300;
-            shelfCv.width = Math.round(w * dpr); shelfCv.height = Math.round(w * 66 / 360 * dpr);
+            // 大小沒變就不要重設（重設會清空畫布；手機捲動時網址列伸縮一直觸發 resize，鏡台會狂閃，2026-11-21 修）
+            const nw = Math.round(w * dpr), nh = Math.round(w * 66 / 360 * dpr);
+            if (shelfCv.width === nw && shelfCv.height === nh) return;
+            shelfCv.width = nw; shelfCv.height = nh;
+            drawShelf(performance.now());   // 變了就馬上重畫一張，不要等下一格
         }
         function drawShelf(now) {
             if (!shelfVisible() || !shelfCv.width) return;
