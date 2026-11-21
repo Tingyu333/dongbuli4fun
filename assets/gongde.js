@@ -12,7 +12,7 @@
 //   財神燈：刮刮樂中獎多兩成（財神加碼，兌獎時另外給），燈油照票價扣，張張有獎也算
 //   太歲燈：挖金礦挖到炸彈擋一次（變啞彈），一張挖金礦用一次
 //   文昌燈：坐洗部工資多兩成，一顆頭用一次
-//   月老燈：坐洗部有緣人（稀有客人）來的機會兩倍（跟招牌合起來最多 2.5 倍），來了多給 $200 紅包，一顆頭用一次
+//   月老燈：坐洗部有緣人（稀有客人）來的機會兩倍（跟招牌合起來最多 2.5 倍），來了多給 $1,000 紅包，一顆頭用一次（2026-11-21 坐洗工資 5 倍，文昌燈 $300→$1,500、月老燈 $200→$1,000 一起調，點燈還是小虧）
 // 換算：捐 $1、點 $1 的燈，大約換回 $0.6～0.7 的期望值，捐錢本來就該有點虧，這樣才叫功德。
 (function () {
     const API_URL = (window.Line && Line.API_URL) || "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
@@ -35,10 +35,10 @@
           fx: '刮刮樂中獎多兩成（財神加碼），張張有獎的也算', left: n => `燈油 ${fmtMoney(n)}，照得到 ${fmtMoney(n)} 的刮刮樂` },
         { key: 'taisui', name: '太歲燈', word: '太歲', price: 600, amount: 1, unit: '次', where: '挖金礦', color: '#c0392b',
           fx: '挖金礦挖到炸彈，太歲幫你擋一次（變啞彈）', left: n => `還能擋 ${n} 次` },
-        { key: 'wenchang', name: '文昌燈', word: '文昌', price: 300, amount: 1, unit: '顆頭', where: '坐洗部', color: '#5b8a72',
+        { key: 'wenchang', name: '文昌燈', word: '文昌', price: 1500, amount: 1, unit: '顆頭', where: '坐洗部', color: '#5b8a72',
           fx: '坐洗部手藝加持，工資多兩成', left: n => `還有 ${n} 顆頭` },
-        { key: 'yuelao', name: '月老燈', word: '月老', price: 200, amount: 1, unit: '顆頭', where: '坐洗部', color: '#d9667a',
-          fx: '有緣人（貓、狗、阿伯、墨鏡）來的機會兩倍，來了多給 $200 紅包', left: n => `還有 ${n} 顆頭` },
+        { key: 'yuelao', name: '月老燈', word: '月老', price: 1000, amount: 1, unit: '顆頭', where: '坐洗部', color: '#d9667a',
+          fx: '有緣人（貓、狗、阿伯、墨鏡）來的機會兩倍，來了多給 $1,000 紅包', left: n => `還有 ${n} 顆頭` },
     ];
     const PACKS = [1, 5, 20];
     const LAMP_Q = 0.5, CAI = 0.2, CAP = 0.98, MAX_Q = 0.9;

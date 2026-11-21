@@ -340,20 +340,20 @@
 
         // ===== 3. 遺失物：藏在房間裡，找到另外給錢 =====
         const LOST = {
-            bei: { name: '筊杯（擲杯用的）', bonus: 150, icon: 'bei' },
-            earphone: { name: '一隻耳機', bonus: 150, icon: 'earphone' },
-            sock: { name: '一隻襪子', bonus: 100, icon: 'sock' },
-            key: { name: '車鑰匙', bonus: 200, icon: 'key' },
-            charger: { name: '充電線', bonus: 100, icon: 'charger' },
-            split: { name: '還沒算完的分帳單', bonus: 150, icon: 'split' },
-            pudding: { name: '沒吃完的布丁', bonus: 120, icon: 'pudding' },
-            lash: { name: '假睫毛', bonus: 100, icon: 'lash' },
-            cattoy: { name: '逗貓棒', bonus: 120, icon: 'cattoy' },
-            comb: { name: '梳子', bonus: 100, icon: 'comb' },
-            lotto: { name: '一張還沒刮的刮刮樂', bonus: 500, icon: 'ticket', rare: true },
-            exprint: { name: '前夫的指紋（裱框）', bonus: 800, icon: 'exprint', rare: true },
-            nugget: { name: '一盒雞塊（還剩一塊）', bonus: 600, icon: 'nugget', rare: true },
-            mingpai: { name: '伊藤的明牌筆記', bonus: 600, icon: 'mingpai', rare: true },
+            bei: { name: '筊杯（擲杯用的）', bonus: 750, icon: 'bei' },
+            earphone: { name: '一隻耳機', bonus: 750, icon: 'earphone' },
+            sock: { name: '一隻襪子', bonus: 500, icon: 'sock' },
+            key: { name: '車鑰匙', bonus: 1000, icon: 'key' },
+            charger: { name: '充電線', bonus: 500, icon: 'charger' },
+            split: { name: '還沒算完的分帳單', bonus: 750, icon: 'split' },
+            pudding: { name: '沒吃完的布丁', bonus: 600, icon: 'pudding' },
+            lash: { name: '假睫毛', bonus: 500, icon: 'lash' },
+            cattoy: { name: '逗貓棒', bonus: 600, icon: 'cattoy' },
+            comb: { name: '梳子', bonus: 500, icon: 'comb' },
+            lotto: { name: '一張還沒刮的刮刮樂', bonus: 2500, icon: 'ticket', rare: true },
+            exprint: { name: '前夫的指紋（裱框）', bonus: 4000, icon: 'exprint', rare: true },
+            nugget: { name: '一盒雞塊（還剩一塊）', bonus: 3000, icon: 'nugget', rare: true },
+            mingpai: { name: '伊藤的明牌筆記', bonus: 3000, icon: 'mingpai', rare: true },
         };
         // 藏東西的地方（找・物那一關的房間）
         const SPOTS = [
@@ -1148,9 +1148,9 @@
             stage = 5; setSteps(5);
             const s = G.scores, total = s.sort + s.wipe + s.bed + s.find + s.run;
             const grade = GRADES.find(g => total >= g.min);
-            const base = Math.max(140, total * 14);   // 2026-11-21 工資調漲 1.4 倍（以前 × 10、最少 100、五星好評 $500／$200）
+            const base = Math.max(500, total * 50);   // 2026-11-21 使用者要「一場約 9000」：房務費、五星好評、失物招領都是原本的 5 倍（原本 × 10、最少 100、好評 $500／$200）
             const lost = G.find.found.reduce((t, k) => t + LOST[k].bonus, 0);
-            const star = total >= 90 ? 700 : total >= 75 ? 280 : 0;
+            const star = total >= 90 ? 2500 : total >= 75 ? 1000 : 0;
             G.pay = { base, lost, star };
             Wallet.earn(base + lost + star, 'clean');
             try { if (total > (Number(localStorage.getItem(BEST_KEY)) || 0)) localStorage.setItem(BEST_KEY, String(total)); } catch (e) { }

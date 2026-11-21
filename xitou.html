@@ -904,18 +904,18 @@
         // 升級存在這支手機（dongbuli-xitou-shop），錢從共用錢包扣。招牌、鏡台、椅子是實物，顏色固定。
         const SHOP_KEY = 'dongbuli-xitou-shop';
         const SHOP = [
-            { key: 'shampoo', name: '洗髮精', sub: '材料費', prices: [3000, 12000, 40000], vals: [100, 200, 350],
+            { key: 'shampoo', name: '洗髮精', sub: '材料費', prices: [3000, 12000, 40000], vals: [500, 1000, 1750],
               tiers: ['白瓶', '綠茶', '琥珀', '金色沙龍'], fx: v => `擠剛好，客人多付 $${v}` },
-            { key: 'hourglass', name: '沙漏', sub: '快手獎金', prices: [5000, 15000, 45000], vals: [100, 200, 300],
+            { key: 'hourglass', name: '沙漏', sub: '快手獎金', prices: [5000, 15000, 45000], vals: [500, 1000, 1500],
               tiers: ['', '木頭', '銅', '金'], fx: v => `泡泡蓋滿 +$${v}，6 秒內蓋滿再翻倍` },
-            { key: 'glove', name: '按摩手套', sub: '抓癢計件', prices: [4000, 12000, 35000], vals: [10, 20, 30],
+            { key: 'glove', name: '按摩手套', sub: '抓癢計件', prices: [4000, 12000, 35000], vals: [50, 100, 150],
               tiers: ['', '白棉', '竹編', '金'], fx: v => `每抓到一個癢 +$${v}` },
             { key: 'metronome', name: '節拍器', sub: '拍背', prices: [5000, 15000, 40000], vals: [1.2, 1.4, 1.6],
               tiers: ['', '木頭', '黑漆', '金'], fx: v => `拍背的判定放寬 ${Math.round((v - 1) * 100)}%` },
             { key: 'chair', name: '按摩椅', sub: '小費', prices: [8000, 25000, 60000], vals: [0.1, 0.2, 0.3],
               tiers: ['塑膠凳', '軟墊椅', '木頭椅', '皮革按摩椅'], fx: v => `小費（含點單）多 ${Math.round(v * 100)}%` },
             { key: 'sign', name: '招牌', sub: '客人', prices: [10000, 30000, 80000], vals: [1.3, 1.6, 2],
-              tiers: ['', '手寫木板', '燈箱', '金字招牌'], fx: v => `稀有客人多 ${Math.round((v - 1) * 100)}%，而且多給 $300` },
+              tiers: ['', '手寫木板', '燈箱', '金字招牌'], fx: v => `稀有客人多 ${Math.round((v - 1) * 100)}%，而且多給 $1,500` },
             { key: 'cat', name: '店貓', sub: '隨機', prices: [20000], vals: [3],
               tiers: ['', '橘貓'], fx: v => `三成機率醒來撒嬌，爽度 +${v}` },
         ];
@@ -1206,14 +1206,14 @@
         // 客人的點單：做到多給小費（不點造型，造型判定太難猜）。ok(G) 洗完才判定；broke 是途中就搞砸的（碰到臉、耳朵）
         // how 是給玩家的提示（貓的點單只有喵，提示就是翻譯）
         const ORDERS = {
-            less: { text: '我頭皮敏感，洗髮精少一點。', how: '擠在框框最左邊，或少一下', tip: 300, no: '頭皮開始癢了。', ok: g => !g.drip && g.landed >= g.c.st.pumps[0] - 1 && g.landed <= g.c.st.pumps[0], fits: c => c.st.pumps[0] >= 2 },
-            more: { text: '多擠一點，我喜歡香香的。', how: '擠在框框最右邊，或多一下，不要流下來', tip: 300, no: '不夠香。', ok: g => !g.drip && g.landed >= g.c.st.pumps[1] && g.landed <= g.c.st.pumps[1] + 1 },
-            foam: { text: '整顆都要有泡泡，不要漏。', how: '泡泡蓋到九成以上', tip: 300, no: '後面還是乾的。', ok: g => g.coverage >= 0.9 },
-            fast: { text: '等等有事，泡泡搓快一點。', how: '六秒內把泡泡蓋滿', tip: 400, no: '我要遲到了。', ok: g => g.rubMs !== null && g.rubMs <= 6000 },
-            itchy: { text: '今天超癢，全部都要抓到。', how: '十四個癢處抓到十二個以上', tip: 400, no: '還是好癢。', ok: g => g.hits >= 12 },
-            noface: { text: '泡泡不要弄到我的臉。', how: '搓泡泡、抓癢都不要碰到臉', tip: 300, no: '臉上都是泡泡。', ok: g => !g.pokes.face, broke: g => g.pokes.face > 0 },
-            noear: { text: '不要碰我的耳朵，我怕癢。', how: '抓癢時不要點到耳朵', tip: 300, no: '說好不碰耳朵的。', ok: g => !g.pokes.ear, broke: g => g.pokes.ear > 0, fits: c => !c.st.hideEars },
-            pat: { text: '拍背要準，我很講究節奏。', how: '四拍都要拍到，不能歪', tip: 300, no: '節奏感有待加強。', ok: g => g.patMarks.length === 4 && !g.patMarks.includes('歪') },
+            less: { text: '我頭皮敏感，洗髮精少一點。', how: '擠在框框最左邊，或少一下', tip: 1500, no: '頭皮開始癢了。', ok: g => !g.drip && g.landed >= g.c.st.pumps[0] - 1 && g.landed <= g.c.st.pumps[0], fits: c => c.st.pumps[0] >= 2 },
+            more: { text: '多擠一點，我喜歡香香的。', how: '擠在框框最右邊，或多一下，不要流下來', tip: 1500, no: '不夠香。', ok: g => !g.drip && g.landed >= g.c.st.pumps[1] && g.landed <= g.c.st.pumps[1] + 1 },
+            foam: { text: '整顆都要有泡泡，不要漏。', how: '泡泡蓋到九成以上', tip: 1500, no: '後面還是乾的。', ok: g => g.coverage >= 0.9 },
+            fast: { text: '等等有事，泡泡搓快一點。', how: '六秒內把泡泡蓋滿', tip: 2000, no: '我要遲到了。', ok: g => g.rubMs !== null && g.rubMs <= 6000 },
+            itchy: { text: '今天超癢，全部都要抓到。', how: '十四個癢處抓到十二個以上', tip: 2000, no: '還是好癢。', ok: g => g.hits >= 12 },
+            noface: { text: '泡泡不要弄到我的臉。', how: '搓泡泡、抓癢都不要碰到臉', tip: 1500, no: '臉上都是泡泡。', ok: g => !g.pokes.face, broke: g => g.pokes.face > 0 },
+            noear: { text: '不要碰我的耳朵，我怕癢。', how: '抓癢時不要點到耳朵', tip: 1500, no: '說好不碰耳朵的。', ok: g => !g.pokes.ear, broke: g => g.pokes.ear > 0, fits: c => !c.st.hideEars },
+            pat: { text: '拍背要準，我很講究節奏。', how: '四拍都要拍到，不能歪', tip: 1500, no: '節奏感有待加強。', ok: g => g.patMarks.length === 4 && !g.patMarks.includes('歪') },
         };
         // 這些人比較常點這個
         const ORDER_PREF = {
@@ -2587,10 +2587,10 @@
                 try { localStorage.setItem(BEST_KEY, String(total)); } catch (e) { }
                 if (best) showToast('新紀錄・最高爽度');
             }
-            // 發工資：爽度 × 14（最少 140），洗得好客人另外給小費（$700／$280）。存進共用錢包
-            // 2026-11-21 工資調漲 1.4 倍（使用者要的：其他打工追上疊・巢；以前是 × 10、最少 100、小費 $500／$200）
-            const wage = Math.max(140, total * 14);
-            const tip = total >= 90 ? 700 : total >= 75 ? 280 : 0;
+            // 發工資：爽度 × 50（最少 500），洗得好客人另外給小費（$2,500／$1,000）。存進共用錢包
+            // 2026-11-21 使用者要「一場約 9000」：工資、小費、點單小費、店面加給、月老牽線都是原本的 5 倍（原本 × 10、最少 100、小費 $500／$200）
+            const wage = Math.max(500, total * 50);
+            const tip = total >= 90 ? 2500 : total >= 75 ? 1000 : 0;
             // 點單：做到另外給
             const o = G.order && ORDERS[G.order];
             const orderDone = !!(o && !G.orderBroken && o.ok(G));
@@ -2602,10 +2602,10 @@
             if (lv('glove') && G.hits) sp.glove = G.hits * val('glove');
             if (lv('chair') && tip + orderTip) sp.chair = Math.round((tip + orderTip) * val('chair') / 10) * 10;
             const rare = G.c.cat || G.c.dog || /阿伯|墨鏡/.test(G.c.who);
-            if (lv('sign') && rare) sp.sign = 300;
-            // 功德・添的燈：文昌燈工資多兩成；月老燈有緣人多給 $200（這顆頭各用掉一次）
+            if (lv('sign') && rare) sp.sign = 1500;
+            // 功德・添的燈：文昌燈工資多兩成；月老燈有緣人多給 $1,000（這顆頭各用掉一次）
             if (Wallet.useOil(1, 'wenchang')) sp.wenchang = Math.round(wage * 0.2 / 10) * 10;
-            if (G.c.yuelao && Wallet.useOil(1, 'yuelao') && rare) sp.yuelao = 200;
+            if (G.c.yuelao && Wallet.useOil(1, 'yuelao') && rare) sp.yuelao = 1000;
             const shopTotal = Object.values(sp).reduce((a, b) => a + b, 0);
             G.pay = { wage, tip, order: orderTip, shop: shopTotal, shopParts: sp };
             Wallet.earn(wage + tip + orderTip + shopTotal, 'xitou');
