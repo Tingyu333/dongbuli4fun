@@ -73,7 +73,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-21c';
+var BACKEND_VERSION = '2026-11-21d';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1 };
 
@@ -3930,7 +3930,10 @@ function gaAnnounceSet(input) {
 // PerkLib：A created、B id、C name（12 字）、D effect、E line（給拿到的人看的一句話，30 字）、F retired_at（停用：不能再發，已經發的照樣有效）、G updated
 // PERK_TYPES 是「效果」：寫在程式裡，有程式才有效果；名字是道具庫取的
 var PERK_TYPES = {
-  shop60: { name: '全店六折', desc: '八家打工店面升級打六折（刮刮樂、功德、股市、保險照原價）', live: true }   // 2026-11-20b 起生效；live: false 的只記錄、不送給玩家
+  shop60: { name: '全店六折', desc: '八家打工店面升級打六折（刮刮樂、功德、股市、保險照原價）', live: true },   // 2026-11-20b 起生效；live: false 的只記錄、不送給玩家
+  // 2026-11-21d：解鎖隱藏商品。平常店面看不到，有這個道具才出現（$1、不打折）；道具到期或收回就藏起來、效果也停
+  minemag: { name: '磁力夾', desc: '礦坑・挖的店面出現「磁力夾」（$1）：金塊靠近鉤子就吸過來', live: true },
+  shiplamp: { name: '探照燈', desc: '貨運・航的船廠出現「探照燈」（$1）：夜航船頭燈照得又遠又寬', live: true }
 };
 var PERK_HEADERS = ['timestamp', 'id', 'line_id', 'perk', 'note', 'expires', 'revoked_at', 'key'];
 var LIB_HEADERS = ['created', 'id', 'name', 'effect', 'line', 'retired_at', 'updated'];
@@ -4010,6 +4013,15 @@ function readLib(create) {
     if (!id) continue;
     out[id] = { row: i + 1, id: id, name: libClean(r[2], LIB_NAME_MAX) || id, effect: String(r[3] || ''), line: libClean(r[4], LIB_LINE_MAX),
       retiredAt: t(r[5]), created: t(r[0]) };
+  }
+  // 新加的效果（2026-11-21d 磁力夾、探照燈）：道具庫裡還沒有這種效果的，自動放一個同名的進去，admin 後台打開就能發
+  if (create) {
+    var have = {}; Object.keys(out).forEach(function (id) { have[out[id].effect] = 1; have[id] = 1; });
+    Object.keys(PERK_TYPES).forEach(function (k) {
+      if (have[k]) return;
+      var now = new Date(); sheet.appendRow([now, k, PERK_TYPES[k].name, k, '', '', now]);
+      out[k] = { row: sheet.getLastRow(), id: k, name: PERK_TYPES[k].name, effect: k, line: '', retiredAt: 0, created: now.getTime() };
+    });
   }
   return out;
 }

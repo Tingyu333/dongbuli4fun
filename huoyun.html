@@ -71,6 +71,7 @@
         .shop-icon { flex: none; width: 56px; height: 56px; border-radius: 6px; background: rgb(var(--wabi-sub) / 0.35); }
         .shop-dots i { display: inline-block; width: 6px; height: 6px; margin-left: 3px; border-radius: 50%; border: 1px solid rgb(var(--wabi-accent)); }
         .shop-dots i.on { background: rgb(var(--wabi-shu)); border-color: rgb(var(--wabi-shu)); }
+        .perk-seal { display: inline-block; margin-left: 0.35rem; padding: 0 0.3rem; border: 1px solid rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); font-family: 'Noto Sans TC', sans-serif; font-size: 10px; letter-spacing: 0.1em; line-height: 1.5; border-radius: 2px; transform: rotate(-3deg); vertical-align: 1px; }   /* 專屬道具解鎖的商品 */
         .shop-buy {
             flex: none; min-width: 5.6rem; min-height: 44px; padding: 0 0.6rem;
             border: 1px solid rgb(var(--wabi-dark)); background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg));
@@ -351,6 +352,9 @@
               tiers: ['', '保冷箱', '冷藏貨艙', '冷凍貨櫃'], fx: v => `蘿蔔、整箱、金蘿蔔賣價多 ${Math.round(v * 100)}%` },
             { key: 'horn', name: '汽笛', sub: '小偷', prices: [15000, 60000], vals: [1, 2],
               tiers: ['', '汽笛', '自動汽笛'], fx: v => v >= 2 ? '海鷗、浣熊靠近就自動鳴笛嚇跑（浣熊賞金照拿）' : '海鷗多等 1.5 秒才叼、浣熊賞金 $100' },
+            // 專屬道具解鎖的（2026-11-21）：平常看不到，主人在 admin 後台發了對應的道具（效果 shiplamp）才出現；定價 $1、不打折；道具到期或收回就藏起來、效果也停（買過的留著）
+            { key: 'spotlight', perk: 'shiplamp', name: '探照燈', sub: '專屬', prices: [1], vals: [1],
+              tiers: ['', '探照燈'], fx: () => '夜航、天黑的時候船頭燈照得又遠又寬，幾乎整片海都看得到' },
         ];
         const SHOP_BY = Object.fromEntries(SHOP.map(u => [u.key, u]));
         function loadShop() {
@@ -975,15 +979,15 @@
             n.setTransform(dpr, 0, 0, dpr, 0, 0); n.globalCompositeOperation = 'source-over'; n.clearRect(0, 0, W, H);
             n.fillStyle = `rgba(3,8,16,${0.95 * lvl})`; n.fillRect(0, 0, W, H);
             n.globalCompositeOperation = 'destination-out';
-            const reach = 190 + (lv('radar') >= 2 ? 110 : lv('radar') ? 60 : 0), x0 = G.bx, y0 = BOAT_Y - 44;
+            const big = lamp(), reach = 190 + (lv('radar') >= 2 ? 110 : lv('radar') ? 60 : 0) + (big ? 260 : 0), half = big ? 175 : 95, ring = big ? 140 : 90, x0 = G.bx, y0 = BOAT_Y - 44;   // 探照燈：照得又遠又寬
             const g = n.createLinearGradient(0, y0, 0, y0 - reach);
             g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(0.7, 'rgba(0,0,0,0.9)'); g.addColorStop(1, 'rgba(0,0,0,0)');
-            n.fillStyle = g; n.beginPath(); n.moveTo(x0 - 16, y0); n.lineTo(x0 - 95, y0 - reach); n.lineTo(x0 + 95, y0 - reach); n.lineTo(x0 + 16, y0); n.closePath(); n.fill();
-            const rg = n.createRadialGradient(x0, BOAT_Y, 20, x0, BOAT_Y, 90);
-            rg.addColorStop(0, 'rgba(0,0,0,1)'); rg.addColorStop(1, 'rgba(0,0,0,0)'); n.fillStyle = rg; n.fillRect(x0 - 90, BOAT_Y - 90, 180, 180);
+            n.fillStyle = g; n.beginPath(); n.moveTo(x0 - 16, y0); n.lineTo(x0 - half, y0 - reach); n.lineTo(x0 + half, y0 - reach); n.lineTo(x0 + 16, y0); n.closePath(); n.fill();
+            const rg = n.createRadialGradient(x0, BOAT_Y, 20, x0, BOAT_Y, ring);
+            rg.addColorStop(0, 'rgba(0,0,0,1)'); rg.addColorStop(1, 'rgba(0,0,0,0)'); n.fillStyle = rg; n.fillRect(x0 - ring, BOAT_Y - ring, ring * 2, ring * 2);
             n.globalCompositeOperation = 'source-over';
             c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(nightCv, 0, 0); c.restore();
-            c.fillStyle = `rgba(255,236,170,${0.1 * lvl})`; c.beginPath(); c.moveTo(x0 - 16, y0); c.lineTo(x0 - 95, y0 - reach); c.lineTo(x0 + 95, y0 - reach); c.lineTo(x0 + 16, y0); c.closePath(); c.fill();
+            c.fillStyle = `rgba(255,236,170,${0.1 * lvl})`; c.beginPath(); c.moveTo(x0 - 16, y0); c.lineTo(x0 - half, y0 - reach); c.lineTo(x0 + half, y0 - reach); c.lineTo(x0 + 16, y0); c.closePath(); c.fill();
         }
         // 進新的海域：中間一行大字
         function drawZoneBanner(c, now) {
@@ -1611,6 +1615,8 @@
         $('payAcct').addEventListener('click', e => { if (e.target.closest('[data-login]')) Line.login(); });
         // ===== 12. 船隻升級面板 =====
         const playing = () => G && G.started && !G.ended;
+        const perkOk = u => !u.perk || Wallet.perk(u.perk);   // 專屬道具解鎖的：要有道具才看得到、才有效果
+        const lamp = () => lv('spotlight') > 0 && Wallet.perk('shiplamp');
         function shopIcon(cv, u, level) {
             const r = Math.min(window.devicePixelRatio || 1, 3), px = 56;
             cv.width = px * r; cv.height = px * r;
@@ -1634,6 +1640,10 @@
             } else if (u.key === 'hold') {
                 for (let i = 0; i < L; i++) { const x = 12 + i * 11, y = 24 + (i % 2) * 6; c.fillStyle = i % 2 ? '#d9e9f4' : '#9cc6e4'; c.fillRect(x, y, 14, 12); c.strokeStyle = '#4d7fa3'; c.lineWidth = 1; c.strokeRect(x, y, 14, 12); }
                 drawCarrot(c, 44, 20, 0.7, false, 0);
+            } else if (u.key === 'spotlight') {
+                c.fillStyle = 'rgba(255,236,170,0.55)'; c.beginPath(); c.moveTo(22, 26); c.lineTo(52, 6); c.lineTo(52, 46); c.closePath(); c.fill();
+                c.fillStyle = '#3d4a55'; c.fillRect(8, 20, 16, 14); c.fillStyle = '#5a6a78'; c.fillRect(8, 20, 16, 3);
+                c.fillStyle = '#fff4c8'; c.beginPath(); c.arc(24, 27, 5, -Math.PI / 2, Math.PI / 2); c.fill(); c.fillStyle = '#8e8070'; c.fillRect(13, 34, 6, 10);
             } else if (u.key === 'horn') {
                 c.fillStyle = '#e0b03a'; c.beginPath(); c.moveTo(14, 30); c.lineTo(34, 20); c.lineTo(34, 40); c.closePath(); c.fill();
                 c.fillStyle = '#b88a22'; c.fillRect(10, 27, 6, 6);
@@ -1643,25 +1653,25 @@
         }
         function renderShop() {
             $('shopMoney').textContent = fmt(Wallet.money);
-            $('shopList').innerHTML = Wallet.saleBanner() + SHOP.map(u => {
+            $('shopList').innerHTML = Wallet.saleBanner() + SHOP.filter(perkOk).map(u => {
                 const now = lv(u.key), max = u.prices.length, next = now < max ? now + 1 : null;
-                const base = next ? u.prices[now] : 0, price = Wallet.shopPrice(base);   // 專屬道具「全店六折」
+                const base = next ? u.prices[now] : 0, price = u.perk ? base : Wallet.shopPrice(base);   // 專屬道具「全店六折」；專屬解鎖的照定價
                 const dots = Array.from({ length: max }, (_, i) => `<i class="${i < now ? 'on' : ''}"></i>`).join('');
                 const tier = next ? `${u.tiers[now] ? u.tiers[now] + ' → ' : ''}${u.tiers[next]}` : u.tiers[now];
                 return `<div class="shop-row">
                     <canvas class="shop-icon" data-icon="${u.key}" data-lv="${next || now}"></canvas>
                     <div class="min-w-0 flex-1">
-                        <p class="text-sm text-wabi-dark tracking-widest">${u.name}<span class="ml-1 text-[10px] font-sans text-stone-400">${u.sub}</span><span class="shop-dots ml-1">${dots}</span></p>
-                        <p class="mt-0.5 text-[10px] font-sans tracking-wider text-stone-400">${tier}</p>
+                        <p class="text-sm text-wabi-dark tracking-widest">${u.name}${u.perk ? '<span class="perk-seal">專屬</span>' : `<span class="ml-1 text-[10px] font-sans text-stone-400">${u.sub}</span>`}<span class="shop-dots ml-1">${dots}</span></p>
+                        <p class="mt-0.5 text-[10px] font-sans tracking-wider text-stone-400">${u.perk ? `${esc((Wallet.perks(u.perk)[0] || {}).name || '專屬道具')}解鎖的` : tier}</p>
                         <p class="mt-1 text-[11px] font-sans leading-relaxed text-stone-600">${now ? '現在：' + u.fx(u.vals[now - 1]) : ''}${next ? `${now ? '<br>' : ''}升級：${u.fx(u.vals[next - 1])}` : '<br>已經是最高級'}</p>
                     </div>
-                    <button type="button" class="shop-buy" data-buy="${u.key}" ${!next || Wallet.money < price ? 'disabled' : ''}>${next ? `${now ? '升級' : '買'}<br>${Wallet.priceTag(base)}` : '滿級'}</button>
+                    <button type="button" class="shop-buy" data-buy="${u.key}" ${!next || Wallet.money < price ? 'disabled' : ''}>${next ? `${now ? '升級' : '買'}<br>${u.perk ? fmt(base) : Wallet.priceTag(base)}` : u.perk ? '已裝上' : '滿級'}</button>
                 </div>`;
             }).join('');
             $('shopList').querySelectorAll('[data-icon]').forEach(cv => shopIcon(cv, SHOP_BY[cv.dataset.icon], Number(cv.dataset.lv)));
         }
         function renderShopLv() {
-            const total = SHOP.reduce((t, u) => t + lv(u.key), 0);
+            const total = SHOP.filter(perkOk).reduce((t, u) => t + lv(u.key), 0);
             $('shopLv').textContent = total ? total : '';
             $('shopBtn').setAttribute('aria-label', total ? `船廠，升級了 ${total} 次` : '船廠升級');
         }
@@ -1682,8 +1692,8 @@
             if (playing()) return;
             shop = loadShop();  // 用錢包裡最新的（別家店可能也買過東西，spent 要接著加）
             const u = SHOP_BY[key], now = lv(key);
-            if (now >= u.prices.length) return;
-            const price = Wallet.shopPrice(u.prices[now]);   // 專屬道具「全店六折」：扣、記都是六折後的
+            if (now >= u.prices.length || !perkOk(u)) return;
+            const price = u.perk ? u.prices[now] : Wallet.shopPrice(u.prices[now]);   // 專屬道具「全店六折」：扣、記都是六折後的；專屬解鎖的照定價
             if (!Wallet.spend(price)) { showToast('錢包不夠，先多跑幾趟'); return; }
             shop.lv[key] = now + 1;
             shop.spent += price;

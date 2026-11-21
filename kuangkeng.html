@@ -72,6 +72,7 @@
         .shop-icon { flex: none; width: 56px; height: 56px; border-radius: 6px; background: #ece8e0; }
         .shop-dots i { display: inline-block; width: 6px; height: 6px; margin-left: 3px; border-radius: 50%; border: 1px solid rgb(var(--wabi-accent)); }
         .shop-dots i.on { background: rgb(var(--wabi-shu)); border-color: rgb(var(--wabi-shu)); }
+        .perk-seal { display: inline-block; margin-left: 0.35rem; padding: 0 0.3rem; border: 1px solid rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); font-family: 'Noto Sans TC', sans-serif; font-size: 10px; letter-spacing: 0.1em; line-height: 1.5; border-radius: 2px; transform: rotate(-3deg); vertical-align: 1px; }   /* 專屬道具解鎖的商品 */
         .shop-buy {
             flex: none; min-width: 5.6rem; min-height: 44px; padding: 0 0.6rem;
             border: 1px solid rgb(var(--wabi-dark)); background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg));
@@ -252,6 +253,8 @@
           { key: 'minelamp', name: '礦燈', sub: '福袋', prices: [40000], vals: [150], tiers: ['', '礦燈'], fx: v => `福袋開到兩的話至少 ${v} 兩（御守是 300）` },
           { key: 'sandglass', name: '沙漏', sub: '加時', prices: [50000, 120000], vals: [5, 10], tiers: ['', '小沙漏', '大沙漏'], fx: v => `每關 ${ROUND + v} 秒（多 ${v} 秒）` },
           { key: 'regular', name: '老顧客卡', sub: '礦坑商店', prices: [30000], vals: [0.1], tiers: ['', '老顧客卡'], fx: () => '礦坑商店的東西打九折（花的是兩）' },
+          // 專屬道具解鎖的（2026-11-21）：平常看不到，主人在 admin 後台發了對應的道具（效果 minemag）才出現；定價 $1、不打折；道具到期或收回就藏起來、效果也停（買過的留著，再拿到道具不用再買）
+          { key: 'magnet', perk: 'minemag', name: '磁力夾', sub: '專屬', prices: [1], vals: [26], tiers: ['', '磁力夾'], fx: () => '金塊靠近鉤子就會被吸過來夾住（鑽石、石頭、別的東西不吸）' },
         ];
         const UPG_BY = Object.fromEntries(UPG.map(u => [u.key, u]));
         function loadUpg() {
@@ -262,7 +265,9 @@
         }
         let upg = loadUpg();
         const lvOf = key => MAINTENANCE ? UPG_BY[key].prices.length : upg.lv[key] || 0;   // 監修中試玩：滿級借你用
-        const val = key => lvOf(key) ? UPG_BY[key].vals[lvOf(key) - 1] : 0;
+        const escH = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
+        const perkOk = u => !u.perk || (!!window.Wallet && Wallet.perk(u.perk));   // 專屬道具解鎖的：要有道具才看得到、才有效果
+        const val = key => lvOf(key) && perkOk(UPG_BY[key]) ? UPG_BY[key].vals[lvOf(key) - 1] : 0;
 
         const cv = document.getElementById('cv');
         let c = cv.getContext('2d');   // 畫結果圖時會暫時換成別張畫布（withCtx）
@@ -433,7 +438,7 @@
 
         // ---------- 店面（錢包的錢）----------
         function syncUI() {
-          const total = MAINTENANCE ? 0 : UPG.reduce((t, u) => t + lvOf(u.key), 0);
+          const total = MAINTENANCE ? 0 : UPG.filter(perkOk).reduce((t, u) => t + lvOf(u.key), 0);
           $('shopLv').textContent = total ? total : '';
           $('shopBtn').setAttribute('aria-label', total ? `店面，升級了 ${total} 次` : '店面升級');
           $('giveUp').classList.toggle('hidden', !(G && (G.phase === 'title' || G.phase === 'shop') && (G.lv > 1 || G.phase === 'shop')));
@@ -451,24 +456,25 @@
           else if (key === 'crate') { x.fillStyle = '#9b7550'; x.fillRect(4, 10, 20, 14); x.strokeStyle = '#7b5a3c'; x.lineWidth = 1; x.strokeRect(4, 10, 20, 14); x.fillStyle = '#a8553f'; x.fillRect(8, 5, 4, 8); x.fillRect(14, 5, 4, 8); txtOn(x, '炸', 14, 18, 8, '#fcfaf8'); }
           else if (key === 'minelamp') { x.fillStyle = '#f0c14b'; x.beginPath(); x.arc(14, 17, 9, Math.PI, TAU); x.fill(); x.fillRect(4, 16, 20, 3); x.fillStyle = '#fff6d8'; x.beginPath(); x.arc(14, 12, 3, 0, TAU); x.fill(); x.fillStyle = 'rgba(255,240,180,.6)'; x.beginPath(); x.moveTo(14, 12); x.lineTo(2, 2); x.lineTo(26, 2); x.closePath(); x.fill(); }
           else if (key === 'sandglass') { x.strokeStyle = '#7b5a3c'; x.lineWidth = 1.6; x.beginPath(); x.moveTo(7, 4); x.lineTo(21, 4); x.moveTo(7, 24); x.lineTo(21, 24); x.stroke(); x.fillStyle = 'rgba(200,220,230,.7)'; x.beginPath(); x.moveTo(8, 5); x.lineTo(20, 5); x.lineTo(14, 14); x.lineTo(20, 23); x.lineTo(8, 23); x.lineTo(14, 14); x.closePath(); x.fill(); x.fillStyle = '#e2a33f'; x.beginPath(); x.moveTo(10, 23); x.lineTo(18, 23); x.lineTo(14, 18); x.closePath(); x.fill(); }
+          else if (key === 'magnet') { x.strokeStyle = '#c0392b'; x.lineWidth = 5; x.beginPath(); x.arc(14, 12, 7, Math.PI, 0); x.moveTo(7, 12); x.lineTo(7, 19); x.moveTo(21, 12); x.lineTo(21, 19); x.stroke(); x.fillStyle = '#9aa0a6'; x.fillRect(4.5, 19, 5, 4); x.fillRect(18.5, 19, 5, 4); x.fillStyle = '#c9ced3'; x.fillRect(4.5, 19, 5, 1.2); x.fillRect(18.5, 19, 5, 1.2); x.strokeStyle = 'rgba(120,170,220,.8)'; x.lineWidth = 1; [3, 6].forEach(d => { x.beginPath(); x.arc(14, 24, 4 + d, Math.PI * 0.2, Math.PI * 0.8); x.stroke(); }); }
           else if (key === 'regular') { x.fillStyle = '#fcfaf8'; x.strokeStyle = '#8e8070'; x.lineWidth = 1; x.fillRect(3, 7, 22, 15); x.strokeRect(3, 7, 22, 15); x.strokeStyle = '#b33a2f'; x.lineWidth = 1.4; x.strokeRect(15, 10, 8, 8); txtOn(x, '常', 19, 14.5, 6, '#b33a2f'); x.fillStyle = '#c4beb4'; x.fillRect(6, 11, 7, 1.5); x.fillRect(6, 15, 6, 1.5); }
           ctx = save;
         }
         function renderShop() {
           if (MAINTENANCE) $('shopSub').textContent = '監修中試玩：滿級先借你用，還不能買';
           $('shopMoney').textContent = Wallet.fmt(Wallet.money);
-          $('shopList').innerHTML = Wallet.saleBanner() + UPG.map(u => {
-            const now = lvOf(u.key), max = u.prices.length, next = now < max ? now + 1 : null, base = next ? u.prices[now] : 0, pr = Wallet.shopPrice(base);   // 專屬道具「全店六折」
+          $('shopList').innerHTML = Wallet.saleBanner() + UPG.filter(perkOk).map(u => {
+            const now = lvOf(u.key), max = u.prices.length, next = now < max ? now + 1 : null, base = next ? u.prices[now] : 0, pr = u.perk ? base : Wallet.shopPrice(base);   // 專屬道具「全店六折」；專屬解鎖的照定價
             const dots = Array.from({ length: max }, (_, i) => `<i class="${i < now ? 'on' : ''}"></i>`).join('');
             const tier = next ? `${u.tiers[now] ? u.tiers[now] + ' → ' : ''}${u.tiers[next]}` : u.tiers[now];
             return `<div class="shop-row">
               <canvas class="shop-icon" data-icon="${u.key}"></canvas>
               <div class="min-w-0 flex-1">
-                <p class="text-sm text-wabi-dark tracking-widest">${u.name}<span class="ml-1 text-[10px] font-sans text-stone-400">${u.sub}</span><span class="shop-dots ml-1">${dots}</span></p>
-                <p class="mt-0.5 text-[10px] font-sans tracking-wider text-stone-400">${tier}</p>
+                <p class="text-sm text-wabi-dark tracking-widest">${u.name}${u.perk ? '<span class="perk-seal">專屬</span>' : `<span class="ml-1 text-[10px] font-sans text-stone-400">${u.sub}</span>`}<span class="shop-dots ml-1">${dots}</span></p>
+                <p class="mt-0.5 text-[10px] font-sans tracking-wider text-stone-400">${u.perk ? `${escH((Wallet.perks(u.perk)[0] || {}).name || '專屬道具')}解鎖的` : tier}</p>
                 <p class="mt-1 text-[11px] font-sans leading-relaxed text-stone-600">${now ? '現在：' + u.fx(u.vals[now - 1]) : ''}${next ? `${now ? '<br>' : ''}升級：${u.fx(u.vals[next - 1])}` : '<br>已經是最高級'}</p>
               </div>
-              <button type="button" class="shop-buy" data-buy="${u.key}" ${!next || Wallet.money < pr ? 'disabled' : ''}>${next ? `${now ? '升級' : '買'}<br>${Wallet.priceTag(base)}` : '滿級'}</button>
+              <button type="button" class="shop-buy" data-buy="${u.key}" ${!next || Wallet.money < pr ? 'disabled' : ''}>${next ? `${now ? '升級' : '買'}<br>${u.perk ? Wallet.fmt(base) : Wallet.priceTag(base)}` : u.perk ? '已裝上' : '滿級'}</button>
             </div>`;
           }).join('');
           $('shopList').querySelectorAll('[data-icon]').forEach(el => shopIcon(el, el.dataset.icon));
@@ -484,8 +490,8 @@
           if (MAINTENANCE || G.phase === 'play') return;
           upg = loadUpg();   // 用錢包裡最新的（別家店可能也買過，spent 要接著加）
           const u = UPG_BY[key], now = lvOf(key);
-          if (now >= u.prices.length) return;
-          const pr = Wallet.shopPrice(u.prices[now]);   // 專屬道具「全店六折」：扣、記都是六折後的
+          if (now >= u.prices.length || !perkOk(u)) return;
+          const pr = u.perk ? u.prices[now] : Wallet.shopPrice(u.prices[now]);   // 專屬道具「全店六折」：扣、記都是六折後的；專屬解鎖的照定價
           if (!Wallet.spend(pr)) { showToast('錢包不夠，先多挖幾關'); return; }
           upg.lv[key] = now + 1; upg.spent += pr; Wallet.setShop(upg);
           showToast(`${u.name}升級了：${u.tiers[now + 1]}`);
@@ -533,7 +539,7 @@
           return { v, txt: '+' + v };
         }
         function step(dt) {
-          G.fx = G.fx.filter(f => (f.t += dt) < f.life); G.fx.forEach(f => { if (!f.ring) { f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 260 * dt; } });
+          G.fx = G.fx.filter(f => (f.t += dt) < f.life); G.fx.forEach(f => { if (!f.ring && !f.mag) { f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 260 * dt; } });
           G.pops = G.pops.filter(p => (p.t += dt) < 1.2);
           if (G.phase === 'clear') G.clearT = (G.clearT || 0) + dt;
           if (G.phase !== 'play' && G.phase !== 'title') return;
@@ -545,8 +551,10 @@
           if (h.st === 'out') {
             h.len += TUNE.shoot * dt;
             const p = tip();
-            const hit = G.items.find(o => Math.hypot(o.x - p.x, o.y - p.y) < o.r + 4);
+            const mag = val('magnet');   // 磁力夾：金塊靠近就吸過來
+            const hit = G.items.find(o => Math.hypot(o.x - p.x, o.y - p.y) < o.r + 4 + (mag && KIND[o.k].draw === 'gold' ? mag : 0));
             if (hit) {
+              if (mag && Math.hypot(hit.x - p.x, hit.y - p.y) >= hit.r + 4) G.fx.push({ mag: true, x: hit.x, y: hit.y, tx: p.x, ty: p.y, t: 0, life: .35 });
               if (hit.k === 'barrel') { explode(hit.x, hit.y); h.st = 'back'; }
               else { G.items.splice(G.items.indexOf(hit), 1); h.item = hit; h.st = 'back'; }
               syncBoom();
@@ -927,7 +935,13 @@
           const open = h.item ? 0.35 : 1;
           c.strokeStyle = '#6d6a66'; c.lineWidth = 3; c.lineCap = 'round';
           c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-13 * open - 4, 4, -10 * open - 2, 16); c.moveTo(0, 0); c.quadraticCurveTo(13 * open + 4, 4, 10 * open + 2, 16); c.stroke();
-          c.fillStyle = '#6d6a66'; c.beginPath(); c.arc(0, 0, 3.4, 0, TAU); c.fill(); c.restore();
+          c.fillStyle = '#6d6a66'; c.beginPath(); c.arc(0, 0, 3.4, 0, TAU); c.fill();
+          if (val('magnet')) {   // 磁力夾：關節上一顆紅色馬蹄磁鐵，伸出去時旁邊一圈淡淡的磁場
+            c.strokeStyle = '#c0392b'; c.lineWidth = 3; c.lineCap = 'butt'; c.beginPath(); c.arc(0, -3, 5, Math.PI * 0.1, Math.PI * 0.9, true); c.stroke();
+            c.fillStyle = '#e8e6e2'; c.fillRect(-6.5, -4, 3, 3); c.fillRect(3.5, -4, 3, 3);
+            if (h.st === 'out' && !reduce) { c.strokeStyle = `rgba(120,170,220,${0.25 + 0.2 * Math.sin(performance.now() / 90)})`; c.lineWidth = 1; c.setLineDash([3, 4]); c.beginPath(); c.arc(0, 8, 22, 0, TAU); c.stroke(); c.setLineDash([]); }
+          }
+          c.restore();
         }
         function pill(x, y, w, s, color) { c.fillStyle = 'rgba(44,44,44,.72)'; c.beginPath(); c.roundRect(x, y, w, 28, 14); c.fill(); txt(s, x + w / 2, y + 14.5, { size: 13.5, w: 500, color: color || '#fcfaf8', align: 'center' }); }
         function hud() {
@@ -950,7 +964,8 @@
           raccoon(158, 82, 0.95, G.tug);
           G.fx.forEach(f => {
             const k = f.t / f.life;
-            if (f.ring) { c.strokeStyle = `rgba(242,176,60,${1 - k})`; c.lineWidth = f.big ? 6 : 4; c.beginPath(); c.arc(f.x, f.y, f.r + k * (f.big ? BLAST : 40), 0, TAU); c.stroke(); }
+            if (f.mag) { c.strokeStyle = `rgba(120,170,220,${1 - k})`; c.lineWidth = 2; for (let i = 0; i < 3; i++) { const t = (k + i / 3) % 1, x = f.x + (f.tx - f.x) * t, y = f.y + (f.ty - f.y) * t; c.beginPath(); c.arc(x, y, 6 - i, 0, TAU); c.stroke(); } }   // 磁力夾吸過來的那一下
+            else if (f.ring) { c.strokeStyle = `rgba(242,176,60,${1 - k})`; c.lineWidth = f.big ? 6 : 4; c.beginPath(); c.arc(f.x, f.y, f.r + k * (f.big ? BLAST : 40), 0, TAU); c.stroke(); }
             else { c.fillStyle = `rgba(${k < .4 ? '242,176,60' : '120,100,85'},${1 - k})`; c.beginPath(); c.arc(f.x, f.y, f.r, 0, TAU); c.fill(); }
           });
           G.pops.forEach(p => { const k = p.t / 1.2; txt(p.txt, p.x, p.y - k * 26, { size: p.big ? 21 : 17, w: 600, font: SERIF, color: `rgba(${p.big ? '179,58,47' : '74,74,74'},${1 - k * k})`, align: 'center' }); });
