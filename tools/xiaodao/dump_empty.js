@@ -13,6 +13,10 @@ window.__rec = [];
 (function () {
   const noop = ['tree', 'palm'].concat(${JSON.stringify(cfg.noop || [])});
   noop.forEach(n => { if (typeof window[n] === 'function') window[n] = function () {}; });
+  // 原本就畫好的空位也記下來（label：s 小車位、m 車位；我們自己畫的那種不記）
+  let mine = false;
+  ${JSON.stringify(cfg.slot ? [cfg.slot] : [])}.forEach(n => { const f = window[n]; if (typeof f !== 'function') return;
+    window[n] = function (x, a, b, w, h, label) { if (!mine) window.__rec.push({ cv: x.canvas.id, fn: 'empty', box: [a, b, w, h], label: label || '' }); return f.apply(this, arguments); }; });
   ${JSON.stringify(cfg.veh)}.forEach(n => {
     const f = window[n]; if (typeof f !== 'function') return;
     window[n] = function (x, a, b, ...rest) {
@@ -22,7 +26,7 @@ window.__rec = [];
       for (let j = 0; j < 400; j++) for (let i = 0; i < 400; i++) if (d[(j * 400 + i) * 4 + 3] === 255) { x0 = Math.min(x0, i); y0 = Math.min(y0, j); x1 = Math.max(x1, i); y1 = Math.max(y1, j); }
       const box = x1 < 0 ? null : [a + x0 - 150, b + y0 - 150, x1 - x0 + 1, y1 - y0 + 1];
       window.__rec.push({ cv: x.canvas.id, fn: n, a, b, box });
-      ${cfg.slot ? `if (box && n !== 'balloon' && n !== 'paraglider') ${cfg.slot}(x, box[0], box[1], box[2], box[3]);` : ''}
+      ${cfg.slot ? `if (box && n !== 'balloon' && n !== 'paraglider') { mine = true; ${cfg.slot}(x, box[0], box[1], box[2], box[3]); mine = false; }` : ''}
     };
   });
 })();

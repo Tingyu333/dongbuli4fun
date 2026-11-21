@@ -22,12 +22,15 @@
       levels: ['腳踏車棚', '車棚', '單車庫', '雙車庫＋工作坊', '展示車廊'],
       prices: [2000, 20000, 75000, 400000, 1200000],
       sprites: [[78, 81], [102, 102], [91, 110], [146, 114], [174, 112]],
+      // 每一階的車位 [x, y, 寬, 高, 停得了幾級]（圖裡的座標；從設計圖原本畫車的位置記下來，tools/xiaodao/slots.json）
+      slots: [[[12,26,5,15,1],[22,26,5,15,1],[33,28,9,14,1],[50,26,14,22,1]],[[15,14,18,28,2],[45,22,9,14,1],[62,16,14,22,1]],[[17,56,20,28,3],[46,80,12,18,1],[47,58,9,14,1]],[[13,54,20,34,4],[59,60,18,28,4],[84,86,12,18,1],[85,64,9,14,1]],[[13,12,18,30,5],[37,12,20,28,5],[73,25,22,30,5],[108,10,18,32,5],[127,8,22,38,5],[15,58,9,14,1],[27,58,9,14,1],[40,56,12,18,1]]],
     },
     dock: {
       name: '碼頭', mode: 'shore', ax: 560, ay: COAST, door: 't',
       levels: ['小木台', '木棧橋', '漁港碼頭', '遊艇碼頭', '私人港灣'],
       prices: [2000, 20000, 90000, 500000, 1600000],
       sprites: [[57, 43, 10], [54, 83, 9], [117, 87, 9], [166, 79, 8], [198, 98, 21]],
+      slots: [[[0,21,14,22,1],[46,23,11,16,1]],[[42,34,12,27,2],[0,20,13,17,1],[0,52,14,24,1]],[[18,54,12,31,3],[22,6,14,26,3],[52,54,16,32,3],[72,6,14,27,3],[84,54,16,33,3]],[[30,24,18,39,4],[84,26,18,39,4],[108,26,18,40,4],[4,22,12,27,3],[136,23,12,21,1]],[[72,18,20,60,5],[106,7,28,72,5],[48,28,18,39,4],[28,36,12,31,3]]],
     },
     airfield: {
       name: '停機坪', mode: 'bc', ax: 330, ay: 340, door: 'b',
@@ -43,6 +46,59 @@
     },
   };
   const FAC_KEYS = ['house', 'garage', 'dock', 'airfield', 'launchpad'];
+
+  // 車、船（第二批）：從 vehicles.html、boats.html 畫出來的圖 assets/xiaodao/v/<key>.png；cls 是幾級（停得進同級以上的位子，買之前車庫／碼頭要蓋到同一級）
+  const VEH = {
+    bike1: { name: '淑女車', desc: '前面有籃子', g: '腳踏車', fac: 'garage', cls: 1, price: 300, w: 7, h: 19 },
+    bike2: { name: '公路車', desc: '彎把、很細', g: '腳踏車', fac: 'garage', cls: 1, price: 1200, w: 7, h: 19 },
+    bike3: { name: '登山車', desc: '粗輪胎、平把', g: '腳踏車', fac: 'garage', cls: 1, price: 900, w: 9, h: 19 },
+    bike4: { name: '小摺', desc: '輪子小小的', g: '腳踏車', fac: 'garage', cls: 1, price: 600, w: 6, h: 15 },
+    bike5: { name: '協力車', desc: '兩個人一起騎', g: '腳踏車', fac: 'garage', cls: 1, price: 2000, w: 7, h: 27 },
+    moto1: { name: '速克達', desc: '白牌、每天騎', g: '機車', fac: 'garage', cls: 1, price: 2000, w: 11, h: 18 },
+    moto2: { name: '偉士牌風', desc: '圓屁股、鍍鉻', g: '機車', fac: 'garage', cls: 1, price: 9000, w: 11, h: 18 },
+    moto3: { name: '外送機車', desc: '後面一個大箱子', g: '機車', fac: 'garage', cls: 1, price: 4000, w: 12, h: 22 },
+    moto4: { name: '重機', desc: '大油箱、排氣管', g: '機車', fac: 'garage', cls: 1, price: 15000, w: 13, h: 21 },
+    moto5: { name: '電動機車', desc: '安安靜靜', g: '機車', fac: 'garage', cls: 1, price: 6000, w: 11, h: 18 },
+    sedan1: { name: '小型車', desc: '圓圓的、好停', g: '轎車', fac: 'garage', cls: 2, price: 30000, w: 18, h: 25 },
+    sedan2: { name: '轎車', desc: '最普通的那種', g: '轎車', fac: 'garage', cls: 2, price: 45000, w: 20, h: 31 },
+    sedan3: { name: '計程車', desc: '車頂有牌子', g: '轎車', fac: 'garage', cls: 2, price: 52000, w: 20, h: 31 },
+    sedan4: { name: '旅行車', desc: '後車廂很長、車頂架', g: '轎車', fac: 'garage', cls: 2, price: 60000, w: 20, h: 33 },
+    sedan5: { name: '黑頭車', desc: '長長的、黑玻璃', g: '轎車', fac: 'garage', cls: 2, price: 90000, w: 20, h: 35 },
+    sport1: { name: '紅色跑車', desc: '黑車頂、兩條白線', g: '跑車', fac: 'garage', cls: 3, price: 150000, w: 22, h: 31 },
+    sport2: { name: '敞篷跑車', desc: '沒有車頂、看得到座椅', g: '跑車', fac: 'garage', cls: 3, price: 250000, w: 22, h: 31 },
+    sport3: { name: 'GT 雙門', desc: '長車頭、斜背', g: '跑車', fac: 'garage', cls: 3, price: 400000, w: 22, h: 33 },
+    jeep1: { name: '軍綠吉普', desc: '方方正正、後面備胎', g: '越野車', fac: 'garage', cls: 4, price: 120000, w: 22, h: 37 },
+    jeep2: { name: '沙漠越野', desc: '車頂燈條、行李架', g: '越野車', fac: 'garage', cls: 4, price: 220000, w: 22, h: 37 },
+    camper1: { name: '奶油露營車', desc: '行李架、天窗', g: '露營車', fac: 'garage', cls: 4, price: 180000, w: 24, h: 41 },
+    camper2: { name: '露營巴士', desc: '雨棚、太陽能板', g: '露營車', fac: 'garage', cls: 4, price: 300000, w: 26, h: 49 },
+    classic1: { name: '綠色老爺車', desc: '敞篷、皮椅、鍍鉻保險桿', g: '古董車', fac: 'garage', cls: 5, price: 600000, w: 20, h: 33 },
+    classic2: { name: '酒紅老爺車', desc: '白邊輪胎、長車頭', g: '古董車', fac: 'garage', cls: 5, price: 1000000, w: 21, h: 35 },
+    super1: { name: '黃色超跑', desc: '楔形、尾翼、進氣口', g: '超跑', fac: 'garage', cls: 5, price: 1600000, w: 24, h: 33 },
+    super2: { name: '寬體橘超跑', desc: '更寬、大尾翼', g: '超跑', fac: 'garage', cls: 5, price: 2200000, w: 27, h: 33 },
+    super3: { name: '消光黑超跑', desc: '金色尾翼、金色線', g: '超跑', fac: 'garage', cls: 5, price: 3000000, w: 24, h: 33 },
+    row1: { name: '竹筏', desc: '竹子綁的', g: '小船', fac: 'dock', cls: 1, price: 500, w: 13, h: 19 },
+    row2: { name: '獨木舟', desc: '一支槳', g: '小船', fac: 'dock', cls: 1, price: 900, w: 12, h: 24 },
+    row3: { name: '小划艇', desc: '兩支槳、木頭座位', g: '小船', fac: 'dock', cls: 1, price: 1500, w: 13, h: 20 },
+    row4: { name: '天鵝船', desc: '用腳踩的', g: '小船', fac: 'dock', cls: 1, price: 2200, w: 14, h: 21 },
+    row5: { name: '立槳板', desc: '站著划', g: '小船', fac: 'dock', cls: 1, price: 3000, w: 9, h: 25 },
+    motor1: { name: '動力小艇', desc: '後面掛馬達', g: '有馬達', fac: 'dock', cls: 2, price: 15000, w: 14, h: 30 },
+    motor2: { name: '小漁船', desc: '漁網、船艙', g: '有馬達', fac: 'dock', cls: 2, price: 40000, w: 16, h: 30 },
+    motor3: { name: '長蘿貨運的船', desc: '載滿蘿蔔', g: '有馬達', fac: 'dock', cls: 2, price: 75000, w: 18, h: 36 },
+    sail1: { name: '小帆船', desc: '一面三角帆', g: '帆船', fac: 'dock', cls: 3, price: 45000, w: 11, h: 23 },
+    sail2: { name: '單桅帆船', desc: '木甲板、收起來的帆', g: '帆船', fac: 'dock', cls: 3, price: 90000, w: 14, h: 34 },
+    sail3: { name: '雙體帆船', desc: '兩個船身、中間網子', g: '帆船', fac: 'dock', cls: 3, price: 160000, w: 21, h: 31 },
+    sail4: { name: '戎克船', desc: '紅色竹骨帆', g: '帆船', fac: 'dock', cls: 3, price: 250000, w: 18, h: 36 },
+    yacht1: { name: '白色遊艇', desc: '木甲板、日光甲板', g: '遊艇', fac: 'dock', cls: 4, price: 500000, w: 20, h: 42 },
+    yacht2: { name: '深藍遊艇', desc: '深藍船身、金線', g: '遊艇', fac: 'dock', cls: 4, price: 800000, w: 20, h: 42 },
+    yacht3: { name: '雙體遊艇', desc: '很寬、很穩', g: '遊艇', fac: 'dock', cls: 4, price: 1100000, w: 26, h: 42 },
+    yacht4: { name: '釣魚遊艇', desc: '塔架、兩根外伸竿', g: '遊艇', fac: 'dock', cls: 4, price: 1600000, w: 33, h: 40 },
+    show1: { name: '超級遊艇', desc: '直升機坪、按摩池、雷達球', g: '展示級', fac: 'dock', cls: 5, price: 8000000, w: 32, h: 77 },
+    show2: { name: '古董木船', desc: '1930 年代桃花心木遊艇', g: '展示級', fac: 'dock', cls: 5, price: 3000000, w: 23, h: 63 },
+    show3: { name: '古典三桅帆船', desc: '張開的方帆、雕花船尾', g: '展示級', fac: 'dock', cls: 5, price: 5000000, w: 44, h: 74 },
+  };
+  const VEH_KEYS = Object.keys(VEH);
+  const CLS_NAME = { garage: ['', '兩輪', '轎車', '跑車', '大車', '展示級'], dock: ['', '小船', '有馬達的船', '帆船', '遊艇', '展示級'] };
+
   const START = { house: 1 };                             // 一開始送帳篷
 
   // 島的等級：地塊（含一開始送的，送 12 塊）幾塊升一階；全部設施蓋到最高剛好要 40 塊，cap 是每種設施最高到幾級（0＝還不能蓋）
@@ -166,7 +222,19 @@
     const plots = [...new Set(W.start.concat(isl.plots.filter(p => Number.isInteger(p) && p >= 0 && p < W.P)))].sort((a, b) => a - b);
     const items = [{ id: 'i1', key: 'island', plots, bought: Math.max(0, Math.floor(Number(isl.bought) || 0)) }];
     FAC_KEYS.forEach(k => { const it = s.items.find(i => i && i.key === k), max = FAC[k].levels.length; const lv = it ? Math.max(0, Math.min(max, Math.floor(Number(it.lv) || 0))) : (START[k] || 0); if (lv) items.push({ id: 'f-' + k, key: k, lv, in: 'i1', at: k }); });
-    s.items.forEach(i => { if (i && i.key !== 'island' && !FAC[i.key]) items.push(i); });   // 之後的東西（車、家具…）原樣留著
+    const seenV = new Set();
+    s.items.forEach(i => {
+      if (!i || i.key === 'island' || FAC[i.key]) return;
+      if (VEH[i.key]) {   // 車、船：每種一台；停的位子不對就收進寄放處
+        if (seenV.has(i.key)) return; seenV.add(i.key);
+        const v = { id: 'v-' + i.key, key: i.key, in: 'depot' }, f = VEH[i.key].fac, lv = (items.find(t => t.key === f) || {}).lv || 0;
+        if (i.in === 'f-' + f && lv && Number.isInteger(i.at) && i.at >= 0 && i.at < FAC[f].slots[lv - 1].length) { v.in = i.in; v.at = i.at; }
+        items.push(v); return;
+      }
+      items.push(i);   // 之後的東西（家具…）原樣留著
+    });
+    // 同一格停了兩台的，後面那台收回寄放處
+    const taken = new Set(); items.forEach(v => { if (!VEH[v.key] || v.in === 'depot') return; const t = v.in + ':' + v.at; if (taken.has(t)) { v.in = 'depot'; delete v.at; } else taken.add(t); });
     return { v: 1, items };
   }
   const island = s => s.items.find(i => i.key === 'island');
@@ -201,7 +269,47 @@
     return Object.assign(out, { ok: true });
   }
 
+  // ---------- 車、船 ----------
+  const vehOf = (s, k) => s.items.find(i => i.key === k && VEH[i.key]);
+  const vehicles = s => s.items.filter(i => VEH[i.key]);
+  // 某個設施現在那一階的位子（世界座標）：[{ i, x, y, w, h, cls, v: 停在這的 key }]
+  function slotsOf(s, f) {
+    const lv = level(s, f); if (!lv || !FAC[f].slots) return [];
+    const r = rect(f, lv), occ = {};
+    vehicles(s).forEach(v => { if (v.in === 'f-' + f) occ[v.at] = v.key; });
+    return FAC[f].slots[lv - 1].map(([x, y, w, h, cls], i) => ({ i, x: r.x + x, y: r.y + y, w, h, cls, v: occ[i] || null }));
+  }
+  // 這台停不停得進這一格（級數要夠、太大台的停不進窄的位子）
+  function fitWhy(k, slot) {
+    const v = VEH[k];
+    if (v.cls > slot.cls) return `這格只能停${CLS_NAME[v.fac][slot.cls]}${slot.cls > 1 ? '以下' : ''}`;
+    if (v.w > slot.w + 16 || v.h > slot.h + 16) return '太大台，這格停不下';
+    return '';
+  }
+  // 買這台：設施要蓋到同一級
+  function vehInfo(s, k) {
+    const v = VEH[k]; if (!v) return { ok: false, why: '沒有這台' };
+    if (vehOf(s, k)) return { ok: false, owned: true, why: '已經有了', price: v.price };
+    const lv = level(s, v.fac);
+    if (lv < v.cls) return { ok: false, price: v.price, why: `${FAC[v.fac].name}要先蓋到「${FAC[v.fac].levels[v.cls - 1]}」` };
+    return { ok: true, price: v.price };
+  }
+  // 找一個空的、停得進去的位子（級數剛好的優先，大位子留給大車）
+  function freeSlot(s, k) {
+    const f = VEH[k].fac; let best = null;
+    slotsOf(s, f).forEach(sl => { if (sl.v || fitWhy(k, sl)) return; if (!best || sl.cls < best.cls) best = sl; });
+    return best;
+  }
+  // 設施升級（位子變了）：照大到小重新停，停不下的收寄放處
+  function reflow(s, f) {
+    const list = vehicles(s).filter(v => VEH[v.key].fac === f && v.in === 'f-' + f).sort((a, b) => VEH[b.key].cls - VEH[a.key].cls);
+    list.forEach(v => { v.in = 'depot'; delete v.at; });
+    list.forEach(v => { const sl = freeSlot(s, v.key); if (sl) { v.in = 'f-' + f; v.at = sl.i; } });
+  }
+  const sellPrice = k => Math.floor(VEH[k].price / 2);
+
   // 做一件事：{ t: 'plot', p } 買地、{ t: 'build', k } 蓋或升一級。money 是錢包有多少。
+  // 車船：{ t: 'buyv', k } 買（自動停進空位，沒空位放寄放處）、{ t: 'park', k, f, i } 停進某一格（有車就對調）、{ t: 'depot', k } 收進寄放處、{ t: 'sell', k } 賣掉（買價一半）
   // 回 { ok: true, cost, state, msg } 或 { ok: false, err }；不改原本的 state。
   function apply(s0, act, money) {
     const s = clean(JSON.parse(JSON.stringify(s0)));
@@ -221,7 +329,43 @@
       if (!(money >= info.price)) return { ok: false, err: '錢包不夠' };
       const it = s.items.find(i => i.key === k);
       if (it) it.lv = info.next; else s.items.push({ id: 'f-' + k, key: k, lv: info.next, in: 'i1', at: k });
+      if (FAC[k].slots) reflow(s, k);
       return { ok: true, cost: info.price, state: s, built: k, lv: info.next };
+    }
+    if (act.t === 'buyv') {
+      const k = String(act.k || ''), info = vehInfo(s, k);
+      if (!info.ok) return { ok: false, err: info.why };
+      if (!(money >= info.price)) return { ok: false, err: '錢包不夠' };
+      let sl = freeSlot(s, k), bumped = null; const v = { id: 'v-' + k, key: k, in: 'depot' };
+      if (!sl) {   // 沒空位：大位子被小台的佔著，就請小台的讓位（先換到別的空位，沒有就收進寄放處）
+        slotsOf(s, VEH[k].fac).forEach(q => { if (q.v && VEH[q.v].cls < VEH[k].cls && !fitWhy(k, q) && (!sl || VEH[q.v].cls < VEH[sl.v].cls)) sl = q; });
+        if (sl) { const u = vehOf(s, sl.v); u.in = 'depot'; delete u.at; const q = freeSlot(s, u.key); if (q && q.i !== sl.i) { u.in = 'f-' + VEH[k].fac; u.at = q.i; } bumped = u.key; }
+      }
+      if (sl) { v.in = 'f-' + VEH[k].fac; v.at = sl.i; }
+      s.items.push(v);
+      return { ok: true, cost: info.price, state: s, parked: !!sl, bumped };
+    }
+    if (act.t === 'park') {
+      const k = String(act.k || ''), v = vehOf(s, k); if (!v) return { ok: false, err: '你沒有這台' };
+      const f = VEH[k].fac; if (act.f && act.f !== f) return { ok: false, err: VEH[k].fac === 'dock' ? '船要停碼頭' : '車要停車庫' };
+      const sl = slotsOf(s, f)[Math.floor(Number(act.i))]; if (!sl) return { ok: false, err: '沒有這個位子' };
+      const why = fitWhy(k, sl); if (why) return { ok: false, err: why };
+      if (sl.v === k) return { ok: true, cost: 0, state: s };
+      if (sl.v) {   // 原本停的那台：能停到這台原本的位子就對調，不然收進寄放處
+        const u = vehOf(s, sl.v), old = v.in === 'f-' + f ? slotsOf(s, f)[v.at] : null;
+        if (old && !fitWhy(u.key, old)) { u.at = old.i; } else { u.in = 'depot'; delete u.at; }
+      }
+      v.in = 'f-' + f; v.at = sl.i;
+      return { ok: true, cost: 0, state: s };
+    }
+    if (act.t === 'depot') {
+      const v = vehOf(s, String(act.k || '')); if (!v) return { ok: false, err: '你沒有這台' };
+      v.in = 'depot'; delete v.at; return { ok: true, cost: 0, state: s };
+    }
+    if (act.t === 'sell') {
+      const k = String(act.k || ''), v = vehOf(s, k); if (!v) return { ok: false, err: '你沒有這台' };
+      s.items = s.items.filter(i => i !== v);
+      return { ok: true, cost: -sellPrice(k), state: s };
     }
     return { ok: false, err: '看不懂要做什麼' };
   }
@@ -230,10 +374,11 @@
     let t = 0; const isl = island(s);
     for (let n = 1; n <= isl.bought; n++) t += plotPrice(n);
     FAC_KEYS.forEach(k => { const lv = level(s, k); for (let l = 1; l <= lv; l++) t += FAC[k].prices[l - 1]; });
+    vehicles(s).forEach(v => { t += VEH[v.key].price; });
     return t;
   }
 
-  const R = { C, GW, GH, COAST, SEA, FAC, FAC_KEYS, TIERS, START, hash, vnoise, inSea, world, rect, needPlots, plotPrice, fresh, clean, island, level, tierOf, nextTier, plotInfo, facInfo, apply, worth };
+  const R = { VEH, VEH_KEYS, CLS_NAME, vehOf, vehicles, slotsOf, fitWhy, vehInfo, freeSlot, sellPrice, C, GW, GH, COAST, SEA, FAC, FAC_KEYS, TIERS, START, hash, vnoise, inSea, world, rect, needPlots, plotPrice, fresh, clean, island, level, tierOf, nextTier, plotInfo, facInfo, apply, worth };
   root.XiaodaoRules = R;
   if (typeof module !== 'undefined' && module.exports) module.exports = R;
 })(typeof window !== 'undefined' ? window : this);

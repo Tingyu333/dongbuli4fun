@@ -156,6 +156,7 @@
   function load(base = 'assets/xiaodao/', ver = '') {
     if (loading) return loading;
     const list = []; X.FAC_KEYS.forEach(k => X.FAC[k].levels.forEach((n, i) => list.push(k + (i + 1))));
+    (X.VEH_KEYS || []).forEach(k => list.push('v/' + k));   // 車、船（第二批）
     loading = Promise.all(list.map(n => new Promise(ok => { const im = new Image(); im.onload = () => { IMG[n] = im; ok(); }; im.onerror = () => ok(); im.src = base + n + '.png' + (ver ? '?v=' + ver : ''); })));
     return loading;
   }
@@ -186,7 +187,11 @@
     const cv = (opt.canvas || document.createElement('canvas')); cv.width = WW; cv.height = HH;
     const x = cv.getContext('2d'); x.imageSmoothingEnabled = false;
     x.putImageData(new ImageData(B.d, WW, HH), 0, 0);
-    built.slice().sort((a, b) => (sites[a].y + sites[a].h) - (sites[b].y + sites[b].h)).forEach(k => { const im = IMG[k + X.level(s, k)], r = sites[k]; if (im) x.drawImage(im, r.x, r.y); });
+    built.slice().sort((a, b) => (sites[a].y + sites[a].h) - (sites[b].y + sites[b].h)).forEach(k => {
+      const im = IMG[k + X.level(s, k)], r = sites[k]; if (im) x.drawImage(im, r.x, r.y);
+      // 停著的車、船：放在位子正中間（圖本身含右下的影子）
+      if (X.slotsOf) X.slotsOf(s, k).forEach(sl => { const v = sl.v && IMG['v/' + sl.v]; if (v) x.drawImage(v, Math.round(sl.x + (sl.w - v.width) / 2 + 1), Math.round(sl.y + (sl.h - v.height) / 2 + 1)); });
+    });
     return { canvas: cv, buyable, sites, paths: road, W: WW, H: HH };
   }
   // 島上看得到的範圍（自己的地＋能買的地，外面留一點海）

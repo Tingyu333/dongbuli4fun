@@ -27,8 +27,8 @@
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
-    <script src="assets/xiaodao-rules.js?v=20261121a"></script>
-    <script src="assets/xiaodao-draw.js?v=20261121a"></script>
+    <script src="assets/xiaodao-rules.js?v=20261121b"></script>
+    <script src="assets/xiaodao-draw.js?v=20261121b"></script>
     <style>
         /* 整頁是一個 App：上面標題列、中間整座島、下面四顆鈕。島是另一個世界（精緻像素風），外框照網站的紙張色 */
         html, body { height: 100%; }
@@ -77,6 +77,7 @@
         .sheet.on { background: rgba(0, 0, 0, .45); pointer-events: auto; }
         .sheet-in { position: absolute; left: 0; right: 0; bottom: 0; max-width: 560px; margin: 0 auto; max-height: 86vh; display: flex; flex-direction: column; background: rgb(var(--wabi-bg)); border-radius: 12px 12px 0 0; transform: translateY(100%); transition: transform .22s ease-out; padding-bottom: env(safe-area-inset-bottom); }
         .sheet.on .sheet-in { transform: none; }
+        .sheet-head, .stabs { flex: none; }
         .sheet-head { display: flex; align-items: baseline; justify-content: space-between; padding: 16px 16px 4px; }
         .sheet-head h2 { margin: 0; font-family: 'Noto Serif TC', serif; font-weight: 400; font-size: 18px; letter-spacing: .3em; color: rgb(var(--wabi-dark)); }
         .x { font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: .15em; color: rgb(var(--wabi-accent)); background: none; border: none; min-height: 40px; padding: 0 4px; }
@@ -96,6 +97,22 @@
         .dots i.on { background: rgb(var(--wabi-shu)); border-color: rgb(var(--wabi-shu)); }
         .buy { flex: none; min-width: 84px; min-height: 44px; padding: 0 8px; border: 1px solid rgb(var(--wabi-dark)); background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: .08em; line-height: 1.35; border-radius: 3px; touch-action: manipulation; }
         .buy:disabled { background: transparent; color: rgb(var(--wabi-accent)); border-color: rgb(var(--wabi-sub)); }
+        .thumb.v { background: #c4beb3; }
+        .thumb.v.sea { background: #7ea9b5; }
+        .subk { display: flex; gap: 6px; margin: 4px 0 2px; }
+        .gh { margin: 14px 0 0; font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: .2em; color: rgb(var(--wabi-shu)); }
+        .acts { flex: none; display: flex; flex-direction: column; gap: 6px; }
+        .acts .buy { min-height: 38px; }
+        .buy.ghost { background: transparent; color: rgb(var(--wabi-dark)); border-color: rgb(var(--wabi-accent) / .6); }
+        .buy.warn { background: rgb(var(--wabi-shu)); border-color: rgb(var(--wabi-shu)); color: #fff; }
+        .vchips { display: flex; gap: 8px; overflow-x: auto; margin: 10px -4px 0; padding: 2px 4px 6px; }
+        .vchip { flex: none; width: 76px; padding: 6px 4px 5px; border: 1px solid rgb(var(--wabi-sub)); border-radius: 6px; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 3px; touch-action: manipulation; }
+        .vchip:disabled { opacity: .4; }
+        .vchip .vimg { width: 60px; height: 52px; border-radius: 4px; background: #c4beb3; display: flex; align-items: center; justify-content: center; }
+        .vchip .vimg.sea { background: #7ea9b5; }
+        .vchip img { image-rendering: pixelated; }
+        .vchip b { font-family: 'Noto Serif TC', serif; font-weight: 500; font-size: 11px; letter-spacing: .04em; color: rgb(var(--wabi-dark)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; }
+        .vchip i { font-style: normal; font-family: 'Noto Sans TC', sans-serif; font-size: 9.5px; letter-spacing: .02em; color: rgb(var(--wabi-accent)); line-height: 1.3; text-align: center; }
         .tier-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: .04em; color: rgb(var(--wabi-text)); }
         .tier-table td { padding: 7px 4px; border-bottom: 1px solid rgb(var(--wabi-sub) / .6); vertical-align: top; line-height: 1.6; }
         .tier-table tr.now td { color: rgb(var(--wabi-shu)); }
@@ -156,7 +173,7 @@
 
         <nav class="tabs" aria-label="小島">
             <button type="button" class="tab" data-tab="shop"><img src="assets/xiaodao/icon-shop.png" alt="">商店</button>
-            <button type="button" class="tab later" data-tab="depot"><img src="assets/xiaodao/icon-depot.png" alt="">倉庫</button>
+            <button type="button" class="tab" data-tab="depot"><img src="assets/xiaodao/icon-depot.png" alt="">倉庫</button>
             <button type="button" class="tab later" data-tab="gacha"><img src="assets/xiaodao/icon-gacha.png" alt="">扭蛋</button>
             <button type="button" class="tab later" data-tab="book"><img src="assets/xiaodao/icon-book.png" alt="">圖鑑</button>
         </nav>
@@ -164,14 +181,8 @@
 
     <div id="sheet" class="sheet" aria-hidden="true">
         <div class="sheet-in" role="dialog" aria-label="商店">
-            <div class="sheet-head"><h2>商店</h2><button type="button" class="x" id="sheetClose">關上</button></div>
-            <div class="stabs" id="stabs">
-                <button type="button" class="stab" data-s="plot">地</button>
-                <button type="button" class="stab on" data-s="fac">設施</button>
-                <button type="button" class="stab later" data-s="veh">載具</button>
-                <button type="button" class="stab later" data-s="furn">家具</button>
-                <button type="button" class="stab later" data-s="cloth">衣服</button>
-            </div>
+            <div class="sheet-head"><h2 id="sheetTitle">商店</h2><button type="button" class="x" id="sheetClose">關上</button></div>
+            <div class="stabs" id="stabs"></div>
             <div class="sheet-body" id="sheetBody"></div>
         </div>
     </div>
@@ -293,6 +304,16 @@
                     ctx.strokeRect(r.x - 2, r.y - 2, r.w + 4, r.h + 4); ctx.setLineDash([]);
                     if (info.miss && info.next) { const r2 = X.rect(sel.k, info.next); ctx.strokeStyle = 'rgba(179,58,47,.9)'; ctx.setLineDash([3 / cam.s, 3 / cam.s]); ctx.strokeRect(r2.x, r2.y, r2.w, r2.h); ctx.setLineDash([]); }
                 }
+                // 換車／看船：每一格框起來（選到的朱色；要停的那台停不進去的格子紅色虛線）
+                if (park) {
+                    X.slotsOf(S, park.f).forEach(sl => {
+                        const on = park.slot === sl.i, bad = park.pick && X.fitWhy(park.pick, sl);
+                        ctx.lineWidth = (on ? 2.4 : 1.3) / cam.s; ctx.setLineDash(on ? [] : [3 / cam.s, 2 / cam.s]);
+                        ctx.strokeStyle = on ? '#b33a2f' : bad ? 'rgba(179,58,47,.75)' : 'rgba(255,255,255,.95)';
+                        ctx.strokeRect(sl.x - 2, sl.y - 2, sl.w + 4, sl.h + 4);
+                    });
+                    ctx.setLineDash([]);
+                }
                 // 標籤「這一塊」
                 const pin = $('pin');
                 if (pinAt) { pin.hidden = false; pin.style.left = ((pinAt[0] - cam.x) * cam.s) + 'px'; pin.style.top = ((pinAt[1] - cam.y) * cam.s - 8) + 'px'; } else pin.hidden = true;
@@ -329,7 +350,7 @@
                 if (pinch) { if (pts.size < 2) pinch = null; drag = null; return; }
                 if (!drag) return; const d = drag; drag = null; if (d.moved) return;
                 const p = pos(e), now = performance.now();
-                if (now - lastTap.t < 320 && Math.hypot(p[0] - lastTap.x, p[1] - lastTap.y) < 30) { lastTap.t = 0; zoomAt(zoomed() ? cam.base : cam.base * 2.2, p[0], p[1]); return; }
+                if (!park && now - lastTap.t < 320 && Math.hypot(p[0] - lastTap.x, p[1] - lastTap.y) < 30) { lastTap.t = 0; zoomAt(zoomed() ? cam.base : cam.base * 2.2, p[0], p[1]); return; }
                 lastTap = { t: now, x: p[0], y: p[1] };
                 tapAt(cam.x + p[0] / cam.s, cam.y + p[1] / cam.s);
             };
@@ -338,6 +359,11 @@
             $('zoomOut').onclick = () => { zoomAt(cam.base, vw / 2, vh / 2); };
 
             function tapAt(wx, wy) {
+                if (park) {   // 換車／看船：只點位子
+                    const sl = X.slotsOf(S, park.f).find(q => wx >= q.x - 4 && wx < q.x + q.w + 4 && wy >= q.y - 4 && wy < q.y + q.h + 4);
+                    if (sl && park.pick) { const k = park.pick; park.pick = null; park.slot = sl.i; act({ t: 'park', k, f: park.f, i: sl.i }); return; }
+                    park.slot = sl ? sl.i : null; openParkCard(); draw(); return;
+                }
                 // 設施（蓋好的、或可以蓋的工地）
                 const hit = X.FAC_KEYS.slice().reverse().find(k => { const lv = X.level(S, k); if (!lv && !siteVisible(k)) return false; const r = X.rect(k, Math.max(1, lv)); return wx >= r.x && wx < r.x + r.w && wy >= r.y && wy < (r.shore != null && !lv ? r.shore : r.y + r.h); });
                 if (hit) { sel = { t: 'fac', k: hit }; openFac(hit); draw(); const r = X.rect(hit, Math.max(1, X.level(S, hit))); focus(r.x + r.w / 2, r.y + r.h / 2); return; }
@@ -376,29 +402,39 @@
             function openFac(k) {
                 const lv = X.level(S, k), f = X.FAC[k], i = X.facInfo(S, k);
                 let note = '', btn = '';
-                if (i.max) note = '已經蓋到最高了。之後車、船、飛機會停在這裡。';
+                if (i.max) note = '已經蓋到最高了。';
                 else if (i.ok) btn = `<button type="button" class="btn main" data-a="build" ${money < i.price ? 'disabled' : ''}>${money < i.price ? '錢包不夠' : (lv ? '升級' : '蓋') + `：${i.name} ${fmt(i.price)}`}</button>`;
                 else { note = i.why + (i.miss ? '（地圖上紅色那幾塊，點有鎖的地就能買）' : '') + '。'; btn = `<button type="button" class="btn main" disabled>${lv ? '升級' : '蓋'}：${i.name} ${fmt(i.price)}</button>`; }
+                const sl = lv && f.slots ? X.slotsOf(S, k) : null;
                 card.innerHTML = `<h2>${lv ? f.levels[lv - 1] : f.name + '・空地'}${lv ? `<span class="seal lvseal">${NUM[lv]}</span>` : ''}</h2>
                     <p class="line">${f.name}・${facLine(k)}</p>
                     ${note ? `<p class="note">${note}</p>` : ''}
+                    ${sl ? `<button type="button" class="btn" data-a="park" style="width:100%;margin-top:12px">${k === 'garage' ? '換車' : '看船'}・停了 ${sl.filter(q => q.v).length}／${sl.length}</button>` : ''}
                     <div class="btns"><button type="button" class="btn" data-a="no">關上</button>${btn}</div>`;
                 card.classList.add('on');
                 card.querySelector('[data-a=no]').onclick = closeCard;
+                const pb = card.querySelector('[data-a=park]'); if (pb) pb.onclick = () => enterPark(k);
                 const b = card.querySelector('[data-a=build]'); if (b) b.onclick = () => act({ t: 'build', k });
             }
             function refreshUI() {
-                if (card.classList.contains('on') && sel) { if (sel.t === 'plot') { if (X.plotInfo(S, sel.p).ok) openPlot(sel.p); else closeCard(); } else openFac(sel.k); }
+                if (park) openParkCard();
+                else if (card.classList.contains('on') && sel) { if (sel.t === 'plot') { if (X.plotInfo(S, sel.p).ok) openPlot(sel.p); else closeCard(); } else openFac(sel.k); }
                 if ($('sheet').classList.contains('on')) renderSheet();
             }
 
             // ----- 買、蓋 -----
             function act(a) {
+                const before = X.vehicles(S).filter(v => v.in !== 'depot').length;
                 const r = X.apply(S, a, money);
                 if (!r.ok) { showToast(r.err); return; }
                 S = r.state; money -= r.cost; save();
+                const V = a.k && X.VEH[a.k], F = V && X.FAC[V.fac];
                 if (a.t === 'plot') { showToast('買下來了・海岸線長出去'); sel = null; card.classList.remove('on'); }
-                else showToast(`${X.FAC[a.k].levels[r.lv - 1]}・蓋好了`);
+                else if (a.t === 'build') { const off = before - X.vehicles(S).filter(v => v.in !== 'depot').length; showToast(`${X.FAC[a.k].levels[r.lv - 1]}・蓋好了` + (off > 0 ? `（${off} 台先收進寄放處）` : '')); }
+                else if (a.t === 'buyv') showToast(r.parked ? (r.bumped ? `停進${F.name}了・${X.VEH[r.bumped].name}先讓位` : `停進${F.name}了`) : `${F.name}沒有空位，先放寄放處`);
+                else if (a.t === 'park') showToast(`${V.name}・停好了`);
+                else if (a.t === 'depot') showToast(`${V.name}・收進寄放處`);
+                else if (a.t === 'sell') showToast(`${V.name}賣掉了・拿回 ${fmt(-r.cost)}`);
                 rebuild(false);
                 if (r.tierUp) {
                     $('upSeal').textContent = '島 ' + X.TIERS[r.tierUp].name;
@@ -408,19 +444,56 @@
             }
             $('upOk').onclick = () => { $('up').hidden = true; };
 
-            // ----- 商店 -----
-            let stab = 'fac';
+            // ----- 換車／看船（點位子 → 下面挑一台；從倉庫按「停進去」會先選好那台，點位子就停） -----
+            let park = null;   // { f: 'garage'|'dock', slot: 第幾格, pick: 要停的那台 }
+            function enterPark(f, pick) {
+                const lv = X.level(S, f); if (!lv) return;
+                park = { f, slot: null, pick: pick || null }; sel = null; closeSheet();
+                const r = X.rect(f, lv), room = vh - 230, s2 = Math.max(cam.base, Math.min(4, vw / (r.w + 30), room / (r.h + 30)));
+                cam.s = s2; cam.x = r.x + r.w / 2 - vw / 2 / s2; cam.y = r.y + r.h / 2 - room / 2 / s2; clampCam();
+                openParkCard(); draw();
+            }
+            function exitPark() { park = null; card.classList.remove('on'); fit(); }
+            const vimg = (k, max = 2) => { const v = X.VEH[k], z = Math.max(1, Math.min(max, Math.floor(48 / Math.max(v.h, v.w * 1.1)))); return `<img src="assets/xiaodao/v/${k}.png" alt="" style="width:${v.w * z}px;height:${v.h * z}px">`; };
+            function openParkCard() {
+                const f = park.f, lv = X.level(S, f), F = X.FAC[f], list = X.slotsOf(S, f), boat = f === 'dock';
+                const n = list.filter(q => q.v).length;
+                let html = `<h2>${boat ? '看船' : '換車'}・${F.levels[lv - 1]}</h2><p class="line">停了 ${n}／${list.length}・${park.pick ? `點一個位子停「${X.VEH[park.pick].name}」` : '點地圖上的一個位子'}</p>`;
+                let btn2 = `<button type="button" class="btn" data-a="shop">去商店買</button>`;
+                if (park.slot != null && list[park.slot]) {
+                    const sl = list[park.slot], cn = X.CLS_NAME[f][sl.cls];
+                    html += `<p class="note">第 ${sl.i + 1} 格・可以停${cn}${sl.cls > 1 ? '以下' : ''}・${sl.v ? `現在停「${X.VEH[sl.v].name}」` : '空的'}</p>`;
+                    const mine = X.vehicles(S).filter(v => X.VEH[v.key].fac === f && v.key !== sl.v);
+                    html += mine.length ? `<div class="vchips">${mine.map(v => { const why = X.fitWhy(v.key, sl); return `<button type="button" class="vchip" data-k="${v.key}" ${why ? 'disabled' : ''}><span class="vimg ${boat ? 'sea' : ''}">${vimg(v.key)}</span><b>${X.VEH[v.key].name}</b><i>${why || (v.in === 'depot' ? '寄放處' : '在第 ' + (v.at + 1) + ' 格')}</i></button>`; }).join('')}</div>`
+                        : `<p class="note">${boat ? '還沒有別的船' : '還沒有別的車'}，去商店買。</p>`;
+                    if (sl.v) btn2 = `<button type="button" class="btn" data-a="depot">收進寄放處</button>`;
+                }
+                card.innerHTML = html + `<div class="btns">${btn2}<button type="button" class="btn main" data-a="done">完成</button></div>`;
+                card.classList.add('on');
+                card.querySelector('[data-a=done]').onclick = exitPark;
+                const sb = card.querySelector('[data-a=shop]'); if (sb) sb.onclick = () => { const f2 = park.f; exitPark(); vkind = f2; openSheet('shop', 'veh'); };
+                const db = card.querySelector('[data-a=depot]'); if (db) db.onclick = () => act({ t: 'depot', k: list[park.slot].v });
+                card.querySelectorAll('.vchip[data-k]').forEach(b => b.onclick = () => act({ t: 'park', k: b.dataset.k, f, i: park.slot }));
+            }
+
+            // ----- 商店、倉庫（同一張從下面滑上來） -----
+            let smode = 'shop', stab = 'fac', vkind = 'garage', sellArm = null;
             const sheet = $('sheet');
-            function openSheet(t) { if (t) stab = t; renderSheet(); sheet.classList.add('on'); sheet.setAttribute('aria-hidden', 'false'); }
+            const TABS = { shop: [['plot', '地'], ['fac', '設施'], ['veh', '載具'], ['furn', '家具', 1], ['cloth', '衣服', 1]], depot: [['veh', '載具'], ['furn', '家具', 1], ['cloth', '衣服', 1], ['coll', '藏品', 1]] };
+            const LATER = { furn: '家具第四批開（進屋擺）', cloth: '衣服第五批開', coll: '藏品第五批開（扭蛋）', gacha: '扭蛋第五批開（29 款藏品）', book: '圖鑑第五批開' };
+            function openSheet(mode, t) { smode = mode || 'shop'; if (t) stab = t; else if (smode === 'depot') stab = 'veh'; renderSheet(); sheet.classList.add('on'); sheet.setAttribute('aria-hidden', 'false'); }
             function closeSheet() { sheet.classList.remove('on'); sheet.setAttribute('aria-hidden', 'true'); }
             $('sheetClose').onclick = closeSheet;
             sheet.addEventListener('click', e => { if (e.target === sheet) closeSheet(); });
             $('stabs').addEventListener('click', e => { const b = e.target.closest('.stab'); if (!b) return; if (b.classList.contains('later')) { showToast(LATER[b.dataset.s]); return; } stab = b.dataset.s; renderSheet(); });
-            const LATER = { veh: '載具第二批開（車、船），飛機、火箭第三批', furn: '家具第四批開（進屋擺）', cloth: '衣服第五批開', depot: '倉庫第二批開（買了還沒擺的、寄放處的車船）', gacha: '扭蛋第五批開（29 款藏品）', book: '圖鑑第五批開' };
+            const LEGAL = `<p class="legal">島上的東西都用遊戲幣買，不能儲值，也不能換成現金或任何獎品。</p>`;
+            const kindChips = () => `<div class="subk">${[['garage', '車'], ['dock', '船']].map(([k, n]) => `<button type="button" class="stab ${vkind === k ? 'on' : ''}" data-kind="${k}">${n}</button>`).join('')}</div>`;
             function renderSheet() {
-                document.querySelectorAll('.stab').forEach(b => b.classList.toggle('on', b.dataset.s === stab));
+                $('sheetTitle').textContent = smode === 'shop' ? '商店' : '倉庫';
+                if (!TABS[smode].some(([k, , l]) => k === stab && !l)) stab = TABS[smode][0][0];
+                $('stabs').innerHTML = TABS[smode].map(([k, n, l]) => `<button type="button" class="stab ${l ? 'later' : ''} ${k === stab ? 'on' : ''}" data-s="${k}">${n}</button>`).join('');
                 const body = $('sheetBody'), t = X.tierOf(S), n = X.island(S).plots.length;
-                if (stab === 'fac') {
+                if (smode === 'shop' && stab === 'fac') {
                     body.innerHTML = X.FAC_KEYS.map(k => {
                         const f = X.FAC[k], lv = X.level(S, k), i = X.facInfo(S, k), showLv = lv || 1;
                         const can = i.ok && money >= i.price;
@@ -428,29 +501,60 @@
                         return `<div class="row"><div class="thumb ${k === 'dock' ? 'sea' : ''}"><img src="assets/xiaodao/${k}${showLv}.png" alt=""></div>
                             <div class="info"><p class="nm">${lv ? f.levels[lv - 1] : f.name}</p><p class="sm">${facLine(k)}</p><p class="sm">${i.max ? '' : `下一階：${i.name} ${fmt(i.price)}${!i.ok ? '・' + i.why : ''}`}</p></div>
                             <button type="button" class="buy" data-k="${k}" ${can ? '' : 'disabled'}>${label}</button></div>`;
-                    }).join('') + `<p class="legal">島上的東西都用遊戲幣買，不能儲值，也不能換成現金或任何獎品。</p>`;
+                    }).join('') + LEGAL;
                     body.querySelectorAll('.buy[data-k]').forEach(b => b.onclick = () => { act({ t: 'build', k: b.dataset.k }); });
-                } else if (stab === 'plot') {
+                } else if (smode === 'shop' && stab === 'plot') {
                     const nextP = X.plotPrice(X.island(S).bought + 1);
                     body.innerHTML = `<p class="sm" style="margin-top:6px;line-height:1.9">點地圖上<b style="font-weight:500;color:rgb(var(--wabi-dark))">有鎖、灰色虛線</b>的地就能買（要跟你的地連著）。買了海岸線會長出去，越後面買的地越貴。</p>
                         <p class="price" style="margin-top:8px;font-family:'Noto Sans TC',sans-serif;color:rgb(var(--wabi-shu))">下一塊 ${fmt(nextP)}</p>
                         <p class="sm">已經有 ${n} 塊（一開始送 ${X.world().start.length} 塊），買過 ${X.island(S).bought} 塊。</p>
                         <table class="tier-table">${X.TIERS.map((x, i) => `<tr class="${i === t ? 'now' : ''}"><td style="white-space:nowrap">島 ${x.name}</td><td style="white-space:nowrap">${i ? x.n + ' 塊' : '一開始'}</td><td>${i ? unlockText(i) : '家、車庫、碼頭，最高到貳'}</td></tr>`).join('')}</table>
-                        <button type="button" class="btn main" id="goMap" style="width:100%;margin-top:14px">回地圖挑地</button>
-                        <p class="legal">島上的東西都用遊戲幣買，不能儲值，也不能換成現金或任何獎品。</p>`;
+                        <button type="button" class="btn main" id="goMap" style="width:100%;margin-top:14px">回地圖挑地</button>` + LEGAL;
                     $('goMap').onclick = closeSheet;
+                } else if (smode === 'shop' && stab === 'veh') {
+                    // 載具：車、船，照種類分組；買之前車庫／碼頭要蓋到同一級
+                    const F = X.FAC[vkind], keys = X.VEH_KEYS.filter(k => X.VEH[k].fac === vkind), groups = [...new Set(keys.map(k => X.VEH[k].g))];
+                    body.innerHTML = kindChips() + `<p class="sm" style="margin-top:6px">${vkind === 'garage' ? '車' : '船'}每種一台。買了先停進${F.name}的空位，沒有空位就放寄放處（倉庫裡看得到）。</p>` + groups.map(g => `<p class="gh">${g}</p>` + keys.filter(k => X.VEH[k].g === g).map(k => {
+                        const v = X.VEH[k], i = X.vehInfo(S, k), can = i.ok && money >= v.price;
+                        const label = i.owned ? '有了' : !i.ok ? `${F.name}<br>「${F.levels[v.cls - 1]}」` : money < v.price ? '錢包不夠' : `買<br>${fmt(v.price)}`;
+                        return `<div class="row"><div class="thumb v ${vkind === 'dock' ? 'sea' : ''}">${vimg(k)}</div>
+                            <div class="info"><p class="nm">${v.name}</p><p class="sm">${v.desc}・${fmt(v.price)}</p><p class="sm">停${X.CLS_NAME[vkind][v.cls]}位・${F.name}要「${F.levels[v.cls - 1]}」以上</p></div>
+                            <button type="button" class="buy" data-v="${k}" ${can ? '' : 'disabled'}>${label}</button></div>`;
+                    }).join('')).join('') + LEGAL;
+                    body.querySelectorAll('.buy[data-v]').forEach(b => b.onclick = () => act({ t: 'buyv', k: b.dataset.v }));
+                } else if (smode === 'depot' && stab === 'veh') {
+                    // 倉庫：有的車船，停在哪、停進去／收起來、賣掉（買價一半，按兩下確定）
+                    const F = X.FAC[vkind], mine = X.vehicles(S).filter(v => X.VEH[v.key].fac === vkind).sort((a, b) => (a.in === 'depot') - (b.in === 'depot') || X.VEH[a.key].cls - X.VEH[b.key].cls);
+                    const nd = mine.filter(v => v.in === 'depot').length;
+                    body.innerHTML = kindChips() + `<p class="sm" style="margin-top:6px">${mine.length ? `有 ${mine.length} ${vkind === 'garage' ? '台' : '艘'}，停在${F.name} ${mine.length - nd}、寄放處 ${nd}。寄放處不限量，只是不會畫在島上。` : `還沒有${vkind === 'garage' ? '車' : '船'}。`}</p>` + mine.map(v => {
+                        const V = X.VEH[v.key], armed = sellArm && sellArm.k === v.key && performance.now() - sellArm.t < 4000;
+                        return `<div class="row"><div class="thumb v ${vkind === 'dock' ? 'sea' : ''}">${vimg(v.key)}</div>
+                            <div class="info"><p class="nm">${V.name}</p><p class="sm">${v.in === 'depot' ? '在寄放處' : `停在${F.name}第 ${v.at + 1} 格`}</p><p class="sm">買價 ${fmt(V.price)}・賣掉拿回 ${fmt(X.sellPrice(v.key))}</p></div>
+                            <div class="acts">${v.in === 'depot' ? `<button type="button" class="buy" data-park="${v.key}">停進去</button>` : `<button type="button" class="buy ghost" data-off="${v.key}">收起來</button>`}
+                            <button type="button" class="buy ${armed ? 'warn' : 'ghost'}" data-sell="${v.key}">${armed ? '確定賣掉' : '賣掉'}</button></div></div>`;
+                    }).join('') + (mine.length ? '' : `<button type="button" class="btn main" id="goShop" style="width:100%;margin-top:14px">去商店買</button>`) + LEGAL;
+                    body.querySelectorAll('[data-park]').forEach(b => b.onclick = () => enterPark(vkind, b.dataset.park));
+                    body.querySelectorAll('[data-off]').forEach(b => b.onclick = () => act({ t: 'depot', k: b.dataset.off }));
+                    body.querySelectorAll('[data-sell]').forEach(b => b.onclick = () => {
+                        const k = b.dataset.sell;
+                        if (sellArm && sellArm.k === k && performance.now() - sellArm.t < 4000) { sellArm = null; act({ t: 'sell', k }); }
+                        else { sellArm = { k, t: performance.now() }; renderSheet(); showToast(`再按一次就賣掉，拿回 ${fmt(X.sellPrice(k))}`); }
+                    });
+                    const gs = $('goShop'); if (gs) gs.onclick = () => openSheet('shop', 'veh');
                 }
+                body.querySelectorAll('[data-kind]').forEach(b => b.onclick = () => { vkind = b.dataset.kind; renderSheet(); });
             }
             document.querySelector('.tabs').addEventListener('click', e => {
                 const b = e.target.closest('.tab'); if (!b) return;
-                if (b.dataset.tab === 'shop') openSheet(); else showToast(LATER[b.dataset.tab]);
+                if (park) exitPark();
+                if (b.dataset.tab === 'shop') openSheet('shop'); else if (b.dataset.tab === 'depot') openSheet('depot'); else showToast(LATER[b.dataset.tab]);
             });
 
             // ----- 開始 -----
             size();
             new ResizeObserver(() => { if (size()) { if (world) { if (zoomed()) { clampCam(); draw(); } else fit(); } } }).observe(view);
             renderTop();
-            D.load('assets/xiaodao/', '20261121a').then(() => setTimeout(() => rebuild(true), 30));
+            D.load('assets/xiaodao/', '20261121b').then(() => setTimeout(() => rebuild(true), 30));
         }
     </script>
 </body>
