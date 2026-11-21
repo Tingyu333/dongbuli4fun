@@ -77,6 +77,7 @@
 - `docs/line-login.md`：LINE 登入（`assets/line.js`）、通行證、LIFF。
 - `docs/api.md`：後端 API 和每一張 Sheet 的欄位、排隊（`LOCKED_TYPES`）、額度、排行榜怎麼算、股市和運動怎麼算、**排程**（排行榜每 5 分鐘、20:58 晚報、00:00 派彩、03:00 備份，`setupTriggers()`）。**改 `apps-script/Code.gs` 前先讀這份。**
 - `docs/line-bot.md`：LINE bot 的指令、資料來源、圖文選單。
+- `docs/plans/`：還在企劃、還沒做的東西。`docs/plans/jiayuan/`：家園・築（精緻像素風的家園，使用者定的畫風規矩和樣張都在裡面）。
 
 ## 設計規範
 

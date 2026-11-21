@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>精緻像素家園</title>
+<style>
+  :root { --bg: #fcfaf8; --text: #4a4a4a; --dark: #2c2c2c; --accent: #8e8070; --sub: #dcdcdc; --shu: #b33a2f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', 'PingFang TC', sans-serif; }
+  main { max-width: 390px; margin: 0 auto; padding: 22px 16px 28px; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 300; font-size: 22px; letter-spacing: .3em; color: var(--dark); margin: 0; text-align: center; }
+  .sub { text-align: center; font-size: 11px; letter-spacing: .12em; color: var(--accent); margin: 6px 0 14px; line-height: 1.7; }
+  .card { border: 1px solid var(--sub); border-radius: 4px; padding: 12px; background: #fff; margin-top: 14px; }
+  .h { display: flex; align-items: baseline; gap: 8px; }
+  .no { font-size: 12px; color: var(--shu); border: 1px solid var(--shu); padding: 0 5px; line-height: 1.5; font-family: 'Noto Serif TC', serif; }
+  .name { font-family: 'Noto Serif TC', serif; font-size: 16px; letter-spacing: .2em; color: var(--dark); }
+  .tag { margin-left: auto; font-size: 10px; letter-spacing: .1em; color: var(--accent); }
+  canvas { display: block; width: 100%; border-radius: 3px; margin-top: 10px; image-rendering: pixelated; image-rendering: crisp-edges; }
+  .zoom { display: flex; gap: 8px; margin-top: 8px; }
+  .zoom canvas { width: 50%; margin-top: 0; }
+  p.d { font-size: 12px; line-height: 1.75; letter-spacing: .04em; margin: 8px 0 0; }
+  .cap { font-size: 10.5px; letter-spacing: .08em; color: var(--accent); margin-top: 5px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>家園・築</h1>
+  <p class="sub">精緻像素風（顆粒約上一版的一半）<br>示意圖，正式做會再細修、會動</p>
+
+  <section class="card">
+    <div class="h"><span class="no">壹</span><span class="name">正上方・精緻版</span><span class="tag">240 × 200 顆</span></div>
+    <canvas id="top" width="240" height="200"></canvas>
+    <div class="zoom"><canvas id="topZ1" width="80" height="60"></canvas><canvas id="topZ2" width="80" height="60"></canvas></div>
+    <p class="cap">↑ 放大看細節：車棚和跑車；停機坪的飛機</p>
+  </section>
+
+  <section class="card">
+    <div class="h"><span class="no">貳</span><span class="name">斜四十五度・精緻版</span><span class="tag">240 × 190 顆</span></div>
+    <canvas id="iso" width="240" height="190"></canvas>
+    <div class="zoom"><canvas id="isoZ1" width="80" height="60"></canvas><canvas id="isoZ2" width="80" height="60"></canvas></div>
+    <p class="cap">↑ 放大看細節：房子的窗和屋簷；車庫和跑車</p>
+  </section>
+</main>
+<script>
+// ===== 小工具：硬邊像素（不反鋸齒）=====
+const TAU = Math.PI * 2;
+function make(id) { const c = document.getElementById(id), x = c.getContext('2d'); x.imageSmoothingEnabled = false; return { c, x, W: c.width, H: c.height }; }
+const hash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+function P(x, a, b, col) { x.fillStyle = col; x.fillRect(a | 0, b | 0, 1, 1); }
+function R(x, a, b, w, h, col) { x.fillStyle = col; x.fillRect(a | 0, b | 0, w | 0, h | 0); }
+function circ(x, cx, cy, r, col) { for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r + r * .6) P(x, cx + xx, cy + yy, col); }
+function ell(x, cx, cy, rx, ry, col) { for (let yy = -ry; yy <= ry; yy++) for (let xx = -rx; xx <= rx; xx++) if ((xx * xx) / (rx * rx) + (yy * yy) / (ry * ry) <= 1.02) P(x, cx + xx, cy + yy, col); }
+function poly(x, pts, col) {   // 掃描線填多邊形（像素中心判斷，硬邊）
+  const ys = pts.map(p => p[1]), xs = pts.map(p => p[0]);
+  const y0 = Math.floor(Math.min(...ys)), y1 = Math.ceil(Math.max(...ys)), x0 = Math.floor(Math.min(...xs)), x1 = Math.ceil(Math.max(...xs));
+  x.fillStyle = col;
+  for (let y = y0; y <= y1; y++) for (let X = x0; X <= x1; X++) {
+    const px = X + .5, py = y + .5; let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside; }
+    if (inside) x.fillRect(X, y, 1, 1);
+  }
+}
+function zoom(src, id, sx, sy) { const z = make(id); z.x.drawImage(src.c, sx, sy, z.W, z.H, 0, 0, z.W, z.H); }
+
+// 色票（大地色＋海）
+const K = {
+  deep: '#4f7d8f', sea: '#6b97a6', sea2: '#7ea9b5', shallow: '#9cc5c8', foam: '#e3efed',
+  sand: '#e6d3a3', sand2: '#d8c18b', sand3: '#efe0b8',
+  g1: '#97ad6f', g2: '#86a061', g3: '#a6bb7c', g4: '#738d51',
+  leaf1: '#5d7c43', leaf2: '#4a6634', leaf3: '#7a9a55', leafHi: '#9cb96f', trunk: '#6e4528',
+  roof: '#b33a2f', roofHi: '#cf5a46', roofLo: '#8f2c23', roofLine: '#7a241d',
+  wall: '#efe4cf', wall2: '#d9c9aa', wall3: '#c2ae8b', door: '#5e3c22', win: '#f6cd72', winLo: '#d9a94e', frame: '#6e4528',
+  conc: '#c4beb3', conc2: '#aea79b', conc3: '#d6d1c7', concLine: '#f2eee5',
+  car: '#c0392b', carHi: '#e0604e', carLo: '#8c2a20', glass: '#a8cdd6', glassHi: '#e2f1f3', tire: '#2a2a2a', lamp: '#f6e08a',
+  plane: '#eef0ef', planeLo: '#c3c8c9', planeHi: '#ffffff', tail: '#b33a2f', eng: '#8e9395',
+  wood: '#9a6a40', wood2: '#7c5230', wood3: '#b07f50', post: '#5e3c22',
+  hull: '#f6f3ec', hullLo: '#d6d0c3', deck: '#c49a6c', deck2: '#a87f55', stripe: '#355a74',
+  ghost: '#d7d0c4', ghost2: '#c2b9aa', lock: '#8e8070', yellow: '#e8c35a', shadow: 'rgba(30,40,30,.22)'
+};
+
+// ===== 壹：正上方 =====
+(() => {
+  const S = make('top'), x = S.x, W = S.W, H = S.H, CX = 120, CY = 102, RX = 100, RY = 82;
+  const dist = (a, b) => { const dx = (a - CX) / RX, dy = (b - CY) / RY, t = Math.atan2(dy, dx); const w = 1 + .055 * Math.sin(t * 3 + .4) + .035 * Math.cos(t * 5); return Math.sqrt(dx * dx + dy * dy) / w; };
+  for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) {
+    const d = dist(a, b), n = hash(a, b);
+    let col;
+    if (d > 1.0) {
+      const t = d - 1; const ditherCut = (lim, wid) => t < lim || (t < lim + wid && ((a + b) % 2 === 0));
+      col = ditherCut(.05, .02) ? K.shallow : ditherCut(.16, .03) ? K.sea2 : ditherCut(.34, .04) ? K.sea : K.deep;
+      if (t < .022 && n > .25) col = K.foam;
+      if (n > .985 && t > .06) col = K.foam;   // 浪花
+      if ((b % 9 === 0) && ((a + b * 3) % 23 < 4) && t > .08) col = K.shallow;
+    } else if (d > .89) {
+      col = n > .86 ? K.sand2 : n < .1 ? K.sand3 : K.sand;
+      if (d > .985) col = K.sand3;
+    } else {
+      col = n > .9 ? K.g3 : n > .75 ? K.g2 : n < .06 ? K.g4 : K.g1;
+      if (d > .86 && ((a + b) % 2)) col = K.sand2;
+    }
+    P(x, a, b, col);
+  }
+  const shadowRect = (a, b, w, h, off = 3) => { x.fillStyle = K.shadow; x.fillRect(a + off, b + off, w, h); };
+  const tree = (a, b, r) => { x.fillStyle = K.shadow; for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r) x.fillRect(a + xx + 3, b + yy + 3, 1, 1);
+    circ(x, a, b, r, K.leaf2); circ(x, a - 1, b - 1, r - 1, K.leaf1); circ(x, a - 2, b - 2, Math.max(1, r - 3), K.leaf3); P(x, a - r / 2, b - r / 2, K.leafHi); P(x, a - r / 2 + 1, b - r / 2, K.leafHi);
+    for (let i = 0; i < r * 2; i++) { const t = hash(a + i, b) * TAU, rr = hash(b, a + i) * r; P(x, a + Math.cos(t) * rr, b + Math.sin(t) * rr, i % 2 ? K.leaf2 : K.leaf3); } };
+  const palm = (a, b) => { R(x, a + 2, b + 2, 3, 3, K.shadow); for (let k = 0; k < 5; k++) { const t = k / 5 * TAU + .3; for (let s = 1; s < 8; s++) P(x, a + Math.cos(t) * s, b + Math.sin(t) * s + (s > 4 ? 1 : 0), s % 2 ? K.leaf1 : K.leaf3); } R(x, a - 1, b - 1, 3, 3, K.trunk); };
+
+  // 小路（石板）
+  [[64, 72], [62, 78], [65, 84], [61, 90], [64, 96]].forEach(([a, b]) => { R(x, a, b, 5, 3, K.conc3); R(x, a, b + 2, 5, 1, K.conc2); });
+  for (let i = 0; i < 26; i++) P(x, 98 + i * 2, 64 + Math.sin(i / 3) * 2, K.sand2);
+
+  // 房子：紅瓦屋頂（上半亮、下半暗），有煙囪、屋簷影子
+  const hx = 38, hy = 30, hw = 56, hh = 38;
+  shadowRect(hx, hy, hw, hh, 4);
+  for (let b = 0; b < hh; b++) for (let a = 0; a < hw; a++) {
+    const top = b < hh / 2; let col = top ? K.roofHi : K.roof;
+    if ((b % 4) === 3) col = top ? K.roof : K.roofLo;
+    if (((a + (Math.floor(b / 4) % 2) * 3) % 6) === 0 && b % 4 !== 3) col = top ? K.roof : K.roofLo;
+    if (b === Math.floor(hh / 2) || b === Math.floor(hh / 2) - 1) col = K.roofLine;
+    if (a === 0 || a === hw - 1 || b === 0 || b === hh - 1) col = K.roofLine;
+    P(x, hx + a, hy + b, col);
+  }
+  R(x, 82, 24, 7, 10, K.wall3); R(x, 82, 24, 7, 2, K.wall2); R(x, 83, 25, 5, 1, '#5a4a3a'); R(x, 89, 27, 2, 8, K.shadow);
+  // 門口小屋簷＋門墊
+  R(x, 59, 68, 12, 4, K.roofLo); R(x, 61, 72, 8, 2, K.deck2);
+  // 花圃
+  for (let i = 0; i < 10; i++) { P(x, 40 + i * 2, 70, i % 2 ? '#e9a6a0' : '#f1d36b'); P(x, 41 + i * 2, 71, K.leaf1); }
+  // 籬笆
+  for (let i = 0; i < 18; i++) { P(x, 100 + i * 3, 30, K.wood2); P(x, 100 + i * 3, 31, K.wood2); } for (let i = 0; i < 52; i++) P(x, 100 + i, 30, K.wood);
+
+  // 車棚＋跑車（正上方）
+  const gx = 34, gy = 100, gw = 50, gh = 38;
+  shadowRect(gx, gy, gw, gh, 2);
+  R(x, gx, gy, gw, gh, K.conc); for (let b = 0; b < gh; b++) for (let a = 0; a < gw; a++) if (hash(a + gx, b + gy) > .93) P(x, gx + a, gy + b, K.conc2);
+  R(x, gx, gy, gw, 1, K.conc2); R(x, gx, gy + gh - 1, gw, 1, K.conc2); for (let b = 0; b < gh; b += 2) { P(x, gx, gy + b, K.concLine); P(x, gx + gw - 1, gy + b, K.concLine); }
+  [[gx + 1, gy + 1], [gx + gw - 4, gy + 1], [gx + 1, gy + gh - 4], [gx + gw - 4, gy + gh - 4]].forEach(([a, b]) => R(x, a, b, 3, 3, K.wood2));
+  const cx = gx + 17, cy = gy + 6;   // 車 16×27
+  R(x, cx + 2, cy + 3, 16, 27, K.shadow);
+  R(x, cx - 1, cy + 4, 2, 5, K.tire); R(x, cx + 15, cy + 4, 2, 5, K.tire); R(x, cx - 1, cy + 18, 2, 5, K.tire); R(x, cx + 15, cy + 18, 2, 5, K.tire);
+  R(x, cx + 1, cy, 14, 27, K.car); R(x, cx, cy + 2, 16, 23, K.car); R(x, cx + 2, cy + 1, 3, 25, K.carHi); R(x, cx + 13, cy + 2, 2, 23, K.carLo);
+  R(x, cx + 2, cy + 7, 12, 4, K.glass); R(x, cx + 3, cy + 7, 3, 1, K.glassHi); R(x, cx + 3, cy + 11, 10, 8, K.carHi); R(x, cx + 4, cy + 12, 8, 6, K.car); R(x, cx + 2, cy + 19, 12, 3, K.glass);
+  P(x, cx + 2, cy, K.lamp); P(x, cx + 13, cy, K.lamp); P(x, cx + 2, cy + 26, K.carLo); P(x, cx + 13, cy + 26, K.carLo);
+
+  // 停機坪＋飛機
+  const px = 162, py = 54, pr = 28;
+  for (let b = -pr; b <= pr; b++) for (let a = -pr; a <= pr; a++) { const d = a * a + b * b; if (d <= pr * pr) P(x, px + a + 3, py + b + 3, K.shadow); }
+  circ(x, px, py, pr, K.conc2); circ(x, px, py, pr - 1, K.conc);
+  for (let b = -pr; b <= pr; b++) for (let a = -pr; a <= pr; a++) { const d = Math.sqrt(a * a + b * b); if (d <= pr - 1 && hash(a + 300, b) > .94) P(x, px + a, py + b, K.conc3); if (d > pr - 5 && d < pr - 3 && (Math.atan2(b, a) * 8 / Math.PI | 0) % 2) P(x, px + a, py + b, K.yellow); }
+  // 飛機影子
+  const plane = (ox, oy, sh) => { const col = c => sh ? K.shadow : c;
+    R(x, ox - 2, oy - 22, 5, 44, col(K.plane)); R(x, ox - 1, oy - 24, 3, 2, col(K.plane));   // 機身
+    poly(x, [[ox - 26, oy + 1], [ox - 2, oy - 6], [ox + 3, oy - 6], [ox + 27, oy + 1], [ox + 27, oy + 4], [ox + 3, oy + 1], [ox - 2, oy + 1], [ox - 26, oy + 4]], col(K.plane));
+    poly(x, [[ox - 10, oy + 18], [ox - 1, oy + 15], [ox + 2, oy + 15], [ox + 11, oy + 18], [ox + 11, oy + 20], [ox - 10, oy + 20]], col(K.plane));
+    if (sh) return;
+    R(x, ox - 26, oy + 3, 53, 1, K.planeLo); R(x, ox + 2, oy - 22, 1, 44, K.planeLo); R(x, ox - 2, oy - 22, 1, 40, K.planeHi);
+    R(x, ox - 15, oy - 1, 3, 6, K.eng); R(x, ox + 13, oy - 1, 3, 6, K.eng); P(x, ox - 14, oy - 1, '#b9bdbf'); P(x, ox + 14, oy - 1, '#b9bdbf');
+    R(x, ox, oy + 14, 1, 7, K.tail); R(x, ox - 1, oy + 17, 3, 3, K.tail);
+    R(x, ox - 1, oy - 21, 3, 2, K.glass); for (let i = 0; i < 6; i++) P(x, ox, oy - 15 + i * 3, K.glass);
+    P(x, ox - 26, oy + 2, '#d84a3c'); P(x, ox + 27, oy + 2, '#4caf6a'); };
+  plane(px + 5, py + 6, true); plane(px, py, false);
+  // 風向袋
+  R(x, 196, 40, 1, 10, K.eng); R(x, 197, 40, 4, 2, '#e08a3c'); R(x, 201, 41, 3, 1, '#f0b37a');
+
+  // 碼頭＋遊艇
+  for (let i = 0; i < 34; i++) { const a = 198 + i, b = 132; R(x, a, b, 1, 9, i % 3 === 2 ? K.wood2 : (i % 3 ? K.wood : K.wood3)); }
+  R(x, 198, 141, 34, 1, K.shadow); R(x, 198, 142, 34, 1, K.shadow);
+  [[200, 131], [212, 131], [224, 131], [200, 141], [212, 141], [224, 141], [231, 131], [231, 141]].forEach(([a, b]) => R(x, a, b, 2, 2, K.post));
+  // 遊艇（船頭朝右）＋尾浪
+  const yx = 196, yy = 148;
+  for (let i = 0; i < 18; i++) { P(x, yx - 2 - i, yy + 3 + (i % 3) - 1, K.foam); if (i % 2) P(x, yx - 2 - i, yy + 8 - (i % 3), K.foam); }
+  poly(x, [[yx + 2, yy + 2], [yx + 34, yy + 2], [yx + 42, yy + 7], [yx + 34, yy + 13], [yx + 2, yy + 13]], K.shadow);
+  poly(x, [[yx, yy], [yx + 32, yy], [yx + 40, yy + 5], [yx + 32, yy + 11], [yx, yy + 11]], K.hull);
+  poly(x, [[yx + 2, yy + 2], [yx + 30, yy + 2], [yx + 36, yy + 5], [yx + 30, yy + 9], [yx + 2, yy + 9]], K.deck);
+  for (let a = 4; a < 32; a += 3) R(x, yx + a, yy + 2, 1, 8, K.deck2);
+  R(x, yx + 10, yy + 3, 14, 6, K.hull); R(x, yx + 11, yy + 4, 12, 4, K.glass); R(x, yx + 12, yy + 4, 4, 1, K.glassHi);
+  R(x, yx, yy + 10, 33, 1, K.hullLo); R(x, yx, yy + 5, 1, 2, K.stripe); P(x, yx + 26, yy + 5, K.tail);
+
+  // 發射台（還沒解鎖）
+  const lx = 118, ly = 146, lr = 17;
+  for (let b = -lr; b <= lr; b++) for (let a = -lr; a <= lr; a++) { const d = Math.sqrt(a * a + b * b); if (d <= lr) P(x, lx + a, ly + b, ((a + b) % 2) ? K.ghost : K.g1); if (d > lr - 1 && d <= lr && (Math.atan2(b, a) * 10 / Math.PI | 0) % 2) P(x, lx + a, ly + b, K.ghost2); }
+  R(x, lx - 6, ly - 6, 12, 10, K.lock); R(x, lx - 4, ly - 11, 2, 5, K.lock); R(x, lx + 2, ly - 11, 2, 5, K.lock); R(x, lx - 4, ly - 12, 8, 2, K.lock); R(x, lx - 1, ly - 3, 2, 4, '#f3efe6');
+
+  // 樹、椰子樹
+  [[24, 66, 7], [28, 88, 6], [104, 14 + 6, 6], [138, 98, 7], [150, 126, 6], [92, 112, 5], [206, 92, 7], [128, 30, 5]].forEach(([a, b, r]) => tree(a, b, r));
+  [[44, 166], [70, 176], [186, 170], [214, 60]].forEach(([a, b]) => palm(a, b));
+  // 小花
+  for (let i = 0; i < 26; i++) { const a = 20 + (hash(i, 7) * 200 | 0), b = 30 + (hash(7, i) * 150 | 0); const d = dist(a, b); if (d < .8 && hash(a, b) > .3) P(x, a, b, i % 3 ? '#f1d36b' : '#f0b8b0'); }
+
+  zoom(S, 'topZ1', 22, 92); zoom(S, 'topZ2', 124, 26);
+})();
+
+// ===== 貳：斜四十五度 =====
+(() => {
+  const S = make('iso'), x = S.x, W = S.W, H = S.H;
+  // 海：上淺下深＋浪紋
+  for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) { const n = hash(a, b), t = b / H + (hash(b, a) - .5) * .25; let col = t < .3 ? K.sea2 : t < .72 ? K.sea : K.deep; if (n > .99) col = K.foam; if (b % 7 === 0 && (a + b * 5) % 29 < 5) col = K.shallow; P(x, a, b, col); }
+  const OX = 120, OY = 40, TW = 10, TH = 5, N = 12;
+  const iso = (i, j, z = 0) => [OX + (i - j) * TW, OY + (i + j) * TH - z];
+  const land = (i, j) => { if (i < 0 || j < 0 || i >= N || j >= N) return false; const di = i - 5.5, dj = j - 5.5; return di * di + dj * dj < 34 - (hash(i, j) * 6 | 0); };
+  const quad = (pts, col) => poly(x, pts, col);
+  const top = (i, j, z, col) => quad([iso(i, j, z), iso(i + 1, j, z), iso(i + 1, j + 1, z), iso(i, j + 1, z)], col);
+  // 島的側面（地層）
+  const DEP = 9;
+  for (let s = 0; s < N * 2; s++) for (let i = 0; i < N; i++) { const j = s - i; if (!land(i, j)) continue;
+    if (!land(i, j + 1)) { quad([iso(i, j + 1), iso(i + 1, j + 1), iso(i + 1, j + 1, -DEP), iso(i, j + 1, -DEP)], '#b39a74'); quad([iso(i, j + 1, -3), iso(i + 1, j + 1, -3), iso(i + 1, j + 1, -4), iso(i, j + 1, -4)], '#9c845f'); }
+    if (!land(i + 1, j)) { quad([iso(i + 1, j), iso(i + 1, j + 1), iso(i + 1, j + 1, -DEP), iso(i + 1, j, -DEP)], '#9c845f'); quad([iso(i + 1, j, -3), iso(i + 1, j + 1, -3), iso(i + 1, j + 1, -4), iso(i + 1, j, -4)], '#86704f'); } }
+  // 水邊的泡沫
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) if (land(i, j) && (!land(i, j + 1) || !land(i + 1, j))) { const [a, b] = iso(i + 1, j + 1, -DEP); for (let k = -6; k < 6; k++) if (hash(a + k, b) > .4) P(x, a + k, b + 1, K.foam); }
+  // 地面
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) if (land(i, j)) { const edge = !land(i + 1, j) || !land(i, j + 1) || !land(i - 1, j) || !land(i, j - 1); top(i, j, 0, edge ? K.sand : ((i + j) % 2 ? K.g1 : K.g2)); }
+  // 草的雜點
+  for (let i = 0; i < 400; i++) { const a = hash(i, 1) * W | 0, b = hash(1, i) * H | 0; const px = x.getImageData(a, b, 1, 1).data; if (px[1] > 150 && px[0] < 175 && px[2] < 130) P(x, a, b, i % 3 ? K.g4 : K.g3); }
+
+  // 方塊：底面 (i,j) 寬 w 深 d 高 h
+  function box(i, j, w, d, h, cTop, cL, cR, z = 0) {
+    quad([iso(i, j + d, z), iso(i + w, j + d, z), iso(i + w, j + d, z + h), iso(i, j + d, z + h)], cL);
+    quad([iso(i + w, j, z), iso(i + w, j + d, z), iso(i + w, j + d, z + h), iso(i + w, j, z + h)], cR);
+    if (cTop) quad([iso(i, j, z + h), iso(i + w, j, z + h), iso(i + w, j + d, z + h), iso(i, j + d, z + h)], cTop);
+  }
+  // 斜面上的小窗（左面：沿 i 方向）
+  function winL(i, j, z, w = .5, hgt = 6, col = K.win) { quad([iso(i, j, z), iso(i + w, j, z), iso(i + w, j, z + hgt), iso(i, j, z + hgt)], K.frame); quad([iso(i + .08, j, z + 1), iso(i + w - .08, j, z + 1), iso(i + w - .08, j, z + hgt - 1), iso(i + .08, j, z + hgt - 1)], col); }
+  function winR(i, j, z, w = .5, hgt = 6, col = K.win) { quad([iso(i, j, z), iso(i, j + w, z), iso(i, j + w, z + hgt), iso(i, j, z + hgt)], K.frame); quad([iso(i, j + .08, z + 1), iso(i, j + w - .08, z + 1), iso(i, j + w - .08, z + hgt - 1), iso(i, j + .08, z + hgt - 1)], col); }
+  const shadowQuad = (i, j, w, d, off) => quad([iso(i + off, j + off * .2), iso(i + w + off, j + off * .2), iso(i + w + off, j + d + off), iso(i + off, j + d + off)], K.shadow);
+
+  // 樹（在後面的先畫）
+  const tree = (i, j, s = 1) => { const [a, b] = iso(i + .5, j + .5); ell(x, a + 3, b + 1, 6 * s, 3 * s, K.shadow); R(x, a - 1, b - 8 * s, 2, 8 * s, K.trunk); circ(x, a, b - 12 * s, 6 * s, K.leaf2); circ(x, a - 1, b - 13 * s, 5 * s, K.leaf1); circ(x, a - 2, b - 14 * s, 2 * s, K.leaf3); P(x, a - 3, b - 16 * s, K.leafHi); };
+  tree(2, 1); tree(5, 1.2, .9); tree(1, 6);
+
+  // 房子：牆＋山牆屋頂（屋脊沿 i 方向）
+  const hi = 2, hj = 2, hw = 3, hd = 2.4, hh = 16, rise = 12;
+  shadowQuad(hi, hj, hw, hd, .5);
+  box(hi, hj, hw, hd, hh, null, K.wall, K.wall2);
+  for (let k = 0; k < hh; k += 3) quad([iso(hi + hw, hj, k), iso(hi + hw, hj + hd, k), iso(hi + hw, hj + hd, k + 1), iso(hi + hw, hj, k + 1)], K.wall3);
+  winL(hi + .4, hj + hd, 5); winL(hi + 2.1, hj + hd, 5);
+  // 門
+  quad([iso(hi + 1.2, hj + hd, 0), iso(hi + 1.8, hj + hd, 0), iso(hi + 1.8, hj + hd, 10), iso(hi + 1.2, hj + hd, 10)], K.door); { const [a, b] = iso(hi + 1.7, hj + hd, 5); P(x, a, b, K.win); }
+  winR(hi + hw, hj + .9, 6, .7, 6);
+  // 屋頂
+  const ov = .25;   // 屋簷伸出
+  const rA = iso(hi - ov, hj + hd / 2, hh + rise), rB = iso(hi + hw + ov, hj + hd / 2, hh + rise);
+  quad([iso(hi + hw, hj, hh), iso(hi + hw, hj + hd, hh), rB], K.wall2);   // 山牆三角
+  quad([iso(hi - ov, hj + hd + ov, hh - 2), iso(hi + hw + ov, hj + hd + ov, hh - 2), rB, rA], K.roof);   // 前坡
+  // 瓦片線
+  for (let t = .15; t < 1; t += .17) { const a = iso(hi - ov, hj + hd + ov - (hd / 2 + ov) * t, hh - 2 + (rise + 2) * t), b = iso(hi + hw + ov, hj + hd + ov - (hd / 2 + ov) * t, hh - 2 + (rise + 2) * t); quad([a, b, [b[0], b[1] + 1], [a[0], a[1] + 1]], K.roofLo); }
+  for (let s = 0; s <= 10; s++) { const fi = hi - ov + (hw + 2 * ov) * s / 10; const a = iso(fi, hj + hd + ov, hh - 2), b = iso(fi, hj + hd / 2, hh + rise); for (let k = 0; k <= 8; k++) P(x, a[0] + (b[0] - a[0]) * k / 8, a[1] + (b[1] - a[1]) * k / 8, s % 2 ? K.roofLo : K.roofHi); }
+  quad([rA, rB, [rB[0], rB[1] + 1], [rA[0], rA[1] + 1]], K.roofLine);
+  quad([iso(hi - ov, hj + hd + ov, hh - 2), iso(hi + hw + ov, hj + hd + ov, hh - 2), iso(hi + hw + ov, hj + hd + ov, hh - 3), iso(hi - ov, hj + hd + ov, hh - 3)], K.roofLine);
+  // 煙囪
+  box(hi + 2.2, hj + .6, .45, .45, 9, K.wall3, K.wall2, K.wall3, hh + rise - 4);
+  { const [a, b] = iso(hi + 2.4, hj + .8, hh + rise + 6); P(x, a, b - 2, '#e8e4dc'); P(x, a + 1, b - 4, '#e8e4dc'); P(x, a, b - 6, '#f2efe9'); }
+
+  // 車庫＋跑車
+  const gi = 2, gj = 6.4;
+  shadowQuad(gi, gj, 2.4, 2, .4);
+  box(gi, gj, 2.4, 2, 11, K.conc3, K.conc, K.conc2);
+  quad([iso(gi + .3, gj + 2, 0), iso(gi + 2.1, gj + 2, 0), iso(gi + 2.1, gj + 2, 8), iso(gi + .3, gj + 2, 8)], '#5a554e');
+  for (let k = 1; k < 8; k += 2) quad([iso(gi + .3, gj + 2, k), iso(gi + 2.1, gj + 2, k), iso(gi + 2.1, gj + 2, k + .8), iso(gi + .3, gj + 2, k + .8)], '#7a756d');
+  // 跑車（停在車庫前）
+  const ci = 2.4, cj = 8.7;
+  shadowQuad(ci, cj, 1.6, .8, .2);
+  box(ci, cj, 1.7, .8, 3, K.carHi, K.car, K.carLo, 1);
+  box(ci + .4, cj + .1, .8, .6, 2.5, K.carHi, K.glass, K.glassHi, 4);
+  [[ci + .25, cj + .8], [ci + 1.35, cj + .8]].forEach(([i, j]) => { const [a, b] = iso(i, j, 1); R(x, a - 1, b - 1, 3, 3, K.tire); });
+  { const [a, b] = iso(ci + 1.7, cj + .2, 2.5); P(x, a, b, K.lamp); }
+
+  // 停機坪＋飛機
+  const pi = 7, pj = 1.2;
+  box(pi, pj, 3.4, 3.4, 2, K.conc, K.conc2, '#9a948a');
+  for (let t = 0; t < TAU; t += .09) { const [a, b] = iso(pi + 1.7 + Math.cos(t) * 1.3, pj + 1.7 + Math.sin(t) * 1.3, 2); if ((t * 10 | 0) % 2) P(x, a, b, K.yellow); }
+  // 飛機：機身沿 j，機翼沿 i
+  const fi = pi + 1.7, fj = pj + 1.7, Z = 5;
+  quad([iso(fi - .15, fj - 1.5, Z), iso(fi + .15, fj - 1.5, Z), iso(fi + .15, fj + 1.4, Z), iso(fi - .15, fj + 1.4, Z)], K.shadow);
+  quad([iso(fi - 1.6, fj - .1, 2.2), iso(fi + 1.6, fj - .1, 2.2), iso(fi + 1.6, fj + .3, 2.2), iso(fi - 1.6, fj + .3, 2.2)], K.shadow);
+  quad([iso(fi - 1.6, fj - .2, Z), iso(fi + 1.6, fj - .2, Z), iso(fi + 1.6, fj + .2, Z), iso(fi - 1.6, fj + .2, Z)], K.planeLo);
+  quad([iso(fi - 1.6, fj - .2, Z + 1), iso(fi + 1.6, fj - .2, Z + 1), iso(fi + 1.6, fj + .2, Z + 1), iso(fi - 1.6, fj + .2, Z + 1)], K.plane);
+  box(fi - .18, fj - 1.5, .36, 2.9, 3, K.planeHi, K.plane, K.planeLo, Z - 1);
+  quad([iso(fi, fj - 1.4, Z + 2), iso(fi, fj - 1.0, Z + 2), iso(fi, fj - 1.0, Z + 9), iso(fi, fj - 1.3, Z + 9)], K.tail);
+  quad([iso(fi - .6, fj - 1.3, Z + 2), iso(fi + .6, fj - 1.3, Z + 2), iso(fi + .6, fj - 1.1, Z + 2), iso(fi - .6, fj - 1.1, Z + 2)], K.planeLo);
+  for (let k = 0; k < 5; k++) { const [a, b] = iso(fi + .18, fj - .9 + k * .45, Z + 1.5); P(x, a, b, K.glass); }
+  { const [a, b] = iso(fi, fj + 1.4, Z + 1); P(x, a, b, K.glass); P(x, a + 1, b, K.glass); }
+
+  // 發射台（鎖住）：灰色剪影
+  const li = 8.2, lj = 5.4;
+  box(li, lj, 1.8, 1.8, 2, K.ghost, K.ghost2, '#b0a798');
+  box(li + .3, lj + .3, .35, .35, 38, K.ghost, K.ghost2, '#b0a798', 2);
+  box(li + 1.0, lj + .8, .55, .55, 28, K.ghost, K.ghost2, '#b0a798', 2);
+  { const [a, b] = iso(li + 1.27, lj + 1.07, 30); poly(x, [[a - 4, b + 2], [a, b - 8], [a + 4, b + 2]], K.ghost); }
+  { const [a, b] = iso(li + 2.2, lj + 2.4, 12); R(x, a - 5, b - 4, 11, 9, K.lock); R(x, a - 3, b - 9, 2, 5, K.lock); R(x, a + 2, b - 9, 2, 5, K.lock); R(x, a - 3, b - 10, 7, 2, K.lock); R(x, a, b - 1, 2, 4, '#f3efe6'); }
+
+  // 碼頭＋遊艇（右下的水裡）
+  for (let k = 0; k < 4; k++) box(11 + k * .55, 8.3, .5, .9, 1.5, k % 2 ? K.wood : K.wood3, K.wood2, K.post, -DEP + 6);
+  { const [a, b] = iso(12.2, 9.8, -DEP); for (let s = 0; s < 18; s++) { P(x, a - 10 - s, b + 4 + (s % 3), K.foam); } }
+  const yi = 12.3, yj = 9.6, YZ = -DEP + 1;
+  quad([iso(yi, yj, YZ), iso(yi + 2.6, yj, YZ), iso(yi + 3.1, yj + .45, YZ), iso(yi + 2.6, yj + .9, YZ), iso(yi, yj + .9, YZ)], K.hullLo);
+  quad([iso(yi, yj, YZ + 3), iso(yi + 2.6, yj, YZ + 3), iso(yi + 3.1, yj + .45, YZ + 3), iso(yi + 2.6, yj + .9, YZ + 3), iso(yi, yj + .9, YZ + 3)], K.hull);
+  quad([iso(yi, yj + .9, YZ), iso(yi + 2.6, yj + .9, YZ), iso(yi + 2.6, yj + .9, YZ + 3), iso(yi, yj + .9, YZ + 3)], K.hull);
+  quad([iso(yi, yj + .9, YZ + 1), iso(yi + 2.6, yj + .9, YZ + 1), iso(yi + 2.6, yj + .9, YZ + 1.8), iso(yi, yj + .9, YZ + 1.8)], K.stripe);
+  quad([iso(yi + .2, yj + .1, YZ + 3), iso(yi + 2.5, yj + .1, YZ + 3), iso(yi + 2.9, yj + .45, YZ + 3), iso(yi + 2.5, yj + .8, YZ + 3), iso(yi + .2, yj + .8, YZ + 3)], K.deck);
+  box(yi + .7, yj + .2, 1.1, .5, 4, K.hull, K.glass, K.hullLo, YZ + 3);
+
+  // 前景的樹
+  tree(.6, 9); tree(7.6, 8.2, .9); tree(5.4, 10.2, .8); tree(5.6, 6, .8);
+  zoom(S, 'isoZ1', 84, 22); zoom(S, 'isoZ2', 46, 74);
+})();
+</script>
+</body>
+</html>
