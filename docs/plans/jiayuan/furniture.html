@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家園：家具圖鑑</title>
+<!-- 家園・築的設計圖（2026-11-21）：家具圖鑑。每類分平價／高級／豪華，每款 2～3 色；每件只畫一個方向（不畫影子），place() 轉 90 度後再加影子；靠牆的自動轉向；夜裡燈會亮。還不是遊戲本身。 -->
+<style>
+  :root { --bg: #fcfaf8; --text: #4a4a4a; --dark: #2c2c2c; --accent: #8e8070; --sub: #dcdcdc; --shu: #b33a2f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', 'PingFang TC', sans-serif; }
+  main { max-width: 390px; margin: 0 auto; padding: 22px 16px 28px; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 300; font-size: 22px; letter-spacing: .3em; color: var(--dark); margin: 0; text-align: center; }
+  .sub { text-align: center; font-size: 11px; letter-spacing: .12em; color: var(--accent); margin: 6px 0 10px; line-height: 1.7; }
+  .card { border: 1px solid var(--sub); border-radius: 4px; padding: 12px; background: #fff; margin-top: 12px; }
+  .h { display: flex; align-items: baseline; gap: 8px; }
+  .no { font-size: 12px; color: var(--shu); border: 1px solid var(--shu); padding: 0 5px; line-height: 1.5; font-family: 'Noto Serif TC', serif; }
+  .name { font-family: 'Noto Serif TC', serif; font-size: 16px; letter-spacing: .2em; color: var(--dark); }
+  .tag { margin-left: auto; font-size: 10px; letter-spacing: .1em; color: var(--accent); }
+  canvas { display: block; width: 100%; border-radius: 3px; margin-top: 10px; image-rendering: pixelated; image-rendering: crisp-edges; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 8px 0 0; font-size: 11.5px; letter-spacing: .04em; line-height: 1.6; }
+  dt { color: var(--accent); } dd { margin: 0; }
+  .arrow { text-align: center; color: var(--accent); font-size: 12px; letter-spacing: .3em; margin-top: 12px; }
+  .labels { display: grid; gap: 4px; margin-top: 6px; text-align: center; }
+  .labels b { display: block; font-weight: 500; font-size: 11.5px; color: var(--dark); letter-spacing: .04em; }
+  .labels span { display: block; font-size: 9.5px; color: var(--accent); line-height: 1.4; margin-top: 1px; }
+  .stack canvas { margin-top: 10px; }
+  .gold { border-color: #c9a24a; }
+  .fl { display: flex; flex-wrap: wrap; gap: 12px 10px; margin-top: 10px; align-items: flex-end; }
+  .it { display: flex; flex-direction: column; align-items: flex-start; max-width: 100%; }
+  .it canvas { margin-top: 0; border-radius: 2px; }
+  .it b { margin-top: 4px; font-weight: 500; font-size: 12px; color: var(--dark); letter-spacing: .06em; }
+  .it span { font-size: 9.5px; color: var(--accent); line-height: 1.5; }
+  .it .sw i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 3px; border: 1px solid rgba(0,0,0,.15); vertical-align: -1px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .two canvas { margin-top: 10px; }
+  .lb { margin: 10px 0 0; font-size: 11px; color: var(--accent); letter-spacing: .2em; }
+  .sws { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-top: 6px; }
+  .sw2 canvas { margin-top: 0; }
+  .sw2 span { display: block; font-size: 9.5px; color: var(--text); text-align: center; margin-top: 2px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>家具・圖鑑</h1>
+  <p class="sub">家園・築的設計圖（屋內，正上方、一格 10 顆）<br>白色虛線是占地；顏色圓點是可以選的顏色；名字、數量都是暫定的</p>
+  <div id="cats"></div>
+  <section class="card">
+    <div class="h"><span class="no">轉</span><span class="name">旋轉</span><span class="tag">只畫一個方向，程式轉</span></div>
+    <canvas id="rot1" width="180" height="50"></canvas>
+    <canvas id="rot2" width="100" height="70" style="width:56%;margin:10px auto 0"></canvas>
+    <dl><dt>四個方向</dt><dd>同一張雙人床轉 0、90、180、270 度；影子都是轉完才加，所以都在右下</dd><dt>貼牆</dt><dd>衣櫃貼哪面牆就自動轉成面向房間（上面那張是同一個衣櫃貼四面牆）</dd></dl>
+  </section>
+  <section class="card">
+    <div class="h"><span class="no">夜</span><span class="name">晚上會亮</span><span class="tag">跟網站的夜間模式一起換</span></div>
+    <div class="two"><canvas id="dayC" width="100" height="80"></canvas><canvas id="nightC" width="100" height="80"></canvas></div>
+    <dl><dt>會亮的</dt><dd>床頭櫃的小燈、書桌的檯燈、立燈、弧形落地燈；窗外變夜色、有星星</dd></dl>
+  </section>
+  <section class="card">
+    <div class="h"><span class="name">地板・壁紙</span><span class="tag">每一間可以換</span></div>
+    <p class="lb">地板</p><div id="floors" class="sws"></div>
+    <p class="lb">壁紙</p><div id="papers" class="sws"></div>
+    <dl><dt>新加的</dt><dd>大理石、榻榻米（地板）；和紙、紅磚（壁紙）</dd></dl>
+  </section>
+</main>
+<script>
+
+// ===== 小工具（跟 style-mockup.html 同一套：硬邊、整數座標）=====
+const TAU = Math.PI * 2;
+function make(id) { const c = document.getElementById(id), x = c.getContext('2d'); x.imageSmoothingEnabled = false; return { c, x, W: c.width, H: c.height }; }
+const hash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+function P(x, a, b, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), 1, 1); }
+function R(x, a, b, w, h, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), Math.round(w), Math.round(h)); }
+function circ(x, cx, cy, r, col) { for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r + r * .6) P(x, cx + xx, cy + yy, col); }
+function poly(x, pts, col) {
+  const ys = pts.map(p => p[1]), xs = pts.map(p => p[0]);
+  const y0 = Math.floor(Math.min(...ys)), y1 = Math.ceil(Math.max(...ys)), x0 = Math.floor(Math.min(...xs)), x1 = Math.ceil(Math.max(...xs));
+  x.fillStyle = col;
+  for (let y = y0; y <= y1; y++) for (let X = x0; X <= x1; X++) {
+    const px = X + .5, py = y + .5; let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside; }
+    if (inside) x.fillRect(X, y, 1, 1);
+  }
+}
+const K = {
+  g1: '#97ad6f', g2: '#86a061', g3: '#a6bb7c', g4: '#738d51', sand: '#e6d3a3', sand2: '#d8c18b', sand3: '#efe0b8',
+  sea: '#6b97a6', sea2: '#7ea9b5', shallow: '#9cc5c8', foam: '#e3efed', deep: '#4f7d8f',
+  leaf1: '#5d7c43', leaf2: '#4a6634', leaf3: '#7a9a55', leafHi: '#9cb96f', trunk: '#6e4528',
+  roof: '#b33a2f', roofHi: '#cf5a46', roofLo: '#8f2c23', roofLine: '#7a241d',
+  wall: '#efe4cf', wall2: '#d9c9aa', wall3: '#c2ae8b', door: '#5e3c22', win: '#f6cd72', frame: '#6e4528',
+  conc: '#c4beb3', conc2: '#aea79b', conc3: '#d6d1c7', stone: '#a39b8e', stone2: '#8b8377', stone3: '#bdb6aa',
+  wood: '#9a6a40', wood2: '#7c5230', wood3: '#b07f50', post: '#5e3c22',
+  canvas: '#dcc9a0', canvasHi: '#ece0c1', canvasLo: '#bba77c', canvasLine: '#9c8a62',
+  shingle: '#8a6440', shingleHi: '#a57a50', shingleLo: '#6c4c30', shingleLine: '#553a24',
+  slate: '#76828c', slateHi: '#8f9ba5', slateLo: '#626d77', slateLine: '#4f5962',
+  white: '#f3f1ec', white2: '#dedad1', white3: '#c9c4b9', glass: '#a8cdd6', glassHi: '#e2f1f3',
+  pool: '#5fb3c4', poolHi: '#9fdce4', poolLo: '#3f93a6', fire: '#e8873a', fire2: '#f6cd72', fire3: '#c4462e',
+  hedge: '#557a3e', hedge2: '#43652f', flowerA: '#f0b8b0', flowerB: '#f1d36b', flowerC: '#c9a0dc',
+  shadow: 'rgba(30,40,30,.24)'
+};
+
+// 共用：草地底、石板路、樹、影子
+function lawn(x, W, H, seed = 0) { for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) { const n = hash(a + seed, b); P(x, a, b, n > .9 ? K.g3 : n > .74 ? K.g2 : n < .05 ? K.g4 : K.g1); } }
+function stones(x, pts) { pts.forEach(([a, b]) => { R(x, a, b, 6, 3, K.conc3); R(x, a, b + 2, 6, 1, K.conc2); P(x, a, b, '#e4e0d8'); }); }
+function tree(x, a, b, r) {
+  x.fillStyle = K.shadow; for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r) x.fillRect(a + xx + 3, b + yy + 3, 1, 1);
+  circ(x, a, b, r, K.leaf2); circ(x, a - 1, b - 1, r - 1, K.leaf1); circ(x, a - 2, b - 2, Math.max(1, r - 3), K.leaf3); P(x, a - r / 2, b - r / 2, K.leafHi); P(x, a - r / 2 + 1, b - r / 2, K.leafHi);
+  for (let i = 0; i < r * 2; i++) { const t = hash(a + i, b) * TAU, rr = hash(b, a + i) * r; P(x, a + Math.cos(t) * rr, b + Math.sin(t) * rr, i % 2 ? K.leaf2 : K.leaf3); }
+}
+function palm(x, a, b) {   // 椰子樹：六片葉子，每片兩顆寬、尾巴往下垂，葉子比草地深才看得出來
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3; for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); P(x, u + 3, v + 3, K.shadow); } }
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3, nx = -Math.sin(t), ny = Math.cos(t); for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); const wdt = s < 4 ? 1 : s < 9 ? 2 : 1; for (let q = -wdt; q <= wdt; q++) P(x, u + nx * q, v + ny * q, q === wdt ? '#3d5f2c' : (q === -wdt ? '#8fb35a' : '#6f9a45')); } }
+  circ(x, a, b, 2, '#7a5a3a'); P(x, a - 1, b - 1, '#a07a50'); P(x, a + 1, b + 1, '#5e4228'); }
+function shadowPoly(x, pts, dx, dy) { poly(x, pts.map(([a, b]) => [a + dx, b + dy]), K.shadow); }
+// 四面坡（上亮、左亮、右暗、下暗），屋脊沿水平方向；line 是瓦片的橫線間距
+function hipRoof(x, a, b, w, h, c, opts = {}) {
+  const inset = Math.min(h / 2, opts.inset ?? h / 2), ry = b + h / 2;
+  const ridgeL = a + inset, ridgeR = a + w - inset;
+  shadowPoly(x, [[a, b], [a + w, b], [a + w, b + h], [a, b + h]], opts.sh || 4, opts.sh || 4);
+  poly(x, [[a, b], [a + w, b], [ridgeR, ry], [ridgeL, ry]], c.hi);           // 上坡（迎光）
+  poly(x, [[a, b + h], [a + w, b + h], [ridgeR, ry], [ridgeL, ry]], c.lo);   // 下坡
+  poly(x, [[a, b], [ridgeL, ry], [a, b + h]], c.mid);                        // 左坡
+  poly(x, [[a + w, b], [ridgeR, ry], [a + w, b + h]], c.lo);                  // 右坡
+  // 瓦片橫線＋錯開的直縫
+  for (let yy = b + 2; yy < b + h - 1; yy += c.step || 3) for (let xx = a + 1; xx < a + w - 1; xx++) {
+    const dTop = yy - b, dBot = b + h - yy, dl = xx - a, dr = a + w - xx;
+    if (dl > Math.min(dTop, dBot) + 1 && dr > Math.min(dTop, dBot) + 1 || true) { const px = x.getImageData(xx, yy, 1, 1).data; if (px[3]) P(x, xx, yy, c.line); }
+  }
+  for (let yy = b + 1; yy < b + h - 1; yy++) for (let xx = a + 1 + ((Math.floor((yy - b) / (c.step || 3)) % 2) * 2); xx < a + w - 1; xx += 4) if ((yy - b) % (c.step || 3)) P(x, xx, yy, c.seam || c.line);
+  R(x, ridgeL, ry - 1, ridgeR - ridgeL, 2, c.ridge || c.line);
+  // 四條斜脊
+  const diag = (x0, y0, x1, y1) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, c.ridge || c.line); };
+  diag(a, b, ridgeL, ry); diag(a, b + h, ridgeL, ry); diag(a + w, b, ridgeR, ry); diag(a + w, b + h, ridgeR, ry);
+  // 外框
+  R(x, a, b, w, 1, c.edge || c.line); R(x, a, b + h - 1, w, 1, c.edge || c.line); R(x, a, b, 1, h, c.edge || c.line); R(x, a + w - 1, b, 1, h, c.edge || c.line);
+}
+function chimney(x, a, b, w, h, top, side, sh = 3) { R(x, a + sh, b + sh, w, h, K.shadow); R(x, a, b, w, h, side); R(x, a, b, w, 2, top); R(x, a + 1, b + 1, w - 2, 1, '#4a3f36'); for (let i = 0; i < 3; i++) P(x, a + 1 + i, b - 2 - i * 2, i % 2 ? '#ece8e2' : '#e0dbd2'); }
+
+// ===== 屋內：正上方、把屋頂拿掉；北邊的牆看得到牆面（壁紙、窗、掛畫），其他牆只看到牆頂。一格 10 顆 =====
+const T = 10; let SH = 'rgba(40,30,20,.22)';
+const WALLTOP = '#6e5a46', WALLTOP2 = '#5a4838';
+function shadowR(x, a, b, w, h, d = 2) { R(x, a + d, b + d, w, h, SH); }
+// 地板
+function floorWood(x, a, b, w, h, pal = ['#c89b6a', '#bb8d5c', '#d3a776', '#9a6a40']) {
+  for (let j = 0; j < h; j++) { const row = Math.floor(j / 5), off = hash(row, 7) * 30; for (let i = 0; i < w; i++) { const n = hash(a + i, b + j), seam = (j % 5 === 4) || ((i + off) % 30 < 1); P(x, a + i, b + j, seam ? pal[3] : n > .9 ? pal[2] : n < .12 ? pal[1] : pal[0]); } }
+}
+function floorTile(x, a, b, w, h) { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const c = (Math.floor(i / 8) + Math.floor(j / 8)) % 2, edge = i % 8 === 7 || j % 8 === 7; P(x, a + i, b + j, edge ? '#c9c2b4' : c ? '#ebe6dc' : '#ddd6c8'); } }
+// 北牆：牆頂 4 顆＋牆面（壁紙）＋踢腳板
+const PAPER = {
+  stripe: (i, j) => (i % 6 < 3) ? '#efe4cf' : '#e4d5b6',
+  mint: (i, j) => (hash(i, j) > .93) ? '#cfdcd3' : '#dfe8e1',
+  dot: (i, j) => (i % 6 === 2 && j % 6 === 2) || (i % 6 === 5 && j % 6 === 5) ? '#c9a24a' : '#f1e9dc',
+  navy: (i, j) => (i % 8 === 0) ? '#2a3a5a' : (hash(i, j) > .95 ? '#3d5078' : '#33456a'),
+};
+function northWall(x, a, w, face, paper) { R(x, a, 0, w, 4, WALLTOP); R(x, a, 3, w, 1, WALLTOP2); for (let j = 0; j < face; j++) for (let i = 0; i < w; i++) P(x, a + i, 4 + j, PAPER[paper](a + i, j)); R(x, a, 4 + face - 2, w, 2, '#8a6a4a'); R(x, a, 4 + face, w, 1, 'rgba(40,30,20,.25)'); }
+function vWall(x, a, b, h) { R(x, a, b, 4, h, WALLTOP); R(x, a + 3, b, 1, h, WALLTOP2); }
+function hWall(x, a, b, w) { R(x, a, b, w, 4, WALLTOP); R(x, a, b + 3, w, 1, WALLTOP2); }
+function windowN(x, a, w, face) { R(x, a, 6, w, face - 6, '#f3f1ec'); R(x, a + 1, 7, w - 2, face - 8, '#a8cdd6'); R(x, a + 1, 7, 3, face - 8, '#e2f1f3'); R(x, a + Math.floor(w / 2), 7, 1, face - 8, '#f3f1ec');
+  poly(x, [[a + 1, 4 + face], [a + w - 1, 4 + face], [a + w + 6, 4 + face + 22], [a + 8, 4 + face + 22]], 'rgba(255,240,200,.18)'); }   // 窗光落在地上
+function painting(x, a, w, col) { R(x, a, 7, w, 9, '#9a7a32'); R(x, a + 1, 8, w - 2, 7, col[0]); R(x, a + 1, 12, w - 2, 3, col[1]); circ(x, a + w - 4, 10, 1, '#f6cd72'); }
+// 家具（左上亮、右下暗，影子往右下 2 顆）
+function rug(x, a, b, w, h, c1, c2, c3) { R(x, a, b, w, h, c1); R(x, a + 2, b + 2, w - 4, h - 4, c2); R(x, a + 4, b + 4, w - 8, h - 8, c1); for (let i = 6; i < w - 6; i += 4) { P(x, a + i, b + h / 2, c3); P(x, a + i + 2, b + h / 2 - 2, c3); P(x, a + i + 2, b + h / 2 + 2, c3); } for (let i = 0; i < w; i += 2) { P(x, a + i, b - 1, c2); P(x, a + i, b + h, c2); } }
+function roundRug(x, cx, cy, r, c1, c2) { circ(x, cx, cy, r, c2); circ(x, cx, cy, r - 2, c1); circ(x, cx, cy, r - 6, c2); circ(x, cx, cy, r - 8, c1); }
+function bed(x, a, b, w, h, blanket) {   // 床頭在上面
+  shadowR(x, a, b, w, h); R(x, a, b, w, h, '#7c5230'); R(x, a, b, w, 3, '#9a6a40'); R(x, a + 1, b + 3, w - 2, h - 4, '#f3f1ec');
+  const pw = Math.floor((w - 6) / 2); R(x, a + 2, b + 4, pw, 6, '#ffffff'); R(x, a + 2, b + 9, pw, 1, '#dedad1'); R(x, a + w - 2 - pw, b + 4, pw, 6, '#ffffff'); R(x, a + w - 2 - pw, b + 9, pw, 1, '#dedad1');
+  R(x, a + 1, b + 13, w - 2, h - 14, blanket[0]); R(x, a + 1, b + 13, w - 2, 2, blanket[1]); R(x, a + 1, b + 15, 2, h - 16, blanket[1]); R(x, a + w - 3, b + 15, 2, h - 16, blanket[2]); R(x, a + 1, b + 13, w - 2, 1, '#f3f1ec');
+}
+function nightstand(x, a, b) { shadowR(x, a, b, 8, 8); R(x, a, b, 8, 8, '#9a6a40'); R(x, a, b, 8, 1, '#b07f50'); R(x, a + 7, b, 1, 8, '#7c5230'); circ(x, a + 4, b + 4, 2, '#f6e7b8'); P(x, a + 3, b + 3, '#ffffff'); }
+function wardrobe(x, a, b, w, h, vertical) { shadowR(x, a, b, w, h, 3); R(x, a, b, w, h, '#8a5a34'); R(x, a, b, w, 1, '#a87448'); R(x, a, b, 1, h, '#a87448'); R(x, a + w - 1, b, 1, h, '#6a4426'); R(x, a, b + h - 1, w, 1, '#6a4426');
+  if (vertical) { R(x, a + 1, b + Math.floor(h / 2), w - 2, 1, '#6a4426'); P(x, a + w - 3, b + Math.floor(h / 2) - 2, '#c9a24a'); P(x, a + w - 3, b + Math.floor(h / 2) + 2, '#c9a24a'); }
+  else { R(x, a + Math.floor(w / 2), b + 1, 1, h - 2, '#6a4426'); P(x, a + Math.floor(w / 2) - 2, b + h - 3, '#c9a24a'); P(x, a + Math.floor(w / 2) + 2, b + h - 3, '#c9a24a'); }
+  for (let i = 3; i < (vertical ? h : w) - 3; i += 5) vertical ? P(x, a + 3, b + i, '#7a4e2c') : P(x, a + i, b + 3, '#7a4e2c'); }
+function bookshelf(x, a, b, w, h, vertical) {   // 從上面看：書背的頂端一排排
+  shadowR(x, a, b, w, h, 3); R(x, a, b, w, h, '#5e3c22'); const cols = ['#b33a2f', '#3d5078', '#c9a24a', '#5d7c43', '#efe4cf', '#8e8070', '#6a4f7a'];
+  if (vertical) for (let j = 1; j < h - 1; j++) { const c = cols[Math.floor(hash(a, b + j * 3) * cols.length)]; R(x, a + 1, b + j, w - 2 - Math.floor(hash(j, a) * 2), 1, c); if (hash(j, b) > .8) j++; }
+  else for (let i = 1; i < w - 1; i++) { const c = cols[Math.floor(hash(a + i * 3, b) * cols.length)]; R(x, a + i, b + 1, 1, h - 2 - Math.floor(hash(i, b) * 2), c); if (hash(i, a) > .8) i++; } }
+function displayCase(x, a, b, w, h) { shadowR(x, a, b, w, h, 3); R(x, a, b, w, h, '#c9a24a'); R(x, a + 1, b + 1, w - 2, h - 2, '#cfe6ea'); R(x, a + 1, b + 1, w - 2, 1, '#eef7f8');
+  circ(x, a + 4, b + h / 2, 1, '#4aa3c9'); P(x, a + 3, b + h / 2 - 1, '#d8f0fa'); R(x, a + 8, b + 3, 3, 4, '#e2a62e'); R(x, a + 7, b + 3, 5, 1, '#f4c75a'); P(x, a + 9, b + 7, '#977630');   // 寶石、小獎盃
+  R(x, a + 14, b + 3, 4, 4, '#b33a2f'); P(x, a + 15, b + 4, '#ffffff'); R(x, a + 20, b + 3, 1, 4, '#3d3d3d'); for (let i = 2; i < w - 2; i += 4) P(x, a + i, b + h - 2, '#eef7f8'); }
+function desk(x, a, b, w, h) { shadowR(x, a, b, w, h); R(x, a, b, w, h, '#a8764a'); R(x, a, b, w, 1, '#c48d5c'); R(x, a + w - 1, b, 1, h, '#7c5230');
+  R(x, a + 4, b + 3, 9, 6, '#5a5d62'); R(x, a + 5, b + 4, 7, 4, '#9fc0cc'); R(x, a + 15, b + 2, 6, 8, '#f3f1ec'); R(x, a + 16, b + 4, 4, 1, '#c9c4ba'); R(x, a + 16, b + 6, 4, 1, '#c9c4ba'); circ(x, a + w - 4, b + 4, 1, '#f3f1ec'); P(x, a + w - 4, b + 4, '#6e4528'); }
+function chair(x, cx, cy, col = '#7c5230') { circ(x, cx + 1, cy + 1, 3, SH); circ(x, cx, cy, 3, col); circ(x, cx - 1, cy - 1, 1, '#c48d5c'); }
+function sofa(x, a, b, w, h, col) {   // 背在下面（面向上）
+  shadowR(x, a, b, w, h, 3); R(x, a, b, w, h, col[2]); R(x, a, b + h - 4, w, 4, col[2]); R(x, a, b, 4, h, col[1]); R(x, a + w - 4, b, 4, h, col[2]);
+  const n = 3, cw = Math.floor((w - 8) / n); for (let k = 0; k < n; k++) { R(x, a + 4 + k * cw, b + 1, cw - 1, h - 5, col[0]); R(x, a + 4 + k * cw, b + 1, cw - 1, 1, col[3]); }
+  R(x, a, b, w, 1, col[3]); }
+function armchair(x, a, b, col) { shadowR(x, a, b, 12, 12, 3); R(x, a, b, 12, 12, col[2]); R(x, a + 3, b + 1, 6, 7, col[0]); R(x, a + 3, b + 1, 6, 1, col[3]); R(x, a, b, 3, 12, col[1]); R(x, a + 9, b, 3, 12, col[2]); }
+function coffeeTable(x, a, b, w, h) { shadowR(x, a, b, w, h); R(x, a, b, w, h, '#7c5230'); R(x, a + 1, b + 1, w - 2, h - 2, '#cfe6ea'); R(x, a + 1, b + 1, w - 2, 1, '#eef7f8'); R(x, a + 3, b + 3, 5, 4, '#b33a2f'); circ(x, a + w - 5, b + h / 2, 1, '#f3f1ec'); }
+function floorLamp(x, cx, cy) { circ(x, cx + 2, cy + 2, 4, SH); circ(x, cx, cy, 4, '#e9dcb8'); circ(x, cx - 1, cy - 1, 2, '#fbf3dc'); P(x, cx, cy, '#8e8070'); }
+function plant(x, cx, cy, r = 5) { circ(x, cx + 2, cy + 2, r, SH); circ(x, cx, cy, r - 2, '#9a5a3a'); for (let k = 0; k < 7; k++) { const t = k / 7 * TAU, u = cx + Math.cos(t) * (r - 1), v = cy + Math.sin(t) * (r - 1); circ(x, u, v, 2, k % 2 ? '#5d7c43' : '#4a6634'); P(x, u - 1, v - 1, '#9cb96f'); } circ(x, cx, cy, 2, '#7a9a55'); }
+function tvStand(x, a, b, w) { shadowR(x, a, b, w, 7); R(x, a, b, w, 7, '#5e3c22'); R(x, a, b, w, 1, '#7c5230'); R(x, a + 4, b + 1, w - 8, 2, '#1f2124'); R(x, a + 5, b + 1, 6, 1, '#3d4a55'); }
+function stairs(x, a, b, w, h, up) { R(x, a, b, w, h, '#9a6a40'); for (let j = 0; j < h; j += 4) { R(x, a, b + j, w, 1, '#c48d5c'); R(x, a, b + j + 3, w, 1, '#6e4528'); } R(x, a - 1, b, 1, h, '#5e3c22'); R(x, a + w, b, 1, h, '#5e3c22');
+  const cx = a + w / 2; for (let k = 0; k < 5; k++) { P(x, cx - k, b + 6 + k, '#f3f1ec'); P(x, cx + k, b + 6 + k, '#f3f1ec'); } if (!up) R(x, a, b, w, h, 'rgba(20,20,20,.18)'); }
+function counter(x, a, b, w, h) { shadowR(x, a, b, w, h); R(x, a, b, w, h, '#d6d1c7'); R(x, a, b + h - 1, w, 1, '#a39b8e'); for (let i = 0; i < w; i++) if (hash(a + i, b) > .9) P(x, a + i, b + 2 + Math.floor(hash(i, b) * (h - 3)), '#e4e0d8'); }
+function sink(x, a, b) { R(x, a, b, 12, 7, '#a9b2b6'); R(x, a + 1, b + 1, 10, 5, '#c7cfd2'); R(x, a + 2, b + 2, 8, 3, '#8e989c'); P(x, a + 6, b, '#5a5d62'); }
+function stove(x, a, b) { R(x, a, b, 14, 8, '#2f3236'); [[3, 2], [10, 2], [3, 6], [10, 6]].forEach(([u, v]) => { P(x, a + u - 1, b + v - 1, '#6a6d70'); P(x, a + u, b + v - 1, '#6a6d70'); }); circ(x, a + 10, b + 3, 2, '#c0392b'); P(x, a + 9, b + 2, '#e8873a'); }
+function fridge(x, a, b) { shadowR(x, a, b, 12, 12, 3); R(x, a, b, 12, 12, '#f3f1ec'); R(x, a, b, 12, 1, '#ffffff'); R(x, a + 11, b, 1, 12, '#c9c4ba'); R(x, a + 2, b + 9, 6, 1, '#a9b2b6'); P(x, a + 3, b + 3, '#b33a2f'); P(x, a + 6, b + 4, '#f1d36b'); }
+function diningTable(x, a, b, w, h) { [[a + 6, b - 3], [a + w - 7, b - 3], [a + 6, b + h + 3], [a + w - 7, b + h + 3]].forEach(([u, v]) => chair(x, u, v)); shadowR(x, a, b, w, h); R(x, a, b, w, h, '#b07f50'); R(x, a, b, w, 1, '#c99b6a'); R(x, a + w - 1, b, 1, h, '#7c5230');
+  circ(x, a + w / 2, b + h / 2, 3, '#efe4cf'); P(x, a + w / 2 - 1, b + h / 2 - 1, '#c0392b'); P(x, a + w / 2 + 1, b + h / 2, '#f1d36b'); P(x, a + w / 2, b + h / 2 + 1, '#7a9a55'); }
+function doormat(x, a, b, w) { R(x, a, b, w, 5, '#8e8070'); for (let i = 1; i < w - 1; i += 2) P(x, a + i, b + 2, '#a99c88'); }
+function railing(x, a, b, w, h) { for (let i = 0; i < w; i++) { P(x, a + i, b, '#5e3c22'); } for (let j = 0; j < h; j++) P(x, a, b + j, '#5e3c22'); for (let i = 0; i < w; i += 4) P(x, a + i, b + 1, '#3d2614'); }
+
+// ===== 家具圖鑑：每件只畫一個方向（畫的時候不畫影子），place() 轉 90 度後再統一加影子 =====
+const WD = { light: { sw: '#c48d5c', b: '#c48d5c', h: '#d9a774', l: '#9a6a40', n: '淺木' }, walnut: { sw: '#8a5a34', b: '#8a5a34', h: '#a87448', l: '#6a4426', n: '胡桃木' },
+  white: { sw: '#efe9df', b: '#efe9df', h: '#ffffff', l: '#c9c2b4', n: '白' }, black: { sw: '#3d3a38', b: '#3d3a38', h: '#5a5652', l: '#262423', n: '黑' } };
+const FB = { blue: ['#6f8fa8', '#8fb0c8', '#4f6f88', '#a9c6da', '藍'], green: ['#7a9a55', '#9cb96f', '#5d7c43', '#b7cf8c', '綠'], beige: ['#d8c7a8', '#e8dbc2', '#b9a684', '#f1e8d6', '米'],
+  red: ['#b33a2f', '#cf5a46', '#8f2c23', '#e07a68', '朱'], brown: ['#7c4a2a', '#9a6440', '#5e3420', '#b07a50', '皮革咖啡'], navy: ['#2f4166', '#4a5f86', '#1f2c47', '#6b80a8', '深藍'], gray: ['#8e9396', '#a9aeb1', '#6a6d70', '#c4c8ca', '灰'], gold: ['#c9a24a', '#e0bd6a', '#977630', '#f4dc95', '金'] };
+// ---- 床 ----
+function bedP(x, a, b, w, h, wd, f, pillows) {
+  R(x, a, b, w, h, wd.l); R(x, a, b, w, 3, wd.h); R(x, a, b + 3, w, 1, wd.l); R(x, a + 1, b + 4, w - 2, h - 5, '#f3f1ec');
+  const pw = Math.floor((w - 4 - (pillows - 1) * 2) / pillows); for (let k = 0; k < pillows; k++) { const px = a + 2 + k * (pw + 2); R(x, px, b + 5, pw, 6, '#ffffff'); R(x, px, b + 10, pw, 1, '#dedad1'); }
+  R(x, a + 1, b + 14, w - 2, h - 15, f[0]); R(x, a + 1, b + 14, w - 2, 2, f[1]); R(x, a + 1, b + 16, 2, h - 17, f[1]); R(x, a + w - 3, b + 16, 2, h - 17, f[2]); R(x, a + 1, b + 14, w - 2, 1, '#f3f1ec');
+  for (let i = a + 4; i < a + w - 4; i += 5) P(x, i, b + 22 + ((i / 5) % 2) * 6, f[3]);
+}
+const singleBed = (x, a, b, c) => bedP(x, a, b, 20, 40, c.wd, c.f, 1);
+const doubleBed = (x, a, b, c) => bedP(x, a, b, 30, 40, c.wd, c.f, 2);
+function canopyBed(x, a, b, c) {
+  bedP(x, a + 3, b + 2, 34, 36, c.wd, c.f, 2);
+  [[a, b], [a + 37, b], [a, b + 37], [a + 37, b + 37]].forEach(([u, v]) => { R(x, u, v, 3, 3, c.wd.l); P(x, u, v, c.wd.h); });
+  R(x, a + 1, b + 1, 38, 1, c.wd.l); R(x, a + 1, b + 38, 38, 1, c.wd.l); R(x, a + 1, b + 1, 1, 38, c.wd.l); R(x, a + 38, b + 1, 1, 38, c.wd.l);
+  for (let j = b + 3; j < b + 37; j++) { if (j % 3) { P(x, a + 1, j, c.f[3]); P(x, a + 38, j, c.f[1]); } }   // 兩側垂下來的紗
+  P(x, a + 20, b + 1, '#c9a24a');
+}
+// ---- 床頭櫃（上面有小燈）----
+function stand(x, a, b, c) { R(x, a + 1, b + 1, 8, 8, c.wd.b); R(x, a + 1, b + 1, 8, 1, c.wd.h); R(x, a + 8, b + 1, 1, 8, c.wd.l); circ(x, a + 5, b + 5, 2, c.night ? '#fff1c4' : '#f6e7b8'); P(x, a + 4, b + 4, '#ffffff'); }
+// ---- 收納（靠牆，畫的時候背靠上面）----
+function wardrobeP(x, a, b, w, c, doors) {
+  const wd = c.wd; R(x, a, b, w, 10, wd.b); R(x, a, b, w, 1, wd.h); R(x, a, b, 1, 10, wd.h); R(x, a + w - 1, b, 1, 10, wd.l); R(x, a, b + 9, w, 1, wd.l);
+  for (let k = 1; k < doors; k++) R(x, a + Math.round(w * k / doors), b + 1, 1, 8, wd.l);
+  for (let k = 0; k < doors; k++) { const cx = a + Math.round(w * (k + .5) / doors); P(x, cx + (k % 2 ? -2 : 2), b + 7, '#c9a24a'); }
+  for (let i = 3; i < w - 3; i += 5) P(x, a + i, b + 3, wd.l);
+  if (doors === 3) R(x, a + Math.round(w / 3) + 3, b + 2, Math.round(w / 3) - 6, 5, '#cfe6ea');   // 中間那扇是鏡子
+}
+const wardrobe2 = (x, a, b, c) => wardrobeP(x, a, b, 20, c, 2), wardrobe3 = (x, a, b, c) => wardrobeP(x, a, b, 30, c, 3);
+function shelfP(x, a, b, w, c, full) {
+  R(x, a, b, w, 10, c.wd.l); R(x, a, b, w, 1, c.wd.h); const cols = ['#b33a2f', '#3d5078', '#c9a24a', '#5d7c43', '#efe4cf', '#8e8070', '#6a4f7a'];
+  for (let i = 1; i < w - 1; i++) { if (!full && hash(i, a) > .75) { i++; continue; } R(x, a + i, b + 2, 1, 7 - Math.floor(hash(i, b) * 3), cols[Math.floor(hash(a + i * 3, b) * cols.length)]); if (hash(i, a + 1) > .85) i++; }
+  if (full) { circ(x, a + w - 5, b + 4, 2, '#5d7c43'); P(x, a + w - 6, b + 3, '#9cb96f'); }
+}
+const shelfLow = (x, a, b, c) => shelfP(x, a, b, 20, c, false), shelfTall = (x, a, b, c) => shelfP(x, a, b, 30, c, true);
+function caseP(x, a, b, w, frame) {
+  R(x, a, b, w, 10, frame); R(x, a + 1, b + 1, w - 2, 8, '#cfe6ea'); R(x, a + 1, b + 1, w - 2, 1, '#eef7f8');
+  circ(x, a + 4, b + 5, 1, '#4aa3c9'); P(x, a + 3, b + 4, '#d8f0fa'); R(x, a + 8, b + 3, 3, 4, '#e2a62e'); R(x, a + 7, b + 3, 5, 1, '#f4c75a');
+  if (w > 20) { R(x, a + 15, b + 3, 4, 4, '#b33a2f'); P(x, a + 16, b + 4, '#ffffff'); circ(x, a + 24, b + 5, 1, '#e8e4dc'); P(x, a + 24, b + 4, '#b33a2f'); }
+}
+const caseSmall = (x, a, b, c) => caseP(x, a, b, 20, c.wd.b), caseBig = (x, a, b, c) => caseP(x, a, b, 30, '#c9a24a');
+// ---- 桌 ----
+function deskP(x, a, b, c, pc) {
+  R(x, a, b, 30, 10, c.wd.b); R(x, a, b, 30, 1, c.wd.h); R(x, a + 29, b, 1, 10, c.wd.l);
+  if (pc) { R(x, a + 8, b + 1, 14, 3, '#2f3236'); R(x, a + 9, b + 2, 12, 1, '#6a8aa0'); R(x, a + 9, b + 5, 11, 3, '#dedad1'); R(x, a + 23, b + 6, 2, 3, '#dedad1'); circ(x, a + 4, b + 4, 2, c.night ? '#fff1c4' : '#e9dcb8'); }
+  else { R(x, a + 4, b + 2, 9, 6, '#5a5d62'); R(x, a + 5, b + 3, 7, 4, '#9fc0cc'); R(x, a + 15, b + 2, 6, 7, '#f3f1ec'); R(x, a + 16, b + 4, 4, 1, '#c9c4ba'); circ(x, a + 25, b + 4, 2, c.night ? '#fff1c4' : '#e9dcb8'); }
+}
+const desk1 = (x, a, b, c) => deskP(x, a, b, c, false), desk2 = (x, a, b, c) => deskP(x, a, b, c, true);
+function stool(x, a, b, c) { circ(x, a + 5, b + 5, 3, c.wd.b); circ(x, a + 4, b + 4, 1, c.wd.h); }
+function backChair(x, a, b, c) { R(x, a + 1, b + 1, 8, 7, c.wd.b); R(x, a + 1, b + 1, 8, 1, c.wd.h); R(x, a + 1, b + 7, 8, 2, c.wd.l); R(x, a + 2, b + 2, 6, 4, c.f ? c.f[0] : c.wd.h); }
+function coffeeWood(x, a, b, c) { R(x, a + 1, b + 1, 18, 8, c.wd.b); R(x, a + 1, b + 1, 18, 1, c.wd.h); R(x, a + 18, b + 1, 1, 8, c.wd.l); R(x, a + 4, b + 3, 5, 4, '#3d5078'); circ(x, a + 14, b + 5, 1, '#f3f1ec'); }
+function coffeeGlass(x, a, b, c) { R(x, a + 3, b + 3, 24, 14, c.wd.l); R(x, a + 4, b + 4, 22, 12, '#cfe6ea'); R(x, a + 4, b + 4, 22, 1, '#eef7f8'); R(x, a + 7, b + 7, 5, 4, '#b33a2f'); circ(x, a + 21, b + 10, 2, '#f3f1ec'); P(x, a + 21, b + 10, '#6e4528'); }
+function chairAt(x, cx, cy, wd) { circ(x, cx, cy, 3, wd.b); circ(x, cx - 1, cy - 1, 1, wd.h); }
+function tableTop(x, a, b, w, h, wd) { R(x, a, b, w, h, wd.b); R(x, a, b, w, 1, wd.h); R(x, a + w - 1, b, 1, h, wd.l); circ(x, a + w / 2, b + h / 2, 3, '#efe4cf'); P(x, a + w / 2 - 1, b + h / 2 - 1, '#c0392b'); P(x, a + w / 2 + 1, b + h / 2, '#f1d36b'); P(x, a + w / 2, b + h / 2 + 1, '#7a9a55'); }
+function dining4(x, a, b, c) { [[a + 20, b + 6], [a + 20, b + 34], [a + 6, b + 20], [a + 34, b + 20]].forEach(([u, v]) => chairAt(x, u, v, c.wd)); tableTop(x, a + 10, b + 10, 20, 20, c.wd); }
+function dining6(x, a, b, c) { [a + 14, a + 30, a + 46].forEach(u => { chairAt(x, u, b + 6, c.wd); chairAt(x, u, b + 34, c.wd); }); tableTop(x, a + 6, b + 11, 48, 18, c.wd); }
+// ---- 椅、沙發 ----
+function armchairS(x, a, b, c) { const f = c.f; R(x, a, b, 10, 10, f[2]); R(x, a + 2, b + 1, 6, 6, f[0]); R(x, a + 2, b + 1, 6, 1, f[3]); R(x, a, b, 2, 10, f[1]); R(x, a + 8, b, 2, 10, f[2]); R(x, a, b + 8, 10, 2, f[2]); }
+function wingback(x, a, b, c) { const f = c.f; R(x, a + 2, b + 2, 16, 16, f[2]); R(x, a + 5, b + 3, 10, 10, f[0]); R(x, a + 5, b + 3, 10, 1, f[3]); R(x, a + 2, b + 2, 3, 16, f[1]); R(x, a + 15, b + 2, 3, 16, f[2]); R(x, a + 2, b + 13, 16, 5, f[2]); R(x, a + 2, b + 13, 16, 1, f[1]);
+  for (let i = a + 6; i < a + 15; i += 3) for (let j = b + 5; j < b + 12; j += 3) P(x, i, j, f[2]); [a + 3, a + 16].forEach(u => P(x, u, b + 17, '#c9a24a')); }
+function sofaS(x, a, b, w, c) { const f = c.f, h = 14, y = b + 3; R(x, a, y, w, h, f[2]); R(x, a, y + h - 4, w, 4, f[2]); R(x, a, y, 4, h, f[1]); R(x, a + w - 4, y, 4, h, f[2]);
+  const n = Math.max(2, Math.round((w - 8) / 14)), cw = Math.floor((w - 8) / n); for (let k = 0; k < n; k++) { R(x, a + 4 + k * cw, y + 1, cw - 1, h - 5, f[0]); R(x, a + 4 + k * cw, y + 1, cw - 1, 1, f[3]); } R(x, a, y, w, 1, f[3]); }
+const sofa2 = (x, a, b, c) => sofaS(x, a, b, 30, c), sofa3 = (x, a, b, c) => sofaS(x, a, b, 50, c);
+function sofaL(x, a, b, c) { const f = c.f; sofaS(x, a, b + 23, 50, c); R(x, a, b, 14, 30, f[2]); R(x, a, b, 4, 30, f[1]); R(x, a + 4, b + 1, 9, 26, f[0]); R(x, a + 4, b + 13, 9, 1, f[2]); R(x, a + 4, b + 1, 9, 1, f[3]); R(x, a, b, 14, 1, f[3]); }
+// ---- 電視、燈 ----
+function tvP(x, a, b, w, c, big) { R(x, a, b + 2, w, 7, c.wd.b); R(x, a, b + 2, w, 1, c.wd.h); R(x, a + 4, b + 3, w - 8, 2, '#1f2124'); R(x, a + 5, b + 3, 6, 1, '#3d4a55');
+  if (big) { [a + 1, a + w - 6].forEach(u => { R(x, u, b + 1, 5, 8, '#2f3236'); circ(x, u + 2, b + 5, 1, '#6a6d70'); }); } }
+const tvSmall = (x, a, b, c) => tvP(x, a, b, 30, c, false), tvBig = (x, a, b, c) => tvP(x, a, b, 50, c, true);
+function floorLampP(x, a, b, c) { circ(x, a + 5, b + 5, 4, c.night ? '#fff1c4' : c.f[0]); circ(x, a + 4, b + 4, 2, c.night ? '#ffffff' : c.f[3]); P(x, a + 5, b + 5, '#8e8070'); }
+function arcLamp(x, a, b, c) { circ(x, a + 5, b + 15, 3, '#5a5652'); P(x, a + 4, b + 14, '#8e8070'); for (let t = 0; t <= 1; t += .05) P(x, a + 5 + t * 9, b + 15 - Math.sin(t * Math.PI * .9) * 10 - t * 2, '#8e9396'); circ(x, a + 14, b + 6, 5, c.night ? '#fff1c4' : c.f[0]); circ(x, a + 13, b + 5, 2, c.night ? '#ffffff' : c.f[3]); }
+// ---- 地毯 ----
+function rugRect(x, a, b, c) { rug(x, a + 2, b + 2, 56, 36, c.f[0], '#f3f1ec', c.f[3] === '#f4dc95' ? '#b33a2f' : '#c9a24a'); }
+function rugRound(x, a, b, c) { roundRug(x, a + 20, b + 20, 19, c.f[0], c.f[3]); }
+function runner(x, a, b, c) { R(x, a + 3, b + 2, 14, 56, c.f[0]); R(x, a + 5, b + 4, 10, 52, c.f[3]); R(x, a + 7, b + 6, 6, 48, c.f[0]); for (let j = b + 8; j < b + 52; j += 6) P(x, a + 10, j, c.f[3]); for (let i = a + 3; i < a + 17; i += 2) { P(x, i, b + 1, c.f[3]); P(x, i, b + 58, c.f[3]); } }
+// ---- 盆栽 ----
+function plantS(x, a, b) { plant(x, a + 5, b + 5, 5); }
+function monstera(x, a, b) { circ(x, a + 10, b + 10, 4, '#9a5a3a'); for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .4, u = a + 10 + Math.cos(t) * 5, v = b + 10 + Math.sin(t) * 5; circ(x, u, v, 4, k % 2 ? '#3f6a35' : '#4f7f3f'); P(x, u + Math.cos(t) * 2, v + Math.sin(t) * 2, '#8fb35a'); P(x, u - Math.sin(t) * 3, v + Math.cos(t) * 3, '#c4a26a'); } circ(x, a + 10, b + 10, 2, '#6f9a45'); }
+function orangeTree(x, a, b) { circ(x, a + 5, b + 5, 4, '#9a5a3a'); circ(x, a + 5, b + 5, 4, '#4a6634'); circ(x, a + 4, b + 4, 3, '#5d7c43'); P(x, a + 3, b + 3, '#9cb96f'); [[2, 6], [7, 3], [6, 7]].forEach(([u, v]) => P(x, a + u, b + v, '#e8873a')); }
+// ---- 廚房（靠牆）----
+function counterP(x, a, b, w) { R(x, a, b, w, 10, '#d6d1c7'); R(x, a, b + 9, w, 1, '#a39b8e'); R(x, a, b, w, 1, '#e4e0d8'); for (let i = 0; i < w; i++) if (hash(a + i, b) > .9) P(x, a + i, b + 2 + Math.floor(hash(i, b) * 6), '#e4e0d8'); }
+const counter3 = (x, a, b) => counterP(x, a, b, 30);
+function sinkU(x, a, b) { counterP(x, a, b, 10); R(x, a + 1, b + 2, 8, 6, '#a9b2b6'); R(x, a + 2, b + 3, 6, 4, '#8e989c'); P(x, a + 5, b + 1, '#5a5d62'); }
+function stoveU(x, a, b) { R(x, a, b, 10, 10, '#2f3236'); R(x, a, b, 10, 1, '#45484b'); [[3, 3], [7, 3], [3, 7], [7, 7]].forEach(([u, v]) => { P(x, a + u, b + v, '#6a6d70'); P(x, a + u - 1, b + v, '#6a6d70'); }); }
+function fridgeP(x, a, b, w, c) { R(x, a, b, w, 10, c.wd.b); R(x, a, b, w, 1, c.wd.h); R(x, a + w - 1, b, 1, 10, c.wd.l); if (w > 10) R(x, a + w / 2, b + 1, 1, 8, c.wd.l); R(x, a + 2, b + 7, w > 10 ? 6 : 5, 1, '#a9b2b6'); P(x, a + 3, b + 3, '#b33a2f'); P(x, a + 6, b + 4, '#f1d36b'); }
+const fridge1 = (x, a, b, c) => fridgeP(x, a, b, 10, c), fridge2 = (x, a, b, c) => fridgeP(x, a, b, 20, c);
+// ---- 掛畫（掛北牆：w 格寬，畫在牆面上）----
+function paintScene(x, a, b) { R(x, a + 2, b + 3, 16, 10, '#9a7a32'); R(x, a + 3, b + 4, 14, 8, '#9cc5c8'); R(x, a + 3, b + 9, 14, 3, '#5d7c43'); poly(x, [[a + 5, b + 9], [a + 9, b + 5], [a + 13, b + 9]], '#8b8377'); circ(x, a + 14, b + 6, 1, '#f6cd72'); }
+function paintRaccoon(x, a, b) { R(x, a + 1, b + 2, 8, 11, '#c9a24a'); R(x, a + 2, b + 3, 6, 9, '#3d5078'); circ(x, a + 5, b + 8, 2, '#8e9396'); R(x, a + 3, b + 7, 5, 1, '#2f3236'); P(x, a + 4, b + 7, '#ffffff'); P(x, a + 6, b + 7, '#ffffff'); R(x, a + 4, b + 4, 3, 1, '#e2a62e'); P(x, a + 5, b + 3, '#e2a62e'); }
+
+// 目錄：kind 'four' 四向、'two' 兩向、'one' 不用轉、'wall' 靠牆（自動面向房間）、'pic' 掛北牆、'rug' 地板層
+const L = WD.light, N = WD.walnut, Wt = WD.white, Bk = WD.black;
+const CATS = [
+  ['床', [['單人木床', '平價', 2, 4, 'four', singleBed, [[L, FB.blue], [N, FB.green], [Wt, FB.beige]]], ['雙人床', '高級', 3, 4, 'four', doubleBed, [[N, FB.red], [L, FB.navy], [Wt, FB.gray]]], ['四柱床', '豪華', 4, 4, 'four', canopyBed, [[N, FB.gold], [Bk, FB.red], [Wt, FB.beige]]]]],
+  ['燈', [['床頭櫃', '附小燈', 1, 1, 'wall', stand, [[L], [N], [Wt]]], ['立燈', '平價', 1, 1, 'one', floorLampP, [[0, FB.beige], [0, FB.gray], [0, FB.red]]], ['弧形落地燈', '高級', 2, 2, 'one', arcLamp, [[0, FB.beige], [0, FB.gold], [0, FB.gray]]]]],
+  ['收納', [['雙門衣櫃', '平價', 2, 1, 'wall', wardrobe2, [[L], [N], [Wt]]], ['三門大衣櫃', '高級・中間是鏡子', 3, 1, 'wall', wardrobe3, [[N], [Wt], [Bk]]], ['矮書櫃', '平價', 2, 1, 'wall', shelfLow, [[L], [N], [Bk]]], ['整面書牆', '高級', 3, 1, 'wall', shelfTall, [[N], [Bk], [Wt]]], ['玻璃小櫃', '展示櫃・平價', 2, 1, 'wall', caseSmall, [[L], [N], [Bk]]], ['金框大展示櫃', '展示櫃・豪華', 3, 1, 'wall', caseBig, [[0]]]]],
+  ['桌椅', [['木書桌', '平價・附檯燈', 3, 1, 'four', desk1, [[L], [N], [Wt]]], ['電腦桌', '高級・螢幕鍵盤', 3, 1, 'four', desk2, [[Bk], [Wt], [N]]], ['木椅凳', '平價', 1, 1, 'one', stool, [[L], [N], [Bk]]], ['靠背椅', '高級', 1, 1, 'four', backChair, [[L, FB.red], [N, FB.green], [Bk, FB.beige]]],
+    ['木茶几', '平價', 2, 1, 'two', coffeeWood, [[L], [N], [Wt]]], ['玻璃茶几', '高級', 3, 2, 'two', coffeeGlass, [[N], [Bk], [L]]], ['四人方桌', '平價', 4, 4, 'one', dining4, [[L], [N], [Wt]]], ['六人長桌', '高級', 6, 4, 'two', dining6, [[N], [L], [Bk]]]]],
+  ['沙發', [['布單人椅', '平價', 1, 1, 'four', armchairS, [[0, FB.green], [0, FB.beige], [0, FB.blue]]], ['高背扶手椅', '豪華', 2, 2, 'four', wingback, [[0, FB.red], [0, FB.navy], [0, FB.brown]]], ['雙人布沙發', '平價', 3, 2, 'four', sofa2, [[0, FB.beige], [0, FB.blue], [0, FB.green]]], ['三人皮沙發', '高級', 5, 2, 'four', sofa3, [[0, FB.brown], [0, FB.gray], [0, FB.navy]]], ['L 型沙發', '豪華', 5, 4, 'four', sofaL, [[0, FB.gray], [0, FB.beige], [0, FB.navy]]]]],
+  ['電視', [['小電視櫃', '平價', 3, 1, 'wall', tvSmall, [[L], [N], [Wt]]], ['大電視＋音響', '豪華', 5, 1, 'wall', tvBig, [[Bk], [N], [Wt]]]]],
+  ['地毯', [['長方地毯', '地板層', 6, 4, 'rug', rugRect, [[0, FB.red], [0, FB.navy], [0, FB.green]]], ['圓地毯', '地板層', 4, 4, 'rugone', rugRound, [[0, FB.navy], [0, FB.beige], [0, FB.red]]], ['走道長毯', '地板層', 2, 6, 'rug', runner, [[0, FB.red], [0, FB.blue], [0, FB.beige]]]]],
+  ['盆栽', [['小盆栽', '平價', 1, 1, 'one', plantS, [[0]]], ['小橘子樹', '高級', 1, 1, 'one', orangeTree, [[0]]], ['龜背芋', '高級', 2, 2, 'one', monstera, [[0]]]]],
+  ['廚房', [['流理台', '靠牆', 3, 1, 'wall', counter3, [[0]]], ['水槽', '靠牆', 1, 1, 'wall', sinkU, [[0]]], ['瓦斯爐', '靠牆', 1, 1, 'wall', stoveU, [[0]]], ['單門冰箱', '平價', 1, 1, 'wall', fridge1, [[Wt], [WD.black], [L]]], ['雙門大冰箱', '高級', 2, 1, 'wall', fridge2, [[Wt], [Bk]]]]],
+  ['掛畫', [['風景畫', '掛北牆', 2, 0, 'pic', paintScene, [[0]]], ['浣熊大王肖像', '掛北牆', 1, 0, 'pic', paintRaccoon, [[0]]]]],
+];
+const KIND_TXT = { four: '四個方向', two: '直放／橫放', one: '不用轉', wall: '貼牆・自動轉向', pic: '只掛北牆', rug: '地板層・直放／橫放', rugone: '地板層' };
+const SHADOW_D = { wall: 3, rug: 0, rugone: 0 };
+// 畫一件：先畫在小畫布（不畫影子）→ 轉 rot 個 90 度 → 影子（照轉完的形狀往右下）→ 本體
+function place(x, draw, w, h, a, b, rot, c, sd = 2) {
+  const W0 = w * T, H0 = h * T, o = document.createElement('canvas'); o.width = W0; o.height = H0; const ox = o.getContext('2d');
+  const keep = SH; SH = 'rgba(0,0,0,0)'; draw(ox, 0, 0, c); SH = keep;
+  const rw = rot % 2 ? H0 : W0, rh = rot % 2 ? W0 : H0, r = document.createElement('canvas'); r.width = rw; r.height = rh; const rx = r.getContext('2d');
+  if (rot === 1) { rx.translate(rw, 0); rx.rotate(Math.PI / 2); } else if (rot === 2) { rx.translate(rw, rh); rx.rotate(Math.PI); } else if (rot === 3) { rx.translate(0, rh); rx.rotate(-Math.PI / 2); }
+  rx.drawImage(o, 0, 0);
+  if (sd) { const s = document.createElement('canvas'); s.width = rw; s.height = rh; const sx = s.getContext('2d'); sx.drawImage(r, 0, 0); sx.globalCompositeOperation = 'source-in'; sx.fillStyle = 'rgba(40,30,20,.22)'; sx.fillRect(0, 0, rw, rh); x.drawImage(s, a + sd, b + sd); }
+  x.drawImage(r, a, b);
+}
+function cellsBg(x, W, H, pal) { floorWood(x, 0, 0, W, H, pal); for (let j = 0; j <= H; j += T) for (let i = 0; i <= W; i += T) P(x, i, j, 'rgba(255,255,255,.55)'); }
+function footprint(x, a, b, w, h) { for (let i = 0; i < w; i++) if (i % 4 < 2) { P(x, a + i, b, '#ffffff'); P(x, a + i, b + h - 1, '#ffffff'); } for (let j = 0; j < h; j++) if (j % 4 < 2) { P(x, a, b + j, '#ffffff'); P(x, a + w - 1, b + j, '#ffffff'); } }
+const S = 1.7, PAD = 5;
+function catalog() {
+  const box = document.getElementById('cats');
+  CATS.forEach(([cat, items]) => {
+    const sec = document.createElement('section'); sec.className = 'card'; sec.innerHTML = `<div class="h"><span class="name">${cat}</span><span class="tag">${items.length} 款</span></div><div class="fl"></div>`; box.appendChild(sec);
+    const fl = sec.querySelector('.fl');
+    items.forEach(([name, note, w, h, kind, draw, pals]) => {
+      const d = document.createElement('div'); d.className = 'it'; const cv = document.createElement('canvas');
+      const pic = kind === 'pic', W = w * T + PAD * 2, H = pic ? 22 : h * T + PAD * 2; cv.width = W; cv.height = H; cv.style.width = (W * S) + 'px';
+      const x = cv.getContext('2d'); x.imageSmoothingEnabled = false;
+      const p0 = pals[0], c = { wd: p0[0] || WD.light, f: p0[1] || FB.beige };
+      if (pic) { for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) P(x, i, j, PAPER.stripe(i, j)); R(x, 0, H - 3, W, 2, '#8a6a4a'); R(x, 0, H - 1, W, 1, 'rgba(40,30,20,.25)'); draw(x, PAD, 2, c); }
+      else { cellsBg(x, W, H); footprint(x, PAD, PAD, w * T, h * T); place(x, draw, w, h, PAD, PAD, 0, c, SHADOW_D[kind] ?? 2); }
+      const sw = pals.map(([wd, f]) => { const col = f ? f[0] : wd ? wd.sw : null; return col ? `<i style="background:${col}" title="${f ? f[4] : wd.n}"></i>` : ''; }).join('');
+      const names = pals.map(([wd, f]) => f ? f[4] : wd ? wd.n : '').filter(Boolean).join('／');
+      d.appendChild(cv); d.insertAdjacentHTML('beforeend', `<b>${name}</b><span>${note}</span><span>${pic ? '牆上 ' + w + ' 格寬' : w + ' × ' + h + ' 格'}・${KIND_TXT[kind]}</span>${sw ? `<span class="sw">${sw}</span><span>${names}</span>` : ''}`);
+      fl.appendChild(d);
+    });
+  });
+}
+// 旋轉示範：同一張雙人床四個方向；衣櫃貼四面牆自動轉向
+function rotDemo() {
+  const c1 = document.getElementById('rot1'), x = c1.getContext('2d'); x.imageSmoothingEnabled = false; cellsBg(x, c1.width, c1.height);
+  const c = { wd: WD.walnut, f: FB.red };
+  place(x, doubleBed, 3, 4, 5, 5, 0, c); place(x, doubleBed, 3, 4, 45, 10, 1, c); place(x, doubleBed, 3, 4, 95, 5, 2, c); place(x, doubleBed, 3, 4, 135, 10, 3, c);
+  const c2 = document.getElementById('rot2'), y = c2.getContext('2d'); y.imageSmoothingEnabled = false; const Wd = c2.width, Hd = c2.height;
+  floorWood(y, 4, 4, Wd - 8, Hd - 8); R(y, 0, 0, Wd, 4, WALLTOP); R(y, 0, Hd - 4, Wd, 4, WALLTOP); R(y, 0, 0, 4, Hd, WALLTOP); R(y, Wd - 4, 0, 4, Hd, WALLTOP);
+  const cw = { wd: WD.light };
+  place(y, wardrobe2, 2, 1, 40, 4, 0, cw, 3); place(y, wardrobe2, 2, 1, Wd - 14, 30, 1, cw, 3); place(y, wardrobe2, 2, 1, 60, Hd - 14, 2, cw, 3); place(y, wardrobe2, 2, 1, 4, 30, 3, cw, 3);
+}
+// 夜裡：同一個角落白天／晚上，燈會亮
+function nightDemo() {
+  ['dayC', 'nightC'].forEach((id, k) => {
+    const cv = document.getElementById(id), x = cv.getContext('2d'); x.imageSmoothingEnabled = false; const W = cv.width, H = cv.height, night = k === 1;
+    floorWood(x, 0, 20, W, H - 20); northWall(x, 0, W, 16, 'mint'); windowN(x, 30, 22, 16);
+    if (night) { R(x, 31, 7, 20, 8, '#1f2c47'); P(x, 34, 9, '#f6cd72'); P(x, 45, 11, '#ffffff'); P(x, 40, 8, '#ffffff'); }
+    const c = { wd: WD.walnut, f: FB.beige, night };
+    place(x, stand, 1, 1, 6, 21, 0, c, 3); place(x, desk1, 3, 1, 62, 21, 0, c, 3); place(x, floorLampP, 1, 1, 8, 58, 0, c); place(x, arcLamp, 2, 2, 70, 52, 0, c); place(x, wingback, 2, 2, 42, 56, 0, { f: FB.red });
+    if (night) {
+      x.fillStyle = 'rgba(12,20,44,.6)'; x.fillRect(0, 0, W, H);
+      x.globalCompositeOperation = 'lighter';
+      [[11, 26, 22], [87, 25, 18], [13, 63, 30], [84, 58, 32]].forEach(([u, v, r]) => { const g = x.createRadialGradient(u, v, 1, u, v, r); g.addColorStop(0, 'rgba(255,200,120,.55)'); g.addColorStop(1, 'rgba(255,200,120,0)'); x.fillStyle = g; x.fillRect(u - r, v - r, r * 2, r * 2); });
+      x.globalCompositeOperation = 'source-over';
+      circ(x, 11, 26, 2, '#fff6dc'); circ(x, 87, 25, 2, '#fff6dc'); circ(x, 13, 63, 4, '#fff1c4'); circ(x, 84, 58, 5, '#fff1c4');
+    }
+  });
+}
+// 地板、壁紙
+const FLOORS = [['淺色木', ['#d8b892', '#c9a882', '#e4c8a4', '#a8865e']], ['木地板', ['#c89b6a', '#bb8d5c', '#d3a776', '#9a6a40']], ['深色木', ['#a8764a', '#986a40', '#b98656', '#6e4528']], ['格子磁磚', 'tile'], ['大理石', 'marble'], ['榻榻米', 'tatami']];
+PAPER.washi = (i, j) => hash(i * 3, j * 5) > .96 ? '#e2dccd' : hash(i, j) > .985 ? '#c9a24a' : '#f4efe4';
+PAPER.brick = (i, j) => { const row = Math.floor(j / 4), off = row % 2 ? 4 : 0; return (j % 4 === 3 || (i + off) % 8 === 7) ? '#d9cfc2' : hash(Math.floor((i + off) / 8), row) > .5 ? '#b5654a' : '#a65a40'; };
+const PAPERS = [['米色條紋', 'stripe'], ['薄荷綠', 'mint'], ['金點', 'dot'], ['深藍', 'navy'], ['和紙', 'washi'], ['紅磚', 'brick']];
+function swatches() {
+  const fb = document.getElementById('floors'), pb = document.getElementById('papers');
+  FLOORS.forEach(([n, p]) => { const d = document.createElement('div'); d.className = 'sw2'; const cv = document.createElement('canvas'); cv.width = 40; cv.height = 30; const x = cv.getContext('2d');
+    if (p === 'tile') floorTile(x, 0, 0, 40, 30);
+    else if (p === 'marble') { for (let j = 0; j < 30; j++) for (let i = 0; i < 40; i++) { const v = Math.sin((i + j * 1.7) / 5 + hash(Math.floor(i / 6), Math.floor(j / 6)) * 3); P(x, i, j, i % 20 === 19 || j % 15 === 14 ? '#d6d1c7' : v > .93 ? '#b9b4ab' : hash(i, j) > .97 ? '#e4e0d8' : '#f1eee8'); } }
+    else if (p === 'tatami') { for (let j = 0; j < 30; j++) for (let i = 0; i < 40; i++) { const edge = j === 0 || j === 14 || j === 15 || j === 29 || i === 0 || i === 39; P(x, i, j, edge ? '#3d4a36' : (i % 2 ? '#c2c48a' : '#b5b77c')); } }
+    else floorWood(x, 0, 0, 40, 30, p);
+    d.appendChild(cv); d.insertAdjacentHTML('beforeend', `<span>${n}</span>`); fb.appendChild(d); });
+  PAPERS.forEach(([n, k]) => { const d = document.createElement('div'); d.className = 'sw2'; const cv = document.createElement('canvas'); cv.width = 40; cv.height = 30; const x = cv.getContext('2d'); for (let j = 0; j < 30; j++) for (let i = 0; i < 40; i++) P(x, i, j, PAPER[k](i, j)); R(x, 0, 27, 40, 3, '#8a6a4a'); d.appendChild(cv); d.insertAdjacentHTML('beforeend', `<span>${n}</span>`); pb.appendChild(d); });
+}
+catalog(); rotDemo(); nightDemo(); swatches(); document.body.dataset.done = 1;
+</script>
+</body>
+</html>
