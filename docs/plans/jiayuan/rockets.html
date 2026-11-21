@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家園：火箭的圖鑑</title>
+<!-- 家園・築的設計圖（2026-11-21）：發射台能放的火箭，三級各 5 枚、共 15 枚。火箭很高，所以跟發射台設計圖一樣「立起來畫」，每一張同一個比例。還不是遊戲本身。 -->
+<style>
+  :root { --bg: #fcfaf8; --text: #4a4a4a; --dark: #2c2c2c; --accent: #8e8070; --sub: #dcdcdc; --shu: #b33a2f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', 'PingFang TC', sans-serif; }
+  main { max-width: 390px; margin: 0 auto; padding: 22px 16px 28px; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 300; font-size: 22px; letter-spacing: .3em; color: var(--dark); margin: 0; text-align: center; }
+  .sub { text-align: center; font-size: 11px; letter-spacing: .12em; color: var(--accent); margin: 6px 0 10px; line-height: 1.7; }
+  .card { border: 1px solid var(--sub); border-radius: 4px; padding: 12px; background: #fff; margin-top: 12px; }
+  .h { display: flex; align-items: baseline; gap: 8px; }
+  .no { font-size: 12px; color: var(--shu); border: 1px solid var(--shu); padding: 0 5px; line-height: 1.5; font-family: 'Noto Serif TC', serif; }
+  .name { font-family: 'Noto Serif TC', serif; font-size: 16px; letter-spacing: .2em; color: var(--dark); }
+  .tag { margin-left: auto; font-size: 10px; letter-spacing: .1em; color: var(--accent); }
+  canvas { display: block; width: 100%; border-radius: 3px; margin-top: 10px; image-rendering: pixelated; image-rendering: crisp-edges; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 8px 0 0; font-size: 11.5px; letter-spacing: .04em; line-height: 1.6; }
+  dt { color: var(--accent); } dd { margin: 0; }
+  .arrow { text-align: center; color: var(--accent); font-size: 12px; letter-spacing: .3em; margin-top: 12px; }
+  .labels { display: grid; gap: 4px; margin-top: 6px; text-align: center; }
+  .labels b { display: block; font-weight: 500; font-size: 11.5px; color: var(--dark); letter-spacing: .04em; }
+  .labels span { display: block; font-size: 9.5px; color: var(--accent); line-height: 1.4; margin-top: 1px; }
+  .stack canvas { margin-top: 10px; }
+  .gold { border-color: #c9a24a; }
+</style>
+</head>
+<body>
+<main>
+  <h1>火箭・圖鑑</h1>
+  <p class="sub">家園・築的設計圖（精緻像素；火箭很高，立起來畫）<br>每一張同一個比例，跟發射台設計圖裡的一樣大；名字都是暫定的</p>
+
+  <section class="card">
+    <div class="h"><span class="name">小型・探空火箭</span><span class="tag">最低要 壹 小發射架・5 枚</span></div>
+    <div id="rSmall" class="stack"></div>
+  </section>
+  <section class="card">
+    <div class="h"><span class="name">中型・運載火箭</span><span class="tag">最低要 貳 發射塔・5 枚</span></div>
+    <div id="rMid" class="stack"></div>
+  </section>
+  <section class="card">
+    <div class="h"><span class="name">大型・重型火箭</span><span class="tag">最低要 參 太空港・5 枚</span></div>
+    <div id="rBig1" class="stack"></div>
+    <div id="rBig2" class="stack"></div>
+  </section>
+</main>
+<script>
+
+// ===== 小工具（跟 style-mockup.html 同一套：硬邊、整數座標）=====
+const TAU = Math.PI * 2;
+function make(id) { const c = document.getElementById(id), x = c.getContext('2d'); x.imageSmoothingEnabled = false; return { c, x, W: c.width, H: c.height }; }
+const hash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+function P(x, a, b, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), 1, 1); }
+function R(x, a, b, w, h, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), Math.round(w), Math.round(h)); }
+function circ(x, cx, cy, r, col) { for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r + r * .6) P(x, cx + xx, cy + yy, col); }
+function poly(x, pts, col) {
+  const ys = pts.map(p => p[1]), xs = pts.map(p => p[0]);
+  const y0 = Math.floor(Math.min(...ys)), y1 = Math.ceil(Math.max(...ys)), x0 = Math.floor(Math.min(...xs)), x1 = Math.ceil(Math.max(...xs));
+  x.fillStyle = col;
+  for (let y = y0; y <= y1; y++) for (let X = x0; X <= x1; X++) {
+    const px = X + .5, py = y + .5; let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside; }
+    if (inside) x.fillRect(X, y, 1, 1);
+  }
+}
+const K = {
+  g1: '#97ad6f', g2: '#86a061', g3: '#a6bb7c', g4: '#738d51', sand: '#e6d3a3', sand2: '#d8c18b', sand3: '#efe0b8',
+  sea: '#6b97a6', sea2: '#7ea9b5', shallow: '#9cc5c8', foam: '#e3efed', deep: '#4f7d8f',
+  leaf1: '#5d7c43', leaf2: '#4a6634', leaf3: '#7a9a55', leafHi: '#9cb96f', trunk: '#6e4528',
+  roof: '#b33a2f', roofHi: '#cf5a46', roofLo: '#8f2c23', roofLine: '#7a241d',
+  wall: '#efe4cf', wall2: '#d9c9aa', wall3: '#c2ae8b', door: '#5e3c22', win: '#f6cd72', frame: '#6e4528',
+  conc: '#c4beb3', conc2: '#aea79b', conc3: '#d6d1c7', stone: '#a39b8e', stone2: '#8b8377', stone3: '#bdb6aa',
+  wood: '#9a6a40', wood2: '#7c5230', wood3: '#b07f50', post: '#5e3c22',
+  canvas: '#dcc9a0', canvasHi: '#ece0c1', canvasLo: '#bba77c', canvasLine: '#9c8a62',
+  shingle: '#8a6440', shingleHi: '#a57a50', shingleLo: '#6c4c30', shingleLine: '#553a24',
+  slate: '#76828c', slateHi: '#8f9ba5', slateLo: '#626d77', slateLine: '#4f5962',
+  white: '#f3f1ec', white2: '#dedad1', white3: '#c9c4b9', glass: '#a8cdd6', glassHi: '#e2f1f3',
+  pool: '#5fb3c4', poolHi: '#9fdce4', poolLo: '#3f93a6', fire: '#e8873a', fire2: '#f6cd72', fire3: '#c4462e',
+  hedge: '#557a3e', hedge2: '#43652f', flowerA: '#f0b8b0', flowerB: '#f1d36b', flowerC: '#c9a0dc',
+  shadow: 'rgba(30,40,30,.24)'
+};
+
+// 共用：草地底、石板路、樹、影子
+function lawn(x, W, H, seed = 0) { for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) { const n = hash(a + seed, b); P(x, a, b, n > .9 ? K.g3 : n > .74 ? K.g2 : n < .05 ? K.g4 : K.g1); } }
+function stones(x, pts) { pts.forEach(([a, b]) => { R(x, a, b, 6, 3, K.conc3); R(x, a, b + 2, 6, 1, K.conc2); P(x, a, b, '#e4e0d8'); }); }
+function tree(x, a, b, r) {
+  x.fillStyle = K.shadow; for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r) x.fillRect(a + xx + 3, b + yy + 3, 1, 1);
+  circ(x, a, b, r, K.leaf2); circ(x, a - 1, b - 1, r - 1, K.leaf1); circ(x, a - 2, b - 2, Math.max(1, r - 3), K.leaf3); P(x, a - r / 2, b - r / 2, K.leafHi); P(x, a - r / 2 + 1, b - r / 2, K.leafHi);
+  for (let i = 0; i < r * 2; i++) { const t = hash(a + i, b) * TAU, rr = hash(b, a + i) * r; P(x, a + Math.cos(t) * rr, b + Math.sin(t) * rr, i % 2 ? K.leaf2 : K.leaf3); }
+}
+function palm(x, a, b) {   // 椰子樹：六片葉子，每片兩顆寬、尾巴往下垂，葉子比草地深才看得出來
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3; for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); P(x, u + 3, v + 3, K.shadow); } }
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3, nx = -Math.sin(t), ny = Math.cos(t); for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); const wdt = s < 4 ? 1 : s < 9 ? 2 : 1; for (let q = -wdt; q <= wdt; q++) P(x, u + nx * q, v + ny * q, q === wdt ? '#3d5f2c' : (q === -wdt ? '#8fb35a' : '#6f9a45')); } }
+  circ(x, a, b, 2, '#7a5a3a'); P(x, a - 1, b - 1, '#a07a50'); P(x, a + 1, b + 1, '#5e4228'); }
+function shadowPoly(x, pts, dx, dy) { poly(x, pts.map(([a, b]) => [a + dx, b + dy]), K.shadow); }
+// 四面坡（上亮、左亮、右暗、下暗），屋脊沿水平方向；line 是瓦片的橫線間距
+function hipRoof(x, a, b, w, h, c, opts = {}) {
+  const inset = Math.min(h / 2, opts.inset ?? h / 2), ry = b + h / 2;
+  const ridgeL = a + inset, ridgeR = a + w - inset;
+  shadowPoly(x, [[a, b], [a + w, b], [a + w, b + h], [a, b + h]], opts.sh || 4, opts.sh || 4);
+  poly(x, [[a, b], [a + w, b], [ridgeR, ry], [ridgeL, ry]], c.hi);           // 上坡（迎光）
+  poly(x, [[a, b + h], [a + w, b + h], [ridgeR, ry], [ridgeL, ry]], c.lo);   // 下坡
+  poly(x, [[a, b], [ridgeL, ry], [a, b + h]], c.mid);                        // 左坡
+  poly(x, [[a + w, b], [ridgeR, ry], [a + w, b + h]], c.lo);                  // 右坡
+  // 瓦片橫線＋錯開的直縫
+  for (let yy = b + 2; yy < b + h - 1; yy += c.step || 3) for (let xx = a + 1; xx < a + w - 1; xx++) {
+    const dTop = yy - b, dBot = b + h - yy, dl = xx - a, dr = a + w - xx;
+    if (dl > Math.min(dTop, dBot) + 1 && dr > Math.min(dTop, dBot) + 1 || true) { const px = x.getImageData(xx, yy, 1, 1).data; if (px[3]) P(x, xx, yy, c.line); }
+  }
+  for (let yy = b + 1; yy < b + h - 1; yy++) for (let xx = a + 1 + ((Math.floor((yy - b) / (c.step || 3)) % 2) * 2); xx < a + w - 1; xx += 4) if ((yy - b) % (c.step || 3)) P(x, xx, yy, c.seam || c.line);
+  R(x, ridgeL, ry - 1, ridgeR - ridgeL, 2, c.ridge || c.line);
+  // 四條斜脊
+  const diag = (x0, y0, x1, y1) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, c.ridge || c.line); };
+  diag(a, b, ridgeL, ry); diag(a, b + h, ridgeL, ry); diag(a + w, b, ridgeR, ry); diag(a + w, b + h, ridgeR, ry);
+  // 外框
+  R(x, a, b, w, 1, c.edge || c.line); R(x, a, b + h - 1, w, 1, c.edge || c.line); R(x, a, b, 1, h, c.edge || c.line); R(x, a + w - 1, b, 1, h, c.edge || c.line);
+}
+function chimney(x, a, b, w, h, top, side, sh = 3) { R(x, a + sh, b + sh, w, h, K.shadow); R(x, a, b, w, h, side); R(x, a, b, w, 2, top); R(x, a + 1, b + 1, w - 2, 1, '#4a3f36'); for (let i = 0; i < 3; i++) P(x, a + 1 + i, b - 2 - i * 2, i % 2 ? '#ece8e2' : '#e0dbd2'); }
+
+// ===== 火箭圖鑑：立起來畫（跟發射台設計圖同一個畫法、同一個比例），光從左上來 =====
+function lineP(x, x0, y0, x1, y1, c) { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) || 1; for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, c); }
+const WHITE = ['#ffffff', '#f3f1ec', '#c9c4ba'], GREY = ['#e3e0d9', '#cfcac0', '#a9a397'], BLACK = ['#5a5d62', '#2f3236', '#1c1e21'],
+  ORANGE = ['#eaa36a', '#d0793f', '#a65829'], SHU = ['#d0574a', '#b33a2f', '#8f2c23'], NAVY = ['#566c94', '#2f4166', '#1f2c47'],
+  GOLD = ['#f4dc95', '#c9a24a', '#977630'], DARK = ['#6a6d70', '#45484b', '#2a2c2e'], BURNT = ['#7a5a3c', '#5a4430', '#3e3024'];
+const shade = (p, t) => t < .25 ? p[0] : t < .7 ? p[1] : p[2];
+const Lx = (cx, w) => Math.round(cx - w / 2);
+// 圓柱：從 bot 往上畫 h 列，回傳頂端的 y
+function tube(x, cx, bot, w, h, p, fn) { const L = Lx(cx, w); for (let v = 0; v < h; v++) for (let u = 0; u < w; u++) { const t = w > 1 ? u / (w - 1) : .5; P(x, L + u, bot - 1 - v, fn ? fn(u, t, v, p) : shade(p, t)); } return bot - h; }
+// 鼻錐：e 越小越鈍
+function cone(x, cx, bot, w, len, p, e = .5) { const L = Lx(cx, w); for (let r = 0; r < len; r++) { let half = (w / 2) * Math.pow((r + 1) / len, e); if (!(w % 2)) half = Math.max(half, .5); for (let u = 0; u < w; u++) { const d = (u + .5) - w / 2; if (Math.abs(d) <= half + .01) P(x, L + u, bot - len + r, shade(p, w > 1 ? u / (w - 1) : .5)); } } return bot - len; }
+// 變寬／變細的一段（級間段、整流罩下緣）
+function taper(x, cx, bot, wb, wt, h, p) { for (let v = 0; v < h; v++) { const ww = Math.round(wb + (wt - wb) * (h > 1 ? v / (h - 1) : 1)), L = Lx(cx, ww); for (let u = 0; u < ww; u++) P(x, L + u, bot - 1 - v, shade(p, ww > 1 ? u / (ww - 1) : .5)); } return bot - h; }
+function nozzle(x, cx, bot, w, h = 2, p = DARK) { return taper(x, cx, bot, Math.max(2, Math.round(w * .8)), Math.max(2, Math.round(w * .55)), h, p); }
+function fins(x, cx, bot, w, h, span, c1, c2) { const L = Lx(cx, w), Rr = L + w; poly(x, [[L, bot - h], [L - span, bot], [L, bot]], c1); poly(x, [[Rr, bot - h], [Rr + span, bot], [Rr, bot]], c2); R(x, Math.round(cx) - (w % 2 ? 0 : 1), bot - h + 2, 1, h - 2, c2); }
+function legs(x, cx, bot, w, h) { const L = Lx(cx, w); R(x, L - 1, bot - h, 1, h, '#2f3236'); R(x, L + w, bot - h, 1, h, '#1c1e21'); P(x, L - 2, bot - 1, '#2f3236'); P(x, L + w + 1, bot - 1, '#1c1e21'); }
+function gridFins(x, cx, y, w, side = 0) { const L = Lx(cx, w); if (side <= 0) { R(x, L - 2, y, 2, 2, '#45484b'); P(x, L - 2, y, '#7a7d80'); } if (side >= 0) { R(x, L + w, y, 2, 2, '#2a2c2e'); P(x, L + w + 1, y, '#5a5d60'); } }
+function soot(x, cx, bot, w, h) { const L = Lx(cx, w); for (let v = 0; v < h; v++) for (let u = 0; u < w; u++) { const k = 1 - v / h + (hash(L + u, bot - v) - .5) * .35; if (k > .08) P(x, L + u, bot - 1 - v, `rgba(62,52,42,${Math.min(.8, k * .75).toFixed(2)})`); } }
+function win(x, cx, y, ring) { if (ring) circ(x, cx, y, 2, ring); circ(x, cx, y, 1, '#2f3e4c'); P(x, cx - 1, y - 1, '#9fc0cc'); }
+function shadowUp(x, cx, b, w, h) { const hh = Math.min(h, 28); poly(x, [[cx - w / 2, b], [cx + w / 2, b], [cx + w / 2 + hh * .55, b + hh * .28], [cx - w / 2 + hh * .55, b + hh * .28]], K.shadow); }
+const roll = seg => (u, t, v, p) => ((Math.floor(v / seg) % 2) ? u < p.w / 2 : u >= p.w / 2) ? shade(BLACK, t) : shade(WHITE, t);
+function rollTube(x, cx, bot, w, h, seg) { const p = Object.assign([], WHITE, { w }); return tube(x, cx, bot, w, h, p, roll(seg)); }
+function booster(x, cx, b, w, h, len, body = WHITE, noseP = body, band) { let y = nozzle(x, cx, b, w); const top = tube(x, cx, y, w, h, body); if (band) tube(x, cx, y - Math.round(h * .45), w, 1, band); cone(x, cx, top, w, len, noseP); return top; }
+
+// ===== 小型：探空火箭（細細一根、沒有推進器）=====
+function s1(x, cx, b) {   // 入門探空火箭
+  shadowUp(x, cx, b, 4, 30); let y = nozzle(x, cx, b, 4); const top = tube(x, cx, y, 4, 22, WHITE);
+  tube(x, cx, y - 12, 4, 2, SHU); cone(x, cx, top, 4, 6, SHU); fins(x, cx, y, 4, 7, 3, SHU[1], SHU[2]);
+}
+function s2(x, cx, b) {   // 雙節探空火箭
+  shadowUp(x, cx, b, 6, 36); let y = nozzle(x, cx, b, 6); y = tube(x, cx, y, 6, 13, GREY); fins(x, cx, b - 2, 6, 8, 4, SHU[2], '#6e2019');
+  y = taper(x, cx, y, 6, 4, 2, BLACK); const up = y; y = tube(x, cx, y, 4, 15, WHITE); tube(x, cx, up - 9, 4, 1, SHU);
+  fins(x, cx, up, 4, 4, 2, GREY[0], GREY[2]); cone(x, cx, y, 4, 6, WHITE);
+}
+function s3(x, cx, b) {   // 氣象探空火箭
+  shadowUp(x, cx, b, 5, 34); let y = nozzle(x, cx, b, 5); y = tube(x, cx, y, 5, 19, WHITE); tube(x, cx, b - 6, 5, 2, NAVY); tube(x, cx, b - 16, 5, 1, NAVY);
+  fins(x, cx, b - 2, 5, 6, 2, NAVY[1], NAVY[2]);
+  const pod = y; y = tube(x, cx, y, 5, 5, GREY); P(x, cx - 1, pod - 3, '#2f3e4c'); P(x, cx + 1, pod - 3, '#2f3e4c');
+  y = cone(x, cx, y, 5, 4, WHITE, .3); lineP(x, cx, y - 1, cx, y - 6, '#6a6d70'); P(x, cx, y - 7, '#d84a3c');
+}
+function s4(x, cx, b) {   // 黑白方格探空火箭
+  shadowUp(x, cx, b, 6, 36); let y = nozzle(x, cx, b, 6); y = rollTube(x, cx, y, 6, 24, 6);
+  fins(x, cx, b - 2, 6, 9, 4, BLACK[1], BLACK[2]); y = cone(x, cx, y, 6, 8, WHITE); P(x, cx - 1, y, '#2f3236');
+}
+function s5(x, cx, b) {   // 朱漆探空火箭「絆號」
+  shadowUp(x, cx, b, 5, 36); let y = nozzle(x, cx, b, 5, 2, BURNT); const top = tube(x, cx, y, 5, 26, SHU);
+  tube(x, cx, y - 15, 5, 3, WHITE); tube(x, cx, y - 16, 5, 1, GOLD); tube(x, cx, y - 12, 5, 1, GOLD); P(x, cx, y - 14, SHU[1]);
+  fins(x, cx, y, 5, 7, 3, GOLD[0], GOLD[2]); cone(x, cx, top, 5, 7, GOLD);
+}
+
+// ===== 中型：運載火箭（大多有兩顆小推進器）=====
+function m1(x, cx, b) {   // 標準運載火箭
+  shadowUp(x, cx, b, 16, 66); [-1, 1].forEach(s => booster(x, cx + s * 6, b, 4, 26, 5, WHITE, WHITE, SHU));
+  let y = nozzle(x, cx, b, 8, 3); const top = tube(x, cx, y, 8, 54, WHITE); tube(x, cx, y - 16, 8, 2, SHU); tube(x, cx, y - 40, 8, 2, SHU);
+  cone(x, cx, top, 8, 11, WHITE); win(x, cx, top - 5 + 9);
+}
+function m2(x, cx, b) {   // 大整流罩運載火箭
+  shadowUp(x, cx, b, 16, 66); [-1, 1].forEach(s => booster(x, cx + s * 6, b, 4, 22, 5, WHITE, GREY));
+  let y = nozzle(x, cx, b, 8, 3); y = tube(x, cx, y, 8, 40, WHITE); tube(x, cx, b - 14, 8, 2, SHU);
+  y = taper(x, cx, y, 8, 12, 3, GREY); const fb = y; y = tube(x, cx, y, 12, 12, WHITE); y = cone(x, cx, y, 12, 11, WHITE);
+  for (let v = y + 2; v < fb; v++) P(x, cx, v, 'rgba(120,112,100,.55)'); R(x, cx - 6, fb - 1, 12, 1, 'rgba(120,112,100,.4)');
+}
+function m3(x, cx, b) {   // 可回收運載火箭
+  shadowUp(x, cx, b, 8, 70); let y = nozzle(x, cx, b, 8, 3); const s1b = y; y = tube(x, cx, y, 8, 44, WHITE); soot(x, cx, s1b, 8, 18);
+  legs(x, cx, s1b, 8, 11); gridFins(x, cx, y + 1, 8); R(x, cx - 3, s1b - 30, 1, 10, 'rgba(47,50,54,.55)');
+  y = tube(x, cx, y, 8, 4, BLACK); y = tube(x, cx, y, 8, 10, WHITE); y = cone(x, cx, y, 8, 10, WHITE, .6);
+}
+function m4(x, cx, b) {   // 橘槽運載火箭
+  shadowUp(x, cx, b, 16, 68); [-1, 1].forEach(s => { const t = booster(x, cx + s * 6, b, 4, 30, 6, WHITE); tube(x, cx + s * 6, b - 5, 4, 1, BLACK); tube(x, cx + s * 6, t + 1, 4, 1, BLACK); });
+  let y = nozzle(x, cx, b, 8, 3); const tb = y; y = tube(x, cx, y, 8, 44, ORANGE); for (let v = tb - 7; v > y; v -= 7) R(x, cx - 4, v, 8, 1, 'rgba(140,70,30,.35)');
+  y = taper(x, cx, y, 8, 6, 2, GREY); y = tube(x, cx, y, 6, 12, WHITE); tube(x, cx, y + 4, 6, 1, SHU); cone(x, cx, y, 6, 9, WHITE);
+}
+function m5(x, cx, b) {   // 夜空藍運載火箭
+  shadowUp(x, cx, b, 16, 66); [-1, 1].forEach(s => { let y = nozzle(x, cx + s * 6, b, 4, 2, GOLD); const t = tube(x, cx + s * 6, y, 4, 26, NAVY); tube(x, cx + s * 6, y - 12, 4, 1, GOLD); cone(x, cx + s * 6, t, 4, 5, GOLD); });
+  let y = nozzle(x, cx, b, 8, 3, GOLD); const top = tube(x, cx, y, 8, 52, NAVY); [8, 26, 44].forEach(d => tube(x, cx, y - d, 8, 1, GOLD));
+  cone(x, cx, top, 8, 11, GOLD); win(x, cx, top + 5, GOLD[1]);
+}
+
+// ===== 大型：重型火箭 =====
+function l1(x, cx, b) {   // 四推進器重型火箭（發射台參階那一枚）
+  shadowUp(x, cx, b, 24, 100); [-1, 1].forEach(s => booster(x, cx + s * 9, b, 6, 46, 8, WHITE, WHITE, ['#a8342a', '#8f2c23', '#6e2019']));
+  let y = nozzle(x, cx, b, 12, 3); const top = tube(x, cx, y, 12, 84, WHITE); [.25, .5, .75].forEach(f => tube(x, cx, y - Math.round(84 * f), 12, 3, SHU));
+  cone(x, cx, top, 12, 16, WHITE); win(x, cx, top + 6);
+}
+function l2(x, cx, b) {   // 三芯重型火箭
+  shadowUp(x, cx, b, 24, 104);
+  [-1, 1].forEach(s => { const c = cx + s * 8; let y = nozzle(x, c, b, 8, 2); const bb = y; y = tube(x, c, y, 8, 62, WHITE); soot(x, c, bb, 8, 20); legs(x, c, bb, 8, 10); tube(x, c, y + 3, 8, 3, BLACK); gridFins(x, c, y + 1, 8, s); cone(x, c, y, 8, 10, WHITE, .6); });
+  let y = nozzle(x, cx, b, 8, 2); const bb = y; y = tube(x, cx, y, 8, 62, WHITE); soot(x, cx, bb, 8, 20);
+  y = tube(x, cx, y, 8, 4, BLACK); y = tube(x, cx, y, 8, 14, WHITE); y = taper(x, cx, y, 8, 10, 2, GREY); y = tube(x, cx, y, 10, 10, WHITE); cone(x, cx, y, 10, 10, WHITE, .6);
+}
+function l3(x, cx, b) {   // 多節重型火箭（最高）
+  shadowUp(x, cx, b, 14, 112);
+  [-4, 0, 4].forEach(d => nozzle(x, cx + d, b, 4, 3));
+  let y = b - 3; const s1b = y; y = tube(x, cx, y, 14, 36, WHITE); rollTube(x, cx, s1b, 14, 10, 5); tube(x, cx, y + 2, 14, 2, BLACK);
+  fins(x, cx, s1b, 14, 10, 4, BLACK[1], BLACK[2]);
+  y = taper(x, cx, y, 14, 12, 3, WHITE); y = tube(x, cx, y, 12, 28, WHITE); tube(x, cx, y + 3, 12, 3, BLACK);
+  y = taper(x, cx, y, 12, 10, 3, WHITE); const s3b = y; y = tube(x, cx, y, 10, 18, WHITE); rollTube(x, cx, s3b, 10, 6, 3);
+  y = cone(x, cx, y, 10, 14, WHITE); lineP(x, cx - .5, y - 1, cx - .5, y - 6, '#8e9396'); P(x, cx - .5, y - 7, '#d84a3c');
+}
+function l4(x, cx, b) {   // 太空梭
+  shadowUp(x, cx, b, 26, 100);
+  let ty = tube(x, cx, b - 6, 10, 74, ORANGE); for (let v = b - 14; v > ty; v -= 9) R(x, cx - 5, v, 10, 1, 'rgba(140,70,30,.35)'); cone(x, cx, ty, 10, 14, ORANGE, .55);
+  [-1, 1].forEach(s => { const c = cx + s * 8; let y = nozzle(x, c, b, 4, 3); const t = tube(x, c, y, 4, 68, WHITE); tube(x, c, y - 4, 4, 1, BLACK); tube(x, c, t + 3, 4, 1, BLACK); cone(x, c, t, 4, 7, WHITE); });
+  // 太空梭本體（背面朝我們）：三角翼、白機身、黑機鼻
+  poly(x, [[cx - 13, b - 5], [cx + 13, b - 5], [cx + 4, b - 32], [cx - 4, b - 32]], WHITE[1]);
+  poly(x, [[cx - 13, b - 5], [cx - 4, b - 32], [cx - 3, b - 32], [cx - 11, b - 5]], WHITE[0]);
+  lineP(x, cx + 13, b - 5, cx + 4, b - 32, '#3d3d3d'); lineP(x, cx - 13, b - 5, cx - 4, b - 32, '#5a5a5a'); R(x, cx - 13, b - 5, 26, 1, '#8e9396');
+  [-3, 0, 3].forEach(d => R(x, cx + d - 1, b - 4, 2, 3, DARK[1]));
+  let y = tube(x, cx, b - 4, 8, 48, WHITE); R(x, cx - .5, b - 16, 1, 11, '#8e9396');
+  y = cone(x, cx, y, 8, 9, BLACK, .45); R(x, cx - 3, y + 9, 6, 1, '#2f3e4c'); P(x, cx - 2, y + 9, '#9fc0cc');
+}
+function l5(x, cx, b) {   // 金箔重型火箭
+  shadowUp(x, cx, b, 24, 100); [-1, 1].forEach(s => { let y = nozzle(x, cx + s * 9, b, 6, 2, GOLD); const t = tube(x, cx + s * 9, y, 6, 44, WHITE); tube(x, cx + s * 9, y - 20, 6, 2, GOLD); cone(x, cx + s * 9, t, 6, 8, GOLD); });
+  let y = nozzle(x, cx, b, 12, 3, GOLD); y = tube(x, cx, y, 12, 60, WHITE); tube(x, cx, b - 18, 12, 2, GOLD); tube(x, cx, b - 40, 12, 2, GOLD);
+  const fb = y; y = tube(x, cx, y, 12, 22, GOLD, (u, t, v) => { const n = hash(u * 7 + 3, v * 5 + 1); return n > .82 ? GOLD[0] : n < .12 ? GOLD[2] : shade(GOLD, t); });
+  tube(x, cx, fb + 1, 12, 1, SHU); y = cone(x, cx, y, 12, 16, WHITE); win(x, cx, fb - 11, GOLD[2]); tube(x, cx, y + 3, 12 * .3, 3, GOLD);
+}
+
+const SMALL = [['入門探空火箭', '白身朱鼻、三片尾翼；最便宜', s1], ['雙節探空火箭', '下面一節推完會掉、上面再飛', s2], ['氣象探空火箭', '頭上有天線、儀器艙兩個小窗', s3], ['黑白方格探空火箭', '經典的黑白方格塗裝', s4], ['朱漆探空火箭', '「絆號」：全身朱色、金色鼻錐', s5]];
+const MID = [['標準運載火箭', '兩顆小推進器、有舷窗', m1], ['大整流罩運載火箭', '頭特別大，裝得下大衛星', m2], ['可回收運載火箭', '柵格翼＋收起來的降落腳，底部燒黑', m3], ['橘槽運載火箭', '橘色燃料槽、白色推進器', m4], ['夜空藍運載火箭', '深藍配金環、金鼻錐', m5]];
+const BIG = [['四推進器重型火箭', '發射台參階那一枚；後面還有兩顆推進器', l1], ['三芯重型火箭', '三根一樣的芯並排，兩邊會飛回來降落', l2], ['多節重型火箭', '三節一路變細、黑白方格；最高', l3], ['太空梭', '橘色大燃料槽＋兩根推進器，三角翼', l4], ['金箔重型火箭', '上段包金箔、金鼻錐；重型裡最貴', l5]];
+
+function sky(x, W, H, seed) {
+  const base = H - 9;
+  for (let j = 0; j < base; j++) { const t = j / base; for (let i = 0; i < W; i++) { const n = hash(i + seed, j); P(x, i, j, n > .992 ? '#eef4f4' : t < .33 ? '#a9c6cf' : t < .66 ? '#bad2d8' : '#cadde0'); } }
+  for (let j = base; j < H; j++) for (let i = 0; i < W; i++) { const n = hash(i + seed, j); P(x, i, j, n > .93 ? K.conc2 : n < .05 ? K.conc3 : K.conc); }
+  R(x, 0, base, W, 1, K.conc3);
+}
+function sheetRk(box, list, cols, rowH) {
+  const el = document.getElementById(box), c = document.createElement('canvas'); c.width = 150; c.height = rowH; el.appendChild(c);
+  const x = c.getContext('2d'); x.imageSmoothingEnabled = false; sky(x, 150, rowH, box.length * 13);
+  const colW = 150 / cols;
+  for (let k = 1; k < cols; k++) for (let j = 2; j < rowH - 10; j++) if (j % 3 !== 2) P(x, Math.round(k * colW), j, 'rgba(255,255,255,.35)');
+  list.forEach(([, , draw], k) => draw(x, Math.round(k * colW + colW / 2) - 2, rowH - 9));
+  const lab = document.createElement('div'); lab.className = 'labels'; lab.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  lab.innerHTML = list.map(([n, note]) => `<div><b>${n}</b><span>${note}</span></div>`).join(''); el.appendChild(lab);
+}
+sheetRk('rSmall', SMALL, 5, 58); sheetRk('rMid', MID, 5, 90); sheetRk('rBig1', BIG.slice(0, 3), 3, 128); sheetRk('rBig2', BIG.slice(3), 2, 128);
+</script>
+</body>
+</html>
