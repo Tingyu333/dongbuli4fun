@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的小島：按鈕圖示</title>
+<!-- 我的小島（家園・築）的設計圖（2026-11-21）：下面四顆按鈕（商店、倉庫、扭蛋、圖鑑）的像素圖示，24 × 24 顆。還不是遊戲本身。 -->
+<style>
+  :root { --bg: #fcfaf8; --text: #4a4a4a; --dark: #2c2c2c; --accent: #8e8070; --sub: #dcdcdc; --shu: #b33a2f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', 'PingFang TC', sans-serif; }
+  main { max-width: 390px; margin: 0 auto; padding: 22px 16px 28px; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 300; font-size: 22px; letter-spacing: .3em; color: var(--dark); margin: 0; text-align: center; }
+  .sub { text-align: center; font-size: 11px; letter-spacing: .12em; color: var(--accent); margin: 6px 0 10px; line-height: 1.7; }
+  .card { border: 1px solid var(--sub); border-radius: 4px; padding: 12px; background: #fff; margin-top: 12px; }
+  .h { display: flex; align-items: baseline; gap: 8px; }
+  .no { font-size: 12px; color: var(--shu); border: 1px solid var(--shu); padding: 0 5px; line-height: 1.5; font-family: 'Noto Serif TC', serif; }
+  .name { font-family: 'Noto Serif TC', serif; font-size: 16px; letter-spacing: .2em; color: var(--dark); }
+  .tag { margin-left: auto; font-size: 10px; letter-spacing: .1em; color: var(--accent); }
+  canvas { display: block; width: 100%; border-radius: 3px; margin-top: 10px; image-rendering: pixelated; image-rendering: crisp-edges; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 8px 0 0; font-size: 11.5px; letter-spacing: .04em; line-height: 1.6; }
+  dt { color: var(--accent); } dd { margin: 0; }
+  .arrow { text-align: center; color: var(--accent); font-size: 12px; letter-spacing: .3em; margin-top: 12px; }
+  .labels { display: grid; gap: 4px; margin-top: 6px; text-align: center; }
+  .labels b { display: block; font-weight: 500; font-size: 11.5px; color: var(--dark); letter-spacing: .04em; }
+  .labels span { display: block; font-size: 9.5px; color: var(--accent); line-height: 1.4; margin-top: 1px; }
+  .stack canvas { margin-top: 10px; }
+  .gold { border-color: #c9a24a; }
+  .big { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+  .bigi { background: #f6f1e8; border: 1px solid var(--sub); border-radius: 4px; padding: 6px; text-align: center; }
+  .bigi canvas { margin: 0; }
+  .bigi span { font-size: 11px; color: var(--dark); letter-spacing: .15em; }
+  .tabs { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--sub); background: #fff; margin-top: 6px; }
+  .tabs span { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 0 7px; font-size: 10px; letter-spacing: .12em; color: var(--accent); border-bottom: 2px solid transparent; }
+  .tabs span canvas { width: 32px; margin: 0; }
+  .tabs span.on { color: var(--dark); border-bottom-color: var(--shu); }
+  .lb { margin: 12px 0 0; font-size: 11px; color: var(--accent); letter-spacing: .15em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>按鈕・圖示</h1>
+  <p class="sub">我的小島下面四顆按鈕（精緻像素，24 × 24 顆）<br>跟島、家具同一套畫法：光從左上來、不描黑邊</p>
+  <section class="card">
+    <div class="h"><span class="name">放大看</span><span class="tag">一顆 24 × 24</span></div>
+    <div id="big" class="big"></div>
+    <dl><dt>商店</dt><dd>紅白條紋遮雨棚的小攤子，櫃台、玻璃櫥窗</dd><dt>倉庫</dt><dd>木箱，蓋子開一點，露出一個盒子和一把車鑰匙（寄放處的車船也在這）</dd><dt>扭蛋</dt><dd>紅色機台、透明圓罩裡五顏六色的蛋、金色轉鈕</dd><dt>圖鑑</dt><dd>打開的藍色書：左頁一隻金色公仔、右頁三格貼好一格空的（收集還沒滿），朱色書籤</dd></dl>
+  </section>
+  <section class="card">
+    <div class="h"><span class="name">放在按鈕列</span><span class="tag">手機實際大小（兩倍）</span></div>
+    <p class="lb">平常</p><div id="tabs1" class="tabs"></div>
+    <p class="lb">按下去（扭蛋）：底下一條朱色線、字變深</p><div id="tabs2" class="tabs"></div>
+  </section>
+</main>
+<script>
+
+// ===== 小工具（跟 style-mockup.html 同一套：硬邊、整數座標）=====
+const TAU = Math.PI * 2;
+function make(id) { const c = document.getElementById(id), x = c.getContext('2d'); x.imageSmoothingEnabled = false; return { c, x, W: c.width, H: c.height }; }
+const hash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+function P(x, a, b, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), 1, 1); }
+function R(x, a, b, w, h, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), Math.round(w), Math.round(h)); }
+function circ(x, cx, cy, r, col) { for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r + r * .6) P(x, cx + xx, cy + yy, col); }
+function poly(x, pts, col) {
+  const ys = pts.map(p => p[1]), xs = pts.map(p => p[0]);
+  const y0 = Math.floor(Math.min(...ys)), y1 = Math.ceil(Math.max(...ys)), x0 = Math.floor(Math.min(...xs)), x1 = Math.ceil(Math.max(...xs));
+  x.fillStyle = col;
+  for (let y = y0; y <= y1; y++) for (let X = x0; X <= x1; X++) {
+    const px = X + .5, py = y + .5; let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside; }
+    if (inside) x.fillRect(X, y, 1, 1);
+  }
+}
+const K = {
+  g1: '#97ad6f', g2: '#86a061', g3: '#a6bb7c', g4: '#738d51', sand: '#e6d3a3', sand2: '#d8c18b', sand3: '#efe0b8',
+  sea: '#6b97a6', sea2: '#7ea9b5', shallow: '#9cc5c8', foam: '#e3efed', deep: '#4f7d8f',
+  leaf1: '#5d7c43', leaf2: '#4a6634', leaf3: '#7a9a55', leafHi: '#9cb96f', trunk: '#6e4528',
+  roof: '#b33a2f', roofHi: '#cf5a46', roofLo: '#8f2c23', roofLine: '#7a241d',
+  wall: '#efe4cf', wall2: '#d9c9aa', wall3: '#c2ae8b', door: '#5e3c22', win: '#f6cd72', frame: '#6e4528',
+  conc: '#c4beb3', conc2: '#aea79b', conc3: '#d6d1c7', stone: '#a39b8e', stone2: '#8b8377', stone3: '#bdb6aa',
+  wood: '#9a6a40', wood2: '#7c5230', wood3: '#b07f50', post: '#5e3c22',
+  canvas: '#dcc9a0', canvasHi: '#ece0c1', canvasLo: '#bba77c', canvasLine: '#9c8a62',
+  shingle: '#8a6440', shingleHi: '#a57a50', shingleLo: '#6c4c30', shingleLine: '#553a24',
+  slate: '#76828c', slateHi: '#8f9ba5', slateLo: '#626d77', slateLine: '#4f5962',
+  white: '#f3f1ec', white2: '#dedad1', white3: '#c9c4b9', glass: '#a8cdd6', glassHi: '#e2f1f3',
+  pool: '#5fb3c4', poolHi: '#9fdce4', poolLo: '#3f93a6', fire: '#e8873a', fire2: '#f6cd72', fire3: '#c4462e',
+  hedge: '#557a3e', hedge2: '#43652f', flowerA: '#f0b8b0', flowerB: '#f1d36b', flowerC: '#c9a0dc',
+  shadow: 'rgba(30,40,30,.24)'
+};
+
+// 共用：草地底、石板路、樹、影子
+function lawn(x, W, H, seed = 0) { for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) { const n = hash(a + seed, b); P(x, a, b, n > .9 ? K.g3 : n > .74 ? K.g2 : n < .05 ? K.g4 : K.g1); } }
+function stones(x, pts) { pts.forEach(([a, b]) => { R(x, a, b, 6, 3, K.conc3); R(x, a, b + 2, 6, 1, K.conc2); P(x, a, b, '#e4e0d8'); }); }
+function tree(x, a, b, r) {
+  x.fillStyle = K.shadow; for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r) x.fillRect(a + xx + 3, b + yy + 3, 1, 1);
+  circ(x, a, b, r, K.leaf2); circ(x, a - 1, b - 1, r - 1, K.leaf1); circ(x, a - 2, b - 2, Math.max(1, r - 3), K.leaf3); P(x, a - r / 2, b - r / 2, K.leafHi); P(x, a - r / 2 + 1, b - r / 2, K.leafHi);
+  for (let i = 0; i < r * 2; i++) { const t = hash(a + i, b) * TAU, rr = hash(b, a + i) * r; P(x, a + Math.cos(t) * rr, b + Math.sin(t) * rr, i % 2 ? K.leaf2 : K.leaf3); }
+}
+function palm(x, a, b) {   // 椰子樹：六片葉子，每片兩顆寬、尾巴往下垂，葉子比草地深才看得出來
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3; for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); P(x, u + 3, v + 3, K.shadow); } }
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3, nx = -Math.sin(t), ny = Math.cos(t); for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); const wdt = s < 4 ? 1 : s < 9 ? 2 : 1; for (let q = -wdt; q <= wdt; q++) P(x, u + nx * q, v + ny * q, q === wdt ? '#3d5f2c' : (q === -wdt ? '#8fb35a' : '#6f9a45')); } }
+  circ(x, a, b, 2, '#7a5a3a'); P(x, a - 1, b - 1, '#a07a50'); P(x, a + 1, b + 1, '#5e4228'); }
+function shadowPoly(x, pts, dx, dy) { poly(x, pts.map(([a, b]) => [a + dx, b + dy]), K.shadow); }
+// 四面坡（上亮、左亮、右暗、下暗），屋脊沿水平方向；line 是瓦片的橫線間距
+function hipRoof(x, a, b, w, h, c, opts = {}) {
+  const inset = Math.min(h / 2, opts.inset ?? h / 2), ry = b + h / 2;
+  const ridgeL = a + inset, ridgeR = a + w - inset;
+  shadowPoly(x, [[a, b], [a + w, b], [a + w, b + h], [a, b + h]], opts.sh || 4, opts.sh || 4);
+  poly(x, [[a, b], [a + w, b], [ridgeR, ry], [ridgeL, ry]], c.hi);           // 上坡（迎光）
+  poly(x, [[a, b + h], [a + w, b + h], [ridgeR, ry], [ridgeL, ry]], c.lo);   // 下坡
+  poly(x, [[a, b], [ridgeL, ry], [a, b + h]], c.mid);                        // 左坡
+  poly(x, [[a + w, b], [ridgeR, ry], [a + w, b + h]], c.lo);                  // 右坡
+  // 瓦片橫線＋錯開的直縫
+  for (let yy = b + 2; yy < b + h - 1; yy += c.step || 3) for (let xx = a + 1; xx < a + w - 1; xx++) {
+    const dTop = yy - b, dBot = b + h - yy, dl = xx - a, dr = a + w - xx;
+    if (dl > Math.min(dTop, dBot) + 1 && dr > Math.min(dTop, dBot) + 1 || true) { const px = x.getImageData(xx, yy, 1, 1).data; if (px[3]) P(x, xx, yy, c.line); }
+  }
+  for (let yy = b + 1; yy < b + h - 1; yy++) for (let xx = a + 1 + ((Math.floor((yy - b) / (c.step || 3)) % 2) * 2); xx < a + w - 1; xx += 4) if ((yy - b) % (c.step || 3)) P(x, xx, yy, c.seam || c.line);
+  R(x, ridgeL, ry - 1, ridgeR - ridgeL, 2, c.ridge || c.line);
+  // 四條斜脊
+  const diag = (x0, y0, x1, y1) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, c.ridge || c.line); };
+  diag(a, b, ridgeL, ry); diag(a, b + h, ridgeL, ry); diag(a + w, b, ridgeR, ry); diag(a + w, b + h, ridgeR, ry);
+  // 外框
+  R(x, a, b, w, 1, c.edge || c.line); R(x, a, b + h - 1, w, 1, c.edge || c.line); R(x, a, b, 1, h, c.edge || c.line); R(x, a + w - 1, b, 1, h, c.edge || c.line);
+}
+function chimney(x, a, b, w, h, top, side, sh = 3) { R(x, a + sh, b + sh, w, h, K.shadow); R(x, a, b, w, h, side); R(x, a, b, w, 2, top); R(x, a + 1, b + 1, w - 2, 1, '#4a3f36'); for (let i = 0; i < 3; i++) P(x, a + 1 + i, b - 2 - i * 2, i % 2 ? '#ece8e2' : '#e0dbd2'); }
+
+// ===== 我的小島下面四顆按鈕的圖示：精緻像素，24 × 24 顆；畫法跟藏品一樣（先畫形狀，shade() 補左上亮、右下暗，再畫細節）=====
+const CW = 24, CH = 24;
+function shade(x, k1 = .26, k2 = .28) {
+  const d = x.getImageData(0, 0, CW, CH), p = d.data, a = (i, j) => (i < 0 || j < 0 || i >= CW || j >= CH) ? 0 : p[(j * CW + i) * 4 + 3];
+  const out = new Uint8ClampedArray(p);
+  for (let j = 0; j < CH; j++) for (let i = 0; i < CW; i++) { const k = (j * CW + i) * 4; if (p[k + 3] < 255) continue;
+    let f = 0; if (!a(i - 1, j) || !a(i, j - 1)) f = k1; if (!a(i + 1, j) || !a(i, j + 1)) f = -k2;
+    for (let q = 0; q < 3; q++) out[k + q] = f > 0 ? p[k + q] + (255 - p[k + q]) * f : f < 0 ? p[k + q] * (1 + f) : p[k + q]; }
+  x.putImageData(new ImageData(out, CW, CH), 0, 0);
+}
+const ICONS = {
+  // 商店：紅白條紋遮雨棚的小攤子，櫃台上一個袋子
+  shop: { name: '商店', pre(x) { R(x, 4, 12, 16, 9, '#e6d3a3'); R(x, 3, 20, 18, 2, '#9a6a40'); poly(x, [[2, 6], [22, 6], [22, 11], [2, 11]], '#f3f1ec'); R(x, 3, 3, 18, 3, '#9a6a40'); },
+    post(x) { for (let i = 2; i < 22; i += 4) R(x, i, 6, 2, 5, '#b33a2f'); for (let i = 2; i < 22; i += 4) { P(x, i, 11, '#b33a2f'); P(x, i + 1, 11, '#b33a2f'); P(x, i + 2, 11, '#f3f1ec'); P(x, i + 3, 11, '#f3f1ec'); }
+      R(x, 6, 14, 5, 6, '#5e3c22'); R(x, 7, 15, 3, 5, '#7c5230'); P(x, 9, 17, '#c9a24a'); R(x, 13, 14, 5, 4, '#a8cdd6'); R(x, 13, 14, 5, 1, '#e2f1f3'); R(x, 15, 14, 1, 4, '#f3f1ec'); R(x, 4, 4, 16, 1, '#b07f50'); } },
+  // 倉庫：木箱，蓋子開一點，露出車鑰匙和一個小盒子
+  depot: { name: '倉庫', pre(x) { R(x, 3, 10, 18, 11, '#b07f50'); poly(x, [[2, 6], [20, 3], [21, 6], [3, 9]], '#c48d5c'); },
+    post(x) { R(x, 3, 14, 18, 1, '#7c5230'); R(x, 3, 18, 18, 1, '#7c5230'); for (let j = 11; j < 21; j++) { P(x, 4 + (j - 11) * 1.6, j, '#8a5a34'); } R(x, 3, 10, 18, 1, '#6e4528'); R(x, 9, 12, 6, 2, '#5e3c22'); R(x, 10, 12, 4, 1, '#c9a24a');
+      R(x, 6, 7, 4, 3, '#4f6f88'); P(x, 6, 7, '#8fb0c8'); circ(x, 14, 8, 1, '#c9a24a'); R(x, 15, 8, 3, 1, '#c9a24a'); P(x, 17, 9, '#c9a24a'); for (let i = 3; i < 20; i += 3) P(x, i, 6 - i * 0.16, '#9a6a40'); } },
+  // 扭蛋：紅色機台、透明圓罩裡五顏六色的蛋、金色轉鈕
+  gacha: { name: '扭蛋', pre(x) { R(x, 5, 13, 14, 9, '#b33a2f'); R(x, 4, 21, 16, 2, '#8f2c23'); circ(x, 12, 8, 7, '#cfe6ea'); },
+    post(x) { circ(x, 11, 7, 6, '#e2f1f3'); [[8, 10, '#f1d36b'], [13, 11, '#6fa8d8'], [15, 6, '#b33a2f'], [8, 5, '#7a9a55'], [12, 7, '#f2a093']].forEach(([a, b, c]) => { R(x, a - 1, b - 1, 3, 3, c); P(x, a - 1, b - 1, '#ffffff'); P(x, a + 1, b + 1, 'rgba(0,0,0,.25)'); R(x, a - 1, b, 3, 1, 'rgba(255,255,255,.35)'); }); P(x, 8, 3, '#ffffff'); P(x, 7, 4, '#ffffff');
+      R(x, 5, 13, 14, 1, '#cf5a46'); circ(x, 12, 17, 2, '#e2a62e'); R(x, 10, 17, 5, 1, '#977630'); P(x, 11, 16, '#fff1c4'); R(x, 9, 20, 6, 1, '#2c2c2c'); } },
+  // 圖鑑：打開的書，左頁一隻公仔的剪影、右頁三格（兩格貼好、一格空的虛線）
+  book: { name: '圖鑑', pre(x) { poly(x, [[2, 6], [11, 5], [12, 7], [13, 5], [22, 6], [22, 20], [13, 21], [12, 22], [11, 21], [2, 20]], '#3d5078'); R(x, 3, 6, 8, 13, '#f6efe4'); R(x, 13, 6, 8, 13, '#f6efe4'); },
+    post(x) { R(x, 11, 6, 2, 15, '#d6cdb8'); circ(x, 7, 11, 2, '#c9a24a'); R(x, 5, 13, 5, 3, '#c9a24a'); P(x, 6, 10, '#ffffff'); R(x, 4, 17, 6, 1, '#c9c2b4');
+      R(x, 14, 7, 3, 3, '#b33a2f'); R(x, 18, 7, 3, 3, '#6fa8d8'); R(x, 14, 12, 3, 3, '#7a9a55'); for (let k = 0; k < 3; k++) { if (k % 2 === 0) { P(x, 18 + k, 12, '#a99c88'); P(x, 18 + k, 14, '#a99c88'); P(x, 18, 12 + k, '#a99c88'); P(x, 20, 12 + k, '#a99c88'); } }
+      R(x, 14, 17, 6, 1, '#c9c2b4'); R(x, 2, 20, 9, 1, '#2f4166'); R(x, 13, 20, 9, 1, '#2f4166'); P(x, 21, 4, '#b33a2f'); R(x, 20, 3, 1, 5, '#b33a2f'); } },
+};
+function icon(key) { const cv = document.createElement('canvas'); cv.width = CW; cv.height = CH; const x = cv.getContext('2d'); x.imageSmoothingEnabled = false; ICONS[key].pre(x); shade(x); ICONS[key].post(x); return cv; }
+function sheet() {
+  const keys = ['shop', 'depot', 'gacha', 'book'];
+  // 大圖：每顆放大 6 倍看細節
+  const big = document.getElementById('big');
+  keys.forEach(k => { const d = document.createElement('div'); d.className = 'bigi'; const c = icon(k); c.style.width = '100%'; d.appendChild(c); d.insertAdjacentHTML('beforeend', `<span>${ICONS[k].name}</span>`); big.appendChild(d); });
+  // 實際大小：按鈕列（一般、選到）
+  ['tabs1', 'tabs2'].forEach((id, t) => { const el = document.getElementById(id); keys.forEach((k, i) => { const s = document.createElement('span'); if (t === 1 && i === 2) s.className = 'on'; s.appendChild(icon(k)); s.insertAdjacentHTML('beforeend', ICONS[k].name); el.appendChild(s); }); });
+  window.__icons = keys.map(k => [k, icon(k).toDataURL()]);
+  document.body.dataset.done = 1;
+}
+sheet();
+</script>
+</body>
+</html>

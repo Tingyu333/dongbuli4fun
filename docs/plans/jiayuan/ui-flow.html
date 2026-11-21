@@ -34,7 +34,7 @@
   .tabs { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--sub); background: #fff; }
   .tabs span { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 7px 0 9px; font-size: 10px; letter-spacing: .1em; color: var(--text); }
   .tabs i { font-style: normal; width: 22px; height: 22px; border: 1.5px solid var(--dark); display: flex; align-items: center; justify-content: center; font-family: 'Noto Serif TC', serif; font-size: 12px; border-radius: 3px; color: var(--dark); }
-  .tabs span.hot i { border-color: var(--shu); color: var(--shu); }
+  .tabs img { width: 28px; image-rendering: pixelated; display: block; }
   .mini { position: absolute; right: 8px; top: 8px; width: 78px; border: 2px solid #fcfaf8; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
   .mini img { position: static; width: 100%; display: block; }
   .mini .box { position: absolute; border: 1.5px solid var(--shu); }
@@ -67,7 +67,7 @@
       <div class="bar"><span class="back">← 會員・我</span><span class="title">我的小島</span><span class="money">$128,400</span></div>
       <div class="info"><span class="seal">島 參</span><span><b>12</b> 塊地</span><span>・藏品 <b>8</b> 件</span><span>・再買 <b>2</b> 塊升 肆</span></div>
       <div class="view"><img class="whole" src="ui-island.png" alt=""><span class="tip">點兩下放大・點設施看看</span></div>
-      <div class="tabs"><span><i>店</i>商店</span><span><i>倉</i>倉庫</span><span class="hot"><i>扭</i>扭蛋</span><span><i>鑑</i>圖鑑</span></div>
+      <div class="tabs"><span><img src="icon-shop.png" alt="">商店</span><span><img src="icon-depot.png" alt="">倉庫</span><span><img src="icon-gacha.png" alt="">扭蛋</span><span><img src="icon-book.png" alt="">圖鑑</span></div>
     </div>
     <dl><dt>上面</dt><dd>回會員中心、標題、錢包（跟其他頁同一個錢包）；下一行島的等級（朱色小章）、幾塊地、藏品幾件、再買幾塊升下一階</dd>
       <dt>中間</dt><dd>整座島縮小放進畫面（太大的島上下留海、可以拖）；還沒買的地是虛線＋鎖</dd>
@@ -87,7 +87,7 @@
         <div class="pop"><div class="t">紅瓦平房<span class="seal">參</span></div><div class="m">2 間房・衣櫃 1・曬衣繩晾 4 件</div>
           <div class="btns"><span>進屋</span><span class="dark">升級：兩層洋房 $?</span></div></div>
       </div>
-      <div class="tabs"><span><i>店</i>商店</span><span><i>倉</i>倉庫</span><span class="hot"><i>扭</i>扭蛋</span><span><i>鑑</i>圖鑑</span></div>
+      <div class="tabs"><span><img src="icon-shop.png" alt="">商店</span><span><img src="icon-depot.png" alt="">倉庫</span><span><img src="icon-gacha.png" alt="">扭蛋</span><span><img src="icon-book.png" alt="">圖鑑</span></div>
     </div>
     <dl><dt>放大</dt><dd>點兩下放大兩倍（再點兩下或按「－」縮回去），一根手指拖著看；右上角小地圖，紅框是現在看的地方</dd>
       <dt>點設施</dt><dd>白色虛線框起來，下面跳一張小卡：名字、等級、裡面有什麼；「進屋」（家）／「換車」（車庫）／「看船」（碼頭）…，和「升級」（寫下一階的名字和價錢）</dd>
@@ -108,7 +108,7 @@
           <p class="note">再買 2 塊，島升到 肆：可以蓋家、車庫、碼頭的伍，停機坪的肆</p>
           <div class="btns"><span>先不要</span><span class="dark">買下來</span></div></div>
       </div>
-      <div class="tabs"><span><i>店</i>商店</span><span><i>倉</i>倉庫</span><span class="hot"><i>扭</i>扭蛋</span><span><i>鑑</i>圖鑑</span></div>
+      <div class="tabs"><span><img src="icon-shop.png" alt="">商店</span><span><img src="icon-depot.png" alt="">倉庫</span><span><img src="icon-gacha.png" alt="">扭蛋</span><span><img src="icon-book.png" alt="">圖鑑</span></div>
     </div>
     <dl><dt>點鎖</dt><dd>那一塊地亮起來、標「這一塊」，下面滑出買地的卡片：幾格、相鄰才能買（不相鄰的寫「先買旁邊那塊」）、價錢、買了離升級還差幾塊、升級會解鎖什麼</dd>
       <dt>買下來</dt><dd>海岸線長出去（之後做個填海的小動畫），升級的話跳一張「島升到 肆」的卡片</dd>
