@@ -43,7 +43,7 @@
 
 | 檔案 | 是什麼 | 詳細 |
 | --- | --- | --- |
-| `index.html` | 首頁、訂房、房況月曆、我的預約、公告跑馬燈 | `docs/pages/index.md` |
+| `index.html` | 首頁、訂房、房況月曆、我的預約 | `docs/pages/index.md` |
 | `reviews.html` | 留言板 | `docs/pages/reviews.md` |
 | `jiaobei.html` | 擲杯（純前端） | `docs/pages/jiaobei.md` |
 | `ticket.html` | 入住券票夾（分享連結進來） | `docs/pages/ticket.md` |
@@ -51,7 +51,7 @@
 | `quede.html` | 缺德榜（假資料，還沒入口） | `docs/pages/quede.md` |
 | `xitou.html` | 打工：坐洗・泡（洗頭），店面升級 | `docs/pages/xitou.md` |
 | `scratch.html` | 刮刮樂「27 樓彩券行」，十種票、加持、分享兌獎單 | `docs/pages/scratch.md` |
-| `member.html` | 會員中心，小遊戲入口都在這 | `docs/pages/member.md` |
+| `member.html` | 會員中心，小遊戲入口都在這；最上面有公告跑馬燈（admin 後台設定） | `docs/pages/member.md` |
 | `gongde.html` | 功德・添：捐香油錢、點燈 | `docs/pages/gongde.md` |
 | `fangwu.html` | 打工：房務・淨（打掃） | `docs/pages/fangwu.md` |
 | `caiyuan.html` | 打工：菜園・拔（拔蘿蔔），農具升級 | `docs/pages/caiyuan.md` |
@@ -69,7 +69,7 @@
 | `404.html` | 找不到頁面 | `docs/pages/404.md` |
 | `admin_login.html` | 後台登入 | `docs/pages/admin_login.md` |
 | `admin_dashboard.html` | 後台預約列表、發紅包、後端狀況 | `docs/pages/admin_dashboard.md` |
-| `admin.html` | admin 後台（另一組密碼 `GAME_ADMIN_PASSWORD`）：玩家列表、專屬道具、道具庫（主人取名字）、經濟體檢、許願池（2026-11-21 從預約後台搬來）、首頁公告 | `docs/pages/admin.md` |
+| `admin.html` | admin 後台（另一組密碼 `GAME_ADMIN_PASSWORD`）：玩家列表、專屬道具、道具庫（主人取名字）、經濟體檢、許願池（2026-11-21 從預約後台搬來）、會員中心的公告 | `docs/pages/admin.md` |
 
 ## 其他說明（也在 docs/）
 

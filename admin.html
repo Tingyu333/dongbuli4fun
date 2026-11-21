@@ -46,7 +46,7 @@
         .wstamp { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 1.5px solid rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); font-size: 13px; border-radius: 3px; flex-shrink: 0; }
         .wstamp.is-done { background: rgb(var(--wabi-shu)); color: rgb(var(--wabi-bg)); }
         .wstamp.is-off { border-color: rgb(var(--wabi-sub)); color: rgb(var(--wabi-accent)); }
-        /* 公告預覽：跟首頁的跑馬燈同一個樣子 */
+        /* 公告預覽：跟會員中心的跑馬燈同一個樣子 */
         .ann { display: flex; align-items: center; gap: 0.6rem; min-height: 36px; padding: 0 0.8rem 0 0.45rem; background: rgb(var(--wabi-bg)); border: 1px solid rgb(var(--wabi-sub)); border-radius: 3px; color: rgb(var(--wabi-dark)); font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: 0.12em; }
         .ann-seal { flex-shrink: 0; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border: 1.5px solid rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); font-family: 'Noto Serif TC', serif; font-size: 13px; letter-spacing: 0; border-radius: 2px; transform: rotate(-5deg); }
         .ann-track { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; }
@@ -203,9 +203,9 @@
 
             <!-- 公告（2026-11-21）：首頁的跑馬燈，只有一條 -->
             <div id="tab-ann" class="mt-5" hidden>
-                <p class="text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">放在首頁大圖上面的跑馬燈。只能放一條，掛新的就蓋掉舊的；旅人按一下跑馬燈會停住。</p>
+                <p class="text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">放在會員中心（會員・我）最上面的跑馬燈。只能放一條，掛新的就蓋掉舊的；旅人按一下跑馬燈會停住。</p>
                 <div class="card mt-4">
-                    <p class="text-[10px] font-sans tracking-[0.2em] text-stone-400">現在首頁</p>
+                    <p class="text-[10px] font-sans tracking-[0.2em] text-stone-400">現在會員中心</p>
                     <p id="annNow" class="mt-1 text-sm text-wabi-dark leading-relaxed break-words">讀取中……</p>
                     <p id="annMeta" class="mt-1 text-[11px] font-sans tracking-wider text-stone-400"></p>
                     <button id="annOff" type="button" class="btn btn-line w-full mt-3" hidden>撤下來</button>
@@ -586,7 +586,7 @@
             if (save) { const id = save.dataset.wishSave, ta = document.querySelector(`[data-wish-reply="${id}"]`); save.disabled = true; save.textContent = '存回覆中……'; setWish(id, { reply: ta.value }, '回覆存好了'); }
         });
 
-        // ===== 公告（2026-11-21；後端 gaAnnounce／gaAnnounceSet，公開的是 announce）=====
+        // ===== 公告（2026-11-21；後端 gaAnnounce／gaAnnounceSet，公開的是 announce；只放會員中心）=====
         const clean = v => String(v || '').replace(/\s+/g, ' ').trim();
         function preview() {
             const v = clean($('annInput').value), el = $('annPreview');
@@ -596,7 +596,7 @@
         }
         function renderAnn() {
             const a = ann && ann.announce;
-            $('annNow').textContent = a ? a.text : '沒有公告，首頁不會出現跑馬燈。';
+            $('annNow').textContent = a ? a.text : '沒有公告，會員中心不會出現跑馬燈。';
             $('annNow').classList.toggle('text-stone-400', !a || !a.live);
             $('annMeta').textContent = !a ? '' : `${day(Date.parse(a.at))} 掛上去・${!a.live ? '已經下架了（過期）' : a.until ? day(Date.parse(a.until)) + ' 自動下架' : '不會自動下架'}`;
             $('annOff').hidden = !a;
@@ -611,7 +611,7 @@
             const text = clean($('annInput').value);
             if (!text) { showToast('先寫公告內容'); return; }
             $('annSave').disabled = true;
-            try { ann = await call({ type: 'gaAnnounceSet', text, days: Number($('annDays').value) }); renderAnn(); $('annInput').value = ''; preview(); showToast('掛上去了，首頁重新整理就看得到'); }
+            try { ann = await call({ type: 'gaAnnounceSet', text, days: Number($('annDays').value) }); renderAnn(); $('annInput').value = ''; preview(); showToast('掛上去了，會員中心重新整理就看得到'); }
             catch (e) { showToast(/舊版/.test(e.message) ? '後端還是舊版，要先部署' : e.message); }
             $('annSave').disabled = false;
         });

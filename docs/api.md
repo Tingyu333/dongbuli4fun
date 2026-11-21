@@ -120,6 +120,8 @@
 
 ## 2026-11-21 公告（版本 `2026-11-21b`）
 
+- 公告只顯示在會員中心（`member.html`）的跑馬燈（一開始放首頁，同一天改了）。
+
 - 公開：`{ type: 'announce' }` → `{ result: 'success', text, at }`（沒有公告或過期了 `text` 是空字串）。快取 `announce:v1` 10 分鐘，存公告時清掉；快取裡也會看下架時間。
 - admin 後台（`ga` 開頭，要 `GAME_ADMIN_PASSWORD` 的通行證）：`gaAnnounce` → `{ announce: { text, at, until, live } | null, max: 80 }`；`gaAnnounceSet { text, days }`：`text` 把控制字元、換行、連續空白變成一個空格，最多 80 字（超過回錯誤），空的就撤下；`days` 0 是不自動下架，1～30 天。只有一條，新的蓋掉舊的。
 - 存在指令碼屬性 `ANNOUNCE`（JSON：`text`、`at`、`until`），不用新分頁。

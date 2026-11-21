@@ -3880,8 +3880,8 @@ function adminWishSet(input) {
 
 
 // ===== 公告（2026-11-21）=====
-// 首頁的跑馬燈，只有一條。admin 後台設定（gaAnnounceSet），存在指令碼屬性 ANNOUNCE（JSON：text、at、until）。
-// 公開的 announce 只回字和時間；until 到了就當作沒有。字只給主人寫，但首頁一律用 textContent 放，不當 HTML。
+// 會員中心（member.html）的跑馬燈，只有一條（一開始放首頁，使用者說只放會員・我）。admin 後台設定（gaAnnounceSet），存在指令碼屬性 ANNOUNCE（JSON：text、at、until）。
+// 公開的 announce 只回字和時間；until 到了就當作沒有。字只給主人寫，但頁面一律用 textContent 放，不當 HTML。
 var ANNOUNCE_MAX = 80;
 function readAnnounce() {
   var raw = PropertiesService.getScriptProperties().getProperty('ANNOUNCE'), a = null;
