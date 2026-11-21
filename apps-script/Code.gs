@@ -3932,7 +3932,7 @@ function gaAnnounceSet(input) {
 var PERK_TYPES = {
   shop60: { name: '全店六折', desc: '八家打工店面升級打六折（刮刮樂、功德、股市、保險照原價）', live: true },   // 2026-11-20b 起生效；live: false 的只記錄、不送給玩家
   // 2026-11-21d：解鎖隱藏商品。平常店面看不到，有這個道具才出現（$1、不打折）；道具到期或收回就藏起來、效果也停
-  minemag: { name: '磁力夾', desc: '礦坑・挖的店面出現「磁力夾」（$1）：金塊靠近鉤子就吸過來', live: true },
+  minemag: { name: '磁力夾', desc: '礦坑・挖的店面出現「磁力夾」（$1）：金塊、鑽石靠近鉤子就吸過來', live: true },
   shiplamp: { name: '探照燈', desc: '貨運・航的船廠出現「探照燈」（$1）：夜航船頭燈照得又遠又寬', live: true }
 };
 var PERK_HEADERS = ['timestamp', 'id', 'line_id', 'perk', 'note', 'expires', 'revoked_at', 'key'];

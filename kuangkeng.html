@@ -254,7 +254,7 @@
           { key: 'sandglass', name: '沙漏', sub: '加時', prices: [50000, 120000], vals: [5, 10], tiers: ['', '小沙漏', '大沙漏'], fx: v => `每關 ${ROUND + v} 秒（多 ${v} 秒）` },
           { key: 'regular', name: '老顧客卡', sub: '礦坑商店', prices: [30000], vals: [0.1], tiers: ['', '老顧客卡'], fx: () => '礦坑商店的東西打九折（花的是兩）' },
           // 專屬道具解鎖的（2026-11-21）：平常看不到，主人在 admin 後台發了對應的道具（效果 minemag）才出現；定價 $1、不打折；道具到期或收回就藏起來、效果也停（買過的留著，再拿到道具不用再買）
-          { key: 'magnet', perk: 'minemag', name: '磁力夾', sub: '專屬', prices: [1], vals: [26], tiers: ['', '磁力夾'], fx: () => '金塊靠近鉤子就會被吸過來夾住（鑽石、石頭、別的東西不吸）' },
+          { key: 'magnet', perk: 'minemag', name: '磁力夾', sub: '專屬', prices: [1], vals: [26], tiers: ['', '磁力夾'], fx: () => '金塊、鑽石靠近鉤子就會被吸過來夾住（石頭、別的東西不吸）' },
         ];
         const UPG_BY = Object.fromEntries(UPG.map(u => [u.key, u]));
         function loadUpg() {
@@ -551,8 +551,8 @@
           if (h.st === 'out') {
             h.len += TUNE.shoot * dt;
             const p = tip();
-            const mag = val('magnet');   // 磁力夾：金塊靠近就吸過來
-            const hit = G.items.find(o => Math.hypot(o.x - p.x, o.y - p.y) < o.r + 4 + (mag && KIND[o.k].draw === 'gold' ? mag : 0));
+            const mag = val('magnet');   // 磁力夾：金塊、鑽石靠近就吸過來
+            const hit = G.items.find(o => Math.hypot(o.x - p.x, o.y - p.y) < o.r + 4 + (mag && (KIND[o.k].draw === 'gold' || o.k === 'diamond') ? mag : 0));
             if (hit) {
               if (mag && Math.hypot(hit.x - p.x, hit.y - p.y) >= hit.r + 4) G.fx.push({ mag: true, x: hit.x, y: hit.y, tx: p.x, ty: p.y, t: 0, life: .35 });
               if (hit.k === 'barrel') { explode(hit.x, hit.y); h.st = 'back'; }
