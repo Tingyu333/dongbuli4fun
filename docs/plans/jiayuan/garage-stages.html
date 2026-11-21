@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家園：車庫的五個階段</title>
+<!-- 家園・築的設計圖（2026-11-21）：車庫一路升級的五個樣子，每一階能停的車不一樣。正上方、精緻像素風（規矩見 README.md）。還不是遊戲本身。 -->
+<style>
+  :root { --bg: #fcfaf8; --text: #4a4a4a; --dark: #2c2c2c; --accent: #8e8070; --sub: #dcdcdc; --shu: #b33a2f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', 'PingFang TC', sans-serif; }
+  main { max-width: 390px; margin: 0 auto; padding: 22px 16px 28px; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 300; font-size: 22px; letter-spacing: .3em; color: var(--dark); margin: 0; text-align: center; }
+  .sub { text-align: center; font-size: 11px; letter-spacing: .12em; color: var(--accent); margin: 6px 0 10px; line-height: 1.7; }
+  .card { border: 1px solid var(--sub); border-radius: 4px; padding: 12px; background: #fff; margin-top: 12px; }
+  .h { display: flex; align-items: baseline; gap: 8px; }
+  .no { font-size: 12px; color: var(--shu); border: 1px solid var(--shu); padding: 0 5px; line-height: 1.5; font-family: 'Noto Serif TC', serif; }
+  .name { font-family: 'Noto Serif TC', serif; font-size: 16px; letter-spacing: .2em; color: var(--dark); }
+  .tag { margin-left: auto; font-size: 10px; letter-spacing: .1em; color: var(--accent); }
+  canvas { display: block; width: 100%; border-radius: 3px; margin-top: 10px; image-rendering: pixelated; image-rendering: crisp-edges; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 8px 0 0; font-size: 11.5px; letter-spacing: .04em; line-height: 1.6; }
+  dt { color: var(--accent); } dd { margin: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 11.5px; letter-spacing: .03em; margin-top: 10px; }
+  th, td { border-bottom: 1px solid var(--sub); padding: 5px 4px; text-align: left; vertical-align: top; line-height: 1.55; }
+  th { color: var(--accent); font-weight: 400; white-space: nowrap; }
+  .arrow { text-align: center; color: var(--accent); font-size: 12px; letter-spacing: .3em; margin-top: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>車庫・五個階段</h1>
+  <p class="sub">家園・築的設計圖（正上方、精緻像素）<br>白色虛線框＝還空著的車位；數字都還沒定</p>
+
+  <section class="card">
+    <div class="h"><span class="no">壹</span><span class="name">腳踏車棚</span><span class="tag">起點</span></div>
+    <canvas id="g1" width="200" height="120"></canvas>
+    <dl><dt>能停</dt><dd>小車位 4（腳踏車、機車）</dd><dt>畫了</dt><dd>磚牆、浪板屋頂、打氣筒、安全帽</dd></dl>
+  </section>
+  <p class="arrow">↓ 升級</p>
+  <section class="card">
+    <div class="h"><span class="no">貳</span><span class="name">車棚</span><span class="tag">有屋頂</span></div>
+    <canvas id="g2" width="200" height="120"></canvas>
+    <dl><dt>能停</dt><dd>車位 1（轎車）＋小車位 2</dd><dt>畫了</dt><dd>透明屋頂、鋼架（看得到下面的車）</dd></dl>
+  </section>
+  <p class="arrow">↓ 升級</p>
+  <section class="card">
+    <div class="h"><span class="no">參</span><span class="name">單車庫</span><span class="tag">有門</span></div>
+    <canvas id="g3" width="200" height="120"></canvas>
+    <dl><dt>能停</dt><dd>車位 1（可以停跑車）＋小車位 2</dd><dt>畫了</dt><dd>雙坡屋頂、捲門、門燈、垃圾桶、水管</dd></dl>
+  </section>
+  <p class="arrow">↓ 升級</p>
+  <section class="card">
+    <div class="h"><span class="no">肆</span><span class="name">雙車庫＋工作坊</span><span class="tag">大車</span></div>
+    <canvas id="g4" width="200" height="120"></canvas>
+    <dl><dt>能停</dt><dd>車位 2（可以停越野車、露營車）＋小車位 2</dd><dt>畫了</dt><dd>平屋頂、天窗、冷氣機、兩扇捲門、外面的工作台、輪胎、油桶</dd></dl>
+  </section>
+  <p class="arrow">↓ 升級</p>
+  <section class="card">
+    <div class="h"><span class="no">伍</span><span class="name">展示車廊</span><span class="tag">最後一階</span></div>
+    <canvas id="g5" width="200" height="120"></canvas>
+    <dl><dt>能停</dt><dd>車位 4（超跑、古董車只能停這）＋轉盤 1＋小車位 3</dd><dt>畫了</dt><dd>玻璃屋頂、拋光地板、聚光燈、轉盤、紅地毯</dd></dl>
+  </section>
+
+  <section class="card">
+    <div class="h"><span class="name">載具分級</span><span class="tag">哪一階才停得了</span></div>
+    <table>
+      <tr><th>級別</th><th>有哪些</th><th>最低要</th></tr>
+      <tr><td>小（兩輪）</td><td>腳踏車、機車</td><td>壹 腳踏車棚</td></tr>
+      <tr><td>一般</td><td>轎車</td><td>貳 車棚</td></tr>
+      <tr><td>跑車</td><td>跑車（怕風吹雨淋，要有門）</td><td>參 單車庫</td></tr>
+      <tr><td>大車</td><td>越野車、露營車</td><td>肆 雙車庫</td></tr>
+      <tr><td>展示級</td><td>超跑、古董車</td><td>伍 展示車廊</td></tr>
+    </table>
+  </section>
+</main>
+<script>
+
+// ===== 小工具（跟 style-mockup.html 同一套：硬邊、整數座標）=====
+const TAU = Math.PI * 2;
+function make(id) { const c = document.getElementById(id), x = c.getContext('2d'); x.imageSmoothingEnabled = false; return { c, x, W: c.width, H: c.height }; }
+const hash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+function P(x, a, b, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), 1, 1); }
+function R(x, a, b, w, h, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), Math.round(w), Math.round(h)); }
+function circ(x, cx, cy, r, col) { for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r + r * .6) P(x, cx + xx, cy + yy, col); }
+function poly(x, pts, col) {
+  const ys = pts.map(p => p[1]), xs = pts.map(p => p[0]);
+  const y0 = Math.floor(Math.min(...ys)), y1 = Math.ceil(Math.max(...ys)), x0 = Math.floor(Math.min(...xs)), x1 = Math.ceil(Math.max(...xs));
+  x.fillStyle = col;
+  for (let y = y0; y <= y1; y++) for (let X = x0; X <= x1; X++) {
+    const px = X + .5, py = y + .5; let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside; }
+    if (inside) x.fillRect(X, y, 1, 1);
+  }
+}
+const K = {
+  g1: '#97ad6f', g2: '#86a061', g3: '#a6bb7c', g4: '#738d51', sand: '#e6d3a3', sand2: '#d8c18b', sand3: '#efe0b8',
+  sea: '#6b97a6', sea2: '#7ea9b5', shallow: '#9cc5c8', foam: '#e3efed', deep: '#4f7d8f',
+  leaf1: '#5d7c43', leaf2: '#4a6634', leaf3: '#7a9a55', leafHi: '#9cb96f', trunk: '#6e4528',
+  roof: '#b33a2f', roofHi: '#cf5a46', roofLo: '#8f2c23', roofLine: '#7a241d',
+  wall: '#efe4cf', wall2: '#d9c9aa', wall3: '#c2ae8b', door: '#5e3c22', win: '#f6cd72', frame: '#6e4528',
+  conc: '#c4beb3', conc2: '#aea79b', conc3: '#d6d1c7', stone: '#a39b8e', stone2: '#8b8377', stone3: '#bdb6aa',
+  wood: '#9a6a40', wood2: '#7c5230', wood3: '#b07f50', post: '#5e3c22',
+  canvas: '#dcc9a0', canvasHi: '#ece0c1', canvasLo: '#bba77c', canvasLine: '#9c8a62',
+  shingle: '#8a6440', shingleHi: '#a57a50', shingleLo: '#6c4c30', shingleLine: '#553a24',
+  slate: '#76828c', slateHi: '#8f9ba5', slateLo: '#626d77', slateLine: '#4f5962',
+  white: '#f3f1ec', white2: '#dedad1', white3: '#c9c4b9', glass: '#a8cdd6', glassHi: '#e2f1f3',
+  pool: '#5fb3c4', poolHi: '#9fdce4', poolLo: '#3f93a6', fire: '#e8873a', fire2: '#f6cd72', fire3: '#c4462e',
+  hedge: '#557a3e', hedge2: '#43652f', flowerA: '#f0b8b0', flowerB: '#f1d36b', flowerC: '#c9a0dc',
+  shadow: 'rgba(30,40,30,.24)'
+};
+
+// 共用：草地底、石板路、樹、影子
+function lawn(x, W, H, seed = 0) { for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) { const n = hash(a + seed, b); P(x, a, b, n > .9 ? K.g3 : n > .74 ? K.g2 : n < .05 ? K.g4 : K.g1); } }
+function stones(x, pts) { pts.forEach(([a, b]) => { R(x, a, b, 6, 3, K.conc3); R(x, a, b + 2, 6, 1, K.conc2); P(x, a, b, '#e4e0d8'); }); }
+function tree(x, a, b, r) {
+  x.fillStyle = K.shadow; for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r) x.fillRect(a + xx + 3, b + yy + 3, 1, 1);
+  circ(x, a, b, r, K.leaf2); circ(x, a - 1, b - 1, r - 1, K.leaf1); circ(x, a - 2, b - 2, Math.max(1, r - 3), K.leaf3); P(x, a - r / 2, b - r / 2, K.leafHi); P(x, a - r / 2 + 1, b - r / 2, K.leafHi);
+  for (let i = 0; i < r * 2; i++) { const t = hash(a + i, b) * TAU, rr = hash(b, a + i) * r; P(x, a + Math.cos(t) * rr, b + Math.sin(t) * rr, i % 2 ? K.leaf2 : K.leaf3); }
+}
+function palm(x, a, b) {   // 椰子樹：六片葉子，每片兩顆寬、尾巴往下垂，葉子比草地深才看得出來
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3; for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); P(x, u + 3, v + 3, K.shadow); } }
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3, nx = -Math.sin(t), ny = Math.cos(t); for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); const wdt = s < 4 ? 1 : s < 9 ? 2 : 1; for (let q = -wdt; q <= wdt; q++) P(x, u + nx * q, v + ny * q, q === wdt ? '#3d5f2c' : (q === -wdt ? '#8fb35a' : '#6f9a45')); } }
+  circ(x, a, b, 2, '#7a5a3a'); P(x, a - 1, b - 1, '#a07a50'); P(x, a + 1, b + 1, '#5e4228'); }
+function shadowPoly(x, pts, dx, dy) { poly(x, pts.map(([a, b]) => [a + dx, b + dy]), K.shadow); }
+// 四面坡（上亮、左亮、右暗、下暗），屋脊沿水平方向；line 是瓦片的橫線間距
+function hipRoof(x, a, b, w, h, c, opts = {}) {
+  const inset = Math.min(h / 2, opts.inset ?? h / 2), ry = b + h / 2;
+  const ridgeL = a + inset, ridgeR = a + w - inset;
+  shadowPoly(x, [[a, b], [a + w, b], [a + w, b + h], [a, b + h]], opts.sh || 4, opts.sh || 4);
+  poly(x, [[a, b], [a + w, b], [ridgeR, ry], [ridgeL, ry]], c.hi);           // 上坡（迎光）
+  poly(x, [[a, b + h], [a + w, b + h], [ridgeR, ry], [ridgeL, ry]], c.lo);   // 下坡
+  poly(x, [[a, b], [ridgeL, ry], [a, b + h]], c.mid);                        // 左坡
+  poly(x, [[a + w, b], [ridgeR, ry], [a + w, b + h]], c.lo);                  // 右坡
+  // 瓦片橫線＋錯開的直縫
+  for (let yy = b + 2; yy < b + h - 1; yy += c.step || 3) for (let xx = a + 1; xx < a + w - 1; xx++) {
+    const dTop = yy - b, dBot = b + h - yy, dl = xx - a, dr = a + w - xx;
+    if (dl > Math.min(dTop, dBot) + 1 && dr > Math.min(dTop, dBot) + 1 || true) { const px = x.getImageData(xx, yy, 1, 1).data; if (px[3]) P(x, xx, yy, c.line); }
+  }
+  for (let yy = b + 1; yy < b + h - 1; yy++) for (let xx = a + 1 + ((Math.floor((yy - b) / (c.step || 3)) % 2) * 2); xx < a + w - 1; xx += 4) if ((yy - b) % (c.step || 3)) P(x, xx, yy, c.seam || c.line);
+  R(x, ridgeL, ry - 1, ridgeR - ridgeL, 2, c.ridge || c.line);
+  // 四條斜脊
+  const diag = (x0, y0, x1, y1) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, c.ridge || c.line); };
+  diag(a, b, ridgeL, ry); diag(a, b + h, ridgeL, ry); diag(a + w, b, ridgeR, ry); diag(a + w, b + h, ridgeR, ry);
+  // 外框
+  R(x, a, b, w, 1, c.edge || c.line); R(x, a, b + h - 1, w, 1, c.edge || c.line); R(x, a, b, 1, h, c.edge || c.line); R(x, a + w - 1, b, 1, h, c.edge || c.line);
+}
+function chimney(x, a, b, w, h, top, side, sh = 3) { R(x, a + sh, b + sh, w, h, K.shadow); R(x, a, b, w, h, side); R(x, a, b, w, 2, top); R(x, a + 1, b + 1, w - 2, 1, '#4a3f36'); for (let i = 0; i < 3; i++) P(x, a + 1 + i, b - 2 - i * 2, i % 2 ? '#ece8e2' : '#e0dbd2'); }
+
+// ===== 載具（正上方，車頭朝下＝朝車道）=====
+const V = {
+  red: ['#c0392b', '#e0604e', '#8c2a20'], blue: ['#4f7393', '#7396b5', '#3a5670'], white: ['#ece9e2', '#ffffff', '#c9c4ba'],
+  yellow: ['#e2a62e', '#f4c75a', '#b37f1c'], cream: ['#e9dcb8', '#f6edd2', '#c4b48a'], green: ['#5d7f5a', '#7d9f77', '#456242'], olive: ['#6f7650', '#8a9166', '#555b3c']
+};
+function wheelsCar(x, a, b, w, h, inset = 4) { [[a - 1, b + inset], [a + w - 1, b + inset], [a - 1, b + h - inset - 5], [a + w - 1, b + h - inset - 5]].forEach(([u, v]) => R(x, u, v, 2, 5, '#2a2a2a')); }
+function carBody(x, a, b, w, h, col, opts = {}) {
+  const [c, hi, lo] = col;
+  R(x, a + 3, b + 3, w, h, K.shadow);
+  wheelsCar(x, a, b, w, h, opts.wheelInset || 4);
+  R(x, a + 1, b, w - 2, h, c); R(x, a, b + 2, w, h - 4, c);
+  R(x, a + 2, b + 1, 2, h - 2, hi); R(x, a + w - 3, b + 2, 2, h - 4, lo);
+  return { c, hi, lo };
+}
+function sedan(x, a, b, col = V.blue) {   // 轎車 16 × 28
+  const { c, hi, lo } = carBody(x, a, b, 16, 28, col);
+  R(x, a + 2, b + 19, 12, 4, K.glass); R(x, a + 3, b + 19, 3, 1, K.glassHi);     // 前擋（車頭朝下）
+  R(x, a + 3, b + 9, 10, 9, hi); R(x, a + 4, b + 10, 8, 7, c);                   // 車頂
+  R(x, a + 2, b + 5, 12, 3, K.glass);                                              // 後擋
+  P(x, a + 2, b + 27, '#f6e08a'); P(x, a + 13, b + 27, '#f6e08a'); P(x, a + 2, b, lo); P(x, a + 13, b, lo);
+  R(x, a - 1, b + 17, 1, 2, c); R(x, a + 16, b + 17, 1, 2, c);                    // 後照鏡
+}
+function sports(x, a, b, col = V.red) {   // 跑車 18 × 28，低、寬、有條紋
+  const { c, hi, lo } = carBody(x, a, b, 18, 28, col, { wheelInset: 3 });
+  R(x, a + 3, b + 15, 12, 5, K.glass); R(x, a + 4, b + 15, 4, 1, K.glassHi);
+  R(x, a + 4, b + 10, 10, 5, '#2a2a2a'); R(x, a + 5, b + 11, 8, 3, '#3d3d3d');    // 黑色車頂
+  R(x, a + 7, b + 20, 1, 8, '#f3f1ec'); R(x, a + 10, b + 20, 1, 8, '#f3f1ec'); R(x, a + 7, b, 1, 10, '#f3f1ec'); R(x, a + 10, b, 1, 10, '#f3f1ec');
+  R(x, a + 3, b + 1, 12, 2, lo); R(x, a + 2, b + 27, 3, 1, '#f6e08a'); R(x, a + 13, b + 27, 3, 1, '#f6e08a');
+}
+function supercar(x, a, b, col = V.yellow) {   // 超跑 20 × 30，楔形、黑色進氣口、尾翼
+  const [c, hi, lo] = col;
+  R(x, a + 3, b + 3, 20, 30, K.shadow); wheelsCar(x, a, b, 20, 30, 4);
+  poly(x, [[a + 2, b], [a + 18, b], [a + 20, b + 6], [a + 20, b + 24], [a + 15, b + 30], [a + 5, b + 30], [a, b + 24], [a, b + 6]], c);
+  poly(x, [[a + 2, b + 1], [a + 5, b + 1], [a + 3, b + 28], [a + 1, b + 24]], hi);
+  R(x, a + 5, b + 14, 10, 6, '#22262a'); R(x, a + 6, b + 14, 3, 1, '#5a6a75'); R(x, a + 6, b + 9, 8, 5, lo);
+  R(x, a + 1, b, 18, 2, '#2a2a2a');   // 尾翼
+  R(x, a + 1, b + 12, 2, 5, '#2a2a2a'); R(x, a + 17, b + 12, 2, 5, '#2a2a2a');   // 側邊進氣口
+  R(x, a + 4, b + 29, 3, 1, '#f3f1ec'); R(x, a + 13, b + 29, 3, 1, '#f3f1ec');
+}
+function classic(x, a, b, col = V.green) {   // 古董車 16 × 30，圓頭、鍍鉻、敞篷
+  const [c, hi, lo] = col;
+  R(x, a + 3, b + 3, 16, 30, K.shadow); wheelsCar(x, a, b, 16, 30, 3);
+  R(x, a + 2, b, 12, 30, c); R(x, a, b + 3, 16, 24, c); R(x, a + 1, b + 1, 14, 28, c);
+  R(x, a + 2, b + 3, 2, 24, hi); R(x, a + 12, b + 3, 2, 24, lo);
+  R(x, a + 3, b + 8, 10, 9, '#7a4a32'); R(x, a + 4, b + 9, 8, 3, '#94603f'); R(x, a + 4, b + 13, 8, 3, '#94603f');   // 皮椅
+  R(x, a + 3, b + 18, 10, 1, '#cfd6d9');   // 擋風玻璃框
+  R(x, a + 2, b + 29, 12, 1, '#dfe5e8'); R(x, a + 2, b, 12, 1, '#dfe5e8');   // 前後保險桿（鍍鉻）
+  circ(x, a + 3, b + 27, 1, '#f6e08a'); circ(x, a + 12, b + 27, 1, '#f6e08a');
+}
+function camper(x, a, b, col = V.cream) {   // 露營車 20 × 38，車頂有天窗和行李架
+  const { c, hi, lo } = carBody(x, a, b, 20, 38, col, { wheelInset: 5 });
+  R(x, a + 3, b + 30, 14, 4, K.glass); R(x, a + 4, b + 30, 4, 1, K.glassHi);
+  R(x, a + 4, b + 4, 12, 22, '#d8cba5'); for (let i = 0; i < 22; i += 3) R(x, a + 4, b + 4 + i, 12, 1, '#b9ac86');   // 行李架
+  R(x, a + 7, b + 8, 6, 6, K.glass); R(x, a + 6, b + 18, 8, 5, '#6d8f6a'); R(x, a + 7, b + 19, 6, 3, '#86a87f');   // 天窗、綠色行李
+  R(x, a, b + 27, 20, 2, '#c94f3d');   // 紅色腰線
+}
+function jeep(x, a, b, col = V.olive) {   // 越野車 18 × 30，備胎在後面
+  const { c, hi, lo } = carBody(x, a, b, 18, 30, col, { wheelInset: 3 });
+  R(x, a - 1, b + 3, 3, 6, '#2a2a2a'); R(x, a + 16, b + 3, 3, 6, '#2a2a2a'); R(x, a - 1, b + 21, 3, 6, '#2a2a2a'); R(x, a + 16, b + 21, 3, 6, '#2a2a2a');
+  R(x, a + 3, b + 21, 12, 4, K.glass); R(x, a + 3, b + 7, 12, 13, lo); for (let i = 0; i < 12; i += 3) R(x, a + 3 + i, b + 7, 1, 13, c);
+  circ(x, a + 9, b - 1, 3, '#2a2a2a'); circ(x, a + 9, b - 1, 1, '#555');   // 備胎
+  R(x, a + 2, b + 29, 14, 1, '#3d3d3d');
+}
+function scooter(x, a, b, col = V.red) {   // 機車 7 × 14
+  const [c, hi, lo] = col;
+  R(x, a + 4, b + 3, 4, 13, K.shadow);
+  R(x, a + 2, b, 3, 3, '#2a2a2a'); R(x, a + 2, b + 11, 3, 3, '#2a2a2a');
+  R(x, a + 1, b + 2, 5, 10, c); R(x, a + 1, b + 2, 1, 10, hi); R(x, a + 2, b + 4, 3, 4, '#3d3d3d');   // 坐墊
+  R(x, a - 1, b + 10, 9, 1, '#5a5a5a'); P(x, a - 1, b + 9, '#cfd6d9'); P(x, a + 7, b + 9, '#cfd6d9'); P(x, a + 3, b + 13, '#f6e08a');
+}
+function bike(x, a, b, col = '#4f7393') {   // 腳踏車 5 × 15（正上方看是一條線）
+  R(x, a + 3, b + 3, 2, 15, K.shadow);
+  R(x, a + 2, b, 1, 4, '#2a2a2a'); R(x, a + 2, b + 11, 1, 4, '#2a2a2a');
+  R(x, a + 2, b + 3, 1, 9, col); R(x, a + 1, b + 4, 3, 2, '#3d3d3d');
+  R(x, a, b + 11, 5, 1, '#8e9293'); P(x, a, b + 10, '#3d3d3d'); P(x, a + 4, b + 10, '#3d3d3d');
+}
+// 空的車位：白色虛線框（看得出還能放）
+function slot(x, a, b, w, h, label) {
+  for (let i = 0; i < w; i++) if (i % 3 !== 2) { P(x, a + i, b, '#f2eee5'); P(x, a + i, b + h - 1, '#f2eee5'); }
+  for (let j = 0; j < h; j++) if (j % 3 !== 2) { P(x, a, b + j, '#f2eee5'); P(x, a + w - 1, b + j, '#f2eee5'); }
+  if (label === 's') { R(x, a + w / 2 - 1, b + h / 2 - 3, 2, 6, '#f2eee5'); }   // 小車位：一條
+  if (label === 'm') { R(x, a + w / 2 - 3, b + h / 2 - 1, 6, 2, '#f2eee5'); R(x, a + w / 2 - 1, b + h / 2 - 3, 2, 6, '#f2eee5'); }   // 車位：十字
+}
+function concPad(x, a, b, w, h, seed = 0) { R(x, a + 2, b + 2, w, h, K.shadow); for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const n = hash(a + i + seed, b + j); P(x, a + i, b + j, n > .92 ? K.conc2 : n < .06 ? K.conc3 : K.conc); } R(x, a, b, w, 1, K.conc2); R(x, a, b + h - 1, w, 1, K.conc2); }
+function metalRoof(x, a, b, w, h, sh = 3) {   // 浪板屋頂：直條紋
+  R(x, a + sh, b + sh, w, h, K.shadow);
+  for (let i = 0; i < w; i++) R(x, a + i, b, 1, h, i % 4 === 0 ? '#8e9396' : i % 4 === 1 ? '#c9cdcf' : '#aeb3b6');
+  R(x, a, b + h - 1, w, 1, '#7d8285');
+}
+
+// ===== 壹 腳踏車棚 =====
+(() => {
+  const { x, W, H } = make('g1'); lawn(x, W, H, 101);
+  concPad(x, 62, 34, 76, 50, 1);
+  // 靠牆的磚牆＋浪板屋頂（屋頂下面是放車的地方，看不到；放在屋簷外的看得到）
+  R(x, 62, 26, 76, 6, '#a5573f'); for (let i = 0; i < 76; i += 4) R(x, 62 + i, 26 + (i % 8 ? 0 : 3), 1, 3, '#8a4532'); R(x, 62, 29, 76, 1, '#8a4532');
+  metalRoof(x, 62, 30, 76, 18, 2);
+  // 屋簷外：腳踏車、機車
+  bike(x, 74, 52, '#4f7393'); bike(x, 84, 52, '#c94f3d');
+  scooter(x, 96, 54, V.white);
+  slot(x, 112, 52, 14, 22, 's');
+  // 打氣筒、安全帽
+  R(x, 130, 56, 2, 8, '#2a2a2a'); R(x, 129, 63, 4, 1, '#2a2a2a'); circ(x, 70, 74, 2, '#e2a62e'); P(x, 69, 73, '#f4c75a');
+  stones(x, [[96, 90], [98, 97], [95, 104]]);
+  tree(x, 26, 30, 9); tree(x, 172, 34, 8); tree(x, 166, 96, 6);
+})();
+
+// ===== 貳 車棚 =====
+(() => {
+  const { x, W, H } = make('g2'); lawn(x, W, H, 202);
+  concPad(x, 50, 18, 100, 84, 2);
+  // 先畫車，再蓋半透明的屋頂（看得到下面的車）
+  sedan(x, 66, 32, V.white);
+  scooter(x, 96, 40, V.blue);
+  slot(x, 112, 34, 14, 22, 's');
+  // 透明屋頂＋鋼架
+  x.fillStyle = 'rgba(214,232,236,.38)'; x.fillRect(52, 20, 84, 52);
+  for (let i = 0; i < 84; i += 14) R(x, 52 + i, 20, 1, 52, '#8e9396');
+  R(x, 52, 20, 84, 1, '#7d8285'); R(x, 52, 71, 84, 1, '#7d8285'); R(x, 135, 20, 1, 52, '#7d8285');
+  [[52, 20], [134, 20], [52, 70], [134, 70]].forEach(([u, v]) => R(x, u, v, 3, 3, '#5a5f62'));
+  for (let i = 0; i < 6; i++) P(x, 60 + i * 13, 24 + (i % 3) * 3, 'rgba(255,255,255,.8)');
+  // 車道
+  for (let j = 102; j < 120; j++) for (let i = 70; i < 96; i++) P(x, i, j, hash(i, j) > .9 ? K.conc2 : K.conc3);
+  tree(x, 24, 40, 9); tree(x, 172, 28, 8); tree(x, 176, 92, 7);
+})();
+
+// ===== 參 單車庫 =====
+(() => {
+  const { x, W, H } = make('g3'); lawn(x, W, H, 303);
+  // 車道
+  concPad(x, 62, 58, 60, 62, 3);
+  // 車庫本體：灰色雙坡屋頂（屋脊垂直），前面是捲門
+  const a = 56, b = 10, w = 72, h = 48;
+  R(x, a + 5, b + 5, w, h, K.shadow);
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const left = i < w / 2; let c = left ? '#9aa0a4' : '#7f868b'; if (j % 4 === 3) c = left ? '#8a9094' : '#6f767b'; if (i === Math.floor(w / 2) || i === Math.floor(w / 2) - 1) c = '#5f666b'; P(x, a + i, b + j, c); }
+  R(x, a, b, w, 1, '#5f666b'); R(x, a, b + h - 1, w, 1, '#5f666b');
+  // 捲門（從上面只看得到門楣）＋門口的燈
+  R(x, a + 10, b + h, 34, 3, '#d6d1c7'); R(x, a + 10, b + h + 2, 34, 1, '#8e8070'); P(x, a + 8, b + h + 1, '#f6cd72'); P(x, a + 46, b + h + 1, '#f6cd72');
+  // 側門＋小窗
+  R(x, a + w, b + 30, 3, 8, '#5e3c22');
+  // 停在車道上的跑車、旁邊兩台機車（一個空位）
+  sports(x, 74, 66, V.red);
+  scooter(x, 104, 68, V.yellow); slot(x, 102, 90, 12, 18, 's');
+  // 垃圾桶、水管
+  R(x, 140, 40, 7, 8, '#4f6d4a'); R(x, 140, 40, 7, 2, '#5f7f59'); for (let i = 0; i < 10; i++) P(x, 136 - i, 52 + Math.sin(i) * 2, '#3f7a4a');
+  tree(x, 24, 30, 9); tree(x, 24, 88, 8); tree(x, 172, 76, 8);
+})();
+
+// ===== 肆 雙車庫＋工作坊 =====
+(() => {
+  const { x, W, H } = make('g4'); lawn(x, W, H, 404);
+  concPad(x, 36, 56, 100, 64, 4);
+  // 本體：較寬的平屋頂（深灰防水層），有兩扇捲門、側邊工作坊
+  const a = 32, b = 6, w = 112, h = 50;
+  R(x, a + 6, b + 6, w, h, K.shadow);
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const n = hash(a + i, b + j); P(x, a + i, b + j, n > .9 ? '#6a6f73' : n < .05 ? '#8a8f93' : '#777c80'); }
+  R(x, a, b, w, 2, '#c9c4ba'); R(x, a, b + h - 2, w, 2, '#c9c4ba'); R(x, a, b, 2, h, '#c9c4ba'); R(x, a + w - 2, b, 2, h, '#c9c4ba');   // 女兒牆
+  // 天窗兩個、冷氣機
+  [[a + 18, b + 14], [a + 52, b + 14]].forEach(([u, v]) => { R(x, u + 2, v + 2, 18, 10, K.shadow); R(x, u, v, 18, 10, '#9fbfc8'); R(x, u + 1, v + 1, 6, 1, '#e2f1f3'); R(x, u, v, 18, 1, '#5f666b'); R(x, u, v + 9, 18, 1, '#5f666b'); });
+  R(x, a + 86, b + 12, 12, 10, '#d6d1c7'); circ(x, a + 92, b + 17, 3, '#9a948a'); R(x, a + 88, b + 24, 8, 2, K.shadow);
+  // 兩扇捲門
+  [[a + 8, 46], [a + 50, 46]].forEach(([u]) => { R(x, u, b + h, 38, 3, '#d6d1c7'); R(x, u, b + h + 2, 38, 1, '#8e8070'); });
+  // 車道上：越野車、轎車、機車
+  jeep(x, a + 14, 64, V.olive); sedan(x, a + 60, 66, V.blue);
+  scooter(x, a + 86, 70, V.red); slot(x, a + 84, 92, 12, 18, 's');
+  // 工作坊：右邊外面的工作台、輪胎、油桶
+  R(x, 152, 20, 26, 10, K.wood); R(x, 152, 20, 26, 1, K.wood3); R(x, 154, 22, 4, 3, '#c94f3d'); R(x, 160, 22, 6, 2, '#8e9396'); R(x, 168, 21, 2, 6, '#5a5a5a');
+  for (let i = 0; i < 3; i++) { circ(x, 160, 40 + i * 1, 5, '#2a2a2a'); circ(x, 160, 40 + i * 1, 2, '#555'); }
+  circ(x, 172, 44, 4, '#3f6e8c'); circ(x, 172, 44, 2, '#2f5570'); R(x, 176, 47, 2, 2, K.shadow);
+  tree(x, 14, 26, 8); tree(x, 176, 92, 9); tree(x, 14, 96, 7);
+})();
+
+// ===== 伍 展示車廊 =====
+(() => {
+  const { x, W, H } = make('g5'); lawn(x, W, H, 505);
+  // 前面的石板廣場
+  for (let j = 92; j < 120; j++) for (let i = 20; i < 180; i++) P(x, i, j, ((i >> 3) + (j >> 3)) % 2 ? '#d6d1c7' : '#cbc5ba');
+  // 玻璃屋頂的車廊：裡面看得到（拋光地板、聚光燈、轉盤）
+  const a = 16, b = 8, w = 168, h = 80;
+  R(x, a + 6, b + 6, w, h, K.shadow);
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) P(x, a + i, b + j, ((i + j) % 9 === 0) ? '#e8e5df' : '#dcd8d1');   // 拋光地板
+  // 轉盤＋超跑（中間）
+  const cx = a + 84, cy = b + 40;
+  for (let j = -24; j <= 24; j++) for (let i = -24; i <= 24; i++) { const d = Math.sqrt(i * i + j * j); if (d <= 24) P(x, cx + i, cy + j, d > 22 ? '#8e9396' : (Math.atan2(j, i) * 6 / Math.PI | 0) % 2 ? '#bfc4c7' : '#c9cdd0'); }
+  supercar(x, cx - 10, cy - 15, V.yellow);
+  // 兩邊的車位
+  classic(x, a + 14, b + 12, V.green); sports(x, a + 38, b + 12, V.red);
+  camper(x, a + 128, b + 8, V.cream); slot(x, a + 108, b + 10, 18, 32, 'm');
+  // 機車區（下面）
+  scooter(x, a + 16, b + 58, V.white); scooter(x, a + 28, b + 58, V.blue); slot(x, a + 40, b + 56, 12, 18, 's');
+  // 玻璃屋頂的鋼框＋反光
+  x.fillStyle = 'rgba(200,226,234,.28)'; x.fillRect(a, b, w, h);
+  for (let i = 0; i <= w; i += 21) R(x, a + i, b, 1, h, 'rgba(80,86,90,.5)');
+  for (let j = 0; j <= h; j += 20) R(x, a, b + j, w, 1, 'rgba(80,86,90,.5)');
+  for (let k = 0; k < 7; k++) for (let t = 0; t < 10; t++) P(x, a + 6 + k * 24 + t, b + 4 + t, 'rgba(255,255,255,.65)');
+  R(x, a, b, w, 2, '#3d4246'); R(x, a, b + h - 2, w, 2, '#3d4246'); R(x, a, b, 2, h, '#3d4246'); R(x, a + w - 2, b, 2, h, '#3d4246');
+  // 聚光燈（屋頂上的小圓點）
+  [[a + 60, b + 24], [a + 108, b + 24], [a + 84, b + 62]].forEach(([u, v]) => { circ(x, u, v, 2, '#3d4246'); P(x, u, v, '#f6e08a'); });
+  // 大門＋紅地毯
+  R(x, a + 70, b + h, 28, 3, '#3d4246'); for (let j = b + h + 3; j < 120; j++) R(x, a + 78, j, 12, 1, j % 2 ? '#b33a2f' : '#a8342a');
+  palm(x, 10, 104); palm(x, 188, 104);
+})();
+
+</script>
+</body>
+</html>
