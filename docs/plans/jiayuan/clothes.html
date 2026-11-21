@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家園：衣服圖鑑</title>
+<!-- 家園・築的設計圖（2026-11-21）：衣服圖鑑 20 款（使用者要的數量），正面看、掛衣架，24 × 28 顆；形狀只畫底色，shade() 自動補左上亮右下暗。還不是遊戲本身。 -->
+<style>
+  :root { --bg: #fcfaf8; --text: #4a4a4a; --dark: #2c2c2c; --accent: #8e8070; --sub: #dcdcdc; --shu: #b33a2f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', 'PingFang TC', sans-serif; }
+  main { max-width: 390px; margin: 0 auto; padding: 22px 16px 28px; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 300; font-size: 22px; letter-spacing: .3em; color: var(--dark); margin: 0; text-align: center; }
+  .sub { text-align: center; font-size: 11px; letter-spacing: .12em; color: var(--accent); margin: 6px 0 10px; line-height: 1.7; }
+  .card { border: 1px solid var(--sub); border-radius: 4px; padding: 12px; background: #fff; margin-top: 12px; }
+  .h { display: flex; align-items: baseline; gap: 8px; }
+  .no { font-size: 12px; color: var(--shu); border: 1px solid var(--shu); padding: 0 5px; line-height: 1.5; font-family: 'Noto Serif TC', serif; }
+  .name { font-family: 'Noto Serif TC', serif; font-size: 16px; letter-spacing: .2em; color: var(--dark); }
+  .tag { margin-left: auto; font-size: 10px; letter-spacing: .1em; color: var(--accent); }
+  canvas { display: block; width: 100%; border-radius: 3px; margin-top: 10px; image-rendering: pixelated; image-rendering: crisp-edges; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 8px 0 0; font-size: 11.5px; letter-spacing: .04em; line-height: 1.6; }
+  dt { color: var(--accent); } dd { margin: 0; }
+  .arrow { text-align: center; color: var(--accent); font-size: 12px; letter-spacing: .3em; margin-top: 12px; }
+  .labels { display: grid; gap: 4px; margin-top: 6px; text-align: center; }
+  .labels b { display: block; font-weight: 500; font-size: 11.5px; color: var(--dark); letter-spacing: .04em; }
+  .labels span { display: block; font-size: 9.5px; color: var(--accent); line-height: 1.4; margin-top: 1px; }
+  .stack canvas { margin-top: 10px; }
+  .gold { border-color: #c9a24a; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid #efebe4; }
+  .row:first-of-type { border-top: 0; }
+  .nm { width: 86px; flex: none; }
+  .nm b { display: block; font-weight: 500; font-size: 13px; color: var(--dark); letter-spacing: .08em; }
+  .nm span { display: block; font-size: 9.5px; color: var(--accent); line-height: 1.5; margin-top: 2px; }
+  .vs { display: flex; gap: 8px; flex-wrap: wrap; }
+  .v { text-align: center; }
+  .v canvas { width: 60px; margin: 0; background: #f6f1e8; border: 1px solid var(--sub); border-radius: 2px; }
+  .v span { display: block; font-size: 9.5px; color: var(--accent); margin-top: 2px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>衣服・圖鑑</h1>
+  <p class="sub">家園・築的設計圖（掛在衣架上、正面看；一格衣櫃一件）<br><span id="count"></span> 款，每款 1～3 色；同一款不同顏色算不同種，一模一樣的疊在同一格</p>
+  <div id="cl"></div>
+  <section class="card">
+    <div class="h"><span class="no">曬</span><span class="name">曬衣繩</span><span class="tag">平房以上</span></div>
+    <canvas id="line" width="160" height="40"></canvas>
+    <dl><dt>晾什麼</dt><dd>隨機晾幾件衣櫃裡的衣服，縮小成島上的大小（一件約 12 顆）</dd></dl>
+  </section>
+</main>
+<script>
+
+// ===== 小工具（跟 style-mockup.html 同一套：硬邊、整數座標）=====
+const TAU = Math.PI * 2;
+function make(id) { const c = document.getElementById(id), x = c.getContext('2d'); x.imageSmoothingEnabled = false; return { c, x, W: c.width, H: c.height }; }
+const hash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+function P(x, a, b, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), 1, 1); }
+function R(x, a, b, w, h, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), Math.round(w), Math.round(h)); }
+function circ(x, cx, cy, r, col) { for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r + r * .6) P(x, cx + xx, cy + yy, col); }
+function poly(x, pts, col) {
+  const ys = pts.map(p => p[1]), xs = pts.map(p => p[0]);
+  const y0 = Math.floor(Math.min(...ys)), y1 = Math.ceil(Math.max(...ys)), x0 = Math.floor(Math.min(...xs)), x1 = Math.ceil(Math.max(...xs));
+  x.fillStyle = col;
+  for (let y = y0; y <= y1; y++) for (let X = x0; X <= x1; X++) {
+    const px = X + .5, py = y + .5; let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside; }
+    if (inside) x.fillRect(X, y, 1, 1);
+  }
+}
+const K = {
+  g1: '#97ad6f', g2: '#86a061', g3: '#a6bb7c', g4: '#738d51', sand: '#e6d3a3', sand2: '#d8c18b', sand3: '#efe0b8',
+  sea: '#6b97a6', sea2: '#7ea9b5', shallow: '#9cc5c8', foam: '#e3efed', deep: '#4f7d8f',
+  leaf1: '#5d7c43', leaf2: '#4a6634', leaf3: '#7a9a55', leafHi: '#9cb96f', trunk: '#6e4528',
+  roof: '#b33a2f', roofHi: '#cf5a46', roofLo: '#8f2c23', roofLine: '#7a241d',
+  wall: '#efe4cf', wall2: '#d9c9aa', wall3: '#c2ae8b', door: '#5e3c22', win: '#f6cd72', frame: '#6e4528',
+  conc: '#c4beb3', conc2: '#aea79b', conc3: '#d6d1c7', stone: '#a39b8e', stone2: '#8b8377', stone3: '#bdb6aa',
+  wood: '#9a6a40', wood2: '#7c5230', wood3: '#b07f50', post: '#5e3c22',
+  canvas: '#dcc9a0', canvasHi: '#ece0c1', canvasLo: '#bba77c', canvasLine: '#9c8a62',
+  shingle: '#8a6440', shingleHi: '#a57a50', shingleLo: '#6c4c30', shingleLine: '#553a24',
+  slate: '#76828c', slateHi: '#8f9ba5', slateLo: '#626d77', slateLine: '#4f5962',
+  white: '#f3f1ec', white2: '#dedad1', white3: '#c9c4b9', glass: '#a8cdd6', glassHi: '#e2f1f3',
+  pool: '#5fb3c4', poolHi: '#9fdce4', poolLo: '#3f93a6', fire: '#e8873a', fire2: '#f6cd72', fire3: '#c4462e',
+  hedge: '#557a3e', hedge2: '#43652f', flowerA: '#f0b8b0', flowerB: '#f1d36b', flowerC: '#c9a0dc',
+  shadow: 'rgba(30,40,30,.24)'
+};
+
+// 共用：草地底、石板路、樹、影子
+function lawn(x, W, H, seed = 0) { for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) { const n = hash(a + seed, b); P(x, a, b, n > .9 ? K.g3 : n > .74 ? K.g2 : n < .05 ? K.g4 : K.g1); } }
+function stones(x, pts) { pts.forEach(([a, b]) => { R(x, a, b, 6, 3, K.conc3); R(x, a, b + 2, 6, 1, K.conc2); P(x, a, b, '#e4e0d8'); }); }
+function tree(x, a, b, r) {
+  x.fillStyle = K.shadow; for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r) x.fillRect(a + xx + 3, b + yy + 3, 1, 1);
+  circ(x, a, b, r, K.leaf2); circ(x, a - 1, b - 1, r - 1, K.leaf1); circ(x, a - 2, b - 2, Math.max(1, r - 3), K.leaf3); P(x, a - r / 2, b - r / 2, K.leafHi); P(x, a - r / 2 + 1, b - r / 2, K.leafHi);
+  for (let i = 0; i < r * 2; i++) { const t = hash(a + i, b) * TAU, rr = hash(b, a + i) * r; P(x, a + Math.cos(t) * rr, b + Math.sin(t) * rr, i % 2 ? K.leaf2 : K.leaf3); }
+}
+function palm(x, a, b) {   // 椰子樹：六片葉子，每片兩顆寬、尾巴往下垂，葉子比草地深才看得出來
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3; for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); P(x, u + 3, v + 3, K.shadow); } }
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3, nx = -Math.sin(t), ny = Math.cos(t); for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); const wdt = s < 4 ? 1 : s < 9 ? 2 : 1; for (let q = -wdt; q <= wdt; q++) P(x, u + nx * q, v + ny * q, q === wdt ? '#3d5f2c' : (q === -wdt ? '#8fb35a' : '#6f9a45')); } }
+  circ(x, a, b, 2, '#7a5a3a'); P(x, a - 1, b - 1, '#a07a50'); P(x, a + 1, b + 1, '#5e4228'); }
+function shadowPoly(x, pts, dx, dy) { poly(x, pts.map(([a, b]) => [a + dx, b + dy]), K.shadow); }
+// 四面坡（上亮、左亮、右暗、下暗），屋脊沿水平方向；line 是瓦片的橫線間距
+function hipRoof(x, a, b, w, h, c, opts = {}) {
+  const inset = Math.min(h / 2, opts.inset ?? h / 2), ry = b + h / 2;
+  const ridgeL = a + inset, ridgeR = a + w - inset;
+  shadowPoly(x, [[a, b], [a + w, b], [a + w, b + h], [a, b + h]], opts.sh || 4, opts.sh || 4);
+  poly(x, [[a, b], [a + w, b], [ridgeR, ry], [ridgeL, ry]], c.hi);           // 上坡（迎光）
+  poly(x, [[a, b + h], [a + w, b + h], [ridgeR, ry], [ridgeL, ry]], c.lo);   // 下坡
+  poly(x, [[a, b], [ridgeL, ry], [a, b + h]], c.mid);                        // 左坡
+  poly(x, [[a + w, b], [ridgeR, ry], [a + w, b + h]], c.lo);                  // 右坡
+  // 瓦片橫線＋錯開的直縫
+  for (let yy = b + 2; yy < b + h - 1; yy += c.step || 3) for (let xx = a + 1; xx < a + w - 1; xx++) {
+    const dTop = yy - b, dBot = b + h - yy, dl = xx - a, dr = a + w - xx;
+    if (dl > Math.min(dTop, dBot) + 1 && dr > Math.min(dTop, dBot) + 1 || true) { const px = x.getImageData(xx, yy, 1, 1).data; if (px[3]) P(x, xx, yy, c.line); }
+  }
+  for (let yy = b + 1; yy < b + h - 1; yy++) for (let xx = a + 1 + ((Math.floor((yy - b) / (c.step || 3)) % 2) * 2); xx < a + w - 1; xx += 4) if ((yy - b) % (c.step || 3)) P(x, xx, yy, c.seam || c.line);
+  R(x, ridgeL, ry - 1, ridgeR - ridgeL, 2, c.ridge || c.line);
+  // 四條斜脊
+  const diag = (x0, y0, x1, y1) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, c.ridge || c.line); };
+  diag(a, b, ridgeL, ry); diag(a, b + h, ridgeL, ry); diag(a + w, b, ridgeR, ry); diag(a + w, b + h, ridgeR, ry);
+  // 外框
+  R(x, a, b, w, 1, c.edge || c.line); R(x, a, b + h - 1, w, 1, c.edge || c.line); R(x, a, b, 1, h, c.edge || c.line); R(x, a + w - 1, b, 1, h, c.edge || c.line);
+}
+function chimney(x, a, b, w, h, top, side, sh = 3) { R(x, a + sh, b + sh, w, h, K.shadow); R(x, a, b, w, h, side); R(x, a, b, w, 2, top); R(x, a + 1, b + 1, w - 2, 1, '#4a3f36'); for (let i = 0; i < 3; i++) P(x, a + 1 + i, b - 2 - i * 2, i % 2 ? '#ece8e2' : '#e0dbd2'); }
+
+// ===== 衣服圖鑑：正面看、掛在衣架上；一格衣櫃一件（24 × 28 顆）。形狀只畫一個底色，邊緣的亮面、暗面程式自己補（左上亮、右下暗）=====
+const CW = 24, CH = 28;
+const hex = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16)), toHex = a => '#' + a.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+const lit = (c, k) => toHex(hex(c).map(v => v + (255 - v) * k)), dim = (c, k) => toHex(hex(c).map(v => v * (1 - k)));
+function shade(x) {   // 不透明的格子：左邊或上面是空的 → 亮；右邊或下面是空的 → 暗
+  const d = x.getImageData(0, 0, CW, CH), p = d.data, a = (i, j) => (i < 0 || j < 0 || i >= CW || j >= CH) ? 0 : p[(j * CW + i) * 4 + 3];
+  const out = new Uint8ClampedArray(p);
+  for (let j = 0; j < CH; j++) for (let i = 0; i < CW; i++) { const k = (j * CW + i) * 4; if (!p[k + 3] || p[k + 3] < 255) continue; const c = [p[k], p[k + 1], p[k + 2]];
+    let f = 0; if (!a(i - 1, j) || !a(i, j - 1)) f = .28; if (!a(i + 1, j) || !a(i, j + 1)) f = -.3;
+    if (f > 0) c.forEach((v, q) => out[k + q] = v + (255 - v) * f); else if (f < 0) c.forEach((v, q) => out[k + q] = v * (1 + f)); }
+  x.putImageData(new ImageData(out, CW, CH), 0, 0);
+}
+function Pin(x, i, j, col) { i = Math.round(i); j = Math.round(j); if (x.getImageData(i, j, 1, 1).data[3] > 0) P(x, i, j, col); }   // 只畫在衣服上（花紋不跑出去）
+function hanger(x) { R(x, 11, 0, 2, 1, '#8e9396'); P(x, 13, 1, '#8e9396'); P(x, 12, 2, '#8e9396'); for (let i = 0; i < 9; i++) { P(x, 12 - i, 3 + i * .25, '#a9aeb1'); P(x, 12 + i, 3 + i * .25, '#8e9396'); } }
+const SH = {
+  tee: [[7, 5], [17, 5], [23, 10], [20, 13], [18, 11], [18, 26], [6, 26], [6, 11], [4, 13], [1, 10]],
+  tank: [[7, 5], [9, 5], [12, 8], [15, 5], [17, 5], [18, 10], [18, 26], [6, 26], [6, 10]],
+  long: [[7, 5], [17, 5], [23, 9], [23, 23], [20, 23], [18, 12], [18, 26], [6, 26], [6, 12], [4, 23], [1, 23], [1, 9]],
+  coat: [[7, 5], [17, 5], [23, 9], [23, 22], [20, 22], [18, 12], [19, 27], [5, 27], [6, 12], [4, 22], [1, 22], [1, 9]],
+  pants: [[6, 5], [18, 5], [19, 27], [13, 27], [12, 12], [11, 27], [5, 27]],
+  shorts: [[6, 5], [18, 5], [19, 17], [13, 17], [12, 10], [11, 17], [5, 17]],
+  skirt: [[8, 5], [16, 5], [20, 20], [4, 20]],
+  kimono: [[7, 5], [17, 5], [23, 6], [23, 15], [18, 15], [18, 27], [6, 27], [6, 15], [1, 15], [1, 6]],
+  dress: [[8, 5], [10, 5], [12, 7], [14, 5], [16, 5], [16, 11], [21, 26], [3, 26], [8, 11]],
+  overall: [[8, 9], [16, 9], [16, 13], [18, 13], [19, 27], [13, 27], [12, 17], [11, 27], [5, 27], [6, 13], [8, 13]],
+  cape: [[9, 5], [15, 5], [22, 26], [2, 26]],
+};
+// 每一款：名字、等級、形狀、顏色（名字, 底色）、細節
+const DETAIL = {
+  plain(x, c) { R(x, 10, 5, 4, 1, dim(c, .25)); P(x, 10, 6, dim(c, .25)); P(x, 13, 6, dim(c, .25)); },
+  stripe(x, c, s) { for (let j = 8; j < 26; j += 3) R(x, 6, j, 12, 1, s); for (let j = 10; j < 13; j += 3) { R(x, 2, j, 3, 1, s); R(x, 19, j, 3, 1, s); } DETAIL.plain(x, c); },
+  logo(x, c) { DETAIL.plain(x, c); circ(x, 12, 13, 3, '#b33a2f'); circ(x, 12, 13, 1, '#ffffff'); P(x, 12, 13, '#b33a2f'); },
+  tankDet(x, c) { R(x, 9, 24, 6, 1, dim(c, .15)); },
+  shirt(x, c) { poly(x, [[9, 5], [12, 9], [8, 9]], '#ffffff'); poly(x, [[15, 5], [16, 9], [12, 9]], '#f3f1ec'); for (let j = 10; j < 26; j += 3) P(x, 12, j, '#ffffff'); R(x, 12, 9, 1, 17, dim(c, .15)); R(x, 7, 11, 3, 2, dim(c, .12)); R(x, 1, 21, 3, 2, '#ffffff'); R(x, 20, 21, 3, 2, '#ffffff'); },
+  sweater(x, c) { [9, 14].forEach(a => { for (let j = 8; j < 24; j++) P(x, a + ((j >> 1) % 2), j, dim(c, .18)); }); R(x, 6, 24, 12, 2, dim(c, .12)); for (let i = 6; i < 18; i += 2) P(x, i, 25, lit(c, .2)); R(x, 1, 21, 3, 2, dim(c, .12)); R(x, 20, 21, 3, 2, dim(c, .12)); R(x, 9, 5, 6, 1, dim(c, .2)); },
+  hoodie(x, c) { circ(x, 12, 6, 4, dim(c, .1)); R(x, 10, 6, 4, 3, dim(c, .35)); P(x, 10, 10, '#f3f1ec'); P(x, 10, 11, '#f3f1ec'); P(x, 14, 10, '#f3f1ec'); P(x, 14, 11, '#f3f1ec'); R(x, 8, 18, 8, 5, dim(c, .12)); R(x, 8, 18, 8, 1, dim(c, .25)); R(x, 6, 24, 12, 2, dim(c, .1)); },
+  denim(x, c) { poly(x, [[8, 5], [12, 10], [10, 11], [7, 7]], lit(c, .15)); poly(x, [[16, 5], [17, 7], [14, 11], [12, 10]], lit(c, .1)); R(x, 12, 10, 1, 16, dim(c, .3)); [[7, 12], [14, 12]].forEach(([a, b]) => { R(x, a, b, 4, 4, dim(c, .1)); R(x, a, b, 4, 1, '#e2a62e'); P(x, a + 1, b + 2, '#c9a24a'); });
+    for (let j = 12; j < 26; j += 3) P(x, 13, j, '#c9a24a'); R(x, 6, 24, 12, 1, '#e2a62e'); },
+  trench(x, c) { poly(x, [[8, 5], [12, 11], [10, 12], [6, 8]], lit(c, .18)); poly(x, [[16, 5], [18, 8], [14, 12], [12, 11]], lit(c, .1)); R(x, 6, 17, 13, 2, dim(c, .22)); R(x, 11, 17, 2, 2, '#c9a24a');
+    [[9, 12], [15, 12], [9, 15], [15, 15], [9, 21], [15, 21]].forEach(([a, b]) => P(x, a, b, dim(c, .45))); R(x, 1, 19, 3, 1, dim(c, .22)); R(x, 20, 19, 3, 1, dim(c, .22)); },
+  down(x, c) { for (let j = 8; j < 27; j += 4) { R(x, 6, j, 12, 1, dim(c, .2)); R(x, 1, j, 3, 1, dim(c, .2)); R(x, 20, j, 3, 1, dim(c, .2)); } R(x, 12, 6, 1, 20, dim(c, .3)); R(x, 9, 4, 6, 2, '#efe9df'); for (let i = 9; i < 15; i += 2) P(x, i, 4, '#ffffff'); },
+  blazer(x, c) { poly(x, [[8, 5], [12, 15], [10, 15], [6, 8]], dim(c, .25)); poly(x, [[16, 5], [18, 8], [14, 15], [12, 15]], dim(c, .3)); poly(x, [[10, 5], [12, 12], [14, 5]], '#ffffff'); P(x, 12, 9, '#b33a2f'); P(x, 12, 10, '#b33a2f');
+    P(x, 12, 17, '#c9a24a'); P(x, 12, 21, '#c9a24a'); R(x, 7, 12, 3, 1, '#ffffff'); P(x, 8, 11, '#b33a2f'); R(x, 7, 20, 4, 1, dim(c, .2)); R(x, 14, 20, 4, 1, dim(c, .2)); },
+  jeans(x, c) { R(x, 6, 5, 13, 2, dim(c, .15)); P(x, 12, 6, '#c9a24a'); for (let j = 7; j < 27; j += 2) { P(x, 8, j, lit(c, .25)); P(x, 16, j, lit(c, .25)); } R(x, 7, 8, 3, 1, '#e2a62e'); R(x, 15, 8, 3, 1, '#e2a62e'); R(x, 5, 26, 6, 1, lit(c, .2)); R(x, 13, 26, 6, 1, lit(c, .2)); },
+  shortsDet(x, c) { R(x, 6, 5, 13, 2, dim(c, .15)); P(x, 12, 6, '#f3f1ec'); R(x, 5, 16, 6, 1, lit(c, .2)); R(x, 13, 16, 6, 1, lit(c, .2)); },
+  pleat(x, c) { R(x, 8, 5, 9, 2, dim(c, .2)); for (let k = 0; k < 5; k++) { const t = (k + .5) / 5; for (let j = 8; j < 20; j++) { const half = 4 + (j - 5) * (4 / 15); P(x, 12 - half + t * half * 2, j, dim(c, .22)); } } },
+  slacks(x, c) { R(x, 6, 5, 13, 2, dim(c, .2)); P(x, 12, 6, '#c9a24a'); for (let j = 8; j < 27; j++) { P(x, 8 + (j > 12 ? 0 : 0), j, lit(c, .18)); P(x, 16, j, lit(c, .18)); } },
+  yukata(x, c, s) { for (let j = 6; j < 27; j += 4) for (let i = 2; i < 23; i += 4) Pin(x, i + ((j >> 2) % 2) * 2, j, s); poly(x, [[9, 5], [15, 5], [9, 15], [7, 13]], dim(c, .25)); poly(x, [[10, 5], [15, 5], [9, 13]], s); R(x, 6, 14, 12, 4, '#c9a24a'); R(x, 6, 14, 12, 1, '#f4dc95'); R(x, 11, 15, 3, 2, '#b33a2f'); },
+  dressDet(x, c, s) { R(x, 8, 11, 8, 2, s); P(x, 12, 12, '#ffffff'); for (let j = 15; j < 26; j += 3) for (let i = 6 - (j - 15) / 3; i < 19 + (j - 15) / 3; i += 4) Pin(x, i, j, lit(c, .35)); },
+  overallDet(x, c) { R(x, 8, 5, 1, 4, dim(c, .3)); R(x, 15, 5, 1, 4, dim(c, .3)); P(x, 8, 9, '#c9a24a'); P(x, 15, 9, '#c9a24a'); R(x, 10, 10, 4, 3, dim(c, .12)); R(x, 10, 10, 4, 1, '#e2a62e'); for (let j = 14; j < 27; j += 2) { P(x, 7, j, lit(c, .2)); P(x, 17, j, lit(c, .2)); } },
+  captain(x, c) { R(x, 1, 9, 5, 2, '#c9a24a'); R(x, 18, 9, 5, 2, '#c9a24a'); for (let i = 1; i < 6; i += 2) P(x, i, 11, '#c9a24a'); for (let i = 18; i < 23; i += 2) P(x, i, 11, '#c9a24a');
+    poly(x, [[9, 5], [12, 9], [15, 5]], '#2f4166'); [[10, 13], [14, 13], [10, 17], [14, 17], [10, 21], [14, 21]].forEach(([a, b]) => P(x, a, b, '#e2a62e')); R(x, 1, 20, 3, 2, '#2f4166'); R(x, 20, 20, 3, 2, '#2f4166'); R(x, 5, 25, 15, 1, '#2f4166'); },
+  capeDet(x, c) { for (let i = 5; i < 20; i++) { const v = 5 + Math.round(Math.sin((i - 5) / 14 * Math.PI) * 3); R(x, i, 4, 1, v - 1, '#f3f1ec'); } [7, 11, 15, 18].forEach(i => P(x, i, 6, '#2c2c2c')); R(x, 11, 9, 2, 2, '#c9a24a'); P(x, 11, 9, '#f4dc95'); for (let j = 12; j < 26; j += 3) { P(x, 9 - (j - 12) / 4, j, dim(c, .2)); P(x, 15 + (j - 12) / 4, j, dim(c, .25)); } R(x, 3, 25, 19, 1, '#c9a24a'); },
+};
+const CLOTHES = [
+  ['上衣', [
+    ['素T', '平價', 'tee', 'plain', [['白', '#f3f1ec'], ['黑', '#3d3a38'], ['灰', '#a9aeb1']]],
+    ['條紋T', '平價', 'tee', 'stripe', [['白底藍條', '#f3f1ec', '#4f6f88'], ['白底朱條', '#f3f1ec', '#b33a2f'], ['深藍白條', '#2f4166', '#f3f1ec']]],
+    ['背心', '平價', 'tank', 'tankDet', [['白', '#f3f1ec'], ['黑', '#3d3a38'], ['卡其', '#c9b48a']]],
+    ['丼步喱T', '高級・胸口一顆朱印', 'tee', 'logo', [['白', '#f3f1ec'], ['米', '#e8dbc2'], ['墨', '#4a4a4a']]],
+    ['長袖襯衫', '高級', 'long', 'shirt', [['淺藍', '#a9c6da'], ['粉', '#f0c4bc'], ['格子綠', '#7a9a55']]],
+    ['麻花毛衣', '高級', 'long', 'sweater', [['米白', '#efe4cf'], ['芥末黃', '#d4a83a'], ['酒紅', '#8f2c23']]],
+    ['連帽衫', '平價', 'long', 'hoodie', [['灰', '#a9aeb1'], ['枯茶', '#8e8070'], ['深藍', '#2f4166']]]]],
+  ['外套', [
+    ['牛仔外套', '高級', 'long', 'denim', [['淺藍', '#7d9cbd'], ['深藍', '#3d5a80'], ['黑', '#3d3a38']]],
+    ['風衣', '豪華', 'coat', 'trench', [['卡其', '#c9a878'], ['黑', '#3d3a38'], ['深綠', '#4f6040']]],
+    ['羽絨外套', '豪華', 'long', 'down', [['黑', '#3d3a38'], ['朱', '#b33a2f'], ['白', '#ece9e2']]],
+    ['西裝外套', '豪華', 'long', 'blazer', [['深藍', '#2f4166'], ['炭灰', '#4a4d52'], ['米', '#d8c7a8']]]]],
+  ['下身', [
+    ['牛仔褲', '平價', 'pants', 'jeans', [['淺藍', '#7d9cbd'], ['深藍', '#3d5a80'], ['黑', '#3d3a38']]],
+    ['短褲', '平價', 'shorts', 'shortsDet', [['卡其', '#c9b48a'], ['深藍', '#2f4166'], ['綠', '#7a9a55']]],
+    ['百褶裙', '高級', 'skirt', 'pleat', [['格紋紅', '#a8342a'], ['深藍', '#2f4166'], ['米', '#d8c7a8']]],
+    ['西裝褲', '高級', 'pants', 'slacks', [['炭灰', '#4a4d52'], ['深藍', '#2f4166'], ['米', '#d8c7a8']]]]],
+  ['連身・和風', [
+    ['浴衣', '豪華', 'kimono', 'yukata', [['深藍', '#2f4166', '#f3f1ec'], ['朱', '#b33a2f', '#f4dc95'], ['白', '#ece9e2', '#4f6f88']]],
+    ['連身洋裝', '高級', 'dress', 'dressDet', [['碎花紅', '#c0574a', '#f3f1ec'], ['黑', '#3d3a38', '#c9a24a'], ['薄荷', '#9cc5b8', '#f3f1ec']]],
+    ['吊帶褲', '平價', 'overall', 'overallDet', [['丹寧', '#5a7aa0'], ['卡其', '#b8a070'], ['紅', '#a8342a']]]]],
+  ['特別款', [
+    ['船長外套', '豪華・跟青江菜船長同款', 'long', 'captain', [['白', '#f3f1ec']]],
+    ['國王紅披風', '豪華・浣熊大王同款', 'cape', 'capeDet', [['朱', '#b33a2f'], ['深紫', '#5a3a6a']]]]],
+];
+function garment(shape, det, col, sub) {
+  const cv = document.createElement('canvas'); cv.width = CW; cv.height = CH; const x = cv.getContext('2d'); x.imageSmoothingEnabled = false;
+  poly(x, SH[shape], col); shade(x); DETAIL[det](x, col, sub); hanger(x); return cv;
+}
+function sheet() {
+  const box = document.getElementById('cl');
+  let n = 0;
+  CLOTHES.forEach(([cat, items]) => {
+    const sec = document.createElement('section'); sec.className = 'card'; sec.innerHTML = `<div class="h"><span class="name">${cat}</span><span class="tag">${items.length} 款</span></div>`; box.appendChild(sec);
+    items.forEach(([name, tier, shape, det, cols]) => {
+      n++; const row = document.createElement('div'); row.className = 'row';
+      row.innerHTML = `<div class="nm"><b>${name}</b><span>${tier}</span></div><div class="vs"></div>`;
+      cols.forEach(([cn, c, s]) => { const v = document.createElement('div'); v.className = 'v'; const g = garment(shape, det, c, s); v.appendChild(g); v.insertAdjacentHTML('beforeend', `<span>${cn}</span>`); row.querySelector('.vs').appendChild(v); });
+      sec.appendChild(row);
+    });
+  });
+  document.getElementById('count').textContent = n;
+  // 曬衣繩：島上（平房以上）隨機晾幾件衣櫃裡的；縮小成島上的大小
+  const cl = document.getElementById('line'), x = cl.getContext('2d'); x.imageSmoothingEnabled = false; lawn(x, cl.width, cl.height, 77);
+  R(x, 8, 10, 2, 24, '#6e4528'); R(x, 150, 10, 2, 24, '#6e4528'); R(x, 10, 12, 140, 1, '#e8e4dc');
+  const flat = CLOTHES.flatMap(c => c[1]), pick = [[0, 0], [1, 1], [3, 0], [5, 1], [6, 2], [11, 0], [14, 1], [15, 0]];
+  pick.forEach(([ii, vi], k) => { const it = flat[ii], col = it[4][vi % it[4].length], g = garment(it[2], it[3], col[1], col[2]);
+    const u = 14 + k * 17, sh = document.createElement('canvas'); sh.width = CW; sh.height = CH; const sx = sh.getContext('2d'); sx.drawImage(g, 0, 0); sx.globalCompositeOperation = 'source-in'; sx.fillStyle = 'rgba(30,40,30,.22)'; sx.fillRect(0, 0, CW, CH);
+    x.drawImage(sh, 0, 4, CW, CH - 4, u + 3, 15, 12, 12); x.drawImage(g, 0, 4, CW, CH - 4, u, 12, 12, 12); P(x, u + 2, 12, '#8e8070'); P(x, u + 9, 12, '#8e8070'); });
+  document.body.dataset.done = 1;
+}
+sheet();
+</script>
+</body>
+</html>
