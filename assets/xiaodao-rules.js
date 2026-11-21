@@ -138,6 +138,68 @@
     rkl5: { name: '金箔重型火箭', desc: '上段包金箔、金鼻錐；重型裡最貴', g: '大型（重型）', fac: 'launchpad', cls: 3, price: 20000000, w: 39, h: 109, ax: 12, ay: 101, free: 1 },
   };
   const VEH_KEYS = Object.keys(VEH);
+
+  // ---------- 屋內（第四批） ----------
+  // 家具：furniture.html 的 40 款（tools/xiaodao/dump_furniture.js 畫成 assets/xiaodao/furn.png；colors[].d 是白天那張在圖裡的 [x, y, 寬, 高]，nt 是晚上亮燈那張）
+  // w、h 是占幾格（一格 10 顆）；kind：four 四個方向、two 直放橫放、one 不用轉、wall 貼牆（自動面向房間）、pic 掛北牆、rug 地板層（可以轉）、rugone 地板層
+  // 豪華的要先有洋房（企劃書：四柱床要先有洋房）
+  const FURN = {
+    bed1: { name: '單人木床', cat: '床', tier: '平價', note: '', w: 2, h: 4, kind: 'four', price: 1500, colors: [{ n: '淺木・藍', sw: '#6f8fa8', d: [0,0,20,40] },{ n: '胡桃木・綠', sw: '#7a9a55', d: [21,0,20,40] },{ n: '白・米', sw: '#d8c7a8', d: [42,0,20,40] }] },
+    bed2: { name: '雙人床', cat: '床', tier: '高級', note: '', w: 3, h: 4, kind: 'four', price: 9000, colors: [{ n: '胡桃木・朱', sw: '#b33a2f', d: [63,0,30,40] },{ n: '淺木・深藍', sw: '#2f4166', d: [94,0,30,40] },{ n: '白・灰', sw: '#8e9396', d: [125,0,30,40] }] },
+    bed3: { name: '四柱床', cat: '床', tier: '豪華', note: '', w: 4, h: 4, kind: 'four', price: 120000, colors: [{ n: '胡桃木・金', sw: '#c9a24a', d: [156,0,40,40] },{ n: '黑・朱', sw: '#b33a2f', d: [197,0,40,40] },{ n: '白・米', sw: '#d8c7a8', d: [238,0,40,40] }] },
+    lamp1: { name: '床頭櫃', cat: '燈', tier: '平價', note: '附小燈', w: 1, h: 1, kind: 'wall', price: 600, colors: [{ n: '淺木', sw: '#c48d5c', d: [279,0,10,10], nt: [290,0,10,10] },{ n: '胡桃木', sw: '#8a5a34', d: [301,0,10,10], nt: [312,0,10,10] },{ n: '白', sw: '#efe9df', d: [323,0,10,10], nt: [334,0,10,10] }] },
+    lamp2: { name: '立燈', cat: '燈', tier: '平價', note: '', w: 1, h: 1, kind: 'one', price: 800, colors: [{ n: '米', sw: '#d8c7a8', d: [345,0,10,10], nt: [356,0,10,10] },{ n: '灰', sw: '#8e9396', d: [367,0,10,10], nt: [378,0,10,10] },{ n: '朱', sw: '#b33a2f', d: [389,0,10,10], nt: [400,0,10,10] }] },
+    lamp3: { name: '弧形落地燈', cat: '燈', tier: '高級', note: '', w: 2, h: 2, kind: 'one', price: 6000, colors: [{ n: '米', sw: '#d8c7a8', d: [411,0,20,20], nt: [432,0,20,20] },{ n: '金', sw: '#c9a24a', d: [453,0,20,20], nt: [474,0,20,20] },{ n: '灰', sw: '#8e9396', d: [0,41,20,20], nt: [21,41,20,20] }] },
+    store1: { name: '雙門衣櫃', cat: '收納', tier: '平價', note: '', w: 2, h: 1, kind: 'wall', price: 1500, colors: [{ n: '淺木', sw: '#c48d5c', d: [42,41,20,10] },{ n: '胡桃木', sw: '#8a5a34', d: [63,41,20,10] },{ n: '白', sw: '#efe9df', d: [84,41,20,10] }] },
+    store2: { name: '三門大衣櫃', cat: '收納', tier: '高級', note: '中間是鏡子', w: 3, h: 1, kind: 'wall', price: 12000, colors: [{ n: '胡桃木', sw: '#8a5a34', d: [105,41,30,10] },{ n: '白', sw: '#efe9df', d: [136,41,30,10] },{ n: '黑', sw: '#3d3a38', d: [167,41,30,10] }] },
+    store3: { name: '矮書櫃', cat: '收納', tier: '平價', note: '', w: 2, h: 1, kind: 'wall', price: 1200, colors: [{ n: '淺木', sw: '#c48d5c', d: [198,41,20,10] },{ n: '胡桃木', sw: '#8a5a34', d: [219,41,20,10] },{ n: '黑', sw: '#3d3a38', d: [240,41,20,10] }] },
+    store4: { name: '整面書牆', cat: '收納', tier: '高級', note: '', w: 3, h: 1, kind: 'wall', price: 13000, colors: [{ n: '胡桃木', sw: '#8a5a34', d: [261,41,30,10] },{ n: '黑', sw: '#3d3a38', d: [292,41,30,10] },{ n: '白', sw: '#efe9df', d: [323,41,30,10] }] },
+    store5: { name: '玻璃小櫃', cat: '收納', tier: '平價', note: '展示櫃', w: 2, h: 1, kind: 'wall', price: 2000, colors: [{ n: '淺木', sw: '#c48d5c', d: [354,41,20,10] },{ n: '胡桃木', sw: '#8a5a34', d: [375,41,20,10] },{ n: '黑', sw: '#3d3a38', d: [396,41,20,10] }] },
+    store6: { name: '金框大展示櫃', cat: '收納', tier: '豪華', note: '展示櫃', w: 3, h: 1, kind: 'wall', price: 80000, colors: [{ n: '原色', sw: '#9a6a40', d: [417,41,30,10] }] },
+    table1: { name: '木書桌', cat: '桌椅', tier: '平價', note: '附檯燈', w: 3, h: 1, kind: 'four', price: 1500, colors: [{ n: '淺木', sw: '#c48d5c', d: [448,41,30,10], nt: [479,41,30,10] },{ n: '胡桃木', sw: '#8a5a34', d: [0,62,30,10], nt: [31,62,30,10] },{ n: '白', sw: '#efe9df', d: [62,62,30,10], nt: [93,62,30,10] }] },
+    table2: { name: '電腦桌', cat: '桌椅', tier: '高級', note: '螢幕鍵盤', w: 3, h: 1, kind: 'four', price: 8000, colors: [{ n: '黑', sw: '#3d3a38', d: [124,62,30,10], nt: [155,62,30,10] },{ n: '白', sw: '#efe9df', d: [186,62,30,10], nt: [217,62,30,10] },{ n: '胡桃木', sw: '#8a5a34', d: [248,62,30,10], nt: [279,62,30,10] }] },
+    table3: { name: '木椅凳', cat: '桌椅', tier: '平價', note: '', w: 1, h: 1, kind: 'one', price: 500, colors: [{ n: '淺木', sw: '#c48d5c', d: [310,62,10,10] },{ n: '胡桃木', sw: '#8a5a34', d: [321,62,10,10] },{ n: '黑', sw: '#3d3a38', d: [332,62,10,10] }] },
+    table4: { name: '靠背椅', cat: '桌椅', tier: '高級', note: '', w: 1, h: 1, kind: 'four', price: 4500, colors: [{ n: '淺木・朱', sw: '#b33a2f', d: [343,62,10,10] },{ n: '胡桃木・綠', sw: '#7a9a55', d: [354,62,10,10] },{ n: '黑・米', sw: '#d8c7a8', d: [365,62,10,10] }] },
+    table5: { name: '木茶几', cat: '桌椅', tier: '平價', note: '', w: 2, h: 1, kind: 'two', price: 1000, colors: [{ n: '淺木', sw: '#c48d5c', d: [376,62,20,10] },{ n: '胡桃木', sw: '#8a5a34', d: [397,62,20,10] },{ n: '白', sw: '#efe9df', d: [418,62,20,10] }] },
+    table6: { name: '玻璃茶几', cat: '桌椅', tier: '高級', note: '', w: 3, h: 2, kind: 'two', price: 7000, colors: [{ n: '胡桃木', sw: '#8a5a34', d: [439,62,30,20] },{ n: '黑', sw: '#3d3a38', d: [470,62,30,20] },{ n: '淺木', sw: '#c48d5c', d: [0,83,30,20] }] },
+    table7: { name: '四人方桌', cat: '桌椅', tier: '平價', note: '', w: 4, h: 4, kind: 'one', price: 2000, colors: [{ n: '淺木', sw: '#c48d5c', d: [31,83,40,40] },{ n: '胡桃木', sw: '#8a5a34', d: [72,83,40,40] },{ n: '白', sw: '#efe9df', d: [113,83,40,40] }] },
+    table8: { name: '六人長桌', cat: '桌椅', tier: '高級', note: '', w: 6, h: 4, kind: 'two', price: 15000, colors: [{ n: '胡桃木', sw: '#8a5a34', d: [154,83,60,40] },{ n: '淺木', sw: '#c48d5c', d: [215,83,60,40] },{ n: '黑', sw: '#3d3a38', d: [276,83,60,40] }] },
+    sofa1: { name: '布單人椅', cat: '沙發', tier: '平價', note: '', w: 1, h: 1, kind: 'four', price: 1200, colors: [{ n: '綠', sw: '#7a9a55', d: [337,83,10,10] },{ n: '米', sw: '#d8c7a8', d: [348,83,10,10] },{ n: '藍', sw: '#6f8fa8', d: [359,83,10,10] }] },
+    sofa2: { name: '高背扶手椅', cat: '沙發', tier: '豪華', note: '', w: 2, h: 2, kind: 'four', price: 50000, colors: [{ n: '朱', sw: '#b33a2f', d: [370,83,20,20] },{ n: '深藍', sw: '#2f4166', d: [391,83,20,20] },{ n: '皮革咖啡', sw: '#7c4a2a', d: [412,83,20,20] }] },
+    sofa3: { name: '雙人布沙發', cat: '沙發', tier: '平價', note: '', w: 3, h: 2, kind: 'four', price: 2000, colors: [{ n: '米', sw: '#d8c7a8', d: [433,83,30,20] },{ n: '藍', sw: '#6f8fa8', d: [464,83,30,20] },{ n: '綠', sw: '#7a9a55', d: [0,124,30,20] }] },
+    sofa4: { name: '三人皮沙發', cat: '沙發', tier: '高級', note: '', w: 5, h: 2, kind: 'four', price: 12000, colors: [{ n: '皮革咖啡', sw: '#7c4a2a', d: [31,124,50,20] },{ n: '灰', sw: '#8e9396', d: [82,124,50,20] },{ n: '深藍', sw: '#2f4166', d: [133,124,50,20] }] },
+    sofa5: { name: 'L 型沙發', cat: '沙發', tier: '豪華', note: '', w: 5, h: 4, kind: 'four', price: 160000, colors: [{ n: '灰', sw: '#8e9396', d: [184,124,50,40] },{ n: '米', sw: '#d8c7a8', d: [235,124,50,40] },{ n: '深藍', sw: '#2f4166', d: [286,124,50,40] }] },
+    tv1: { name: '小電視櫃', cat: '電視', tier: '平價', note: '', w: 3, h: 1, kind: 'wall', price: 1800, colors: [{ n: '淺木', sw: '#c48d5c', d: [337,124,30,10] },{ n: '胡桃木', sw: '#8a5a34', d: [368,124,30,10] },{ n: '白', sw: '#efe9df', d: [399,124,30,10] }] },
+    tv2: { name: '大電視＋音響', cat: '電視', tier: '豪華', note: '', w: 5, h: 1, kind: 'wall', price: 90000, colors: [{ n: '黑', sw: '#3d3a38', d: [430,124,50,10] },{ n: '胡桃木', sw: '#8a5a34', d: [0,165,50,10] },{ n: '白', sw: '#efe9df', d: [51,165,50,10] }] },
+    rug1: { name: '長方地毯', cat: '地毯', tier: '高級', note: '地板層', w: 6, h: 4, kind: 'rug', price: 6000, colors: [{ n: '朱', sw: '#b33a2f', d: [102,165,60,40] },{ n: '深藍', sw: '#2f4166', d: [163,165,60,40] },{ n: '綠', sw: '#7a9a55', d: [224,165,60,40] }] },
+    rug2: { name: '圓地毯', cat: '地毯', tier: '平價', note: '地板層', w: 4, h: 4, kind: 'rugone', price: 1500, colors: [{ n: '深藍', sw: '#2f4166', d: [285,165,40,40] },{ n: '米', sw: '#d8c7a8', d: [326,165,40,40] },{ n: '朱', sw: '#b33a2f', d: [367,165,40,40] }] },
+    rug3: { name: '走道長毯', cat: '地毯', tier: '平價', note: '地板層', w: 2, h: 6, kind: 'rug', price: 1200, colors: [{ n: '朱', sw: '#b33a2f', d: [408,165,20,60] },{ n: '藍', sw: '#6f8fa8', d: [429,165,20,60] },{ n: '米', sw: '#d8c7a8', d: [450,165,20,60] }] },
+    plant1: { name: '小盆栽', cat: '盆栽', tier: '平價', note: '', w: 1, h: 1, kind: 'one', price: 500, colors: [{ n: '原色', sw: '#9a6a40', d: [471,165,10,10] }] },
+    plant2: { name: '小橘子樹', cat: '盆栽', tier: '高級', note: '', w: 1, h: 1, kind: 'one', price: 5000, colors: [{ n: '原色', sw: '#9a6a40', d: [482,165,10,10] }] },
+    plant3: { name: '龜背芋', cat: '盆栽', tier: '高級', note: '', w: 2, h: 2, kind: 'one', price: 6000, colors: [{ n: '原色', sw: '#9a6a40', d: [0,226,20,20] }] },
+    kitchen1: { name: '流理台', cat: '廚房', tier: '平價', note: '靠牆', w: 3, h: 1, kind: 'wall', price: 1500, colors: [{ n: '原色', sw: '#9a6a40', d: [21,226,30,10] }] },
+    kitchen2: { name: '水槽', cat: '廚房', tier: '平價', note: '靠牆', w: 1, h: 1, kind: 'wall', price: 800, colors: [{ n: '原色', sw: '#9a6a40', d: [52,226,10,10] }] },
+    kitchen3: { name: '瓦斯爐', cat: '廚房', tier: '平價', note: '靠牆', w: 1, h: 1, kind: 'wall', price: 1000, colors: [{ n: '原色', sw: '#9a6a40', d: [63,226,10,10] }] },
+    kitchen4: { name: '單門冰箱', cat: '廚房', tier: '平價', note: '', w: 1, h: 1, kind: 'wall', price: 1800, colors: [{ n: '白', sw: '#efe9df', d: [74,226,10,10] },{ n: '黑', sw: '#3d3a38', d: [85,226,10,10] },{ n: '淺木', sw: '#c48d5c', d: [96,226,10,10] }] },
+    kitchen5: { name: '雙門大冰箱', cat: '廚房', tier: '高級', note: '', w: 2, h: 1, kind: 'wall', price: 9000, colors: [{ n: '白', sw: '#efe9df', d: [107,226,20,10] },{ n: '黑', sw: '#3d3a38', d: [128,226,20,10] }] },
+    pic1: { name: '風景畫', cat: '掛畫', tier: '平價', note: '掛北牆', w: 2, h: 0, kind: 'pic', price: 1500, colors: [{ n: '原色', sw: '#9a6a40', d: [149,226,20,16] }] },
+    pic2: { name: '浣熊大王肖像', cat: '掛畫', tier: '高級', note: '掛北牆', w: 1, h: 0, kind: 'pic', price: 8000, colors: [{ n: '原色', sw: '#9a6a40', d: [170,226,10,16] }] },
+  };
+  const FURN_KEYS = Object.keys(FURN), FURN_LUX_HOUSE = 4, FURN_MAX = 300;
+  // 地板、壁紙：木地板、米色條紋送的，其他買一次就每一間都能用
+  const FLOORS = [{ n: '淺色木', p: 2000 }, { n: '木地板', p: 0 }, { n: '深色木', p: 3000 }, { n: '格子磁磚', p: 2500 }, { n: '大理石', p: 7500 }, { n: '榻榻米', p: 5000 }];
+  const PAPERS = [{ n: '米色條紋', p: 0 }, { n: '薄荷綠', p: 1500 }, { n: '金點', p: 3500 }, { n: '深藍', p: 2500 }, { n: '和紙', p: 5000 }, { n: '紅磚', p: 4000 }];
+  const STYLE0 = { floor: 1, paper: 0 };
+  // 每一階的家有哪幾層、哪幾間（格數；block 是樓梯，不能擺）。同一個 id 的房間升級後還在，裡面的家具擺得下就留著
+  const ROOMS = [null,
+    [{ n: '帳篷', rooms: [{ id: 'main', name: '帳篷裡', w: 6, h: 5 }] }],
+    [{ n: '木屋', rooms: [{ id: 'main', name: '小木屋', w: 10, h: 7 }] }],
+    [{ n: '平房', rooms: [{ id: 'main', name: '客廳', w: 10, h: 8 }, { id: 'bed', name: '臥室', w: 8, h: 8 }] }],
+    [{ n: '一樓', rooms: [{ id: 'main', name: '客廳', w: 13, h: 12, block: [[11, 8, 2, 4]] }, { id: 'kitchen', name: '廚房', w: 9, h: 12 }] },
+     { n: '二樓', rooms: [{ id: 'bed', name: '臥室', w: 12, h: 12, block: [[0, 8, 2, 4]] }, { id: 'study', name: '書房', w: 10, h: 12 }] }],
+    [{ n: '一樓', rooms: [{ id: 'main', name: '客廳', w: 13, h: 12, block: [[11, 8, 2, 4]] }, { id: 'kitchen', name: '廚房', w: 8, h: 12 }, { id: 'dining', name: '餐廳', w: 9, h: 12 }] },
+     { n: '二樓', rooms: [{ id: 'bed', name: '主臥', w: 12, h: 12, block: [[0, 8, 2, 4]] }, { id: 'study', name: '書房', w: 9, h: 12 }, { id: 'guest', name: '客房', w: 9, h: 12 }] }],
+  ];
   const CLS_NAME = { garage: ['', '兩輪', '轎車', '跑車', '大車', '展示級'], dock: ['', '小船', '有馬達的船', '帆船', '遊艇', '展示級'], airfield: ['', '小飛行器', '直升機', '小飛機', '噴射機', '展示級'], launchpad: ['', '小型火箭', '中型火箭', '大型火箭'] };
 
   const START = { house: 1 };                             // 一開始送帳篷
@@ -275,11 +337,28 @@
         if (i.in === 'f-' + f && lv && FAC[f].slots && Number.isInteger(i.at) && i.at >= 0 && i.at < FAC[f].slots[lv - 1].length) { v.in = i.in; v.at = i.at; }
         items.push(v); return;
       }
-      items.push(i);   // 之後的東西（家具…）原樣留著
+      if (FURN[i.key]) {   // 家具：寄放的疊成一筆（qty），擺著的一件一筆；房間、位子不對的收回倉庫
+        const nc = FURN[i.key].colors.length, c = Math.max(0, Math.min(nc - 1, Math.floor(Number(i.c) || 0)));
+        if (i.in === 'depot') { const q = Math.max(0, Math.min(99, Math.floor(Number(i.qty) || 0))); if (q) addStack(items, i.key, c, q); return; }
+        if (typeof i.in === 'string' && i.in.indexOf('room:') === 0 && Array.isArray(i.at) && /^u\d{1,6}$/.test(String(i.id))) { items.push({ id: i.id, key: i.key, c, in: i.in, at: [Math.floor(Number(i.at[0]) || 0), Math.floor(Number(i.at[1]) || 0)], rot: Math.floor(Number(i.rot) || 0) & 3 }); return; }
+        addStack(items, i.key, c, 1); return;
+      }
+      if (i.key === 'style' && typeof i.room === 'string' && /^[a-z]{1,12}$/.test(i.room)) { if (!items.some(t => t.key === 'style' && t.room === i.room)) items.push({ id: 'style-' + i.room, key: 'style', room: i.room, floor: Math.max(0, Math.min(FLOORS.length - 1, Math.floor(Number(i.floor) || 0))), paper: Math.max(0, Math.min(PAPERS.length - 1, Math.floor(Number(i.paper) || 0))) }); return; }
+      if (i.key === 'deco') { const ok = (a, n) => (Array.isArray(a) ? a : []).filter(x => Number.isInteger(x) && x >= 0 && x < n); if (!items.some(t => t.key === 'deco')) items.push({ id: 'deco', key: 'deco', floors: [...new Set(ok(i.floors, FLOORS.length))], papers: [...new Set(ok(i.papers, PAPERS.length))] }); return; }
+      items.push(i);   // 之後的東西（衣服、藏品…）原樣留著
     });
     // 同一格停了兩台的，後面那台收回寄放處
     const taken = new Set(); items.forEach(v => { if (!VEH[v.key] || v.in === 'depot') return; const t = v.in + ':' + v.at; if (taken.has(t)) { v.in = 'depot'; delete v.at; } else taken.add(t); });
-    return { v: 1, items };
+    // 擺著的家具：房間不在了、位子不對、跟別的疊到，一件一件檢查，不行的收回倉庫
+    const tmp = { v: 1, items }; const placed = items.filter(t => FURN[t.key] && t.in !== 'depot');
+    placed.forEach(t => { t._skip = true; });
+    placed.forEach(t => { delete t._skip; const rid = t.in.slice(5), chk = canPlace(tmp, rid, t.key, t.at[0], t.at[1], t.rot, t.id); if (!chk.ok) { tmp.items = tmp.items.filter(q => q !== t); addStack(tmp.items, t.key, t.c, 1); } else t.rot = chk.rot; });
+    return { v: 1, items: tmp.items };
+  }
+  function addStack(items, key, c, q) {
+    let st = items.find(t => t.key === key && t.in === 'depot' && t.c === c);
+    if (!st) { st = { id: 'd-' + key + '-' + c, key, c, in: 'depot', qty: 0 }; items.push(st); }
+    st.qty = Math.min(99, st.qty + q);
   }
   const island = s => s.items.find(i => i.key === 'island');
   const level = (s, k) => { const it = s.items.find(i => i.key === k); return it ? it.lv : 0; };
@@ -312,6 +391,63 @@
     if (miss.length) return Object.assign(out, { ok: false, miss, why: `工地還差 ${miss.length} 塊地` });
     return Object.assign(out, { ok: true });
   }
+
+  // ---------- 屋內 ----------
+  // 現在這一階的家有哪幾層、哪幾間：[{ n: '一樓', rooms: [...] }]；roomOf 找一間
+  const floorsOf = s => ROOMS[level(s, 'house')] || [];
+  const roomOf = (s, rid) => { for (const f of floorsOf(s)) for (const r of f.rooms) if (r.id === rid) return r; return null; };
+  // 轉完之後占幾格 [寬, 高]（掛畫只占北牆）
+  const fpOf = (k, rot) => { const f = FURN[k]; return rot & 1 ? [f.h, f.w] : [f.w, f.h]; };
+  const layerOf = k => FURN[k].kind === 'pic' ? 'pic' : (FURN[k].kind === 'rug' || FURN[k].kind === 'rugone') ? 'rug' : 'obj';
+  const placedIn = (s, rid) => s.items.filter(t => FURN[t.key] && t.in === 'room:' + rid && !t._skip);
+  // 貼牆的家具：貼哪面牆就轉成面向房間（北 0、東 1、南 2、西 3）；prefer 是想要的方向，那面貼得到就用它
+  function wallRots(room, k, x, y) {
+    const out = [];
+    [0, 1, 2, 3].forEach(r => { const [w, h] = fpOf(k, r); if ((r === 0 && y === 0) || (r === 1 && x + w === room.w) || (r === 2 && y + h === room.h) || (r === 3 && x === 0)) out.push(r); });
+    return out;
+  }
+  // 放不放得下：回 { ok, rot（貼牆的會改成貼的那面）, why }
+  function canPlace(s, rid, k, x, y, rot, ignoreId) {
+    const f = FURN[k], room = roomOf(s, rid); if (!f) return { ok: false, why: '沒有這件' }; if (!room) return { ok: false, why: '沒有這間房間' };
+    x = Math.floor(Number(x)); y = Math.floor(Number(y)); rot = Math.floor(Number(rot) || 0) & 3;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return { ok: false, why: '位子不對' };
+    const others = placedIn(s, rid).filter(t => t.id !== ignoreId);
+    if (f.kind === 'pic') {   // 掛畫：只掛北牆，y 一定是 -1；不能跟別幅疊
+      if (y !== -1) return { ok: false, why: '掛畫只能掛北邊的牆' };
+      if (x < 0 || x + f.w > room.w) return { ok: false, why: '牆不夠寬' };
+      if (others.some(t => layerOf(t.key) === 'pic' && x < t.at[0] + FURN[t.key].w && t.at[0] < x + f.w)) return { ok: false, why: '這裡已經掛了一幅' };
+      return { ok: true, rot: 0 };
+    }
+    if (f.kind === 'one' || f.kind === 'rugone') rot = 0;
+    if (f.kind === 'two' || f.kind === 'rug') rot &= 1;
+    if (f.kind === 'wall') { const rs = wallRots(room, k, x, y); if (!rs.length) { const [w, h] = fpOf(k, rot); if (x < 0 || y < 0 || x + w > room.w || y + h > room.h) return { ok: false, why: '超出房間了' }; return { ok: false, why: `${f.name}要貼著牆` }; } if (!rs.includes(rot)) rot = rs[0]; }
+    const [w, h] = fpOf(k, rot);
+    if (x < 0 || y < 0 || x + w > room.w || y + h > room.h) return { ok: false, why: '超出房間了' };
+    if ((room.block || []).some(([bx, by, bw, bh]) => x < bx + bw && bx < x + w && y < by + bh && by < y + h)) return { ok: false, why: '這裡是樓梯' };
+    const L = layerOf(k);
+    const hit = others.find(t => { if (layerOf(t.key) !== L) return false; const [tw, th] = fpOf(t.key, t.rot); return x < t.at[0] + tw && t.at[0] < x + w && y < t.at[1] + th && t.at[1] < y + h; });
+    if (hit) return { ok: false, why: `這裡有${FURN[hit.key].name}了` };
+    return { ok: true, rot };
+  }
+  // 家升級（房間變了）：同一間還在、擺得下的留著，其他收回倉庫
+  function refitRooms(s) {
+    const placed = s.items.filter(t => FURN[t.key] && t.in !== 'depot'); let off = 0;
+    placed.forEach(t => { t._skip = true; });
+    placed.forEach(t => { delete t._skip; const chk = canPlace(s, t.in.slice(5), t.key, t.at[0], t.at[1], t.rot, t.id); if (!chk.ok) { s.items = s.items.filter(q => q !== t); addStack(s.items, t.key, t.c, 1); off++; } });
+    return off;
+  }
+  const furnCount = s => s.items.reduce((n, t) => n + (FURN[t.key] ? (t.in === 'depot' ? t.qty : 1) : 0), 0);
+  const deco = s => s.items.find(t => t.key === 'deco') || { floors: [], papers: [] };
+  const styleOf = (s, rid) => { const t = s.items.find(q => q.key === 'style' && q.room === rid); return t ? { floor: t.floor, paper: t.paper } : Object.assign({}, STYLE0); };
+  const hasFloor = (s, i) => FLOORS[i] && (!FLOORS[i].p || deco(s).floors.includes(i));
+  const hasPaper = (s, i) => PAPERS[i] && (!PAPERS[i].p || deco(s).papers.includes(i));
+  function furnInfo(s, k) {
+    const f = FURN[k]; if (!f) return { ok: false, why: '沒有這件' };
+    if (f.tier === '豪華' && level(s, 'house') < FURN_LUX_HOUSE) return { ok: false, price: f.price, why: `豪華家具要先有「${FAC.house.levels[FURN_LUX_HOUSE - 1]}」` };
+    if (furnCount(s) >= FURN_MAX) return { ok: false, price: f.price, why: `家具最多 ${FURN_MAX} 件` };
+    return { ok: true, price: f.price };
+  }
+  const furnSell = k => Math.floor(FURN[k].price / 2);
 
   // ---------- 車、船 ----------
   const vehOf = (s, k) => s.items.find(i => i.key === k && VEH[i.key]);
@@ -374,7 +510,8 @@
       const it = s.items.find(i => i.key === k);
       if (it) it.lv = info.next; else s.items.push({ id: 'f-' + k, key: k, lv: info.next, in: 'i1', at: k });
       if (FAC[k].slots) reflow(s, k);
-      return { ok: true, cost: info.price, state: s, built: k, lv: info.next };
+      const stowed = k === 'house' ? refitRooms(s) : 0;
+      return { ok: true, cost: info.price, state: s, built: k, lv: info.next, stowed };
     }
     if (act.t === 'buyv') {
       const k = String(act.k || ''), info = vehInfo(s, k);
@@ -406,6 +543,47 @@
       const v = vehOf(s, String(act.k || '')); if (!v) return { ok: false, err: '你沒有這台' };
       v.in = 'depot'; delete v.at; return { ok: true, cost: 0, state: s };
     }
+    if (act.t === 'buyf') {   // 買家具：先進倉庫
+      const k = String(act.k || ''), info = furnInfo(s, k); if (!info.ok) return { ok: false, err: info.why };
+      const c = Math.floor(Number(act.c) || 0); if (!(c >= 0 && c < FURN[k].colors.length)) return { ok: false, err: '沒有這個顏色' };
+      const st = s.items.find(t => t.key === k && t.in === 'depot' && t.c === c); if (st && st.qty >= 99) return { ok: false, err: '同一款最多 99 件' };
+      if (!(money >= info.price)) return { ok: false, err: '錢包不夠' };
+      addStack(s.items, k, c, 1); return { ok: true, cost: info.price, state: s };
+    }
+    if (act.t === 'sellf') {   // 賣倉庫裡的家具（一件、買價一半）
+      const k = String(act.k || ''), c = Math.floor(Number(act.c) || 0), st = FURN[k] && s.items.find(t => t.key === k && t.in === 'depot' && t.c === c);
+      if (!st || !st.qty) return { ok: false, err: '倉庫裡沒有這件' };
+      st.qty--; if (!st.qty) s.items = s.items.filter(t => t !== st);
+      return { ok: true, cost: -furnSell(k), state: s };
+    }
+    if (act.t === 'place') {   // 從倉庫擺進房間
+      const k = String(act.k || ''), c = Math.floor(Number(act.c) || 0), st = FURN[k] && s.items.find(t => t.key === k && t.in === 'depot' && t.c === c);
+      if (!st || !st.qty) return { ok: false, err: '倉庫裡沒有這件' };
+      const rid = String(act.room || ''), chk = canPlace(s, rid, k, act.x, act.y, act.rot); if (!chk.ok) return { ok: false, err: chk.why };
+      st.qty--; if (!st.qty) s.items = s.items.filter(t => t !== st);
+      const n = s.items.reduce((m, t) => { const q = /^u(\d+)$/.exec(String(t.id)); return q ? Math.max(m, +q[1]) : m; }, 0) + 1;
+      const it = { id: 'u' + n, key: k, c, in: 'room:' + rid, at: [Math.floor(Number(act.x)), Math.floor(Number(act.y))], rot: chk.rot };
+      s.items.push(it); return { ok: true, cost: 0, state: s, id: it.id };
+    }
+    if (act.t === 'move') {   // 擺著的家具換位子、轉方向（可以換房間）
+      const it = s.items.find(t => t.id === act.id && FURN[t.key] && t.in !== 'depot'); if (!it) return { ok: false, err: '找不到這件' };
+      const rid = String(act.room || it.in.slice(5)), chk = canPlace(s, rid, it.key, act.x, act.y, act.rot, it.id); if (!chk.ok) return { ok: false, err: chk.why };
+      it.in = 'room:' + rid; it.at = [Math.floor(Number(act.x)), Math.floor(Number(act.y))]; it.rot = chk.rot; return { ok: true, cost: 0, state: s };
+    }
+    if (act.t === 'stow') {   // 收回倉庫
+      const it = s.items.find(t => t.id === act.id && FURN[t.key] && t.in !== 'depot'); if (!it) return { ok: false, err: '找不到這件' };
+      s.items = s.items.filter(t => t !== it); addStack(s.items, it.key, it.c, 1); return { ok: true, cost: 0, state: s };
+    }
+    if (act.t === 'deco') {   // 換地板或壁紙（還沒有的順便買，之後每一間都能用）
+      const rid = String(act.room || ''); if (!roomOf(s, rid)) return { ok: false, err: '沒有這間房間' };
+      const isF = act.floor != null, i = Math.floor(Number(isF ? act.floor : act.paper)), list = isF ? FLOORS : PAPERS;
+      if (!list[i]) return { ok: false, err: '沒有這種' };
+      const owned = isF ? hasFloor(s, i) : hasPaper(s, i), cost = owned ? 0 : list[i].p;
+      if (!(money >= cost)) return { ok: false, err: '錢包不夠' };
+      if (!owned) { let d = s.items.find(t => t.key === 'deco'); if (!d) { d = { id: 'deco', key: 'deco', floors: [], papers: [] }; s.items.push(d); } (isF ? d.floors : d.papers).push(i); }
+      let st = s.items.find(t => t.key === 'style' && t.room === rid); if (!st) { st = Object.assign({ id: 'style-' + rid, key: 'style', room: rid }, STYLE0); s.items.push(st); }
+      st[isF ? 'floor' : 'paper'] = i; return { ok: true, cost, state: s };
+    }
     if (act.t === 'sell') {
       const k = String(act.k || ''), v = vehOf(s, k); if (!v) return { ok: false, err: '你沒有這台' };
       s.items = s.items.filter(i => i !== v);
@@ -419,10 +597,12 @@
     for (let n = 1; n <= isl.bought; n++) t += plotPrice(n);
     FAC_KEYS.forEach(k => { const lv = level(s, k); for (let l = 1; l <= lv; l++) t += FAC[k].prices[l - 1]; });
     vehicles(s).forEach(v => { t += VEH[v.key].price; });
+    s.items.forEach(i => { if (FURN[i.key]) t += FURN[i.key].price * (i.in === 'depot' ? i.qty : 1); });
+    const d = deco(s); d.floors.forEach(i => { t += FLOORS[i].p; }); d.papers.forEach(i => { t += PAPERS[i].p; });
     return t;
   }
 
-  const R = { VEH, VEH_KEYS, CLS_NAME, vehOf, vehicles, slotsOf, fitWhy, vehInfo, freeSlot, sellPrice, C, GW, GH, COAST, SEA, FAC, FAC_KEYS, TIERS, START, hash, vnoise, inSea, world, rect, needPlots, plotPrice, fresh, clean, island, level, tierOf, nextTier, plotInfo, facInfo, apply, worth };
+  const R = { FURN, FURN_KEYS, FURN_MAX, FURN_LUX_HOUSE, FLOORS, PAPERS, STYLE0, ROOMS, floorsOf, roomOf, fpOf, layerOf, placedIn, wallRots, canPlace, furnCount, deco, styleOf, hasFloor, hasPaper, furnInfo, furnSell, VEH, VEH_KEYS, CLS_NAME, vehOf, vehicles, slotsOf, fitWhy, vehInfo, freeSlot, sellPrice, C, GW, GH, COAST, SEA, FAC, FAC_KEYS, TIERS, START, hash, vnoise, inSea, world, rect, needPlots, plotPrice, fresh, clean, island, level, tierOf, nextTier, plotInfo, facInfo, apply, worth };
   root.XiaodaoRules = R;
   if (typeof module !== 'undefined' && module.exports) module.exports = R;
 })(typeof window !== 'undefined' ? window : this);
