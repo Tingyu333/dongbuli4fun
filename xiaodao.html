@@ -28,8 +28,8 @@
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
-    <script src="assets/xiaodao-rules.js?v=20261121b"></script>
-    <script src="assets/xiaodao-draw.js?v=20261121b"></script>
+    <script src="assets/xiaodao-rules.js?v=20261121c"></script>
+    <script src="assets/xiaodao-draw.js?v=20261121c"></script>
     <style>
         /* 整頁是一個 App：上面標題列、中間整座島、下面四顆鈕。島是另一個世界（精緻像素風），外框照網站的紙張色 */
         html, body { height: 100%; }
@@ -101,7 +101,9 @@
         .buy { flex: none; min-width: 84px; min-height: 44px; padding: 0 8px; border: 1px solid rgb(var(--wabi-dark)); background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: .08em; line-height: 1.35; border-radius: 3px; touch-action: manipulation; }
         .buy:disabled { background: transparent; color: rgb(var(--wabi-accent)); border-color: rgb(var(--wabi-sub)); }
         .thumb.v { background: #c4beb3; }
-        .thumb.v.sea { background: #7ea9b5; }
+        .thumb.v.sea, .vchip .vimg.sea { background: #7ea9b5; }
+        .thumb.v.air, .vchip .vimg.air { background: #5a5d60; }
+        .thumb.v.sky, .vchip .vimg.sky { background: linear-gradient(#bad2d8 0 80%, #c4beb3 80%); }
         .subk { display: flex; gap: 6px; margin: 4px 0 2px; }
         .gh { margin: 14px 0 0; font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: .2em; color: rgb(var(--wabi-shu)); }
         .acts { flex: none; display: flex; flex-direction: column; gap: 6px; }
@@ -378,6 +380,7 @@
                 if (park) {   // 換車／看船：只點位子
                     const sl = X.slotsOf(S, park.f).find(q => wx >= q.x - 4 && wx < q.x + q.w + 4 && wy >= q.y - 4 && wy < q.y + q.h + 4);
                     if (sl && park.pick) { const k = park.pick; park.pick = null; park.slot = sl.i; act({ t: 'park', k, f: park.f, i: sl.i }); return; }
+                    if (!sl && park.f === 'launchpad') { const only = X.slotsOf(S, 'launchpad')[0]; park.slot = only ? 0 : null; openParkCard(); draw(); return; }
                     park.slot = sl ? sl.i : null; openParkCard(); draw(); return;
                 }
                 // 設施（蓋好的、或可以蓋的工地）
@@ -425,7 +428,7 @@
                 card.innerHTML = `<h2>${lv ? f.levels[lv - 1] : f.name + '・空地'}${lv ? `<span class="seal lvseal">${NUM[lv]}</span>` : ''}</h2>
                     <p class="line">${f.name}・${facLine(k)}</p>
                     ${note ? `<p class="note">${note}</p>` : ''}
-                    ${sl ? `<button type="button" class="btn" data-a="park" style="width:100%;margin-top:12px">${k === 'garage' ? '換車' : '看船'}・停了 ${sl.filter(q => q.v).length}／${sl.length}</button>` : ''}
+                    ${sl ? `<button type="button" class="btn" data-a="park" style="width:100%;margin-top:12px">${KIND[k].park}・${k === 'launchpad' ? (sl[0].v ? `立著「${X.VEH[sl[0].v].name}」` : '還沒有火箭') : `停了 ${sl.filter(q => q.v).length}／${sl.length}`}</button>` : ''}
                     <div class="btns"><button type="button" class="btn" data-a="no">關上</button>${btn}</div>`;
                 card.classList.add('on');
                 card.querySelector('[data-a=no]').onclick = closeCard;
@@ -447,8 +450,8 @@
                 const V = a.k && X.VEH[a.k], F = V && X.FAC[V.fac];
                 if (a.t === 'plot') { showToast('買下來了・海岸線長出去'); sel = null; card.classList.remove('on'); }
                 else if (a.t === 'build') { const off = before - X.vehicles(S).filter(v => v.in !== 'depot').length; showToast(`${X.FAC[a.k].levels[r.lv - 1]}・蓋好了` + (off > 0 ? `（${off} 台先收進寄放處）` : '')); }
-                else if (a.t === 'buyv') showToast(r.parked ? (r.bumped ? `停進${F.name}了・${X.VEH[r.bumped].name}先讓位` : `停進${F.name}了`) : `${F.name}沒有空位，先放寄放處`);
-                else if (a.t === 'park') showToast(`${V.name}・停好了`);
+                else if (a.t === 'buyv') showToast(V.fac === 'launchpad' ? (r.parked ? (r.bumped ? `立上發射台了・${X.VEH[r.bumped].name}先收起來` : '立上發射台了') : '發射台上已經有一枚，先放寄放處') : r.parked ? (r.bumped ? `停進${F.name}了・${X.VEH[r.bumped].name}先讓位` : `停進${F.name}了`) : `${F.name}沒有空位，先放寄放處`);
+                else if (a.t === 'park') showToast(`${V.name}・${V.fac === 'launchpad' ? '立上去了' : '停好了'}`);
                 else if (a.t === 'depot') showToast(`${V.name}・收進寄放處`);
                 else if (a.t === 'sell') showToast(`${V.name}賣掉了・拿回 ${fmt(-r.cost)}`);
                 rebuild(false);
@@ -461,6 +464,9 @@
             $('upOk').onclick = () => { $('up').hidden = true; };
 
             // ----- 換車／看船（點位子 → 下面挑一台；從倉庫按「停進去」會先選好那台，點位子就停） -----
+            // 四種載具：停哪、怎麼叫（第三批多了飛機、火箭）
+            const KIND = { garage: { n: '車', u: '台', park: '換車', bg: '' }, dock: { n: '船', u: '艘', park: '看船', bg: 'sea' }, airfield: { n: '飛機', u: '架', park: '看飛機', bg: 'air' }, launchpad: { n: '火箭', u: '枚', park: '換火箭', bg: 'sky' } };
+            const KINDS = Object.keys(KIND);
             let park = null;   // { f: 'garage'|'dock', slot: 第幾格, pick: 要停的那台 }
             function enterPark(f, pick) {
                 const lv = X.level(S, f); if (!lv) return;
@@ -470,18 +476,18 @@
                 openParkCard(); draw();
             }
             function exitPark() { park = null; card.classList.remove('on'); fit(); }
-            const vimg = (k, max = 2) => { const v = X.VEH[k], z = Math.max(1, Math.min(max, Math.floor(48 / Math.max(v.h, v.w * 1.1)))); return `<img src="assets/xiaodao/v/${k}.png" alt="" style="width:${v.w * z}px;height:${v.h * z}px">`; };
+            const vimg = (k, max = 2) => { const v = X.VEH[k]; let z = Math.min(max, 48 / Math.max(v.h, v.w * 1.1)); if (z >= 1) z = Math.floor(z); return `<img src="assets/xiaodao/v/${k}.png" alt="" style="width:${Math.round(v.w * z)}px;height:${Math.round(v.h * z)}px">`; };
             function openParkCard() {
-                const f = park.f, lv = X.level(S, f), F = X.FAC[f], list = X.slotsOf(S, f), boat = f === 'dock';
+                const f = park.f, lv = X.level(S, f), F = X.FAC[f], list = X.slotsOf(S, f), K = KIND[f];
                 const n = list.filter(q => q.v).length;
-                let html = `<h2>${boat ? '看船' : '換車'}・${F.levels[lv - 1]}</h2><p class="line">停了 ${n}／${list.length}・${park.pick ? `點一個位子停「${X.VEH[park.pick].name}」` : '點地圖上的一個位子'}</p>`;
+                let html = `<h2>${K.park}・${F.levels[lv - 1]}</h2><p class="line">${f === 'launchpad' ? '發射台一次立一枚' : `停了 ${n}／${list.length}`}・${park.pick ? `點一個位子停「${X.VEH[park.pick].name}」` : '點地圖上的一個位子'}</p>`;
                 let btn2 = `<button type="button" class="btn" data-a="shop">去商店買</button>`;
                 if (park.slot != null && list[park.slot]) {
                     const sl = list[park.slot], cn = X.CLS_NAME[f][sl.cls];
                     html += `<p class="note">第 ${sl.i + 1} 格・可以停${cn}${sl.cls > 1 ? '以下' : ''}・${sl.v ? `現在停「${X.VEH[sl.v].name}」` : '空的'}</p>`;
                     const mine = X.vehicles(S).filter(v => X.VEH[v.key].fac === f && v.key !== sl.v);
-                    html += mine.length ? `<div class="vchips">${mine.map(v => { const why = X.fitWhy(v.key, sl); return `<button type="button" class="vchip" data-k="${v.key}" ${why ? 'disabled' : ''}><span class="vimg ${boat ? 'sea' : ''}">${vimg(v.key)}</span><b>${X.VEH[v.key].name}</b><i>${why || (v.in === 'depot' ? '寄放處' : '在第 ' + (v.at + 1) + ' 格')}</i></button>`; }).join('')}</div>`
-                        : `<p class="note">${boat ? '還沒有別的船' : '還沒有別的車'}，去商店買。</p>`;
+                    html += mine.length ? `<div class="vchips">${mine.map(v => { const why = X.fitWhy(v.key, sl); return `<button type="button" class="vchip" data-k="${v.key}" ${why ? 'disabled' : ''}><span class="vimg ${K.bg}">${vimg(v.key)}</span><b>${X.VEH[v.key].name}</b><i>${why || (v.in === 'depot' ? '寄放處' : '在第 ' + (v.at + 1) + ' 格')}</i></button>`; }).join('')}</div>`
+                        : `<p class="note">還沒有別的${K.n}，去商店買。</p>`;
                     if (sl.v) btn2 = `<button type="button" class="btn" data-a="depot">收進寄放處</button>`;
                 }
                 card.innerHTML = html + `<div class="btns">${btn2}<button type="button" class="btn main" data-a="done">完成</button></div>`;
@@ -503,7 +509,7 @@
             sheet.addEventListener('click', e => { if (e.target === sheet) closeSheet(); });
             $('stabs').addEventListener('click', e => { const b = e.target.closest('.stab'); if (!b) return; if (b.classList.contains('later')) { showToast(LATER[b.dataset.s]); return; } stab = b.dataset.s; renderSheet(); });
             const LEGAL = `<p class="legal">島上的東西都用遊戲幣買，不能儲值，也不能換成現金或任何獎品。</p>`;
-            const kindChips = () => `<div class="subk">${[['garage', '車'], ['dock', '船']].map(([k, n]) => `<button type="button" class="stab ${vkind === k ? 'on' : ''}" data-kind="${k}">${n}</button>`).join('')}</div>`;
+            const kindChips = () => `<div class="subk">${KINDS.map(k => `<button type="button" class="stab ${vkind === k ? 'on' : ''}" data-kind="${k}">${KIND[k].n}</button>`).join('')}</div>`;
             function renderSheet() {
                 $('sheetTitle').textContent = smode === 'shop' ? '商店' : '倉庫';
                 if (!TABS[smode].some(([k, , l]) => k === stab && !l)) stab = TABS[smode][0][0];
@@ -530,11 +536,12 @@
                 } else if (smode === 'shop' && stab === 'veh') {
                     // 載具：車、船，照種類分組；買之前車庫／碼頭要蓋到同一級
                     const F = X.FAC[vkind], keys = X.VEH_KEYS.filter(k => X.VEH[k].fac === vkind), groups = [...new Set(keys.map(k => X.VEH[k].g))];
-                    body.innerHTML = kindChips() + `<p class="sm" style="margin-top:6px">${vkind === 'garage' ? '車' : '船'}每種一台。買了先停進${F.name}的空位，沒有空位就放寄放處（倉庫裡看得到）。</p>` + groups.map(g => `<p class="gh">${g}</p>` + keys.filter(k => X.VEH[k].g === g).map(k => {
+                    const K = KIND[vkind], Fl = X.level(S, vkind);
+                    body.innerHTML = kindChips() + `<p class="sm" style="margin-top:6px">${K.n}每種一${K.u}。${vkind === 'launchpad' ? '發射台一次立一枚，空著就立上去，其他的收在寄放處，倉庫裡隨時可以換。' : `買了先停進${F.name}的空位，沒有空位就放寄放處（倉庫裡看得到）。`}${Fl ? '' : `<br>要先蓋${F.name}${vkind === 'launchpad' ? '（島升到「伍」、停機坪蓋到「私人機場」）' : vkind === 'airfield' ? '（島升到「貳」）' : ''}。`}</p>` + groups.map(g => `<p class="gh">${g}</p>` + keys.filter(k => X.VEH[k].g === g).map(k => {
                         const v = X.VEH[k], i = X.vehInfo(S, k), can = i.ok && money >= v.price;
                         const label = i.owned ? '有了' : !i.ok ? `${F.name}<br>「${F.levels[v.cls - 1]}」` : money < v.price ? '錢包不夠' : `買<br>${fmt(v.price)}`;
-                        return `<div class="row"><div class="thumb v ${vkind === 'dock' ? 'sea' : ''}">${vimg(k)}</div>
-                            <div class="info"><p class="nm">${v.name}</p><p class="sm">${v.desc}・${fmt(v.price)}</p><p class="sm">停${X.CLS_NAME[vkind][v.cls]}位・${F.name}要「${F.levels[v.cls - 1]}」以上</p></div>
+                        return `<div class="row"><div class="thumb v ${K.bg}">${vimg(k)}</div>
+                            <div class="info"><p class="nm">${v.name}</p><p class="sm">${v.desc}・${fmt(v.price)}</p><p class="sm">${vkind === 'launchpad' ? '' : `停${X.CLS_NAME[vkind][v.cls]}位・`}${F.name}要「${F.levels[v.cls - 1]}」以上</p></div>
                             <button type="button" class="buy" data-v="${k}" ${can ? '' : 'disabled'}>${label}</button></div>`;
                     }).join('')).join('') + LEGAL;
                     body.querySelectorAll('.buy[data-v]').forEach(b => b.onclick = () => act({ t: 'buyv', k: b.dataset.v }));
@@ -542,10 +549,11 @@
                     // 倉庫：有的車船，停在哪、停進去／收起來、賣掉（買價一半，按兩下確定）
                     const F = X.FAC[vkind], mine = X.vehicles(S).filter(v => X.VEH[v.key].fac === vkind).sort((a, b) => (a.in === 'depot') - (b.in === 'depot') || X.VEH[a.key].cls - X.VEH[b.key].cls);
                     const nd = mine.filter(v => v.in === 'depot').length;
-                    body.innerHTML = kindChips() + `<p class="sm" style="margin-top:6px">${mine.length ? `有 ${mine.length} ${vkind === 'garage' ? '台' : '艘'}，停在${F.name} ${mine.length - nd}、寄放處 ${nd}。寄放處不限量，只是不會畫在島上。` : `還沒有${vkind === 'garage' ? '車' : '船'}。`}</p>` + mine.map(v => {
+                    const K = KIND[vkind];
+                    body.innerHTML = kindChips() + `<p class="sm" style="margin-top:6px">${mine.length ? `有 ${mine.length} ${K.u}，${vkind === 'launchpad' ? '立在' : '停在'}${F.name} ${mine.length - nd}、寄放處 ${nd}。寄放處不限量，只是不會畫在島上。` : `還沒有${K.n}。`}</p>` + mine.map(v => {
                         const V = X.VEH[v.key], armed = sellArm && sellArm.k === v.key && performance.now() - sellArm.t < 4000;
-                        return `<div class="row"><div class="thumb v ${vkind === 'dock' ? 'sea' : ''}">${vimg(v.key)}</div>
-                            <div class="info"><p class="nm">${V.name}</p><p class="sm">${v.in === 'depot' ? '在寄放處' : `停在${F.name}第 ${v.at + 1} 格`}</p><p class="sm">買價 ${fmt(V.price)}・賣掉拿回 ${fmt(X.sellPrice(v.key))}</p></div>
+                        return `<div class="row"><div class="thumb v ${K.bg}">${vimg(v.key)}</div>
+                            <div class="info"><p class="nm">${V.name}</p><p class="sm">${v.in === 'depot' ? '在寄放處' : vkind === 'launchpad' ? `立在${F.name}上` : `停在${F.name}第 ${v.at + 1} 格`}</p><p class="sm">買價 ${fmt(V.price)}・賣掉拿回 ${fmt(X.sellPrice(v.key))}</p></div>
                             <div class="acts">${v.in === 'depot' ? `<button type="button" class="buy" data-park="${v.key}">停進去</button>` : `<button type="button" class="buy ghost" data-off="${v.key}">收起來</button>`}
                             <button type="button" class="buy ${armed ? 'warn' : 'ghost'}" data-sell="${v.key}">${armed ? '確定賣掉' : '賣掉'}</button></div></div>`;
                     }).join('') + (mine.length ? '' : `<button type="button" class="btn main" id="goShop" style="width:100%;margin-top:14px">去商店買</button>`) + LEGAL;
@@ -570,7 +578,7 @@
             size();
             new ResizeObserver(() => { if (size()) { if (world) { if (zoomed()) { clampCam(); draw(); } else fit(); } } }).observe(view);
             renderTop();
-            D.load('assets/xiaodao/', '20261121b').then(() => setTimeout(() => rebuild(true), 30));
+            D.load('assets/xiaodao/', '20261121c').then(() => setTimeout(() => rebuild(true), 30));
         }
     </script>
 </body>

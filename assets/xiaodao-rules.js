@@ -37,12 +37,16 @@
       levels: ['草地起降場', '直升機坪', '小機場', '私人機場', '航空站'],
       prices: [45000, 150000, 600000, 2000000, 6000000],
       sprites: [[180, 75], [150, 80], [200, 98], [200, 114], [200, 118]],
+      // 機位（第三批）：熱氣球那格飄在圖上面一點；直升機位比設計圖量到的寬一點（旋翼）
+      slots: [[[50,-2,27,27,1],[90,56,30,17,1],[130,2,30,28,1]],[[27,8,30,32,2],[96,34,42,20,1],[102,10,26,19,1]],[[50,29,32,30,3],[92,29,32,30,3],[134,38,30,30,3],[12,8,30,32,2]],[[28,38,37,39,4],[74,38,37,39,4],[120,43,32,30,3]],[[67,24,66,70,5],[142,36,37,39,4],[18,39,30,30,3],[18,74,34,20,2]]],
     },
     launchpad: {
       name: '發射台', mode: 'bc', ax: 590, ay: 300, door: 'b', needs: { airfield: 4 },
       levels: ['小發射架', '發射塔', '太空港'],
       prices: [2000000, 6000000, 16000000],
       sprites: [[120, 89], [170, 113], [194, 130]],
+      // 發射台一次立一枚（企劃書定的），其他收倉庫；位子是主火箭連推進器的範圍
+      slots: [[[57,28,10,32,1]],[[50,17,24,64,2]],[[112,12,36,100,3]]],
     },
   };
   const FAC_KEYS = ['house', 'garage', 'dock', 'airfield', 'launchpad'];
@@ -95,9 +99,46 @@
     show1: { name: '超級遊艇', desc: '直升機坪、按摩池、雷達球', g: '展示級', fac: 'dock', cls: 5, price: 8000000, w: 32, h: 77 },
     show2: { name: '古董木船', desc: '1930 年代桃花心木遊艇', g: '展示級', fac: 'dock', cls: 5, price: 3000000, w: 23, h: 63 },
     show3: { name: '古典三桅帆船', desc: '張開的方帆、雕花船尾', g: '展示級', fac: 'dock', cls: 5, price: 5000000, w: 44, h: 74 },
+    // 飛機、火箭（第三批）。火箭是立起來畫的：ax、ay 是圖裡的地面點，擺的時候對齊位子的底部中間；free 的不比大小（飄在天上的、火箭）
+    fly1: { name: '熱氣球', desc: '紅白條紋', g: '小飛行器', fac: 'airfield', cls: 1, price: 5000, w: 37, h: 39, free: 1 },
+    fly2: { name: '動力傘', desc: '背著螺旋槳飛', g: '小飛行器', fac: 'airfield', cls: 1, price: 8000, w: 32, h: 19 },
+    fly3: { name: '超輕航機', desc: '布翼、小座艙', g: '小飛行器', fac: 'airfield', cls: 1, price: 15000, w: 34, h: 17 },
+    fly4: { name: '滑翔機', desc: '超長的細翼、沒有引擎', g: '小飛行器', fac: 'airfield', cls: 1, price: 25000, w: 51, h: 28 },
+    fly5: { name: '自轉旋翼機', desc: '上面旋翼、後面推', g: '小飛行器', fac: 'airfield', cls: 1, price: 45000, w: 29, h: 28 },
+    heli1: { name: '小直升機', desc: '圓泡泡艙', g: '直升機', fac: 'airfield', cls: 2, price: 150000, w: 29, h: 33 },
+    heli2: { name: '藍色直升機', desc: '最常見的那種', g: '直升機', fac: 'airfield', cls: 2, price: 250000, w: 31, h: 37 },
+    heli3: { name: '救援直升機', desc: '白紅橘、吊掛門', g: '直升機', fac: 'airfield', cls: 2, price: 400000, w: 31, h: 45 },
+    heli4: { name: '商務直升機', desc: '黑金、五片旋翼', g: '直升機', fac: 'airfield', cls: 2, price: 600000, w: 30, h: 46 },
+    heli5: { name: '雙旋翼直升機', desc: '前後兩組旋翼', g: '直升機', fac: 'airfield', cls: 2, price: 700000, w: 26, h: 47 },
+    prop1: { name: '小飛機', desc: '上單翼、白藍', g: '小飛機', fac: 'airfield', cls: 3, price: 500000, w: 37, h: 35 },
+    prop2: { name: '水上飛機', desc: '兩根浮筒', g: '小飛機', fac: 'airfield', cls: 3, price: 800000, w: 37, h: 35 },
+    prop3: { name: '特技飛機', desc: '下單翼、紅白格子', g: '小飛機', fac: 'airfield', cls: 3, price: 1100000, w: 33, h: 28 },
+    prop4: { name: '古董雙翼機', desc: '兩層翼、圓引擎罩', g: '小飛機', fac: 'airfield', cls: 3, price: 1600000, w: 36, h: 30 },
+    jet1: { name: '白色噴射機', desc: 'T 尾、後段引擎', g: '噴射機', fac: 'airfield', cls: 4, price: 3000000, w: 41, h: 46 },
+    jet2: { name: '深藍金線', desc: '深藍機身、金色 T 尾', g: '噴射機', fac: 'airfield', cls: 4, price: 4000000, w: 41, h: 46 },
+    jet3: { name: '消光黑金', desc: '消光黑、金色線', g: '噴射機', fac: 'airfield', cls: 4, price: 5500000, w: 41, h: 46 },
+    jet4: { name: '長程商務機', desc: '更長、翼尖小翼', g: '噴射機', fac: 'airfield', cls: 4, price: 8000000, w: 50, h: 55 },
+    airshow1: { name: '私人豪華客機', desc: '四顆引擎、雙層前段、朱色小翼、金色線、尾翼徽章', g: '展示級', fac: 'airfield', cls: 5, price: 24000000, w: 74, h: 80 },
+    airshow2: { name: '古典飛行艇', desc: '1930 年代、拋光銀色船身、四顆星形引擎、翼下浮筒', g: '展示級', fac: 'airfield', cls: 5, price: 12000000, w: 77, h: 70 },
+    airshow3: { name: '豪華飛艇', desc: '雪茄形、金環、朱色尾翼、上面玻璃觀景台；在天上飄', g: '展示級', fac: 'airfield', cls: 5, price: 18000000, w: 47, h: 104, free: 1 },
+    rks1: { name: '入門探空火箭', desc: '白身朱鼻、三片尾翼；最便宜', g: '小型（探空）', fac: 'launchpad', cls: 1, price: 400000, w: 22, h: 38, ax: 5, ay: 30, free: 1 },
+    rks2: { name: '雙節探空火箭', desc: '下面一節推完會掉、上面再飛', g: '小型（探空）', fac: 'launchpad', cls: 1, price: 550000, w: 25, h: 46, ax: 7, ay: 38, free: 1 },
+    rks3: { name: '氣象探空火箭', desc: '頭上有天線、儀器艙兩個小窗', g: '小型（探空）', fac: 'launchpad', cls: 1, price: 700000, w: 21, h: 45, ax: 4, ay: 37, free: 1 },
+    rks4: { name: '黑白方格探空火箭', desc: '經典的黑白方格塗裝', g: '小型（探空）', fac: 'launchpad', cls: 1, price: 900000, w: 25, h: 42, ax: 7, ay: 34, free: 1 },
+    rks5: { name: '朱漆探空火箭', desc: '「絆號」：全身朱色、金色鼻錐', g: '小型（探空）', fac: 'launchpad', cls: 1, price: 1200000, w: 22, h: 43, ax: 5, ay: 35, free: 1 },
+    rkm1: { name: '標準運載火箭', desc: '兩顆小推進器、有舷窗', g: '中型（運載）', fac: 'launchpad', cls: 2, price: 2000000, w: 31, h: 76, ax: 8, ay: 68, free: 1 },
+    rkm2: { name: '大整流罩運載火箭', desc: '頭特別大，裝得下大衛星', g: '中型（運載）', fac: 'launchpad', cls: 2, price: 3000000, w: 31, h: 77, ax: 8, ay: 69, free: 1 },
+    rkm3: { name: '可回收運載火箭', desc: '柵格翼＋收起來的降落腳，底部燒黑', g: '中型（運載）', fac: 'launchpad', cls: 2, price: 4000000, w: 25, h: 79, ax: 6, ay: 71, free: 1 },
+    rkm4: { name: '橘槽運載火箭', desc: '橘色燃料槽、白色推進器', g: '中型（運載）', fac: 'launchpad', cls: 2, price: 5000000, w: 31, h: 78, ax: 8, ay: 70, free: 1 },
+    rkm5: { name: '夜空藍運載火箭', desc: '深藍配金環、金鼻錐', g: '中型（運載）', fac: 'launchpad', cls: 2, price: 6000000, w: 31, h: 74, ax: 8, ay: 66, free: 1 },
+    rkl1: { name: '四推進器重型火箭', desc: '發射台參階那一枚；後面還有兩顆推進器', g: '大型（重型）', fac: 'launchpad', cls: 3, price: 8000000, w: 39, h: 111, ax: 12, ay: 103, free: 1 },
+    rkl2: { name: '三芯重型火箭', desc: '三根一樣的芯並排，兩邊會飛回來降落', g: '大型（重型）', fac: 'launchpad', cls: 3, price: 11000000, w: 41, h: 112, ax: 14, ay: 104, free: 1 },
+    rkl3: { name: '多節重型火箭', desc: '三節一路變細、黑白方格；最高', g: '大型（重型）', fac: 'launchpad', cls: 3, price: 14000000, w: 33, h: 120, ax: 11, ay: 112, free: 1 },
+    rkl4: { name: '太空梭', desc: '橘色大燃料槽＋兩根推進器，三角翼', g: '大型（重型）', fac: 'launchpad', cls: 3, price: 17000000, w: 41, h: 102, ax: 13, ay: 94, free: 1 },
+    rkl5: { name: '金箔重型火箭', desc: '上段包金箔、金鼻錐；重型裡最貴', g: '大型（重型）', fac: 'launchpad', cls: 3, price: 20000000, w: 39, h: 109, ax: 12, ay: 101, free: 1 },
   };
   const VEH_KEYS = Object.keys(VEH);
-  const CLS_NAME = { garage: ['', '兩輪', '轎車', '跑車', '大車', '展示級'], dock: ['', '小船', '有馬達的船', '帆船', '遊艇', '展示級'] };
+  const CLS_NAME = { garage: ['', '兩輪', '轎車', '跑車', '大車', '展示級'], dock: ['', '小船', '有馬達的船', '帆船', '遊艇', '展示級'], airfield: ['', '小飛行器', '直升機', '小飛機', '噴射機', '展示級'], launchpad: ['', '小型火箭', '中型火箭', '大型火箭'] };
 
   const START = { house: 1 };                             // 一開始送帳篷
 
@@ -228,7 +269,7 @@
       if (VEH[i.key]) {   // 車、船：每種一台；停的位子不對就收進寄放處
         if (seenV.has(i.key)) return; seenV.add(i.key);
         const v = { id: 'v-' + i.key, key: i.key, in: 'depot' }, f = VEH[i.key].fac, lv = (items.find(t => t.key === f) || {}).lv || 0;
-        if (i.in === 'f-' + f && lv && Number.isInteger(i.at) && i.at >= 0 && i.at < FAC[f].slots[lv - 1].length) { v.in = i.in; v.at = i.at; }
+        if (i.in === 'f-' + f && lv && FAC[f].slots && Number.isInteger(i.at) && i.at >= 0 && i.at < FAC[f].slots[lv - 1].length) { v.in = i.in; v.at = i.at; }
         items.push(v); return;
       }
       items.push(i);   // 之後的東西（家具…）原樣留著
@@ -283,7 +324,7 @@
   function fitWhy(k, slot) {
     const v = VEH[k];
     if (v.cls > slot.cls) return `這格只能停${CLS_NAME[v.fac][slot.cls]}${slot.cls > 1 ? '以下' : ''}`;
-    if (v.w > slot.w + 16 || v.h > slot.h + 16) return '太大台，這格停不下';
+    if (!v.free && (v.w > slot.w + 22 || v.h > slot.h + 16)) return v.fac === 'airfield' ? '太大架，這格停不下' : '太大台，這格停不下';
     return '';
   }
   // 買這台：設施要蓋到同一級
@@ -347,7 +388,7 @@
     }
     if (act.t === 'park') {
       const k = String(act.k || ''), v = vehOf(s, k); if (!v) return { ok: false, err: '你沒有這台' };
-      const f = VEH[k].fac; if (act.f && act.f !== f) return { ok: false, err: VEH[k].fac === 'dock' ? '船要停碼頭' : '車要停車庫' };
+      const f = VEH[k].fac; if (act.f && act.f !== f) return { ok: false, err: { dock: '船要停碼頭', garage: '車要停車庫', airfield: '飛機要停停機坪', launchpad: '火箭要立在發射台' }[f] };
       const sl = slotsOf(s, f)[Math.floor(Number(act.i))]; if (!sl) return { ok: false, err: '沒有這個位子' };
       const why = fitWhy(k, sl); if (why) return { ok: false, err: why };
       if (sl.v === k) return { ok: true, cost: 0, state: s };

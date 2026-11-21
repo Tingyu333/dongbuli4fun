@@ -190,7 +190,9 @@
     built.slice().sort((a, b) => (sites[a].y + sites[a].h) - (sites[b].y + sites[b].h)).forEach(k => {
       const im = IMG[k + X.level(s, k)], r = sites[k]; if (im) x.drawImage(im, r.x, r.y);
       // 停著的車、船：放在位子正中間（圖本身含右下的影子）
-      if (X.slotsOf) X.slotsOf(s, k).forEach(sl => { const v = sl.v && IMG['v/' + sl.v]; if (v) x.drawImage(v, Math.round(sl.x + (sl.w - v.width) / 2 + 1), Math.round(sl.y + (sl.h - v.height) / 2 + 1)); });
+      if (X.slotsOf) X.slotsOf(s, k).forEach(sl => { const v = sl.v && IMG['v/' + sl.v], V = sl.v && X.VEH[sl.v]; if (!v) return;
+        if (V.ax != null) x.drawImage(v, Math.round(sl.x + sl.w / 2 - V.ax), Math.round(sl.y + sl.h - V.ay));   // 火箭：地面點對齊位子的底部中間
+        else x.drawImage(v, Math.round(sl.x + (sl.w - v.width) / 2 + 1), Math.round(sl.y + (sl.h - v.height) / 2 + 1)); });
     });
     return { canvas: cv, buyable, sites, paths: road, W: WW, H: HH };
   }
