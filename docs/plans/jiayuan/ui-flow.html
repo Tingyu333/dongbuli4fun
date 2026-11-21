@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的小島：畫面草圖</title>
+<!-- 我的小島（家園・築）的設計圖（2026-11-21）：登島之後的三個畫面草圖（全島、放大、買地）。島的圖是 island-stages 的「參」那座（ui-island.png，600 × 520）。還不是遊戲本身。 -->
+<style>
+  :root { --bg: #fcfaf8; --text: #4a4a4a; --dark: #2c2c2c; --accent: #8e8070; --sub: #dcdcdc; --shu: #b33a2f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', 'PingFang TC', sans-serif; }
+  main { max-width: 390px; margin: 0 auto; padding: 22px 16px 28px; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 300; font-size: 22px; letter-spacing: .3em; color: var(--dark); margin: 0; text-align: center; }
+  .sub { text-align: center; font-size: 11px; letter-spacing: .12em; color: var(--accent); margin: 6px 0 10px; line-height: 1.7; }
+  .step { margin-top: 22px; }
+  .step h2 { font-family: 'Noto Serif TC', serif; font-weight: 400; font-size: 16px; letter-spacing: .2em; color: var(--dark); margin: 0 0 8px; display: flex; gap: 8px; align-items: baseline; }
+  .no { font-size: 12px; color: var(--shu); border: 1px solid var(--shu); padding: 0 5px; line-height: 1.5; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 10px 0 0; font-size: 11.5px; letter-spacing: .04em; line-height: 1.6; }
+  dt { color: var(--accent); } dd { margin: 0; }
+  /* 手機 */
+  .phone { width: 300px; margin: 0 auto; border: 9px solid #2c2c2c; border-radius: 30px; overflow: hidden; background: var(--bg); position: relative; box-shadow: 0 10px 30px -12px rgba(0,0,0,.3); }
+  .bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 6px; font-size: 11px; }
+  .bar .back { color: var(--accent); letter-spacing: .1em; }
+  .bar .title { font-family: 'Noto Serif TC', serif; font-size: 15px; letter-spacing: .25em; color: var(--dark); }
+  .bar .money { color: var(--shu); font-weight: 500; letter-spacing: .02em; }
+  .info { display: flex; gap: 6px; padding: 0 12px 8px; font-size: 10px; color: var(--accent); letter-spacing: .08em; flex-wrap: wrap; }
+  .info b { font-weight: 500; color: var(--dark); }
+  .seal { display: inline-block; border: 1px solid var(--shu); color: var(--shu); padding: 0 4px; font-family: 'Noto Serif TC', serif; font-size: 10px; transform: rotate(-4deg); }
+  .view { position: relative; height: 340px; overflow: hidden; background: #4f7d8f; }
+  .view img { position: absolute; display: block; }
+  .view .whole { left: 0; top: 38px; width: 100%; image-rendering: auto; }
+  .view .zoom { image-rendering: pixelated; }
+  .tip { position: absolute; left: 8px; bottom: 8px; background: rgba(44,44,44,.72); color: #fcfaf8; font-size: 9.5px; letter-spacing: .1em; padding: 3px 8px; border-radius: 10px; }
+  .tabs { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--sub); background: #fff; }
+  .tabs span { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 7px 0 9px; font-size: 10px; letter-spacing: .1em; color: var(--text); }
+  .tabs i { font-style: normal; width: 22px; height: 22px; border: 1.5px solid var(--dark); display: flex; align-items: center; justify-content: center; font-family: 'Noto Serif TC', serif; font-size: 12px; border-radius: 3px; color: var(--dark); }
+  .tabs span.hot i { border-color: var(--shu); color: var(--shu); }
+  .mini { position: absolute; right: 8px; top: 8px; width: 78px; border: 2px solid #fcfaf8; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+  .mini img { position: static; width: 100%; display: block; }
+  .mini .box { position: absolute; border: 1.5px solid var(--shu); }
+  .zbtn { position: absolute; right: 8px; top: 86px; width: 30px; height: 30px; border-radius: 50%; background: #fcfaf8; color: var(--dark); display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+  .pick { position: absolute; border: 2px dashed #fcfaf8; border-radius: 4px; box-shadow: 0 0 0 2000px rgba(20,30,40,.18); }
+  .pop { position: absolute; left: 10px; right: 10px; bottom: 10px; background: rgba(252,250,248,.97); border: 1px solid var(--sub); border-radius: 6px; padding: 10px 12px; font-size: 10.5px; }
+  .pop .t { display: flex; align-items: baseline; gap: 6px; font-family: 'Noto Serif TC', serif; font-size: 14px; letter-spacing: .15em; color: var(--dark); }
+  .pop .m { color: var(--accent); margin-top: 3px; letter-spacing: .05em; }
+  .btns { display: grid; grid-template-columns: 1fr 1.4fr; gap: 6px; margin-top: 8px; }
+  .btns span { text-align: center; padding: 7px 0; font-size: 10.5px; letter-spacing: .15em; border: 1px solid var(--sub); border-radius: 2px; }
+  .btns .dark { background: var(--dark); color: #fcfaf8; border-color: var(--dark); }
+  .glow { position: absolute; width: 50px; height: 44px; border-radius: 50%; border: 2px solid #fff6c8; box-shadow: 0 0 12px 4px rgba(255,240,180,.8), inset 0 0 10px rgba(255,240,180,.6); }
+  .pin { position: absolute; background: var(--shu); color: #fcfaf8; font-size: 9px; letter-spacing: .1em; padding: 2px 6px; border-radius: 2px; }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--bg); border-top-left-radius: 14px; border-top-right-radius: 14px; padding: 12px 14px 12px; box-shadow: 0 -6px 20px rgba(0,0,0,.18); font-size: 11px; }
+  .sheet .grip { width: 36px; height: 4px; background: var(--sub); border-radius: 2px; margin: 0 auto 8px; }
+  .sheet .t { font-family: 'Noto Serif TC', serif; font-size: 15px; letter-spacing: .2em; color: var(--dark); }
+  .sheet p { margin: 5px 0 0; color: var(--text); letter-spacing: .04em; line-height: 1.6; }
+  .sheet .note { color: var(--accent); font-size: 10px; }
+  .price { font-size: 16px; color: var(--shu); letter-spacing: .02em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>我的小島・畫面</h1>
+  <p class="sub">登島之後的三個畫面草圖（手機 375 寬）<br>島的圖是「參」那座；價錢、數字都還沒定</p>
+
+  <section class="step">
+    <h2><span class="no">一</span>登島：看全島</h2>
+    <div class="phone">
+      <div class="bar"><span class="back">← 會員・我</span><span class="title">我的小島</span><span class="money">$128,400</span></div>
+      <div class="info"><span class="seal">島 參</span><span><b>12</b> 塊地</span><span>・藏品 <b>8</b> 件</span><span>・再買 <b>2</b> 塊升 肆</span></div>
+      <div class="view"><img class="whole" src="ui-island.png" alt=""><span class="tip">點兩下放大・點設施看看</span></div>
+      <div class="tabs"><span><i>店</i>商店</span><span><i>倉</i>倉庫</span><span class="hot"><i>扭</i>扭蛋</span><span><i>鑑</i>圖鑑</span></div>
+    </div>
+    <dl><dt>上面</dt><dd>回會員中心、標題、錢包（跟其他頁同一個錢包）；下一行島的等級（朱色小章）、幾塊地、藏品幾件、再買幾塊升下一階</dd>
+      <dt>中間</dt><dd>整座島縮小放進畫面（太大的島上下留海、可以拖）；還沒買的地是虛線＋鎖</dd>
+      <dt>下面</dt><dd>四顆：商店（地、設施、載具、家具、衣服）、倉庫（買了還沒擺的、寄放處的車船）、扭蛋（藏品）、圖鑑（收集了幾成）</dd></dl>
+  </section>
+
+  <section class="step">
+    <h2><span class="no">二</span>點兩下：放大</h2>
+    <div class="phone">
+      <div class="bar"><span class="back">← 會員・我</span><span class="title">我的小島</span><span class="money">$128,400</span></div>
+      <div class="info"><span class="seal">島 參</span><span><b>12</b> 塊地</span><span>・藏品 <b>8</b> 件</span><span>・再買 <b>2</b> 塊升 肆</span></div>
+      <div class="view">
+        <img class="zoom" src="ui-island.png" alt="" style="width:900px;left:-126px;top:-385px">
+        <div class="pick" style="left:88px;top:55px;width:126px;height:82px"></div>
+        <div class="mini"><img src="ui-island.png" alt=""><div class="box" style="left:11px;top:33px;width:25px;height:29px"></div></div>
+        <span class="zbtn">－</span>
+        <div class="pop"><div class="t">紅瓦平房<span class="seal">參</span></div><div class="m">2 間房・衣櫃 1・曬衣繩晾 4 件</div>
+          <div class="btns"><span>進屋</span><span class="dark">升級：兩層洋房 $?</span></div></div>
+      </div>
+      <div class="tabs"><span><i>店</i>商店</span><span><i>倉</i>倉庫</span><span class="hot"><i>扭</i>扭蛋</span><span><i>鑑</i>圖鑑</span></div>
+    </div>
+    <dl><dt>放大</dt><dd>點兩下放大兩倍（再點兩下或按「－」縮回去），一根手指拖著看；右上角小地圖，紅框是現在看的地方</dd>
+      <dt>點設施</dt><dd>白色虛線框起來，下面跳一張小卡：名字、等級、裡面有什麼；「進屋」（家）／「換車」（車庫）／「看船」（碼頭）…，和「升級」（寫下一階的名字和價錢）</dd>
+      <dt>會動</dt><dd>之後再加：車開來開去、飛機起降、火箭發射</dd></dl>
+  </section>
+
+  <section class="step">
+    <h2><span class="no">三</span>點沒買的地：買地</h2>
+    <div class="phone">
+      <div class="bar"><span class="back">← 會員・我</span><span class="title">我的小島</span><span class="money">$128,400</span></div>
+      <div class="info"><span class="seal">島 參</span><span><b>12</b> 塊地</span><span>・藏品 <b>8</b> 件</span><span>・再買 <b>2</b> 塊升 肆</span></div>
+      <div class="view">
+        <img class="whole" src="ui-island.png" alt="">
+        <div class="glow" style="left:62px;top:20px"></div><span class="pin" style="left:116px;top:34px">這一塊</span>
+        <div class="sheet"><div class="grip"></div><div class="t">買這塊地</div>
+          <p>9 格・跟陸地相鄰・會填海接起來</p>
+          <p><span class="price">$?</span>　<span class="note">價錢之後定；越後面買的地越貴</span></p>
+          <p class="note">再買 2 塊，島升到 肆：可以蓋家、車庫、碼頭的伍，停機坪的肆</p>
+          <div class="btns"><span>先不要</span><span class="dark">買下來</span></div></div>
+      </div>
+      <div class="tabs"><span><i>店</i>商店</span><span><i>倉</i>倉庫</span><span class="hot"><i>扭</i>扭蛋</span><span><i>鑑</i>圖鑑</span></div>
+    </div>
+    <dl><dt>點鎖</dt><dd>那一塊地亮起來、標「這一塊」，下面滑出買地的卡片：幾格、相鄰才能買（不相鄰的寫「先買旁邊那塊」）、價錢、買了離升級還差幾塊、升級會解鎖什麼</dd>
+      <dt>買下來</dt><dd>海岸線長出去（之後做個填海的小動畫），升級的話跳一張「島升到 肆」的卡片</dd>
+      <dt>特殊地塊</dt><dd>第一版先不做（想法留著）</dd></dl>
+  </section>
+</main>
+</body>
+</html>
