@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家園：載具圖鑑</title>
+<!-- 家園・築的設計圖（2026-11-21）：車庫能停的載具，八類 27 台，正上方、車頭朝下，跟車庫設計圖同一個比例。還不是遊戲本身。 -->
+<style>
+  :root { --bg: #fcfaf8; --text: #4a4a4a; --dark: #2c2c2c; --accent: #8e8070; --sub: #dcdcdc; --shu: #b33a2f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', 'PingFang TC', sans-serif; }
+  main { max-width: 390px; margin: 0 auto; padding: 22px 16px 28px; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 300; font-size: 22px; letter-spacing: .3em; color: var(--dark); margin: 0; text-align: center; }
+  .sub { text-align: center; font-size: 11px; letter-spacing: .12em; color: var(--accent); margin: 6px 0 10px; line-height: 1.7; }
+  .card { border: 1px solid var(--sub); border-radius: 4px; padding: 12px; background: #fff; margin-top: 12px; }
+  .h { display: flex; align-items: baseline; gap: 8px; }
+  .no { font-size: 12px; color: var(--shu); border: 1px solid var(--shu); padding: 0 5px; line-height: 1.5; font-family: 'Noto Serif TC', serif; }
+  .name { font-family: 'Noto Serif TC', serif; font-size: 16px; letter-spacing: .2em; color: var(--dark); }
+  .tag { margin-left: auto; font-size: 10px; letter-spacing: .1em; color: var(--accent); }
+  canvas { display: block; width: 100%; border-radius: 3px; margin-top: 10px; image-rendering: pixelated; image-rendering: crisp-edges; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 8px 0 0; font-size: 11.5px; letter-spacing: .04em; line-height: 1.6; }
+  dt { color: var(--accent); } dd { margin: 0; }
+  .arrow { text-align: center; color: var(--accent); font-size: 12px; letter-spacing: .3em; margin-top: 12px; }
+  .labels { display: grid; gap: 4px; margin-top: 6px; text-align: center; }
+  .labels b { display: block; font-weight: 500; font-size: 11.5px; color: var(--dark); letter-spacing: .04em; }
+  .labels span { display: block; font-size: 9.5px; color: var(--accent); line-height: 1.4; margin-top: 1px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>載具・圖鑑</h1>
+  <p class="sub">家園・築的設計圖（正上方、精緻像素、車頭朝下）<br>每一張同一個比例，看得出大小；名字都是暫定的</p>
+
+  <section class="card">
+    <div class="h"><span class="name">腳踏車</span><span class="tag">小・兩輪・5 台</span></div>
+    <canvas id="vBike" width="150" height="34"></canvas>
+    <div id="vBikeL" class="labels"></div>
+  </section>
+  <section class="card">
+    <div class="h"><span class="name">機車</span><span class="tag">小・兩輪・5 台</span></div>
+    <canvas id="vScoot" width="150" height="34"></canvas>
+    <div id="vScootL" class="labels"></div>
+  </section>
+  <section class="card">
+    <div class="h"><span class="name">轎車</span><span class="tag">一般・5 台</span></div>
+    <canvas id="vSedan" width="150" height="44"></canvas>
+    <div id="vSedanL" class="labels"></div>
+  </section>
+  <section class="card">
+    <div class="h"><span class="name">跑車</span><span class="tag">要有門的車庫・3 台</span></div>
+    <canvas id="vSport" width="150" height="42"></canvas>
+    <div id="vSportL" class="labels"></div>
+  </section>
+  <section class="card">
+    <div class="h"><span class="name">越野車</span><span class="tag">大車・2 台</span></div>
+    <canvas id="vJeep" width="150" height="44"></canvas>
+    <div id="vJeepL" class="labels"></div>
+  </section>
+  <section class="card">
+    <div class="h"><span class="name">露營車</span><span class="tag">大車・2 台</span></div>
+    <canvas id="vCamp" width="150" height="60"></canvas>
+    <div id="vCampL" class="labels"></div>
+  </section>
+  <section class="card">
+    <div class="h"><span class="name">古董車</span><span class="tag">展示級・2 台</span></div>
+    <canvas id="vClassic" width="150" height="44"></canvas>
+    <div id="vClassicL" class="labels"></div>
+  </section>
+  <section class="card">
+    <div class="h"><span class="name">超跑</span><span class="tag">展示級・3 台</span></div>
+    <canvas id="vSuper" width="150" height="42"></canvas>
+    <div id="vSuperL" class="labels"></div>
+  </section>
+</main>
+<script>
+
+// ===== 小工具（跟 style-mockup.html 同一套：硬邊、整數座標）=====
+const TAU = Math.PI * 2;
+function make(id) { const c = document.getElementById(id), x = c.getContext('2d'); x.imageSmoothingEnabled = false; return { c, x, W: c.width, H: c.height }; }
+const hash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+function P(x, a, b, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), 1, 1); }
+function R(x, a, b, w, h, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), Math.round(w), Math.round(h)); }
+function circ(x, cx, cy, r, col) { for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r + r * .6) P(x, cx + xx, cy + yy, col); }
+function poly(x, pts, col) {
+  const ys = pts.map(p => p[1]), xs = pts.map(p => p[0]);
+  const y0 = Math.floor(Math.min(...ys)), y1 = Math.ceil(Math.max(...ys)), x0 = Math.floor(Math.min(...xs)), x1 = Math.ceil(Math.max(...xs));
+  x.fillStyle = col;
+  for (let y = y0; y <= y1; y++) for (let X = x0; X <= x1; X++) {
+    const px = X + .5, py = y + .5; let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside; }
+    if (inside) x.fillRect(X, y, 1, 1);
+  }
+}
+const K = {
+  g1: '#97ad6f', g2: '#86a061', g3: '#a6bb7c', g4: '#738d51', sand: '#e6d3a3', sand2: '#d8c18b', sand3: '#efe0b8',
+  sea: '#6b97a6', sea2: '#7ea9b5', shallow: '#9cc5c8', foam: '#e3efed', deep: '#4f7d8f',
+  leaf1: '#5d7c43', leaf2: '#4a6634', leaf3: '#7a9a55', leafHi: '#9cb96f', trunk: '#6e4528',
+  roof: '#b33a2f', roofHi: '#cf5a46', roofLo: '#8f2c23', roofLine: '#7a241d',
+  wall: '#efe4cf', wall2: '#d9c9aa', wall3: '#c2ae8b', door: '#5e3c22', win: '#f6cd72', frame: '#6e4528',
+  conc: '#c4beb3', conc2: '#aea79b', conc3: '#d6d1c7', stone: '#a39b8e', stone2: '#8b8377', stone3: '#bdb6aa',
+  wood: '#9a6a40', wood2: '#7c5230', wood3: '#b07f50', post: '#5e3c22',
+  canvas: '#dcc9a0', canvasHi: '#ece0c1', canvasLo: '#bba77c', canvasLine: '#9c8a62',
+  shingle: '#8a6440', shingleHi: '#a57a50', shingleLo: '#6c4c30', shingleLine: '#553a24',
+  slate: '#76828c', slateHi: '#8f9ba5', slateLo: '#626d77', slateLine: '#4f5962',
+  white: '#f3f1ec', white2: '#dedad1', white3: '#c9c4b9', glass: '#a8cdd6', glassHi: '#e2f1f3',
+  pool: '#5fb3c4', poolHi: '#9fdce4', poolLo: '#3f93a6', fire: '#e8873a', fire2: '#f6cd72', fire3: '#c4462e',
+  hedge: '#557a3e', hedge2: '#43652f', flowerA: '#f0b8b0', flowerB: '#f1d36b', flowerC: '#c9a0dc',
+  shadow: 'rgba(30,40,30,.24)'
+};
+
+// 共用：草地底、石板路、樹、影子
+function lawn(x, W, H, seed = 0) { for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) { const n = hash(a + seed, b); P(x, a, b, n > .9 ? K.g3 : n > .74 ? K.g2 : n < .05 ? K.g4 : K.g1); } }
+function stones(x, pts) { pts.forEach(([a, b]) => { R(x, a, b, 6, 3, K.conc3); R(x, a, b + 2, 6, 1, K.conc2); P(x, a, b, '#e4e0d8'); }); }
+function tree(x, a, b, r) {
+  x.fillStyle = K.shadow; for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r) x.fillRect(a + xx + 3, b + yy + 3, 1, 1);
+  circ(x, a, b, r, K.leaf2); circ(x, a - 1, b - 1, r - 1, K.leaf1); circ(x, a - 2, b - 2, Math.max(1, r - 3), K.leaf3); P(x, a - r / 2, b - r / 2, K.leafHi); P(x, a - r / 2 + 1, b - r / 2, K.leafHi);
+  for (let i = 0; i < r * 2; i++) { const t = hash(a + i, b) * TAU, rr = hash(b, a + i) * r; P(x, a + Math.cos(t) * rr, b + Math.sin(t) * rr, i % 2 ? K.leaf2 : K.leaf3); }
+}
+function palm(x, a, b) {   // 椰子樹：六片葉子，每片兩顆寬、尾巴往下垂，葉子比草地深才看得出來
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3; for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); P(x, u + 3, v + 3, K.shadow); } }
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3, nx = -Math.sin(t), ny = Math.cos(t); for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); const wdt = s < 4 ? 1 : s < 9 ? 2 : 1; for (let q = -wdt; q <= wdt; q++) P(x, u + nx * q, v + ny * q, q === wdt ? '#3d5f2c' : (q === -wdt ? '#8fb35a' : '#6f9a45')); } }
+  circ(x, a, b, 2, '#7a5a3a'); P(x, a - 1, b - 1, '#a07a50'); P(x, a + 1, b + 1, '#5e4228'); }
+function shadowPoly(x, pts, dx, dy) { poly(x, pts.map(([a, b]) => [a + dx, b + dy]), K.shadow); }
+// 四面坡（上亮、左亮、右暗、下暗），屋脊沿水平方向；line 是瓦片的橫線間距
+function hipRoof(x, a, b, w, h, c, opts = {}) {
+  const inset = Math.min(h / 2, opts.inset ?? h / 2), ry = b + h / 2;
+  const ridgeL = a + inset, ridgeR = a + w - inset;
+  shadowPoly(x, [[a, b], [a + w, b], [a + w, b + h], [a, b + h]], opts.sh || 4, opts.sh || 4);
+  poly(x, [[a, b], [a + w, b], [ridgeR, ry], [ridgeL, ry]], c.hi);           // 上坡（迎光）
+  poly(x, [[a, b + h], [a + w, b + h], [ridgeR, ry], [ridgeL, ry]], c.lo);   // 下坡
+  poly(x, [[a, b], [ridgeL, ry], [a, b + h]], c.mid);                        // 左坡
+  poly(x, [[a + w, b], [ridgeR, ry], [a + w, b + h]], c.lo);                  // 右坡
+  // 瓦片橫線＋錯開的直縫
+  for (let yy = b + 2; yy < b + h - 1; yy += c.step || 3) for (let xx = a + 1; xx < a + w - 1; xx++) {
+    const dTop = yy - b, dBot = b + h - yy, dl = xx - a, dr = a + w - xx;
+    if (dl > Math.min(dTop, dBot) + 1 && dr > Math.min(dTop, dBot) + 1 || true) { const px = x.getImageData(xx, yy, 1, 1).data; if (px[3]) P(x, xx, yy, c.line); }
+  }
+  for (let yy = b + 1; yy < b + h - 1; yy++) for (let xx = a + 1 + ((Math.floor((yy - b) / (c.step || 3)) % 2) * 2); xx < a + w - 1; xx += 4) if ((yy - b) % (c.step || 3)) P(x, xx, yy, c.seam || c.line);
+  R(x, ridgeL, ry - 1, ridgeR - ridgeL, 2, c.ridge || c.line);
+  // 四條斜脊
+  const diag = (x0, y0, x1, y1) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, c.ridge || c.line); };
+  diag(a, b, ridgeL, ry); diag(a, b + h, ridgeL, ry); diag(a + w, b, ridgeR, ry); diag(a + w, b + h, ridgeR, ry);
+  // 外框
+  R(x, a, b, w, 1, c.edge || c.line); R(x, a, b + h - 1, w, 1, c.edge || c.line); R(x, a, b, 1, h, c.edge || c.line); R(x, a + w - 1, b, 1, h, c.edge || c.line);
+}
+function chimney(x, a, b, w, h, top, side, sh = 3) { R(x, a + sh, b + sh, w, h, K.shadow); R(x, a, b, w, h, side); R(x, a, b, w, 2, top); R(x, a + 1, b + 1, w - 2, 1, '#4a3f36'); for (let i = 0; i < 3; i++) P(x, a + 1 + i, b - 2 - i * 2, i % 2 ? '#ece8e2' : '#e0dbd2'); }
+
+// ===== 載具圖鑑（正上方，車頭朝下）=====
+const C3 = (c, hi, lo) => [c, hi, lo];
+function tires(x, list) { list.forEach(([u, v, w = 2, h = 5]) => R(x, u, v, w, h, '#2a2a2a')); }
+function body(x, a, b, w, h, [c, hi, lo], round = 1) {
+  R(x, a + round, b, w - round * 2, h, c); R(x, a, b + round + 1, w, h - round * 2 - 2, c);
+  R(x, a + round + 1, b + 1, 2, h - 2, hi); R(x, a + w - round - 3, b + 2, 2, h - 4, lo);
+}
+const SH = (x, a, b, w, h) => R(x, a + 3, b + 3, w, h, K.shadow);
+
+// ---- 腳踏車 ----
+const BIKES = [
+  ['淑女車', '前面有籃子', (x, a, b) => { SH(x, a + 1, b, 3, 16); tires(x, [[a + 2, b, 1, 4], [a + 2, b + 12, 1, 4]]); R(x, a + 2, b + 3, 1, 9, '#e9dcb8'); R(x, a + 1, b + 4, 3, 2, '#7a4a32'); R(x, a, b + 11, 5, 1, '#8e9293'); R(x, a, b + 13, 5, 4, '#a07a50'); R(x, a + 1, b + 14, 3, 2, '#c99b6a'); }],
+  ['公路車', '彎把、很細', (x, a, b) => { SH(x, a + 1, b, 3, 16); tires(x, [[a + 2, b, 1, 4], [a + 2, b + 12, 1, 4]]); R(x, a + 2, b + 3, 1, 9, '#c0392b'); R(x, a + 2, b + 4, 1, 2, '#2a2a2a'); R(x, a, b + 11, 5, 1, '#2a2a2a'); P(x, a, b + 12, '#2a2a2a'); P(x, a + 4, b + 12, '#2a2a2a'); }],
+  ['登山車', '粗輪胎、平把', (x, a, b) => { SH(x, a, b, 5, 16); tires(x, [[a + 1, b, 3, 4], [a + 1, b + 12, 3, 4]]); R(x, a + 2, b + 3, 1, 9, '#5d7f5a'); R(x, a + 1, b + 4, 3, 2, '#2a2a2a'); R(x, a - 1, b + 11, 7, 1, '#2a2a2a'); P(x, a - 1, b + 10, '#c94f3d'); P(x, a + 5, b + 10, '#c94f3d'); }],
+  ['小摺', '輪子小小的', (x, a, b) => { SH(x, a + 1, b + 2, 3, 12); tires(x, [[a + 2, b + 2, 1, 3], [a + 2, b + 11, 1, 3]]); R(x, a + 2, b + 4, 1, 7, '#e2a62e'); R(x, a + 1, b + 5, 3, 2, '#2a2a2a'); R(x, a + 1, b + 10, 3, 1, '#8e9293'); }],
+  ['協力車', '兩個人一起騎', (x, a, b) => { SH(x, a + 1, b - 4, 3, 24); tires(x, [[a + 2, b - 4, 1, 4], [a + 2, b + 16, 1, 4]]); R(x, a + 2, b - 1, 1, 17, '#4f7393'); R(x, a + 1, b + 1, 3, 2, '#2a2a2a'); R(x, a + 1, b + 9, 3, 2, '#2a2a2a'); R(x, a, b + 7, 5, 1, '#8e9293'); R(x, a, b + 15, 5, 1, '#8e9293'); }],
+];
+
+// ---- 機車 ----
+const SCOOTERS = [
+  ['速克達', '白牌、每天騎', (x, a, b) => { SH(x, a + 1, b, 6, 15); tires(x, [[a + 2, b, 3, 3], [a + 2, b + 12, 3, 3]]); R(x, a + 1, b + 2, 5, 10, '#ece9e2'); R(x, a + 1, b + 2, 1, 10, '#fff'); R(x, a + 2, b + 4, 3, 4, '#3d3d3d'); R(x, a - 1, b + 10, 9, 1, '#5a5a5a'); P(x, a + 3, b + 14, '#f6e08a'); }],
+  ['偉士牌風', '圓屁股、鍍鉻', (x, a, b) => { SH(x, a, b, 8, 15); tires(x, [[a + 3, b, 2, 3], [a + 3, b + 12, 2, 3]]); R(x, a, b + 2, 8, 6, '#8fc4b3'); R(x, a + 1, b + 1, 6, 1, '#8fc4b3'); R(x, a + 2, b + 8, 4, 5, '#8fc4b3'); R(x, a + 1, b + 2, 1, 5, '#b4dccf'); R(x, a + 2, b + 3, 4, 4, '#7a4a32'); R(x, a, b + 11, 8, 1, '#cfd6d9'); P(x, a, b + 10, '#e8eef0'); P(x, a + 7, b + 10, '#e8eef0'); circ(x, a + 4, b + 13, 1, '#f6e08a'); }],
+  ['外送機車', '後面一個大箱子', (x, a, b) => { SH(x, a + 1, b - 4, 7, 19); tires(x, [[a + 2, b, 3, 3], [a + 2, b + 12, 3, 3]]); R(x, a + 1, b + 2, 5, 10, '#c0392b'); R(x, a + 2, b + 6, 3, 3, '#3d3d3d'); R(x, a - 1, b - 4, 9, 8, '#e8873a'); R(x, a - 1, b - 4, 9, 1, '#f4a964'); R(x, a - 1, b, 9, 1, '#c96d24'); R(x, a + 2, b - 2, 3, 2, '#fff'); R(x, a - 1, b + 10, 9, 1, '#5a5a5a'); }],
+  ['重機', '大油箱、排氣管', (x, a, b) => { SH(x, a, b, 8, 18); tires(x, [[a + 2, b, 3, 4], [a + 2, b + 14, 3, 4]]); R(x, a + 1, b + 3, 5, 12, '#2c2c2c'); R(x, a + 1, b + 9, 5, 4, '#3f3f3f'); R(x, a + 2, b + 10, 2, 1, '#6a6a6a'); R(x, a + 2, b + 4, 3, 4, '#1e1e1e'); R(x, a + 6, b + 2, 1, 8, '#cfd6d9'); R(x, a - 2, b + 14, 11, 1, '#5a5a5a'); P(x, a + 3, b + 17, '#f6e08a'); }],
+  ['電動機車', '安安靜靜', (x, a, b) => { SH(x, a + 1, b, 6, 15); tires(x, [[a + 2, b, 3, 3], [a + 2, b + 12, 3, 3]]); R(x, a + 1, b + 2, 5, 10, '#9aa3a8'); R(x, a + 1, b + 2, 1, 10, '#b8c0c4'); R(x, a + 2, b + 4, 3, 4, '#2c2c2c'); R(x, a + 1, b + 9, 5, 1, '#3fb4c4'); R(x, a - 1, b + 10, 9, 1, '#5a5a5a'); P(x, a + 3, b + 14, '#bfe9ef'); }],
+];
+
+// ---- 轎車 ----
+const SEDANS = [
+  ['小型車', '圓圓的、好停', (x, a, b) => { SH(x, a, b, 14, 22); tires(x, [[a - 1, b + 3], [a + 13, b + 3], [a - 1, b + 14], [a + 13, b + 14]]); body(x, a, b, 14, 22, C3('#a9c46e', '#c4db8c', '#88a352'), 2); R(x, a + 2, b + 15, 10, 4, K.glass); R(x, a + 3, b + 7, 8, 7, '#f3f1ec'); R(x, a + 2, b + 3, 10, 3, K.glass); P(x, a + 2, b + 21, '#f6e08a'); P(x, a + 11, b + 21, '#f6e08a'); }],
+  ['轎車', '最普通的那種', (x, a, b) => { SH(x, a, b, 16, 28); tires(x, [[a - 1, b + 4], [a + 15, b + 4], [a - 1, b + 19], [a + 15, b + 19]]); body(x, a, b, 16, 28, C3('#4f7393', '#7396b5', '#3a5670')); R(x, a + 2, b + 19, 12, 4, K.glass); R(x, a + 3, b + 19, 3, 1, K.glassHi); R(x, a + 3, b + 9, 10, 9, '#7396b5'); R(x, a + 4, b + 10, 8, 7, '#4f7393'); R(x, a + 2, b + 5, 12, 3, K.glass); P(x, a + 2, b + 27, '#f6e08a'); P(x, a + 13, b + 27, '#f6e08a'); }],
+  ['計程車', '車頂有牌子', (x, a, b) => { SH(x, a, b, 16, 28); tires(x, [[a - 1, b + 4], [a + 15, b + 4], [a - 1, b + 19], [a + 15, b + 19]]); body(x, a, b, 16, 28, C3('#e9c13f', '#f6d86a', '#c49c22')); R(x, a + 2, b + 19, 12, 4, K.glass); R(x, a + 3, b + 9, 10, 9, '#f6d86a'); R(x, a + 5, b + 12, 6, 3, '#f3f1ec'); R(x, a + 5, b + 12, 6, 1, '#c0392b'); R(x, a + 2, b + 5, 12, 3, K.glass); for (let i = 0; i < 16; i += 2) P(x, a + i, b + 24, '#2c2c2c'); }],
+  ['旅行車', '後車廂很長、車頂架', (x, a, b) => { SH(x, a, b, 16, 30); tires(x, [[a - 1, b + 4], [a + 15, b + 4], [a - 1, b + 21], [a + 15, b + 21]]); body(x, a, b, 16, 30, C3('#e2ddd2', '#f6f3ec', '#bfb8aa')); R(x, a + 2, b + 21, 12, 4, K.glass); R(x, a + 3, b + 4, 10, 16, '#f6f3ec'); R(x, a + 3, b + 4, 1, 16, '#5a5a5a'); R(x, a + 12, b + 4, 1, 16, '#5a5a5a'); R(x, a + 2, b + 2, 12, 2, K.glass); P(x, a + 2, b + 29, '#f6e08a'); P(x, a + 13, b + 29, '#f6e08a'); }],
+  ['黑頭車', '長長的、黑玻璃', (x, a, b) => { SH(x, a, b, 16, 32); tires(x, [[a - 1, b + 4], [a + 15, b + 4], [a - 1, b + 23], [a + 15, b + 23]]); body(x, a, b, 16, 32, C3('#262a2e', '#454b52', '#16191c')); R(x, a + 2, b + 22, 12, 4, '#3d4a55'); R(x, a + 3, b + 22, 3, 1, '#6a7f8e'); R(x, a + 3, b + 9, 10, 12, '#30353a'); R(x, a + 2, b + 5, 12, 3, '#3d4a55'); R(x, a, b + 16, 16, 1, '#cfd6d9'); R(x, a + 5, b + 31, 6, 1, '#cfd6d9'); P(x, a + 2, b + 31, '#f6e08a'); P(x, a + 13, b + 31, '#f6e08a'); }],
+];
+
+// ---- 跑車 ----
+const SPORTS = [
+  ['紅色跑車', '黑車頂、兩條白線', (x, a, b) => { SH(x, a, b, 18, 28); tires(x, [[a - 1, b + 3], [a + 17, b + 3], [a - 1, b + 20], [a + 17, b + 20]]); body(x, a, b, 18, 28, C3('#c0392b', '#e0604e', '#8c2a20')); R(x, a + 3, b + 15, 12, 5, K.glass); R(x, a + 4, b + 15, 4, 1, K.glassHi); R(x, a + 4, b + 10, 10, 5, '#2a2a2a'); R(x, a + 7, b + 20, 1, 8, '#f3f1ec'); R(x, a + 10, b + 20, 1, 8, '#f3f1ec'); R(x, a + 7, b, 1, 10, '#f3f1ec'); R(x, a + 10, b, 1, 10, '#f3f1ec'); R(x, a + 2, b + 27, 3, 1, '#f6e08a'); R(x, a + 13, b + 27, 3, 1, '#f6e08a'); }],
+  ['敞篷跑車', '沒有車頂、看得到座椅', (x, a, b) => { SH(x, a, b, 18, 28); tires(x, [[a - 1, b + 3], [a + 17, b + 3], [a - 1, b + 20], [a + 17, b + 20]]); body(x, a, b, 18, 28, C3('#ece9e2', '#ffffff', '#c9c4ba')); R(x, a + 3, b + 18, 12, 1, '#cfd6d9'); R(x, a + 3, b + 9, 12, 9, '#3d3d3d'); R(x, a + 4, b + 10, 4, 6, '#c99b6a'); R(x, a + 10, b + 10, 4, 6, '#c99b6a'); R(x, a + 4, b + 10, 4, 2, '#e0b88a'); R(x, a + 10, b + 10, 4, 2, '#e0b88a'); circ(x, a + 12, b + 15, 1, '#2a2a2a'); R(x, a + 2, b + 27, 3, 1, '#f6e08a'); R(x, a + 13, b + 27, 3, 1, '#f6e08a'); }],
+  ['GT 雙門', '長車頭、斜背', (x, a, b) => { SH(x, a, b, 18, 30); tires(x, [[a - 1, b + 3], [a + 17, b + 3], [a - 1, b + 22], [a + 17, b + 22]]); body(x, a, b, 18, 30, C3('#2f5d7c', '#4f7fa0', '#20435a')); R(x, a + 3, b + 13, 12, 4, K.glass); R(x, a + 4, b + 8, 10, 5, '#20435a'); R(x, a + 3, b + 2, 12, 6, '#3d6a88'); R(x, a + 4, b + 3, 10, 4, K.glass); R(x, a + 8, b + 18, 2, 11, '#20435a'); R(x, a + 2, b + 29, 3, 1, '#f6e08a'); R(x, a + 13, b + 29, 3, 1, '#f6e08a'); }],
+];
+
+// ---- 越野車 ----
+const JEEPS = [
+  ['軍綠吉普', '方方正正、後面備胎', (x, a, b) => { SH(x, a, b, 18, 30); tires(x, [[a - 1, b + 3, 3, 6], [a + 16, b + 3, 3, 6], [a - 1, b + 21, 3, 6], [a + 16, b + 21, 3, 6]]); body(x, a, b, 18, 30, C3('#6f7650', '#8a9166', '#555b3c'), 0); R(x, a + 3, b + 21, 12, 4, K.glass); R(x, a + 3, b + 7, 12, 13, '#555b3c'); for (let i = 0; i < 12; i += 3) R(x, a + 3 + i, b + 7, 1, 13, '#6f7650'); circ(x, a + 9, b - 1, 3, '#2a2a2a'); circ(x, a + 9, b - 1, 1, '#555'); R(x, a + 2, b + 29, 14, 1, '#3d3d3d'); }],
+  ['沙漠越野', '車頂燈條、行李架', (x, a, b) => { SH(x, a, b, 18, 30); tires(x, [[a - 1, b + 3, 3, 6], [a + 16, b + 3, 3, 6], [a - 1, b + 21, 3, 6], [a + 16, b + 21, 3, 6]]); body(x, a, b, 18, 30, C3('#d3b98a', '#e6d0a6', '#b39a6c'), 0); R(x, a + 3, b + 21, 12, 4, K.glass); R(x, a + 3, b + 6, 12, 14, '#8e8070'); for (let j = 0; j < 14; j += 3) R(x, a + 3, b + 6 + j, 12, 1, '#6e6457'); R(x, a + 3, b + 19, 12, 2, '#2a2a2a'); for (let i = 0; i < 6; i++) P(x, a + 4 + i * 2, b + 19, '#f6e08a'); R(x, a + 5, b + 8, 8, 4, '#5d7f5a'); circ(x, a + 9, b - 1, 3, '#2a2a2a'); circ(x, a + 9, b - 1, 1, '#555'); R(x, a + 2, b + 29, 14, 1, '#3d3d3d'); }],
+];
+
+// ---- 露營車 ----
+const CAMPERS = [
+  ['奶油露營車', '行李架、天窗', (x, a, b) => { SH(x, a, b, 20, 38); tires(x, [[a - 1, b + 5], [a + 19, b + 5], [a - 1, b + 28], [a + 19, b + 28]]); body(x, a, b, 20, 38, C3('#e9dcb8', '#f6edd2', '#c4b48a')); R(x, a + 3, b + 30, 14, 4, K.glass); R(x, a + 4, b + 30, 4, 1, K.glassHi); R(x, a + 4, b + 4, 12, 22, '#d8cba5'); for (let i = 0; i < 22; i += 3) R(x, a + 4, b + 4 + i, 12, 1, '#b9ac86'); R(x, a + 7, b + 8, 6, 6, K.glass); R(x, a + 6, b + 18, 8, 5, '#6d8f6a'); R(x, a, b + 27, 20, 2, '#c94f3d'); }],
+  ['露營巴士', '雨棚、太陽能板', (x, a, b) => { SH(x, a, b - 6, 22, 46); tires(x, [[a - 1, b - 1], [a + 21, b - 1], [a - 1, b + 30], [a + 21, b + 30]]); body(x, a, b - 6, 22, 46, C3('#f3f1ec', '#ffffff', '#cfc9bd')); R(x, a + 3, b + 33, 16, 4, K.glass); for (let r = 0; r < 3; r++) { R(x, a + 4, b - 3 + r * 8, 14, 6, '#3d5a73'); R(x, a + 4, b - 3 + r * 8, 14, 1, '#5d7d96'); R(x, a + 10, b - 3 + r * 8, 1, 6, '#5d7d96'); } R(x, a + 6, b + 22, 10, 6, K.glass); for (let j = 0; j < 30; j += 2) R(x, a + 21, b - 2 + j, 3, 1, j % 4 ? '#3fa7b8' : '#f3f1ec'); R(x, a, b + 28, 22, 2, '#3fa7b8'); }],
+];
+
+// ---- 古董車 ----
+const CLASSICS = [
+  ['綠色老爺車', '敞篷、皮椅、鍍鉻保險桿', (x, a, b) => { SH(x, a, b, 16, 30); tires(x, [[a - 1, b + 3], [a + 15, b + 3], [a - 1, b + 22], [a + 15, b + 22]]); R(x, a + 2, b, 12, 30, '#5d7f5a'); R(x, a, b + 3, 16, 24, '#5d7f5a'); R(x, a + 2, b + 3, 2, 24, '#7d9f77'); R(x, a + 12, b + 3, 2, 24, '#456242'); R(x, a + 3, b + 8, 10, 9, '#7a4a32'); R(x, a + 4, b + 9, 8, 3, '#94603f'); R(x, a + 4, b + 13, 8, 3, '#94603f'); R(x, a + 3, b + 18, 10, 1, '#cfd6d9'); R(x, a + 2, b + 29, 12, 1, '#dfe5e8'); R(x, a + 2, b, 12, 1, '#dfe5e8'); circ(x, a + 3, b + 27, 1, '#f6e08a'); circ(x, a + 12, b + 27, 1, '#f6e08a'); }],
+  ['酒紅老爺車', '白邊輪胎、長車頭', (x, a, b) => { SH(x, a, b, 16, 32); [[a - 2, b + 3], [a + 15, b + 3], [a - 2, b + 23], [a + 15, b + 23]].forEach(([u, v]) => { R(x, u, v, 3, 6, '#2a2a2a'); R(x, u + 1, v + 1, 1, 4, '#f3f1ec'); }); R(x, a + 2, b, 12, 32, '#7a2a33'); R(x, a, b + 3, 16, 26, '#7a2a33'); R(x, a + 2, b + 3, 2, 26, '#9a4450'); R(x, a + 12, b + 3, 2, 26, '#5c1f26'); R(x, a + 3, b + 6, 10, 8, '#e9dcb8'); R(x, a + 4, b + 7, 8, 2, '#f6edd2'); R(x, a + 4, b + 10, 8, 2, '#f6edd2'); R(x, a + 3, b + 15, 10, 1, '#cfd6d9'); R(x, a + 7, b + 16, 2, 15, '#5c1f26'); R(x, a + 5, b + 30, 6, 2, '#dfe5e8'); R(x, a + 2, b, 12, 1, '#dfe5e8'); circ(x, a + 3, b + 28, 1, '#f6e08a'); circ(x, a + 12, b + 28, 1, '#f6e08a'); }],
+];
+
+// ---- 超跑 ----
+function superBase(x, a, b, w, h, [c, hi, lo], wing, accent) {
+  SH(x, a, b, w, h); tires(x, [[a - 1, b + 4, 2, 6], [a + w - 1, b + 4, 2, 6], [a - 1, b + h - 10, 2, 6], [a + w - 1, b + h - 10, 2, 6]]);
+  poly(x, [[a + 2, b], [a + w - 2, b], [a + w, b + 6], [a + w, b + h - 6], [a + w - 5, b + h], [a + 5, b + h], [a, b + h - 6], [a, b + 6]], c);
+  poly(x, [[a + 2, b + 1], [a + 5, b + 1], [a + 3, b + h - 2], [a + 1, b + h - 6]], hi);
+  R(x, a + 5, b + 14, w - 10, 6, '#22262a'); R(x, a + 6, b + 14, 3, 1, '#5a6a75'); R(x, a + 6, b + 9, w - 12, 5, lo);
+  R(x, a + 1 - (wing - 18) / 2, b, wing, 2, accent);
+  R(x, a + 1, b + 12, 2, 5, accent); R(x, a + w - 3, b + 12, 2, 5, accent);
+  R(x, a + 4, b + h - 1, 3, 1, '#f3f1ec'); R(x, a + w - 7, b + h - 1, 3, 1, '#f3f1ec');
+}
+const SUPERS = [
+  ['黃色超跑', '楔形、尾翼、進氣口', (x, a, b) => superBase(x, a, b, 20, 30, C3('#e2a62e', '#f4c75a', '#b37f1c'), 18, '#2a2a2a')],
+  ['寬體橘超跑', '更寬、大尾翼', (x, a, b) => { superBase(x, a, b, 22, 30, C3('#e0672f', '#f08a52', '#b34d1f'), 24, '#2a2a2a'); R(x, a + 10, b + 20, 2, 9, '#2a2a2a'); }],
+  ['消光黑超跑', '金色尾翼、金色線', (x, a, b) => { superBase(x, a, b, 20, 30, C3('#2f3236', '#46494e', '#1f2124'), 18, '#c9a24a'); R(x, a + 9, b + 20, 2, 10, '#c9a24a'); R(x, a + 9, b + 2, 2, 7, '#c9a24a'); }],
+];
+
+// ===== 畫：每一類一張（寬 150，大家同一個比例）=====
+function sheet(id, list, H) {
+  const { x, W } = make(id), n = list.length, colW = W / n;
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const nn = hash(i + id.length * 31, j); P(x, i, j, nn > .93 ? K.conc2 : nn < .05 ? K.conc3 : K.conc); }
+  for (let k = 1; k < n; k++) for (let j = 2; j < H - 2; j++) if (j % 3 !== 2) P(x, Math.round(k * colW), j, '#f2eee5');
+  list.forEach(([, , draw], k) => {
+    // 先在暫存畫布量大小，再置中
+    const tmp = document.createElement('canvas'); tmp.width = 60; tmp.height = 80; const tx = tmp.getContext('2d'); draw(tx, 20, 20);
+    const d = tx.getImageData(0, 0, 60, 80).data; let x0 = 60, y0 = 80, x1 = 0, y1 = 0;
+    for (let j = 0; j < 80; j++) for (let i = 0; i < 60; i++) if (d[(j * 60 + i) * 4 + 3] > 0) { x0 = Math.min(x0, i); x1 = Math.max(x1, i); y0 = Math.min(y0, j); y1 = Math.max(y1, j); }
+    const w = x1 - x0 + 1, h = y1 - y0 + 1, ox = Math.round(k * colW + (colW - w) / 2) - x0 + 20, oy = Math.round((H - h) / 2) - y0 + 20;
+    draw(x, ox, oy);
+  });
+  const el = document.getElementById(id + 'L'); el.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+  el.innerHTML = list.map(([name, note]) => `<div><b>${name}</b><span>${note}</span></div>`).join('');
+}
+sheet('vBike', BIKES, 34); sheet('vScoot', SCOOTERS, 34); sheet('vSedan', SEDANS, 44); sheet('vSport', SPORTS, 42);
+sheet('vJeep', JEEPS, 44); sheet('vCamp', CAMPERS, 60); sheet('vClassic', CLASSICS, 44); sheet('vSuper', SUPERS, 42);
+
+</script>
+</body>
+</html>
