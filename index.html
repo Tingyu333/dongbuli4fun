@@ -498,9 +498,22 @@
             opacity: 0.3;
         }
 
+        /* 公告跑馬燈（2026-11-21）：admin 後台設定，只有一條；按一下停住、再按一下繼續 */
+        .ann { position: absolute; left: 1rem; right: 1rem; top: 4.6rem; z-index: 30; display: flex; align-items: center; gap: 0.6rem; min-height: 36px; padding: 0 0.8rem 0 0.45rem; background: rgb(var(--wabi-bg) / 0.84); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border: 1px solid rgb(var(--wabi-sub) / 0.9); border-radius: 3px; box-shadow: 0 6px 20px -12px rgb(0 0 0 / 0.35); color: rgb(var(--wabi-dark)); font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: 0.12em; cursor: pointer; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+        .ann[hidden] { display: none; }
+        @media (min-width: 768px) { .ann { top: 7rem; left: 50%; right: auto; width: min(640px, calc(100% - 4rem)); transform: translateX(-50%); } }
+        .ann-seal { flex-shrink: 0; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border: 1.5px solid rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); font-family: 'Noto Serif TC', serif; font-size: 13px; letter-spacing: 0; border-radius: 2px; transform: rotate(-5deg); }
+        .ann-track { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; -webkit-mask-image: linear-gradient(to right, transparent, #000 10px, #000 calc(100% - 10px), transparent); mask-image: linear-gradient(to right, transparent, #000 10px, #000 calc(100% - 10px), transparent); }
+        .ann-text { display: inline-block; padding-left: 100%; animation: ann-run var(--ann-dur, 14s) linear infinite; will-change: transform; }
+        .ann.is-paused .ann-text { animation-play-state: paused; }
+        @keyframes ann-run { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+        @media (prefers-reduced-motion: reduce) {
+            .ann-track { white-space: normal; -webkit-mask-image: none; mask-image: none; padding: 0.45rem 0; }
+            .ann-text { padding-left: 0; animation: none; line-height: 1.6; }
+        }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261121a">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261121b">
 </head>
 
 <body class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white">
@@ -543,6 +556,11 @@
 
     <!-- 頁首視覺 -->
     <header class="relative w-full h-[90vh] overflow-hidden flex items-center justify-center">
+        <!-- 公告跑馬燈：admin 後台設定（後端 announce），沒有就藏起來 -->
+        <div id="ann" class="ann" role="status" aria-label="公告" hidden>
+            <span class="ann-seal" aria-hidden="true">告</span>
+            <div class="ann-track"><span id="annText" class="ann-text"></span></div>
+        </div>
         <div class="absolute inset-0">
             <!-- 夜間模式換成 27 樓的夜景（theme.js 會換 src） -->
             <img src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=2000&auto=format&fit=crop"
@@ -900,7 +918,24 @@
             const later = () => setTimeout(startHome, 1500);
             (window.Line && Line.ready ? Line.ready.then(later, later) : later());
         });
+        // 公告跑馬燈（2026-11-21）：先用上次存的馬上顯示，再跟後端拿新的；只有一條，字一律 textContent
+        function startAnnounce() {
+            const KEY = 'dongbuli-announce', box = document.getElementById('ann'), t = document.getElementById('annText');
+            const show = text => {
+                if (!text) { box.hidden = true; return; }
+                if (t.textContent === text && !box.hidden) return;
+                t.textContent = text; box.hidden = false;
+                requestAnimationFrame(() => t.style.setProperty('--ann-dur', Math.max(8, t.scrollWidth / 42).toFixed(1) + 's'));   // 一秒約 42px，長短都一樣快
+            };
+            box.addEventListener('click', () => box.classList.toggle('is-paused'));
+            try { const c = JSON.parse(localStorage.getItem(KEY) || 'null'); if (c && c.text) show(c.text); } catch (e) { }
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'announce' }) })
+                .then(r => r.json())
+                .then(r => { if (r.result !== 'success') return; show(r.text || ''); try { localStorage.setItem(KEY, JSON.stringify({ text: r.text || '' })); } catch (e) { } })
+                .catch(() => { });
+        }
         function startHome() {
+            startAnnounce();
             loadBookedDates()
                 .then(() => {
                     initPickers();

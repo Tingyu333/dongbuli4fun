@@ -117,3 +117,10 @@
 - **礦坑・挖**：新的 `mineLog` 和 `Mines` 分頁（欄位見上面）。排行榜每個人多 `mine`：`n`、`money` 讀 `earned.mine`，`deep` 是 `Mines` 裡過到最深的一關（`BOARD_SOURCES.Mines`：只看 G `win` 是 true 的列，比 F `lv`，一樣深比 I `liang`），`best` 就是 `deep.lv`，`clears` 是 T `final` 的列數（破關幾次）。只有 `mine` 有紀錄、別的都沒有的人也會上榜。
 - `BOARD_STATE_COLS` 加 `Mines`（Board 分頁多一欄，舊的照樣接著讀，不用從頭讀，`BOARD_STATE_VERSION` 不用加）；`ARCHIVE_SHEETS` 加 `Mines`；`ECON_SOURCES` 加「礦坑・挖」（`len` 算時間，真人工資表、admin 經濟體檢都有）；`ECON_NAMES.mine`。
 - `PERK_TYPES.shop60` 的說明改成「八家打工店」。
+
+## 2026-11-21 公告（版本 `2026-11-21b`）
+
+- 公開：`{ type: 'announce' }` → `{ result: 'success', text, at }`（沒有公告或過期了 `text` 是空字串）。快取 `announce:v1` 10 分鐘，存公告時清掉；快取裡也會看下架時間。
+- admin 後台（`ga` 開頭，要 `GAME_ADMIN_PASSWORD` 的通行證）：`gaAnnounce` → `{ announce: { text, at, until, live } | null, max: 80 }`；`gaAnnounceSet { text, days }`：`text` 把控制字元、換行、連續空白變成一個空格，最多 80 字（超過回錯誤），空的就撤下；`days` 0 是不自動下架，1～30 天。只有一條，新的蓋掉舊的。
+- 存在指令碼屬性 `ANNOUNCE`（JSON：`text`、`at`、`until`），不用新分頁。
+

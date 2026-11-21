@@ -43,7 +43,7 @@
 
 | 檔案 | 是什麼 | 詳細 |
 | --- | --- | --- |
-| `index.html` | 首頁、訂房、房況月曆、我的預約 | `docs/pages/index.md` |
+| `index.html` | 首頁、訂房、房況月曆、我的預約、公告跑馬燈 | `docs/pages/index.md` |
 | `reviews.html` | 留言板 | `docs/pages/reviews.md` |
 | `jiaobei.html` | 擲杯（純前端） | `docs/pages/jiaobei.md` |
 | `ticket.html` | 入住券票夾（分享連結進來） | `docs/pages/ticket.md` |
@@ -69,7 +69,7 @@
 | `404.html` | 找不到頁面 | `docs/pages/404.md` |
 | `admin_login.html` | 後台登入 | `docs/pages/admin_login.md` |
 | `admin_dashboard.html` | 後台預約列表、發紅包、後端狀況 | `docs/pages/admin_dashboard.md` |
-| `admin.html` | admin 後台（另一組密碼 `GAME_ADMIN_PASSWORD`）：玩家列表、專屬道具、道具庫（主人取名字）、經濟體檢、許願池（2026-11-21 從預約後台搬來） | `docs/pages/admin.md` |
+| `admin.html` | admin 後台（另一組密碼 `GAME_ADMIN_PASSWORD`）：玩家列表、專屬道具、道具庫（主人取名字）、經濟體檢、許願池（2026-11-21 從預約後台搬來）、首頁公告 | `docs/pages/admin.md` |
 
 ## 其他說明（也在 docs/）
 

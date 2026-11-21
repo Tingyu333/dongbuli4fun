@@ -73,7 +73,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-21a';
+var BACKEND_VERSION = '2026-11-21b';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1 };
 
@@ -153,6 +153,7 @@ function route(type, input) {
     if (type === 'wishList') return wishList(input);
     if (type === 'wishAdd') return wishAdd(input);
     if (type === 'wishVote') return wishVote(input);
+    if (type === 'announce') return announceGet();
 
     if (type === 'ping') return { result: 'success', version: BACKEND_VERSION };   // 公開：只回版本
 
@@ -169,6 +170,8 @@ function route(type, input) {
       if (type === 'gaWage') return gaWage(input);
       if (type === 'gaWishes') return adminWishes();        // 許願池 2026-11-21 從預約後台搬過來
       if (type === 'gaWishSet') return adminWishSet(input);
+      if (type === 'gaAnnounce') return gaAnnounce();
+      if (type === 'gaAnnounceSet') return gaAnnounceSet(input);
       return { result: 'error', error: '不認得的請求' };
     }
 
@@ -3875,6 +3878,45 @@ function adminWishSet(input) {
   return adminWishes();
 }
 
+
+// ===== 公告（2026-11-21）=====
+// 首頁的跑馬燈，只有一條。admin 後台設定（gaAnnounceSet），存在指令碼屬性 ANNOUNCE（JSON：text、at、until）。
+// 公開的 announce 只回字和時間；until 到了就當作沒有。字只給主人寫，但首頁一律用 textContent 放，不當 HTML。
+var ANNOUNCE_MAX = 80;
+function readAnnounce() {
+  var raw = PropertiesService.getScriptProperties().getProperty('ANNOUNCE'), a = null;
+  try { a = raw ? JSON.parse(raw) : null; } catch (e) { a = null; }
+  return a && a.text ? a : null;
+}
+function announceLive(a) { return !!a && (!a.until || new Date(a.until).getTime() > Date.now()); }
+function cleanAnnounce(v) {
+  return String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+// 公開：{ type: 'announce' } → { text, at }（沒有就是空字串）
+function announceGet() {
+  var cache = CacheService.getScriptCache(), hit = cache.get('announce:v1');
+  if (hit) { var c = JSON.parse(hit); if (!c.until || new Date(c.until).getTime() > Date.now()) return { result: 'success', text: c.text, at: c.at }; return { result: 'success', text: '', at: '' }; }
+  var a = readAnnounce(), out = announceLive(a) ? { text: a.text, at: a.at, until: a.until || '' } : { text: '', at: '', until: '' };
+  cache.put('announce:v1', JSON.stringify(out), 600);
+  return { result: 'success', text: out.text, at: out.at };
+}
+// admin 後台：看現在掛的（含已經過期的）
+function gaAnnounce() {
+  var a = readAnnounce();
+  return { result: 'success', announce: a ? { text: a.text, at: a.at, until: a.until || '', live: announceLive(a) } : null, max: ANNOUNCE_MAX };
+}
+// admin 後台：{ type: 'gaAnnounceSet', token, text, days }：text 空的就撤下；days 0 是不自動下架，1～30 天後自己下架。新的直接蓋掉舊的（只有一條）
+function gaAnnounceSet(input) {
+  var text = cleanAnnounce(input.text), props = PropertiesService.getScriptProperties();
+  if (text.length > ANNOUNCE_MAX) return { result: 'error', error: '公告最多 ' + ANNOUNCE_MAX + ' 個字' };
+  if (!text) props.deleteProperty('ANNOUNCE');
+  else {
+    var days = Math.max(0, Math.min(30, Math.floor(Number(input.days) || 0))), now = new Date();
+    props.setProperty('ANNOUNCE', JSON.stringify({ text: text, at: now.toISOString(), until: days ? new Date(now.getTime() + days * 86400000).toISOString() : '' }));
+  }
+  CacheService.getScriptCache().remove('announce:v1');
+  return gaAnnounce();
+}
 
 // ===== admin 後台（admin.html，2026-11-20）=====
 // 使用者要的「另一個後台」：玩家列表、專屬道具（先做架子：發、收回、到期，還沒有效果）、經濟體檢。

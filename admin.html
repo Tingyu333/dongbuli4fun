@@ -20,7 +20,7 @@
         .sans { font-family: 'Noto Sans TC', sans-serif; }
         .tabs { display: flex; border-bottom: 1px solid rgb(var(--wabi-sub)); }
         .tabs button {
-            flex: 1; min-height: 46px; font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: 0.25em;
+            flex: 1; min-width: 0; min-height: 46px; font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: 0.12em; white-space: nowrap;
             color: rgb(var(--wabi-accent)); border-bottom: 2px solid transparent; margin-bottom: -1px; touch-action: manipulation;
         }
         .tabs button[aria-pressed="true"] { color: rgb(var(--wabi-dark)); border-bottom-color: rgb(var(--wabi-shu)); }
@@ -46,6 +46,14 @@
         .wstamp { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 1.5px solid rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); font-size: 13px; border-radius: 3px; flex-shrink: 0; }
         .wstamp.is-done { background: rgb(var(--wabi-shu)); color: rgb(var(--wabi-bg)); }
         .wstamp.is-off { border-color: rgb(var(--wabi-sub)); color: rgb(var(--wabi-accent)); }
+        /* 公告預覽：跟首頁的跑馬燈同一個樣子 */
+        .ann { display: flex; align-items: center; gap: 0.6rem; min-height: 36px; padding: 0 0.8rem 0 0.45rem; background: rgb(var(--wabi-bg)); border: 1px solid rgb(var(--wabi-sub)); border-radius: 3px; color: rgb(var(--wabi-dark)); font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: 0.12em; }
+        .ann-seal { flex-shrink: 0; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border: 1.5px solid rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); font-family: 'Noto Serif TC', serif; font-size: 13px; letter-spacing: 0; border-radius: 2px; transform: rotate(-5deg); }
+        .ann-track { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; }
+        .ann-text { display: inline-block; padding-left: 100%; animation: ann-run var(--ann-dur, 14s) linear infinite; }
+        .ann-text.is-empty { padding-left: 0; animation: none; color: rgb(var(--wabi-accent)); }
+        @keyframes ann-run { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+        @media (prefers-reduced-motion: reduce) { .ann-track { white-space: normal; padding: 0.45rem 0; } .ann-text { padding-left: 0; animation: none; } }
         .chip.is-off { border-color: rgb(var(--wabi-sub)); color: rgb(var(--wabi-accent)); }
         .stat { border-top: 1px solid rgb(var(--wabi-sub)); padding: 0.7rem 0; }
         .stat span { display: block; font-size: 11px; letter-spacing: 0.15em; color: rgb(var(--wabi-accent)); font-family: 'Noto Sans TC', sans-serif; }
@@ -59,7 +67,7 @@
         .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         [hidden] { display: none !important; }
     </style>
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261121a">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261121b">
 </head>
 
 <body class="bg-wabi-bg text-wabi-text font-serif antialiased min-h-screen">
@@ -97,6 +105,7 @@
                 <button type="button" data-tab="lib" aria-pressed="false">道具庫</button>
                 <button type="button" data-tab="econ" aria-pressed="false">經濟</button>
                 <button type="button" data-tab="wish" aria-pressed="false">許願池</button>
+                <button type="button" data-tab="ann" aria-pressed="false">公告</button>
             </div>
             <p id="state" class="mt-6 text-xs font-sans tracking-widest text-stone-400 text-center"></p>
 
@@ -192,6 +201,38 @@
                 </div>
             </div>
 
+            <!-- 公告（2026-11-21）：首頁的跑馬燈，只有一條 -->
+            <div id="tab-ann" class="mt-5" hidden>
+                <p class="text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">放在首頁大圖上面的跑馬燈。只能放一條，掛新的就蓋掉舊的；旅人按一下跑馬燈會停住。</p>
+                <div class="card mt-4">
+                    <p class="text-[10px] font-sans tracking-[0.2em] text-stone-400">現在首頁</p>
+                    <p id="annNow" class="mt-1 text-sm text-wabi-dark leading-relaxed break-words">讀取中……</p>
+                    <p id="annMeta" class="mt-1 text-[11px] font-sans tracking-wider text-stone-400"></p>
+                    <button id="annOff" type="button" class="btn btn-line w-full mt-3" hidden>撤下來</button>
+                </div>
+                <div class="mt-6 space-y-4">
+                    <label class="block text-[10px] font-sans tracking-[0.2em] text-stone-400">公告內容
+                        <textarea id="annInput" maxlength="80" rows="2" class="field mt-1 py-2 leading-relaxed" placeholder="例如：礦坑・挖開工了，浣熊大王在地底等你"></textarea>
+                    </label>
+                    <p class="!mt-1 text-right text-[11px] font-sans tracking-wider text-stone-400"><span id="annCount">0</span>／80 字・換行會變成空格</p>
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-sans tracking-[0.2em] text-stone-400 mb-1">預覽</p>
+                        <div class="ann"><span class="ann-seal" aria-hidden="true">告</span><div class="ann-track"><span id="annPreview" class="ann-text is-empty">打字就看得到</span></div></div>
+                    </div>
+                    <label class="block text-[10px] font-sans tracking-[0.2em] text-stone-400">什麼時候下架
+                        <select id="annDays" class="field mt-1">
+                            <option value="0">不自動下架</option>
+                            <option value="1">1 天後</option>
+                            <option value="3">3 天後</option>
+                            <option value="7" selected>7 天後</option>
+                            <option value="14">14 天後</option>
+                            <option value="30">30 天後</option>
+                        </select>
+                    </label>
+                    <button id="annSave" type="button" class="btn btn-dark w-full">掛上去</button>
+                </div>
+            </div>
+
             <!-- 許願池（2026-11-21 從預約後台搬過來）：改狀態、回一句話、藏起來 -->
             <div id="tab-wish" class="mt-5" hidden>
                 <p class="text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">旅人在許願・池許的願。狀態和回覆會貼在願望牆上；亂寫的按「藏起來」，願望牆就看不到（獎金不會收回）。</p>
@@ -224,7 +265,7 @@
         };
         const day = t => { if (!t) return ''; const d = new Date(t); return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`; };
         let token = null; try { token = localStorage.getItem(TOKEN_KEY); } catch (e) { }
-        let data = null, econ = null, wishes = null, tab = 'players';
+        let data = null, econ = null, wishes = null, ann = null, tab = 'players';
 
         async function call(body) {
             let res;
@@ -240,7 +281,7 @@
         // ===== 登入 =====
         function showLogin(msg) { $('loginView').hidden = false; $('appView').hidden = true; $('logoutBtn').hidden = true; $('loginMsg').textContent = msg || ''; setTimeout(() => $('pw').focus(), 50); }
         function showApp() { $('loginView').hidden = true; $('appView').hidden = false; $('logoutBtn').hidden = false; }
-        function logout(msg) { token = null; try { localStorage.removeItem(TOKEN_KEY); } catch (e) { } data = econ = wishes = null; showLogin(msg); }
+        function logout(msg) { token = null; try { localStorage.removeItem(TOKEN_KEY); } catch (e) { } data = econ = wishes = ann = null; showLogin(msg); }
         $('logoutBtn').addEventListener('click', () => logout(''));
         $('loginForm').addEventListener('submit', async e => {
             e.preventDefault();
@@ -260,7 +301,8 @@
         function setTab(t) {
             tab = t;
             document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tab === t)));
-            ['players', 'perks', 'lib', 'econ', 'wish'].forEach(k => $('tab-' + k).hidden = k !== t);
+            ['players', 'perks', 'lib', 'econ', 'wish', 'ann'].forEach(k => $('tab-' + k).hidden = k !== t);
+            if (t === 'ann' && !ann) loadAnn();
             if (t === 'econ' && !econ) loadEcon();
             if (t === 'wish' && !wishes) loadWishes();
         }
@@ -542,6 +584,42 @@
             if (hide) { const w = wishes.find(x => x.id === hide.dataset.wishHide); return setWish(w.id, { hidden: !w.hidden }, w.hidden ? '放回願望牆了' : '藏起來了'); }
             const save = e.target.closest('[data-wish-save]');
             if (save) { const id = save.dataset.wishSave, ta = document.querySelector(`[data-wish-reply="${id}"]`); save.disabled = true; save.textContent = '存回覆中……'; setWish(id, { reply: ta.value }, '回覆存好了'); }
+        });
+
+        // ===== 公告（2026-11-21；後端 gaAnnounce／gaAnnounceSet，公開的是 announce）=====
+        const clean = v => String(v || '').replace(/\s+/g, ' ').trim();
+        function preview() {
+            const v = clean($('annInput').value), el = $('annPreview');
+            $('annCount').textContent = v.length;
+            el.textContent = v || '打字就看得到'; el.classList.toggle('is-empty', !v);
+            requestAnimationFrame(() => el.style.setProperty('--ann-dur', Math.max(8, el.scrollWidth / 42).toFixed(1) + 's'));
+        }
+        function renderAnn() {
+            const a = ann && ann.announce;
+            $('annNow').textContent = a ? a.text : '沒有公告，首頁不會出現跑馬燈。';
+            $('annNow').classList.toggle('text-stone-400', !a || !a.live);
+            $('annMeta').textContent = !a ? '' : `${day(Date.parse(a.at))} 掛上去・${!a.live ? '已經下架了（過期）' : a.until ? day(Date.parse(a.until)) + ' 自動下架' : '不會自動下架'}`;
+            $('annOff').hidden = !a;
+        }
+        async function loadAnn() {
+            $('annNow').textContent = '讀取中……';
+            try { ann = await call({ type: 'gaAnnounce' }); renderAnn(); if (ann.announce && ann.announce.live && !$('annInput').value) { $('annInput').value = ann.announce.text; preview(); } }   // 要改字就從現在的改
+            catch (e) { $('annNow').textContent = /舊版/.test(e.message) ? '後端還是舊版：部署新版本（2026-11-21b 以後）才能放公告' : e.message; }
+        }
+        $('annInput').addEventListener('input', preview);
+        $('annSave').addEventListener('click', async () => {
+            const text = clean($('annInput').value);
+            if (!text) { showToast('先寫公告內容'); return; }
+            $('annSave').disabled = true;
+            try { ann = await call({ type: 'gaAnnounceSet', text, days: Number($('annDays').value) }); renderAnn(); $('annInput').value = ''; preview(); showToast('掛上去了，首頁重新整理就看得到'); }
+            catch (e) { showToast(/舊版/.test(e.message) ? '後端還是舊版，要先部署' : e.message); }
+            $('annSave').disabled = false;
+        });
+        $('annOff').addEventListener('click', async () => {
+            $('annOff').disabled = true;
+            try { ann = await call({ type: 'gaAnnounceSet', text: '' }); renderAnn(); showToast('撤下來了'); }
+            catch (e) { showToast(e.message); }
+            $('annOff').disabled = false;
         });
 
         if (token) { showApp(); loadPlayers(); loadWishes(); } else showLogin('');
