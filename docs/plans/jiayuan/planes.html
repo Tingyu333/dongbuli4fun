@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家園：飛機的圖鑑</title>
+<!-- 家園・築的設計圖（2026-11-21）：停機坪能停的飛機，五級 21 架，正上方、機頭朝下，每一張同一個比例。展示級要大、豪華、精緻（使用者說的）。還不是遊戲本身。 -->
+<style>
+  :root { --bg: #fcfaf8; --text: #4a4a4a; --dark: #2c2c2c; --accent: #8e8070; --sub: #dcdcdc; --shu: #b33a2f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', 'PingFang TC', sans-serif; }
+  main { max-width: 390px; margin: 0 auto; padding: 22px 16px 28px; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 300; font-size: 22px; letter-spacing: .3em; color: var(--dark); margin: 0; text-align: center; }
+  .sub { text-align: center; font-size: 11px; letter-spacing: .12em; color: var(--accent); margin: 6px 0 10px; line-height: 1.7; }
+  .card { border: 1px solid var(--sub); border-radius: 4px; padding: 12px; background: #fff; margin-top: 12px; }
+  .h { display: flex; align-items: baseline; gap: 8px; }
+  .no { font-size: 12px; color: var(--shu); border: 1px solid var(--shu); padding: 0 5px; line-height: 1.5; font-family: 'Noto Serif TC', serif; }
+  .name { font-family: 'Noto Serif TC', serif; font-size: 16px; letter-spacing: .2em; color: var(--dark); }
+  .tag { margin-left: auto; font-size: 10px; letter-spacing: .1em; color: var(--accent); }
+  canvas { display: block; width: 100%; border-radius: 3px; margin-top: 10px; image-rendering: pixelated; image-rendering: crisp-edges; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 8px 0 0; font-size: 11.5px; letter-spacing: .04em; line-height: 1.6; }
+  dt { color: var(--accent); } dd { margin: 0; }
+  .arrow { text-align: center; color: var(--accent); font-size: 12px; letter-spacing: .3em; margin-top: 12px; }
+  .labels { display: grid; gap: 4px; margin-top: 6px; text-align: center; }
+  .labels b { display: block; font-weight: 500; font-size: 11.5px; color: var(--dark); letter-spacing: .04em; }
+  .labels span { display: block; font-size: 9.5px; color: var(--accent); line-height: 1.4; margin-top: 1px; }
+  .stack canvas { margin-top: 10px; }
+  .gold { border-color: #c9a24a; }
+</style>
+</head>
+<body>
+<main>
+  <h1>飛機・圖鑑</h1>
+  <p class="sub">家園・築的設計圖（正上方、精緻像素、機頭朝下）<br>每一張同一個比例，看得出大小；名字都是暫定的</p>
+
+  <section class="card">
+    <div class="h"><span class="name">小（不用跑道）</span><span class="tag">最低要 壹 草地起降場・5 架</span></div>
+    <div id="aSmall" class="stack"></div>
+  </section>
+  <section class="card">
+    <div class="h"><span class="name">直升機</span><span class="tag">最低要 貳 直升機坪・5 架</span></div>
+    <div id="aHeli" class="stack"></div>
+  </section>
+  <section class="card">
+    <div class="h"><span class="name">小飛機</span><span class="tag">最低要 參 小機場・4 架</span></div>
+    <div id="aProp" class="stack"></div>
+  </section>
+  <section class="card">
+    <div class="h"><span class="name">噴射機</span><span class="tag">最低要 肆 私人機場・4 架</span></div>
+    <div id="aJet" class="stack"></div>
+  </section>
+  <section class="card gold">
+    <div class="h"><span class="no">展</span><span class="name">展示級</span><span class="tag">最低要 伍 航空站・3 架</span></div>
+    <div id="aJumbo" class="stack"></div>
+    <div id="aBoat" class="stack"></div>
+    <div id="aShip" class="stack"></div>
+  </section>
+</main>
+<script>
+
+// ===== 小工具（跟 style-mockup.html 同一套：硬邊、整數座標）=====
+const TAU = Math.PI * 2;
+function make(id) { const c = document.getElementById(id), x = c.getContext('2d'); x.imageSmoothingEnabled = false; return { c, x, W: c.width, H: c.height }; }
+const hash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+function P(x, a, b, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), 1, 1); }
+function R(x, a, b, w, h, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), Math.round(w), Math.round(h)); }
+function circ(x, cx, cy, r, col) { for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r + r * .6) P(x, cx + xx, cy + yy, col); }
+function poly(x, pts, col) {
+  const ys = pts.map(p => p[1]), xs = pts.map(p => p[0]);
+  const y0 = Math.floor(Math.min(...ys)), y1 = Math.ceil(Math.max(...ys)), x0 = Math.floor(Math.min(...xs)), x1 = Math.ceil(Math.max(...xs));
+  x.fillStyle = col;
+  for (let y = y0; y <= y1; y++) for (let X = x0; X <= x1; X++) {
+    const px = X + .5, py = y + .5; let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside; }
+    if (inside) x.fillRect(X, y, 1, 1);
+  }
+}
+const K = {
+  g1: '#97ad6f', g2: '#86a061', g3: '#a6bb7c', g4: '#738d51', sand: '#e6d3a3', sand2: '#d8c18b', sand3: '#efe0b8',
+  sea: '#6b97a6', sea2: '#7ea9b5', shallow: '#9cc5c8', foam: '#e3efed', deep: '#4f7d8f',
+  leaf1: '#5d7c43', leaf2: '#4a6634', leaf3: '#7a9a55', leafHi: '#9cb96f', trunk: '#6e4528',
+  roof: '#b33a2f', roofHi: '#cf5a46', roofLo: '#8f2c23', roofLine: '#7a241d',
+  wall: '#efe4cf', wall2: '#d9c9aa', wall3: '#c2ae8b', door: '#5e3c22', win: '#f6cd72', frame: '#6e4528',
+  conc: '#c4beb3', conc2: '#aea79b', conc3: '#d6d1c7', stone: '#a39b8e', stone2: '#8b8377', stone3: '#bdb6aa',
+  wood: '#9a6a40', wood2: '#7c5230', wood3: '#b07f50', post: '#5e3c22',
+  canvas: '#dcc9a0', canvasHi: '#ece0c1', canvasLo: '#bba77c', canvasLine: '#9c8a62',
+  shingle: '#8a6440', shingleHi: '#a57a50', shingleLo: '#6c4c30', shingleLine: '#553a24',
+  slate: '#76828c', slateHi: '#8f9ba5', slateLo: '#626d77', slateLine: '#4f5962',
+  white: '#f3f1ec', white2: '#dedad1', white3: '#c9c4b9', glass: '#a8cdd6', glassHi: '#e2f1f3',
+  pool: '#5fb3c4', poolHi: '#9fdce4', poolLo: '#3f93a6', fire: '#e8873a', fire2: '#f6cd72', fire3: '#c4462e',
+  hedge: '#557a3e', hedge2: '#43652f', flowerA: '#f0b8b0', flowerB: '#f1d36b', flowerC: '#c9a0dc',
+  shadow: 'rgba(30,40,30,.24)'
+};
+
+// 共用：草地底、石板路、樹、影子
+function lawn(x, W, H, seed = 0) { for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) { const n = hash(a + seed, b); P(x, a, b, n > .9 ? K.g3 : n > .74 ? K.g2 : n < .05 ? K.g4 : K.g1); } }
+function stones(x, pts) { pts.forEach(([a, b]) => { R(x, a, b, 6, 3, K.conc3); R(x, a, b + 2, 6, 1, K.conc2); P(x, a, b, '#e4e0d8'); }); }
+function tree(x, a, b, r) {
+  x.fillStyle = K.shadow; for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r) x.fillRect(a + xx + 3, b + yy + 3, 1, 1);
+  circ(x, a, b, r, K.leaf2); circ(x, a - 1, b - 1, r - 1, K.leaf1); circ(x, a - 2, b - 2, Math.max(1, r - 3), K.leaf3); P(x, a - r / 2, b - r / 2, K.leafHi); P(x, a - r / 2 + 1, b - r / 2, K.leafHi);
+  for (let i = 0; i < r * 2; i++) { const t = hash(a + i, b) * TAU, rr = hash(b, a + i) * r; P(x, a + Math.cos(t) * rr, b + Math.sin(t) * rr, i % 2 ? K.leaf2 : K.leaf3); }
+}
+function palm(x, a, b) {   // 椰子樹：六片葉子，每片兩顆寬、尾巴往下垂，葉子比草地深才看得出來
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3; for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); P(x, u + 3, v + 3, K.shadow); } }
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3, nx = -Math.sin(t), ny = Math.cos(t); for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); const wdt = s < 4 ? 1 : s < 9 ? 2 : 1; for (let q = -wdt; q <= wdt; q++) P(x, u + nx * q, v + ny * q, q === wdt ? '#3d5f2c' : (q === -wdt ? '#8fb35a' : '#6f9a45')); } }
+  circ(x, a, b, 2, '#7a5a3a'); P(x, a - 1, b - 1, '#a07a50'); P(x, a + 1, b + 1, '#5e4228'); }
+function shadowPoly(x, pts, dx, dy) { poly(x, pts.map(([a, b]) => [a + dx, b + dy]), K.shadow); }
+// 四面坡（上亮、左亮、右暗、下暗），屋脊沿水平方向；line 是瓦片的橫線間距
+function hipRoof(x, a, b, w, h, c, opts = {}) {
+  const inset = Math.min(h / 2, opts.inset ?? h / 2), ry = b + h / 2;
+  const ridgeL = a + inset, ridgeR = a + w - inset;
+  shadowPoly(x, [[a, b], [a + w, b], [a + w, b + h], [a, b + h]], opts.sh || 4, opts.sh || 4);
+  poly(x, [[a, b], [a + w, b], [ridgeR, ry], [ridgeL, ry]], c.hi);           // 上坡（迎光）
+  poly(x, [[a, b + h], [a + w, b + h], [ridgeR, ry], [ridgeL, ry]], c.lo);   // 下坡
+  poly(x, [[a, b], [ridgeL, ry], [a, b + h]], c.mid);                        // 左坡
+  poly(x, [[a + w, b], [ridgeR, ry], [a + w, b + h]], c.lo);                  // 右坡
+  // 瓦片橫線＋錯開的直縫
+  for (let yy = b + 2; yy < b + h - 1; yy += c.step || 3) for (let xx = a + 1; xx < a + w - 1; xx++) {
+    const dTop = yy - b, dBot = b + h - yy, dl = xx - a, dr = a + w - xx;
+    if (dl > Math.min(dTop, dBot) + 1 && dr > Math.min(dTop, dBot) + 1 || true) { const px = x.getImageData(xx, yy, 1, 1).data; if (px[3]) P(x, xx, yy, c.line); }
+  }
+  for (let yy = b + 1; yy < b + h - 1; yy++) for (let xx = a + 1 + ((Math.floor((yy - b) / (c.step || 3)) % 2) * 2); xx < a + w - 1; xx += 4) if ((yy - b) % (c.step || 3)) P(x, xx, yy, c.seam || c.line);
+  R(x, ridgeL, ry - 1, ridgeR - ridgeL, 2, c.ridge || c.line);
+  // 四條斜脊
+  const diag = (x0, y0, x1, y1) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, c.ridge || c.line); };
+  diag(a, b, ridgeL, ry); diag(a, b + h, ridgeL, ry); diag(a + w, b, ridgeR, ry); diag(a + w, b + h, ridgeR, ry);
+  // 外框
+  R(x, a, b, w, 1, c.edge || c.line); R(x, a, b + h - 1, w, 1, c.edge || c.line); R(x, a, b, 1, h, c.edge || c.line); R(x, a + w - 1, b, 1, h, c.edge || c.line);
+}
+function chimney(x, a, b, w, h, top, side, sh = 3) { R(x, a + sh, b + sh, w, h, K.shadow); R(x, a, b, w, h, side); R(x, a, b, w, 2, top); R(x, a + 1, b + 1, w - 2, 1, '#4a3f36'); for (let i = 0; i < 3; i++) P(x, a + 1 + i, b - 2 - i * 2, i % 2 ? '#ece8e2' : '#e0dbd2'); }
+
+// ===== 停機坪用的地面 =====
+function asphalt(x, a, b, w, h, seed = 0) { R(x, a + 2, b + 2, w, h, K.shadow); for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const n = hash(a + i + seed, b + j); P(x, a + i, b + j, n > .93 ? '#6a6d70' : n < .05 ? '#4a4d50' : '#5a5d60'); } R(x, a, b, w, 1, '#c9c4ba'); R(x, a, b + h - 1, w, 1, '#c9c4ba'); }
+function dashes(x, a, b, w, col = '#f2eee5') { for (let i = 0; i < w; i += 8) R(x, a + i, b, 5, 1, col); }
+function windsock(x, a, b) { R(x, a, b, 1, 10, '#8e9396'); for (let i = 0; i < 6; i++) R(x, a + 1 + i, b + (i > 3 ? 1 : 0), 1, 3 - (i > 3 ? 1 : 0), i % 2 ? '#f3f1ec' : '#e8873a'); }
+function lights(x, a, b, w, step = 6, col = '#f6cd72') { for (let i = 0; i < w; i += step) P(x, a + i, b, col); }
+const ASH = (x, pts, dx, dy) => poly(x, pts.map(([u, v]) => [u + dx, v + dy]), K.shadow);
+function lineP(x, x0, y0, x1, y1, c) { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) || 1; for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, c); }
+
+// ===== 飛的東西（正上方，機頭朝下）=====
+function balloon(x, a, b, cols = ['#c0392b', '#f3efe6']) {   // 熱氣球：飄在空中，影子離很遠
+  const r = 13, cx = a + r, cy = b + r;
+  for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) if (i * i + j * j <= r * r) P(x, cx + i + 10, cy + j + 12, 'rgba(30,40,30,.16)');
+  for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) { const d = i * i + j * j; if (d > r * r) continue; const t = Math.atan2(j, i), seg = Math.floor((t + Math.PI) / (Math.PI / 6)); let c = cols[seg % 2]; if (d > (r - 2) * (r - 2) && (i + j) > 0) c = seg % 2 ? '#d8d2c4' : '#8c2a20'; if (i + j < -r * .9 && d < (r - 1) * (r - 1)) c = seg % 2 ? '#ffffff' : '#e0604e'; P(x, cx + i, cy + j, c); }
+  circ(x, cx, cy, 2, '#f6cd72'); P(x, cx, cy, '#e8873a');
+}
+function paraglider(x, a, b) {   // 動力傘：彎彎的傘翼＋下面一個人
+  for (let i = 0; i < 26; i++) { const v = Math.round(Math.abs(i - 12.5) * .25); R(x, a + i + 6, b + v + 9, 1, 3, 'rgba(30,40,30,.16)'); R(x, a + i, b + v, 1, 3, i % 4 < 2 ? '#3fa7b8' : '#f3efe6'); }
+  for (let k = 0; k < 4; k++) lineP(x, a + 3 + k * 7, b + 3, a + 13, b + 12, 'rgba(60,60,60,.5)');
+  circ(x, a + 13, b + 13, 2, '#e8873a'); circ(x, a + 13, b + 16, 2, '#8e9396');
+}
+function ultralight(x, a, b) {   // 超輕航機：長長的布翼、小座艙、尾桁
+  ASH(x, [[a, b + 6], [a + 30, b + 6], [a + 30, b + 10], [a, b + 10]], 4, 4);
+  R(x, a, b + 6, 30, 4, '#e2a62e'); R(x, a, b + 6, 30, 1, '#f4c75a'); for (let i = 3; i < 30; i += 4) R(x, a + i, b + 6, 1, 4, '#c08a1e');
+  R(x, a + 14, b, 2, 16, '#8e9396'); R(x, a + 10, b, 10, 2, '#e2a62e');
+  R(x, a + 13, b + 10, 4, 6, '#f3f1ec'); R(x, a + 14, b + 11, 2, 2, K.glass); R(x, a + 12, b + 16, 6, 1, '#3d3d3d');
+}
+function heli(x, a, b, col = '#c0392b') {   // 直升機：機身、尾桁、兩片旋翼
+  ASH(x, [[a + 9, b + 2], [a + 17, b + 2], [a + 17, b + 18], [a + 9, b + 18]], 5, 5);
+  R(x, a + 12, b - 12, 2, 14, col); R(x, a + 10, b - 13, 6, 2, col); R(x, a + 9, b - 14, 1, 4, '#3d3d3d');   // 尾桁＋尾翼＋尾旋翼
+  R(x, a + 9, b + 2, 8, 16, col); R(x, a + 8, b + 4, 10, 12, col); R(x, a + 9, b + 3, 2, 14, '#e0604e');
+  R(x, a + 10, b + 12, 6, 5, K.glass); R(x, a + 10, b + 12, 2, 1, K.glassHi);
+  R(x, a + 6, b + 5, 1, 12, '#3d3d3d'); R(x, a + 19, b + 5, 1, 12, '#3d3d3d');   // 起落橇
+  lineP(x, a - 2, b - 2, a + 28, b + 22, 'rgba(70,70,70,.75)'); lineP(x, a - 2, b + 22, a + 28, b - 2, 'rgba(70,70,70,.75)'); circ(x, a + 13, b + 10, 1, '#2c2c2c');
+}
+function cessna(x, a, b, col = '#f3f1ec', stripe = '#2f5d7c') {   // 螺旋槳小飛機：上單翼
+  ASH(x, [[a, b + 8], [a + 32, b + 8], [a + 32, b + 13], [a, b + 13]], 5, 6); ASH(x, [[a + 14, b], [a + 18, b], [a + 18, b + 26], [a + 14, b + 26]], 5, 6);
+  R(x, a + 14, b, 4, 26, col); R(x, a + 15, b, 1, 24, '#ffffff'); R(x, a + 14, b + 14, 4, 1, stripe);
+  R(x, a, b + 8, 32, 5, col); R(x, a, b + 8, 32, 1, '#ffffff'); R(x, a, b + 12, 32, 1, '#cfc9bd'); R(x, a, b + 9, 2, 3, stripe); R(x, a + 30, b + 9, 2, 3, stripe);
+  R(x, a + 10, b - 1, 12, 3, col); R(x, a + 15, b - 3, 2, 3, stripe);   // 水平尾翼＋垂直尾翼
+  R(x, a + 15, b + 14, 2, 4, K.glass); R(x, a + 13, b + 26, 6, 1, '#3d3d3d'); P(x, a + 16, b + 25, '#8e9396');   // 螺旋槳
+  P(x, a, b + 10, '#d84a3c'); P(x, a + 31, b + 10, '#4caf6a');
+}
+function seaplane(x, a, b) {   // 水上飛機：小飛機＋兩根浮筒
+  R(x, a + 8, b + 4, 3, 22, '#d6d1c7'); R(x, a + 21, b + 4, 3, 22, '#d6d1c7'); R(x, a + 8, b + 25, 3, 1, '#b8b2a6'); R(x, a + 21, b + 25, 3, 1, '#b8b2a6');
+  cessna(x, a, b, '#e2a62e', '#c0392b');
+}
+function bizjet(x, a, b, col = '#f3f1ec', trim = '#2f3e4c') {   // 私人噴射機：後掠翼、T 尾、後段兩顆引擎
+  const body = [[a + 18, b], [a + 22, b], [a + 22, b + 34], [a + 20, b + 38], [a + 18, b + 34]];
+  ASH(x, body, 6, 7); ASH(x, [[a + 2, b + 12], [a + 38, b + 12], [a + 24, b + 22], [a + 16, b + 22]], 6, 7);
+  poly(x, [[a + 2, b + 12], [a + 18, b + 18], [a + 18, b + 23], [a + 4, b + 15]], col); poly(x, [[a + 38, b + 12], [a + 22, b + 18], [a + 22, b + 23], [a + 36, b + 15]], col);
+  lineP(x, a + 2, b + 12, a + 18, b + 18, '#ffffff'); lineP(x, a + 4, b + 15, a + 18, b + 23, '#cfc9bd'); lineP(x, a + 36, b + 15, a + 22, b + 23, '#cfc9bd');
+  poly(x, body, col); R(x, a + 19, b + 1, 1, 33, '#ffffff'); R(x, a + 21, b + 2, 1, 32, '#d6d1c7');
+  R(x, a + 13, b - 1, 14, 3, col); R(x, a + 19, b - 2, 2, 5, trim);   // T 尾
+  R(x, a + 15, b + 4, 3, 7, '#b8bcbe'); R(x, a + 22, b + 4, 3, 7, '#b8bcbe'); R(x, a + 15, b + 4, 3, 1, '#3d3d3d'); R(x, a + 22, b + 4, 3, 1, '#3d3d3d');
+  for (let i = 0; i < 5; i++) { P(x, a + 18, b + 14 + i * 3, trim); P(x, a + 21, b + 14 + i * 3, trim); }
+  R(x, a + 19, b + 33, 2, 2, '#3d4a55'); R(x, a + 18, b + 26, 4, 1, trim);
+  P(x, a + 2, b + 12, '#d84a3c'); P(x, a + 38, b + 12, '#4caf6a');
+}
+function biplane(x, a, b) {   // 古董雙翼機：紅色、兩層翼、圓形引擎罩
+  ASH(x, [[a, b + 10], [a + 30, b + 10], [a + 30, b + 16], [a, b + 16]], 6, 7);
+  R(x, a + 2, b + 13, 26, 4, '#8c2a20');   // 下翼（從上翼邊緣看得到）
+  R(x, a + 13, b, 4, 24, '#c0392b'); R(x, a + 14, b, 1, 22, '#e0604e');
+  R(x, a, b + 9, 30, 5, '#c0392b'); R(x, a, b + 9, 30, 1, '#e0604e'); for (let i = 4; i < 30; i += 5) R(x, a + i, b + 9, 1, 5, '#a8342a');
+  [[a + 4, b + 14], [a + 25, b + 14]].forEach(([u, v]) => R(x, u, v, 1, 3, '#3d3d3d'));   // 支柱
+  R(x, a + 9, b - 1, 12, 3, '#c0392b'); R(x, a + 14, b - 3, 2, 3, '#f3efe6');
+  R(x, a + 13, b + 15, 4, 3, '#7a4a32'); P(x, a + 14, b + 16, '#2c2c2c');   // 座艙
+  circ(x, a + 15, b + 23, 2, '#cfd6d9'); R(x, a + 10, b + 26, 10, 1, '#3d3d3d');
+  circ(x, a + 4, b + 11, 1, '#f3efe6'); circ(x, a + 26, b + 11, 1, '#f3efe6'); P(x, a + 4, b + 11, '#2f5d7c'); P(x, a + 26, b + 11, '#2f5d7c');
+}
+function jumbo(x, a, b) {   // 私人豪華客機：長機身、四顆引擎、金色線
+  const L = 60, cx = a + 26;
+  const body = [[cx - 3, b], [cx + 3, b], [cx + 4, b + 6], [cx + 4, b + L - 6], [cx, b + L], [cx - 4, b + L - 6], [cx - 4, b + 6]];
+  ASH(x, body, 8, 9); ASH(x, [[a, b + 22], [a + 52, b + 22], [cx + 4, b + 36], [cx - 4, b + 36]], 8, 9);
+  poly(x, [[a, b + 22], [cx - 4, b + 30], [cx - 4, b + 37], [a + 3, b + 26]], '#f3f1ec'); poly(x, [[a + 52, b + 22], [cx + 4, b + 30], [cx + 4, b + 37], [a + 49, b + 26]], '#f3f1ec');
+  lineP(x, a + 3, b + 26, cx - 4, b + 37, '#cfc9bd'); lineP(x, a + 49, b + 26, cx + 4, b + 37, '#cfc9bd');
+  [[a + 8, b + 26], [a + 15, b + 29], [a + 40, b + 26], [a + 33, b + 29]].forEach(([u, v]) => { R(x, u, v, 4, 7, '#b8bcbe'); R(x, u, v + 6, 4, 1, '#3d3d3d'); });
+  poly(x, body, '#f7f5f0'); R(x, cx - 2, b + 2, 1, L - 8, '#ffffff'); R(x, cx + 2, b + 4, 1, L - 10, '#d6d1c7');
+  R(x, cx - 1, b + 6, 2, L - 14, '#c9a24a');   // 金色線
+  poly(x, [[cx - 9, b + 2], [cx + 9, b + 2], [cx + 2, b + 8], [cx - 2, b + 8]], '#f3f1ec'); R(x, cx - 1, b - 2, 2, 8, '#2f3e4c'); R(x, cx - 1, b - 2, 2, 2, '#c9a24a');
+  for (let i = 0; i < 9; i++) { P(x, cx - 3, b + 12 + i * 5, '#2f3e4c'); P(x, cx + 3, b + 12 + i * 5, '#2f3e4c'); }
+  R(x, cx - 2, b + L - 6, 4, 2, '#3d4a55');
+  P(x, a, b + 22, '#d84a3c'); P(x, a + 52, b + 22, '#4caf6a');
+}
+function slotAir(x, a, b, w, h) { for (let i = 0; i < w; i++) if (i % 3 !== 2) { P(x, a + i, b, '#f2eee5'); P(x, a + i, b + h - 1, '#f2eee5'); } for (let j = 0; j < h; j++) if (j % 3 !== 2) { P(x, a, b + j, '#f2eee5'); P(x, a + w - 1, b + j, '#f2eee5'); } }
+function hangar(x, a, b, w, h, col = '#9aa0a4') { R(x, a + 5, b + 5, w, h, K.shadow); for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const t = Math.abs(i - w / 2) / (w / 2); P(x, a + i, b + j, j % 4 === 3 ? '#6f767b' : t < .15 ? '#b6bcc0' : col); } R(x, a, b + h - 1, w, 1, '#5f666b'); }
+
+// ===== 飛機圖鑑：新加的機型（機頭朝下）=====
+function glider(x, a, b) {   // 滑翔機：超長的細翼
+  ASH(x, [[a, b + 8], [a + 44, b + 8], [a + 44, b + 11], [a, b + 11]], 7, 8);
+  R(x, a, b + 8, 44, 3, '#f7f5f0'); R(x, a, b + 8, 44, 1, '#ffffff'); R(x, a, b + 8, 3, 3, '#c0392b'); R(x, a + 41, b + 8, 3, 3, '#c0392b');
+  R(x, a + 21, b - 6, 2, 26, '#f7f5f0'); R(x, a + 22, b - 6, 1, 24, '#e2ddd2'); R(x, a + 16, b - 6, 12, 2, '#f7f5f0'); R(x, a + 21, b - 8, 2, 3, '#c0392b');
+  R(x, a + 21, b + 12, 2, 5, '#9fc0cc'); P(x, a + 21, b + 12, '#e2f1f3');
+}
+function gyro(x, a, b) {   // 自轉旋翼機：小艙、上面兩片旋翼、後面推進槳
+  ASH(x, [[a + 11, b + 4], [a + 17, b + 4], [a + 17, b + 16], [a + 11, b + 16]], 6, 7);
+  R(x, a + 13, b - 4, 2, 10, '#8e9396'); R(x, a + 10, b - 5, 8, 2, '#e2a62e'); R(x, a + 9, b - 2, 10, 1, '#3d3d3d');
+  R(x, a + 11, b + 4, 6, 12, '#e2a62e'); R(x, a + 12, b + 4, 1, 12, '#f4c75a'); R(x, a + 12, b + 11, 4, 4, '#9fc0cc');
+  lineP(x, a, b + 12, a + 28, b + 6, 'rgba(60,60,60,.8)'); circ(x, a + 14, b + 9, 1, '#2c2c2c');
+}
+function miniHeli(x, a, b) {   // 小直升機：圓泡泡艙、細尾桁
+  ASH(x, [[a + 10, b + 4], [a + 18, b + 4], [a + 18, b + 14], [a + 10, b + 14]], 5, 6);
+  R(x, a + 13, b - 10, 2, 14, '#e8873a'); R(x, a + 11, b - 11, 6, 2, '#e8873a'); R(x, a + 10, b - 12, 1, 3, '#3d3d3d');
+  circ(x, a + 14, b + 9, 5, '#e8873a'); circ(x, a + 14, b + 11, 3, '#9fc0cc'); P(x, a + 13, b + 10, '#e2f1f3');
+  R(x, a + 8, b + 4, 1, 10, '#3d3d3d'); R(x, a + 20, b + 4, 1, 10, '#3d3d3d');
+  lineP(x, a, b - 4, a + 28, b + 20, 'rgba(70,70,70,.75)'); lineP(x, a, b + 20, a + 28, b - 4, 'rgba(70,70,70,.75)'); circ(x, a + 14, b + 8, 1, '#2c2c2c');
+}
+function rescueHeli(x, a, b) {   // 救援直升機：白紅橘、大一點、吊掛門
+  ASH(x, [[a + 8, b], [a + 20, b], [a + 20, b + 22], [a + 8, b + 22]], 6, 7);
+  R(x, a + 13, b - 14, 2, 16, '#f3f1ec'); R(x, a + 10, b - 15, 8, 2, '#c0392b'); R(x, a + 9, b - 16, 1, 4, '#3d3d3d');
+  R(x, a + 8, b, 12, 22, '#f3f1ec'); R(x, a + 7, b + 3, 14, 16, '#f3f1ec'); R(x, a + 8, b + 8, 12, 3, '#c0392b'); R(x, a + 8, b + 14, 12, 1, '#e8873a');
+  R(x, a + 9, b + 16, 10, 5, '#9fc0cc'); R(x, a + 9, b + 16, 3, 1, '#e2f1f3'); R(x, a + 20, b + 6, 2, 6, '#5a5a5a');
+  for (let k = 0; k < 4; k++) { const t = k / 4 * Math.PI + .4; lineP(x, a + 14 - Math.cos(t) * 16, b + 10 - Math.sin(t) * 16, a + 14 + Math.cos(t) * 16, b + 10 + Math.sin(t) * 16, 'rgba(70,70,70,.7)'); }
+  circ(x, a + 14, b + 10, 1, '#2c2c2c');
+}
+function execHeli(x, a, b) {   // 商務直升機：黑金、五片旋翼、流線
+  ASH(x, [[a + 9, b], [a + 19, b], [a + 19, b + 22], [a + 9, b + 22]], 6, 7);
+  R(x, a + 13, b - 14, 2, 16, '#2f3236'); R(x, a + 10, b - 15, 8, 2, '#c9a24a'); R(x, a + 12, b - 17, 4, 2, '#2f3236');
+  R(x, a + 9, b, 10, 22, '#2f3236'); R(x, a + 8, b + 3, 12, 16, '#2f3236'); R(x, a + 9, b + 2, 2, 18, '#46494e'); R(x, a + 8, b + 12, 12, 1, '#c9a24a');
+  R(x, a + 10, b + 15, 8, 6, '#3d4a55'); R(x, a + 10, b + 15, 3, 1, '#6a7f8e');
+  for (let k = 0; k < 5; k++) { const t = k / 5 * Math.PI * 2 + .2; lineP(x, a + 14, b + 10, a + 14 + Math.cos(t) * 16, b + 10 + Math.sin(t) * 16, 'rgba(70,70,70,.75)'); }
+  circ(x, a + 14, b + 10, 1, '#c9a24a');
+}
+function chinook(x, a, b) {   // 雙旋翼直升機：長機身、前後兩組旋翼
+  ASH(x, [[a + 10, b], [a + 18, b], [a + 18, b + 32], [a + 10, b + 32]], 6, 7);
+  R(x, a + 10, b, 8, 32, '#6f7650'); R(x, a + 11, b, 1, 32, '#8a9166'); R(x, a + 16, b + 2, 1, 28, '#555b3c');
+  for (let j = 4; j < 30; j += 4) R(x, a + 10, b + j, 8, 1, '#555b3c'); R(x, a + 11, b + 27, 6, 4, '#9fc0cc');
+  [[b + 4], [b + 26]].forEach(([v]) => { for (let k = 0; k < 3; k++) { const t = k / 3 * Math.PI * 2 + (v > b + 10 ? .5 : 0); lineP(x, a + 14, v, a + 14 + Math.cos(t) * 14, v + Math.sin(t) * 14, 'rgba(60,60,60,.75)'); } circ(x, a + 14, v, 1, '#2c2c2c'); });
+}
+function aerobatic(x, a, b) {   // 特技飛機：下單翼、紅白格子
+  ASH(x, [[a, b + 12], [a + 28, b + 12], [a + 28, b + 17], [a, b + 17]], 5, 6);
+  R(x, a + 12, b, 4, 24, '#f3f1ec'); R(x, a + 12, b, 4, 6, '#c0392b');
+  R(x, a, b + 12, 28, 5, '#f3f1ec'); for (let i = 0; i < 28; i += 2) for (let j = 0; j < 5; j++) if ((i / 2 + j) % 2) P(x, a + i, b + 12 + j, '#c0392b'), P(x, a + i + 1, b + 12 + j, '#c0392b');
+  R(x, a + 8, b - 1, 12, 3, '#c0392b'); R(x, a + 13, b - 3, 2, 3, '#f3f1ec');
+  R(x, a + 13, b + 8, 2, 3, '#9fc0cc'); R(x, a + 9, b + 24, 10, 1, '#3d3d3d'); circ(x, a + 14, b + 23, 1, '#cfd6d9');
+}
+function longjet(x, a, b) {   // 長程商務機：更長、翼尖小翼、兩顆大引擎
+  const L = 46, cx = a + 22;
+  const body = [[cx - 2, b], [cx + 2, b], [cx + 3, b + 5], [cx + 3, b + L - 5], [cx, b + L], [cx - 3, b + L - 5], [cx - 3, b + 5]];
+  ASH(x, body, 7, 8); ASH(x, [[a, b + 16], [a + 44, b + 16], [cx + 3, b + 28], [cx - 3, b + 28]], 7, 8);
+  poly(x, [[a, b + 16], [cx - 3, b + 23], [cx - 3, b + 29], [a + 2, b + 20]], '#f3f1ec'); poly(x, [[a + 44, b + 16], [cx + 3, b + 23], [cx + 3, b + 29], [a + 42, b + 20]], '#f3f1ec');
+  R(x, a, b + 14, 2, 3, '#c9a24a'); R(x, a + 42, b + 14, 2, 3, '#c9a24a');   // 小翼
+  lineP(x, a + 2, b + 20, cx - 3, b + 29, '#cfc9bd'); lineP(x, a + 42, b + 20, cx + 3, b + 29, '#cfc9bd');
+  poly(x, body, '#f7f5f0'); R(x, cx - 2, b + 2, 1, L - 6, '#ffffff'); R(x, cx - 1, b + 5, 2, L - 12, '#c9a24a');
+  poly(x, [[cx - 8, b + 1], [cx + 8, b + 1], [cx + 2, b + 6], [cx - 2, b + 6]], '#f3f1ec'); R(x, cx - 1, b - 2, 2, 6, '#2f3e4c');
+  R(x, cx - 7, b + 6, 4, 9, '#b8bcbe'); R(x, cx + 3, b + 6, 4, 9, '#b8bcbe'); R(x, cx - 7, b + 6, 4, 1, '#3d3d3d'); R(x, cx + 3, b + 6, 4, 1, '#3d3d3d');
+  for (let i = 0; i < 7; i++) { P(x, cx - 3, b + 14 + i * 4, '#2f3e4c'); P(x, cx + 2, b + 14 + i * 4, '#2f3e4c'); }
+  R(x, cx - 2, b + L - 5, 4, 2, '#3d4a55');
+}
+
+// ===== 展示級：大、豪華、精緻 =====
+function jumbo(x, a, b) {   // 私人豪華客機：機身 10 × 66、翼展 64，四顆引擎、雙層前段、朱色小翼、金色線、尾翼徽章
+  const L = 66, cx = a + 32, half = 32;
+  const body = [[cx - 3, b], [cx + 3, b], [cx + 5, b + 8], [cx + 5, b + L - 12], [cx + 3, b + L - 3], [cx, b + L], [cx - 3, b + L - 3], [cx - 5, b + L - 12], [cx - 5, b + 8]];
+  const wingL = [[cx - half, b + 22], [cx - 5, b + 33], [cx - 5, b + 42], [cx - half + 3, b + 27]], wingR = wingL.map(([u, v]) => [2 * cx - u, v]);
+  ASH(x, body, 9, 10); ASH(x, wingL, 9, 10); ASH(x, wingR, 9, 10);
+  [wingL, wingR].forEach((w, s) => { poly(x, w, '#f3f1ec'); lineP(x, w[0][0], w[0][1], w[1][0], w[1][1], '#ffffff'); lineP(x, w[3][0], w[3][1], w[2][0], w[2][1], '#c9c3b6');
+    for (let k = 1; k < 5; k++) { const u = cx + (s ? 1 : -1) * (6 + k * 5), v = b + 39 - k * 3; R(x, u, v, 1, 3, '#d6d1c7'); }   // 襟翼滑軌
+    const tipX = s ? cx + half : cx - half; R(x, tipX - 1, b + 19, 2, 5, '#b33a2f'); });   // 朱色小翼
+  // 四顆引擎（進氣口一圈）
+  [-23, -13, 13, 23].forEach(dx => { const u = cx + dx - 2, v = b + 24 + Math.abs(dx) * -0.25 + 6; R(x, u, v, 5, 9, '#d6d9db'); R(x, u, v, 5, 1, '#2c2c2c'); R(x, u + 1, v + 1, 3, 1, '#8e9396'); R(x, u + 4, v + 1, 1, 8, '#aeb3b6'); });
+  // 機身：奶油白、左邊反光、金色線、前段雙層的寬背
+  poly(x, body, '#f7f5f0'); R(x, cx - 4, b + 8, 1, L - 20, '#ffffff'); R(x, cx + 4, b + 8, 1, L - 20, '#d6d1c7');
+  R(x, cx - 1, b + 8, 2, L - 22, '#c9a24a'); R(x, cx - 1, b + 8, 1, L - 22, '#f0d58a');
+  poly(x, [[cx - 4, b + L - 26], [cx + 4, b + L - 26], [cx + 4, b + L - 12], [cx, b + L - 8], [cx - 4, b + L - 12]], '#fbfaf6');   // 上層前段
+  for (let i = 0; i < 4; i++) { P(x, cx - 3, b + L - 24 + i * 3, '#2f3e4c'); P(x, cx + 3, b + L - 24 + i * 3, '#2f3e4c'); }
+  for (let i = 0; i < 10; i++) { P(x, cx - 5, b + 12 + i * 4, '#2f3e4c'); P(x, cx + 4, b + 12 + i * 4, '#2f3e4c'); }
+  R(x, cx - 3, b + L - 6, 6, 2, '#24303a'); R(x, cx - 2, b + L - 6, 2, 1, '#6a7f8e');   // 駕駛艙窗
+  // 尾巴：後掠水平尾、深藍垂直尾＋金色徽章
+  poly(x, [[cx - 14, b + 6], [cx - 2, b + 2], [cx - 2, b + 8], [cx - 12, b + 9]], '#f3f1ec'); poly(x, [[cx + 14, b + 6], [cx + 2, b + 2], [cx + 2, b + 8], [cx + 12, b + 9]], '#f3f1ec');
+  R(x, cx - 1, b - 4, 2, 14, '#1f2f3f'); circ(x, cx, b + 2, 1, '#c9a24a');
+  P(x, cx - half, b + 23, '#d84a3c'); P(x, cx + half, b + 23, '#4caf6a');
+}
+function flyingBoat(x, a, b) {   // 古典飛行艇：1930 年代、拋光銀色船形機身、上單翼四顆星形引擎、翼下浮筒
+  const L = 58, cx = a + 34;
+  ASH(x, [[cx - 6, b], [cx + 6, b], [cx + 6, b + L], [cx - 6, b + L]], 9, 11); ASH(x, [[a, b + 26], [a + 68, b + 26], [a + 68, b + 34], [a, b + 34]], 9, 11);
+  // 船形機身（機頭圓、朝下）
+  const body = [[cx - 3, b], [cx + 3, b], [cx + 6, b + 10], [cx + 6, b + L - 8], [cx + 3, b + L - 1], [cx - 3, b + L - 1], [cx - 6, b + L - 8], [cx - 6, b + 10]];
+  poly(x, body, '#c9ced2'); R(x, cx - 5, b + 10, 2, L - 18, '#e8ecee'); R(x, cx + 4, b + 10, 1, L - 18, '#9aa0a4');
+  for (let j = 12; j < L - 8; j += 4) R(x, cx - 5, b + j, 10, 1, '#b6bcc0');   // 鉚釘線
+  R(x, cx - 6, b + 40, 12, 2, '#2f3e4c'); R(x, cx - 6, b + 42, 12, 1, '#c9a24a');   // 深藍金線
+  for (let i = 0; i < 7; i++) { circ(x, cx - 5, b + 14 + i * 4, 0, '#2f3e4c'); circ(x, cx + 5, b + 14 + i * 4, 0, '#2f3e4c'); }   // 圓窗
+  R(x, cx - 3, b + L - 6, 6, 3, '#3d4a55'); R(x, cx - 2, b + L - 6, 2, 1, '#8fb0c0');
+  // 雙垂直尾翼＋水平尾翼
+  R(x, cx - 14, b + 2, 28, 4, '#c9ced2'); R(x, cx - 14, b + 2, 28, 1, '#e8ecee'); R(x, cx - 15, b - 1, 2, 8, '#2f3e4c'); R(x, cx + 13, b - 1, 2, 8, '#2f3e4c');
+  // 上單翼（直的、很長）＋四顆星形引擎
+  R(x, a, b + 26, 68, 8, '#d6dadd'); R(x, a, b + 26, 68, 1, '#f2f4f5'); R(x, a, b + 33, 68, 1, '#9aa0a4'); for (let i = 4; i < 68; i += 6) R(x, a + i, b + 27, 1, 6, '#c3c8cb');
+  R(x, a, b + 28, 3, 4, '#2f3e4c'); R(x, a + 65, b + 28, 3, 4, '#2f3e4c');
+  [-24, -12, 12, 24].forEach(dx => { const u = cx + dx; R(x, u - 2, b + 30, 5, 10, '#b6bcc0'); circ(x, u, b + 40, 3, '#5a5f62'); circ(x, u, b + 40, 2, '#8e9396'); P(x, u, b + 40, '#c9a24a');
+    lineP(x, u - 5, b + 42, u + 5, b + 38, 'rgba(60,60,60,.7)'); });   // 螺旋槳
+  [a + 6, a + 60].forEach(u => { R(x, u, b + 34, 3, 8, '#e8ecee'); R(x, u, b + 41, 3, 1, '#9aa0a4'); });   // 翼下浮筒
+}
+function airship(x, a, b) {   // 豪華飛艇：雪茄形、奶油色、金環、四片尾翼、上面觀景台；影子離很遠（在天上）
+  const L = 84, r = 14, cx = a + 20, top = b + 4;
+  const shape = (u, v) => { const t = (v - top) / L; if (t < 0 || t > 1) return 0; const w = t > .55 ? r * Math.sqrt(Math.max(0, 1 - Math.pow((t - .55) / .45, 2))) + .5 : r * (1 - Math.pow((.55 - t) / .55, 1.8) * .8); return Math.abs(u - cx) <= w ? w : 0; };   // 尾巴（上）慢慢變細、機頭（下）圓的
+  for (let v = top; v < top + L; v++) for (let u = cx - r; u <= cx + r; u++) if (shape(u, v)) P(x, u + 16, v + 18, 'rgba(30,40,30,.16)');
+  // 尾翼（上面，四片：左右兩片看得到）
+  poly(x, [[cx - 4, top + 6], [cx - 16, top - 2], [cx - 16, top + 6], [cx - 6, top + 16]], '#b33a2f'); poly(x, [[cx + 4, top + 6], [cx + 16, top - 2], [cx + 16, top + 6], [cx + 6, top + 16]], '#b33a2f');
+  for (let v = top; v < top + L; v++) for (let u = cx - r; u <= cx + r; u++) { const w = shape(u, v); if (!w) continue; const k = (u - cx) / w; let c = k < -.55 ? '#fbf6ea' : k < .1 ? '#efe4cf' : k < .6 ? '#dccfb2' : '#c4b48f'; if ((v - top) % 10 === 0) c = k < 0 ? '#e3d6b8' : '#c9b991'; P(x, u, v, c); }
+  for (let v = top; v < top + L; v++) { const w = shape(cx, v); if (w) P(x, cx, v, '#d8cba9'); }
+  [.3, .55, .78].forEach(f => { const v = top + Math.round(L * f); for (let u = cx - r; u <= cx + r; u++) if (shape(u, v)) { P(x, u, v, '#c9a24a'); P(x, u, v + 1, '#f0d58a'); } });   // 金環
+  R(x, cx - 1, top - 2, 2, 12, '#b33a2f');   // 上面那片尾翼（從正上方看是一條）
+  // 觀景台（前段上面）：玻璃圓頂＋欄杆
+  ell(x, cx, top + L - 26, 4, 7, '#2f3e4c'); ell(x, cx, top + L - 26, 3, 6, '#8fb4c0'); P(x, cx - 1, top + L - 30, '#e2f1f3'); for (let v = top + L - 34; v < top + L - 18; v += 2) { P(x, cx - 6, v, '#c9a24a'); P(x, cx + 5, v, '#c9a24a'); }
+  // 機頭朱色圓徽
+  circ(x, cx, top + L - 9, 2, '#b33a2f'); P(x, cx, top + L - 9, '#f0d58a');
+}
+function ell(x, cx, cy, rx, ry, col) { for (let yy = -ry; yy <= ry; yy++) for (let xx = -rx; xx <= rx; xx++) if ((xx * xx) / (rx * rx) + (yy * yy) / (ry * ry) <= 1.02) P(x, cx + xx, cy + yy, col); }
+
+const AIR = [
+  ['aSmall', [['熱氣球', '紅白條紋', (x, a, b) => balloon(x, a, b)], ['動力傘', '背著螺旋槳飛', paraglider], ['超輕航機', '布翼、小座艙', ultralight], ['滑翔機', '超長的細翼、沒有引擎', glider], ['自轉旋翼機', '上面旋翼、後面推', gyro]], 3, 44],
+  ['aHeli', [['小直升機', '圓泡泡艙', miniHeli], ['藍色直升機', '最常見的那種', (x, a, b) => heli(x, a, b + 12, '#2f5d7c')], ['救援直升機', '白紅橘、吊掛門', (x, a, b) => rescueHeli(x, a, b + 14)], ['商務直升機', '黑金、五片旋翼', (x, a, b) => execHeli(x, a, b + 14)], ['雙旋翼直升機', '前後兩組旋翼', chinook]], 3, 48],
+  ['aProp', [['小飛機', '上單翼、白藍', (x, a, b) => cessna(x, a, b)], ['水上飛機', '兩根浮筒', seaplane], ['特技飛機', '下單翼、紅白格子', aerobatic], ['古董雙翼機', '兩層翼、圓引擎罩', biplane]], 2, 40],
+  ['aJet', [['白色噴射機', 'T 尾、後段引擎', (x, a, b) => bizjet(x, a, b, '#f3f1ec', '#2f3e4c')], ['深藍金線', '深藍機身、金色 T 尾', (x, a, b) => bizjet(x, a, b, '#22364a', '#c9a24a')], ['消光黑金', '消光黑、金色線', (x, a, b) => bizjet(x, a, b, '#2f3236', '#c9a24a')], ['長程商務機', '更長、翼尖小翼', longjet]], 2, 54],
+];
+const SHOWCASE = [['aJumbo', '私人豪華客機', '四顆引擎、雙層前段、朱色小翼、金色線、尾翼徽章', jumbo, 80], ['aBoat', '古典飛行艇', '1930 年代、拋光銀色船身、四顆星形引擎、翼下浮筒', flyingBoat, 72], ['aShip', '豪華飛艇', '雪茄形、金環、朱色尾翼、上面玻璃觀景台；在天上飄', airship, 104]];
+
+function centerDraw(x, draw, cellX, cellY, cellW, cellH) {
+  const tmp = document.createElement('canvas'); tmp.width = 140; tmp.height = 140; const tx = tmp.getContext('2d'); draw(tx, 40, 30);
+  const d = tx.getImageData(0, 0, 140, 140).data; let x0 = 140, y0 = 140, x1 = 0, y1 = 0;
+  for (let j = 0; j < 140; j++) for (let i = 0; i < 140; i++) if (d[(j * 140 + i) * 4 + 3] > 0) { x0 = Math.min(x0, i); x1 = Math.max(x1, i); y0 = Math.min(y0, j); y1 = Math.max(y1, j); }
+  draw(x, Math.round(cellX + (cellW - (x1 - x0 + 1)) / 2) - x0 + 40, Math.round(cellY + (cellH - (y1 - y0 + 1)) / 2) - y0 + 30);
+}
+function ground(x, W, H, seed) { for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const n = hash(i + seed, j); P(x, i, j, n > .93 ? '#6a6d70' : n < .05 ? '#4a4d50' : '#5a5d60'); } }
+function sheetAir(box, list, cols, rowH) {
+  const el = document.getElementById(box);
+  for (let r = 0; r * cols < list.length; r++) {
+    const row = list.slice(r * cols, r * cols + cols), c = document.createElement('canvas'); c.width = 150; c.height = rowH; el.appendChild(c);
+    const x = c.getContext('2d'); x.imageSmoothingEnabled = false; ground(x, 150, rowH, r * 31 + box.length);
+    const colW = 150 / cols;
+    for (let k = 1; k < cols; k++) for (let j = 2; j < rowH - 2; j++) if (j % 3 !== 2) P(x, Math.round(k * colW), j, 'rgba(242,238,229,.7)');
+    row.forEach(([, , draw], k) => centerDraw(x, draw, k * colW, 0, colW, rowH));
+    const lab = document.createElement('div'); lab.className = 'labels'; lab.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    lab.innerHTML = row.map(([n, note]) => `<div><b>${n}</b><span>${note}</span></div>`).join('') + (row.length < cols ? '<div></div>'.repeat(cols - row.length) : '');
+    el.appendChild(lab);
+  }
+}
+AIR.forEach(([id, list, cols, h]) => sheetAir(id, list, cols, h));
+SHOWCASE.forEach(([id, name, note, draw, h]) => {
+  const el = document.getElementById(id), c = document.createElement('canvas'); c.width = 150; c.height = h; el.appendChild(c);
+  const x = c.getContext('2d'); x.imageSmoothingEnabled = false; ground(x, 150, h, id.length * 7);
+  for (let i = 0; i < 150; i += 10) P(x, i, 2, '#f6cd72'), P(x, i, h - 3, '#f6cd72');
+  centerDraw(x, draw, 0, 0, 150, h);
+  const lab = document.createElement('div'); lab.className = 'labels'; lab.style.gridTemplateColumns = '1fr'; lab.innerHTML = `<div><b>${name}</b><span>${note}</span></div>`; el.appendChild(lab);
+});
+
+</script>
+</body>
+</html>
