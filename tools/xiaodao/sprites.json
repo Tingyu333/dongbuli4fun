@@ -1,0 +1,163 @@
+{
+ "house1": {
+  "w": 139,
+  "h": 87,
+  "ox": 23,
+  "oy": 19,
+  "shore": null
+ },
+ "house2": {
+  "w": 128,
+  "h": 92,
+  "ox": 20,
+  "oy": 24,
+  "shore": null
+ },
+ "house3": {
+  "w": 154,
+  "h": 96,
+  "ox": 18,
+  "oy": 18,
+  "shore": null
+ },
+ "house4": {
+  "w": 182,
+  "h": 106,
+  "ox": 10,
+  "oy": 14,
+  "shore": null
+ },
+ "house5": {
+  "w": 141,
+  "h": 87,
+  "ox": 36,
+  "oy": 4,
+  "shore": 93
+ },
+ "garage1": {
+  "w": 78,
+  "h": 81,
+  "ox": 62,
+  "oy": 26,
+  "shore": null
+ },
+ "garage2": {
+  "w": 102,
+  "h": 102,
+  "ox": 50,
+  "oy": 18,
+  "shore": null
+ },
+ "garage3": {
+  "w": 91,
+  "h": 110,
+  "ox": 56,
+  "oy": 10,
+  "shore": null
+ },
+ "garage4": {
+  "w": 146,
+  "h": 114,
+  "ox": 32,
+  "oy": 6,
+  "shore": null
+ },
+ "garage5": {
+  "w": 174,
+  "h": 112,
+  "ox": 16,
+  "oy": 8,
+  "shore": null
+ },
+ "dock1": {
+  "w": 57,
+  "h": 43,
+  "ox": 66,
+  "oy": 43,
+  "shore": 10
+ },
+ "dock2": {
+  "w": 54,
+  "h": 83,
+  "ox": 70,
+  "oy": 32,
+  "shore": 9
+ },
+ "dock3": {
+  "w": 117,
+  "h": 87,
+  "ox": 40,
+  "oy": 26,
+  "shore": 9
+ },
+ "dock4": {
+  "w": 166,
+  "h": 79,
+  "ox": 20,
+  "oy": 18,
+  "shore": 8
+ },
+ "dock5": {
+  "w": 198,
+  "h": 98,
+  "ox": 2,
+  "oy": 12,
+  "shore": 21
+ },
+ "airfield1": {
+  "w": 180,
+  "h": 75,
+  "ox": 10,
+  "oy": 18,
+  "shore": null
+ },
+ "airfield2": {
+  "w": 150,
+  "h": 80,
+  "ox": 30,
+  "oy": 30,
+  "shore": null
+ },
+ "airfield3": {
+  "w": 200,
+  "h": 98,
+  "ox": 0,
+  "oy": 8,
+  "shore": null
+ },
+ "airfield4": {
+  "w": 200,
+  "h": 114,
+  "ox": 0,
+  "oy": 4,
+  "shore": null
+ },
+ "airfield5": {
+  "w": 200,
+  "h": 118,
+  "ox": 0,
+  "oy": 2,
+  "shore": null
+ },
+ "launchpad1": {
+  "w": 120,
+  "h": 89,
+  "ox": 40,
+  "oy": 22,
+  "shore": null
+ },
+ "launchpad2": {
+  "w": 170,
+  "h": 113,
+  "ox": 18,
+  "oy": 7,
+  "shore": null
+ },
+ "launchpad3": {
+  "w": 194,
+  "h": 130,
+  "ox": 6,
+  "oy": 10,
+  "shore": null
+ }
+}
