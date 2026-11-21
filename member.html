@@ -43,14 +43,30 @@
             touch-action: manipulation;
         }
 
+        /* 遊戲方塊：兩個一排（2026-11-21 使用者選「甲」，以前一個一排、整頁要滑四個畫面）；單數的最後一個佔一整排 */
+        .game-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+        .game-grid > .game:last-child:nth-child(odd) { grid-column: span 2; }
         .game {
             display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem 0;
-            border-top: 1px solid rgb(var(--wabi-sub) / 0.6);
+            flex-direction: column;
+            gap: 0.45rem;
+            padding: 0.7rem 0.65rem 0.75rem;
+            border: 1px solid rgb(var(--wabi-sub) / 0.8);
+            border-radius: 4px;
             -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
+        .game-top { display: flex; align-items: center; gap: 0.55rem; min-width: 0; }
+        .game-name { min-width: 0; font-size: 0.9rem; line-height: 1.35; letter-spacing: 0.08em; color: rgb(var(--wabi-dark)); }
+        .game-desc { font-family: 'Noto Sans TC', sans-serif; font-size: 11px; line-height: 1.55; letter-spacing: 0.04em; color: rgb(var(--wabi-accent)); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        /* 最近玩的：三個一排的小方塊 */
+        .recent-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+        .recent { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; padding: 0.65rem 0.25rem 0.55rem; border: 1px solid rgb(var(--wabi-shu) / 0.35); border-radius: 4px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        .recent:active { opacity: 0.6; }
+        .recent .game-name { font-size: 0.78rem; letter-spacing: 0.05em; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        /* 錢包明細：先給看賺最多的三種，其他收起來（2026-11-21 使用者選「乙」） */
+        .ledger-more { min-height: 36px; font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: 0.15em; color: rgb(var(--wabi-accent)); text-decoration: underline; text-underline-offset: 4px; touch-action: manipulation; }
 
         .game:active {
             opacity: 0.6;
@@ -58,30 +74,32 @@
 
         /* 監修中的遊戲：淡掉、蓋朱色小章 */
         .game.is-closed { cursor: default; }
-        .game.is-closed .game-mark, .game.is-closed .flex-1 { opacity: 0.5; }
+        .game.is-closed { position: relative; }
+        .game.is-closed .game-top, .game.is-closed .game-desc { opacity: 0.5; }
+        .game.is-closed .closed-tag { position: absolute; top: 0.5rem; right: 0.5rem; }
         .closed-tag { flex-shrink: 0; font-size: 0.7rem; letter-spacing: 0.15em; padding: 0.1rem 0.3rem 0.1rem 0.45rem; color: rgb(var(--wabi-shu)); border: 1px solid rgb(var(--wabi-shu) / 0.7); transform: rotate(-4deg); }
 
         .game-mark {
             flex-shrink: 0;
-            width: 2.75rem;
-            height: 2.75rem;
+            width: 2rem;
+            height: 2rem;
             display: flex;
             align-items: center;
             justify-content: center;
             border: 1px solid rgb(var(--wabi-accent) / 0.5);
             border-radius: 9999px;
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             color: rgb(var(--wabi-dark));
         }
 
         /* 小遊戲分區 */
-        .game-group + .game-group { margin-top: 0.75rem; }
+        .game-group + .game-group { margin-top: 0.5rem; }
         .group-h {
             display: flex;
             align-items: baseline;
             gap: 0.6rem;
-            margin-top: 1.1rem;
-            padding-bottom: 0.4rem;
+            margin-top: 1.25rem;
+            padding: 0 0.25rem 0.6rem;
         }
         .group-no {
             font-size: 0.7rem;
@@ -123,7 +141,7 @@
         }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261121b">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261121c">
 </head>
 
 <body
@@ -148,7 +166,7 @@
     <main class="flex-grow max-w-md mx-auto pt-28 md:pt-36 pb-16 px-6 w-full">
 
         <!-- 標題區塊 -->
-        <div class="text-center mb-10">
+        <div class="text-center mb-8">
             <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-3">MEMBER</span>
             <h1 class="text-3xl font-light text-wabi-dark tracking-widest">會員・我</h1>
             <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">二十七樓的住戶名冊，你也在上面。</p>
@@ -175,155 +193,100 @@
         </section>
 
         <!-- 小遊戲：分四區 -->
-        <section class="mt-6 bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-6 pt-6 pb-2">
-            <h2 class="text-sm tracking-[0.3em] text-wabi-dark">小遊戲</h2>
+        <section class="mt-6 bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-4 pt-6 pb-5">
+            <h2 class="px-2 text-sm tracking-[0.3em] text-wabi-dark">小遊戲</h2>
+            <!-- 最近玩的（2026-11-21，使用者選「丙」）：在這頁點過的遊戲記在 dongbuli-recent，最多三個，沒有就藏起來 -->
+            <div id="recent" class="mt-4" hidden>
+                <h3 class="group-h !mt-0"><span class="group-no">近</span><span class="group-name">最近玩的</span></h3>
+                <div id="recentList" class="recent-grid"></div>
+            </div>
             <div class="game-group">
                 <h3 class="group-h"><span class="group-no">壹</span><span class="group-name">打工</span><span class="group-desc">賺錢的地方</span></h3>
-                <a href="xitou.html" class="game">
-                    <span class="game-mark">洗</span>
-                    <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">坐洗・泡</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">幫客人洗一顆頭。他閉著眼睛，看不到你在亂抓</span>
-                    </span>
-                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                <div class="game-grid">
+                <a href="xitou.html" class="game" title="幫客人洗一顆頭。他閉著眼睛，看不到你在亂抓">
+                    <span class="game-top"><span class="game-mark">洗</span><span class="game-name">坐洗・泡</span></span>
+                    <span class="game-desc">客人閉著眼，看不到你亂抓</span>
                 </a>
-                <a href="fangwu.html" class="game">
-                    <span class="game-mark">淨</span>
-                    <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">房務・淨</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">上一組房客走了，留下一地的證據</span>
-                    </span>
-                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                <a href="fangwu.html" class="game" title="上一組房客走了，留下一地的證據">
+                    <span class="game-top"><span class="game-mark">淨</span><span class="game-name">房務・淨</span></span>
+                    <span class="game-desc">房客走了，留下一地證據</span>
                 </a>
-                <a href="caiyuan.html" class="game">
-                    <span class="game-mark">拔</span>
-                    <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">菜園・拔</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">頂樓的蘿蔔不會跑，跑的是那六十秒</span>
-                    </span>
-                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                <a href="caiyuan.html" class="game" title="頂樓的蘿蔔不會跑，跑的是那六十秒">
+                    <span class="game-top"><span class="game-mark">拔</span><span class="game-name">菜園・拔</span></span>
+                    <span class="game-desc">蘿蔔不會跑，跑的是六十秒</span>
                 </a>
-                <a href="cengwang.html" class="game">
-                    <span class="game-mark">蹭</span>
-                    <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">蹭・網</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">28 樓的 Wi-Fi 有五格，茱莉鴨只有一雙眼睛</span>
-                    </span>
-                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                <a href="cengwang.html" class="game" title="28 樓的 Wi-Fi 有五格，茱莉鴨只有一雙眼睛">
+                    <span class="game-top"><span class="game-mark">蹭</span><span class="game-name">蹭・網</span></span>
+                    <span class="game-desc">Wi-Fi 五格，茱莉鴨一雙眼</span>
                 </a>
-                <a href="zaocan.html" class="game">
-                    <span class="game-mark">煎</span>
-                    <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">早餐・煎</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">麥克早餐店：蛋可以翻面，客人不能翻臉</span>
-                    </span>
-                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                <a href="zaocan.html" class="game" title="麥克早餐店：蛋可以翻面，客人不能翻臉">
+                    <span class="game-top"><span class="game-mark">煎</span><span class="game-name">早餐・煎</span></span>
+                    <span class="game-desc">蛋可以翻面，客人不能翻臉</span>
                 </a>
-                <a href="huoyun.html" class="game">
-                    <span class="game-mark">航</span>
-                    <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">貨運・航</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">長蘿貨運只運蘿蔔，浣熊海盜不這麼想</span>
-                    </span>
-                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                <a href="huoyun.html" class="game" title="長蘿貨運只運蘿蔔，浣熊海盜不這麼想">
+                    <span class="game-top"><span class="game-mark">航</span><span class="game-name">貨運・航</span></span>
+                    <span class="game-desc">只運蘿蔔，浣熊海盜不同意</span>
                 </a>
-                <a href="tiandian.html" class="game">
-                    <span class="game-mark">甜</span>
-                    <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">甜點・轉</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">蘋果鴨的轉盤一直轉，你的手不能停</span>
-                    </span>
-                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                <a href="tiandian.html" class="game" title="蘋果鴨的轉盤一直轉，你的手不能停">
+                    <span class="game-top"><span class="game-mark">甜</span><span class="game-name">甜點・轉</span></span>
+                    <span class="game-desc">轉盤一直轉，手不能停</span>
                 </a>
-                <a href="diechao.html" class="game">
-                    <span class="game-mark">疊</span>
-                    <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">疊・巢</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">小吳鴨把學過的書往上疊，基礎歪了上面就窄</span>
-                    </span>
-                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                <a href="diechao.html" class="game" title="小吳鴨把學過的書往上疊，基礎歪了上面就窄">
+                    <span class="game-top"><span class="game-mark">疊</span><span class="game-name">疊・巢</span></span>
+                    <span class="game-desc">基礎歪了，上面就窄</span>
                 </a>
-                <a href="kuangkeng.html" class="game">
-                    <span class="game-mark">挖</span>
-                    <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">礦坑・挖</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">浣熊大王下礦坑，十關挖到底有一把房卡</span>
-                    </span>
-                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                <a href="kuangkeng.html" class="game" title="浣熊大王下礦坑，十關挖到底有一把房卡">
+                    <span class="game-top"><span class="game-mark">挖</span><span class="game-name">礦坑・挖</span></span>
+                    <span class="game-desc">十關挖到底，有一把房卡</span>
                 </a>
+                </div>
             </div>
             <div class="game-group">
                 <h3 class="group-h"><span class="group-no">貳</span><span class="group-name">錢的去處</span><span class="group-desc">花掉，或存起來</span></h3>
-                <a href="scratch.html" class="game">
-                    <span class="game-mark is-shu">刮</span>
-                    <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">二十七樓彩券行</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">辛苦打工的錢，在這裡刮掉最快</span>
-                    </span>
-                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                <div class="game-grid">
+                <a href="scratch.html" class="game" data-short="彩券行" title="辛苦打工的錢，在這裡刮掉最快">
+                    <span class="game-top"><span class="game-mark is-shu">刮</span><span class="game-name">二十七樓彩券行</span></span>
+                    <span class="game-desc">打工的錢，在這裡刮最快</span>
                 </a>
-                <a href="gushi.html" class="game">
-                    <span class="game-mark">股</span>
-                    <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">股市・炒</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">十檔股票，三檔是妖。晚報七成準，剩下三成看緣分</span>
-                    </span>
-                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                <a href="gushi.html" class="game" title="十檔股票，三檔是妖。晚報七成準，剩下三成看緣分">
+                    <span class="game-top"><span class="game-mark">股</span><span class="game-name">股市・炒</span></span>
+                    <span class="game-desc">三檔是妖，晚報七成準</span>
                 </a>
-                <a href="yuncai.html" class="game">
-                    <span class="game-mark">球</span>
-                    <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">運動・押</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">陪台灣職業排球一起猜，猜錯不要怪球</span>
-                    </span>
-                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                <a href="yuncai.html" class="game" title="陪台灣職業排球一起猜，猜錯不要怪球">
+                    <span class="game-top"><span class="game-mark">球</span><span class="game-name">運動・押</span></span>
+                    <span class="game-desc">押排球，猜錯不要怪球</span>
                 </a>
-                <a href="baoxian.html" class="game">
-                    <span class="game-mark">保</span>
-                    <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">保險・存</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">丼步喱人壽：錢鎖幾天會長利息，前夫造成的損失不理賠</span>
-                    </span>
-                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                <a href="baoxian.html" class="game" title="丼步喱人壽：錢鎖幾天會長利息，前夫造成的損失不理賠">
+                    <span class="game-top"><span class="game-mark">保</span><span class="game-name">保險・存</span></span>
+                    <span class="game-desc">錢鎖幾天長利息，前夫不賠</span>
                 </a>
+                </div>
             </div>
             <div class="game-group">
                 <h3 class="group-h"><span class="group-no">參</span><span class="group-name">廟口</span><span class="group-desc">求神明保佑</span></h3>
-                <a href="gongde.html" class="game">
-                    <span class="game-mark is-shu">佑</span>
-                    <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">功德・添 <span id="tierTag" class="text-[11px] font-sans tracking-wider text-wabi-shu"></span></span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">香油錢捐給神明，刮刮樂沒中，神明幫你再刮一次</span>
-                    </span>
-                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                <div class="game-grid">
+                <a href="gongde.html" class="game" title="香油錢捐給神明，刮刮樂沒中，神明幫你再刮一次">
+                    <span class="game-top"><span class="game-mark is-shu">佑</span><span class="game-name">功德・添 <span id="tierTag" class="text-[11px] font-sans tracking-wider text-wabi-shu"></span></span></span>
+                    <span class="game-desc">沒刮中，神明幫你再刮一次</span>
                 </a>
-                <a href="jiaobei.html" class="game">
-                    <span class="game-mark">杯</span>
-                    <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">擲杯・問</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">不賺錢，問一下神明就好</span>
-                    </span>
-                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                <a href="jiaobei.html" class="game" title="不賺錢，問一下神明就好">
+                    <span class="game-top"><span class="game-mark">杯</span><span class="game-name">擲杯・問</span></span>
+                    <span class="game-desc">不賺錢，問神明就好</span>
                 </a>
-                <a href="xuyuan.html" class="game">
-                    <span class="game-mark">願</span>
-                    <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">許願・池</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">說你想要網站多什麼，主人會來撈。每天第一個願望有獎金</span>
-                    </span>
-                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                <a href="xuyuan.html" class="game" title="說你想要網站多什麼，主人會來撈。每天第一個願望有獎金">
+                    <span class="game-top"><span class="game-mark">願</span><span class="game-name">許願・池</span></span>
+                    <span class="game-desc">想要網站多什麼，說出來</span>
                 </a>
+                </div>
             </div>
             <div class="game-group">
                 <h3 class="group-h"><span class="group-no">肆</span><span class="group-name">公告欄</span><span class="group-desc">誰最會賺、誰最會花</span></h3>
-                <a href="rank.html" class="game">
-                    <span class="game-mark is-shu">榜</span>
-                    <span class="flex-1 min-w-0">
-                    <span class="block text-wabi-dark tracking-widest">排行・榜</span>
-                    <span class="block text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed">誰最會賺、誰最會花、誰最撐得住，都貼在這裡</span>
-                    </span>
-                    <span class="text-stone-300 font-sans" aria-hidden="true">›</span>
+                <div class="game-grid">
+                <a href="rank.html" class="game" title="誰最會賺、誰最會花、誰最撐得住，都貼在這裡">
+                    <span class="game-top"><span class="game-mark is-shu">榜</span><span class="game-name">排行・榜</span></span>
+                    <span class="game-desc">誰最會賺、誰最會花、誰最撐得住，都貼在這裡</span>
                 </a>
+                </div>
             </div>
         </section>
 
@@ -408,12 +371,15 @@
             }
         }
 
+        let ledgerOpen = false;
+        $('ledger').addEventListener('click', e => { if (e.target.closest('[data-ledger]')) { ledgerOpen = !ledgerOpen; renderWallet(); } });
         function renderWallet() {
             const w = Wallet.stats();
             $('money').textContent = fmt(w.money);
             $('where').textContent = Line.loggedIn ? '存在 LINE 帳號，換手機也在' : '只存在這支手機';
             const rows = Object.keys(w.earned || {})
                 .filter(k => w.earned[k].times)
+                .sort((a, b) => (w.earned[b].total || 0) - (w.earned[a].total || 0))   // 賺最多的在上面
                 .map(k => `<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">${esc(LABELS[k] || k)}</dt><dd class="flex-1">${SOURCES[k] ? SOURCES[k](w.earned[k]) : fmt(w.earned[k].total)}</dd></div>`);
             const shopSpent = Wallet.shop.spent;
             const gd = Wallet.gongde, tier = Gongde.tierOf(gd.donated);
@@ -427,12 +393,38 @@
             try { gs = Line.loggedIn ? JSON.parse(localStorage.getItem('dongbuli-gushi') || 'null') : null; } catch (e) { }
             if (gs && (gs.pl || gs.fee || gs.n)) rows.push(`<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">股市</dt><dd class="flex-1">${gs.pl > 0 ? '賺' : gs.pl < 0 ? '賠' : '打平'} ${fmt(Math.abs(gs.pl))}（已賣掉的），付過手續費 ${fmt(gs.fee)}${gs.n ? `，手上 ${gs.n} 檔` : ''}</dd></div>`);
             $('tierTag').textContent = gd.donated ? tier.name : '';
-            $('ledger').innerHTML = rows.length ? rows.join('') : '<p class="text-stone-400">還沒賺過錢。先去坐洗部洗一顆頭。</p>';
+            // 前三行（賺最多的三種）一直看得到，其他（含花掉、功德、股市）收在「看全部」裡
+            const SHOW = 3, more = rows.length - SHOW;
+            $('ledger').innerHTML = !rows.length ? '<p class="text-stone-400">還沒賺過錢。先去坐洗部洗一顆頭。</p>'
+                : rows.slice(0, more > 1 ? SHOW : rows.length).join('') + (more > 1 ? (ledgerOpen ? rows.slice(SHOW).join('') : '') + `<button type="button" class="ledger-more" data-ledger aria-expanded="${ledgerOpen}">${ledgerOpen ? '收起來' : `看全部（還有 ${more} 項）`}</button>` : '');
+
         }
+
+        // 最近玩的：在這頁點過的遊戲（只記這支手機），最多三個，新的在前面
+        const RECENT_KEY = 'dongbuli-recent';
+        const loadRecent = () => { try { const a = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); return Array.isArray(a) ? a.filter(x => typeof x === 'string') : []; } catch (e) { return []; } };
+        document.querySelectorAll('a.game').forEach(a => a.addEventListener('click', () => {
+            const href = a.getAttribute('href');
+            try { localStorage.setItem(RECENT_KEY, JSON.stringify([href, ...loadRecent().filter(h => h !== href)].slice(0, 3))); } catch (e) { }
+        }));
+        function renderRecent() {
+            const list = loadRecent().map(h => document.querySelector(`a.game[href="${CSS.escape(h)}"]`)).filter(Boolean);
+            $('recent').hidden = !list.length;
+            $('recentList').innerHTML = list.map(a => {
+                const mark = a.querySelector('.game-mark'), name = a.dataset.short || a.querySelector('.game-name').firstChild.textContent.trim();
+                return `<a href="${esc(a.getAttribute('href'))}" class="recent"><span class="${esc(mark.className)}">${esc(mark.textContent)}</span><span class="game-name">${esc(name)}</span></a>`;
+            }).join('');
+        }
+        $('recentList').addEventListener('click', e => {
+            const a = e.target.closest('a.recent'); if (!a) return;
+            const href = a.getAttribute('href');
+            try { localStorage.setItem(RECENT_KEY, JSON.stringify([href, ...loadRecent().filter(h => h !== href)].slice(0, 3))); } catch (e) { }
+        });
 
         function render() {
             renderWho();
             renderWallet();
+            renderRecent();
         }
 
         // ---- 暱稱、頭像（存在後端 Players 的 M、N 欄；這支手機記一份在 dongbuli-me，打開頁面再跟後端對一次）----
