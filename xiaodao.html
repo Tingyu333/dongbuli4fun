@@ -249,8 +249,15 @@
             }
             function zoomAt(s2, px, py) {
                 s2 = Math.max(cam.base, Math.min(Math.max(cam.base * 4, 3), s2));
+                // 縮回全島（或兩指捏到差不多全島）就整座島擺回正中間；卡片開著的話再把選到的東西推到卡片上面
+                if (s2 <= cam.base * 1.05) { fit(); refocus(); return; }
                 const wx = cam.x + px / cam.s, wy = cam.y + py / cam.s;
                 cam.s = s2; cam.x = wx - px / s2; cam.y = wy - py / s2; clampCam(); draw();
+            }
+            function refocus() {
+                if (!sel || !card.classList.contains('on')) return;
+                if (sel.t === 'plot') focus(...X.world().center[sel.p]);
+                else { const r = X.rect(sel.k, Math.max(1, X.level(S, sel.k))); focus(r.x + r.w / 2, r.y + r.h / 2); }
             }
             const zoomed = () => cam.s > cam.base * 1.05;
 
