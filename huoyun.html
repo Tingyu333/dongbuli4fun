@@ -1096,11 +1096,15 @@
                 c.globalAlpha = 1;
             });
         }
-        function sumEarn() {
+        function baseEarn() {
             const e = G.earn;
             return Object.values(e.cargo).reduce((s, v) => s + v.m, 0) + Object.values(e.trash).reduce((s, v) => s + v.m, 0)
                 + e.hold + e.combo + e.ito + e.dog + e.nod + e.bounty + e.duckHit + e.gull + e.raccoon + e.repair;
         }
+        // 2026-11-21 工資調漲（使用者要的：其他打工追上疊・巢）：合計多 40%，明細多一列「工資調漲」，等第照調漲前的錢算
+        const RAISE = 1.4;
+        const raiseOf = b => b > 0 ? Math.round(b * (RAISE - 1)) : 0;
+        const sumEarn = () => { const b = baseEarn(); return b + raiseOf(b); };
         function drawHud(c, now) {
             const left = Math.max(0, ROUND - G.clock);
             const pill = (x, y, w, text, col) => {
@@ -1398,7 +1402,7 @@
         }
 
         // ===== 10. 靠港 =====
-        function gradeOf(pay) { return G.endless ? FAR_GRADES.find(g => G.zone >= g.min) : G.sank ? SANK : GRADES.find(g => pay >= g.min); }
+        function gradeOf(pay) { return G.endless ? FAR_GRADES.find(g => G.zone >= g.min) : G.sank ? SANK : GRADES.find(g => pay / RAISE >= g.min); }
         let sheetFile = null;
         function bill() {
             const e = G.earn, t = G.tally;
@@ -1416,6 +1420,7 @@
                 ['被浣熊偷走', t.raccoonSteals, '次', e.raccoon, '跳上船偷走兩份的錢，最多 $300'],
                 ...['pet', 'bag', 'router'].filter(k => e.trash[k]).map(k => [ITEMS[k].name, e.trash[k].n, ITEMS[k].unit, e.trash[k].m, `清潔費每${ITEMS[k].unit} ${fmt(-Math.round(ITEMS[k].val * (lv('sweep') ? val('sweep') : 1)))}${lv('sweep') ? `（${SHOP_BY.sweep.tiers[lv('sweep')]}）` : ''}`]),
                 ['船身維修費', t.reefs + t.ships + t.whaleHits, '次', e.repair, `撞到暗礁 ${t.reefs} 次、貨輪 ${t.ships} 次${t.whaleHits ? `、鯨魚 ${t.whaleHits} 次` : ''}，每次 ${fmt(repairCost())}`],
+                ['工資調漲', 1, '次', raiseOf(baseEarn()), `主人加薪：合計多 ${Math.round((RAISE - 1) * 100)}%`],
             ].filter(r => r[1] && r[3]));
         }
         async function endRound() {

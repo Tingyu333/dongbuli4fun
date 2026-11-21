@@ -73,7 +73,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-21d';
+var BACKEND_VERSION = '2026-11-21e';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1 };
 
@@ -3229,6 +3229,7 @@ function minesSheet() {
 
 var MINE_HAUL = ['gold1', 'gold2', 'gold3', 'gold4', 'nugget', 'rock1', 'rock2', 'diamond', 'cat', 'bag', 'skull', 'bone', 'barrel'];
 function mineRow(r, now, lineId, device) {
+  // total 上限 2026-11-21 從 10000 調到 100000（工資四倍，一關最多約 $14,400）
   if (!r || typeof r !== 'object') return null;
   var at = new Date(r.at);
   if (isNaN(at.getTime()) || at.getTime() > now.getTime() + 86400000 || at.getTime() < now.getTime() - 90 * 86400000) return null;
@@ -3239,7 +3240,7 @@ function mineRow(r, now, lineId, device) {
   if (r.haul && typeof r.haul === 'object') MINE_HAUL.forEach(function (k) { if (r.haul[k]) haul[k] = n(r.haul[k]); });
   return [
     now, at, lineId || '', device,
-    washNum(r.total, 0, 10000), lv, win, washNum(r.gain, 0, 100000), washNum(r.liang, 0, 1000000), washNum(r.target, 0, 1000000),
+    washNum(r.total, 0, 100000), lv, win, washNum(r.gain, 0, 100000), washNum(r.liang, 0, 1000000), washNum(r.target, 0, 1000000),
     washNum(r.lost, 0, 10000), n(r.dyn_used), n(r.dyn_left), n(r.items), washText(r.buff, 24), JSON.stringify(haul), JSON.stringify(shop),
     washNum(r.ms, 0, 3600000), washNum(r.len, 0, 3600), win && lv === 10 && !!r.final, !!r.login
   ];
@@ -3656,8 +3657,9 @@ function backupSheet() {
 // 用中位數（不被一兩個特別快、特別慢的人拉偏）；一輪不到 10 秒的（沒玩完、亂按）不算。之後調工資照這張，不再只看機器人模擬。
 // econReport(30) 只算最近 30 天。只讀紀錄，不改任何東西，不用部署。
 var ECON_SOURCES = [
-  { sheet: 'Washes', name: '坐洗・泡', dur: 'ms', fallback: 0 },
-  { sheet: 'Cleans', name: '房務・淨', dur: 'ms', fallback: 0 },
+  // 坐洗、房務的 total 是爽度（0～100）不是錢：照工資那幾欄加起來（2026-11-21 以前算錯，真人工資表上只有一百多）
+  { sheet: 'Washes', name: '坐洗・泡', dur: 'ms', fallback: 0, money: ['wage', 'tip', 'order_tip'] },
+  { sheet: 'Cleans', name: '房務・淨', dur: 'ms', fallback: 0, money: ['fee', 'lost_bonus', 'star'] },
   { sheet: 'Farms', name: '菜園・拔', dur: 'len', fallback: 60 },
   { sheet: 'Wifis', name: '蹭・網', dur: 'ms', fallback: 0, mode: true },
   { sheet: 'Zaocans', name: '早餐・煎', dur: 'len', fallback: 75 },
@@ -3692,6 +3694,7 @@ function econCompute(days) {
     var groups = {};
     for (var i = 1; i < rows.length; i++) {
       var r = rows[i], total = Number(r[cTotal]);
+      if (src.money) { var cols = src.money.map(col).filter(function (c) { return c >= 0; }); if (cols.length) total = cols.reduce(function (t, c) { return t + (Number(r[c]) || 0); }, 0); }
       if (!isFinite(total)) continue;
       var at = r[cAt] instanceof Date ? r[cAt].getTime() : 0;
       if (since && at && at < since) continue;

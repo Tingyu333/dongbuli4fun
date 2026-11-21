@@ -2583,9 +2583,10 @@
                 try { localStorage.setItem(BEST_KEY, String(total)); } catch (e) { }
                 if (best) showToast('新紀錄・最高爽度');
             }
-            // 發工資：爽度 × 10（最少 100），洗得好客人另外給小費。存進共用錢包
-            const wage = Math.max(100, total * 10);
-            const tip = total >= 90 ? 500 : total >= 75 ? 200 : 0;
+            // 發工資：爽度 × 14（最少 140），洗得好客人另外給小費（$700／$280）。存進共用錢包
+            // 2026-11-21 工資調漲 1.4 倍（使用者要的：其他打工追上疊・巢；以前是 × 10、最少 100、小費 $500／$200）
+            const wage = Math.max(140, total * 14);
+            const tip = total >= 90 ? 700 : total >= 75 ? 280 : 0;
             // 點單：做到另外給
             const o = G.order && ORDERS[G.order];
             const orderDone = !!(o && !G.orderBroken && o.ok(G));

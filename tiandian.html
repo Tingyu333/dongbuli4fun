@@ -735,7 +735,11 @@
             });
             c.globalAlpha = 1;
         }
-        const sumEarn = () => { const e = G.earn; return e.sales + e.tip + e.ito + e.scrap + e.angry; };
+        const baseEarn = () => { const e = G.earn; return e.sales + e.tip + e.ito + e.scrap + e.angry; };
+        // 2026-11-21 工資調漲（使用者要的：其他打工追上疊・巢）：合計多 40%，明細多一列「工資調漲」，等第照調漲前的錢算
+        const RAISE = 1.4;
+        const raiseOf = b => b > 0 ? Math.round(b * (RAISE - 1)) : 0;
+        const sumEarn = () => { const b = baseEarn(); return b + raiseOf(b); };
         let beltOff = 0;
         function draw(now) {
             const c = ctx, k = cv.width / W;
@@ -828,7 +832,7 @@
         document.addEventListener('visibilitychange', () => { lastNow = performance.now(); });
 
         // ===== 8. 打烊 =====
-        function gradeOf(pay) { return GRADES.find(g => pay >= g.min); }
+        function gradeOf(pay) { return GRADES.find(g => pay / RAISE >= g.min); }
         function bill() {
             const e = G.earn, t = G.tally;
             // [名稱, 數量, 單位, 金額, 怎麼算]；金額加起來等於合計
@@ -838,6 +842,7 @@
                 ['伊藤的刮刮樂', t.itoWins, '張', e.ito, `伊藤用刮刮樂付小費，刮中 ${fmt(ITO_WIN)}`],
                 ['報廢的盤子', t.scrapped, '盤', e.scrap, `選錯料，材料費每盤 ${fmt(SCRAP)}`],
                 ['氣走的客人', t.angry, '位', e.angry, `蘋果鴨扣薪，每位 ${fmt(ANGRY)}`],
+                ['工資調漲', 1, '次', raiseOf(baseEarn()), `主人加薪：合計多 ${Math.round((RAISE - 1) * 100)}%`],
             ].filter(r => r[1] && r[3]);
         }
         let sheetFile = null;

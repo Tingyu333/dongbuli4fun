@@ -156,7 +156,7 @@
                 <li>過關後進<b class="font-normal text-wabi-dark">礦坑商店</b>，用兩買下一關的東西：炸藥、大力丸（拉兩倍快）、御守（福袋開到好東西）、鑽石拋光劑（鑽石變 900）、石頭圖鑑（石頭值三倍）。買了會從兩扣掉。</li>
                 <li><b class="font-normal text-wabi-dark">福袋</b>開出隨機的兩、一根炸藥，或這一關力氣變大。<b class="font-normal text-wabi-shu">火藥桶</b>一鉤到就爆，旁邊的東西全炸光。<b class="font-normal text-wabi-dark">雞塊</b>長得像金塊，只值 2 兩。<b class="font-normal text-wabi-dark">店貓</b>叼著鑽石走來走去，抓到值 602 兩。</li>
                 <li>切去別的 App 會自動暫停；中途離開，下次打開從那一關重來（兩、炸藥回到那關開始時）。</li>
-                <li>工資進錢包：每打完一關出勤費 <b class="font-normal text-wabi-dark">$100</b>，過第 n 關再給 $500＋$100×n（第 1 關 $600、第 10 關 $1,500），破關獎金 <b class="font-normal text-wabi-dark">$2,000</b>。十關打完約 $13,500。</li>
+                <li>工資進錢包：每打完一關出勤費 <b class="font-normal text-wabi-dark">$400</b>，過第 n 關再給 $2,000＋$400×n（第 1 關 $2,400、第 10 關 $6,000），破關獎金 <b class="font-normal text-wabi-dark">$8,000</b>。十關打完約 $54,000。</li>
                 <li>右上角<b class="font-normal text-wabi-dark">店面</b>用錢包的錢買永久的工具：電動絞盤、防晃鉤、炸藥箱、礦燈、沙漏、老顧客卡。</li>
             </ol>
             <p class="mt-6 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">用 LINE 登入，挖過的關會上排行榜的礦坑部（比挖最深）。每關結束可以分享礦坑日報，破關有結局和結業證書。<span id="trialNote">現在監修中試玩：不發工資、不記錄，店面滿級先借你用。</span>遊戲幣，不能儲值也不能換現金。</p>
@@ -239,8 +239,8 @@
           { key: 'book', name: '石頭圖鑑', fx: '下一關石頭值三倍', lo: 10, hi: 150 },
         ];
         const BUFF = { power: '大力', luck: '御守', polish: '拋光', book: '圖鑑' };
-        // 工資（計劃書：破關一局約 $13,500，一分鐘約 $1,050）：每打完一關出勤費、過關照關數、破關獎金
-        const PAY = { show: 100, clear: n => 500 + 100 * n, final: 2000 };
+        // 工資（計劃書原本破關一局約 $13,500；2026-11-21 調成四倍，約 $54,000）：每打完一關出勤費、過關照關數、破關獎金
+        const PAY = { show: 400, clear: n => 2000 + 400 * n, final: 8000 };   // 2026-11-21 工資調成四倍（使用者：其他打工追上疊・巢）
         // 監修中：會員中心的入口蓋章、畫布蓋起來；網址加 ?preview 可以試玩（不發工資、不記錄，店面滿級借你用）
         const MAINTENANCE = false;   // 2026-11-20 晚上開工（使用者說「開工」）；改回 true 就又蓋起來，?preview 可以試玩
         const PREVIEW = /[?&]preview\b/.test(location.search);

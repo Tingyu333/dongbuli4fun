@@ -63,7 +63,7 @@
 - **紀錄的限流和擋重送**（`logGate(kind, device, hour)`）：七個打工和功德紀錄，每支手機每種紀錄只佔一筆快取 `gate:<種類>:<裝置>`（`{ h: 這小時, n: 送了幾次, t: 最近 80 輪的時間 }`，6 小時）。以前一輪一筆 `wash:<裝置>:<時間>`、一小時一筆 `washLog:<裝置>:<小時>`，人多會把 CacheService（總共最多 1,000 筆）塞滿、把通行證和排行榜的快取擠掉。全站每小時的計數（`washRows:<小時>` 等）照舊。
 - **紅包只排一次隊**：`bonusClaim` 帶 `session`（登入了）就在同一次排隊直接把錢加進 `Players`（`earned.bonus`），回傳多 `credited: true`、`wallet`；網頁 `Wallet.adopt(wallet)`、不再 `Wallet.earn`，所以不用再送一次錢包同步。沒登入、通行證不對的照舊（手機自己加）。
 - **看持股不排隊**：`stockMine` 拿出 `LOCKED_TYPES`。`stockEnsure(now, false)`（要補價格、寫晚報才自己排隊）；有通知要清才排隊，排進去重讀一次、只清掉看過的那幾則（`slice(seen)`）。
-- **真人工資對帳表**：編輯器執行 `econReport()`（或 `econReport(30)` 只算最近 30 天），讀 Washes／Cleans／Farms／Wifis／Zaocans／Ships／Desserts，照「打工 × 模式（蹭網、貨運分一般／無盡）× 升級程度（shop 等級加總：沒升級、1～3、4～7、8 以上；坐洗、房務沒記）」分組，算輪數、幾個人、每分鐘（中位數）、每輪（中位數、前 10% 門檻）、一輪幾秒，整頁重寫「對帳」分頁。一輪幾秒：有 `len` 用 `len`，沒有用 `ms`，都沒有用預設（菜園 60、早餐甜點 75、貨運 60）；不到 10 秒的不算。只讀不改，不用部署。
+- **真人工資對帳表**：編輯器執行 `econReport()`（或 `econReport(30)` 只算最近 30 天），讀 Washes／Cleans／Farms／Wifis／Zaocans／Ships／Desserts，照「打工 × 模式（蹭網、貨運分一般／無盡）× 升級程度（shop 等級加總：沒升級、1～3、4～7、8 以上；坐洗、房務沒記）」分組，算輪數、幾個人、每分鐘（中位數）、每輪（中位數、前 10% 門檻）、一輪幾秒，整頁重寫「對帳」分頁。一輪幾秒：有 `len` 用 `len`，沒有用 `ms`，都沒有用預設（菜園 60、早餐甜點 75、貨運 60）；不到 10 秒的不算。只讀不改，不用部署。**坐洗、房務的 `total` 是爽度／乾淨度（0～100）不是錢**：`ECON_SOURCES` 的 `money` 寫要加哪幾欄（Washes `wage`＋`tip`＋`order_tip`、Cleans `fee`＋`lost_bonus`＋`star`），2026-11-21e 以前沒這樣算，兩個遊戲在表上只有每分鐘一百多（測試 `econ_wash_test.js`）。
 - **每月 1 號 04:00 `cronMonthly`**（`CRON_DAILY` 第三個數字是每月幾號，`cronNextAt(h, m, now, dom)`）：`archiveBets()` 把開獎或退錢超過 `BETS_KEEP_DAYS` 60 天的注單搬到「丼步喱注單封存」（只有一份，id 在指令碼屬性 `BETS_ARCHIVE_ID`，被刪會重建；搬過去的格子設成文字，「3:1」不會變時間），還沒開獎的不動，排隊做、做完 `sportBump()`；`pruneSessions()` 把 `last_used`（沒有就 `created`）超過 `SESSIONS_KEEP_DAYS` 90 天的通行證刪掉（那支手機要重新登入）。刪列用 `deleteRowList()` 一段一段從下往上刪，剛好新加在最下面的列不會被刪到。**打工紀錄不自動封存**（使用者 2026-11-18：資料量還不大），要的話手動 `archiveLogs()`。
 - **查預約、取消的次數上限**（`overHourLimit(key, max)`，快取 `lim:<key>:<小時>`）：同一支電話每小時查 `LOOKUP_PER_PHONE` 10 次、全站 `LOOKUP_ALL` 300 次；同一支電話每小時取消 `CANCEL_PER_PHONE` 5 次；同一筆預約電話打錯每小時 `CANCEL_FAILS_PER_BOOKING` 5 次（超過連對的也先擋）。
 - **領票不覆蓋 Email**：`claim` 同一個名字再領，之前沒留 Email 才補上；已經有的不換，回傳多 `emailKept: true`（票夾跳紙條「這張票之前已經留過 Email，沒有換掉」）。
@@ -126,3 +126,8 @@
 - admin 後台（`ga` 開頭，要 `GAME_ADMIN_PASSWORD` 的通行證）：`gaAnnounce` → `{ announce: { text, at, until, live } | null, max: 80 }`；`gaAnnounceSet { text, days }`：`text` 把控制字元、換行、連續空白變成一個空格，最多 80 字（超過回錯誤），空的就撤下；`days` 0 是不自動下架，1～30 天。只有一條，新的蓋掉舊的。
 - 存在指令碼屬性 `ANNOUNCE`（JSON：`text`、`at`、`until`），不用新分頁。
 
+## 2026-11-21e
+
+- 工資調漲（貨運、甜點、坐洗、房務 ×1.4，菜園 ×2.2，蹭網 ×2.3，早餐 ×3，礦坑 ×4；疊・巢不動）。前端各頁自己算，後端只動兩個地方：
+- `mineRow` 的 `total` 上限從 10000 調到 100000（礦坑一關最多約 $14,400，舊上限會把紀錄切掉）。
+- `econCompute()`：坐洗、房務照工資欄算錢（見上面「真人工資對帳表」），admin 經濟體檢的真人工資跟著對了。

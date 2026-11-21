@@ -397,10 +397,14 @@
             renderBest();
         }
         const prog = () => clamp(G.clock / ROUND, 0, 1);
-        const sumEarn = () => {
+        const baseEarn = () => {
             const e = G.earn;
             return Object.values(e.sales).reduce((s, v) => s + v.m, 0) + e.menu + e.tip + e.ito + e.quality + e.exDebt + e.exBonus + e.burnt + e.spilled + e.angry;
         };
+        // 2026-11-21 工資調漲（使用者要的：其他打工追上疊・巢）：合計多 200%，明細多一列「工資調漲」，等第照調漲前的錢算
+        const RAISE = 3;
+        const raiseOf = b => b > 0 ? Math.round(b * (RAISE - 1)) : 0;
+        const sumEarn = () => { const b = baseEarn(); return b + raiseOf(b); };
 
         // ===== 3. 客人 =====
         function makeOrder(who, p) {
@@ -1331,7 +1335,7 @@
         }
 
         // ===== 10. 打烊 =====
-        function gradeOf(pay) { return GRADES.find(g => pay >= g.min); }
+        function gradeOf(pay) { return GRADES.find(g => pay / RAISE >= g.min); }
         let sheetFile = null;
         function bill() {
             const e = G.earn, t = G.tally;
@@ -1347,6 +1351,7 @@
                 ['焦掉的', t.burnt, '份', e.burnt, `食材錢從薪水扣，每份 ${fmt(BURNT)}`],
                 ['打翻的飲料', t.spilled, '杯', e.spilled, `倒太滿，每杯 ${fmt(SPILL)}`],
                 ['氣走的客人', t.angry, '位', e.angry, `老闆扣薪，每位 ${fmt(ANGRY)}`],
+                ['工資調漲', 1, '次', raiseOf(baseEarn()), `主人加薪：合計多 ${Math.round((RAISE - 1) * 100)}%`],
             ].filter(r => r[1] && r[3]));
         }
         async function endRound() {

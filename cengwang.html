@@ -1128,7 +1128,8 @@
         // ===== 6. 每一格的規則 =====
         function liveMoney() {
             const base = Math.round(Math.floor(G.wifiMs / 100) * RATE / 10) + Math.round(Math.floor(G.boostMs / 100) * RATE / 10);   // 照 0.1 秒算：錢跳得快，明細也對得起來
-            return base + Math.round(base * (lv('antenna') ? val('antenna') : 0)) + G.ep * EP_PAY + G.earn.fine;
+            const b = base + Math.round(base * (lv('antenna') ? val('antenna') : 0)) + G.ep * EP_PAY + G.earn.fine;
+            return b + raiseOf(b);   // 畫面上跳的錢也算進工資調漲
         }
         function setOn(want) {
             if (!G || G.ended) return;
@@ -1273,7 +1274,11 @@
         }
 
         // ===== 9. 收工 =====
-        function gradeOf(pay) { return GRADES.find(g => pay >= g.min); }
+        // 2026-11-21 工資調漲（使用者要的：其他打工追上疊・巢）：合計多 130%，明細多一列「工資調漲」，等第照調漲前的錢算
+        const RAISE = 2.3;
+        const raiseOf = b => b > 0 ? Math.round(b * (RAISE - 1)) : 0;
+        const baseEarn = () => G.earn.wifi + G.earn.boost + G.earn.antenna + G.earn.ep + G.earn.perfect + G.earn.fine;
+        function gradeOf(pay) { return GRADES.find(g => pay / RAISE >= g.min); }
         let sheetFile = null;
         function bill() {
             // 照 0.1 秒算（跟畫面上跳的錢一樣）：23.4 秒 × $25 = $585
@@ -1291,6 +1296,7 @@
                 ['天線加成', G.earn.antenna ? secs + bsecs : 0, '秒', G.earn.antenna, `${SHOP_BY.antenna.tiers[lv('antenna')] || '天線'}：蹭網和網速加成多 ${Math.round((val('antenna') || 0) * 100)}%`],
                 ['追完', G.ep, '集', G.earn.ep, `《${G.drama}》每集 ${Wallet.fmt(EP_PAY)}`],
                 ['完美蹭網', G.earn.perfect ? 1 : 0, '次', G.earn.perfect, '一次都沒被抓'],
+                ['工資調漲', raiseOf(baseEarn()) ? 1 : 0, '次', raiseOf(baseEarn()), `主人加薪：合計多 ${Math.round((RAISE - 1) * 100)}%`],
                 ['網路使用費', G.caught, '次', G.earn.fine, `被抓一次賠 28 樓 ${Wallet.fmt(fineNow())}${lv('unlimited') ? `（${SHOP_BY.unlimited.tiers[lv('unlimited')]}）` : ''}`],
                 ['麵包', G.breadUsed, '片', 0, '被抓的時候丟麵包，茱莉鴨去吃了：不算抓、不扣錢'],
             ].filter(r => r[1]);
@@ -1301,7 +1307,7 @@
             renderHold();
             sfx.bell();
             const rows = bill();
-            const sales = G.earn.wifi + G.earn.boost + G.earn.antenna + G.earn.ep + G.earn.perfect + G.earn.fine;
+            const sales = baseEarn() + raiseOf(baseEarn());
             const pay = Math.max(100, sales);
             const grade = gradeOf(pay);
             G.pay = { sales, pay };

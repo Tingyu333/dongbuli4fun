@@ -1148,9 +1148,9 @@
             stage = 5; setSteps(5);
             const s = G.scores, total = s.sort + s.wipe + s.bed + s.find + s.run;
             const grade = GRADES.find(g => total >= g.min);
-            const base = Math.max(100, total * 10);
+            const base = Math.max(140, total * 14);   // 2026-11-21 工資調漲 1.4 倍（以前 × 10、最少 100、五星好評 $500／$200）
             const lost = G.find.found.reduce((t, k) => t + LOST[k].bonus, 0);
-            const star = total >= 90 ? 500 : total >= 75 ? 200 : 0;
+            const star = total >= 90 ? 700 : total >= 75 ? 280 : 0;
             G.pay = { base, lost, star };
             Wallet.earn(base + lost + star, 'clean');
             try { if (total > (Number(localStorage.getItem(BEST_KEY)) || 0)) localStorage.setItem(BEST_KEY, String(total)); } catch (e) { }

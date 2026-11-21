@@ -216,6 +216,7 @@
             <div class="mt-3 mx-auto max-w-[17rem] border-y border-stone-100 py-3 font-sans text-xs tracking-widest text-stone-500">
                 <p class="flex justify-between"><span>賣給市場</span><span id="paySales" class="text-wabi-dark"></span></p>
                 <p id="payBonusRow" class="hidden flex justify-between mt-1"><span>農會表揚</span><span id="payBonus" class="text-wabi-dark"></span></p>
+                <p id="payRaiseRow" class="hidden flex justify-between mt-1"><span>主人加薪（多 120%）</span><span id="payRaise" class="text-wabi-dark"></span></p>
                 <p id="payMinRow" class="hidden flex justify-between mt-1"><span>出勤費補到</span><span id="payMin" class="text-wabi-dark"></span></p>
                 <p class="flex justify-between mt-2 pt-2 border-t border-stone-100"><span>錢包</span><span id="payWallet" class="text-wabi-shu text-sm"></span></p>
                 <p id="payAcct" class="mt-2 text-[10px] leading-relaxed text-stone-400"></p>
@@ -1040,7 +1041,10 @@
         }
 
         // ===== 8. 收工 =====
-        function gradeOf(pay) { return GRADES.find(g => pay >= g.min); }
+        // 2026-11-21 工資調漲（使用者要的：其他打工追上疊・巢）：合計多 120%，結果多一列「主人加薪」，等第照調漲前的錢算
+        const RAISE = 2.2;
+        const raiseOf = b => b > 0 ? Math.round(b * (RAISE - 1)) : 0;
+        function gradeOf(pay) { return GRADES.find(g => pay / RAISE >= g.min); }
         let sheetFile = null;
 
         async function endRound() {
@@ -1050,9 +1054,10 @@
             const t = G.tally, carrots = t[1] + t[2] + t[3];
             const sales = G.money;
             const bonus = carrots >= 10 && !t.snapped ? 200 : 0;
-            const pay = Math.max(100, sales + bonus);
+            const raise = raiseOf(sales + bonus);
+            const pay = Math.max(100, sales + bonus + raise);
             const grade = gradeOf(pay);
-            G.pay = { sales, bonus, pay };
+            G.pay = { sales, bonus, raise, pay };
             note('時間到，收工。');
             hint('');
             Wallet.earn(pay, 'farm');
@@ -1084,7 +1089,8 @@
                 : '<li><span>什麼都沒拔到</span><span></span></li>';
             $('paySales').textContent = (sales < 0 ? '−' : '') + Wallet.fmt(Math.abs(sales));
             $('payBonusRow').classList.toggle('hidden', !bonus); $('payBonus').textContent = Wallet.fmt(bonus);
-            $('payMinRow').classList.toggle('hidden', pay === sales + bonus); $('payMin').textContent = Wallet.fmt(pay);
+            $('payRaiseRow').classList.toggle('hidden', !G.pay.raise); $('payRaise').textContent = Wallet.fmt(G.pay.raise);
+            $('payMinRow').classList.toggle('hidden', pay === sales + bonus + G.pay.raise); $('payMin').textContent = Wallet.fmt(pay);
             $('payWallet').textContent = Wallet.fmt(Wallet.money);
             $('payAcct').innerHTML = Line.loggedIn ? `存在 ${esc((Line.profile || {}).name || 'LINE')} 的 LINE 帳號` : '錢只存在這支手機。<button type="button" data-login class="min-h-[32px] underline underline-offset-4 text-wabi-dark">用 LINE 登入</button>，換手機也在';
             renderBest();
@@ -1127,6 +1133,7 @@
             y = Math.max(y, 900);
             text(`賣給市場 ${Wallet.fmt(G.pay.sales)}`, 150, y + 10, `400 30px ${SANS}`, '#8e8070', 'left');
             if (G.pay.bonus) text(`農會表揚 ${Wallet.fmt(G.pay.bonus)}`, 150, y + 56, `400 30px ${SANS}`, '#8e8070', 'left');
+            if (G.pay.raise) text(`主人加薪 ${Wallet.fmt(G.pay.raise)}`, G.pay.bonus ? 430 : 150, y + 56, `400 30px ${SANS}`, '#8e8070', 'left');
             text(`共 ${Wallet.fmt(pay)}`, 150, y + 140, `600 60px ${SERIF}`, '#2c2c2c', 'left');
             text(grade.line, 150, y + 200, `400 30px ${SERIF}`, '#8e8070', 'left');
             x.save(); x.translate(850, y + 110); x.rotate(-0.12); x.globalAlpha = 0.9;
