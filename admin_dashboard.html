@@ -60,7 +60,7 @@
         #historyToggle[aria-expanded="true"] .toggle-mark { transform: rotate(180deg); }
     </style>
     <!-- 先打包好的 Tailwind（CDN 被擋或太慢時排版也不會跑掉；放在 head 最後，跟 CDN 插入的位置一樣） -->
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261120a">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261121a">
 </head>
 
 <body
@@ -230,19 +230,8 @@
             <div id="bonusList" class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3"></div>
         </section>
 
-        <!-- 許願池：旅人在 xuyuan.html 許的願（2026-11-19）。改狀態、回一句話、藏起來 -->
-        <section id="wishSection" class="mt-12 md:mt-16">
-            <h3 class="text-lg md:text-xl font-light text-wabi-dark mb-2 tracking-widest pl-4 border-l-2 border-wabi-shu">許願池</h3>
-            <p class="mb-4 md:mb-6 pl-4 text-xs font-sans tracking-wider text-stone-400 leading-relaxed">
-                旅人許的願。狀態和回覆會貼在願望牆上給大家看；亂寫的按「藏起來」，願望牆就看不到（獎金不會收回）。</p>
-            <div id="wishTabs" class="flex gap-2 font-sans mb-4">
-                <button type="button" data-wtab="open" class="min-h-[36px] px-3 border border-stone-200 text-xs">還沒處理</button>
-                <button type="button" data-wtab="all" class="min-h-[36px] px-3 border border-stone-200 text-xs">全部</button>
-                <button type="button" data-wtab="hidden" class="min-h-[36px] px-3 border border-stone-200 text-xs">藏起來的</button>
-            </div>
-            <div id="wishState" class="text-xs font-sans tracking-widest text-stone-400 leading-relaxed"></div>
-            <div id="wishList" class="mt-2 grid gap-3 md:grid-cols-2 xl:grid-cols-3"></div>
-        </section>
+        <!-- 許願池 2026-11-21 搬到 admin 後台（admin.html 的「許願池」分頁） -->
+        <p class="mt-12 md:mt-16 pl-4 text-xs font-sans tracking-wider text-stone-400 leading-relaxed">許願池搬到 <a href="admin.html" class="underline underline-offset-4 text-wabi-dark">admin 後台</a>的「許願池」分頁了（另一組密碼）。</p>
 
         <!-- 後端・況：部署的是不是新版、排程有沒有在跑、試算表用了多少（2026-11-18） -->
         <section id="healthSection" class="mt-12 md:mt-16">
@@ -745,69 +734,8 @@
         });
 
         // ===== 後端・況 =====
-        const BACKEND_EXPECT = '2026-11-20d';   // 跟 Code.gs 的 BACKEND_VERSION 一起換
+        const BACKEND_EXPECT = '2026-11-21a';   // 跟 Code.gs 的 BACKEND_VERSION 一起換
         const CRON_NAME = { cronNews: '20:58 晚報', cronSport: '00:00 運動派彩', cronBackup: '03:00 備份', cronMonthly: '每月 1 號 04:00 清舊注單、舊登入' };
-        // ===== 許願池 =====
-        const WISH_KIND = { game: '新遊戲', idea: '點子', bug: '抓蟲', other: '其他' };
-        const WISH_STATUS = [['new', '剛投'], ['seen', '收到了'], ['doing', '在做了'], ['done', '實現了'], ['no', '不行']];
-        let wishes = [], wishTab = 'open';
-        function wishCard(w) {
-            const d = new Date(w.at), when = isNaN(d) ? '' : `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-            return `
-                <div class="bg-white border border-stone-100 rounded-sm p-4 font-sans ${w.hidden ? 'opacity-60' : ''}" data-wish="${esc(w.id)}">
-                    <div class="flex items-baseline justify-between gap-2 text-xs">
-                        <span class="text-wabi-dark truncate">${esc(w.name)}</span>
-                        <span class="text-[10px] tracking-widest text-stone-400 shrink-0">${esc(WISH_KIND[w.kind] || '其他')}・${when}・想要 ${w.votes}</span>
-                    </div>
-                    <p class="mt-2 text-sm text-wabi-dark font-serif leading-relaxed whitespace-pre-line break-words">${esc(w.text)}</p>
-                    <div class="mt-3 grid grid-cols-[1fr_auto] gap-2 items-end">
-                        <label class="block text-[10px] tracking-[0.2em] text-stone-500">狀態
-                            <select data-wish-status="${esc(w.id)}" class="mt-1 w-full min-h-[40px] bg-transparent border-b border-stone-300 text-sm text-wabi-dark">
-                                ${WISH_STATUS.map(([k, t]) => `<option value="${k}" ${w.status === k ? 'selected' : ''}>${t}</option>`).join('')}
-                            </select>
-                        </label>
-                        <button type="button" data-wish-hide="${esc(w.id)}" class="min-h-[40px] px-3 border border-stone-300 text-xs text-stone-500">${w.hidden ? '放回去' : '藏起來'}</button>
-                    </div>
-                    <label class="mt-3 block text-[10px] tracking-[0.2em] text-stone-500">回一句話（願望牆看得到，空的就不顯示）
-                        <textarea data-wish-reply="${esc(w.id)}" maxlength="200" rows="2" class="mt-1 w-full bg-transparent border-b border-stone-300 py-1 text-base tracking-normal text-wabi-dark focus:outline-none focus:border-wabi-dark">${esc(w.reply)}</textarea>
-                    </label>
-                    <button type="button" data-wish-save="${esc(w.id)}" class="act-btn mt-2 w-full min-h-[44px] bg-wabi-dark text-white text-sm tracking-widest active:opacity-80">存回覆</button>
-                </div>`;
-        }
-        function renderWishes() {
-            document.querySelectorAll('[data-wtab]').forEach(b => { const on = b.dataset.wtab === wishTab; b.classList.toggle('bg-wabi-dark', on); b.classList.toggle('text-white', on); b.classList.toggle('text-stone-500', !on); });
-            const list = wishes.filter(w => wishTab === 'hidden' ? w.hidden : wishTab === 'open' ? !w.hidden && (w.status === 'new' || w.status === 'seen') : true);
-            document.getElementById('wishState').textContent = wishes.length ? (list.length ? `${list.length} 個` : '這裡沒有。') : '還沒有人許願。';
-            document.getElementById('wishList').innerHTML = list.map(wishCard).join('');
-        }
-        async function wishCall(body) {
-            const result = await callApi({ ...body, token: adminToken });
-            if (result.result === 'unauthorized') { backToLogin(); throw new Error('通行證過期了'); }
-            if (result.result !== 'success') throw new Error(result.error === '不認得的請求' ? '後端還是舊版：部署新版本以後才看得到許願池。' : (result.error || '失敗了，再試一次'));
-            return result;
-        }
-        async function loadWishes() {
-            const box = document.getElementById('wishState');
-            box.textContent = '撈願望中……';
-            try { wishes = (await wishCall({ type: 'adminWishes' })).wishes || []; renderWishes(); }
-            catch (e) { box.innerHTML = `${esc(e.message || '願望讀不到')}<br><button type="button" onclick="loadWishes()" class="mt-3 px-5 py-3 border border-stone-300 text-xs tracking-widest text-wabi-dark">再試一次</button>`; }
-        }
-        async function setWish(id, change, okText) {
-            try { wishes = (await wishCall({ type: 'adminWishSet', id, ...change })).wishes || []; renderWishes(); showToast(okText); }
-            catch (e) { showToast(e.message || '失敗了'); renderWishes(); }
-        }
-        document.getElementById('wishTabs').addEventListener('click', e => { const b = e.target.closest('[data-wtab]'); if (b) { wishTab = b.dataset.wtab; renderWishes(); } });
-        document.getElementById('wishList').addEventListener('change', e => {
-            const sel = e.target.closest('[data-wish-status]');
-            if (sel) setWish(sel.dataset.wishStatus, { status: sel.value }, '狀態改好了');
-        });
-        document.getElementById('wishList').addEventListener('click', e => {
-            const hide = e.target.closest('[data-wish-hide]');
-            if (hide) { const w = wishes.find(x => x.id === hide.dataset.wishHide); return setWish(w.id, { hidden: !w.hidden }, w.hidden ? '放回願望牆了' : '藏起來了'); }
-            const save = e.target.closest('[data-wish-save]');
-            if (save) { const id = save.dataset.wishSave, ta = document.querySelector(`[data-wish-reply="${id}"]`); save.disabled = true; save.textContent = '存回覆中……'; setWish(id, { reply: ta.value }, '回覆存好了'); }
-        });
-
         async function loadHealth() {
             const box = document.getElementById('health');
             let r;
@@ -835,7 +763,6 @@
 
         fetchData();
         loadBonuses();
-        loadWishes();
         loadHealth();
 
     </script>

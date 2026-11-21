@@ -73,7 +73,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-20d';
+var BACKEND_VERSION = '2026-11-21a';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1 };
 
@@ -167,15 +167,15 @@ function route(type, input) {
       if (type === 'gaLibRetire') return gaLibRetire(input);
       if (type === 'gaEcon') return gaEcon();
       if (type === 'gaWage') return gaWage(input);
+      if (type === 'gaWishes') return adminWishes();        // 許願池 2026-11-21 從預約後台搬過來
+      if (type === 'gaWishSet') return adminWishSet(input);
       return { result: 'error', error: '不認得的請求' };
     }
 
     // 以下只有後台能用，要帶登入拿到的通行證
-    if (type === 'updateStatus' || type === 'adminList' || type === 'bonusCreate' || type === 'bonusList' || type === 'bonusClose' || type === 'adminHealth' || type === 'adminWishes' || type === 'adminWishSet') {
+    if (type === 'updateStatus' || type === 'adminList' || type === 'bonusCreate' || type === 'bonusList' || type === 'bonusClose' || type === 'adminHealth') {
       if (!isAdmin(input.token)) return { result: 'unauthorized' };
       if (type === 'adminHealth') return adminHealth();
-      if (type === 'adminWishes') return adminWishes();
-      if (type === 'adminWishSet') return adminWishSet(input);
       if (type === 'updateStatus') return updateStatus(input);
       if (type === 'bonusCreate') return bonusCreate(input);
       if (type === 'bonusList') return bonusList();
@@ -3857,7 +3857,7 @@ function adminWishes() {
   return { result: 'success', wishes: readWishes().reverse().map(function (w) { var v = wishView(w, people, null); v.hidden = w.hidden; return v; }) };
 }
 
-// 後台：{ type: 'adminWishSet', token, id, status?, reply?, hidden? }
+// admin 後台：{ type: 'gaWishSet', token, id, status?, reply?, hidden? }（2026-11-21 以前是預約後台的 adminWishSet；通行證是 admin 後台的）
 function adminWishSet(input) {
   var w = readWishes().filter(function (x) { return x.id === String(input.id || ''); })[0];
   if (!w) return { result: 'error', error: '找不到這個願望' };

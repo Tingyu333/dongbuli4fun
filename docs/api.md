@@ -87,6 +87,7 @@
 - `wishAdd`（要登入、排隊）：`{ kind, text }`，4～200 字、一天 3 個、同樣的字不能兩次、全站每小時 60 個；當天第一個 `reward` 隨機 $3,000～6,666（2026-11-19c 起；a 版 $1,000、b 版 $3,000），`wishList` 和 `me` 不回金額加進帳號 `earned.wish`，回 `{ id, reward, wallet, me }`。
 - `wishVote`（要登入、排隊）：`{ id }` 切換「我也想要」，自己的、藏起來的不能按，一人每小時 60 次；回 `{ votes, voted }`。
 - 後台（帶 `token`）：`adminWishes`（全部含藏起來的，多 `hidden`）、`adminWishSet`（`{ id, status?, reply?, hidden? }`，有帶才改，回覆存了記 `replied_at`；回傳整份 `adminWishes`）。
+- **2026-11-21a 搬家**：上面兩個改名 `gaWishes`、`gaWishSet`，要 admin 後台（`gameAdminLogin`、`GAME_ADMIN_PASSWORD`）的通行證；預約後台的 `adminWishes`／`adminWishSet` 拿掉了（回「不認得的請求」）。
 - 都不寄信。
 
 ## 2026-11-20 admin 後台（版本 `2026-11-20a`）

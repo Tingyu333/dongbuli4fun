@@ -41,6 +41,11 @@
         .kv b { display: block; font-weight: 500; font-size: 14px; color: rgb(var(--wabi-dark)); font-family: 'Noto Sans TC', sans-serif; letter-spacing: 0.02em; }
         .kv span { font-size: 10px; letter-spacing: 0.15em; color: rgb(var(--wabi-accent)); font-family: 'Noto Sans TC', sans-serif; }
         .chip { display: inline-block; padding: 0 0.5rem; border: 1px solid rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); font-size: 11px; letter-spacing: 0.1em; border-radius: 3px; font-family: 'Noto Sans TC', sans-serif; }
+        .wtab { min-height: 36px; padding: 0 0.8rem; border: 1px solid rgb(var(--wabi-sub)); font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: 0.1em; color: rgb(var(--wabi-accent)); }
+        .wtab[aria-pressed="true"] { background: rgb(var(--wabi-dark)); border-color: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); }
+        .wstamp { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 1.5px solid rgb(var(--wabi-shu)); color: rgb(var(--wabi-shu)); font-size: 13px; border-radius: 3px; flex-shrink: 0; }
+        .wstamp.is-done { background: rgb(var(--wabi-shu)); color: rgb(var(--wabi-bg)); }
+        .wstamp.is-off { border-color: rgb(var(--wabi-sub)); color: rgb(var(--wabi-accent)); }
         .chip.is-off { border-color: rgb(var(--wabi-sub)); color: rgb(var(--wabi-accent)); }
         .stat { border-top: 1px solid rgb(var(--wabi-sub)); padding: 0.7rem 0; }
         .stat span { display: block; font-size: 11px; letter-spacing: 0.15em; color: rgb(var(--wabi-accent)); font-family: 'Noto Sans TC', sans-serif; }
@@ -54,7 +59,7 @@
         .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         [hidden] { display: none !important; }
     </style>
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261120a">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261121a">
 </head>
 
 <body class="bg-wabi-bg text-wabi-text font-serif antialiased min-h-screen">
@@ -91,6 +96,7 @@
                 <button type="button" data-tab="perks" aria-pressed="false">道具</button>
                 <button type="button" data-tab="lib" aria-pressed="false">道具庫</button>
                 <button type="button" data-tab="econ" aria-pressed="false">經濟</button>
+                <button type="button" data-tab="wish" aria-pressed="false">許願池</button>
             </div>
             <p id="state" class="mt-6 text-xs font-sans tracking-widest text-stone-400 text-center"></p>
 
@@ -185,6 +191,19 @@
                     <div id="wageBody" class="mt-4"></div>
                 </div>
             </div>
+
+            <!-- 許願池（2026-11-21 從預約後台搬過來）：改狀態、回一句話、藏起來 -->
+            <div id="tab-wish" class="mt-5" hidden>
+                <p class="text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">旅人在許願・池許的願。狀態和回覆會貼在願望牆上；亂寫的按「藏起來」，願望牆就看不到（獎金不會收回）。</p>
+                <div id="wishTabs" class="mt-3 flex flex-wrap gap-2" role="group" aria-label="篩選">
+                    <button type="button" class="wtab" data-wtab="open" aria-pressed="true">還沒處理</button>
+                    <button type="button" class="wtab" data-wtab="doing" aria-pressed="false">在做了</button>
+                    <button type="button" class="wtab" data-wtab="all" aria-pressed="false">全部</button>
+                    <button type="button" class="wtab" data-wtab="hidden" aria-pressed="false">藏起來的</button>
+                </div>
+                <p id="wishState" class="mt-4 text-xs font-sans tracking-widest text-stone-400"></p>
+                <div id="wishList" class="mt-2 space-y-3"></div>
+            </div>
         </section>
     </main>
 
@@ -205,7 +224,7 @@
         };
         const day = t => { if (!t) return ''; const d = new Date(t); return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`; };
         let token = null; try { token = localStorage.getItem(TOKEN_KEY); } catch (e) { }
-        let data = null, econ = null, tab = 'players';
+        let data = null, econ = null, wishes = null, tab = 'players';
 
         async function call(body) {
             let res;
@@ -221,7 +240,7 @@
         // ===== 登入 =====
         function showLogin(msg) { $('loginView').hidden = false; $('appView').hidden = true; $('logoutBtn').hidden = true; $('loginMsg').textContent = msg || ''; setTimeout(() => $('pw').focus(), 50); }
         function showApp() { $('loginView').hidden = true; $('appView').hidden = false; $('logoutBtn').hidden = false; }
-        function logout(msg) { token = null; try { localStorage.removeItem(TOKEN_KEY); } catch (e) { } data = econ = null; showLogin(msg); }
+        function logout(msg) { token = null; try { localStorage.removeItem(TOKEN_KEY); } catch (e) { } data = econ = wishes = null; showLogin(msg); }
         $('logoutBtn').addEventListener('click', () => logout(''));
         $('loginForm').addEventListener('submit', async e => {
             e.preventDefault();
@@ -232,7 +251,7 @@
                 const r = JSON.parse(await res.text());
                 if (r.result !== 'success') throw new Error(/不認得的請求/.test(r.error || '') ? '後端還是舊版：部署新版本（2026-11-20a 以後）' : (r.error || '登入失敗'));
                 token = r.token; try { localStorage.setItem(TOKEN_KEY, token); } catch (e) { }
-                $('pw').value = ''; showApp(); loadPlayers();
+                $('pw').value = ''; showApp(); loadPlayers(); loadWishes();
             } catch (err) { $('loginMsg').textContent = err.message || '登入失敗'; }
             $('loginBtn').disabled = false;
         });
@@ -241,8 +260,9 @@
         function setTab(t) {
             tab = t;
             document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tab === t)));
-            ['players', 'perks', 'lib', 'econ'].forEach(k => $('tab-' + k).hidden = k !== t);
+            ['players', 'perks', 'lib', 'econ', 'wish'].forEach(k => $('tab-' + k).hidden = k !== t);
             if (t === 'econ' && !econ) loadEcon();
+            if (t === 'wish' && !wishes) loadWishes();
         }
         document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
         document.addEventListener('click', e => { const b = e.target.closest('[data-goto]'); if (b) { setTab(b.dataset.goto); window.scrollTo({ top: 0, behavior: 'smooth' }); } });
@@ -466,7 +486,65 @@
             try { data = await call({ type: 'gaPlayers' }); $('state').textContent = ''; render(); }
             catch (err) { $('state').textContent = err.message; }
         }
-        if (token) { showApp(); loadPlayers(); } else showLogin('');
+        // ===== 許願池（2026-11-21 從預約後台搬過來；後端 gaWishes／gaWishSet）=====
+        const WISH_KIND = { game: '新遊戲', idea: '點子', bug: '抓蟲', other: '其他' };
+        const WISH_STATUS = [['new', '剛投', '收'], ['seen', '收到了', '收'], ['doing', '在做了', '做'], ['done', '實現了', '成'], ['no', '不行', '否']];
+        let wishTab = 'open';
+        function wishCard(w) {
+            const st = WISH_STATUS.find(x => x[0] === w.status) || WISH_STATUS[0], t = Date.parse(w.at);
+            return `
+                <div class="card${w.hidden ? ' opacity-60' : ''}">
+                    <div class="flex items-center gap-3">
+                        ${pic(w)}
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm text-wabi-dark truncate">${esc(w.name)}${w.hidden ? '<span class="chip is-off ml-2">藏起來了</span>' : ''}</p>
+                            <p class="text-[11px] font-sans tracking-wider text-stone-400">${esc(WISH_KIND[w.kind] || '其他')}・${ago(t)}・想要 ${w.votes}</p>
+                        </div>
+                        <span class="wstamp${w.status === 'done' ? ' is-done' : w.status === 'no' ? ' is-off' : ''}" title="${esc(st[1])}">${st[2]}</span>
+                    </div>
+                    <p class="mt-3 text-[15px] text-wabi-dark leading-relaxed whitespace-pre-line break-words">${esc(w.text)}</p>
+                    <div class="mt-3 grid grid-cols-[1fr_auto] gap-3 items-end">
+                        <label class="block text-[10px] font-sans tracking-[0.2em] text-stone-400">狀態
+                            <select data-wish-status="${esc(w.id)}" class="field mt-1">${WISH_STATUS.map(([k, n]) => `<option value="${k}" ${w.status === k ? 'selected' : ''}>${n}</option>`).join('')}</select>
+                        </label>
+                        <button type="button" data-wish-hide="${esc(w.id)}" class="btn btn-line">${w.hidden ? '放回去' : '藏起來'}</button>
+                    </div>
+                    <label class="mt-3 block text-[10px] font-sans tracking-[0.2em] text-stone-400">回一句話（願望牆看得到，空的就不顯示）
+                        <textarea data-wish-reply="${esc(w.id)}" maxlength="200" rows="2" class="field mt-1 py-2 leading-relaxed">${esc(w.reply)}</textarea>
+                    </label>
+                    <button type="button" data-wish-save="${esc(w.id)}" class="btn btn-dark w-full mt-2">存回覆</button>
+                </div>`;
+        }
+        function renderWishes() {
+            if (!wishes) return;
+            document.querySelectorAll('[data-wtab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.wtab === wishTab)));
+            const open = w => !w.hidden && (w.status === 'new' || w.status === 'seen');
+            const list = wishes.filter(w => wishTab === 'hidden' ? w.hidden : wishTab === 'open' ? open(w) : wishTab === 'doing' ? !w.hidden && w.status === 'doing' : true);
+            const n = wishes.filter(open).length;
+            document.querySelector('[data-tab="wish"]').innerHTML = n ? `許願池<span class="text-wabi-shu ml-1">${n}</span>` : '許願池';
+            $('wishState').textContent = wishes.length ? (list.length ? `${list.length} 個` : '這裡沒有。') : '還沒有人許願。';
+            $('wishList').innerHTML = list.map(wishCard).join('');
+        }
+        async function loadWishes() {
+            $('wishState').textContent = '撈願望中……';
+            try { wishes = (await call({ type: 'gaWishes' })).wishes || []; renderWishes(); }
+            catch (e) { $('wishState').innerHTML = `${esc(/舊版/.test(e.message) ? '後端還是舊版：部署新版本（2026-11-21a 以後）才看得到許願池' : e.message || '願望讀不到')}<br><button type="button" class="btn btn-line mt-3" data-wish-reload>再試一次</button>`; }
+        }
+        async function setWish(id, change, okText) {
+            try { wishes = (await call({ type: 'gaWishSet', id, ...change })).wishes || []; renderWishes(); showToast(okText); }
+            catch (e) { showToast(e.message || '失敗了'); renderWishes(); }
+        }
+        $('wishTabs').addEventListener('click', e => { const b = e.target.closest('[data-wtab]'); if (b) { wishTab = b.dataset.wtab; renderWishes(); } });
+        $('tab-wish').addEventListener('change', e => { const sel = e.target.closest('[data-wish-status]'); if (sel) setWish(sel.dataset.wishStatus, { status: sel.value }, '狀態改好了'); });
+        $('tab-wish').addEventListener('click', e => {
+            if (e.target.closest('[data-wish-reload]')) return loadWishes();
+            const hide = e.target.closest('[data-wish-hide]');
+            if (hide) { const w = wishes.find(x => x.id === hide.dataset.wishHide); return setWish(w.id, { hidden: !w.hidden }, w.hidden ? '放回願望牆了' : '藏起來了'); }
+            const save = e.target.closest('[data-wish-save]');
+            if (save) { const id = save.dataset.wishSave, ta = document.querySelector(`[data-wish-reply="${id}"]`); save.disabled = true; save.textContent = '存回覆中……'; setWish(id, { reply: ta.value }, '回覆存好了'); }
+        });
+
+        if (token) { showApp(); loadPlayers(); loadWishes(); } else showLogin('');
     </script>
 </body>
 

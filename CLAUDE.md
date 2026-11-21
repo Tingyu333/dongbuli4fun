@@ -68,8 +68,8 @@
 | `yuncai.html` | 運動・押：押 TPVL 排球，彩池分錢 | `docs/pages/yuncai.md` |
 | `404.html` | 找不到頁面 | `docs/pages/404.md` |
 | `admin_login.html` | 後台登入 | `docs/pages/admin_login.md` |
-| `admin_dashboard.html` | 後台預約列表、發紅包 | `docs/pages/admin_dashboard.md` |
-| `admin.html` | admin 後台（另一組密碼 `GAME_ADMIN_PASSWORD`）：玩家列表、專屬道具、道具庫（主人取名字）、經濟體檢 | `docs/pages/admin.md` |
+| `admin_dashboard.html` | 後台預約列表、發紅包、後端狀況 | `docs/pages/admin_dashboard.md` |
+| `admin.html` | admin 後台（另一組密碼 `GAME_ADMIN_PASSWORD`）：玩家列表、專屬道具、道具庫（主人取名字）、經濟體檢、許願池（2026-11-21 從預約後台搬來） | `docs/pages/admin.md` |
 
 ## 其他說明（也在 docs/）
 

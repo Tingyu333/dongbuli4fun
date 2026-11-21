@@ -153,7 +153,7 @@
         @keyframes stampFade { 0% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
         @media (prefers-reduced-motion: reduce) { .big-stamp.is-on .s { animation: none; } .wish.is-new { animation: none; } }
     </style>
-    <link rel="stylesheet" href="assets/tailwind.css?v=20261120a">
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261121a">
 </head>
 
 <body class="bg-wabi-bg text-wabi-text font-serif antialiased min-h-screen flex flex-col">
@@ -456,10 +456,10 @@
             }
             $('wallCount').textContent = `${data.total} 個願望・實現 ${data.done} 個`;
             let list = data.wishes.slice();
-            if (tab === 'hot') list = list.filter(w => w.votes > 0).sort((a, b) => b.votes - a.votes || Date.parse(b.at) - Date.parse(a.at));
+            if (tab === 'hot') list = list.filter(w => w.votes > 0 && w.status !== 'done').sort((a, b) => b.votes - a.votes || Date.parse(b.at) - Date.parse(a.at));
             if (tab === 'done') list = list.filter(w => w.status === 'done');
             if (!list.length) {
-                const empty = { new: '池子還是空的。第一個願望，主人一定會看到。', hot: '還沒有人按「我也想要」。', done: '還沒有實現的。主人在努力了（大概）。' }[tab];
+                const empty = { new: '池子還是空的。第一個願望，主人一定會看到。', hot: '還沒有人按「我也想要」（實現了的在「實現了」那頁）。', done: '還沒有實現的。主人在努力了（大概）。' }[tab];
                 box.innerHTML = `<p class="py-10 text-center text-xs font-sans tracking-widest text-stone-400">${empty}</p>`; return;
             }
             box.innerHTML = list.map(w => {
