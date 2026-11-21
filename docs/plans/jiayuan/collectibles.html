@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家園：藏品圖鑑</title>
+<!-- 家園・築的設計圖（2026-11-21）：藏品圖鑑 29 款（使用者說全做）：公仔 9 用扭蛋，礦坑標本、海上撿到的、和風小物、27 樓的梗直接買；分普通／稀有／傳說。還不是遊戲本身。 -->
+<style>
+  :root { --bg: #fcfaf8; --text: #4a4a4a; --dark: #2c2c2c; --accent: #8e8070; --sub: #dcdcdc; --shu: #b33a2f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', 'PingFang TC', sans-serif; }
+  main { max-width: 390px; margin: 0 auto; padding: 22px 16px 28px; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 300; font-size: 22px; letter-spacing: .3em; color: var(--dark); margin: 0; text-align: center; }
+  .sub { text-align: center; font-size: 11px; letter-spacing: .12em; color: var(--accent); margin: 6px 0 10px; line-height: 1.7; }
+  .card { border: 1px solid var(--sub); border-radius: 4px; padding: 12px; background: #fff; margin-top: 12px; }
+  .h { display: flex; align-items: baseline; gap: 8px; }
+  .no { font-size: 12px; color: var(--shu); border: 1px solid var(--shu); padding: 0 5px; line-height: 1.5; font-family: 'Noto Serif TC', serif; }
+  .name { font-family: 'Noto Serif TC', serif; font-size: 16px; letter-spacing: .2em; color: var(--dark); }
+  .tag { margin-left: auto; font-size: 10px; letter-spacing: .1em; color: var(--accent); }
+  canvas { display: block; width: 100%; border-radius: 3px; margin-top: 10px; image-rendering: pixelated; image-rendering: crisp-edges; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 8px 0 0; font-size: 11.5px; letter-spacing: .04em; line-height: 1.6; }
+  dt { color: var(--accent); } dd { margin: 0; }
+  .arrow { text-align: center; color: var(--accent); font-size: 12px; letter-spacing: .3em; margin-top: 12px; }
+  .labels { display: grid; gap: 4px; margin-top: 6px; text-align: center; }
+  .labels b { display: block; font-weight: 500; font-size: 11.5px; color: var(--dark); letter-spacing: .04em; }
+  .labels span { display: block; font-size: 9.5px; color: var(--accent); line-height: 1.4; margin-top: 1px; }
+  .stack canvas { margin-top: 10px; }
+  .gold { border-color: #c9a24a; }
+  .legend { text-align: center; margin: 0 0 4px; }
+  .lg { display: inline-block; font-size: 10px; letter-spacing: .1em; padding: 1px 6px; margin: 0 3px; border: 2px solid; border-radius: 3px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+  .grid.g4 { grid-template-columns: repeat(4, 1fr); }
+  .it { position: relative; border: 2px solid #c9c2b4; border-radius: 4px; background: #f6f1e8; padding: 4px 2px 5px; text-align: center; overflow: hidden; }
+  .it.empty { border-style: dashed; border-width: 1px; min-height: 70px; background: transparent; }
+  .it canvas { width: 64%; margin: 0 auto; }
+  .it b { display: block; font-weight: 500; font-size: 10.5px; color: var(--dark); letter-spacing: .02em; line-height: 1.3; margin-top: 2px; }
+  .it .rr { display: block; font-size: 9px; letter-spacing: .1em; }
+  .it .how { display: block; font-size: 9px; color: var(--shu); }
+  .r-n, .lg.r-n { border-color: #c9c2b4; } .r-n .rr, .lg.r-n { color: #8e8070; }
+  .r-r, .lg.r-r { border-color: #c9a24a; } .r-r .rr, .lg.r-r { color: #977630; }
+  .r-l, .lg.r-l { border-color: var(--shu); } .r-l .rr, .lg.r-l { color: var(--shu); }
+  .it.r-l { background: #fbf3e6; }
+  .spark { position: absolute; left: 18%; top: 10%; width: 6px; height: 6px; background: #fff6c8; transform: rotate(45deg); animation: sp 1.6s infinite; box-shadow: 0 0 6px 2px rgba(255,230,150,.9); }
+  .spark.s2 { left: 74%; top: 34%; animation-delay: .8s; }
+  @keyframes sp { 0%, 100% { opacity: 0; transform: rotate(45deg) scale(.3); } 50% { opacity: 1; transform: rotate(45deg) scale(1); } }
+  .gacha { display: flex; gap: 12px; align-items: flex-start; margin-top: 12px; padding-top: 10px; border-top: 1px solid #efebe4; }
+  .gacha canvas { width: 70px; flex: none; margin: 0; }
+  .gacha dl { margin: 0; }
+  .lb { margin: 10px 0 0; font-size: 11px; color: var(--accent); letter-spacing: .2em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>藏品・圖鑑</h1>
+  <p class="sub">家園・築的設計圖（放在展示櫃裡；正面看，一件 24 × 24 顆）<br><span id="count"></span> 款：公仔用扭蛋，其他直接買；框的顏色是稀有度</p>
+  <p class="legend"><span class="lg r-n">普通</span><span class="lg r-r">稀有</span><span class="lg r-l">傳說（放進展示櫃會閃）</span></p>
+  <div id="groups"></div>
+  <section class="card">
+    <div class="h"><span class="no">櫃</span><span class="name">展示櫃打開</span><span class="tag">一格一件</span></div>
+    <p class="lb">玻璃小櫃（4 格）</p><div id="caseS" class="grid g4"></div>
+    <p class="lb">金框大展示櫃（8 格）</p><div id="caseB" class="grid g4"></div>
+    <dl><dt>放法</dt><dd>點空的格子，從倉庫挑一件放進去；傳說級的會一閃一閃</dd><dt>俯視</dt><dd>在屋內（正上方）看展示櫃，玻璃下面看得到幾個小點，傳說的那顆會閃</dd></dl>
+  </section>
+</main>
+<script>
+
+// ===== 小工具（跟 style-mockup.html 同一套：硬邊、整數座標）=====
+const TAU = Math.PI * 2;
+function make(id) { const c = document.getElementById(id), x = c.getContext('2d'); x.imageSmoothingEnabled = false; return { c, x, W: c.width, H: c.height }; }
+const hash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+function P(x, a, b, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), 1, 1); }
+function R(x, a, b, w, h, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), Math.round(w), Math.round(h)); }
+function circ(x, cx, cy, r, col) { for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r + r * .6) P(x, cx + xx, cy + yy, col); }
+function poly(x, pts, col) {
+  const ys = pts.map(p => p[1]), xs = pts.map(p => p[0]);
+  const y0 = Math.floor(Math.min(...ys)), y1 = Math.ceil(Math.max(...ys)), x0 = Math.floor(Math.min(...xs)), x1 = Math.ceil(Math.max(...xs));
+  x.fillStyle = col;
+  for (let y = y0; y <= y1; y++) for (let X = x0; X <= x1; X++) {
+    const px = X + .5, py = y + .5; let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside; }
+    if (inside) x.fillRect(X, y, 1, 1);
+  }
+}
+const K = {
+  g1: '#97ad6f', g2: '#86a061', g3: '#a6bb7c', g4: '#738d51', sand: '#e6d3a3', sand2: '#d8c18b', sand3: '#efe0b8',
+  sea: '#6b97a6', sea2: '#7ea9b5', shallow: '#9cc5c8', foam: '#e3efed', deep: '#4f7d8f',
+  leaf1: '#5d7c43', leaf2: '#4a6634', leaf3: '#7a9a55', leafHi: '#9cb96f', trunk: '#6e4528',
+  roof: '#b33a2f', roofHi: '#cf5a46', roofLo: '#8f2c23', roofLine: '#7a241d',
+  wall: '#efe4cf', wall2: '#d9c9aa', wall3: '#c2ae8b', door: '#5e3c22', win: '#f6cd72', frame: '#6e4528',
+  conc: '#c4beb3', conc2: '#aea79b', conc3: '#d6d1c7', stone: '#a39b8e', stone2: '#8b8377', stone3: '#bdb6aa',
+  wood: '#9a6a40', wood2: '#7c5230', wood3: '#b07f50', post: '#5e3c22',
+  canvas: '#dcc9a0', canvasHi: '#ece0c1', canvasLo: '#bba77c', canvasLine: '#9c8a62',
+  shingle: '#8a6440', shingleHi: '#a57a50', shingleLo: '#6c4c30', shingleLine: '#553a24',
+  slate: '#76828c', slateHi: '#8f9ba5', slateLo: '#626d77', slateLine: '#4f5962',
+  white: '#f3f1ec', white2: '#dedad1', white3: '#c9c4b9', glass: '#a8cdd6', glassHi: '#e2f1f3',
+  pool: '#5fb3c4', poolHi: '#9fdce4', poolLo: '#3f93a6', fire: '#e8873a', fire2: '#f6cd72', fire3: '#c4462e',
+  hedge: '#557a3e', hedge2: '#43652f', flowerA: '#f0b8b0', flowerB: '#f1d36b', flowerC: '#c9a0dc',
+  shadow: 'rgba(30,40,30,.24)'
+};
+
+// 共用：草地底、石板路、樹、影子
+function lawn(x, W, H, seed = 0) { for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) { const n = hash(a + seed, b); P(x, a, b, n > .9 ? K.g3 : n > .74 ? K.g2 : n < .05 ? K.g4 : K.g1); } }
+function stones(x, pts) { pts.forEach(([a, b]) => { R(x, a, b, 6, 3, K.conc3); R(x, a, b + 2, 6, 1, K.conc2); P(x, a, b, '#e4e0d8'); }); }
+function tree(x, a, b, r) {
+  x.fillStyle = K.shadow; for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r) x.fillRect(a + xx + 3, b + yy + 3, 1, 1);
+  circ(x, a, b, r, K.leaf2); circ(x, a - 1, b - 1, r - 1, K.leaf1); circ(x, a - 2, b - 2, Math.max(1, r - 3), K.leaf3); P(x, a - r / 2, b - r / 2, K.leafHi); P(x, a - r / 2 + 1, b - r / 2, K.leafHi);
+  for (let i = 0; i < r * 2; i++) { const t = hash(a + i, b) * TAU, rr = hash(b, a + i) * r; P(x, a + Math.cos(t) * rr, b + Math.sin(t) * rr, i % 2 ? K.leaf2 : K.leaf3); }
+}
+function palm(x, a, b) {   // 椰子樹：六片葉子，每片兩顆寬、尾巴往下垂，葉子比草地深才看得出來
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3; for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); P(x, u + 3, v + 3, K.shadow); } }
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3, nx = -Math.sin(t), ny = Math.cos(t); for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); const wdt = s < 4 ? 1 : s < 9 ? 2 : 1; for (let q = -wdt; q <= wdt; q++) P(x, u + nx * q, v + ny * q, q === wdt ? '#3d5f2c' : (q === -wdt ? '#8fb35a' : '#6f9a45')); } }
+  circ(x, a, b, 2, '#7a5a3a'); P(x, a - 1, b - 1, '#a07a50'); P(x, a + 1, b + 1, '#5e4228'); }
+function shadowPoly(x, pts, dx, dy) { poly(x, pts.map(([a, b]) => [a + dx, b + dy]), K.shadow); }
+// 四面坡（上亮、左亮、右暗、下暗），屋脊沿水平方向；line 是瓦片的橫線間距
+function hipRoof(x, a, b, w, h, c, opts = {}) {
+  const inset = Math.min(h / 2, opts.inset ?? h / 2), ry = b + h / 2;
+  const ridgeL = a + inset, ridgeR = a + w - inset;
+  shadowPoly(x, [[a, b], [a + w, b], [a + w, b + h], [a, b + h]], opts.sh || 4, opts.sh || 4);
+  poly(x, [[a, b], [a + w, b], [ridgeR, ry], [ridgeL, ry]], c.hi);           // 上坡（迎光）
+  poly(x, [[a, b + h], [a + w, b + h], [ridgeR, ry], [ridgeL, ry]], c.lo);   // 下坡
+  poly(x, [[a, b], [ridgeL, ry], [a, b + h]], c.mid);                        // 左坡
+  poly(x, [[a + w, b], [ridgeR, ry], [a + w, b + h]], c.lo);                  // 右坡
+  // 瓦片橫線＋錯開的直縫
+  for (let yy = b + 2; yy < b + h - 1; yy += c.step || 3) for (let xx = a + 1; xx < a + w - 1; xx++) {
+    const dTop = yy - b, dBot = b + h - yy, dl = xx - a, dr = a + w - xx;
+    if (dl > Math.min(dTop, dBot) + 1 && dr > Math.min(dTop, dBot) + 1 || true) { const px = x.getImageData(xx, yy, 1, 1).data; if (px[3]) P(x, xx, yy, c.line); }
+  }
+  for (let yy = b + 1; yy < b + h - 1; yy++) for (let xx = a + 1 + ((Math.floor((yy - b) / (c.step || 3)) % 2) * 2); xx < a + w - 1; xx += 4) if ((yy - b) % (c.step || 3)) P(x, xx, yy, c.seam || c.line);
+  R(x, ridgeL, ry - 1, ridgeR - ridgeL, 2, c.ridge || c.line);
+  // 四條斜脊
+  const diag = (x0, y0, x1, y1) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, c.ridge || c.line); };
+  diag(a, b, ridgeL, ry); diag(a, b + h, ridgeL, ry); diag(a + w, b, ridgeR, ry); diag(a + w, b + h, ridgeR, ry);
+  // 外框
+  R(x, a, b, w, 1, c.edge || c.line); R(x, a, b + h - 1, w, 1, c.edge || c.line); R(x, a, b, 1, h, c.edge || c.line); R(x, a + w - 1, b, 1, h, c.edge || c.line);
+}
+function chimney(x, a, b, w, h, top, side, sh = 3) { R(x, a + sh, b + sh, w, h, K.shadow); R(x, a, b, w, h, side); R(x, a, b, w, 2, top); R(x, a + 1, b + 1, w - 2, 1, '#4a3f36'); for (let i = 0; i < 3; i++) P(x, a + 1 + i, b - 2 - i * 2, i % 2 ? '#ece8e2' : '#e0dbd2'); }
+
+// ===== 藏品圖鑑：正面看，一件 24 × 24 顆；先畫形狀，shade() 補左上亮、右下暗，再畫眼睛之類的細節 =====
+const CW = 24, CH = 24;
+function shade(x, k1 = .28, k2 = .3) {
+  const d = x.getImageData(0, 0, CW, CH), p = d.data, a = (i, j) => (i < 0 || j < 0 || i >= CW || j >= CH) ? 0 : p[(j * CW + i) * 4 + 3];
+  const out = new Uint8ClampedArray(p);
+  for (let j = 0; j < CH; j++) for (let i = 0; i < CW; i++) { const k = (j * CW + i) * 4; if (p[k + 3] < 255) continue;
+    let f = 0; if (!a(i - 1, j) || !a(i, j - 1)) f = k1; if (!a(i + 1, j) || !a(i, j + 1)) f = -k2;
+    for (let q = 0; q < 3; q++) out[k + q] = f > 0 ? p[k + q] + (255 - p[k + q]) * f : f < 0 ? p[k + q] * (1 + f) : p[k + q]; }
+  x.putImageData(new ImageData(out, CW, CH), 0, 0);
+}
+const ell = (x, cx, cy, rx, ry, col) => { for (let j = -ry; j <= ry; j++) for (let i = -rx; i <= rx; i++) if ((i * i) / (rx * rx) + (j * j) / (ry * ry) <= 1.05) P(x, cx + i, cy + j, col); };
+const base = x => { ell(x, 12, 21, 8, 2, '#9a6a40'); };                       // 公仔的圓木底座
+const slab = (x, col = '#8b8377') => { R(x, 3, 19, 18, 4, col); };           // 標本的石台
+const eyes = (x, y, a = 9, b = 15, col = '#2c2c2c') => { P(x, a, y, col); P(x, b, y, col); };
+const D = {
+  // ---- 公仔（扭蛋）----
+  julie: { pre(x) { base(x); circ(x, 12, 12, 7, '#fbfbf8'); ell(x, 12, 17, 6, 3, '#fbfbf8'); }, post(x) { R(x, 11, 13, 6, 2, '#f0a03a'); R(x, 12, 14, 5, 1, '#d9862a'); [[8, 10], [14, 10]].forEach(([a, b]) => { R(x, a, b, 3, 1, '#2c2c2c'); P(x, a + 1, b + 1, '#2c2c2c'); }); poly(x, [[8, 18], [12, 17], [8, 16]], '#3d6fb6'); poly(x, [[16, 18], [12, 17], [16, 16]], '#3d6fb6'); P(x, 12, 17, '#3d6fb6'); } },
+  appleduck: { pre(x) { base(x); circ(x, 12, 14, 6, '#f6d04a'); ell(x, 12, 18, 7, 3, '#f6d04a'); circ(x, 12, 6, 3, '#c0392b'); }, post(x) { P(x, 12, 2, '#6e4528'); P(x, 13, 2, '#5d7c43'); P(x, 14, 2, '#5d7c43'); P(x, 11, 5, '#e8786a'); eyes(x, 13, 10, 14); R(x, 5, 14, 3, 1, '#e8873a'); R(x, 9, 17, 6, 1, '#3d6fb6'); P(x, 10, 15, '#f2a093'); } },
+  raccoon: { pre(x) { base(x); poly(x, [[6, 20], [18, 20], [16, 12], [8, 12]], '#b33a2f'); circ(x, 12, 10, 6, '#9a9fa4'); P(x, 7, 4, '#8e9396'); P(x, 17, 4, '#8e9396'); }, post(x) { R(x, 7, 9, 10, 3, '#2c2c2c'); P(x, 9, 10, '#ffffff'); P(x, 15, 10, '#ffffff'); R(x, 10, 13, 4, 2, '#e8e6e2'); P(x, 12, 13, '#2c2c2c'); R(x, 8, 2, 8, 3, '#e2a62e'); P(x, 8, 1, '#e2a62e'); P(x, 12, 1, '#e2a62e'); P(x, 15, 1, '#e2a62e'); P(x, 10, 3, '#b33a2f'); P(x, 12, 3, '#3d6fb6'); P(x, 14, 3, '#5d7c43'); R(x, 7, 16, 10, 2, '#f3f1ec'); } },
+  xiaowu: { pre(x) { base(x); circ(x, 12, 13, 7, '#2f3236'); ell(x, 12, 18, 6, 3, '#2f3236'); }, post(x) { P(x, 11, 5, '#2f3236'); P(x, 12, 4, '#2f3236'); [[9, 11], [15, 11]].forEach(([a, b]) => { circ(x, a, b, 2, '#c9a24a'); circ(x, a, b, 1, '#e8e6e2'); P(x, a, b, '#2c2c2c'); }); poly(x, [[5, 14], [11, 13], [11, 15]], '#4a4a4a'); R(x, 10, 16, 1, 3, '#3d6fb6'); R(x, 9, 18, 4, 3, '#f3f1ec'); P(x, 10, 19, '#f6d04a'); P(x, 16, 9, '#566c94'); } },
+  captain: { pre(x) { base(x); for (let k = -2; k <= 2; k++) ell(x, 12 + k * 3, 11 - Math.abs(k), 2, 6, '#3f6a35'); R(x, 9, 12, 6, 8, '#d9ead0'); }, post(x) { R(x, 7, 2, 10, 3, '#f3f1ec'); R(x, 6, 5, 12, 1, '#2c2c2c'); P(x, 12, 3, '#e2a62e'); R(x, 9, 13, 2, 1, '#2c2c2c'); R(x, 13, 13, 2, 1, '#2c2c2c'); eyes(x, 15, 10, 14); P(x, 12, 17, '#2c2c2c'); R(x, 8, 19, 3, 1, '#b33a2f'); R(x, 13, 19, 3, 1, '#b33a2f'); } },
+  cat: { pre(x) { base(x); circ(x, 12, 14, 6, '#e8a35a'); ell(x, 12, 18, 7, 3, '#e8a35a'); poly(x, [[7, 9], [8, 4], [11, 8]], '#e8a35a'); poly(x, [[13, 8], [16, 4], [17, 9]], '#e8a35a'); circ(x, 18, 9, 2, '#e8a35a'); }, post(x) { R(x, 10, 9, 1, 2, '#b8702a'); R(x, 12, 8, 1, 3, '#b8702a'); R(x, 14, 9, 1, 2, '#b8702a'); R(x, 8, 12, 2, 1, '#2c2c2c'); R(x, 14, 12, 2, 1, '#2c2c2c'); P(x, 12, 14, '#f2a093'); ell(x, 12, 18, 3, 2, '#f6efe4'); P(x, 18, 8, '#f6efe4'); R(x, 10, 20, 4, 1, '#c9a24a'); } },
+  dog: { pre(x) { base(x); circ(x, 12, 14, 7, '#f1e4c8'); ell(x, 6, 14, 2, 4, '#d8c39a'); ell(x, 18, 14, 2, 4, '#d8c39a'); circ(x, 9, 6, 3, '#ffffff'); circ(x, 14, 5, 3, '#ffffff'); circ(x, 12, 7, 2, '#ffffff'); }, post(x) { eyes(x, 13, 10, 14); P(x, 9, 12, '#ffffff'); R(x, 11, 15, 3, 2, '#3d3a38'); P(x, 12, 18, '#f2a093'); P(x, 8, 5, '#d8eef2'); P(x, 13, 4, '#d8eef2'); } },
+  mole: { pre(x) { base(x); circ(x, 12, 14, 7, '#7a5a42'); ell(x, 12, 6, 7, 3, '#e2b43a'); }, post(x) { R(x, 5, 8, 14, 1, '#b8861a'); P(x, 12, 4, '#fff1c4'); P(x, 9, 12, '#2c2c2c'); P(x, 15, 12, '#2c2c2c'); circ(x, 12, 15, 2, '#f2a0a0'); P(x, 11, 14, '#ffd6d6'); R(x, 6, 18, 3, 2, '#f2a0a0'); R(x, 15, 18, 3, 2, '#f2a0a0'); } },
+  nugget: { pre(x) { base(x); ell(x, 12, 14, 8, 6, '#e0a845'); circ(x, 7, 11, 3, '#e0a845'); circ(x, 16, 10, 3, '#e0a845'); }, post(x) { [[6, 15], [17, 16], [10, 18], [15, 9], [7, 10], [18, 13]].forEach(([a, b]) => P(x, a, b, '#b9802a')); eyes(x, 13, 10, 14); P(x, 10, 12, '#ffffff'); P(x, 15, 12, '#ffffff'); P(x, 8, 15, '#f2a093'); P(x, 16, 15, '#f2a093'); R(x, 11, 15, 3, 1, '#7a4a1a'); } },
+  // ---- 礦坑標本 ----
+  goldspec: { pre(x) { slab(x); poly(x, [[6, 18], [7, 12], [10, 9], [14, 10], [17, 13], [18, 18]], '#e2b43a'); circ(x, 10, 12, 2, '#e2b43a'); }, post(x) { P(x, 9, 11, '#fff1c4'); P(x, 10, 11, '#fff1c4'); P(x, 14, 13, '#b8861a'); P(x, 12, 15, '#b8861a'); P(x, 15, 16, '#fff1c4'); } },
+  diamond: { pre(x) { slab(x, '#6a6d70'); poly(x, [[12, 4], [18, 11], [12, 19], [6, 11]], '#a9dcef'); }, post(x) { R(x, 6, 11, 13, 1, '#d8f0fa'); poly(x, [[12, 4], [9, 11], [12, 11]], '#e9f8fd'); P(x, 10, 7, '#ffffff'); P(x, 15, 14, '#7ab6cc'); } },
+  geode: { pre(x) { slab(x); ell(x, 12, 13, 9, 7, '#6a6d70'); }, post(x) { ell(x, 12, 13, 6, 4, '#3a2a4a'); for (let i = 7; i < 18; i += 2) poly(x, [[i, 16], [i + 1, 10 + ((i * 7) % 4)], [i + 2, 16]], i % 4 ? '#9a6ac0' : '#c49ae0'); P(x, 9, 11, '#ffffff'); P(x, 14, 12, '#ffffff'); } },
+  trilobite: { pre(x) { R(x, 3, 5, 18, 16, '#b9b0a0'); }, post(x) { ell(x, 12, 12, 5, 6, '#8a7050'); for (let j = 9; j < 18; j += 2) R(x, 8, j, 9, 1, '#6a5038'); R(x, 12, 7, 1, 11, '#a88a62'); ell(x, 12, 7, 4, 2, '#7a6040'); P(x, 10, 7, '#3d3a38'); P(x, 14, 7, '#3d3a38'); } },
+  meteor: { pre(x) { slab(x, '#4a4d50'); poly(x, [[5, 17], [6, 10], [10, 6], [16, 7], [19, 12], [17, 18]], '#4a4648'); }, post(x) { [[9, 9], [14, 10], [11, 14], [16, 15], [8, 15]].forEach(([a, b]) => P(x, a, b, '#c9ced3')); P(x, 13, 12, '#9fdcf0'); P(x, 10, 11, '#f6cd72'); } },
+  // ---- 海上撿到的 ----
+  shell: { pre(x) { slab(x, '#c9b48a'); poly(x, [[12, 18], [4, 10], [6, 6], [12, 4], [18, 6], [20, 10]], '#f2cfc2'); R(x, 10, 17, 4, 2, '#f2cfc2'); }, post(x) { for (let k = -3; k <= 3; k++) for (let t = 0; t < 1; t += .1) P(x, 12 + k * 2.2 * t, 18 - 13 * t, '#d8a090'); } },
+  bottle: { pre(x) { slab(x, '#c9b48a'); ell(x, 11, 14, 8, 4, '#6fae8a'); R(x, 17, 12, 4, 4, '#6fae8a'); }, post(x) { R(x, 20, 12, 2, 4, '#a87448'); R(x, 7, 13, 8, 2, '#f1e8d6'); P(x, 9, 13, '#b33a2f'); R(x, 5, 11, 7, 1, '#b8e0c8'); } },
+  coral: { pre(x) { slab(x); R(x, 11, 9, 2, 10, '#c0392b'); R(x, 7, 7, 2, 7, '#c0392b'); R(x, 15, 5, 2, 9, '#c0392b'); R(x, 7, 13, 5, 2, '#c0392b'); R(x, 12, 12, 5, 2, '#c0392b'); R(x, 5, 9, 3, 2, '#c0392b'); R(x, 16, 7, 3, 2, '#c0392b'); }, post(x) { [[8, 6], [16, 4], [5, 8], [18, 6], [12, 8]].forEach(([a, b]) => P(x, a, b, '#f2a093')); } },
+  shipbottle: { pre(x) { R(x, 4, 18, 16, 3, '#7c5230'); ell(x, 11, 12, 8, 5, '#cfe6ea'); R(x, 18, 10, 4, 4, '#cfe6ea'); }, post(x) { R(x, 21, 10, 2, 4, '#a87448'); poly(x, [[6, 13], [14, 13], [16, 12], [14, 15], [7, 15]], '#e8873a'); R(x, 13, 12, 3, 1, '#5d7c43'); R(x, 10, 8, 1, 5, '#6e4528'); poly(x, [[11, 8], [14, 11], [11, 11]], '#f3f1ec'); R(x, 5, 9, 8, 1, '#ffffff'); } },
+  goldcarrot: { pre(x) { ell(x, 12, 19, 9, 3, '#b33a2f'); poly(x, [[8, 8], [16, 8], [12, 20]], '#e2b43a'); }, post(x) { for (let j = 10; j < 18; j += 3) R(x, 10 + (j - 10) / 4, j, 3, 1, '#b8861a'); P(x, 10, 9, '#fff1c4'); P(x, 11, 10, '#fff1c4'); [[9, 4], [12, 3], [15, 4]].forEach(([a, b]) => { R(x, a, b, 2, 5, '#5d7c43'); P(x, a, b, '#9cb96f'); }); R(x, 3, 20, 18, 1, '#c9a24a'); } },
+  // ---- 和風 ----
+  omamori: { pre(x) { R(x, 7, 6, 10, 15, '#b33a2f'); poly(x, [[7, 6], [12, 3], [17, 6]], '#b33a2f'); }, post(x) { R(x, 8, 9, 8, 1, '#c9a24a'); R(x, 8, 18, 8, 1, '#c9a24a'); R(x, 10, 11, 4, 5, '#f3f1ec'); R(x, 11, 12, 2, 3, '#b33a2f'); circ(x, 12, 3, 1, '#e2a62e'); P(x, 11, 1, '#e2a62e'); P(x, 13, 1, '#e2a62e'); } },
+  fan: { pre(x) { for (let r = 0; r < 10; r++) for (let t = Math.PI * 1.08; t <= Math.PI * 1.92; t += .02) P(x, 12 + Math.cos(t) * (r + 2), 18 + Math.sin(t) * (r + 2), r < 3 ? '#5e3c22' : '#f6efe4'); }, post(x) { for (let t = Math.PI * 1.08; t <= Math.PI * 1.93; t += Math.PI * .12) for (let r = 4; r < 12; r++) P(x, 12 + Math.cos(t) * r, 18 + Math.sin(t) * r, '#d8cbb2'); circ(x, 12, 11, 2, '#b33a2f'); P(x, 12, 18, '#c9a24a'); } },
+  furin: { pre(x) { ell(x, 12, 8, 5, 4, '#e2f1f3'); R(x, 7, 8, 11, 3, '#e2f1f3'); }, post(x) { R(x, 12, 1, 1, 3, '#8e8070'); P(x, 9, 7, '#b33a2f'); P(x, 14, 6, '#3d6fb6'); P(x, 11, 9, '#b33a2f'); R(x, 12, 11, 1, 3, '#8e8070'); R(x, 10, 14, 5, 8, '#f6efe4'); R(x, 11, 16, 3, 1, '#c9c2b4'); R(x, 11, 18, 2, 1, '#c9c2b4'); P(x, 9, 6, '#ffffff'); } },
+  daruma: { pre(x) { ell(x, 12, 13, 8, 8, '#c0392b'); }, post(x) { ell(x, 12, 11, 5, 4, '#f6efe4'); R(x, 8, 8, 3, 1, '#2c2c2c'); R(x, 13, 8, 3, 1, '#2c2c2c'); circ(x, 10, 11, 1, '#2c2c2c'); circ(x, 14, 11, 1, '#ffffff'); P(x, 14, 11, '#3d3a38'); R(x, 11, 14, 3, 1, '#2c2c2c'); R(x, 8, 17, 8, 2, '#e2a62e'); } },
+  bonsai: { pre(x) { R(x, 6, 18, 12, 4, '#3d4a55'); R(x, 5, 17, 14, 2, '#4a5866'); for (let j = 10; j < 18; j++) P(x, 11 + Math.sin(j / 2) * 2, j, '#6e4528'); ell(x, 8, 9, 4, 2, '#4f7f3f'); ell(x, 15, 7, 5, 2, '#4f7f3f'); ell(x, 12, 4, 3, 2, '#4f7f3f'); }, post(x) { P(x, 7, 8, '#8fb35a'); P(x, 14, 6, '#8fb35a'); P(x, 12, 3, '#8fb35a'); R(x, 7, 17, 10, 1, '#8b8377'); } },
+  kintsugi: { pre(x) { poly(x, [[4, 9], [20, 9], [18, 17], [15, 19], [9, 19], [6, 17]], '#3d3a38'); R(x, 9, 19, 6, 2, '#3d3a38'); ell(x, 12, 9, 8, 2, '#5a4a40'); }, post(x) { ell(x, 12, 9, 7, 1, '#7a6050'); for (let t = 0; t < 1; t += .08) { P(x, 7 + t * 5, 10 + t * 7 + Math.sin(t * 9), '#e2b43a'); P(x, 15 + t * 3, 11 + t * 5, '#e2b43a'); } P(x, 13, 14, '#fff1c4'); } },
+  // ---- 27 樓的梗 ----
+  router: { pre(x) { R(x, 4, 12, 16, 7, '#2f3236'); R(x, 6, 4, 1, 8, '#2f3236'); R(x, 17, 4, 1, 8, '#2f3236'); }, post(x) { [7, 9, 11, 13].forEach((i, k) => P(x, i, 15, k === 2 ? '#e8873a' : '#5fd068')); R(x, 4, 19, 16, 1, '#1c1e21'); R(x, 15, 16, 3, 1, '#4a4d52'); P(x, 6, 3, '#4a4d52'); P(x, 17, 3, '#4a4d52'); } },
+  oldticket: { pre(x) { R(x, 3, 7, 18, 11, '#e9d9a8'); }, post(x) { for (let j = 8; j < 18; j += 2) P(x, 15, j, '#c9b47a'); R(x, 5, 9, 8, 1, '#a8946a'); R(x, 5, 12, 6, 1, '#a8946a'); R(x, 5, 15, 7, 1, '#a8946a'); R(x, 16, 10, 4, 4, '#b33a2f'); R(x, 17, 11, 2, 2, '#e9d9a8'); P(x, 4, 8, '#c9b47a'); P(x, 19, 16, '#c9b47a'); } },
+  tower: { pre(x) { R(x, 5, 20, 14, 2, '#7c5230'); R(x, 8, 2, 8, 18, '#dcd6cb'); }, post(x) { for (let j = 4; j < 19; j += 2) for (let i = 9; i < 15; i += 2) P(x, i, j, hash(i, j) > .55 ? '#f6cd72' : '#8e9aa6'); R(x, 9, 3, 6, 1, '#b33a2f'); P(x, 12, 1, '#b33a2f'); R(x, 11, 17, 2, 3, '#6e4528'); } },
+  key: { pre(x) { circ(x, 8, 9, 4, '#c9a24a'); R(x, 11, 8, 10, 2, '#c9a24a'); R(x, 17, 10, 2, 3, '#c9a24a'); R(x, 20, 10, 1, 2, '#c9a24a'); }, post(x) { circ(x, 8, 9, 1, '#fcfaf8'); P(x, 6, 7, '#f4dc95'); R(x, 4, 14, 1, 4, '#b33a2f'); R(x, 3, 18, 3, 4, '#b33a2f'); P(x, 4, 19, '#e07a68'); R(x, 4, 12, 1, 2, '#b33a2f'); } },
+};
+const RARE = { n: ['普通', '#c9c2b4'], r: ['稀有', '#c9a24a'], l: ['傳說', '#b33a2f'] };
+const GROUPS = [
+  ['公仔', '扭蛋', [['茱莉鴨', 'julie', 'r'], ['蘋果鴨', 'appleduck', 'r'], ['浣熊大王', 'raccoon', 'l'], ['小吳鴨', 'xiaowu', 'r'], ['青江菜船長', 'captain', 'r'], ['店貓', 'cat', 'n'], ['坐洗部的狗', 'dog', 'n'], ['鼴鼠', 'mole', 'n'], ['雞塊', 'nugget', 'n']]],
+  ['礦坑標本', '直接買', [['金塊標本', 'goldspec', 'n'], ['三葉蟲化石', 'trilobite', 'n'], ['紫水晶洞', 'geode', 'r'], ['鑽石原石', 'diamond', 'r'], ['隕石碎片', 'meteor', 'l']]],
+  ['海上撿到的', '直接買', [['貝殼標本', 'shell', 'n'], ['伊藤的漂流瓶', 'bottle', 'n'], ['紅珊瑚', 'coral', 'r'], ['長蘿號瓶中船', 'shipbottle', 'r'], ['金蘿蔔', 'goldcarrot', 'l']]],
+  ['和風小物', '直接買', [['御守', 'omamori', 'n'], ['扇子', 'fan', 'n'], ['風鈴', 'furin', 'n'], ['達摩不倒翁', 'daruma', 'r'], ['小盆景', 'bonsai', 'r'], ['金繼茶碗', 'kintsugi', 'l']]],
+  ['27 樓的梗', '直接買', [['28 樓的舊路由器', 'router', 'n'], ['泛黃的入住券', 'oldticket', 'r'], ['27 樓大樓模型', 'tower', 'r'], ['「絆」房的鑰匙', 'key', 'l', '非賣品']]],
+];
+function icon(key) { const cv = document.createElement('canvas'); cv.width = CW; cv.height = CH; const x = cv.getContext('2d'); x.imageSmoothingEnabled = false; D[key].pre(x); shade(x); D[key].post(x); return cv; }
+function tile(name, key, r, how) {
+  const d = document.createElement('div'); d.className = 'it r-' + r; d.appendChild(icon(key));
+  d.insertAdjacentHTML('beforeend', `${r === 'l' ? '<i class="spark"></i><i class="spark s2"></i>' : ''}<b>${name}</b><span class="rr">${RARE[r][0]}</span>${how ? `<span class="how">${how}</span>` : ''}`); return d;
+}
+function sheet() {
+  const box = document.getElementById('groups'); let n = 0;
+  GROUPS.forEach(([g, how, items]) => {
+    const sec = document.createElement('section'); sec.className = 'card'; sec.innerHTML = `<div class="h"><span class="name">${g}</span><span class="tag">${how}・${items.length} 款</span></div><div class="grid"></div>`; box.appendChild(sec);
+    if (g === '公仔') sec.insertAdjacentHTML('beforeend', '<div class="gacha"><canvas id="gacha" width="40" height="48"></canvas><dl><dt>扭蛋機</dt><dd>9 款公仔隨機出一隻（價錢之後定）</dd><dt>機率</dt><dd>普通 60%、稀有 32%、傳說 8%（草案；稀有 4 款、傳說只有浣熊大王）</dd><dt>重複</dt><dd>疊起來記數量（× 2），展示櫃放一隻；之後可以考慮重複的換東西</dd><dt>聲明</dt><dd>只能用遊戲幣扭，頁面要放「不能儲值、不能換現金」那句</dd></dl></div>');
+    items.forEach(([name, key, r, how2]) => { sec.querySelector('.grid').appendChild(tile(name, key, r, how2)); n++; });
+  });
+  document.getElementById('count').textContent = n;
+  // 扭蛋機
+  const gx = document.getElementById('gacha').getContext('2d'); gx.imageSmoothingEnabled = false;
+  R(gx, 8, 24, 24, 20, '#b33a2f'); R(gx, 8, 24, 24, 2, '#cf5a46'); R(gx, 30, 24, 2, 20, '#8f2c23'); R(gx, 6, 44, 28, 3, '#8f2c23');
+  circ(gx, 20, 14, 12, '#cfe6ea'); circ(gx, 18, 12, 10, '#e2f1f3'); [[14, 18, '#f1d36b'], [21, 20, '#6fa8d8'], [25, 15, '#b33a2f'], [16, 11, '#7a9a55'], [22, 9, '#f2a093'], [11, 16, '#c49ae0'], [19, 16, '#ffffff']].forEach(([a, b, c]) => { circ(gx, a, b, 3, c); P(gx, a - 1, b - 1, '#ffffff'); });
+  P(gx, 13, 6, '#ffffff'); P(gx, 12, 7, '#ffffff'); circ(gx, 20, 32, 4, '#e2a62e'); R(gx, 16, 31, 9, 2, '#977630'); R(gx, 15, 38, 10, 4, '#2c2c2c'); R(gx, 17, 30, 2, 2, '#fff1c4');
+  // 展示櫃打開
+  const show = (id, n, list) => { const el = document.getElementById(id); for (let k = 0; k < n; k++) { const it = list[k]; if (it) el.appendChild(tile(it[0], it[1], it[2])); else { const e = document.createElement('div'); e.className = 'it empty'; el.appendChild(e); } } };
+  show('caseS', 4, [['金塊標本', 'goldspec', 'n'], ['達摩不倒翁', 'daruma', 'r'], ['貝殼標本', 'shell', 'n']]);
+  show('caseB', 8, [['浣熊大王', 'raccoon', 'l'], ['茱莉鴨', 'julie', 'r'], ['小吳鴨', 'xiaowu', 'r'], ['金蘿蔔', 'goldcarrot', 'l'], ['紫水晶洞', 'geode', 'r'], ['金繼茶碗', 'kintsugi', 'l'], ['27 樓大樓模型', 'tower', 'r']]);
+  document.body.dataset.done = 1;
+}
+sheet();
+</script>
+</body>
+</html>
