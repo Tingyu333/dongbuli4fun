@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家園：碼頭的五個階段</title>
+<!-- 家園・築的設計圖（2026-11-21）：碼頭一路升級的五個樣子，每一階能停的船不一樣。正上方、精緻像素風（規矩見 README.md）。還不是遊戲本身。 -->
+<style>
+  :root { --bg: #fcfaf8; --text: #4a4a4a; --dark: #2c2c2c; --accent: #8e8070; --sub: #dcdcdc; --shu: #b33a2f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', 'PingFang TC', sans-serif; }
+  main { max-width: 390px; margin: 0 auto; padding: 22px 16px 28px; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 300; font-size: 22px; letter-spacing: .3em; color: var(--dark); margin: 0; text-align: center; }
+  .sub { text-align: center; font-size: 11px; letter-spacing: .12em; color: var(--accent); margin: 6px 0 10px; line-height: 1.7; }
+  .card { border: 1px solid var(--sub); border-radius: 4px; padding: 12px; background: #fff; margin-top: 12px; }
+  .h { display: flex; align-items: baseline; gap: 8px; }
+  .no { font-size: 12px; color: var(--shu); border: 1px solid var(--shu); padding: 0 5px; line-height: 1.5; font-family: 'Noto Serif TC', serif; }
+  .name { font-family: 'Noto Serif TC', serif; font-size: 16px; letter-spacing: .2em; color: var(--dark); }
+  .tag { margin-left: auto; font-size: 10px; letter-spacing: .1em; color: var(--accent); }
+  canvas { display: block; width: 100%; border-radius: 3px; margin-top: 10px; image-rendering: pixelated; image-rendering: crisp-edges; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 8px 0 0; font-size: 11.5px; letter-spacing: .04em; line-height: 1.6; }
+  dt { color: var(--accent); } dd { margin: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 11.5px; letter-spacing: .03em; margin-top: 10px; }
+  th, td { border-bottom: 1px solid var(--sub); padding: 5px 4px; text-align: left; vertical-align: top; line-height: 1.55; }
+  th { color: var(--accent); font-weight: 400; white-space: nowrap; }
+  .arrow { text-align: center; color: var(--accent); font-size: 12px; letter-spacing: .3em; margin-top: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>碼頭・五個階段</h1>
+  <p class="sub">家園・築的設計圖（正上方、精緻像素、船頭朝海）<br>白色虛線框＝還空著的泊位；數字都還沒定</p>
+
+  <section class="card">
+    <div class="h"><span class="no">壹</span><span class="name">小木台</span><span class="tag">起點</span></div>
+    <canvas id="d1" width="200" height="120"></canvas>
+    <dl><dt>能停</dt><dd>小船位 2（竹筏、獨木舟、小划艇）</dd><dt>畫了</dt><dd>一小塊木板台、兩根木樁、水桶、釣竿</dd></dl>
+  </section>
+  <p class="arrow">↓ 升級</p>
+  <section class="card">
+    <div class="h"><span class="no">貳</span><span class="name">木棧橋</span><span class="tag">往海裡伸</span></div>
+    <canvas id="d2" width="200" height="120"></canvas>
+    <dl><dt>能停</dt><dd>小船位 2＋船位 1（動力小艇）</dd><dt>畫了</dt><dd>長長的木棧橋、一排木樁、燈柱、救生圈</dd></dl>
+  </section>
+  <p class="arrow">↓ 升級</p>
+  <section class="card">
+    <div class="h"><span class="no">參</span><span class="name">漁港碼頭</span><span class="tag">水泥</span></div>
+    <canvas id="d3" width="200" height="120"></canvas>
+    <dl><dt>能停</dt><dd>船位 5（漁船、帆船、長蘿貨運的船都可以）</dd><dt>畫了</dt><dd>T 字形水泥碼頭、繫船柱、漁網、魚箱、小起重機</dd></dl>
+  </section>
+  <p class="arrow">↓ 升級</p>
+  <section class="card">
+    <div class="h"><span class="no">肆</span><span class="name">遊艇碼頭</span><span class="tag">停遊艇</span></div>
+    <canvas id="d4" width="200" height="120"></canvas>
+    <dl><dt>能停</dt><dd>大船位 3（遊艇）＋船位 1＋小船位 1</dd><dt>畫了</dt><dd>浮動碼頭（一條主幹、三根手指）、路燈、加油站</dd></dl>
+  </section>
+  <p class="arrow">↓ 升級</p>
+  <section class="card">
+    <div class="h"><span class="no">伍</span><span class="name">私人港灣</span><span class="tag">最後一階</span></div>
+    <canvas id="d5" width="200" height="120"></canvas>
+    <dl><dt>能停</dt><dd>超大船位 1（超級遊艇）＋大船位 1＋船位 2＋船屋</dd><dt>畫了</dt><dd>兩條石頭防波堤、燈塔、綠屋頂船屋、深色木棧橋、紅地毯</dd></dl>
+  </section>
+
+  <section class="card">
+    <div class="h"><span class="name">船的分級</span><span class="tag">哪一階才停得了</span></div>
+    <table>
+      <tr><th>級別</th><th>有哪些（圖上出現的）</th><th>最低要</th></tr>
+      <tr><td>小（人力）</td><td>竹筏、獨木舟、小划艇</td><td>壹 小木台</td></tr>
+      <tr><td>一般（有馬達）</td><td>動力小艇、小漁船、長蘿貨運的船</td><td>貳 木棧橋</td></tr>
+      <tr><td>帆船</td><td>帆船（要深一點的水）</td><td>參 漁港碼頭</td></tr>
+      <tr><td>大</td><td>遊艇</td><td>肆 遊艇碼頭</td></tr>
+      <tr><td>展示級</td><td>超級遊艇、古董木船</td><td>伍 私人港灣</td></tr>
+    </table>
+  </section>
+</main>
+<script>
+
+// ===== 小工具（跟 style-mockup.html 同一套：硬邊、整數座標）=====
+const TAU = Math.PI * 2;
+function make(id) { const c = document.getElementById(id), x = c.getContext('2d'); x.imageSmoothingEnabled = false; return { c, x, W: c.width, H: c.height }; }
+const hash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+function P(x, a, b, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), 1, 1); }
+function R(x, a, b, w, h, col) { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), Math.round(w), Math.round(h)); }
+function circ(x, cx, cy, r, col) { for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r + r * .6) P(x, cx + xx, cy + yy, col); }
+function poly(x, pts, col) {
+  const ys = pts.map(p => p[1]), xs = pts.map(p => p[0]);
+  const y0 = Math.floor(Math.min(...ys)), y1 = Math.ceil(Math.max(...ys)), x0 = Math.floor(Math.min(...xs)), x1 = Math.ceil(Math.max(...xs));
+  x.fillStyle = col;
+  for (let y = y0; y <= y1; y++) for (let X = x0; X <= x1; X++) {
+    const px = X + .5, py = y + .5; let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside; }
+    if (inside) x.fillRect(X, y, 1, 1);
+  }
+}
+const K = {
+  g1: '#97ad6f', g2: '#86a061', g3: '#a6bb7c', g4: '#738d51', sand: '#e6d3a3', sand2: '#d8c18b', sand3: '#efe0b8',
+  sea: '#6b97a6', sea2: '#7ea9b5', shallow: '#9cc5c8', foam: '#e3efed', deep: '#4f7d8f',
+  leaf1: '#5d7c43', leaf2: '#4a6634', leaf3: '#7a9a55', leafHi: '#9cb96f', trunk: '#6e4528',
+  roof: '#b33a2f', roofHi: '#cf5a46', roofLo: '#8f2c23', roofLine: '#7a241d',
+  wall: '#efe4cf', wall2: '#d9c9aa', wall3: '#c2ae8b', door: '#5e3c22', win: '#f6cd72', frame: '#6e4528',
+  conc: '#c4beb3', conc2: '#aea79b', conc3: '#d6d1c7', stone: '#a39b8e', stone2: '#8b8377', stone3: '#bdb6aa',
+  wood: '#9a6a40', wood2: '#7c5230', wood3: '#b07f50', post: '#5e3c22',
+  canvas: '#dcc9a0', canvasHi: '#ece0c1', canvasLo: '#bba77c', canvasLine: '#9c8a62',
+  shingle: '#8a6440', shingleHi: '#a57a50', shingleLo: '#6c4c30', shingleLine: '#553a24',
+  slate: '#76828c', slateHi: '#8f9ba5', slateLo: '#626d77', slateLine: '#4f5962',
+  white: '#f3f1ec', white2: '#dedad1', white3: '#c9c4b9', glass: '#a8cdd6', glassHi: '#e2f1f3',
+  pool: '#5fb3c4', poolHi: '#9fdce4', poolLo: '#3f93a6', fire: '#e8873a', fire2: '#f6cd72', fire3: '#c4462e',
+  hedge: '#557a3e', hedge2: '#43652f', flowerA: '#f0b8b0', flowerB: '#f1d36b', flowerC: '#c9a0dc',
+  shadow: 'rgba(30,40,30,.24)'
+};
+
+// 共用：草地底、石板路、樹、影子
+function lawn(x, W, H, seed = 0) { for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) { const n = hash(a + seed, b); P(x, a, b, n > .9 ? K.g3 : n > .74 ? K.g2 : n < .05 ? K.g4 : K.g1); } }
+function stones(x, pts) { pts.forEach(([a, b]) => { R(x, a, b, 6, 3, K.conc3); R(x, a, b + 2, 6, 1, K.conc2); P(x, a, b, '#e4e0d8'); }); }
+function tree(x, a, b, r) {
+  x.fillStyle = K.shadow; for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) if (xx * xx + yy * yy <= r * r) x.fillRect(a + xx + 3, b + yy + 3, 1, 1);
+  circ(x, a, b, r, K.leaf2); circ(x, a - 1, b - 1, r - 1, K.leaf1); circ(x, a - 2, b - 2, Math.max(1, r - 3), K.leaf3); P(x, a - r / 2, b - r / 2, K.leafHi); P(x, a - r / 2 + 1, b - r / 2, K.leafHi);
+  for (let i = 0; i < r * 2; i++) { const t = hash(a + i, b) * TAU, rr = hash(b, a + i) * r; P(x, a + Math.cos(t) * rr, b + Math.sin(t) * rr, i % 2 ? K.leaf2 : K.leaf3); }
+}
+function palm(x, a, b) {   // 椰子樹：六片葉子，每片兩顆寬、尾巴往下垂，葉子比草地深才看得出來
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3; for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); P(x, u + 3, v + 3, K.shadow); } }
+  for (let k = 0; k < 6; k++) { const t = k / 6 * TAU + .3, nx = -Math.sin(t), ny = Math.cos(t); for (let s = 2; s < 12; s++) { const u = a + Math.cos(t) * s, v = b + Math.sin(t) * s + (s > 7 ? (s - 7) * .6 : 0); const wdt = s < 4 ? 1 : s < 9 ? 2 : 1; for (let q = -wdt; q <= wdt; q++) P(x, u + nx * q, v + ny * q, q === wdt ? '#3d5f2c' : (q === -wdt ? '#8fb35a' : '#6f9a45')); } }
+  circ(x, a, b, 2, '#7a5a3a'); P(x, a - 1, b - 1, '#a07a50'); P(x, a + 1, b + 1, '#5e4228'); }
+function shadowPoly(x, pts, dx, dy) { poly(x, pts.map(([a, b]) => [a + dx, b + dy]), K.shadow); }
+// 四面坡（上亮、左亮、右暗、下暗），屋脊沿水平方向；line 是瓦片的橫線間距
+function hipRoof(x, a, b, w, h, c, opts = {}) {
+  const inset = Math.min(h / 2, opts.inset ?? h / 2), ry = b + h / 2;
+  const ridgeL = a + inset, ridgeR = a + w - inset;
+  shadowPoly(x, [[a, b], [a + w, b], [a + w, b + h], [a, b + h]], opts.sh || 4, opts.sh || 4);
+  poly(x, [[a, b], [a + w, b], [ridgeR, ry], [ridgeL, ry]], c.hi);           // 上坡（迎光）
+  poly(x, [[a, b + h], [a + w, b + h], [ridgeR, ry], [ridgeL, ry]], c.lo);   // 下坡
+  poly(x, [[a, b], [ridgeL, ry], [a, b + h]], c.mid);                        // 左坡
+  poly(x, [[a + w, b], [ridgeR, ry], [a + w, b + h]], c.lo);                  // 右坡
+  // 瓦片橫線＋錯開的直縫
+  for (let yy = b + 2; yy < b + h - 1; yy += c.step || 3) for (let xx = a + 1; xx < a + w - 1; xx++) {
+    const dTop = yy - b, dBot = b + h - yy, dl = xx - a, dr = a + w - xx;
+    if (dl > Math.min(dTop, dBot) + 1 && dr > Math.min(dTop, dBot) + 1 || true) { const px = x.getImageData(xx, yy, 1, 1).data; if (px[3]) P(x, xx, yy, c.line); }
+  }
+  for (let yy = b + 1; yy < b + h - 1; yy++) for (let xx = a + 1 + ((Math.floor((yy - b) / (c.step || 3)) % 2) * 2); xx < a + w - 1; xx += 4) if ((yy - b) % (c.step || 3)) P(x, xx, yy, c.seam || c.line);
+  R(x, ridgeL, ry - 1, ridgeR - ridgeL, 2, c.ridge || c.line);
+  // 四條斜脊
+  const diag = (x0, y0, x1, y1) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, c.ridge || c.line); };
+  diag(a, b, ridgeL, ry); diag(a, b + h, ridgeL, ry); diag(a + w, b, ridgeR, ry); diag(a + w, b + h, ridgeR, ry);
+  // 外框
+  R(x, a, b, w, 1, c.edge || c.line); R(x, a, b + h - 1, w, 1, c.edge || c.line); R(x, a, b, 1, h, c.edge || c.line); R(x, a + w - 1, b, 1, h, c.edge || c.line);
+}
+function chimney(x, a, b, w, h, top, side, sh = 3) { R(x, a + sh, b + sh, w, h, K.shadow); R(x, a, b, w, h, side); R(x, a, b, w, 2, top); R(x, a + 1, b + 1, w - 2, 1, '#4a3f36'); for (let i = 0; i < 3; i++) P(x, a + 1 + i, b - 2 - i * 2, i % 2 ? '#ece8e2' : '#e0dbd2'); }
+
+// ===== 海岸：上面是陸地（草＋沙灘），下面是海；shore 是海岸線的 y =====
+function coast(x, W, H, shore, seed = 0) {
+  for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) {
+    const sl = shore + Math.round(Math.sin((a + seed) / 13) * 2 + Math.sin((a + seed) / 5)), n = hash(a + seed, b);
+    let c;
+    if (b < sl - 12) c = n > .9 ? K.g3 : n > .74 ? K.g2 : n < .05 ? K.g4 : K.g1;
+    else if (b < sl) { c = n > .85 ? K.sand2 : n < .08 ? K.sand3 : K.sand; if (b < sl - 10 && (a + b) % 2) c = K.g2; }
+    else { const t = b - sl, dith = (lim) => t < lim || (t < lim + 3 && (a + b) % 2 === 0); c = t < 2 && n > .2 ? K.foam : dith(6) ? K.shallow : dith(22) ? K.sea2 : dith(52) ? K.sea : K.deep; if (n > .988) c = K.foam; if (b % 9 === 0 && (a * 3 + b) % 31 < 4 && t > 6) c = K.shallow; }
+    P(x, a, b, c);
+  }
+}
+function ripple(x, a, b, w) { for (let i = -1; i <= w; i++) if ((i + a) % 2 === 0) P(x, a + i, b, 'rgba(227,239,237,.8)'); }
+function planks(x, a, b, w, h, vertical = true, dark = false) {   // 木板：vertical 表示木板直的（棧橋往海裡伸）
+  R(x, a + 2, b + 3, w, h, 'rgba(20,40,50,.28)');
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const k = vertical ? i : j; let c = k % 4 === 3 ? K.wood2 : k % 4 === 0 ? K.wood3 : K.wood; if (dark) c = k % 4 === 3 ? '#5e3c22' : k % 4 === 0 ? '#8a5a34' : '#74492a'; if (hash(a + i, b + j) > .96) c = K.wood2; P(x, a + i, b + j, c); }
+}
+function post(x, a, b) { R(x, a, b, 2, 2, K.post); P(x, a, b, '#7c5230'); ripple(x, a - 1, b + 2, 3); }
+function bollard(x, a, b) { circ(x, a, b, 1, '#3d3d3d'); P(x, a - 1, b - 1, '#6a6a6a'); }
+function rope(x, x0, y0, x1, y1) { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n + Math.sin(i / n * Math.PI) * 1.5, '#d9cba5'); }
+function wake(x, a, b) { for (let i = 0; i < 3; i++) { P(x, a - 2 - i, b + i * 2, 'rgba(227,239,237,.7)'); P(x, a + 2 + i, b + i * 2, 'rgba(227,239,237,.7)'); } }
+
+// ===== 船（正上方，船頭朝下＝朝海）=====
+const BSH = (x, pts, dx = 2, dy = 3) => poly(x, pts.map(([u, v]) => [u + dx, v + dy]), 'rgba(20,40,50,.3)');
+function hull(x, a, b, w, h, bow, col) {   // 船頭在下面，bow 是尖的長度
+  const pts = [[a, b], [a + w, b], [a + w, b + h - bow], [a + w / 2, b + h], [a, b + h - bow]];
+  BSH(x, pts); poly(x, pts, col); return pts;
+}
+function canoe(x, a, b) { hull(x, a, b, 5, 18, 5, '#c9572e'); poly(x, [[a, b], [a + 5, b], [a + 2.5, b - 3]], '#c9572e'); R(x, a + 1, b + 2, 3, 10, '#8a3b1e'); R(x, a + 1, b + 5, 3, 1, K.wood3); R(x, a - 3, b + 8, 11, 1, K.wood2); R(x, a - 4, b + 7, 2, 3, K.wood3); }
+function raft(x, a, b) { R(x, a + 2, b + 3, 11, 16, 'rgba(20,40,50,.3)'); for (let i = 0; i < 11; i++) R(x, a + i, b, 1, 16, i % 2 ? '#b9a25f' : '#d3bd77'); R(x, a, b + 3, 11, 1, '#7c5230'); R(x, a, b + 12, 11, 1, '#7c5230'); R(x, a + 4, b + 6, 3, 3, '#c94f3d'); }
+function rowboat(x, a, b) { hull(x, a, b, 9, 17, 5, K.wood); poly(x, [[a + 1, b + 1], [a + 8, b + 1], [a + 8, b + 11], [a + 4.5, b + 15], [a + 1, b + 11]], '#c99b6a'); R(x, a + 1, b + 4, 7, 1, K.wood2); R(x, a + 1, b + 9, 7, 1, K.wood2); R(x, a - 2, b + 6, 13, 1, K.wood3); }
+function motorboat(x, a, b) { hull(x, a, b, 12, 24, 7, K.hull || '#f6f3ec'); poly(x, [[a + 1, b + 1], [a + 11, b + 1], [a + 11, b + 16], [a + 6, b + 22], [a + 1, b + 16]], '#e7e2d6'); R(x, a + 2, b + 11, 8, 3, K.glass); R(x, a + 2, b + 5, 8, 5, '#c94f3d'); R(x, a, b + 15, 12, 1, '#355a74'); R(x, a + 4, b - 3, 4, 3, '#3d3d3d'); P(x, a + 5, b - 4, '#6a6a6a'); }
+function fishing(x, a, b) { hull(x, a, b, 14, 28, 8, '#3f6e8c'); poly(x, [[a + 1, b + 1], [a + 13, b + 1], [a + 13, b + 19], [a + 7, b + 26], [a + 1, b + 19]], '#c9b79a'); R(x, a + 3, b + 12, 8, 8, '#f3f1ec'); R(x, a + 4, b + 17, 6, 2, K.glass); R(x, a + 3, b + 12, 8, 1, '#c94f3d'); for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) P(x, a + 3 + i * 2, b + 3 + j * 2, '#6d8f6a'); R(x, a + 10, b + 3, 2, 6, '#e8873a'); }
+function sailboat(x, a, b) { hull(x, a, b, 12, 32, 10, '#f6f3ec'); poly(x, [[a + 1, b + 1], [a + 11, b + 1], [a + 11, b + 21], [a + 6, b + 30], [a + 1, b + 21]], '#c49a6c'); for (let j = 3; j < 26; j += 3) R(x, a + 2, b + j, 8, 1, '#a87f55'); R(x, a + 3, b + 4, 6, 6, '#f3f1ec'); R(x, a + 4, b + 5, 4, 2, K.glass); R(x, a + 5, b + 6, 2, 18, '#e9dfc6'); R(x, a + 6, b + 6, 1, 18, '#cfc3a5'); circ(x, a + 6, b + 18, 1, '#8e9396'); R(x, a, b + 31, 12, 0, '#000'); }
+function yacht(x, a, b) { hull(x, a, b, 18, 40, 12, '#f6f3ec'); poly(x, [[a + 1, b + 1], [a + 17, b + 1], [a + 17, b + 27], [a + 9, b + 38], [a + 1, b + 27]], '#e7e2d6'); R(x, a + 2, b + 2, 14, 6, '#c49a6c'); for (let i = 2; i < 16; i += 2) R(x, a + i, b + 2, 1, 6, '#a87f55'); R(x, a + 3, b + 10, 12, 14, '#ffffff'); R(x, a + 4, b + 18, 10, 4, K.glass); R(x, a + 5, b + 18, 3, 1, K.glassHi); R(x, a + 5, b + 12, 8, 5, '#dcd6ca'); R(x, a, b + 25, 18, 1, '#355a74'); P(x, a + 9, b + 14, '#c94f3d'); }
+function superyacht(x, a, b) { hull(x, a, b, 26, 62, 18, '#f6f3ec'); poly(x, [[a + 1, b + 1], [a + 25, b + 1], [a + 25, b + 43], [a + 13, b + 60], [a + 1, b + 43]], '#ebe6db');
+  circ(x, a + 13, b + 9, 7, '#3d5a73'); circ(x, a + 13, b + 9, 6, '#4f7393'); R(x, a + 10, b + 6, 1, 7, '#f3f1ec'); R(x, a + 16, b + 6, 1, 7, '#f3f1ec'); R(x, a + 10, b + 9, 7, 1, '#f3f1ec');   // 直升機停機坪
+  R(x, a + 4, b + 18, 18, 22, '#ffffff'); R(x, a + 6, b + 20, 14, 8, '#5fb3c4'); R(x, a + 7, b + 21, 5, 1, '#9fdce4');   // 小泳池
+  R(x, a + 6, b + 30, 14, 8, '#f3f1ec'); R(x, a + 7, b + 34, 12, 3, '#3d4a55'); R(x, a + 12, b + 31, 2, 3, '#8e9396');   // 艦橋
+  R(x, a, b + 42, 26, 1, '#c9a24a'); R(x, a + 1, b + 44, 24, 1, '#3d4a55'); }
+function runabout(x, a, b) { hull(x, a, b, 12, 28, 9, '#7a4422'); poly(x, [[a + 1, b + 1], [a + 11, b + 1], [a + 11, b + 18], [a + 6, b + 26], [a + 1, b + 18]], '#9a5a30'); for (let j = 2; j < 22; j += 2) R(x, a + 1, b + j, 10, 1, '#8a4f28'); R(x, a + 5, b + 2, 2, 22, '#efe4cf'); R(x, a + 2, b + 6, 8, 4, '#efe4cf'); R(x, a + 3, b + 7, 6, 2, '#c94f3d'); R(x, a + 2, b + 12, 8, 1, '#cfd6d9'); R(x, a + 2, b + 13, 8, 2, K.glass); }
+function cargo(x, a, b) {   // 長蘿貨運的船：綠色船身、載滿蘿蔔（貨運・航致敬）
+  hull(x, a, b, 16, 34, 10, '#5d7f3a'); poly(x, [[a + 1, b + 1], [a + 15, b + 1], [a + 15, b + 23], [a + 8, b + 32], [a + 1, b + 23]], '#c9b79a');
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { circ(x, a + 3 + i * 3.4, b + 4 + j * 3.4, 1, '#f3efe6'); P(x, a + 3 + i * 3.4, b + 3 + j * 3.4, '#7ba84a'); }
+  R(x, a + 4, b + 18, 8, 6, '#efe4cf'); R(x, a + 5, b + 21, 6, 2, K.glass); R(x, a + 4, b + 18, 8, 1, '#c94f3d'); }
+
+// ===== 壹 小木台 =====
+(() => {
+  const { x, W, H } = make('d1'); coast(x, W, H, 52, 11);
+  planks(x, 88, 44, 18, 30, false);
+  post(x, 88, 74); post(x, 104, 74);
+  raft(x, 112, 66); rope(x, 104, 66, 112, 70);
+  slotBoat(x, 66, 64, 14, 22);
+  R(x, 92, 48, 4, 4, '#8e9396'); R(x, 92, 48, 4, 1, '#b8bcbe');   // 水桶
+  for (let i = 0; i < 12; i++) P(x, 100 + i, 50 - i * 0.6, '#5e3c22'); for (let i = 0; i < 14; i++) P(x, 112, 43 + i * 1.6, 'rgba(240,240,240,.6)');   // 釣竿＋釣線
+  tree(x, 26, 22, 9); palm(x, 160, 30); tree(x, 176, 14, 6);
+})();
+
+// ===== 貳 木棧橋 =====
+(() => {
+  const { x, W, H } = make('d2'); coast(x, W, H, 40, 23);
+  planks(x, 90, 32, 14, 80, true);
+  for (let j = 42; j < 112; j += 14) { post(x, 88, j); post(x, 104, j); }
+  // 燈柱、救生圈
+  [[90, 60], [90, 96]].forEach(([u, v]) => { R(x, u, v, 2, 2, '#3d3d3d'); P(x, u, v, '#f6cd72'); });
+  circ(x, 101, 78, 2, '#f3f1ec'); P(x, 101, 78, K.wood); P(x, 99, 78, '#c94f3d'); P(x, 103, 78, '#c94f3d');
+  rowboat(x, 72, 52); rope(x, 81, 58, 88, 56);
+  motorboat(x, 112, 70); rope(x, 104, 74, 112, 74);
+  slotBoat(x, 70, 84, 14, 24);
+  tree(x, 24, 14, 9); palm(x, 168, 22); tree(x, 46, 22, 6);
+})();
+
+// ===== 參 漁港碼頭 =====
+(() => {
+  const { x, W, H } = make('d3'); coast(x, W, H, 34, 37);
+  // 水泥碼頭：T 字形
+  const pier = (a, b, w, h) => { R(x, a + 3, b + 3, w, h, 'rgba(20,40,50,.3)'); for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const n = hash(a + i, b + j); P(x, a + i, b + j, n > .92 ? K.conc2 : n < .05 ? K.conc3 : K.conc); } R(x, a, b + h - 1, w, 1, K.conc2); R(x, a + w - 1, b, 1, h, K.conc2); };
+  pier(86, 26, 22, 40); pier(40, 64, 114, 12);
+  for (let i = 44; i < 152; i += 12) bollard(x, i, 74); bollard(x, 104, 38); bollard(x, 104, 56); bollard(x, 88, 46);
+  // 漁網、魚箱
+  for (let j = 0; j < 8; j++) for (let i = 0; i < 10; i++) if ((i + j) % 2) P(x, 92 + i, 30 + j, '#6d8f6a');
+  [[92, 54], [98, 54], [92, 59]].forEach(([u, v]) => { R(x, u, v, 5, 4, '#3f7fb4'); R(x, u, v, 5, 1, '#5f9fd0'); P(x, u + 2, v + 2, '#cfd6d9'); });
+  // 小起重機
+  R(x, 136, 66, 6, 6, '#e2a62e'); R(x, 120, 68, 18, 2, '#e2a62e'); R(x, 121, 69, 1, 8, '#3d3d3d');
+  fishing(x, 112, 32); rope(x, 108, 38, 112, 38);
+  sailboat(x, 58, 80); cargo(x, 124, 80); rope(x, 64, 78, 64, 80);
+  slotBoat(x, 92, 80, 16, 32); slotBoat(x, 62, 32, 14, 26);
+  tree(x, 22, 12, 8); palm(x, 168, 16);
+})();
+
+// ===== 肆 遊艇碼頭 =====
+(() => {
+  const { x, W, H } = make('d4'); coast(x, W, H, 26, 51);
+  // 浮動碼頭：一條主幹、三根手指
+  planks(x, 20, 30, 160, 8, false, false);
+  [[42], [96], [150]].forEach(([u]) => { planks(x, u, 38, 6, 56, true); post(x, u - 2, 92); post(x, u + 6, 92); });
+  // 加油站
+  R(x, 176, 18, 10, 10, '#c94f3d'); R(x, 178, 20, 6, 4, '#f3f1ec'); R(x, 176, 28, 10, 2, 'rgba(20,40,50,.3)');
+  yacht(x, 50, 42); yacht(x, 104, 44);
+  motorboat(x, 24, 44); canoe(x, 160, 44);
+  slotBoat(x, 128, 44, 18, 40);
+  [[28, 34], [80, 34], [134, 34]].forEach(([u, v]) => { R(x, u, v, 2, 2, '#3d3d3d'); P(x, u, v, '#f6cd72'); });
+  tree(x, 16, 10, 7); palm(x, 120, 12); palm(x, 64, 10);
+})();
+
+// ===== 伍 私人港灣 =====
+(() => {
+  const { x, W, H } = make('d5'); coast(x, W, H, 22, 67);
+  // 防波堤（左右兩條石頭堤，中間是港口出口）
+  const breakwater = (pts) => pts.forEach(([u, v]) => { circ(x, u + 1, v + 2, 4, 'rgba(20,40,50,.3)'); circ(x, u, v, 4, K.stone2); circ(x, u - 1, v - 1, 3, K.stone); P(x, u - 2, v - 2, K.stone3); });
+  breakwater([[6, 30], [8, 40], [10, 50], [14, 60], [18, 70], [24, 80], [32, 88], [42, 94], [52, 98]]);
+  breakwater([[194, 30], [192, 40], [190, 50], [186, 60], [182, 70], [176, 80], [168, 88], [158, 94], [148, 98]]);
+  // 燈塔（右堤尾端）
+  circ(x, 150, 104, 5, '#f3f1ec'); circ(x, 150, 104, 3, '#c94f3d'); P(x, 150, 104, '#f6cd72'); for (let i = 0; i < 8; i++) P(x, 156 + i, 100 - i * 0.5, 'rgba(246,205,114,.6)');
+  // 船屋（左上）
+  R(x, 26, 14, 34, 22, 'rgba(20,40,50,.3)'); for (let j = 0; j < 22; j++) for (let i = 0; i < 32; i++) { const top = j < 11; P(x, 24 + i, 12 + j, j % 3 === 2 ? (top ? '#6a8f6a' : '#4f6f4f') : (top ? '#7ba57a' : '#5d7f5a')); } R(x, 24, 22, 32, 2, '#3f5a3f');
+  // 主棧橋（石頭＋木頭）
+  planks(x, 70, 22, 60, 8, false, true);
+  planks(x, 96, 30, 8, 50, true, true);
+  [[96, 80], [102, 80]].forEach(([u, v]) => post(x, u, v));
+  superyacht(x, 108, 26);
+  runabout(x, 80, 36);
+  yacht(x, 58, 40);
+  sailboat(x, 34, 46);
+  // 紅地毯接到超級遊艇
+  for (let i = 0; i < 6; i++) R(x, 104 + i, 50, 1, 3, i % 2 ? '#b33a2f' : '#a8342a');
+  palm(x, 70, 10); palm(x, 140, 10); tree(x, 178, 8, 7);
+})();
+
+// 空的泊位：白色虛線框
+function slotBoat(x, a, b, w, h) { for (let i = 0; i < w; i++) if (i % 3 !== 2) { P(x, a + i, b, '#f2eee5'); P(x, a + i, b + h - 1, '#f2eee5'); } for (let j = 0; j < h; j++) if (j % 3 !== 2) { P(x, a, b + j, '#f2eee5'); P(x, a + w - 1, b + j, '#f2eee5'); } }
+
+</script>
+</body>
+</html>
