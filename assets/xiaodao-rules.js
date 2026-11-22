@@ -259,7 +259,7 @@
   };
   const COLL_KEYS = Object.keys(COLL);
   // 扭蛋：一次 $1,500（企劃書，第一批照工資調整過）。機率：普通 60%（12 款平分 5%）、稀有 32%（12 款平分約 2.67%）、傳說 7.5%（4 款平分約 1.88%）、「絆」房的鑰匙 0.5%（最低）
-  const GACHA = { price: 1500, odds: { n: 60, r: 32, l: 7.5, key: 0.5 } };
+  const GACHA = { price: 3000, odds: { n: 60, r: 32, l: 7.5, key: 0.5 } };
   const RARE = { n: ['普通', '#c9c2b4'], r: ['稀有', '#c9a24a'], l: ['傳說', '#b33a2f'] };
   // 收納家具：衣櫃裝幾格衣服、展示櫃放幾件藏品（企劃書：衣櫃 12 格、玻璃小櫃 4 格、金框大展示櫃 8 格）
   const HOLD = { store1: { t: 'wr', n: 12 }, store2: { t: 'wr', n: 18 }, store5: { t: 'case', n: 4 }, store6: { t: 'case', n: 8 } };
