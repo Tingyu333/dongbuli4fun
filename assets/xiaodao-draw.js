@@ -161,7 +161,7 @@
     return loading;
   }
 
-  // 畫整座島 → { canvas, buyable: [地塊], sites: { 設施: 圖的範圍 }, paths }
+  // 畫整座島 → { canvas, buyable: [地塊], sites: { 設施: 圖的範圍 }, paths, F: 離岸遠近（給浪用） }；opt.noVeh 不畫停著的車船（第六批改由 xiaodao-fx.js 每張畫，才能開走）
   function render(s, opt = {}) {
     const Wd = X.world(), GW = X.GW, own = new Set(X.island(s).plots), seed = 37;
     const land = new Uint8Array(GW * X.GH); for (let k = 0; k < land.length; k++) land[k] = Wd.id[k] >= 0 && own.has(Wd.id[k]) ? 1 : 0;
@@ -196,11 +196,11 @@
           x.fillStyle = 'rgba(30,40,30,.24)'; x.fillRect(a + 2, b + 2, ww, hh); x.fillStyle = col; x.fillRect(a, b, ww, hh); x.fillStyle = 'rgba(255,255,255,.33)'; x.fillRect(a, b, ww, 1); });
       }
       // 停著的車、船：放在位子正中間（圖本身含右下的影子）
-      if (X.slotsOf) X.slotsOf(s, k).forEach(sl => { const v = sl.v && IMG['v/' + sl.v], V = sl.v && X.VEH[sl.v]; if (!v) return;
+      if (!opt.noVeh && X.slotsOf) X.slotsOf(s, k).forEach(sl => { const v = sl.v && IMG['v/' + sl.v], V = sl.v && X.VEH[sl.v]; if (!v) return;
         if (V.ax != null) x.drawImage(v, Math.round(sl.x + sl.w / 2 - V.ax), Math.round(sl.y + sl.h - V.ay));   // 火箭：地面點對齊位子的底部中間
         else x.drawImage(v, Math.round(sl.x + (sl.w - v.width) / 2 + 1), Math.round(sl.y + (sl.h - v.height) / 2 + 1)); });
     });
-    return { canvas: cv, buyable, sites, paths: road, W: WW, H: HH };
+    return { canvas: cv, buyable, sites, paths: road, W: WW, H: HH, F: T.F };
   }
   // 島上看得到的範圍（自己的地＋能買的地，外面留一點海）
   function bounds(s, pad = 30) {

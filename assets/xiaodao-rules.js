@@ -741,18 +741,19 @@
     }
     return { ok: false, err: '看不懂要做什麼' };
   }
-  // 小島值多少（身價・榜之後用；送的不算）
-  function worth(s) {
-    let t = 0; const isl = island(s);
-    for (let n = 1; n <= isl.bought; n++) t += plotPrice(n);
-    FAC_KEYS.forEach(k => { const lv = level(s, k); for (let l = 1; l <= lv; l++) t += FAC[k].prices[l - 1]; });
-    vehicles(s).forEach(v => { t += VEH[v.key].price; });
-    s.items.forEach(i => { if (FURN[i.key]) t += FURN[i.key].price * (i.in === 'depot' ? i.qty : 1); if (CLOTH[i.key]) t += CLOTH[i.key].price * i.qty; if (COLL[i.key]) t += GACHA.price * (i.in === 'depot' ? i.qty : 1); });
-    const d = deco(s); d.floors.forEach(i => { t += FLOORS[i].p; }); d.papers.forEach(i => { t += PAPERS[i].p; });
-    return t;
+  // 小島值多少（身價・榜；送的不算）：每一樣照買價加起來。worthParts 拆成幾類給圖鑑「身價」那一塊
+  function worthParts(s) {
+    const o = { land: 0, fac: 0, veh: 0, furn: 0, deco: 0, cloth: 0, coll: 0 }, isl = island(s);
+    for (let n = 1; n <= isl.bought; n++) o.land += plotPrice(n);
+    FAC_KEYS.forEach(k => { const lv = level(s, k); for (let l = 1; l <= lv; l++) o.fac += FAC[k].prices[l - 1]; });
+    vehicles(s).forEach(v => { o.veh += VEH[v.key].price; });
+    s.items.forEach(i => { if (FURN[i.key]) o.furn += FURN[i.key].price * (i.in === 'depot' ? i.qty : 1); if (CLOTH[i.key]) o.cloth += CLOTH[i.key].price * i.qty; if (COLL[i.key]) o.coll += GACHA.price * (i.in === 'depot' ? i.qty : 1); });
+    const d = deco(s); d.floors.forEach(i => { o.deco += FLOORS[i].p; }); d.papers.forEach(i => { o.deco += PAPERS[i].p; });
+    o.total = o.land + o.fac + o.veh + o.furn + o.deco + o.cloth + o.coll; return o;
   }
+  const worth = s => worthParts(s).total;
 
-  const R = { CLOTH, CLOTH_KEYS, CLOTH_MAX, COLL, COLL_KEYS, GACHA, RARE, HOLD, holders, wrStacks, caseItems, clothCount, collCount, clothSell, rollGacha, FURN, FURN_KEYS, FURN_MAX, FURN_LUX_HOUSE, FLOORS, PAPERS, STYLE0, ROOMS, floorsOf, roomOf, fpOf, layerOf, placedIn, wallRots, canPlace, furnCount, deco, styleOf, hasFloor, hasPaper, furnInfo, furnSell, VEH, VEH_KEYS, CLS_NAME, vehOf, vehicles, slotsOf, fitWhy, vehInfo, freeSlot, sellPrice, C, GW, GH, COAST, SEA, FAC, FAC_KEYS, TIERS, START, hash, vnoise, inSea, world, rect, needPlots, plotPrice, fresh, clean, island, level, tierOf, nextTier, plotInfo, facInfo, apply, worth };
+  const R = { CLOTH, CLOTH_KEYS, CLOTH_MAX, COLL, COLL_KEYS, GACHA, RARE, HOLD, holders, wrStacks, caseItems, clothCount, collCount, clothSell, rollGacha, FURN, FURN_KEYS, FURN_MAX, FURN_LUX_HOUSE, FLOORS, PAPERS, STYLE0, ROOMS, floorsOf, roomOf, fpOf, layerOf, placedIn, wallRots, canPlace, furnCount, deco, styleOf, hasFloor, hasPaper, furnInfo, furnSell, VEH, VEH_KEYS, CLS_NAME, vehOf, vehicles, slotsOf, fitWhy, vehInfo, freeSlot, sellPrice, C, GW, GH, COAST, SEA, FAC, FAC_KEYS, TIERS, START, hash, vnoise, inSea, world, rect, needPlots, plotPrice, fresh, clean, island, level, tierOf, nextTier, plotInfo, facInfo, apply, worth, worthParts };
   root.XiaodaoRules = R;
   if (typeof module !== 'undefined' && module.exports) module.exports = R;
 })(typeof window !== 'undefined' ? window : this);

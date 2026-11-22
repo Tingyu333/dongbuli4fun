@@ -28,8 +28,9 @@
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
-    <script src="assets/xiaodao-rules.js?v=20261122d"></script>
-    <script src="assets/xiaodao-draw.js?v=20261122b"></script>
+    <script src="assets/xiaodao-rules.js?v=20261122e"></script>
+    <script src="assets/xiaodao-draw.js?v=20261122c"></script>
+    <script src="assets/xiaodao-fx.js?v=20261122a"></script>
     <script src="assets/xiaodao-room.js?v=20261122d"></script>
     <script src="assets/saveimg.js?v=20261116d"></script>
     <style>
@@ -66,6 +67,12 @@
         .hint { position: absolute; left: 12px; bottom: 12px; padding: 5px 10px; border-radius: 999px; background: rgba(30, 40, 30, .55); color: #f3f1ec; font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: .08em; pointer-events: none; transition: opacity .3s; }
         .mini { position: absolute; right: 10px; top: 10px; width: 92px; border: 2px solid #f3f1ec; border-radius: 4px; box-shadow: 0 2px 8px rgba(0, 0, 0, .25); image-rendering: pixelated; pointer-events: none; }
         .zoomout { position: absolute; right: 10px; width: 40px; height: 40px; border-radius: 50%; border: none; background: rgba(252, 250, 248, .92); color: rgb(44 44 44); font-size: 22px; line-height: 40px; box-shadow: 0 2px 8px rgba(0, 0, 0, .25); touch-action: manipulation; }
+        .dn { position: absolute; left: 10px; top: 10px; width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(243, 241, 236, .6); background: rgba(30, 40, 30, .5); color: #f3f1ec; font-family: 'Noto Serif TC', serif; font-size: 14px; line-height: 1; touch-action: manipulation; }
+        .worth { margin-left: auto; flex: none; padding: 0; border: 0; background: none; font: inherit; letter-spacing: .06em; color: rgb(var(--wabi-shu)); cursor: pointer; }
+        #nextTier { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+        .wtab { width: 100%; margin-top: 8px; border-collapse: collapse; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; }
+        .wtab td { padding: 5px 0; border-bottom: 1px solid rgb(var(--wabi-sub) / .6); color: rgb(var(--wabi-text)); }
+        .wtab td:last-child { text-align: right; } .wtab .bar2 { display: block; height: 3px; margin-top: 3px; background: rgb(var(--wabi-shu) / .55); }
         .pin { position: absolute; transform: translate(-50%, -100%); padding: 2px 8px; background: #b33a2f; color: #fff; font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: .15em; border-radius: 2px; pointer-events: none; white-space: nowrap; }
         .pin::after { content: ''; position: absolute; left: 50%; bottom: -5px; margin-left: -5px; border: 5px solid transparent; border-bottom: 0; border-top-color: #b33a2f; }
         /* 下面滑出來的卡片 */
@@ -249,6 +256,7 @@
                 <span id="tierSeal" class="seal">島 壹</span>
                 <span><b id="nPlots">0</b> 塊地</span>
                 <span id="nextTier"></span>
+                <button type="button" id="worthBtn" class="worth" aria-label="身價"></button>
             </div>
             <button type="button" id="zoomTip" class="zoomtip" hidden>畫面被放大了・點這裡縮回<small>還是很大的話：瀏覽器右上「⋯」→「縮放」→ 100%</small></button>
             <div id="trial" class="trial" hidden>
@@ -263,6 +271,7 @@
             <canvas id="mini" class="mini" hidden></canvas>
             <button type="button" id="zoomOut" class="zoomout" hidden aria-label="縮回去看全島">－</button>
             <div id="pin" class="pin" hidden>這一塊</div>
+            <button type="button" id="dn" class="dn" aria-label="切換晝夜">夜</button>
             <p id="hint" class="hint">點兩下放大・點設施看看</p>
             <div id="card" class="card" role="dialog" aria-live="polite"></div>
         </div>
@@ -343,6 +352,7 @@
         const X = XiaodaoRules, D = XiaodaoDraw, $ = id => document.getElementById(id);
         const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
         const NUM = ['', '壹', '貳', '參', '肆', '伍'];
+        const short = n => n >= 1e8 ? (n / 1e8).toFixed(n >= 1e9 ? 1 : 2).replace(/\.?0+$/, '') + ' 億' : n >= 1e4 ? Math.floor(n / 1e4).toLocaleString('en-US') + ' 萬' : '$' + Math.round(n).toLocaleString('en-US');
         if (!OPEN && !PREVIEW) { $('teaser').hidden = false; }
         else start();
 
@@ -368,6 +378,7 @@
                 $('tierSeal').textContent = '島 ' + X.TIERS[t].name;
                 $('nPlots').textContent = n;
                 $('nextTier').textContent = nt ? `・再買 ${nt.n - n} 塊升「${nt.name}」` : '・島已經最大了';
+                $('worthBtn').textContent = '身價 ' + short(X.worth(S));
             }
 
             // ----- 島和鏡頭 -----
@@ -413,21 +424,24 @@
             const zoomed = () => cam.s > cam.base * 1.05;
 
             function rebuild(refit) {
-                out = D.render(S, { canvas: world || (world = document.createElement('canvas')) });
+                out = D.render(S, { canvas: world || (world = document.createElement('canvas')), noVeh: true });
+                fx = XiaodaoFX.make(S, out, { waves: !calm });
                 $('loading').hidden = true;
                 renderTop();
                 if (refit) fit(); else { clampCam(); draw(); }
-                refreshUI();
+                refreshUI(); nextFrame();
             }
 
             let raf = 0;
             function draw() { if (!raf) raf = requestAnimationFrame(paint); }
             function paint() {
                 raf = 0; if (!world) return;
-                ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#4f7d8f'; ctx.fillRect(0, 0, cv.width, cv.height);
+                const night = isNight(), base = night && fx ? fx.night(world) : world;
+                ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = night ? '#1f2c42' : '#4f7d8f'; ctx.fillRect(0, 0, cv.width, cv.height);
                 const k = dpr * cam.s; ctx.imageSmoothingEnabled = false;
                 ctx.setTransform(k, 0, 0, k, -cam.x * k, -cam.y * k);
-                ctx.drawImage(world, 0, 0);
+                ctx.drawImage(base, 0, 0);
+                if (fx) fx.paint(ctx, performance.now(), night, calm);
                 // 工地：還沒蓋、島的等級已經可以蓋的設施，畫白色虛線框
                 ctx.lineWidth = 1.5 / cam.s; ctx.setLineDash([4 / cam.s, 3 / cam.s]);
                 X.FAC_KEYS.forEach(k2 => { if (X.level(S, k2)) return; const i = X.facInfo(S, k2); if (i.needTier != null && i.why && !i.miss && !i.ok) return; const r = X.rect(k2, 1); ctx.strokeStyle = 'rgba(243,241,236,.85)'; ctx.strokeRect(r.x + .5, r.y + .5, r.w - 1, (r.shore != null ? r.shore - r.y : r.h) - 1); });
@@ -465,10 +479,41 @@
                     if (mini.width !== mw || mini.height !== mh) { mini.width = mw; mini.height = mh; }
                     mini.style.height = (mh / dpr) + 'px'; $('zoomOut').style.top = (10 + mh / dpr + 10) + 'px';
                     const m = mini.getContext('2d'), ks = mw / b.w; m.imageSmoothingEnabled = true;
-                    m.setTransform(1, 0, 0, 1, 0, 0); m.drawImage(world, b.x, b.y, b.w, b.h, 0, 0, mw, mh);
+                    m.setTransform(1, 0, 0, 1, 0, 0); m.drawImage(base, b.x, b.y, b.w, b.h, 0, 0, mw, mh);
                     m.strokeStyle = '#b33a2f'; m.lineWidth = 2 * dpr; m.strokeRect((cam.x - b.x) * ks, (cam.y - b.y) * ks, vw / cam.s * ks, vh / cam.s * ks);
                 }
             }
+
+            // ----- 會動的東西、夜景（第六批）-----
+            // 浪一直在打、每 9～17 秒島上隨機一台車開出去兜風／一艘船出海繞一圈／一架飛機起飛（飛走一會兒再降落），偶爾火箭發射；
+            // 設施卡片上也有按鈕叫一台出去。迴圈照網站的規矩：沒東西在動每秒畫約 20 張、有東西在動 60 張；看不到島（進屋、切到別的 App）就停
+            let fx = null, loopOn = false, nextAmb = performance.now() + 5000;
+            const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const isNight = () => document.documentElement.classList.contains('night');
+            const islandVisible = () => world && !$('app').hidden && !$('view').hidden && document.visibilityState === 'visible';
+            function tick() {
+                loopOn = false; if (!islandVisible()) return;
+                const now = performance.now();
+                if (!calm && !park && fx && now > nextAmb) {
+                    nextAmb = now + 9000 + Math.random() * 8000;
+                    if (fx.actors.length < 2) { const opts = ['garage', 'dock', 'airfield'].filter(f => fx.can(f)); if (fx.can('launchpad') && Math.random() < .12) opts.push('launchpad'); if (opts.length) fx.trip(opts[Math.floor(Math.random() * opts.length)]); }
+                }
+                paint(); nextFrame();
+            }
+            function nextFrame() {
+                if (loopOn || !islandVisible()) return; loopOn = true;
+                if (fx && fx.busy()) requestAnimationFrame(tick); else setTimeout(() => requestAnimationFrame(tick), calm ? 500 : 34);
+            }
+            document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') nextFrame(); });
+            // 晝夜：網站晚上 10 點到早上 6 點、或手機是深色模式會自動換夜；左上角「夜／晝」可以手動切（跟網站其他頁同一個設定）
+            function dnLabel() { $('dn').textContent = isNight() ? '晝' : '夜'; }
+            $('dn').onclick = () => { const t = document.querySelector('.theme-toggle'); if (t) t.click(); else document.documentElement.classList.toggle('night'); };
+            new MutationObserver(() => { dnLabel(); draw(); if (typeof roomOn !== 'undefined' && roomOn) renderRoom(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+            dnLabel();
+            if (PREVIEW) window.__xiaodao = { fx: () => fx, cam, tap: (wx, wy) => tapAt(wx, wy) };   // 試玩時給測試用
+            // 設施卡片的「出去一趟」
+            const TRIP = { garage: '開一台出去兜風', dock: '開一艘出海繞一圈', airfield: '飛一架起來', launchpad: '發射' };
+            function goTrip(k) { closeCard(); if (!fx || !fx.trip(k)) { showToast(k === 'dock' ? '船開不出去（碼頭外面不是海）' : '現在沒有空著的可以出去'); return; } nextFrame(); }
 
             // ----- 摸：拖、點、點兩下、兩指縮放 -----
             const pts = new Map(); let drag = null, lastTap = { t: 0, x: 0, y: 0 }, pinch = null;
@@ -551,12 +596,14 @@
                     <p class="line">${f.name}・${facLine(k)}</p>
                     ${note ? `<p class="note">${note}</p>` : ''}
                     ${k === 'house' && lv ? `<button type="button" class="btn" data-a="in" style="width:100%;margin-top:12px">進屋・${X.floorsOf(S).reduce((n, f) => n + f.rooms.length, 0)} 間・擺了 ${S.items.filter(t => X.FURN[t.key] && t.in !== 'depot').length} 件家具</button>` : ''}
+                    ${sl && TRIP[k] && fx && fx.can(k) ? `<button type="button" class="btn" data-a="trip" style="width:100%;margin-top:12px">${TRIP[k]}</button>` : ''}
                     ${sl ? `<button type="button" class="btn" data-a="park" style="width:100%;margin-top:12px">${KIND[k].park}・${k === 'launchpad' ? (sl[0].v ? `立著「${X.VEH[sl[0].v].name}」` : '還沒有火箭') : `停了 ${sl.filter(q => q.v).length}／${sl.length}`}</button>` : ''}
                     <div class="btns"><button type="button" class="btn" data-a="no">關上</button>${btn}</div>`;
                 card.classList.add('on');
                 card.querySelector('[data-a=no]').onclick = closeCard;
                 const pb = card.querySelector('[data-a=park]'); if (pb) pb.onclick = () => enterPark(k);
                 const ib = card.querySelector('[data-a=in]'); if (ib) ib.onclick = () => openRoom();
+                const tb = card.querySelector('[data-a=trip]'); if (tb) tb.onclick = () => goTrip(k);
                 const b = card.querySelector('[data-a=build]'); if (b) b.onclick = () => act({ t: 'build', k });
             }
             function refreshUI() {
@@ -650,6 +697,7 @@
             function openSheet(mode, t) { smode = mode || 'shop'; if (t) stab = t; else stab = (TABS[smode] || TABS.shop)[0][0]; renderSheet(); $('sheetBody').scrollTop = 0; sheet.classList.add('on'); sheet.setAttribute('aria-hidden', 'false'); }
             function closeSheet() { sheet.classList.remove('on'); sheet.setAttribute('aria-hidden', 'true'); }
             $('sheetClose').onclick = closeSheet;
+            $('worthBtn').onclick = () => openSheet('book', 'all');
             sheet.addEventListener('click', e => { if (e.target === sheet) closeSheet(); });
             $('stabs').addEventListener('click', e => { const b = e.target.closest('.stab'); if (!b) return; if (b.classList.contains('later')) { showToast(LATER[b.dataset.s]); return; } stab = b.dataset.s; renderSheet(); });
             const LEGAL = `<p class="legal">島上的東西都用遊戲幣買，不能儲值，也不能換成現金或任何獎品。</p>`;
@@ -740,7 +788,7 @@
                 if (mode === 'place') startPlace(pick);
                 roomLoaded.then(() => renderRoom());
             }
-            function closeRoom() { roomOn = false; $('room').hidden = true; $('view').hidden = false; document.querySelector('.tabs').hidden = false; size(); fit(); }
+            function closeRoom() { roomOn = false; $('room').hidden = true; $('view').hidden = false; document.querySelector('.tabs').hidden = false; size(); fit(); nextFrame(); }
             function renderRoom() {
                 if (!roomOn) return;
                 const fls = X.floorsOf(S); rfl = Math.min(rfl, fls.length - 1);
@@ -754,7 +802,7 @@
                 const g = pm && pm.ghost ? Object.assign({ k: pm.k, c: pm.c }, pm.ghost) : null;
                 // 畫的時候放大 RZ 倍（一格 10 顆 × RZ），手指放大看展示櫃裡的藏品才清楚；圖最寬約 2400 顆
                 const L0 = RM.layout(S, rfl); RZ = Math.max(2, Math.min(6, Math.floor(2400 / L0.W)));
-                const o = RM.render(S, rfl, { canvas: rcv, z: RZ, ghost: g, hide: pm && pm.move && pm.ghost ? pm.move : null }); rlay = o.layout;
+                const o = RM.render(S, rfl, { canvas: rcv, z: RZ, night: isNight(), ghost: g, hide: pm && pm.move && pm.ghost ? pm.move : null }); rlay = o.layout;
                 const st = $('rStage').getBoundingClientRect();
                 rscale0 = Math.min((st.width - 16) / rlay.W, (st.height - 28) / rlay.H);
                 // 地板壁紙：選到的房間框起來
@@ -1020,7 +1068,10 @@
                 if (stab === 'all') {
                     const rows = Object.entries(BOOK).map(([id, b]) => { const ks = b.keys(), h = ks.filter(b.has).length; return { id, b, h, n: ks.length }; });
                     const H = rows.reduce((t, r) => t + r.h, 0), N = rows.reduce((t, r) => t + r.n, 0);
-                    body.innerHTML = `<p class="price" style="margin-top:6px;font-family:'Noto Sans TC',sans-serif;color:rgb(var(--wabi-shu))">收集了 ${Math.floor(H / N * 100)}%</p><p class="sm">照「款」算（顏色不算），一共 ${H}／${N} 款。</p>` + rows.map(r => `<button type="button" class="row" data-bk="${r.id}" style="width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left">
+                    const wp = X.worthParts(S), WN = [['land', '地'], ['fac', '設施'], ['veh', '車船飛機火箭'], ['furn', '家具'], ['deco', '地板壁紙'], ['cloth', '衣服'], ['coll', '藏品']];
+                    body.innerHTML = `<p class="price" style="margin-top:6px;font-family:'Noto Sans TC',sans-serif;color:rgb(var(--wabi-shu))">身價 ${fmt(wp.total)}</p><p class="sm">島上每一樣照買的價錢加起來（一開始送的地和帳篷不算）。小島開放以後，排行・榜會多一本「身價・榜」。</p>
+                        <table class="wtab">${WN.map(([k2, nm]) => `<tr><td>${nm}<span class="bar2" style="width:${wp.total ? Math.max(wp[k2] ? 2 : 0, wp[k2] / wp.total * 100) : 0}%"></span></td><td>${fmt(wp[k2])}</td></tr>`).join('')}</table>
+                        <p class="price" style="margin-top:18px;font-family:'Noto Sans TC',sans-serif;color:rgb(var(--wabi-shu))">收集了 ${Math.floor(H / N * 100)}%</p><p class="sm">照「款」算（顏色不算），一共 ${H}／${N} 款。</p>` + rows.map(r => `<button type="button" class="row" data-bk="${r.id}" style="width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left">
                         <div class="info"><p class="nm">${r.b.n} <span class="sm">${r.h}／${r.n}</span></p><div class="pbar"><i style="width:${r.h / r.n * 100}%"></i></div></div><span class="sm">看 →</span></button>`).join('') + `<p class="sm" style="margin-top:10px">集滿一類送什麼：之後再說。</p>`;
                     body.querySelectorAll('[data-bk]').forEach(b => b.onclick = () => { stab = b.dataset.bk; renderSheet(); });
                     return;
