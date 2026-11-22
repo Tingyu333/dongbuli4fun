@@ -30,7 +30,7 @@
     <script src="assets/wallet.js?v=20261120c"></script>
     <script src="assets/xiaodao-rules.js?v=20261122d"></script>
     <script src="assets/xiaodao-draw.js?v=20261122b"></script>
-    <script src="assets/xiaodao-room.js?v=20261122c"></script>
+    <script src="assets/xiaodao-room.js?v=20261122d"></script>
     <script src="assets/saveimg.js?v=20261116d"></script>
     <style>
         /* 整頁是一個 App：上面標題列、中間整座島、下面四顆鈕。島是另一個世界（精緻像素風），外框照網站的紙張色 */
@@ -94,6 +94,11 @@
         #rcv { image-rendering: pixelated; display: block; box-shadow: 0 8px 30px rgba(0, 0, 0, .35); }
         .rhint { position: absolute; left: 10px; right: 10px; bottom: 8px; margin: 0; text-align: center; font-family: 'Noto Sans TC', sans-serif; font-size: 11.5px; letter-spacing: .06em; color: #f3ead8; pointer-events: none; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
         .rhint.bad { color: #ff9a8a; }
+        /* 屋內放大縮小（兩指、滾輪、右上角＋－；放大了一指拖著看） */
+        .rzoom { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 6px; z-index: 2; }
+        .rzoom button { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(243, 234, 216, .4); background: rgba(30, 24, 20, .6); color: #f3ead8; font-family: 'Noto Sans TC', sans-serif; font-size: 18px; line-height: 1; cursor: pointer; }
+        .rzoom button:disabled { opacity: .3; }
+        #rcv { flex: none; will-change: transform; }
         .rpanel { flex: none; background: rgb(var(--wabi-bg)); color: rgb(var(--wabi-text)); padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(0, 0, 0, .2); }
         .rrow { display: flex; gap: 8px; }
         .rrow .btn { margin: 0; min-height: 44px; font-size: 12px; letter-spacing: .1em; }
@@ -266,7 +271,7 @@
         <div id="room" class="room" hidden>
             <div class="rbar"><span id="rLeft"></span><b id="rName"></b><span id="rRight"></span></div>
             <div id="rFloors" class="rfloors"></div>
-            <div id="rStage" class="rstage"><canvas id="rcv" aria-label="屋內"></canvas><p id="rHint" class="rhint"></p></div>
+            <div id="rStage" class="rstage"><canvas id="rcv" aria-label="屋內"></canvas><div class="rzoom"><button type="button" id="rzIn" aria-label="放大">＋</button><button type="button" id="rzOut" aria-label="縮小">－</button></div><p id="rHint" class="rhint"></p></div>
             <div id="rPanel" class="rpanel"></div>
         </div>
 
@@ -724,10 +729,11 @@
             // ===== 屋內（第四批）=====
             // 進屋：島和下面四顆藏起來，換成房間；一層一張圖，點樓層切換。三種模式：看（view）、擺放（place）、地板壁紙（deco）
             const RM = XiaodaoRoom, rcv = $('rcv');
-            let roomOn = false, rfl = 0, rmode = 'view', pm = null, rdeco = null, rscale = 1, rlay = null, fcat = '床', fcol = {}, roomLoaded = null;
+            let roomOn = false, rfl = 0, rmode = 'view', pm = null, rdeco = null, rscale = 1, rscale0 = 1, rzoom = 1, rpan = [0, 0], RZ = 1, rlay = null, fcat = '床', fcol = {}, roomLoaded = null;
             function openRoom(mode, pick) {
                 if (!X.level(S, 'house')) return;
-                roomLoaded = roomLoaded || RM.load('assets/xiaodao/', '20261122a');
+                roomLoaded = roomLoaded || RM.load('assets/xiaodao/', '20261122a', '20261122a');
+                rzoom = 1; rpan = [0, 0];
                 closeCard(); closeSheet(); if (park) exitPark();
                 roomOn = true; $('view').hidden = true; document.querySelector('.tabs').hidden = true; $('room').hidden = false;
                 rfl = Math.min(rfl, X.floorsOf(S).length - 1); rmode = 'view'; pm = null; rdeco = null;
@@ -746,18 +752,21 @@
                 else { $('rLeft').innerHTML = `<button type="button" id="rCancel">取消</button>`; $('rRight').innerHTML = `<button type="button" class="main" id="rDone">完成</button>`; $('rCancel').onclick = cancelMode; $('rDone').onclick = () => { rmode = 'view'; pm = null; rdeco = null; renderRoom(); }; }
                 // 畫房間（擺放中：選好的那件半透明預覽）
                 const g = pm && pm.ghost ? Object.assign({ k: pm.k, c: pm.c }, pm.ghost) : null;
-                const o = RM.render(S, rfl, { canvas: rcv, ghost: g, hide: pm && pm.move && pm.ghost ? pm.move : null }); rlay = o.layout;
-                const st = $('rStage').getBoundingClientRect(), sc = Math.min((st.width - 16) / rlay.W, (st.height - 28) / rlay.H);
-                rscale = sc >= 1 ? Math.floor(sc * 2) / 2 : sc; rcv.style.width = Math.round(rlay.W * rscale) + 'px'; rcv.style.height = Math.round(rlay.H * rscale) + 'px';
+                // 畫的時候放大 RZ 倍（一格 10 顆 × RZ），手指放大看展示櫃裡的藏品才清楚；圖最寬約 2400 顆
+                const L0 = RM.layout(S, rfl); RZ = Math.max(2, Math.min(6, Math.floor(2400 / L0.W)));
+                const o = RM.render(S, rfl, { canvas: rcv, z: RZ, ghost: g, hide: pm && pm.move && pm.ghost ? pm.move : null }); rlay = o.layout;
+                const st = $('rStage').getBoundingClientRect();
+                rscale0 = Math.min((st.width - 16) / rlay.W, (st.height - 28) / rlay.H);
                 // 地板壁紙：選到的房間框起來
-                if (rdeco) { const r = rlay.rooms.find(q => q.id === rdeco); if (r) { const x = rcv.getContext('2d'); x.strokeStyle = '#b33a2f'; x.lineWidth = 2; x.strokeRect(r.x0 - 3, 1, r.w * RM.T + 6, RM.TOP + r.h * RM.T + 2); } }
+                if (rdeco) { const r = rlay.rooms.find(q => q.id === rdeco); if (r) { const x = rcv.getContext('2d'); x.setTransform(RZ, 0, 0, RZ, 0, 0); x.strokeStyle = '#b33a2f'; x.lineWidth = 2; x.strokeRect(r.x0 - 3, 1, r.w * RM.T + 6, RM.TOP + r.h * RM.T + 2); x.setTransform(1, 0, 0, 1, 0, 0); } }
+                applyRZ();
                 renderRoomPanel();
             }
             const rHint = (t, bad) => { const h = $('rHint'); h.textContent = t || ''; h.classList.toggle('bad', !!bad); };
             function renderRoomPanel() {
                 const P = $('rPanel'), here = rlay ? rlay.rooms.reduce((n, r) => n + X.placedIn(S, r.id).length, 0) : 0;
                 if (rmode === 'view') {
-                    rHint(here ? `這層擺了 ${here} 件家具` : '這層還空空的，按「擺放」從倉庫拿家具出來');
+                    rHint(here ? `這層擺了 ${here} 件家具・兩指可以放大，點展示櫃、衣櫃看裡面` : '這層還空空的，按「擺放」從倉庫拿家具出來');
                     P.innerHTML = `<div class="rrow"><button type="button" class="btn" data-r="deco">地板・壁紙</button><button type="button" class="btn" data-r="shot">${SaveImg.inApp ? '存一張圖' : navigator.canShare ? '分享一張圖' : '存一張圖'}</button><button type="button" class="btn main" data-r="place">擺放</button></div>`;
                     P.querySelector('[data-r=deco]').onclick = () => { rmode = 'deco'; rdeco = rlay.rooms[0].id; snap(); renderRoom(); };
                     P.querySelector('[data-r=place]').onclick = () => { startPlace(); renderRoom(); };
@@ -791,6 +800,42 @@
             let rsnap = null;
             function cancelMode() { if (rsnap) { S = X.clean(JSON.parse(rsnap.s)); money = rsnap.money; save(); renderTop(); refreshUI(); } rmode = 'view'; pm = null; rdeco = null; rsnap = null; renderRoom(); showToast('都還原了'); }
             function startPlace(pick) { rmode = 'place'; rsnap = { s: JSON.stringify(S), money }; pm = { k: pick ? pick.k : null, c: pick ? pick.c : 0, rot: 0, ghost: null, move: null }; }
+            // 放大縮小：rscale0 是剛好塞進畫面的大小，rzoom 1～6 倍，rpan 是拖過去多少（畫面的 px，從正中間算）
+            const RZMAX = 6;
+            function applyRZ() {
+                if (!rlay) return; rscale = rscale0 * rzoom;
+                const st = $('rStage').getBoundingClientRect(), cw = rlay.W * rscale, ch = rlay.H * rscale;
+                const mx = Math.max(0, (cw - st.width) / 2 + 12), my = Math.max(0, (ch - st.height) / 2 + 12);
+                rpan = [Math.max(-mx, Math.min(mx, rpan[0])), Math.max(-my, Math.min(my, rpan[1]))];
+                rcv.style.width = cw + 'px'; rcv.style.height = ch + 'px'; rcv.style.transform = `translate(${rpan[0]}px,${rpan[1]}px)`;
+                $('rzIn').disabled = rzoom >= RZMAX; $('rzOut').disabled = rzoom <= 1;
+            }
+            function zoomRoom(z, px, py) {   // px, py：以哪一點為中心（畫面座標）；沒給就是正中間
+                const st = $('rStage').getBoundingClientRect(), p = [px == null ? 0 : px - (st.left + st.width / 2), py == null ? 0 : py - (st.top + st.height / 2)];
+                const nz = Math.max(1, Math.min(RZMAX, z)), q = [(p[0] - rpan[0]) / rzoom, (p[1] - rpan[1]) / rzoom];
+                rzoom = nz; rpan = nz === 1 ? [0, 0] : [p[0] - q[0] * nz, p[1] - q[1] * nz]; applyRZ();
+            }
+            $('rzIn').onclick = () => zoomRoom(rzoom * 1.6);
+            $('rzOut').onclick = () => zoomRoom(rzoom / 1.6 < 1.15 ? 1 : rzoom / 1.6);
+            {   // 兩指放大、一指拖（放大了才拖得動）；拖過的那一下不算點
+                const ptr = new Map(), stage = $('rStage'); let pinch = null, drag = null;
+                const mid = () => { const v = [...ptr.values()]; return [(v[0][0] + v[1][0]) / 2, (v[0][1] + v[1][1]) / 2, Math.hypot(v[0][0] - v[1][0], v[0][1] - v[1][1])]; };
+                stage.addEventListener('pointerdown', e => {
+                    if (e.target.closest('.rzoom')) return;
+                    ptr.set(e.pointerId, [e.clientX, e.clientY]);
+                    if (ptr.size === 1) { drag = { x: e.clientX, y: e.clientY, pan: rpan.slice() }; rmoved = false; }
+                    else if (ptr.size === 2) { const [x, y, d] = mid(); pinch = { x, y, d: Math.max(20, d), z: rzoom }; drag = null; rmoved = true; }
+                });
+                stage.addEventListener('pointermove', e => {
+                    if (!ptr.has(e.pointerId)) return; ptr.set(e.pointerId, [e.clientX, e.clientY]);
+                    if (pinch && ptr.size >= 2) { const [x, y, d] = mid(); const st = stage.getBoundingClientRect(); zoomRoom(pinch.z * d / pinch.d, pinch.x, pinch.y); rpan = [rpan[0] + x - pinch.x, rpan[1] + y - pinch.y]; pinch.x = x; pinch.y = y; pinch.z = rzoom; pinch.d = Math.max(20, d); applyRZ(); return; }
+                    if (drag) { const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.hypot(dx, dy) > 8) rmoved = true; if (rmoved && rzoom > 1) { rpan = [drag.pan[0] + dx, drag.pan[1] + dy]; applyRZ(); } }
+                });
+                const up = e => { ptr.delete(e.pointerId); if (ptr.size < 2) pinch = null; if (ptr.size === 1) { const [v] = [...ptr.values()]; drag = { x: v[0], y: v[1], pan: rpan.slice() }; } if (!ptr.size) drag = null; };
+                stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up); stage.addEventListener('pointerleave', up);
+                stage.addEventListener('wheel', e => { e.preventDefault(); zoomRoom(rzoom * Math.pow(1.0015, -e.deltaY), e.clientX, e.clientY); }, { passive: false });
+            }
+            let rmoved = false;
             // 點房間：哪一間、哪一格（北牆那條是 y = -1，給掛畫）
             function cellAt(e) {
                 const b = rcv.getBoundingClientRect(), px = (e.clientX - b.left) / rscale, py = (e.clientY - b.top) / rscale;
@@ -824,6 +869,7 @@
                 g.bad = !chk.ok; if (chk.ok) g.rot = chk.rot; rHint(chk.ok ? `「${X.FURN[pm.k].name}」放這裡？按「放這裡」` : chk.why, !chk.ok);
             }
             rcv.addEventListener('click', e => {
+                if (rmoved) { rmoved = false; return; }
                 if (!roomOn || !rlay) return; const at = cellAt(e); if (!at) return;
                 if (rmode === 'deco') { rdeco = at.r.id; renderRoom(); return; }
                 if (rmode === 'view') { const t = furnAt(at.r, at.x, at.y); if (t && X.HOLD[t.key]) openHold(t.id); else if (t) showToast(`${X.FURN[t.key].name}・${X.FURN[t.key].colors[t.c].n}`); return; }
@@ -851,9 +897,9 @@
                 showToast('放好了'); renderRoom();
             }
             async function shotRoom() {
-                const o = RM.render(S, rfl, {}), z = 3, pad = 24, W = o.layout.W * z + pad * 2, H = o.layout.H * z + pad * 2 + 54;
+                const z = 3, o = RM.render(S, rfl, { z }), pad = 24, W = o.layout.W * z + pad * 2, H = o.layout.H * z + pad * 2 + 54;
                 const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
-                x.fillStyle = '#fcfaf8'; x.fillRect(0, 0, W, H); x.drawImage(o.canvas, pad, pad, o.layout.W * z, o.layout.H * z);
+                x.fillStyle = '#fcfaf8'; x.fillRect(0, 0, W, H); x.drawImage(o.canvas, pad, pad);
                 x.fillStyle = '#2c2c2c'; x.font = '600 26px "Noto Serif TC", serif'; x.textBaseline = 'middle'; x.fillText(`我的小島・${X.FAC.house.levels[X.level(S, 'house') - 1]}・${o.layout.n}`, pad, H - 32);
                 x.fillStyle = '#b33a2f'; x.font = '16px "Noto Sans TC", sans-serif'; x.textAlign = 'right'; x.fillText('DONGBULI・27F', W - pad, H - 32);
                 const blob = await new Promise(ok => c.toBlob(ok, 'image/png'));

@@ -49,10 +49,11 @@
   function doormat(B, a, b, w) { B.R(a, b, w, 5, '#8e8070'); for (let i = 1; i < w - 1; i += 2) B.P(a + i, b + 2, '#a99c88'); }
 
   // ---- 家具（切圖、轉、影子） ----
-  let ATLAS = null, loading = null;
-  function load(base = 'assets/xiaodao/', ver = '') {
+  let ATLAS = null, COATLAS = null, loading = null;
+  function load(base = 'assets/xiaodao/', ver = '', cver = '') {   // furn.png 家具、collect.png 藏品（展示櫃裡要畫）
     if (loading) return loading;
-    loading = new Promise(ok => { const im = new Image(); im.onload = () => { ATLAS = im; ok(); }; im.onerror = () => ok(); im.src = base + 'furn.png' + (ver ? '?v=' + ver : ''); });
+    const one = (f, v, set) => new Promise(ok => { const im = new Image(); im.onload = () => { set(im); ok(); }; im.onerror = () => ok(); im.src = base + f + (v ? '?v=' + v : ''); });
+    loading = Promise.all([one('furn.png', ver, im => { ATLAS = im; }), one('collect.png', cver || ver, im => { COATLAS = im; })]);
     return loading;
   }
   const SHADOW_D = { wall: 3, rug: 0, rugone: 0, pic: 0 };
@@ -73,11 +74,24 @@
     x.drawImage(t, a, b); x.globalAlpha = 1;
   }
 
-  // 展示櫃：玻璃下面看得到幾個小點（照稀有度上色，傳說的朱色亮一點）；沿著櫃子長的那一邊排
-  function caseDots(x, s, t, a, b) {
+  // 展示櫃（2026-11-22 改）：家具圖裡玻璃下面原本畫好的裝飾先用空玻璃蓋掉，再把真的藏品縮小擺進去（沿著櫃子長的那一邊排）；
+  // 稀有、傳說下面墊一條金／朱色的台子，最上面一層玻璃反光。要 render 用 opt.z 放大畫（一格 10 顆 × z），不然藏品只有幾顆像素看不出來
+  function caseShow(x, s, t, a, b) {
     const n = X.HOLD[t.key].n, [fw, fh] = X.fpOf(t.key, t.rot), W = fw * T, H = fh * T, long = W >= H, list = X.caseItems(s, t.id);
-    list.forEach(it => { const k = (it.at + .5) / n, cx = Math.round(a + (long ? W * k : W / 2)), cy = Math.round(b + (long ? H / 2 : H * k)), col = X.RARE[X.COLL[it.key].r][1];
-      x.fillStyle = 'rgba(40,30,20,.3)'; x.fillRect(cx - 1, cy - 1 + 1, 3, 3); x.fillStyle = X.COLL[it.key].r === 'n' ? '#efe8da' : col; x.fillRect(cx - 1, cy - 1, 3, 3); x.fillStyle = '#ffffff'; x.fillRect(cx - 1, cy - 1, 1, 1); });
+    const ix = a + 1, iy = b + 1, iw = W - 2, ih = H - 2;
+    x.fillStyle = '#cfe6ea'; x.fillRect(ix, iy, iw, ih);
+    x.fillStyle = '#eef7f8'; if (long) x.fillRect(ix, iy, iw, .6); else x.fillRect(t.rot === 1 ? ix + iw - .6 : ix, iy, .6, ih);
+    const slot = (long ? iw : ih) / n, deep = long ? ih : iw, sz = Math.min(slot - .4, deep - 1.2);
+    list.forEach(it => {
+      const c = X.COLL[it.key], m = (it.at + .5) * slot, cx = long ? ix + m : ix + iw / 2, cy = long ? iy + ih / 2 + .3 : iy + m;
+      x.fillStyle = 'rgba(40,60,70,.25)'; x.fillRect(cx - sz * .4, cy + sz / 2 - .3, sz * .8, .6);
+      if (c.r !== 'n') { x.fillStyle = X.RARE[c.r][1]; x.fillRect(cx - sz * .45, cy + sz / 2 - .1, sz * .9, .5); }
+      if (COATLAS) { x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high'; x.drawImage(COATLAS, c.d[0], c.d[1], c.d[2], c.d[3], cx - sz / 2, cy - sz / 2, sz, sz); x.imageSmoothingEnabled = false; }
+    });
+    x.fillStyle = 'rgba(255,255,255,.16)'; x.fillRect(ix, iy, iw, ih);
+    x.save(); x.beginPath(); x.rect(ix, iy, iw, ih); x.clip(); x.fillStyle = 'rgba(255,255,255,.4)';   // 玻璃的斜反光
+    for (let k = 2; k < iw + ih; k += 9) { x.beginPath(); x.moveTo(ix + k, iy); x.lineTo(ix + k + .9, iy); x.lineTo(ix + k + .9 - ih * .6, iy + ih); x.lineTo(ix + k - ih * .6, iy + ih); x.closePath(); x.fill(); }
+    x.restore();
   }
   // 一層的版面：每一間在圖上的位置 { id, name, w, h, x0, y0（地板左上） }
   function layout(s, fi) {
@@ -86,7 +100,7 @@
     fl.rooms.forEach(r => { rooms.push(Object.assign({}, r, { x0: x, y0: TOP })); x += r.w * T + 4; });
     return { n: fl.n, rooms, W: x, H: TOP + H * T + 4 + (fi === 0 ? 6 : 0) };
   }
-  // 畫一層：opt.night 亮燈、opt.ghost 半透明預覽 { k, c, rot, room, x, y, bad }、opt.hide 不畫的那件（正在移動）
+  // 畫一層：opt.z 放大幾倍畫（像素還是方的，展示櫃的藏品才畫得清楚；回傳的 layout 還是用一倍的座標）、opt.night 亮燈、opt.ghost 半透明預覽 { k, c, rot, room, x, y, bad }、opt.hide 不畫的那件（正在移動）
   function render(s, fi, opt = {}) {
     const L = layout(s, fi); if (!L) return null;
     const B = new Buf(L.W, L.H), night = !!opt.night;
@@ -108,14 +122,16 @@
       if (fi === 0 && r.id === 'main') { const d = r.x0 + Math.floor(r.w / 2) * T - 8; hWall(B, r.x0 - 4, bottom, d - r.x0 + 4); hWall(B, d + 16, bottom, r.x0 + r.w * T - d - 16 + 4); floor(B, d, bottom, 16, 4, X.styleOf(s, r.id).floor); doormat(B, d, bottom + 4, 16); }
       else hWall(B, r.x0 - 4, bottom, r.w * T + 8);
     });
-    const cv = opt.canvas || document.createElement('canvas'); if (cv.width !== L.W || cv.height !== L.H) { cv.width = L.W; cv.height = L.H; }
-    const x = cv.getContext('2d'); x.imageSmoothingEnabled = false; x.putImageData(new ImageData(B.d, L.W, L.H), 0, 0);
+    const z = Math.max(1, Math.round(opt.z || 1)), cv = opt.canvas || document.createElement('canvas'); if (cv.width !== L.W * z || cv.height !== L.H * z) { cv.width = L.W * z; cv.height = L.H * z; }
+    const x = cv.getContext('2d'); x.setTransform(1, 0, 0, 1, 0, 0); x.imageSmoothingEnabled = false;
+    if (z === 1) x.putImageData(new ImageData(B.d, L.W, L.H), 0, 0);
+    else { const b0 = document.createElement('canvas'); b0.width = L.W; b0.height = L.H; b0.getContext('2d').putImageData(new ImageData(B.d, L.W, L.H), 0, 0); x.drawImage(b0, 0, 0, L.W * z, L.H * z); x.setTransform(z, 0, 0, z, 0, 0); }
     // 家具：地毯 → 其他照 y 排 → 掛畫
     L.rooms.forEach(r => {
       const list = X.placedIn(s, r.id).filter(t => t.id !== opt.hide), lay = t => X.layerOf(t.key);
       const at = t => [r.x0 + t.at[0] * T, lay(t) === 'pic' ? 4 : TOP + t.at[1] * T];
       list.filter(t => lay(t) === 'rug').forEach(t => { const [a, b] = at(t); drawFurn(x, t.key, t.c, t.rot, a, b, night); });
-      list.filter(t => lay(t) === 'obj').sort((p, q) => p.at[1] - q.at[1]).forEach(t => { const [a, b] = at(t); drawFurn(x, t.key, t.c, t.rot, a, b, night); if (X.HOLD && X.HOLD[t.key] && X.HOLD[t.key].t === 'case') caseDots(x, s, t, a, b); });
+      list.filter(t => lay(t) === 'obj').sort((p, q) => p.at[1] - q.at[1]).forEach(t => { const [a, b] = at(t); drawFurn(x, t.key, t.c, t.rot, a, b, night); if (X.HOLD && X.HOLD[t.key] && X.HOLD[t.key].t === 'case') caseShow(x, s, t, a, b); });
       list.filter(t => lay(t) === 'pic').forEach(t => { const [a, b] = at(t); drawFurn(x, t.key, t.c, 0, a, b, night); });
       const g = opt.ghost; if (g && g.room === r.id) {
         const pic = X.FURN[g.k].kind === 'pic', a = r.x0 + g.x * T, b = pic ? 4 : TOP + g.y * T, [fw, fh] = X.fpOf(g.k, g.rot);
@@ -124,7 +140,8 @@
       }
     });
     if (night) { x.fillStyle = 'rgba(20,24,48,.28)'; x.fillRect(0, 0, L.W, L.H); }
-    return { canvas: cv, layout: L };
+    x.setTransform(1, 0, 0, 1, 0, 0);
+    return { canvas: cv, layout: L, z };
   }
   // 地板、壁紙的小樣（商店、換地板壁紙用）：回 dataURL
   function swatch(kind, i, w = 40, h = 30) {
@@ -135,5 +152,5 @@
   // 家具小圖（不轉、白天）：回 dataURL
   const thumbCache = new Map();
   function thumb(k, c) { const id = k + ':' + c; if (thumbCache.has(id)) return thumbCache.get(id); const u = tile(k, c, 0, false).toDataURL(); if (ATLAS) thumbCache.set(id, u); return u; }
-  root.XiaodaoRoom = { load, render, layout, T, TOP, F, tile, thumb, swatch, FLOOR_PAL, PAPER };
+  root.XiaodaoRoom = { load, render, layout, caseShow, T, TOP, F, tile, thumb, swatch, FLOOR_PAL, PAPER };
 })(window);
