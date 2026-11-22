@@ -133,6 +133,26 @@
         @keyframes flash { 0% { box-shadow: inset 0 0 0 0 rgba(244, 220, 149, 0); } 30% { box-shadow: inset 0 0 0 2000px rgba(244, 220, 149, .55); } 100% { box-shadow: inset 0 0 0 0 rgba(244, 220, 149, 0); } }
         .sheet-in.flash { animation: flash 1.1s ease-out 2; }
         @media (prefers-reduced-motion: reduce) { .sheet-in.flash { animation: none; } }
+        /* 扭蛋動畫 */
+        .gfx { position: fixed; inset: 0; z-index: 50; background: rgba(20, 16, 12, .92); display: flex; align-items: center; justify-content: center; touch-action: none; }
+        .gfx[hidden] { display: none !important; }
+        .gfx-in { position: relative; width: min(340px, 92vw); display: flex; flex-direction: column; align-items: center; }
+        .gfx-m { position: relative; width: 120px; height: 144px; }
+        .gfx-mimg { width: 120px; height: 144px; image-rendering: pixelated; display: block; }
+        .gfx-knob { position: absolute; left: 57px; top: 87px; width: 6px; height: 18px; margin-top: -9px; background: #fff1c4; box-shadow: 0 0 0 1px #977630; border-radius: 1px; transform-origin: 50% 50%; }
+        .gfx-out { position: relative; width: 100%; min-height: 170px; margin-top: 8px; display: flex; align-items: center; justify-content: center; }
+        .gfx-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; }
+        .gfx-cell { position: relative; aspect-ratio: 1; border-radius: 8px; background: rgba(255, 255, 255, .08); display: flex; align-items: center; justify-content: center; }
+        .gfx-cell.r-r { box-shadow: 0 0 0 2px #c9a24a, 0 0 14px rgba(201, 162, 74, .6); } .gfx-cell.r-l { box-shadow: 0 0 0 2px #b33a2f, 0 0 18px rgba(244, 120, 100, .8); }
+        .gfx-cell img { width: 80%; height: auto; image-rendering: pixelated; }
+        .gfx-cell .nw { position: absolute; left: 2px; top: 1px; font-family: 'Noto Sans TC', sans-serif; font-size: 9px; color: #fff; background: #b33a2f; padding: 0 3px; border-radius: 2px; }
+        .gfx-cap { position: absolute; left: 0; top: 0; width: 28px; height: 28px; image-rendering: pixelated; pointer-events: none; }
+        .gfx-rays { position: absolute; width: 220px; height: 220px; left: 50%; top: 50%; margin: -110px 0 0 -110px; border-radius: 50%; pointer-events: none; }
+        .gfx-item { position: relative; width: 120px; height: 120px; image-rendering: pixelated; }
+        .gfx-txt { min-height: 46px; margin: 10px 0 0; text-align: center; font-family: 'Noto Serif TC', serif; font-size: 16px; letter-spacing: .15em; color: #f3ead8; line-height: 1.5; }
+        .gfx-txt small { display: block; font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: .1em; color: #d8c9ae; }
+        .gfx-ok { width: 160px; margin-top: 10px; }
+        .gfx-skip { margin: 10px 0 0; font-family: 'Noto Sans TC', sans-serif; font-size: 10px; color: rgba(243, 234, 216, .5); letter-spacing: .1em; }
         /* 下面四顆 */
         .tabs { flex: none; display: flex; background: rgb(var(--wabi-bg)); border-top: 1px solid rgb(var(--wabi-sub) / .7); padding-bottom: env(safe-area-inset-bottom); }
         .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 0 7px; border: none; background: transparent; font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: .15em; color: rgb(var(--wabi-accent)); border-bottom: 2px solid transparent; touch-action: manipulation; }
@@ -263,6 +283,17 @@
             <div class="sheet-head"><h2 id="sheetTitle">商店</h2><button type="button" class="x" id="sheetClose">關上</button></div>
             <div class="stabs" id="stabs"></div>
             <div class="sheet-body" id="sheetBody"></div>
+        </div>
+    </div>
+
+    <!-- 扭蛋動畫：轉把手 → 蛋掉出來 → 搖一搖 → 打開（點畫面跳過） -->
+    <div id="gfx" class="gfx" hidden>
+        <div class="gfx-in">
+            <div class="gfx-m"><img src="assets/xiaodao/gacha.png?v=20261122a" alt="" class="gfx-mimg"><i class="gfx-knob"></i></div>
+            <div id="gfxOut" class="gfx-out"></div>
+            <p id="gfxTxt" class="gfx-txt"></p>
+            <button type="button" id="gfxOk" class="btn main gfx-ok" hidden>好</button>
+            <p class="gfx-skip">點畫面可以跳過</p>
         </div>
     </div>
 
@@ -555,7 +586,7 @@
                 else if (a.t === 'sellc') showToast(`${CL.name}賣掉了・拿回 ${fmt(-r.cost)}`);
                 else if (a.t === 'wrin') showToast('放進衣櫃了'); else if (a.t === 'wrout') showToast('拿出來了・放回倉庫');
                 else if (a.t === 'casein') showToast('放進展示櫃了'); else if (a.t === 'caseout') showToast('拿出來了・放回倉庫');
-                else if (a.t === 'gacha') { lastGot = r.got; if (r.got.some(g => X.COLL[g.k].r === 'l')) setTimeout(() => $('sheet').querySelector('.sheet-in').classList.add('flash'), 30); }
+                else if (a.t === 'gacha') { lastGot = r.got; playGacha(r.got); }
                 if (['buyc', 'sellc'].includes(a.t) && X.level(S, 'house') === 3) { rebuild(false); return r; }   // 平房的曬衣繩會換
                 if (a.t === 'build' && r.stowed) showToast(`${X.FAC.house.levels[r.lv - 1]}・蓋好了（房間變了，${r.stowed} 件家具先收回倉庫）`);
                 if (['buyf', 'sellf', 'place', 'move', 'stow', 'deco', 'buyc', 'sellc', 'wrin', 'wrout', 'casein', 'caseout', 'gacha'].includes(a.t)) { renderTop(); refreshUI(); if (roomOn) renderRoom(); return r; }
@@ -975,6 +1006,71 @@
                     body.querySelectorAll('[data-cin]').forEach(b => b.onclick = () => { let i = caseSel; if (i == null || its.some(q => q.at === i)) { i = null; for (let j = 0; j < H.n; j++) if (!its.some(q => q.at === j)) { i = j; break; } } if (i == null) { showToast('展示櫃滿了，先點一格拿出來'); return; } caseSel = null; act({ t: 'casein', k: b.dataset.cin, uid: u.id, i }); });
                     const g = $('goGa'); if (g) g.onclick = () => openSheet('gacha');
                 }
+            }
+
+
+            // ----- 扭蛋動畫（2026-11-22 使用者要的）-----
+            // 轉把手、機器晃 → 蛋從出口掉出來 → 滾到中間搖一搖（傳說搖比較久、會發光）→ 打開，藏品跳出來；十次是十顆一起掉、一顆一顆打開。點畫面跳過，直接看結果
+            const CAP_TOP = { n: ['#9cc5c8', '#f2a093', '#c49ae0', '#a9c46e', '#f1d36b'], r: ['#e2b84a'], l: ['#b33a2f'] };
+            function capsule(col, half) {   // 14×14 的蛋：上半顏色、下半白；half: 'top' 只畫上半、'bot' 只畫下半
+                const c = document.createElement('canvas'); c.width = 14; c.height = 14; const x = c.getContext('2d');
+                for (let j = 0; j < 14; j++) for (let i = 0; i < 14; i++) { const d = Math.hypot(i - 6.5, j - 6.5); if (d > 6.6) continue; const top = j < 7; if ((half === 'top' && !top) || (half === 'bot' && top)) continue;
+                    x.fillStyle = d > 5.7 ? (top ? 'rgba(0,0,0,.35)' : '#b9b2a6') : top ? col : (j === 7 ? '#d6d1c7' : '#f3f1ec'); x.fillRect(i, j, 1, 1); }
+                if (half !== 'bot') { x.fillStyle = 'rgba(255,255,255,.75)'; x.fillRect(3, 3, 2, 1); x.fillRect(3, 4, 1, 1); }
+                return c;
+            }
+            const capCol = k => { const r = X.COLL[k].r, list = CAP_TOP[r]; return list[Math.floor(Math.random() * list.length)]; };
+            const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+            let gfxSkip = false, gfxAnims = [];
+            const anim = (el, kf, opt) => { const a = el.animate(kf, Object.assign({ fill: 'forwards', easing: 'ease-out' }, opt)); gfxAnims.push(a); if (gfxSkip) a.finish(); return a.finished.catch(() => { }); };
+            const gwait = ms => new Promise(ok => { const t0 = performance.now(); const tick = () => { if (gfxSkip || performance.now() - t0 >= ms) ok(); else requestAnimationFrame(tick); }; tick(); });
+            async function playGacha(got) {
+                const fx = $('gfx'), out = $('gfxOut'), txt = $('gfxTxt'), ok = $('gfxOk'), m = fx.querySelector('.gfx-m'), knob = fx.querySelector('.gfx-knob');
+                fx.hidden = false; out.innerHTML = ''; txt.innerHTML = ''; ok.hidden = true; gfxSkip = reduce; gfxAnims = [];
+                fx.onclick = e => { if (e.target === ok) return; if (!gfxSkip) { gfxSkip = true; gfxAnims.forEach(a => { try { a.finish(); } catch (er) { } }); } };
+                ok.onclick = () => { fx.hidden = true; };
+                const legend = got.some(g => X.COLL[g.k].r === 'l');
+                // 1. 轉把手、機器晃
+                anim(knob, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(720deg)' }], { duration: 650, easing: 'ease-in-out' });
+                await anim(m, [0, -3, 3, -2, 2, -1, 0].map(v => ({ transform: `translateX(${v}px)` })), { duration: 650 });
+                const ob = out.getBoundingClientRect(), mb = m.getBoundingClientRect(), chute = [mb.left - ob.left + 60 - 14, mb.top - ob.top + 120 - 14];
+                const center = [ob.width / 2 - 14, ob.height / 2 - 14];
+                if (got.length === 1) {
+                    // 2. 掉出來、彈一下 → 滾到中間變大、搖一搖 → 打開
+                    const g = got[0], c = X.COLL[g.k], col = capCol(g.k), cap = capsule(col); cap.className = 'gfx-cap'; out.appendChild(cap);
+                    await anim(cap, [{ transform: `translate(${chute[0]}px,${chute[1] - 30}px) scale(1)` }, { transform: `translate(${chute[0]}px,${chute[1]}px) scale(1)`, offset: .6 }, { transform: `translate(${chute[0]}px,${chute[1] - 8}px) scale(1)`, offset: .8 }, { transform: `translate(${chute[0]}px,${chute[1]}px) scale(1)` }], { duration: 450, easing: 'ease-in' });
+                    await anim(cap, [{ transform: `translate(${chute[0]}px,${chute[1]}px) scale(1) rotate(0deg)` }, { transform: `translate(${center[0]}px,${center[1]}px) scale(3.2) rotate(360deg)` }], { duration: 500 });
+                    const shake = legend ? 1100 : c.r === 'r' ? 800 : 550;
+                    if (c.r !== 'n') anim(cap, [{ filter: 'drop-shadow(0 0 0 rgba(255,220,150,0))' }, { filter: `drop-shadow(0 0 6px ${c.r === 'l' ? '#ff8a70' : '#f4dc95'})` }], { duration: shake });
+                    await anim(cap, [0, -18, 18, -14, 14, -8, 8, 0].map(v => ({ transform: `translate(${center[0]}px,${center[1]}px) scale(3.2) rotate(${v}deg)` })), { duration: shake, easing: 'linear' });
+                    cap.remove();
+                    const top = capsule(col, 'top'), bot = capsule(col, 'bot'); [top, bot].forEach(e => { e.className = 'gfx-cap'; out.appendChild(e); });
+                    if (c.r !== 'n') { const rays = document.createElement('div'); rays.className = 'gfx-rays'; rays.style.background = `repeating-conic-gradient(${c.r === 'l' ? 'rgba(255,140,110,.45)' : 'rgba(244,220,149,.4)'} 0 10deg, transparent 10deg 30deg)`; out.appendChild(rays); anim(rays, [{ transform: 'scale(.2) rotate(0deg)', opacity: 0 }, { transform: 'scale(1) rotate(90deg)', opacity: 1 }], { duration: 700 }); anim(rays, [{ transform: 'scale(1) rotate(90deg)' }, { transform: 'scale(1) rotate(450deg)' }], { duration: 9000, delay: 700, iterations: Infinity, easing: 'linear', fill: 'none' }); }
+                    const item = document.createElement('img'); item.className = 'gfx-item'; item.src = crop(CO_IMG, c.d, 5); out.appendChild(item);
+                    anim(top, [{ transform: `translate(${center[0]}px,${center[1]}px) scale(3.2)`, opacity: 1 }, { transform: `translate(${center[0] - 40}px,${center[1] - 60}px) scale(3.2) rotate(-40deg)`, opacity: 0 }], { duration: 450 });
+                    anim(bot, [{ transform: `translate(${center[0]}px,${center[1]}px) scale(3.2)`, opacity: 1 }, { transform: `translate(${center[0] + 30}px,${center[1] + 50}px) scale(3.2) rotate(30deg)`, opacity: 0 }], { duration: 450 });
+                    await anim(item, [{ transform: 'scale(.2)', opacity: 0 }, { transform: 'scale(1.25)', opacity: 1, offset: .6 }, { transform: 'scale(1)', opacity: 1 }], { duration: 450 });
+                    txt.innerHTML = `${c.name}<small style="color:${c.r === 'n' ? '#d8c9ae' : X.RARE[c.r][1] === '#b33a2f' ? '#ff9a8a' : '#f4dc95'}">${X.RARE[c.r][0]}・${g.first ? '第一次扭到！' : '重複 ×' + g.n}</small>`;
+                } else {
+                    // 十次：十顆接連掉進格子 → 一顆一顆打開
+                    const grid = document.createElement('div'); grid.className = 'gfx-grid'; out.appendChild(grid);
+                    const cells = got.map(() => { const d = document.createElement('div'); d.className = 'gfx-cell'; grid.appendChild(d); return d; });
+                    const caps = got.map((g, i) => { const cap = capsule(capCol(g.k)); cap.className = 'gfx-cap'; cap.style.opacity = 0; out.appendChild(cap); return cap; });
+                    const cellPos = i => { const cb = cells[i].getBoundingClientRect(); return [cb.left - ob.left + cb.width / 2 - 14, cb.top - ob.top + cb.height / 2 - 14]; };
+                    for (let i = 0; i < got.length; i++) { const [cx, cy] = cellPos(i); caps[i].style.opacity = 1; anim(caps[i], [{ transform: `translate(${chute[0]}px,${chute[1] - 20}px) scale(1)` }, { transform: `translate(${cx}px,${cy}px) scale(1.6) rotate(360deg)` }], { duration: 380 }); await gwait(110); }
+                    await gwait(420);
+                    for (let i = 0; i < got.length; i++) {
+                        const g = got[i], c = X.COLL[g.k], [cx, cy] = cellPos(i);
+                        if (c.r !== 'n') await anim(caps[i], [0, -15, 15, -10, 10, 0].map(v => ({ transform: `translate(${cx}px,${cy}px) scale(1.6) rotate(${v}deg)` })), { duration: c.r === 'l' ? 600 : 300, easing: 'linear' });
+                        caps[i].remove(); cells[i].className = 'gfx-cell r-' + c.r; cells[i].innerHTML = `<img src="${crop(CO_IMG, c.d, 3)}" alt="${c.name}">${g.first ? '<span class="nw">新</span>' : ''}`;
+                        anim(cells[i].firstChild, [{ transform: 'scale(.2)' }, { transform: 'scale(1.2)', offset: .6 }, { transform: 'scale(1)' }], { duration: 260 });
+                        await gwait(130);
+                    }
+                    const fresh = got.filter(g => g.first).length, best = got.reduce((b, g) => ({ n: 0, r: 1, l: 2 })[X.COLL[g.k].r] > ({ n: 0, r: 1, l: 2 })[X.COLL[b.k].r] ? g : b);
+                    txt.innerHTML = `扭了十次<small>${fresh ? `新的 ${fresh} 款・` : '都是重複的・'}最好的是${X.RARE[X.COLL[best.k].r][0]}「${X.COLL[best.k].name}」</small>`;
+                }
+                if (legend) { const fl = document.createElement('div'); fl.style.cssText = 'position:fixed;inset:0;pointer-events:none;background:rgba(255,236,190,.0)'; fx.appendChild(fl); anim(fl, [{ background: 'rgba(255,236,190,0)' }, { background: 'rgba(255,236,190,.55)' }, { background: 'rgba(255,236,190,0)' }], { duration: 900, fill: 'none' }).then(() => fl.remove()); }
+                ok.hidden = false;
             }
 
             // ----- 開始 -----
