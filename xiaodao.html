@@ -543,7 +543,10 @@
                 else if (a.t === 'depot') showToast(`${V.name}・收進寄放處`);
                 else if (a.t === 'sell') showToast(`${V.name}賣掉了・拿回 ${fmt(-r.cost)}`);
                 const FU = a.k && X.FURN[a.k];
-                if (a.t === 'buyf') showToast(`${FU.name}・放進倉庫了`);
+                if (a.t === 'buyf') {
+                    if (roomOn) { if (rmode !== 'place') startPlace(); pm = { k: a.k, c: a.c || 0, rot: 0, ghost: null, move: null }; showToast(`${FU.name}・買好了，關上商店點一格就能放`); }
+                    else showToast(`${FU.name}・放進倉庫了`);
+                }
                 else if (a.t === 'sellf') showToast(`${FU.name}賣掉了・拿回 ${fmt(-r.cost)}`);
                 else if (a.t === 'stow') showToast('收回倉庫了');
                 else if (a.t === 'deco') showToast(r.cost ? `買了・花 ${fmt(r.cost)}，之後每一間都能用` : '換好了');
@@ -708,7 +711,7 @@
                 $('rFloors').innerHTML = fls.length > 1 ? fls.map((f, i) => `<button type="button" class="${i === rfl ? 'on' : ''}" data-fl="${i}">${f.n}・${f.rooms.map(r => r.name).join('、')}</button>`).join('') : `<span>${fls[0].rooms.map(r => r.name).join('、')}</span>`;
                 $('rFloors').querySelectorAll('[data-fl]').forEach(b => b.onclick = () => { rfl = +b.dataset.fl; if (pm) { pm.ghost = null; if (pm.move) pm.move = null; } rdeco = null; renderRoom(); });
                 // 上面左右：看的時候「← 回島上」；擺放、地板壁紙的時候「取消／完成」
-                if (rmode === 'view') { $('rLeft').innerHTML = `<button type="button" id="rBack">← 回島上</button>`; $('rRight').innerHTML = '<span style="display:inline-block;min-width:64px"></span>'; $('rBack').onclick = closeRoom; }
+                if (rmode === 'view') { $('rLeft').innerHTML = `<button type="button" id="rBack">← 回島上</button>`; $('rRight').innerHTML = `<button type="button" id="rShop">買家具</button>`; $('rBack').onclick = closeRoom; $('rShop').onclick = () => openSheet('shop', 'furn'); }
                 else { $('rLeft').innerHTML = `<button type="button" id="rCancel">取消</button>`; $('rRight').innerHTML = `<button type="button" class="main" id="rDone">完成</button>`; $('rCancel').onclick = cancelMode; $('rDone').onclick = () => { rmode = 'view'; pm = null; rdeco = null; renderRoom(); }; }
                 // 畫房間（擺放中：選好的那件半透明預覽）
                 const g = pm && pm.ghost ? Object.assign({ k: pm.k, c: pm.c }, pm.ghost) : null;
@@ -730,11 +733,13 @@
                     P.querySelector('[data-r=shot]').onclick = shotRoom;
                 } else if (rmode === 'place') {
                     const stacks = S.items.filter(t => X.FURN[t.key] && t.in === 'depot');
-                    P.innerHTML = (stacks.length ? `<div class="tray">${stacks.map(t => `<button type="button" class="vchip ${pm.k === t.key && pm.c === t.c && !pm.move ? 'on' : ''}" data-k="${t.key}" data-c="${t.c}"><span class="vimg"><img src="${RM.thumb(t.key, t.c)}" alt="" style="${furnImgStyle(t.key)}"></span><b>${X.FURN[t.key].name}</b><i>×${t.qty}</i></button>`).join('')}</div>`
+                    const buyChip = `<button type="button" class="vchip" data-r="buy"><span class="vimg" style="background:transparent;border:1px dashed rgb(var(--wabi-accent));font-size:22px;color:rgb(var(--wabi-accent))">＋</span><b>買家具</b><i>商店</i></button>`;
+                    P.innerHTML = (stacks.length ? `<div class="tray">${buyChip}${stacks.map(t => `<button type="button" class="vchip ${pm.k === t.key && pm.c === t.c && !pm.move ? 'on' : ''}" data-k="${t.key}" data-c="${t.c}"><span class="vimg"><img src="${RM.thumb(t.key, t.c)}" alt="" style="${furnImgStyle(t.key)}"></span><b>${X.FURN[t.key].name}</b><i>×${t.qty}</i></button>`).join('')}</div>`
                         : `<p class="note" style="margin:0 0 8px">倉庫裡沒有家具了。<button type="button" class="btn" data-r="shop" style="margin-left:6px;min-height:32px;padding:0 10px">去商店買</button></p>`)
                         + `<div class="rrow"><button type="button" class="btn" data-r="rot" ${pm.k ? '' : 'disabled'}>旋轉</button><button type="button" class="btn" data-r="stow" ${pm.move ? '' : 'disabled'}>收回</button><button type="button" class="btn main" data-r="put" ${pm.ghost && !pm.ghost.bad ? '' : 'disabled'}>放這裡</button></div>`;
-                    P.querySelectorAll('.tray .vchip').forEach(b => b.onclick = () => { pm = { snap: pm.snap, k: b.dataset.k, c: +b.dataset.c, rot: 0, ghost: null, move: null }; renderRoom(); rHint(`點房間裡的一格放「${X.FURN[pm.k].name}」`); });
-                    const sb = P.querySelector('[data-r=shop]'); if (sb) sb.onclick = () => { openSheet('shop', 'furn'); };
+                    const bc = P.querySelector('[data-r=buy]'); if (bc) bc.onclick = () => openSheet('shop', 'furn');
+                    P.querySelectorAll('.tray .vchip[data-k]').forEach(b => b.onclick = () => { pm = { snap: pm.snap, k: b.dataset.k, c: +b.dataset.c, rot: 0, ghost: null, move: null }; renderRoom(); rHint(`點房間裡的一格放「${X.FURN[pm.k].name}」`); });
+                    const sb = P.querySelector('[data-r=shop]'); if (sb) sb.onclick = () => openSheet('shop', 'furn');
                     P.querySelector('[data-r=rot]').onclick = rotateGhost;
                     P.querySelector('[data-r=stow]').onclick = () => { const id = pm.move; pm.move = null; pm.ghost = null; pm.k = null; act({ t: 'stow', id }); };
                     P.querySelector('[data-r=put]').onclick = putGhost;
