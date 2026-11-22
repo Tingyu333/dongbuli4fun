@@ -73,7 +73,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-22a';
+var BACKEND_VERSION = '2026-11-22b';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1 };
 
@@ -2469,7 +2469,7 @@ function setupStocks() {
 // 賽程存在 SportMatches 分頁，不用每次都去爬官網：一天爬一次賽程；有比賽開打兩小時後還沒結果，才每 15 分鐘去看一次比分。
 // 比賽都在週末，平常幾乎不會去爬。官網改版爬不到的時候，可以在編輯器用 sportSetResult()／sportVoid() 手動開獎、退錢。
 var SPORT_SEED = 100000;   // 2026-11-22 使用者說底池改 10 萬（2026-11-17 是 1 萬、更早 1,000）
-var SPORT_MIN = 100, SPORT_MAX = 50000, SPORT_MATCH_MAX = 200000;
+var SPORT_MIN = 100, SPORT_MAX = 500000, SPORT_MATCH_MAX = 500000;   // 2026-11-22 使用者說一注、一場上限都改 50 萬（原本 5 萬、20 萬）
 var SPORT_OPS_PER_HOUR = 300;
 var SPORT_PICKS = { win: ['home', 'away'], score: ['3:0', '3:1', '3:2', '2:3', '1:3', '0:3'] };
 var SPORT_FULL_MS = 24 * 3600000;       // 賽程多久重爬一次

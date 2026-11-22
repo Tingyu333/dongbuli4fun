@@ -233,7 +233,7 @@
             <p>・二十七樓運動在每個選項先放 $10 萬保底，所以只有你一個人押也有得賺；保底那份押中了就消失。</p>
             <p>・上面寫的 ×倍數是「照現在的彩池」算的，開賽前別人還會押，會一直變；最後照開賽那一刻的彩池算。</p>
             <p>・<b class="font-normal text-wabi-dark">只能押這週的比賽</b>（一週是週一到週日）。下週以後的只列賽程、不算倍數，週一 0:00 開放。</p>
-            <p>・一注 $100～$5 萬，一場最多押 $20 萬。開賽就不能押，押了不能退。</p>
+            <p>・一注 $100～$50 萬，一場最多押 $50 萬。開賽就不能押，押了不能退。</p>
             <p>・比分從 TPVL 官網抓，比完幾個小時內自動派彩，錢直接進錢包。延賽、取消、三天都沒有結果的，全部退錢。</p>
             <p>・要用 LINE 登入才能押，沒登入只能看。押的錢、贏的錢不算進打工榜和花錢榜。</p>
             <p class="pt-2 text-stone-400">押的是遊戲幣，不能儲值，也不能換成現金或任何獎品。這不是真的運動彩券，跟台灣彩券、運動彩券、TPVL 官方都沒有關係，只是借比分來玩。</p>
@@ -502,7 +502,7 @@
             if (a) lines.push(`照現在的彩池，押中大約拿回 <b class="text-wabi-dark num">${fmt(est)}</b>（${xo(total / on)}）。開賽前別人還會押，倍數會變。`);
             const lim = room(m);
             if (a && a < r.min) lines.push(`<span class="warn">一注最少 ${fmt(r.min)}。</span>`);
-            else if (a > lim) lines.push(`<span class="warn">${Line.loggedIn && a > Wallet.money ? '錢包不夠' : '超過上限（一注 $5 萬、一場 $20 萬）'}，最多可押 ${fmt(lim)}。</span>`);
+            else if (a > lim) lines.push(`<span class="warn">${Line.loggedIn && a > Wallet.money ? '錢包不夠' : '超過上限（一場最多 $50 萬）'}，最多可押 ${fmt(lim)}。</span>`);
             $('sEst').innerHTML = lines.join('<br>');
             const logged = Line.loggedIn && M;
             $('betBtn').classList.toggle('hidden', !logged);
