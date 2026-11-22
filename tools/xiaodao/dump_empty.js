@@ -39,6 +39,8 @@ window.__rec = [];
       let html = fs.readFileSync(require('path').join(__dirname, '../../docs/plans/jiayuan/') + n + '.html', 'utf8');
       // 注入在主要 script 的最前面（function 宣告已經提升了，在這裡換掉就會生效）
       const i = html.lastIndexOf('<script>'); html = html.slice(0, i + 8) + inject(cfg) + html.slice(i + 8);
+      // 平房的曬衣繩：晾的衣服拿掉（島上照玩家的衣服畫，xiaodao-draw.js 的 LAUNDRY）
+      if (n === 'house-stages') html = html.replace(/\n  \[\[22, '#6d8fb0'[^\n]*\n/, '\n');
       r.fulfill({ status: 200, contentType: 'text/html', body: html });
     });
     await p.goto('http://local.test/' + n + '.html'); await p.waitForTimeout(600);

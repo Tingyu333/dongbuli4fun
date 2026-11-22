@@ -189,6 +189,12 @@
     x.putImageData(new ImageData(B.d, WW, HH), 0, 0);
     built.slice().sort((a, b) => (sites[a].y + sites[a].h) - (sites[b].y + sites[b].h)).forEach(k => {
       const im = IMG[k + X.level(s, k)], r = sites[k]; if (im) x.drawImage(im, r.x, r.y);
+      // 平房的曬衣繩：晾你有的衣服（最多四件；設計圖原本那四塊的位置和大小），沒有衣服就空著
+      if (k === 'house' && X.level(s, k) === 3 && X.CLOTH) {
+        const mine = s.items.filter(i => X.CLOTH[i.key] && i.qty > 0).sort((a, b) => (a.key + a.c).localeCompare(b.key + b.c)).slice(0, 4);
+        [[22, 5, 6], [29, 4, 7], [35, 5, 5], [41, 3, 4]].forEach(([u, ww, hh], j) => { const it = mine[j]; if (!it) return; const v = 26 + Math.round(Math.sin((u - 20) / 26 * Math.PI) * 2), col = X.CLOTH[it.key].colors[it.c].sw, a = r.x + u - 18, b = r.y + v - 18;
+          x.fillStyle = 'rgba(30,40,30,.24)'; x.fillRect(a + 2, b + 2, ww, hh); x.fillStyle = col; x.fillRect(a, b, ww, hh); x.fillStyle = 'rgba(255,255,255,.33)'; x.fillRect(a, b, ww, 1); });
+      }
       // 停著的車、船：放在位子正中間（圖本身含右下的影子）
       if (X.slotsOf) X.slotsOf(s, k).forEach(sl => { const v = sl.v && IMG['v/' + sl.v], V = sl.v && X.VEH[sl.v]; if (!v) return;
         if (V.ax != null) x.drawImage(v, Math.round(sl.x + sl.w / 2 - V.ax), Math.round(sl.y + sl.h - V.ay));   // 火箭：地面點對齊位子的底部中間

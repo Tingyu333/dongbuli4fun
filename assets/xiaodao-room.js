@@ -73,6 +73,12 @@
     x.drawImage(t, a, b); x.globalAlpha = 1;
   }
 
+  // 展示櫃：玻璃下面看得到幾個小點（照稀有度上色，傳說的朱色亮一點）；沿著櫃子長的那一邊排
+  function caseDots(x, s, t, a, b) {
+    const n = X.HOLD[t.key].n, [fw, fh] = X.fpOf(t.key, t.rot), W = fw * T, H = fh * T, long = W >= H, list = X.caseItems(s, t.id);
+    list.forEach(it => { const k = (it.at + .5) / n, cx = Math.round(a + (long ? W * k : W / 2)), cy = Math.round(b + (long ? H / 2 : H * k)), col = X.RARE[X.COLL[it.key].r][1];
+      x.fillStyle = 'rgba(40,30,20,.3)'; x.fillRect(cx - 1, cy - 1 + 1, 3, 3); x.fillStyle = X.COLL[it.key].r === 'n' ? '#efe8da' : col; x.fillRect(cx - 1, cy - 1, 3, 3); x.fillStyle = '#ffffff'; x.fillRect(cx - 1, cy - 1, 1, 1); });
+  }
   // 一層的版面：每一間在圖上的位置 { id, name, w, h, x0, y0（地板左上） }
   function layout(s, fi) {
     const fl = X.floorsOf(s)[fi]; if (!fl) return null;
@@ -109,7 +115,7 @@
       const list = X.placedIn(s, r.id).filter(t => t.id !== opt.hide), lay = t => X.layerOf(t.key);
       const at = t => [r.x0 + t.at[0] * T, lay(t) === 'pic' ? 4 : TOP + t.at[1] * T];
       list.filter(t => lay(t) === 'rug').forEach(t => { const [a, b] = at(t); drawFurn(x, t.key, t.c, t.rot, a, b, night); });
-      list.filter(t => lay(t) === 'obj').sort((p, q) => p.at[1] - q.at[1]).forEach(t => { const [a, b] = at(t); drawFurn(x, t.key, t.c, t.rot, a, b, night); });
+      list.filter(t => lay(t) === 'obj').sort((p, q) => p.at[1] - q.at[1]).forEach(t => { const [a, b] = at(t); drawFurn(x, t.key, t.c, t.rot, a, b, night); if (X.HOLD && X.HOLD[t.key] && X.HOLD[t.key].t === 'case') caseDots(x, s, t, a, b); });
       list.filter(t => lay(t) === 'pic').forEach(t => { const [a, b] = at(t); drawFurn(x, t.key, t.c, 0, a, b, night); });
       const g = opt.ghost; if (g && g.room === r.id) {
         const pic = X.FURN[g.k].kind === 'pic', a = r.x0 + g.x * T, b = pic ? 4 : TOP + g.y * T, [fw, fh] = X.fpOf(g.k, g.rot);

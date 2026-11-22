@@ -28,9 +28,9 @@
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
-    <script src="assets/xiaodao-rules.js?v=20261122b"></script>
-    <script src="assets/xiaodao-draw.js?v=20261122a"></script>
-    <script src="assets/xiaodao-room.js?v=20261122b"></script>
+    <script src="assets/xiaodao-rules.js?v=20261122c"></script>
+    <script src="assets/xiaodao-draw.js?v=20261122b"></script>
+    <script src="assets/xiaodao-room.js?v=20261122c"></script>
     <script src="assets/saveimg.js?v=20261116d"></script>
     <style>
         /* 整頁是一個 App：上面標題列、中間整座島、下面四顆鈕。島是另一個世界（精緻像素風），外框照網站的紙張色 */
@@ -112,6 +112,27 @@
         .cdots button.on { box-shadow: 0 0 0 2px rgb(var(--wabi-bg)), 0 0 0 3px rgb(var(--wabi-shu)); }
         .thumb.f { background: #c89b6a; }
         .thumb.f img { max-width: 60px; max-height: 48px; }
+        /* 衣服、藏品、扭蛋、圖鑑（第五批） */
+        .thumb.c { background: #e9e1d2; }
+        .thumb.c img, .grid4 img, .tray img.ci { image-rendering: pixelated; }
+        .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
+        .gcell img { max-width: 100%; height: auto; }
+        .gcell { position: relative; aspect-ratio: 1 / 1.15; border: 1px solid rgb(var(--wabi-sub)); border-radius: 6px; background: #f4efe6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 3px; font-family: 'Noto Sans TC', sans-serif; font-size: 10px; color: rgb(var(--wabi-dark)); touch-action: manipulation; overflow: hidden; }
+        .gcell.empty { border-style: dashed; background: transparent; color: rgb(var(--wabi-accent)); }
+        .gcell.on { box-shadow: 0 0 0 2px rgb(var(--wabi-shu)); }
+        .gcell b { font-weight: 400; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .gcell i { font-style: normal; font-size: 9.5px; color: rgb(var(--wabi-accent)); }
+        .gcell.r-r { border-color: #c9a24a; } .gcell.r-l { border-color: #b33a2f; border-width: 2px; }
+        .gcell .q { position: absolute; right: 4px; top: 2px; font-size: 10px; color: rgb(var(--wabi-shu)); }
+        .gcell.no img, .gcell.no canvas { filter: brightness(0) opacity(.22); }
+        .gcell.first::after { content: '新'; position: absolute; left: 3px; top: 2px; font-size: 10px; color: #fff; background: #b33a2f; padding: 0 3px; border-radius: 2px; }
+        .pbar { height: 6px; border-radius: 3px; background: rgb(var(--wabi-sub) / .7); overflow: hidden; margin-top: 4px; }
+        .pbar i { display: block; height: 100%; background: rgb(var(--wabi-shu)); }
+        .machine { display: flex; gap: 14px; align-items: center; margin-top: 6px; }
+        .machine img { width: 96px; height: 115px; image-rendering: pixelated; flex: none; }
+        @keyframes flash { 0% { box-shadow: inset 0 0 0 0 rgba(244, 220, 149, 0); } 30% { box-shadow: inset 0 0 0 2000px rgba(244, 220, 149, .55); } 100% { box-shadow: inset 0 0 0 0 rgba(244, 220, 149, 0); } }
+        .sheet-in.flash { animation: flash 1.1s ease-out 2; }
+        @media (prefers-reduced-motion: reduce) { .sheet-in.flash { animation: none; } }
         /* 下面四顆 */
         .tabs { flex: none; display: flex; background: rgb(var(--wabi-bg)); border-top: 1px solid rgb(var(--wabi-sub) / .7); padding-bottom: env(safe-area-inset-bottom); }
         .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 0 7px; border: none; background: transparent; font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: .15em; color: rgb(var(--wabi-accent)); border-bottom: 2px solid transparent; touch-action: manipulation; }
@@ -232,8 +253,8 @@
         <nav class="tabs" aria-label="小島">
             <button type="button" class="tab" data-tab="shop"><img src="assets/xiaodao/icon-shop.png" alt="">商店</button>
             <button type="button" class="tab" data-tab="depot"><img src="assets/xiaodao/icon-depot.png" alt="">倉庫</button>
-            <button type="button" class="tab later" data-tab="gacha"><img src="assets/xiaodao/icon-gacha.png" alt="">扭蛋</button>
-            <button type="button" class="tab later" data-tab="book"><img src="assets/xiaodao/icon-book.png" alt="">圖鑑</button>
+            <button type="button" class="tab" data-tab="gacha"><img src="assets/xiaodao/icon-gacha.png" alt="">扭蛋</button>
+            <button type="button" class="tab" data-tab="book"><img src="assets/xiaodao/icon-book.png" alt="">圖鑑</button>
         </nav>
     </div>
 
@@ -526,8 +547,15 @@
                 else if (a.t === 'sellf') showToast(`${FU.name}賣掉了・拿回 ${fmt(-r.cost)}`);
                 else if (a.t === 'stow') showToast('收回倉庫了');
                 else if (a.t === 'deco') showToast(r.cost ? `買了・花 ${fmt(r.cost)}，之後每一間都能用` : '換好了');
+                const CL = a.k && X.CLOTH[a.k];
+                if (a.t === 'buyc') showToast(r.into ? `${CL.name}・放進衣櫃了` : `${CL.name}・先放倉庫（${X.holders(S, 'wr').length ? '衣櫃滿了' : '屋裡還沒有衣櫃'}）`);
+                else if (a.t === 'sellc') showToast(`${CL.name}賣掉了・拿回 ${fmt(-r.cost)}`);
+                else if (a.t === 'wrin') showToast('放進衣櫃了'); else if (a.t === 'wrout') showToast('拿出來了・放回倉庫');
+                else if (a.t === 'casein') showToast('放進展示櫃了'); else if (a.t === 'caseout') showToast('拿出來了・放回倉庫');
+                else if (a.t === 'gacha') { lastGot = r.got; if (r.got.some(g => X.COLL[g.k].r === 'l')) setTimeout(() => $('sheet').querySelector('.sheet-in').classList.add('flash'), 30); }
+                if (['buyc', 'sellc'].includes(a.t) && X.level(S, 'house') === 3) { rebuild(false); return r; }   // 平房的曬衣繩會換
                 if (a.t === 'build' && r.stowed) showToast(`${X.FAC.house.levels[r.lv - 1]}・蓋好了（房間變了，${r.stowed} 件家具先收回倉庫）`);
-                if (['buyf', 'sellf', 'place', 'move', 'stow', 'deco'].includes(a.t)) { renderTop(); refreshUI(); if (roomOn) renderRoom(); return r; }
+                if (['buyf', 'sellf', 'place', 'move', 'stow', 'deco', 'buyc', 'sellc', 'wrin', 'wrout', 'casein', 'caseout', 'gacha'].includes(a.t)) { renderTop(); refreshUI(); if (roomOn) renderRoom(); return r; }
                 rebuild(false);
                 if (r.tierUp) {
                     $('upSeal').textContent = '島 ' + X.TIERS[r.tierUp].name;
@@ -576,9 +604,11 @@
             // ----- 商店、倉庫（同一張從下面滑上來） -----
             let smode = 'shop', stab = 'fac', vkind = 'garage', sellArm = null;
             const sheet = $('sheet');
-            const TABS = { shop: [['plot', '地'], ['fac', '設施'], ['veh', '載具'], ['furn', '家具'], ['cloth', '衣服', 1]], depot: [['veh', '載具'], ['furn', '家具'], ['cloth', '衣服', 1], ['coll', '藏品', 1]] };
-            const LATER = { cloth: '衣服第五批開', coll: '藏品第五批開（扭蛋）', gacha: '扭蛋第五批開（29 款藏品）', book: '圖鑑第五批開' };
-            function openSheet(mode, t) { smode = mode || 'shop'; if (t) stab = t; else if (smode === 'depot') stab = 'veh'; renderSheet(); sheet.classList.add('on'); sheet.setAttribute('aria-hidden', 'false'); }
+            const TABS = { shop: [['plot', '地'], ['fac', '設施'], ['veh', '載具'], ['furn', '家具'], ['cloth', '衣服']], depot: [['veh', '載具'], ['furn', '家具'], ['cloth', '衣服'], ['coll', '藏品']],
+                gacha: [['g', '扭蛋機'], ['odds', '機率']], book: [['all', '總覽'], ['car', '車'], ['boat', '船'], ['plane', '飛機'], ['rocket', '火箭'], ['furn', '家具'], ['cloth', '衣服'], ['coll', '藏品']], hold: [['h', '裡面']] };
+            const LATER = {};
+            const SHEET_TITLE = { shop: '商店', depot: '倉庫', gacha: '扭蛋', book: '圖鑑', hold: '收納' };
+            function openSheet(mode, t) { smode = mode || 'shop'; if (t) stab = t; else stab = (TABS[smode] || TABS.shop)[0][0]; renderSheet(); $('sheetBody').scrollTop = 0; sheet.classList.add('on'); sheet.setAttribute('aria-hidden', 'false'); }
             function closeSheet() { sheet.classList.remove('on'); sheet.setAttribute('aria-hidden', 'true'); }
             $('sheetClose').onclick = closeSheet;
             sheet.addEventListener('click', e => { if (e.target === sheet) closeSheet(); });
@@ -586,7 +616,8 @@
             const LEGAL = `<p class="legal">島上的東西都用遊戲幣買，不能儲值，也不能換成現金或任何獎品。</p>`;
             const kindChips = () => `<div class="subk">${KINDS.map(k => `<button type="button" class="stab ${vkind === k ? 'on' : ''}" data-kind="${k}">${KIND[k].n}</button>`).join('')}</div>`;
             function renderSheet() {
-                $('sheetTitle').textContent = smode === 'shop' ? '商店' : '倉庫';
+                $('sheetTitle').textContent = SHEET_TITLE[smode] || '商店';
+                $('sheet').querySelector('.sheet-in').classList.remove('flash');
                 if (!TABS[smode].some(([k, , l]) => k === stab && !l)) stab = TABS[smode][0][0];
                 $('stabs').innerHTML = TABS[smode].map(([k, n, l]) => `<button type="button" class="stab ${l ? 'later' : ''} ${k === stab ? 'on' : ''}" data-s="${k}">${n}</button>`).join('');
                 const body = $('sheetBody'), t = X.tierOf(S), n = X.island(S).plots.length;
@@ -641,13 +672,18 @@
                     });
                     const gs = $('goShop'); if (gs) gs.onclick = () => openSheet('shop', 'veh');
                 }
-                if (stab === 'furn') renderFurnTab(body);
+                if ((smode === 'shop' || smode === 'depot') && stab === 'furn') renderFurnTab(body);
+                if ((smode === 'shop' || smode === 'depot') && stab === 'cloth') renderClothTab(body);
+                if (smode === 'depot' && stab === 'coll') renderCollTab(body);
+                if (smode === 'gacha') renderGacha(body);
+                if (smode === 'book') renderBook(body);
+                if (smode === 'hold') renderHold(body);
                 body.querySelectorAll('[data-kind]').forEach(b => b.onclick = () => { vkind = b.dataset.kind; renderSheet(); });
             }
             document.querySelector('.tabs').addEventListener('click', e => {
                 const b = e.target.closest('.tab'); if (!b) return;
                 if (park) exitPark();
-                if (b.dataset.tab === 'shop') openSheet('shop'); else if (b.dataset.tab === 'depot') openSheet('depot'); else showToast(LATER[b.dataset.tab]);
+                openSheet(b.dataset.tab === 'shop' ? 'shop' : b.dataset.tab === 'depot' ? 'depot' : b.dataset.tab);
             });
 
 
@@ -754,7 +790,7 @@
             rcv.addEventListener('click', e => {
                 if (!roomOn || !rlay) return; const at = cellAt(e); if (!at) return;
                 if (rmode === 'deco') { rdeco = at.r.id; renderRoom(); return; }
-                if (rmode === 'view') { const t = furnAt(at.r, at.x, at.y); if (t) showToast(`${X.FURN[t.key].name}・${X.FURN[t.key].colors[t.c].n}`); return; }
+                if (rmode === 'view') { const t = furnAt(at.r, at.x, at.y); if (t && X.HOLD[t.key]) openHold(t.id); else if (t) showToast(`${X.FURN[t.key].name}・${X.FURN[t.key].colors[t.c].n}`); return; }
                 // 擺放：點到擺好的家具 → 拿起來移動；不然把選好的那件放在這格
                 const t = (!pm.k || pm.move) ? furnAt(at.r, at.x, at.y) : null;
                 if (t && t.id !== pm.move) { pm = { snap: pm.snap, k: t.key, c: t.c, rot: t.rot, move: t.id, ghost: { room: at.r.id, x: t.at[0], y: t.at[1], rot: t.rot } }; checkGhost(); renderRoom(); checkGhost(); return; }
@@ -824,11 +860,123 @@
                 }
             }
 
+
+            // ===== 衣服、藏品、扭蛋、圖鑑（第五批）=====
+            const CL_IMG = new Image(), CO_IMG = new Image(), GA_IMG = 'assets/xiaodao/gacha.png?v=20261122a';
+            let itemsReady = Promise.all([[CL_IMG, 'clothes'], [CO_IMG, 'collect']].map(([im, n]) => new Promise(ok => { im.onload = ok; im.onerror = ok; im.src = `assets/xiaodao/${n}.png?v=20261122a`; })));
+            itemsReady.then(() => { if ($('sheet').classList.contains('on')) renderSheet(); });
+            const icoCache = new Map();
+            function crop(im, d, z) { const id = im.src + d.join(',') + z; if (icoCache.has(id)) return icoCache.get(id); const c = document.createElement('canvas'); c.width = d[2] * z; c.height = d[3] * z; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; if (im.complete && im.naturalWidth) x.drawImage(im, d[0], d[1], d[2], d[3], 0, 0, d[2] * z, d[3] * z); const u = c.toDataURL(); if (im.complete && im.naturalWidth) icoCache.set(id, u); return u; }
+            const clIco = (k, c, z = 2) => `<img class="ci" src="${crop(CL_IMG, X.CLOTH[k].colors[c].d, z)}" alt="" width="${24 * z}" height="${28 * z}">`;
+            const coIco = (k, z = 2) => `<img class="ci" src="${crop(CO_IMG, X.COLL[k].d, z)}" alt="" width="${24 * z}" height="${24 * z}">`;
+            let ccat = '上衣', ccol = {}, lastGot = null, holdUid = null, caseSel = null;
+            const GACHA_LEGAL = `<p class="legal">扭蛋只能用遊戲幣扭，不能儲值，也不能換成現金或任何獎品。</p>`;
+
+            function renderClothTab(body) {
+                const cats = [...new Set(X.CLOTH_KEYS.map(k => X.CLOTH[k].cat))];
+                if (smode === 'shop') {
+                    body.innerHTML = `<div class="subk" style="flex-wrap:wrap">${cats.map(c => `<button type="button" class="stab ${c === ccat ? 'on' : ''}" data-ccat="${c}">${c}</button>`).join('')}</div>
+                        <p class="sm" style="margin-top:6px">買了先放進屋裡的衣櫃（一樣的疊在同一格），沒有衣櫃或滿了才放倉庫。${X.level(S, 'house') === 3 ? '平房的曬衣繩會晾你的衣服。' : ''}</p>` + X.CLOTH_KEYS.filter(k => X.CLOTH[k].cat === ccat).map(k => {
+                        const f = X.CLOTH[k], c = ccol[k] || 0, have = S.items.filter(t => t.key === k).reduce((n, t) => n + t.qty, 0), can = money >= f.price;
+                        return `<div class="row"><div class="thumb c">${clIco(k, c)}</div>
+                            <div class="info"><p class="nm">${f.name}${have ? `<span class="sm" style="margin-left:6px">有 ${have}</span>` : ''}</p><p class="sm">${f.tier}${f.note ? '・' + f.note : ''}・${fmt(f.price)}</p>
+                            <p class="sm">${f.colors.length > 1 ? `<span class="cdots">${f.colors.map((cc, j) => `<button type="button" class="${j === c ? 'on' : ''}" style="background:${cc.sw}" data-ck="${k}" data-cc="${j}" aria-label="${cc.n}"></button>`).join('')}</span> ` : ''}${f.colors[c].n}</p></div>
+                            <button type="button" class="buy" data-buyc="${k}" ${can ? '' : 'disabled'}>${can ? `${have ? '再買' : '買'}<br>${fmt(f.price)}` : '錢包不夠'}</button></div>`;
+                    }).join('') + LEGAL;
+                    body.querySelectorAll('[data-ccat]').forEach(b => b.onclick = () => { ccat = b.dataset.ccat; renderSheet(); });
+                    body.querySelectorAll('[data-ck]').forEach(b => b.onclick = () => { ccol[b.dataset.ck] = +b.dataset.cc; renderSheet(); });
+                    body.querySelectorAll('[data-buyc]').forEach(b => b.onclick = () => act({ t: 'buyc', k: b.dataset.buyc, c: ccol[b.dataset.buyc] || 0 }));
+                } else {
+                    const stacks = S.items.filter(t => X.CLOTH[t.key] && t.in === 'depot'), wrs = X.holders(S, 'wr');
+                    const inWr = wrs.map(u => `${X.FURN[u.key].name}（${X.roomOf(S, u.in.slice(5)) ? X.roomOf(S, u.in.slice(5)).name : ''}）${X.wrStacks(S, u.id).length}／${X.HOLD[u.key].n} 格`).join('、');
+                    body.innerHTML = `<p class="sm" style="margin-top:6px">衣服一共 ${X.clothCount(S)} 件。${wrs.length ? '衣櫃：' + inWr + '。點衣櫃（進屋點它）可以看裡面。' : '屋裡還沒有衣櫃：家具「收納」有雙門衣櫃（12 格）、三門大衣櫃（18 格）。'}</p>` + stacks.map(t => {
+                        const f = X.CLOTH[t.key], armed = sellArm && sellArm.k === 'c:' + t.key + ':' + t.c && performance.now() - sellArm.t < 4000;
+                        return `<div class="row"><div class="thumb c">${clIco(t.key, t.c)}</div>
+                            <div class="info"><p class="nm">${f.name} <span class="sm">×${t.qty}</span></p><p class="sm">${f.colors[t.c].n}・在倉庫</p><p class="sm">賣一件拿回 ${fmt(X.clothSell(t.key))}</p></div>
+                            <div class="acts"><button type="button" class="buy" data-wrin="${t.key}" data-c="${t.c}" ${wrs.length ? '' : 'disabled'}>放進衣櫃</button><button type="button" class="buy ${armed ? 'warn' : 'ghost'}" data-sellc="${t.key}" data-c="${t.c}">${armed ? '確定賣一件' : '賣一件'}</button></div></div>`;
+                    }).join('') + (stacks.length ? '' : `<p class="sm" style="margin-top:10px">倉庫裡沒有衣服${X.clothCount(S) ? '，都在衣櫃裡' : ''}。</p>`) + LEGAL;
+                    body.querySelectorAll('[data-wrin]').forEach(b => b.onclick = () => { const k = b.dataset.wrin, c = +b.dataset.c, u = wrs.find(w => X.wrStacks(S, w.id).some(t => t.key === k && t.c === c)) || wrs.find(w => X.wrStacks(S, w.id).length < X.HOLD[w.key].n); if (!u) { showToast('衣櫃都滿了'); return; } act({ t: 'wrin', k, c, uid: u.id }); });
+                    body.querySelectorAll('[data-sellc]').forEach(b => b.onclick = () => { const id = 'c:' + b.dataset.sellc + ':' + b.dataset.c;
+                        if (sellArm && sellArm.k === id && performance.now() - sellArm.t < 4000) { sellArm = null; act({ t: 'sellc', k: b.dataset.sellc, c: +b.dataset.c }); }
+                        else { sellArm = { k: id, t: performance.now() }; renderSheet(); showToast(`再按一次就賣一件，拿回 ${fmt(X.clothSell(b.dataset.sellc))}`); } });
+                }
+            }
+            function renderCollTab(body) {
+                const own = X.COLL_KEYS.filter(k => X.collCount(S, k) > 0), cases = X.holders(S, 'case');
+                body.innerHTML = `<p class="sm" style="margin-top:6px">收集 ${own.length}／${X.COLL_KEYS.length} 款（藏品只能扭）。${cases.length ? '' : '屋裡還沒有展示櫃：家具「收納」有玻璃小櫃（4 格）、金框大展示櫃（8 格）。'}</p>` + own.map(k => {
+                    const c = X.COLL[k], dep = (S.items.find(t => t.key === k && t.in === 'depot') || { qty: 0 }).qty, shown = X.collCount(S, k) - dep;
+                    return `<div class="row"><div class="thumb c">${coIco(k)}</div><div class="info"><p class="nm">${c.name} <span class="sm">×${X.collCount(S, k)}</span></p><p class="sm" style="color:${X.RARE[c.r][1]}">${X.RARE[c.r][0]}・${c.g}</p><p class="sm">${shown ? `展示中 ${shown}・` : ''}倉庫 ${dep}</p></div>
+                        <button type="button" class="buy" data-case="${k}" ${dep && cases.length ? '' : 'disabled'}>放進展示櫃</button></div>`;
+                }).join('') + `<button type="button" class="btn main" id="goGacha" style="width:100%;margin-top:14px">去扭蛋</button>` + GACHA_LEGAL;
+                body.querySelectorAll('[data-case]').forEach(b => b.onclick = () => { for (const u of cases) { const used = X.caseItems(S, u.id).map(t => t.at); for (let i = 0; i < X.HOLD[u.key].n; i++) if (!used.includes(i)) { act({ t: 'casein', k: b.dataset.case, uid: u.id, i }); return; } } showToast('展示櫃都滿了'); });
+                $('goGacha').onclick = () => openSheet('gacha');
+            }
+            function renderGacha(body) {
+                const own = X.COLL_KEYS.filter(k => X.collCount(S, k) > 0).length, spins = (S.items.find(t => t.key === 'gstat') || { n: 0 }).n, P = X.GACHA.price;
+                if (stab === 'odds') {
+                    const o = X.GACHA.odds, per = r => (o[r] / X.COLL_KEYS.filter(k => X.COLL[k].r === r && k !== 'c_key').length);
+                    body.innerHTML = `<p class="sm" style="margin-top:6px">一次隨機出一件，29 款都在裡面。普通 ${o.n}%（12 款，每款 ${per('n').toFixed(0)}%）、稀有 ${o.r}%（12 款，每款約 ${per('r').toFixed(2)}%）、傳說 ${o.l}%（4 款，每款約 ${per('l').toFixed(2)}%），「絆」房的鑰匙 ${o.key}%（最低）。重複的疊起來記數量。</p>
+                        <div class="grid4">${X.COLL_KEYS.map(k => { const c = X.COLL[k], has = X.collCount(S, k) > 0; return `<div class="gcell r-${c.r} ${has ? '' : 'no'}">${coIco(k, 2)}<b>${has ? c.name : '？？？'}</b><i>${k === 'c_key' ? o.key : per(c.r).toFixed(c.r === 'n' ? 0 : 2)}%</i></div>`; }).join('')}</div>` + GACHA_LEGAL;
+                    return;
+                }
+                body.innerHTML = `<div class="machine"><img src="${GA_IMG}" alt="扭蛋機"><div><p class="nm">二十七樓扭蛋機</p><p class="sm">收集 ${own}／${X.COLL_KEYS.length} 款・扭過 ${spins} 次</p><p class="sm">${X.collCount(S, 'c_key') ? '「絆」房的鑰匙：有了' : '「絆」房的鑰匙還沒出現'}</p></div></div>
+                    <div class="rrow" style="margin-top:12px"><button type="button" class="btn" data-g="1" ${money >= P ? '' : 'disabled'}>扭一次 ${fmt(P)}</button><button type="button" class="btn main" data-g="10" ${money >= P * 10 ? '' : 'disabled'}>扭十次 ${fmt(P * 10)}</button></div>
+                    ${lastGot ? `<p class="swl" style="margin-top:14px">扭到了</p><div class="grid4">${lastGot.map(g => { const c = X.COLL[g.k]; return `<div class="gcell r-${c.r} ${g.first ? 'first' : ''}">${coIco(g.k, 2)}<b>${c.name}</b><i>${g.first ? X.RARE[c.r][0] + '・第一次' : '重複 ×' + g.n}</i></div>`; }).join('')}</div>` : ''}` + GACHA_LEGAL;
+                body.querySelectorAll('[data-g]').forEach(b => b.onclick = () => act({ t: 'gacha', n: +b.dataset.g }));
+            }
+            // 圖鑑：每一類收集了幾款；點進去有的彩色、沒有的灰色剪影「？？？」
+            const BOOK = {
+                car: { n: '車', keys: () => X.VEH_KEYS.filter(k => X.VEH[k].fac === 'garage'), has: k => !!X.vehOf(S, k), ico: k => vimg(k, 1), how: '商店「載具」' },
+                boat: { n: '船', keys: () => X.VEH_KEYS.filter(k => X.VEH[k].fac === 'dock'), has: k => !!X.vehOf(S, k), ico: k => vimg(k, 1), how: '商店「載具」' },
+                plane: { n: '飛機', keys: () => X.VEH_KEYS.filter(k => X.VEH[k].fac === 'airfield'), has: k => !!X.vehOf(S, k), ico: k => vimg(k, 1), how: '商店「載具」' },
+                rocket: { n: '火箭', keys: () => X.VEH_KEYS.filter(k => X.VEH[k].fac === 'launchpad'), has: k => !!X.vehOf(S, k), ico: k => vimg(k, 1), how: '商店「載具」' },
+                furn: { n: '家具', keys: () => X.FURN_KEYS, has: k => S.items.some(t => t.key === k), ico: k => `<img src="${RM.thumb(k, 0)}" alt="" style="${furnImgStyle(k)}">`, how: '商店「家具」' },
+                cloth: { n: '衣服', keys: () => X.CLOTH_KEYS, has: k => S.items.some(t => t.key === k && t.qty > 0), ico: k => clIco(k, 0, 1), how: '商店「衣服」' },
+                coll: { n: '藏品', keys: () => X.COLL_KEYS, has: k => X.collCount(S, k) > 0, ico: k => coIco(k, 2), how: '扭蛋' },
+            };
+            function renderBook(body) {
+                if (stab === 'all') {
+                    const rows = Object.entries(BOOK).map(([id, b]) => { const ks = b.keys(), h = ks.filter(b.has).length; return { id, b, h, n: ks.length }; });
+                    const H = rows.reduce((t, r) => t + r.h, 0), N = rows.reduce((t, r) => t + r.n, 0);
+                    body.innerHTML = `<p class="price" style="margin-top:6px;font-family:'Noto Sans TC',sans-serif;color:rgb(var(--wabi-shu))">收集了 ${Math.floor(H / N * 100)}%</p><p class="sm">照「款」算（顏色不算），一共 ${H}／${N} 款。</p>` + rows.map(r => `<button type="button" class="row" data-bk="${r.id}" style="width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left">
+                        <div class="info"><p class="nm">${r.b.n} <span class="sm">${r.h}／${r.n}</span></p><div class="pbar"><i style="width:${r.h / r.n * 100}%"></i></div></div><span class="sm">看 →</span></button>`).join('') + `<p class="sm" style="margin-top:10px">集滿一類送什麼：之後再說。</p>`;
+                    body.querySelectorAll('[data-bk]').forEach(b => b.onclick = () => { stab = b.dataset.bk; renderSheet(); });
+                    return;
+                }
+                const b = BOOK[stab], ks = b.keys(), name = k => (X.VEH[k] || X.FURN[k] || X.CLOTH[k] || X.COLL[k]).name;
+                body.innerHTML = `<p class="sm" style="margin-top:6px">${b.n} ${ks.filter(b.has).length}／${ks.length} 款。沒有的是灰色剪影，${b.how}拿得到。</p><div class="grid4">${ks.map(k => { const has = b.has(k), r = X.COLL[k] ? X.COLL[k].r : ''; return `<div class="gcell ${r ? 'r-' + r : ''} ${has ? '' : 'no'}">${b.ico(k)}<b>${has ? name(k) : '？？？'}</b>${r ? `<i>${X.RARE[r][0]}</i>` : ''}</div>`; }).join('')}</div>`;
+            }
+            // 衣櫃、展示櫃（進屋點它）
+            function openHold(uid) { holdUid = uid; caseSel = null; openSheet('hold'); }
+            function renderHold(body) {
+                const u = S.items.find(t => t.id === holdUid && X.HOLD[t.key]); if (!u) { body.innerHTML = '<p class="sm">找不到了</p>'; return; }
+                const H = X.HOLD[u.key], F = X.FURN[u.key], room = X.roomOf(S, u.in.slice(5));
+                $('sheetTitle').textContent = H.t === 'wr' ? '衣櫃' : '展示櫃';
+                if (H.t === 'wr') {
+                    const st = X.wrStacks(S, u.id), dep = S.items.filter(t => X.CLOTH[t.key] && t.in === 'depot');
+                    body.innerHTML = `<p class="sm" style="margin-top:6px">${F.name}（${room ? room.name : ''}）・${H.n} 格，用了 ${st.length} 格。一模一樣的疊在同一格；點一格拿一件出來。</p>
+                        <div class="grid4">${Array.from({ length: H.n }, (_, i) => { const t = st[i]; return t ? `<button type="button" class="gcell" data-out="${t.key}" data-c="${t.c}">${clIco(t.key, t.c, 1)}<b>${X.CLOTH[t.key].name}</b><span class="q">×${t.qty}</span></button>` : `<div class="gcell empty">空</div>`; }).join('')}</div>
+                        <p class="swl" style="margin-top:14px">倉庫裡的衣服（點了放一件進來）</p>` + (dep.length ? `<div class="tray">${dep.map(t => `<button type="button" class="vchip" data-in="${t.key}" data-c="${t.c}"><span class="vimg" style="background:#e9e1d2">${clIco(t.key, t.c, 1)}</span><b>${X.CLOTH[t.key].name}</b><i>×${t.qty}</i></button>`).join('')}</div>` : `<p class="sm">沒有。<button type="button" class="btn" id="goCl" style="min-height:32px;padding:0 10px;margin-left:6px">去商店買衣服</button></p>`);
+                    body.querySelectorAll('[data-out]').forEach(b => b.onclick = () => act({ t: 'wrout', k: b.dataset.out, c: +b.dataset.c, uid: u.id }));
+                    body.querySelectorAll('[data-in]').forEach(b => b.onclick = () => act({ t: 'wrin', k: b.dataset.in, c: +b.dataset.c, uid: u.id }));
+                    const g = $('goCl'); if (g) g.onclick = () => openSheet('shop', 'cloth');
+                } else {
+                    const its = X.caseItems(S, u.id), dep = S.items.filter(t => X.COLL[t.key] && t.in === 'depot' && t.qty > 0);
+                    body.innerHTML = `<p class="sm" style="margin-top:6px">${F.name}（${room ? room.name : ''}）・${H.n} 格。點空格再點下面一件放進去；點擺著的拿出來。</p>
+                        <div class="grid4">${Array.from({ length: H.n }, (_, i) => { const t = its.find(q => q.at === i); return t ? `<button type="button" class="gcell r-${X.COLL[t.key].r}" data-cout="${i}">${coIco(t.key, 2)}<b>${X.COLL[t.key].name}</b></button>` : `<button type="button" class="gcell empty ${caseSel === i ? 'on' : ''}" data-sel="${i}">空</button>`; }).join('')}</div>
+                        <p class="swl" style="margin-top:14px">倉庫裡的藏品</p>` + (dep.length ? `<div class="tray">${dep.map(t => `<button type="button" class="vchip" data-cin="${t.key}"><span class="vimg" style="background:#e9e1d2">${coIco(t.key, 1)}</span><b>${X.COLL[t.key].name}</b><i>×${t.qty}</i></button>`).join('')}</div>` : `<p class="sm">沒有。<button type="button" class="btn" id="goGa" style="min-height:32px;padding:0 10px;margin-left:6px">去扭蛋</button></p>`) + GACHA_LEGAL;
+                    body.querySelectorAll('[data-cout]').forEach(b => b.onclick = () => act({ t: 'caseout', uid: u.id, i: +b.dataset.cout }));
+                    body.querySelectorAll('[data-sel]').forEach(b => b.onclick = () => { caseSel = +b.dataset.sel; renderSheet(); });
+                    body.querySelectorAll('[data-cin]').forEach(b => b.onclick = () => { let i = caseSel; if (i == null || its.some(q => q.at === i)) { i = null; for (let j = 0; j < H.n; j++) if (!its.some(q => q.at === j)) { i = j; break; } } if (i == null) { showToast('展示櫃滿了，先點一格拿出來'); return; } caseSel = null; act({ t: 'casein', k: b.dataset.cin, uid: u.id, i }); });
+                    const g = $('goGa'); if (g) g.onclick = () => openSheet('gacha');
+                }
+            }
+
             // ----- 開始 -----
             size();
             new ResizeObserver(() => { if (size()) { if (world) { if (zoomed()) { clampCam(); draw(); } else fit(); } } }).observe(view);
             renderTop();
-            D.load('assets/xiaodao/', '20261122a').then(() => setTimeout(() => rebuild(true), 30));
+            D.load('assets/xiaodao/', '20261122b').then(() => setTimeout(() => rebuild(true), 30));
             roomLoaded = RM.load('assets/xiaodao/', '20261122a');   // 家具的圖先載好（商店、倉庫的小圖要用）
             roomLoaded.then(() => { if ($('sheet').classList.contains('on')) renderSheet(); if (roomOn) renderRoom(); });
         }

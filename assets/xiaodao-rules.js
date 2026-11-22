@@ -200,6 +200,70 @@
     [{ n: '一樓', rooms: [{ id: 'main', name: '客廳', w: 13, h: 12, block: [[11, 8, 2, 4]] }, { id: 'kitchen', name: '廚房', w: 8, h: 12 }, { id: 'dining', name: '餐廳', w: 9, h: 12 }] },
      { n: '二樓', rooms: [{ id: 'bed', name: '主臥', w: 12, h: 12, block: [[0, 8, 2, 4]] }, { id: 'study', name: '書房', w: 9, h: 12 }, { id: 'guest', name: '客房', w: 9, h: 12 }] }],
   ];
+  // ---------- 衣服、藏品（第五批） ----------
+  // 衣服：clothes.html 的 20 款（tools/xiaodao/dump_items.js → assets/xiaodao/clothes.png，colors[].d 是圖裡的位置）。一模一樣的（同款同色）疊在同一格記數量
+  const CLOTH = {
+    top1: { name: '素T', cat: '上衣', tier: '平價', note: '', price: 300, colors: [{ n: '白', sw: '#f3f1ec', d: [0,0,24,28] },{ n: '黑', sw: '#3d3a38', d: [25,0,24,28] },{ n: '灰', sw: '#a9aeb1', d: [50,0,24,28] }] },
+    top2: { name: '條紋T', cat: '上衣', tier: '平價', note: '', price: 400, colors: [{ n: '白底藍條', sw: '#f3f1ec', d: [75,0,24,28] },{ n: '白底朱條', sw: '#f3f1ec', d: [100,0,24,28] },{ n: '深藍白條', sw: '#2f4166', d: [125,0,24,28] }] },
+    top3: { name: '背心', cat: '上衣', tier: '平價', note: '', price: 300, colors: [{ n: '白', sw: '#f3f1ec', d: [150,0,24,28] },{ n: '黑', sw: '#3d3a38', d: [175,0,24,28] },{ n: '卡其', sw: '#c9b48a', d: [200,0,24,28] }] },
+    top4: { name: '丼步喱T', cat: '上衣', tier: '高級', note: '胸口一顆朱印', price: 2500, colors: [{ n: '白', sw: '#f3f1ec', d: [225,0,24,28] },{ n: '米', sw: '#e8dbc2', d: [250,0,24,28] },{ n: '墨', sw: '#4a4a4a', d: [275,0,24,28] }] },
+    top5: { name: '長袖襯衫', cat: '上衣', tier: '高級', note: '', price: 2000, colors: [{ n: '淺藍', sw: '#a9c6da', d: [300,0,24,28] },{ n: '粉', sw: '#f0c4bc', d: [325,0,24,28] },{ n: '格子綠', sw: '#7a9a55', d: [350,0,24,28] }] },
+    top6: { name: '麻花毛衣', cat: '上衣', tier: '高級', note: '', price: 4000, colors: [{ n: '米白', sw: '#efe4cf', d: [375,0,24,28] },{ n: '芥末黃', sw: '#d4a83a', d: [400,0,24,28] },{ n: '酒紅', sw: '#8f2c23', d: [425,0,24,28] }] },
+    top7: { name: '連帽衫', cat: '上衣', tier: '平價', note: '', price: 800, colors: [{ n: '灰', sw: '#a9aeb1', d: [450,0,24,28] },{ n: '枯茶', sw: '#8e8070', d: [475,0,24,28] },{ n: '深藍', sw: '#2f4166', d: [0,29,24,28] }] },
+    coat1: { name: '牛仔外套', cat: '外套', tier: '高級', note: '', price: 6000, colors: [{ n: '淺藍', sw: '#7d9cbd', d: [25,29,24,28] },{ n: '深藍', sw: '#3d5a80', d: [50,29,24,28] },{ n: '黑', sw: '#3d3a38', d: [75,29,24,28] }] },
+    coat2: { name: '風衣', cat: '外套', tier: '豪華', note: '', price: 25000, colors: [{ n: '卡其', sw: '#c9a878', d: [100,29,24,28] },{ n: '黑', sw: '#3d3a38', d: [125,29,24,28] },{ n: '深綠', sw: '#4f6040', d: [150,29,24,28] }] },
+    coat3: { name: '羽絨外套', cat: '外套', tier: '豪華', note: '', price: 30000, colors: [{ n: '黑', sw: '#3d3a38', d: [175,29,24,28] },{ n: '朱', sw: '#b33a2f', d: [200,29,24,28] },{ n: '白', sw: '#ece9e2', d: [225,29,24,28] }] },
+    coat4: { name: '西裝外套', cat: '外套', tier: '豪華', note: '', price: 40000, colors: [{ n: '深藍', sw: '#2f4166', d: [250,29,24,28] },{ n: '炭灰', sw: '#4a4d52', d: [275,29,24,28] },{ n: '米', sw: '#d8c7a8', d: [300,29,24,28] }] },
+    bottom1: { name: '牛仔褲', cat: '下身', tier: '平價', note: '', price: 800, colors: [{ n: '淺藍', sw: '#7d9cbd', d: [325,29,24,28] },{ n: '深藍', sw: '#3d5a80', d: [350,29,24,28] },{ n: '黑', sw: '#3d3a38', d: [375,29,24,28] }] },
+    bottom2: { name: '短褲', cat: '下身', tier: '平價', note: '', price: 500, colors: [{ n: '卡其', sw: '#c9b48a', d: [400,29,24,28] },{ n: '深藍', sw: '#2f4166', d: [425,29,24,28] },{ n: '綠', sw: '#7a9a55', d: [450,29,24,28] }] },
+    bottom3: { name: '百褶裙', cat: '下身', tier: '高級', note: '', price: 3000, colors: [{ n: '格紋紅', sw: '#a8342a', d: [475,29,24,28] },{ n: '深藍', sw: '#2f4166', d: [0,58,24,28] },{ n: '米', sw: '#d8c7a8', d: [25,58,24,28] }] },
+    bottom4: { name: '西裝褲', cat: '下身', tier: '高級', note: '', price: 4500, colors: [{ n: '炭灰', sw: '#4a4d52', d: [50,58,24,28] },{ n: '深藍', sw: '#2f4166', d: [75,58,24,28] },{ n: '米', sw: '#d8c7a8', d: [100,58,24,28] }] },
+    dress1: { name: '浴衣', cat: '連身・和風', tier: '豪華', note: '', price: 20000, colors: [{ n: '深藍', sw: '#2f4166', d: [125,58,24,28] },{ n: '朱', sw: '#b33a2f', d: [150,58,24,28] },{ n: '白', sw: '#ece9e2', d: [175,58,24,28] }] },
+    dress2: { name: '連身洋裝', cat: '連身・和風', tier: '高級', note: '', price: 5000, colors: [{ n: '碎花紅', sw: '#c0574a', d: [200,58,24,28] },{ n: '黑', sw: '#3d3a38', d: [225,58,24,28] },{ n: '薄荷', sw: '#9cc5b8', d: [250,58,24,28] }] },
+    dress3: { name: '吊帶褲', cat: '連身・和風', tier: '平價', note: '', price: 700, colors: [{ n: '丹寧', sw: '#5a7aa0', d: [275,58,24,28] },{ n: '卡其', sw: '#b8a070', d: [300,58,24,28] },{ n: '紅', sw: '#a8342a', d: [325,58,24,28] }] },
+    special1: { name: '船長外套', cat: '特別款', tier: '豪華', note: '跟青江菜船長同款', price: 60000, colors: [{ n: '白', sw: '#f3f1ec', d: [350,58,24,28] }] },
+    special2: { name: '國王紅披風', cat: '特別款', tier: '豪華', note: '浣熊大王同款', price: 60000, colors: [{ n: '朱', sw: '#b33a2f', d: [375,58,24,28] },{ n: '深紫', sw: '#5a3a6a', d: [400,58,24,28] }] },
+  };
+  const CLOTH_KEYS = Object.keys(CLOTH), CLOTH_MAX = 300;
+  // 藏品：collectibles.html 的 29 款，全部只能扭（使用者定的）；r 是稀有度 n 普通、r 稀有、l 傳說（assets/xiaodao/collect.png）
+  const COLL = {
+    c_julie: { name: '茱莉鴨', g: '公仔', r: 'r', d: [0,0,24,24] },
+    c_appleduck: { name: '蘋果鴨', g: '公仔', r: 'r', d: [25,0,24,24] },
+    c_raccoon: { name: '浣熊大王', g: '公仔', r: 'l', d: [50,0,24,24] },
+    c_xiaowu: { name: '小吳鴨', g: '公仔', r: 'r', d: [75,0,24,24] },
+    c_captain: { name: '青江菜船長', g: '公仔', r: 'r', d: [100,0,24,24] },
+    c_cat: { name: '店貓', g: '公仔', r: 'n', d: [125,0,24,24] },
+    c_dog: { name: '坐洗部的狗', g: '公仔', r: 'n', d: [150,0,24,24] },
+    c_mole: { name: '鼴鼠', g: '公仔', r: 'n', d: [175,0,24,24] },
+    c_nugget: { name: '雞塊', g: '公仔', r: 'n', d: [200,0,24,24] },
+    c_goldspec: { name: '金塊標本', g: '礦坑標本', r: 'n', d: [225,0,24,24] },
+    c_trilobite: { name: '三葉蟲化石', g: '礦坑標本', r: 'n', d: [250,0,24,24] },
+    c_geode: { name: '紫水晶洞', g: '礦坑標本', r: 'r', d: [275,0,24,24] },
+    c_diamond: { name: '鑽石原石', g: '礦坑標本', r: 'r', d: [300,0,24,24] },
+    c_meteor: { name: '隕石碎片', g: '礦坑標本', r: 'l', d: [325,0,24,24] },
+    c_shell: { name: '貝殼標本', g: '海上撿到的', r: 'n', d: [350,0,24,24] },
+    c_bottle: { name: '伊藤的漂流瓶', g: '海上撿到的', r: 'n', d: [375,0,24,24] },
+    c_coral: { name: '紅珊瑚', g: '海上撿到的', r: 'r', d: [400,0,24,24] },
+    c_shipbottle: { name: '長蘿號瓶中船', g: '海上撿到的', r: 'r', d: [425,0,24,24] },
+    c_goldcarrot: { name: '金蘿蔔', g: '海上撿到的', r: 'l', d: [450,0,24,24] },
+    c_omamori: { name: '御守', g: '和風小物', r: 'n', d: [475,0,24,24] },
+    c_fan: { name: '扇子', g: '和風小物', r: 'n', d: [0,25,24,24] },
+    c_furin: { name: '風鈴', g: '和風小物', r: 'n', d: [25,25,24,24] },
+    c_daruma: { name: '達摩不倒翁', g: '和風小物', r: 'r', d: [50,25,24,24] },
+    c_bonsai: { name: '小盆景', g: '和風小物', r: 'r', d: [75,25,24,24] },
+    c_kintsugi: { name: '金繼茶碗', g: '和風小物', r: 'l', d: [100,25,24,24] },
+    c_router: { name: '28 樓的舊路由器', g: '27 樓的梗', r: 'n', d: [125,25,24,24] },
+    c_oldticket: { name: '泛黃的入住券', g: '27 樓的梗', r: 'r', d: [150,25,24,24] },
+    c_tower: { name: '27 樓大樓模型', g: '27 樓的梗', r: 'r', d: [175,25,24,24] },
+    c_key: { name: '「絆」房的鑰匙', g: '27 樓的梗', r: 'l', d: [200,25,24,24] },
+  };
+  const COLL_KEYS = Object.keys(COLL);
+  // 扭蛋：一次 $1,500（企劃書，第一批照工資調整過）。機率：普通 60%（12 款平分 5%）、稀有 32%（12 款平分約 2.67%）、傳說 7.5%（4 款平分約 1.88%）、「絆」房的鑰匙 0.5%（最低）
+  const GACHA = { price: 1500, odds: { n: 60, r: 32, l: 7.5, key: 0.5 } };
+  const RARE = { n: ['普通', '#c9c2b4'], r: ['稀有', '#c9a24a'], l: ['傳說', '#b33a2f'] };
+  // 收納家具：衣櫃裝幾格衣服、展示櫃放幾件藏品（企劃書：衣櫃 12 格、玻璃小櫃 4 格、金框大展示櫃 8 格）
+  const HOLD = { store1: { t: 'wr', n: 12 }, store2: { t: 'wr', n: 18 }, store5: { t: 'case', n: 4 }, store6: { t: 'case', n: 8 } };
+
   const CLS_NAME = { garage: ['', '兩輪', '轎車', '跑車', '大車', '展示級'], dock: ['', '小船', '有馬達的船', '帆船', '遊艇', '展示級'], airfield: ['', '小飛行器', '直升機', '小飛機', '噴射機', '展示級'], launchpad: ['', '小型火箭', '中型火箭', '大型火箭'] };
 
   const START = { house: 1 };                             // 一開始送帳篷
@@ -343,6 +407,15 @@
         if (typeof i.in === 'string' && i.in.indexOf('room:') === 0 && Array.isArray(i.at) && /^u\d{1,6}$/.test(String(i.id))) { items.push({ id: i.id, key: i.key, c, in: i.in, at: [Math.floor(Number(i.at[0]) || 0), Math.floor(Number(i.at[1]) || 0)], rot: Math.floor(Number(i.rot) || 0) & 3 }); return; }
         addStack(items, i.key, c, 1); return;
       }
+      if (CLOTH[i.key]) {   // 衣服：倉庫或某個衣櫃裡（疊數量）；衣櫃在不在、裝不裝得下最後 fixHolds() 再看
+        const c = Math.max(0, Math.min(CLOTH[i.key].colors.length - 1, Math.floor(Number(i.c) || 0))), q = Math.max(0, Math.min(99, Math.floor(Number(i.qty) || 0)));
+        if (q) addCloth(items, i.key, c, typeof i.in === 'string' && /^wr:u\d+$/.test(i.in) ? i.in : 'depot', q); return;
+      }
+      if (COLL[i.key]) {   // 藏品：倉庫的疊數量；擺在展示櫃的一件一筆
+        if (typeof i.in === 'string' && /^case:u\d+$/.test(i.in) && Number.isInteger(i.at)) { if (!items.some(t => t.in === i.in && t.at === i.at && COLL[t.key])) items.push({ id: 'cp-' + i.in.slice(5) + '-' + i.at, key: i.key, in: i.in, at: i.at }); else addColl(items, i.key, 1); return; }
+        const q = Math.max(0, Math.min(999, Math.floor(Number(i.qty) || 0))); if (q) addColl(items, i.key, q); return;
+      }
+      if (i.key === 'gstat') { if (!items.some(t => t.key === 'gstat')) items.push({ id: 'gstat', key: 'gstat', n: Math.max(0, Math.floor(Number(i.n) || 0)) }); return; }
       if (i.key === 'style' && typeof i.room === 'string' && /^[a-z]{1,12}$/.test(i.room)) { if (!items.some(t => t.key === 'style' && t.room === i.room)) items.push({ id: 'style-' + i.room, key: 'style', room: i.room, floor: Math.max(0, Math.min(FLOORS.length - 1, Math.floor(Number(i.floor) || 0))), paper: Math.max(0, Math.min(PAPERS.length - 1, Math.floor(Number(i.paper) || 0))) }); return; }
       if (i.key === 'deco') { const ok = (a, n) => (Array.isArray(a) ? a : []).filter(x => Number.isInteger(x) && x >= 0 && x < n); if (!items.some(t => t.key === 'deco')) items.push({ id: 'deco', key: 'deco', floors: [...new Set(ok(i.floors, FLOORS.length))], papers: [...new Set(ok(i.papers, PAPERS.length))] }); return; }
       items.push(i);   // 之後的東西（衣服、藏品…）原樣留著
@@ -353,7 +426,36 @@
     const tmp = { v: 1, items }; const placed = items.filter(t => FURN[t.key] && t.in !== 'depot');
     placed.forEach(t => { t._skip = true; });
     placed.forEach(t => { delete t._skip; const rid = t.in.slice(5), chk = canPlace(tmp, rid, t.key, t.at[0], t.at[1], t.rot, t.id); if (!chk.ok) { tmp.items = tmp.items.filter(q => q !== t); addStack(tmp.items, t.key, t.c, 1); } else t.rot = chk.rot; });
+    fixHolds(tmp);
     return { v: 1, items: tmp.items };
+  }
+  // ---- 衣服、藏品的小工具 ----
+  function addCloth(items, key, c, where, q) {
+    let st = items.find(t => t.key === key && t.c === c && t.in === where);
+    if (!st) { st = { id: (where === 'depot' ? 'cd-' : 'w-') + key + '-' + c + (where === 'depot' ? '' : '-' + where.slice(3)), key, c, in: where, qty: 0 }; items.push(st); }
+    const room = 99 - st.qty, add = Math.min(room, q); st.qty += add; return q - add;
+  }
+  function addColl(items, key, q) { let st = items.find(t => t.key === key && t.in === 'depot'); if (!st) { st = { id: 'cs-' + key, key, in: 'depot', qty: 0 }; items.push(st); } st.qty = Math.min(999, st.qty + q); }
+  // 衣櫃、展示櫃（擺在屋裡的那一件）
+  const holders = (s, t) => s.items.filter(i => FURN[i.key] && HOLD[i.key] && HOLD[i.key].t === t && i.in !== 'depot');
+  const wrStacks = (s, uid) => s.items.filter(i => CLOTH[i.key] && i.in === 'wr:' + uid);
+  const caseItems = (s, uid) => s.items.filter(i => COLL[i.key] && i.in === 'case:' + uid);
+  // 衣櫃、展示櫃不見了（收回倉庫、賣掉、房間沒了）或裝太多：裡面的東西回倉庫
+  function fixHolds(s) {
+    const ok = new Map(holders(s, 'wr').concat(holders(s, 'case')).map(i => [i.id, i]));
+    s.items.filter(i => CLOTH[i.key] && i.in !== 'depot').forEach(i => { const u = ok.get(i.in.slice(3)); if (!u || HOLD[u.key].t !== 'wr') { s.items = s.items.filter(t => t !== i); addCloth(s.items, i.key, i.c, 'depot', i.qty); } });
+    holders(s, 'wr').forEach(u => { const st = wrStacks(s, u.id); st.slice(HOLD[u.key].n).forEach(i => { s.items = s.items.filter(t => t !== i); addCloth(s.items, i.key, i.c, 'depot', i.qty); }); });
+    s.items.filter(i => COLL[i.key] && i.in !== 'depot').forEach(i => { const u = ok.get(i.in.slice(5)); if (!u || HOLD[u.key].t !== 'case' || !(i.at >= 0 && i.at < HOLD[u.key].n)) { s.items = s.items.filter(t => t !== i); addColl(s.items, i.key, 1); } });
+  }
+  const clothCount = s => s.items.reduce((n, t) => n + (CLOTH[t.key] ? t.qty : 0), 0);
+  const collCount = (s, k) => s.items.reduce((n, t) => n + (t.key === k ? (t.in === 'depot' ? t.qty : 1) : 0), 0);
+  const clothSell = k => Math.floor(CLOTH[k].price / 2);
+  // 扭一次：rng 回 0～1（網頁用 Math.random，之後後端用自己的）
+  function rollGacha(rng) {
+    const o = GACHA.odds, x = rng() * 100;
+    if (x < o.key) return 'c_key';
+    const y = x - o.key, grp = y < o.n ? 'n' : y < o.n + o.r ? 'r' : 'l', list = COLL_KEYS.filter(k => COLL[k].r === grp && k !== 'c_key');
+    return list[Math.min(list.length - 1, Math.floor(rng() * list.length))];
   }
   function addStack(items, key, c, q) {
     let st = items.find(t => t.key === key && t.in === 'depot' && t.c === c);
@@ -491,7 +593,12 @@
   // 做一件事：{ t: 'plot', p } 買地、{ t: 'build', k } 蓋或升一級。money 是錢包有多少。
   // 車船：{ t: 'buyv', k } 買（自動停進空位，沒空位放寄放處）、{ t: 'park', k, f, i } 停進某一格（有車就對調）、{ t: 'depot', k } 收進寄放處、{ t: 'sell', k } 賣掉（買價一半）
   // 回 { ok: true, cost, state, msg } 或 { ok: false, err }；不改原本的 state。
-  function apply(s0, act, money) {
+  function apply(s0, act, money, rng) {
+    const r = apply0(s0, act, money, rng || Math.random);
+    if (r.ok && r.state) fixHolds(r.state);
+    return r;
+  }
+  function apply0(s0, act, money, rng) {
     const s = clean(JSON.parse(JSON.stringify(s0)));
     if (!act || typeof act !== 'object') return { ok: false, err: '看不懂要做什麼' };
     if (act.t === 'plot') {
@@ -542,6 +649,49 @@
     if (act.t === 'depot') {
       const v = vehOf(s, String(act.k || '')); if (!v) return { ok: false, err: '你沒有這台' };
       v.in = 'depot'; delete v.at; return { ok: true, cost: 0, state: s };
+    }
+    if (act.t === 'buyc') {   // 買衣服：先放進擺著的衣櫃（同一格疊、或有空格的），都滿了才放倉庫
+      const k = String(act.k || ''), f = CLOTH[k]; if (!f) return { ok: false, err: '沒有這件' };
+      const c = Math.floor(Number(act.c) || 0); if (!(c >= 0 && c < f.colors.length)) return { ok: false, err: '沒有這個顏色' };
+      if (clothCount(s) >= CLOTH_MAX) return { ok: false, err: `衣服最多 ${CLOTH_MAX} 件` };
+      if (!(money >= f.price)) return { ok: false, err: '錢包不夠' };
+      const wrs = holders(s, 'wr'); let to = wrs.find(u => wrStacks(s, u.id).some(t => t.key === k && t.c === c && t.qty < 99)) || wrs.find(u => wrStacks(s, u.id).length < HOLD[u.key].n);
+      const where = to ? 'wr:' + to.id : 'depot';
+      if (addCloth(s.items, k, c, where, 1)) return { ok: false, err: '同一款最多疊 99 件' };
+      return { ok: true, cost: f.price, state: s, into: to ? to.id : null };
+    }
+    if (act.t === 'sellc') {   // 賣倉庫裡的衣服（一件、一半）
+      const k = String(act.k || ''), c = Math.floor(Number(act.c) || 0), st = CLOTH[k] && s.items.find(t => t.key === k && t.c === c && t.in === 'depot');
+      if (!st || !st.qty) return { ok: false, err: '倉庫裡沒有這件' };
+      st.qty--; if (!st.qty) s.items = s.items.filter(t => t !== st); return { ok: true, cost: -clothSell(k), state: s };
+    }
+    if (act.t === 'wrin' || act.t === 'wrout') {   // 衣服放進衣櫃／拿出來（一件）
+      const k = String(act.k || ''), c = Math.floor(Number(act.c) || 0), u = holders(s, 'wr').find(i => i.id === act.uid); if (!u) return { ok: false, err: '找不到這個衣櫃' };
+      const from = act.t === 'wrin' ? 'depot' : 'wr:' + u.id, to = act.t === 'wrin' ? 'wr:' + u.id : 'depot', st = CLOTH[k] && s.items.find(t => t.key === k && t.c === c && t.in === from);
+      if (!st || !st.qty) return { ok: false, err: act.t === 'wrin' ? '倉庫裡沒有這件' : '衣櫃裡沒有這件' };
+      if (act.t === 'wrin' && !wrStacks(s, u.id).some(t => t.key === k && t.c === c) && wrStacks(s, u.id).length >= HOLD[u.key].n) return { ok: false, err: `衣櫃滿了（${HOLD[u.key].n} 格）` };
+      if (addCloth(s.items, k, c, to, 1)) return { ok: false, err: '同一款最多疊 99 件' };
+      st.qty--; if (!st.qty) s.items = s.items.filter(t => t !== st); return { ok: true, cost: 0, state: s };
+    }
+    if (act.t === 'gacha') {   // 扭蛋：一次或十次，扭到的進倉庫
+      const n = act.n === 10 ? 10 : 1, cost = GACHA.price * n; if (!(money >= cost)) return { ok: false, err: '錢包不夠' };
+      const got = [];
+      for (let i = 0; i < n; i++) { const k = rollGacha(rng); got.push({ k, first: collCount(s, k) === 0 }); addColl(s.items, k, 1); }
+      let g = s.items.find(t => t.key === 'gstat'); if (!g) { g = { id: 'gstat', key: 'gstat', n: 0 }; s.items.push(g); } g.n += n;
+      got.forEach(x => { x.n = collCount(s, x.k); });
+      return { ok: true, cost, state: s, got };
+    }
+    if (act.t === 'casein') {   // 藏品放進展示櫃的某一格（那格原本的回倉庫）
+      const k = String(act.k || ''), u = holders(s, 'case').find(i => i.id === act.uid), at = Math.floor(Number(act.i));
+      if (!u) return { ok: false, err: '找不到這個展示櫃' }; if (!(at >= 0 && at < HOLD[u.key].n)) return { ok: false, err: '沒有這一格' };
+      const st = COLL[k] && s.items.find(t => t.key === k && t.in === 'depot'); if (!st || !st.qty) return { ok: false, err: '倉庫裡沒有這件' };
+      const old = caseItems(s, u.id).find(t => t.at === at); if (old) { s.items = s.items.filter(t => t !== old); addColl(s.items, old.key, 1); }
+      st.qty--; if (!st.qty) s.items = s.items.filter(t => t !== st);
+      s.items.push({ id: 'cp-' + u.id + '-' + at, key: k, in: 'case:' + u.id, at }); return { ok: true, cost: 0, state: s };
+    }
+    if (act.t === 'caseout') {
+      const it = s.items.find(t => COLL[t.key] && t.in === 'case:' + act.uid && t.at === Math.floor(Number(act.i))); if (!it) return { ok: false, err: '這一格是空的' };
+      s.items = s.items.filter(t => t !== it); addColl(s.items, it.key, 1); return { ok: true, cost: 0, state: s };
     }
     if (act.t === 'buyf') {   // 買家具：先進倉庫
       const k = String(act.k || ''), info = furnInfo(s, k); if (!info.ok) return { ok: false, err: info.why };
@@ -597,12 +747,12 @@
     for (let n = 1; n <= isl.bought; n++) t += plotPrice(n);
     FAC_KEYS.forEach(k => { const lv = level(s, k); for (let l = 1; l <= lv; l++) t += FAC[k].prices[l - 1]; });
     vehicles(s).forEach(v => { t += VEH[v.key].price; });
-    s.items.forEach(i => { if (FURN[i.key]) t += FURN[i.key].price * (i.in === 'depot' ? i.qty : 1); });
+    s.items.forEach(i => { if (FURN[i.key]) t += FURN[i.key].price * (i.in === 'depot' ? i.qty : 1); if (CLOTH[i.key]) t += CLOTH[i.key].price * i.qty; if (COLL[i.key]) t += GACHA.price * (i.in === 'depot' ? i.qty : 1); });
     const d = deco(s); d.floors.forEach(i => { t += FLOORS[i].p; }); d.papers.forEach(i => { t += PAPERS[i].p; });
     return t;
   }
 
-  const R = { FURN, FURN_KEYS, FURN_MAX, FURN_LUX_HOUSE, FLOORS, PAPERS, STYLE0, ROOMS, floorsOf, roomOf, fpOf, layerOf, placedIn, wallRots, canPlace, furnCount, deco, styleOf, hasFloor, hasPaper, furnInfo, furnSell, VEH, VEH_KEYS, CLS_NAME, vehOf, vehicles, slotsOf, fitWhy, vehInfo, freeSlot, sellPrice, C, GW, GH, COAST, SEA, FAC, FAC_KEYS, TIERS, START, hash, vnoise, inSea, world, rect, needPlots, plotPrice, fresh, clean, island, level, tierOf, nextTier, plotInfo, facInfo, apply, worth };
+  const R = { CLOTH, CLOTH_KEYS, CLOTH_MAX, COLL, COLL_KEYS, GACHA, RARE, HOLD, holders, wrStacks, caseItems, clothCount, collCount, clothSell, rollGacha, FURN, FURN_KEYS, FURN_MAX, FURN_LUX_HOUSE, FLOORS, PAPERS, STYLE0, ROOMS, floorsOf, roomOf, fpOf, layerOf, placedIn, wallRots, canPlace, furnCount, deco, styleOf, hasFloor, hasPaper, furnInfo, furnSell, VEH, VEH_KEYS, CLS_NAME, vehOf, vehicles, slotsOf, fitWhy, vehInfo, freeSlot, sellPrice, C, GW, GH, COAST, SEA, FAC, FAC_KEYS, TIERS, START, hash, vnoise, inSea, world, rect, needPlots, plotPrice, fresh, clean, island, level, tierOf, nextTier, plotInfo, facInfo, apply, worth };
   root.XiaodaoRules = R;
   if (typeof module !== 'undefined' && module.exports) module.exports = R;
 })(typeof window !== 'undefined' ? window : this);
