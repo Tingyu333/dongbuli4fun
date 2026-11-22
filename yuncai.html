@@ -640,7 +640,7 @@
             if (b) { const [id, kind, pick] = b.dataset.bet.split('|'); return openSheet(id, kind, pick); }
             if (t.id === 'sheet' || t.closest('[data-close]')) return closeSheet();
             const step = t.closest('[data-step]');
-            if (step) { $('amt').value = Math.max(0, amt() + Number(step.dataset.step) * 100); return renderSheet(); }
+            if (step) { $('amt').value = Math.max(0, amt() + Number(step.dataset.step) * 1000); return renderSheet(); }   // 一次 ±1000（2026-11-22 使用者要的，原本 100）
             const set = t.closest('[data-set]');
             if (set) { const m = matchOf(cur && cur.id); $('amt').value = set.dataset.set === 'max' ? (m ? room(m) : 0) : set.dataset.set; return renderSheet(); }
             if (t.closest('#betBtn')) return bet();
