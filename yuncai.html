@@ -503,7 +503,7 @@
             // 超出底池（2026-11-23 使用者要的，只標示、不擋）：押的比「別的選項的錢＋保底」還多，
             // 押中也只是按比例分這些錢，押越多倍數越低
             const others = total - on;
-            if (a && a > others) lines.push(`<span class="warn">超出底池：押中最多只能分到 ${fmt(others)}，會按比例分配，押越多倍數越低。</span>`);
+            if (a && a > others) lines.push(`<span class="warn">超出底池：會按比例分配，押越多倍數越低。</span>`);
             const lim = room(m);
             if (a && a < r.min) lines.push(`<span class="warn">一注最少 ${fmt(r.min)}。</span>`);
             else if (a > lim) lines.push(`<span class="warn">${Line.loggedIn && a > Wallet.money ? '錢包不夠' : `超過上限（一場最多 ${fmt(r.matchMax)}）`}，最多可押 ${fmt(lim)}。</span>`);
