@@ -152,6 +152,28 @@
       q([iso(X1 + RO, Y0 - RO, eave), iso(X1 + RO, RY, ridgeH), iso(X1 + RO, RY, ridgeH - 2), iso(X1 + RO, Y0 - RO, eave - 2)], sh(col, -.38));
       q([iso(X0 - RO, RY - .1, ridgeH + 1.5), iso(X1 + RO, RY - .1, ridgeH + 1.5), iso(X1 + RO, RY + .1, ridgeH), iso(X0 - RO, RY + .1, ridgeH)], sh(col, -.3));
     }
+    // 曬衣繩：A、B 兩根柱子（posts = false 就不畫柱子，例如掛在陽台欄杆上），h 是繩子多高；衣服照 clothes 一件一件掛
+    // clothes：[{ t: 'top'|'coat'|'bottom'|'skirt'|'dress'|'cape'|'towel', c: 色 }]；沒有就空著（跟島上平房的曬衣繩一樣）
+    const CLOTHES = opt.clothes || [];
+    function hang(A, B, h, o = {}) {
+      const L = (t, zz) => iso(A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, zz), len = Math.hypot(B[0] - A[0], B[1] - A[1]);
+      if (o.posts !== false) [A, B].forEach(([i, j]) => { box(i - .06, j - .06, i + .06, j + .06, o.z0 || 0, h + 1, '#8a6a48'); box(i - .25, j - .04, i + .25, j + .04, h, h + 1, '#8a6a48'); });
+      const [p0, r0] = L(0, h), [p1, r1] = L(1, h); x.strokeStyle = '#e9e1cf'; x.lineWidth = .7; x.beginPath(); x.moveTo(p0, r0); x.lineTo(p1, r1); x.stroke();
+      const list = CLOTHES.slice(0, o.max || 5), n = list.length; if (!n) return;
+      const w = Math.min(.75, len / (n + .5)) / len, gap = (1 - n * w) / (n + 1);
+      list.forEach((it, k) => { const t0 = gap + k * (w + gap), t1 = t0 + w, tm = (t0 + t1) / 2, c = it.c, R = (a, b, z0, z1, col) => q([L(a, z0), L(b, z0), L(b, z1), L(a, z1)], col);
+        const sw = .18 * w / .75;
+        if (it.t === 'bottom') { R(t0, t1, h - 2.2, h - .2, c); R(t0, tm - .02 * w / .2, h - 9, h - 2, c); R(tm + .02 * w / .2, t1, h - 9, h - 2, sh(c, -.08)); R(t0, t1, h - 1, h - .4, sh(c, -.25)); }
+        else if (it.t === 'skirt') q([L(t0 + w * .15, h - .3), L(t1 - w * .15, h - .3), L(t1 + w * .08, h - 7), L(t0 - w * .08, h - 7)], c);
+        else if (it.t === 'towel') { R(t0, t1, h - 10, h - .2, c); R(t0, t1, h - 8, h - 7, '#ffffff'); }
+        else { const long = it.t === 'dress' || it.t === 'cape' || it.t === 'coat', bottom = long ? (it.t === 'coat' ? h - 9 : h - 11) : h - 7;
+          if (it.t === 'dress') q([L(t0 + w * .1, h - 3), L(t1 - w * .1, h - 3), L(t1 + w * .12, bottom), L(t0 - w * .12, bottom)], c);
+          else R(t0, t1, bottom, h - .3, c);
+          if (it.t !== 'cape') { R(t0 - sw, t0, h - 3.5, h - .3, sh(c, -.06)); R(t1, t1 + sw, h - 3.5, h - .3, sh(c, -.12)); }
+          R(t0, t1, h - .8, h - .3, sh(c, .25)); R(tm - w * .12, tm + w * .12, h - 1.2, h - .3, sh(c, -.3)); }
+        R(t1 - w * .12, t1, Math.min(h - 7, h - 2), h - .3, 'rgba(0,0,0,.08)');
+        [t0 + w * .15, t1 - w * .15].forEach(t => { const [a, b] = L(t, h); P(a, b - 1, '#a8845a', 1, 2); }); });
+    }
     function chimney(i0, j0, i1, j1, z0, z1, col = '#a0948a') { box(i0, j0, i1, j1, z0, z1, col); top(i0 + .05, j0 + .05, i1 - .05, j1 - .05, z1, '#4a4440');
       if (!night) [[0, 0], [2, -4], [5, -9]].forEach(([u, v], k) => { const [a, b] = iso((i0 + i1) / 2, (j0 + j1) / 2, z1 + 2); x.fillStyle = `rgba(255,255,255,${.7 - k * .2})`; x.fillRect(Math.round(a + u), Math.round(b + v - 3), 4 + k, 3); }); }
 
@@ -160,9 +182,7 @@
       tree(.9, 1.2, 'round', .8); tree(8.2, 1.1, 'pine'); bush(.8, 6.5, 2); bush(8.3, 4.4, 2);
       dirt(3.6, 7.6, 4.6, 7.7);
       // 曬衣繩（沿 y，在左邊）
-      box(.9, 3.2, 1.02, 3.32, 0, 17, '#8a6a48'); box(.9, 6.6, 1.02, 6.72, 0, 17, '#8a6a48');
-      q([iso(.96, 3.26, 16), iso(.96, 6.66, 16), iso(.96, 6.66, 15.6), iso(.96, 3.26, 15.6)], '#e9e1cf');
-      [['#7d9a8c', 3.7, 4.4, 8], ['#e8c35a', 4.6, 5.2, 9], ['#b33a2f', 5.4, 6.2, 7]].forEach(([c, a0, a1, h]) => { q([iso(.96, a0, 15.8), iso(.96, a1, 15.8), iso(.96, a1, 15.8 - h), iso(.96, a0, 15.8 - h)], c); q([iso(.96, a0, 15.8), iso(.96, a1, 15.8), iso(.96, a1, 14.8), iso(.96, a0, 14.8)], sh(c, -.2)); });
+      hang([.96, 3.1], [.96, 6.8], 16, { max: 4 });
       // 帳篷：屋脊沿 x，入口在東邊的三角形
       const X0 = 2.3, X1 = 6.2, Y0 = 1.2, Y1 = 4.2, YC = (Y0 + Y1) / 2, RH = 22;
       shadow(X0, Y0, X1, Y1, 1);
@@ -211,6 +231,7 @@
       // 柴堆
       box(8, 4.6, 9.4, 5.4, 0, 8, '#8a5a36'); for (let zz = 1; zz < 8; zz += 2.2) for (let t = 8.15; t < 9.3; t += .4) { const [a, b] = iso(t, 5.4, zz); P(a - 1, b - 1, '#c99a66', 3, 2); P(a, b - 1, '#a8784a'); }
       catAt(4.7, 5.8, 1.2);
+      hang([7.2, 6.6], [9.4, 7.6], 15, { max: 3 });   // 柴堆前面拉一條
       mailbox(3.1, 7.9, 'post');
       railFence(0, YD - .1, 4, YD - .1); railFence(5.4, YD - .1, YW - .1, YD - .1); railFence(YW - .1, 2, YW - .1, YD - .1);
     }
@@ -231,6 +252,7 @@
       const tz = smallTable(7.45, 5.3, 3); diary(7.6, 5.4, tz);
       box(2.3, Y1 + .1, 4.1, 5.9, 0, 3, '#7c5230'); flowers(2.45, 5.2, 3.95, 5.8, 14, 4);
       catAt(5.6, 6.5, 1.6);
+      hang([11.1, 1.4], [11.1, 5.4], 16, { max: 5 });   // 東邊側院的曬衣繩（島上平房那條）
       tree(10.9, 7.2); bush(1.2, 6.2, 3); bush(9.6, 6, 3); bush(1.4, 8.3, 2);
       mailbox(3.6, 8.75, 'post');
       groundLamp(5.1, 7.6); groundLamp(6.9, 8.6);
@@ -260,6 +282,7 @@
       for (let j = Y1 + .2; j <= 6.85; j += .35) q([iso(8.25, j, F1 + 1), iso(8.25, j + .05, F1 + 1), iso(8.25, j + .05, F1 + 9), iso(8.25, j, F1 + 9)], '#3a3836');
       q([iso(4.1, 6.9, F1 + 9), iso(8.3, 6.9, F1 + 9), iso(8.3, 6.9, F1 + 10), iso(4.1, 6.9, F1 + 10)], '#3a3836'); q([iso(8.3, Y1, F1 + 9), iso(8.3, 6.9, F1 + 9), iso(8.3, 6.9, F1 + 10), iso(8.3, Y1, F1 + 10)], '#2b2b2e');
       box(4.5, 5.6, 5, 6.1, F1 + 1, F1 + 5, '#c96f4a'); bush(4.75, 5.85, 2, '#5e8e44');
+      hang([5.2, 6.95], [8.15, 6.95], F1 + 10, { posts: false, max: 4 });   // 衣服晾在二樓陽台的欄杆上
       const tz = smallTable(7.15, 5.55, 2.5, '#3a3836'); diary(7.3, 5.65, tz);
       catAt(5.9, 7.0, 1.2);
       hedge(.3, 5.8, 1.6, 9.2); hedge(10.9, 5.8, 12.2, 8.8);
@@ -305,8 +328,9 @@
       box(8.8, 2.6, 8.9, 2.7, F1 + 2, F1 + 20, '#efe9dc');
       { const [a, b] = iso(8.85, 2.65, F1 + 20); for (let r = 0; r < 6; r++) { const w = 3 + r * 2; P(a - w, b + r - 1, r % 2 ? '#f3efe6' : '#b33a2f', w * 2 + 1, 1); } }
       box(9.4, 3.3, 10.2, 4.8, F1 + 2, F1 + 4, '#f3efe6'); box(9.4, 3.3, 10.2, 3.6, F1 + 4, F1 + 8, '#f3efe6');
+      hang([7.6, 1.6], [10, 1.6], F1 + 12, { z0: F1 + 2, max: 4 });   // 屋頂露台的曬衣架
       // 泳池邊的躺椅、小圓桌放日記
-      [[10, 7], [10, 8.4]].forEach(([i, j], n) => { box(i, j, i + 1, j + .6, .6, 3, '#f3efe6'); box(i, j, i + .3, j + .6, 3, 6.5, '#f3efe6'); if (n === 1) catAt(i + .6, j + .3, 3); });
+      [[10, 7], [10, 8.4]].forEach(([i, j], n) => { box(i, j, i + 1, j + .6, .6, 3, '#f3efe6'); box(i, j, i + .3, j + .6, 3, 6.5, '#f3efe6'); if (n === 0) { top(i + .35, j + .05, i + .95, j + .55, 3.2, '#5fc6d6'); top(i + .45, j + .05, i + .55, j + .55, 3.3, '#ffffff'); } if (n === 1) catAt(i + .6, j + .3, 3); });   // 一張躺椅鋪著海灘巾
       { const tz = smallTable(10.3, 7.75, .6, '#d6d1c7'); diary(10.4, 7.8, tz); }
       tree(12.6, 3.4, 'palm', 1.2); tree(.9, 11, 'palm'); tree(12.8, 10.6, 'palm', .9); bush(.9, 6.6, 3); bush(1, 8.6, 2);
       stonesX(11.4, YW, 10.9, 11.7, '#e2ded5'); stones(11.5, 12.3, 6.2, 10.9, '#e2ded5');

@@ -28,16 +28,18 @@
 <script>
 const CAP = {
   1: '帳篷：曬衣繩、營火、木頭椅凳；木箱桌上放日記、掛一盞提燈；信箱是木箱插在木樁上',
-  2: '小木屋：圓木牆、綠屋頂、石頭煙囪；門廊有搖椅，木桶上放日記；旁邊一堆柴；木柵欄',
-  3: '平房：木板牆、紅瓦；門廊小桌放日記；花圃、石板小路、地燈、白色籬笆',
-  4: '兩層樓：二樓陽台（陽台下面就是門廊）、深藍百葉窗；路燈、樹籬、長椅、磚頭信箱',
-  5: '海景別墅：白色方塊房子、大落地窗、屋頂露台的陽傘；泳池、躺椅（店貓在上面）、棕櫚樹；後面是海'
+  2: '小木屋：圓木牆、綠屋頂、石頭煙囪；門廊有搖椅，木桶上放日記；柴堆前面拉一條曬衣繩；木柵欄',
+  3: '平房：木板牆、紅瓦；門廊小桌放日記；東邊側院的曬衣繩；花圃、石板小路、地燈、白色籬笆',
+  4: '兩層樓：二樓陽台（衣服晾在欄杆上，陽台下面就是門廊）、深藍百葉窗；路燈、樹籬、長椅、磚頭信箱',
+  5: '海景別墅：白色方塊房子、大落地窗、屋頂露台的陽傘和曬衣架；泳池、躺椅（店貓在上面）、棕櫚樹；後面是海'
 };
 const NUM = ['', '壹', '貳', '參', '肆', '伍'];
+// 樣張用的衣服（正式的照你有的衣服、顏色）
+const SAMPLE = [{ t: 'top', c: '#f3efe6' }, { t: 'bottom', c: '#5f80a8' }, { t: 'dress', c: '#b33a2f' }, { t: 'top', c: '#7d9a8c' }, { t: 'skirt', c: '#c9b07a' }];
 for (let lv = 1; lv <= 5; lv++) {
   const sec = document.createElement('section'); sec.className = 'card';
   sec.innerHTML = `<div class="h"><span class="no">${NUM[lv]}</span><span class="name">${XiaodaoDoor.SPEC[lv].name}</span></div>`;
-  [false, true].forEach(n => { const c = document.createElement('canvas'); c.id = `d${lv}${n ? 'n' : ''}`; XiaodaoDoor.render(lv, { canvas: c, z: 2, night: n }); sec.appendChild(c); });
+  [false, true].forEach(n => { const c = document.createElement('canvas'); c.id = `d${lv}${n ? 'n' : ''}`; XiaodaoDoor.render(lv, { canvas: c, z: 2, night: n, clothes: SAMPLE }); sec.appendChild(c); });
   const p = document.createElement('p'); p.className = 'cap'; p.textContent = CAP[lv]; sec.appendChild(p);
   document.getElementById('list').appendChild(sec);
 }
