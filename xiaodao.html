@@ -33,6 +33,7 @@
     <script src="assets/xiaodao-fx.js?v=20261122a"></script>
     <script src="assets/xiaodao-room.js?v=20261122d"></script>
     <script src="assets/xiaodao-iso.js?v=20261123b"></script>
+    <script src="assets/xiaodao-door.js?v=20261123a"></script>
     <script src="assets/saveimg.js?v=20261116d"></script>
     <style>
         /* 整頁是一個 App：上面標題列、中間整座島、下面四顆鈕。島是另一個世界（精緻像素風），外框照網站的紙張色 */
@@ -109,6 +110,8 @@
         .rzoom button { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(243, 234, 216, .4); background: rgba(30, 24, 20, .6); color: #f3ead8; font-family: 'Noto Sans TC', sans-serif; font-size: 18px; line-height: 1; cursor: pointer; }
         .rzoom button:disabled { opacity: .3; }
         #rcv { flex: none; will-change: transform; }
+        .dbtns { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 8px; } .dbtns .btn { min-height: 44px; }
+        #dcv { flex: none; image-rendering: pixelated; }
         .rpanel { flex: none; background: rgb(var(--wabi-bg)); color: rgb(var(--wabi-text)); padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(0, 0, 0, .2); }
         .rrow { display: flex; gap: 8px; }
         .rrow .btn { margin: 0; min-height: 44px; font-size: 12px; letter-spacing: .1em; }
@@ -280,6 +283,13 @@
         </div>
 
         <!-- 屋內（第四批）：進屋時把島和下面四顆換成這一塊 -->
+        <!-- 家門口（2026-11-23）：島上點家先到這裡，點大門進屋 -->
+        <div id="door" class="room" hidden>
+            <div class="rbar"><span><button type="button" id="dBack">← 回島上</button></span><b id="dName"></b><span><button type="button" class="main" id="dIn">進屋</button></span></div>
+            <div id="dStage" class="rstage"><canvas id="dcv" aria-label="家門口"></canvas><p id="dHint" class="rhint">點大門進屋・點信箱、門廊上的日記看看</p></div>
+            <div class="rpanel"><div class="dbtns"><button type="button" class="btn" data-d="mail">信箱</button><button type="button" class="btn" data-d="diary">小日記</button><button type="button" class="btn main" data-d="door">進屋</button></div></div>
+        </div>
+
         <div id="room" class="room" hidden>
             <div class="rbar"><span id="rLeft"></span><b id="rName"></b><span id="rRight"></span></div>
             <div id="rFloors" class="rfloors"></div>
@@ -511,7 +521,7 @@
             // 晝夜：網站晚上 10 點到早上 6 點、或手機是深色模式會自動換夜；左上角「夜／晝」可以手動切（跟網站其他頁同一個設定）
             function dnLabel() { $('dn').textContent = isNight() ? '晝' : '夜'; }
             $('dn').onclick = () => { const t = document.querySelector('.theme-toggle'); if (t) t.click(); else document.documentElement.classList.toggle('night'); };
-            new MutationObserver(() => { dnLabel(); draw(); if (typeof roomOn !== 'undefined' && roomOn) renderRoom(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+            new MutationObserver(() => { dnLabel(); draw(); if (typeof roomOn !== 'undefined' && roomOn) renderRoom(); if (typeof doorOn !== 'undefined' && doorOn) renderDoor(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
             dnLabel();
             if (PREVIEW) window.__xiaodao = { fx: () => fx, cam, tap: (wx, wy) => tapAt(wx, wy), room: () => ({ rio, rscale }) };   // 試玩時給測試用
             // 設施卡片的「出去一趟」
@@ -598,14 +608,14 @@
                 card.innerHTML = `<h2>${lv ? f.levels[lv - 1] : f.name + '・空地'}${lv ? `<span class="seal lvseal">${NUM[lv]}</span>` : ''}</h2>
                     <p class="line">${f.name}・${facLine(k)}</p>
                     ${note ? `<p class="note">${note}</p>` : ''}
-                    ${k === 'house' && lv ? `<button type="button" class="btn" data-a="in" style="width:100%;margin-top:12px">進屋・${X.floorsOf(S).reduce((n, f) => n + f.rooms.length, 0)} 間・擺了 ${S.items.filter(t => X.FURN[t.key] && t.in !== 'depot').length} 件家具</button>` : ''}
+                    ${k === 'house' && lv ? `<button type="button" class="btn" data-a="in" style="width:100%;margin-top:12px">回家・${X.floorsOf(S).reduce((n, f) => n + f.rooms.length, 0)} 間・擺了 ${S.items.filter(t => X.FURN[t.key] && t.in !== 'depot').length} 件家具</button>` : ''}
                     ${sl && TRIP[k] && fx && fx.can(k) ? `<button type="button" class="btn" data-a="trip" style="width:100%;margin-top:12px">${TRIP[k]}</button>` : ''}
                     ${sl ? `<button type="button" class="btn" data-a="park" style="width:100%;margin-top:12px">${KIND[k].park}・${k === 'launchpad' ? (sl[0].v ? `立著「${X.VEH[sl[0].v].name}」` : '還沒有火箭') : `停了 ${sl.filter(q => q.v).length}／${sl.length}`}</button>` : ''}
                     <div class="btns"><button type="button" class="btn" data-a="no">關上</button>${btn}</div>`;
                 card.classList.add('on');
                 card.querySelector('[data-a=no]').onclick = closeCard;
                 const pb = card.querySelector('[data-a=park]'); if (pb) pb.onclick = () => enterPark(k);
-                const ib = card.querySelector('[data-a=in]'); if (ib) ib.onclick = () => openRoom();
+                const ib = card.querySelector('[data-a=in]'); if (ib) ib.onclick = () => openDoor();
                 const tb = card.querySelector('[data-a=trip]'); if (tb) tb.onclick = () => goTrip(k);
                 const b = card.querySelector('[data-a=build]'); if (b) b.onclick = () => act({ t: 'build', k });
             }
@@ -783,17 +793,50 @@
             // 斜看（2026-11-23，預設）：一次看一間（rri 是這層第幾間）；平面圖：舊的正上方、一層一張。存在這台手機
             let rview = 'iso', rri = 0, rio = null; try { if (localStorage.getItem('dongbuli-xiaodao-rview') === 'flat') rview = 'flat'; } catch (e) { }
             let roomOn = false, rfl = 0, rmode = 'view', pm = null, rdeco = null, rscale = 1, rscale0 = 1, rzoom = 1, rpan = [0, 0], RZ = 1, rlay = null, fcat = '床', fcol = {}, roomLoaded = null;
+            // ----- 家門口（2026-11-23）：XiaodaoDoor 畫院子和整棟房子；晾的是你有的衣服；店貓先坐在台階上（之後換成來玩的角色）-----
+            let doorOn = false, dspots = null, dscale = 1, roomFrom = null;
+            const CLOTH_T = k => /^bottom3/.test(k) ? 'skirt' : /^dress3/.test(k) ? 'bottom' : /^dress/.test(k) ? 'dress' : /^coat|^special1/.test(k) ? 'coat' : /^special2/.test(k) ? 'cape' : /^bottom/.test(k) ? 'bottom' : 'top';
+            const myClothes = () => S.items.filter(i => X.CLOTH[i.key] && i.qty > 0).sort((a, b) => (a.key + a.c).localeCompare(b.key + b.c)).map(i => ({ t: CLOTH_T(i.key), c: X.CLOTH[i.key].colors[i.c].sw }));
+            function openDoor() {
+                if (!X.level(S, 'house')) return;
+                closeCard(); closeSheet(); if (park) exitPark(); if (roomOn) { roomOn = false; $('room').hidden = true; }
+                doorOn = true; $('view').hidden = true; document.querySelector('.tabs').hidden = true; $('door').hidden = false;
+                renderDoor();
+            }
+            function closeDoor() { doorOn = false; $('door').hidden = true; $('view').hidden = false; document.querySelector('.tabs').hidden = false; size(); fit(); nextFrame(); }
+            function renderDoor() {
+                if (!doorOn) return;
+                const lv = X.level(S, 'house'), st = $('dStage').getBoundingClientRect(), info = XiaodaoDoor.SPEC[lv];
+                $('dName').textContent = X.FAC.house.levels[lv - 1];
+                const o = XiaodaoDoor.render(lv, { canvas: $('dcv'), z: 4, night: isNight(), clothes: myClothes(), mail: false });
+                dspots = o.spots; dscale = Math.min((st.width - 8) / o.W, (st.height - 24) / o.H);
+                $('dcv').style.width = Math.round(o.W * dscale) + 'px'; $('dcv').style.height = Math.round(o.H * dscale) + 'px';
+            }
+            function doorDo(k) {
+                if (k === 'door') { roomFrom = 'door'; doorOn = false; $('door').hidden = true; openRoom(); }
+                else if (k === 'mail') showToast('信箱還是空的。之後住過的旅客會寄明信片來。');
+                else if (k === 'diary') showToast('小日記還在寫，之後就翻得開。');
+            }
+            $('dBack').onclick = closeDoor; $('dIn').onclick = () => doorDo('door');
+            document.querySelectorAll('[data-d]').forEach(b => b.onclick = () => doorDo(b.dataset.d));
+            $('dcv').addEventListener('click', e => {
+                if (!dspots) return; const b = $('dcv').getBoundingClientRect(), px = (e.clientX - b.left) / dscale, py = (e.clientY - b.top) / dscale;
+                const hitK = ['door', 'mail', 'diary'].find(k => { const r = dspots[k]; return r && px >= r[0] - 4 && px <= r[0] + r[2] + 4 && py >= r[1] - 4 && py <= r[1] + r[3] + 4; });
+                if (hitK) doorDo(hitK);
+            });
+            new ResizeObserver(() => { if (doorOn) renderDoor(); }).observe($('dStage'));
+
             function openRoom(mode, pick) {
                 if (!X.level(S, 'house')) return;
                 roomLoaded = roomLoaded || Promise.all([RM.load('assets/xiaodao/', '20261122a', '20261122a'), RI.load('assets/xiaodao/', '20261122a')]);
                 rzoom = 1; rpan = [0, 0];
-                closeCard(); closeSheet(); if (park) exitPark();
+                closeCard(); closeSheet(); if (park) exitPark(); if (mode) roomFrom = null;
                 roomOn = true; $('view').hidden = true; document.querySelector('.tabs').hidden = true; $('room').hidden = false;
                 rfl = Math.min(rfl, X.floorsOf(S).length - 1); rmode = 'view'; pm = null; rdeco = null;
                 if (mode === 'place') startPlace(pick);
                 roomLoaded.then(() => renderRoom());
             }
-            function closeRoom() { roomOn = false; $('room').hidden = true; $('view').hidden = false; document.querySelector('.tabs').hidden = false; size(); fit(); nextFrame(); }
+            function closeRoom() { roomOn = false; $('room').hidden = true; if (roomFrom === 'door') { roomFrom = null; openDoor(); return; } $('view').hidden = false; document.querySelector('.tabs').hidden = false; size(); fit(); nextFrame(); }
             function renderRoom() {
                 if (!roomOn) return;
                 const fls = X.floorsOf(S); rfl = Math.min(rfl, fls.length - 1);
@@ -806,7 +849,7 @@
                 { const on = $('rFloors').querySelector('.on'); if (on && on.scrollIntoView) on.scrollIntoView({ inline: 'center', block: 'nearest' }); }
                 $('rFloors').querySelectorAll('[data-fl]').forEach(b => b.onclick = () => { rfl = +b.dataset.fl; rri = +(b.dataset.ri || 0); if (pm) { pm.ghost = null; if (pm.move) pm.move = null; } if (rmode === 'deco') rdeco = X.floorsOf(S)[rfl].rooms[rview === 'iso' ? rri : 0].id; else rdeco = null; renderRoom(); });
                 // 上面左右：看的時候「← 回島上」；擺放、地板壁紙的時候「取消／完成」
-                if (rmode === 'view') { $('rLeft').innerHTML = `<button type="button" id="rBack">← 回島上</button>`; $('rRight').innerHTML = `<button type="button" id="rShop">買家具</button>`; $('rBack').onclick = closeRoom; $('rShop').onclick = () => openSheet('shop', 'furn'); }
+                if (rmode === 'view') { $('rLeft').innerHTML = `<button type="button" id="rBack">${roomFrom === 'door' ? '← 出門' : '← 回島上'}</button>`; $('rRight').innerHTML = `<button type="button" id="rShop">買家具</button>`; $('rBack').onclick = closeRoom; $('rShop').onclick = () => openSheet('shop', 'furn'); }
                 else { $('rLeft').innerHTML = `<button type="button" id="rCancel">取消</button>`; $('rRight').innerHTML = `<button type="button" class="main" id="rDone">完成</button>`; $('rCancel').onclick = cancelMode; $('rDone').onclick = () => { rmode = 'view'; pm = null; rdeco = null; renderRoom(); }; }
                 // 畫房間（擺放中：選好的那件半透明預覽）
                 const g = pm && pm.ghost ? Object.assign({ k: pm.k, c: pm.c }, pm.ghost) : null;
