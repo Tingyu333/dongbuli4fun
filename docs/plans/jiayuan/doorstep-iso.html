@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家門口・斜看</title>
+<style>
+  :root { --bg: #fcfaf8; --text: #4a4a4a; --dark: #2c2c2c; --accent: #8e8070; --sub: #dcdcdc; --shu: #b33a2f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', 'PingFang TC', sans-serif; }
+  main { max-width: 390px; margin: 0 auto; padding: 22px 16px 28px; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 300; font-size: 22px; letter-spacing: .3em; color: var(--dark); margin: 0; text-align: center; }
+  .sub { text-align: center; font-size: 11px; letter-spacing: .12em; color: var(--accent); margin: 6px 0 14px; line-height: 1.7; }
+  .card { border: 1px solid var(--sub); border-radius: 4px; padding: 12px; background: #fff; margin-top: 14px; }
+  .h { display: flex; align-items: baseline; gap: 8px; }
+  .no { font-size: 12px; color: var(--shu); border: 1px solid var(--shu); padding: 0 5px; line-height: 1.5; font-family: 'Noto Serif TC', serif; }
+  .name { font-family: 'Noto Serif TC', serif; font-size: 16px; letter-spacing: .2em; color: var(--dark); }
+  .tag { margin-left: auto; font-size: 10px; letter-spacing: .1em; color: var(--accent); }
+  canvas { display: block; width: 100%; border-radius: 3px; margin-top: 10px; image-rendering: pixelated; image-rendering: crisp-edges; }
+  .cap { font-size: 10.5px; letter-spacing: .08em; color: var(--accent); margin-top: 6px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<main>
+  <h1>家門口・斜看</h1>
+  <p class="sub">平房的家門口・斜四十五度樣張<br>島上點家先到這裡，點大門再進屋</p>
+
+  <section class="card">
+    <div class="h"><span class="no">壹</span><span class="name">白天</span><span class="tag">平房</span></div>
+    <canvas id="day" width="300" height="200"></canvas>
+    <p class="cap">店貓坐在台階上打盹；信箱插著一張明信片（有新的）；門廊小桌上那本紅色的是島的小日記；石板小路走到院子的小門</p>
+  </section>
+
+  <section class="card">
+    <div class="h"><span class="no">貳</span><span class="name">夜晚</span><span class="tag">開燈</span></div>
+    <canvas id="night" width="300" height="200"></canvas>
+    <p class="cap">窗戶亮燈、門口的燈和小路的地燈亮著；店貓回屋裡了</p>
+  </section>
+</main>
+<script>
+const hash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const sh = (c, f) => { const a = hex(c); return '#' + (f > 0 ? a.map(x => x + (255 - x) * f) : a.map(x => x * (1 + f))).map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join(''); };
+
+// 院子 12 × 10 格；i 往右下、j 往左下；房子在後面
+const YW = 12, YD = 10, TW = 12, TH = 6, SLAB = 8, OX = 138, OY = 44;
+const iso = (i, j, z = 0) => [OX + (i - j) * TW, OY + (i + j) * TH - z];
+function poly(x, pts, col) {
+  let y0 = Infinity, y1 = -Infinity; for (const p of pts) { y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); }
+  x.fillStyle = col;
+  for (let y = Math.floor(y0); y <= Math.ceil(y1); y++) { const py = y + .5, xs = [];
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > py) !== (yj > py)) xs.push((xj - xi) * (py - yi) / (yj - yi) + xi); }
+    xs.sort((a, b) => a - b); for (let k = 0; k + 1 < xs.length; k += 2) { const a = Math.ceil(xs[k] - .5), b = Math.floor(xs[k + 1] - .5); if (b >= a) x.fillRect(a, y, b - a + 1, 1); } }
+}
+const P = (x, a, b, col, w = 1, h = 1) => { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), w, h); };
+
+function scene(id, night) {
+  const c = document.getElementById(id), main = c.getContext('2d'), W = c.width, H = c.height; main.imageSmoothingEnabled = false;
+  // 夜晚：院子和房子先畫在另一張（透明底），調暗後再貼到夜空上，天空才不會被調暗兩次
+  const off = document.createElement('canvas'); off.width = W; off.height = H;
+  let x = night ? off.getContext('2d') : main;
+  const q = (pts, col) => poly(x, pts, col);
+  const top = (i0, j0, i1, j1, z, col) => q([iso(i0, j0, z), iso(i1, j0, z), iso(i1, j1, z), iso(i0, j1, z)], col);
+  const box = (i0, j0, i1, j1, z0, z1, col) => { q([iso(i0, j1, z0), iso(i1, j1, z0), iso(i1, j1, z1), iso(i0, j1, z1)], col); q([iso(i1, j0, z0), iso(i1, j1, z0), iso(i1, j1, z1), iso(i1, j0, z1)], sh(col, -.16)); top(i0, j0, i1, j1, z1, sh(col, .14)); };
+  const onF = (i, z) => iso(i, HY1, z), onE = (j, z) => iso(HX1, j, z);   // 房子正面（朝 +j）、東面（朝 +i）
+  const emit = [];
+
+  // 天空
+  const sky = x.createLinearGradient(0, 0, 0, H);
+  if (night) { sky.addColorStop(0, '#141a30'); sky.addColorStop(1, '#232a44'); } else { sky.addColorStop(0, '#dbe9ee'); sky.addColorStop(1, '#f1ece2'); }
+  main.fillStyle = sky; main.fillRect(0, 0, W, H);
+  if (night) for (let k = 0; k < 40; k++) P(main, hash(k, 1) * W, hash(2, k) * 70, hash(k, k) > .7 ? '#f4eed8' : '#8f96b8');
+  else { [[40, 26], [232, 18], [260, 40]].forEach(([a, b]) => { x.fillStyle = '#ffffff'; x.fillRect(a, b, 18, 4); x.fillRect(a + 4, b - 3, 10, 3); x.fillStyle = '#e8f1f4'; x.fillRect(a, b + 3, 18, 1); }); }
+
+  // 底座（土）
+  q([iso(0, YD), iso(YW, YD), iso(YW, YD, -SLAB), iso(0, YD, -SLAB)], '#6e5338'); q([iso(YW, 0), iso(YW, YD), iso(YW, YD, -SLAB), iso(YW, 0, -SLAB)], '#5a432c');
+  q([iso(0, YD), iso(YW, YD), iso(YW, YD, -2), iso(0, YD, -2)], '#5f8a45'); q([iso(YW, 0), iso(YW, YD), iso(YW, YD, -2), iso(YW, 0, -2)], '#4f763a');
+
+  // 草地（一顆一顆）
+  const img = x.getImageData(0, 0, W, H), d = img.data;   // 夜晚這張是透明底
+  for (let py = 0; py < H; py++) for (let px = 0; px < W; px++) { const a = (px + .5 - OX) / TW, b = (py + .5 - OY) / TH, i = (a + b) / 2, j = (b - a) / 2;
+    if (i < 0 || j < 0 || i >= YW || j >= YD) continue;
+    const h0 = hash(px, py), h1 = hash(px >> 2, py >> 1); let col = h1 > .55 ? '#8fbf62' : '#86b65a'; if (h0 > .9) col = '#a6cf74'; else if (h0 < .07) col = '#6f9e48';
+    const k = (py * W + px) * 4, [r, g, bb] = hex(col); d[k] = r; d[k + 1] = g; d[k + 2] = bb; d[k + 3] = 255; }
+  x.putImageData(img, 0, 0);
+
+  // 石板小路：台階到院子的小門
+  for (let j = 6.9; j < YD - .1; j += .75) { const o = (Math.floor(j * 4) % 2) * .15; top(5.35 + o, j, 6.65 + o, j + .6, .3, '#b9b2a4'); top(5.45 + o, j + .05, 6.55 + o, j + .5, .3, '#cfc9bb'); }
+
+  // ---- 房子（平房）：x 2～10、y 1～5，牆高 30，屋頂斜到 48 ----
+  const HX0 = 2, HX1 = 10, HY0 = 1, HY1 = 5, WH = 30, RH = 50;
+  // 影子
+  x.save(); x.globalAlpha = .18; q([iso(HX0 + .3, HY1), iso(HX1 + .9, HY1), iso(HX1 + .9, HY1 + 1.4), iso(HX0 + .3, HY1 + 1.4)], '#2b2418'); q([iso(HX1, HY0 + .4), iso(HX1 + 1.4, HY0 + .4), iso(HX1 + 1.4, HY1 + 1.4), iso(HX1, HY1)], '#2b2418'); x.restore();
+  // 牆：正面、東面（木板牆，一條一條）
+  q([onF(HX0, 0), onF(HX1, 0), onF(HX1, WH), onF(HX0, WH)], '#efe4cc');
+  for (let z = 4; z < WH; z += 3) q([onF(HX0, z), onF(HX1, z), onF(HX1, z + .6), onF(HX0, z + .6)], '#e0d2b4');
+  q([onE(HY0, 0), onE(HY1, 0), onE(HY1, WH), onE(HY0, WH)], '#ddd0b4');
+  for (let z = 4; z < WH; z += 3) q([onE(HY0, z), onE(HY1, z), onE(HY1, z + .6), onE(HY0, z + .6)], '#cdbf9f');
+  // 牆腳石
+  q([onF(HX0, 0), onF(HX1, 0), onF(HX1, 3), onF(HX0, 3)], '#9a958b'); q([onE(HY0, 0), onE(HY1, 0), onE(HY1, 3), onE(HY0, 3)], '#86827a');
+  // 東面的三角山牆
+  q([onE(HY0 - .3, WH), onE(HY1 + .3, WH), onE((HY0 + HY1) / 2, RH)], '#ddd0b4');
+  for (let z = WH + 3; z < RH - 2; z += 3) { const t = (z - WH) / (RH - WH), a0 = HY0 - .3 + t * ((HY1 - HY0) / 2 + .3), a1 = HY1 + .3 - t * ((HY1 - HY0) / 2 + .3); q([onE(a0, z), onE(a1, z), onE(a1, z + .6), onE(a0, z + .6)], '#cdbf9f'); }
+  { const [a, b] = onE(3, 40); x.fillStyle = '#5e3c22'; x.fillRect(Math.round(a) - 2, Math.round(b) - 2, 4, 4); x.fillStyle = night ? '#ffd98a' : '#a8d4e8'; x.fillRect(Math.round(a) - 1, Math.round(b) - 1, 2, 2); }
+  // 窗（正面兩扇、東面一扇）：有窗台花箱
+  function win(at, a0, a1, z0, z1, flowers) {
+    q([at(a0 - .12, z0 - 1.5), at(a1 + .12, z0 - 1.5), at(a1 + .12, z1 + 1.5), at(a0 - .12, z1 + 1.5)], '#f8f4ea');
+    q([at(a0, z0), at(a1, z0), at(a1, z1), at(a0, z1)], night ? '#ffd98a' : '#a8d4e8');
+    if (!night) q([at(a0, z1 - 4), at(a1, z1 - 4), at(a1, z1), at(a0, z1)], '#d4ecf5');
+    const m = (a0 + a1) / 2; q([at(m - .04, z0), at(m + .04, z0), at(m + .04, z1), at(m - .04, z1)], '#f8f4ea'); q([at(a0, (z0 + z1) / 2), at(a1, (z0 + z1) / 2), at(a1, (z0 + z1) / 2 + .8), at(a0, (z0 + z1) / 2 + .8)], '#f8f4ea');
+    [[a0 - .55, a0 - .15], [a1 + .15, a1 + .55]].forEach(([b0, b1]) => { q([at(b0, z0), at(b1, z0), at(b1, z1), at(b0, z1)], '#7d9a8c'); for (let z = z0 + 1.5; z < z1; z += 2) q([at(b0 + .05, z), at(b1 - .05, z), at(b1 - .05, z + .6), at(b0 + .05, z + .6)], '#62796d'); });
+    if (flowers) { q([at(a0 - .1, z0 - 4), at(a1 + .1, z0 - 4), at(a1 + .1, z0 - 1.5), at(a0 - .1, z0 - 1.5)], '#9a6a40'); for (let t = a0; t < a1; t += .22) { const [p, r] = at(t, z0 - 1); P(x, p, r - 1, hash(t * 10 | 0, 3) > .5 ? '#e46a5c' : '#f2c14e'); P(x, p, r, '#4f7a3e'); } }
+    if (night) emit.push(() => { const [p, r] = at((a0 + a1) / 2, (z0 + z1) / 2); glow(p, r + 6, 22, '255,200,120', .35); });
+  }
+  win(onF, 2.7, 4.2, 12, 23, true); win(onF, 7.8, 9.3, 12, 23, true); win(onE, 2.4, 3.6, 12, 23, false);
+  // 大門
+  q([onF(5.3, 0), onF(6.7, 0), onF(6.7, 25), onF(5.3, 25)], '#f8f4ea');
+  q([onF(5.45, 0), onF(6.55, 0), onF(6.55, 24), onF(5.45, 24)], '#8a5a36');
+  q([onF(5.6, 13), onF(6.4, 13), onF(6.4, 21), onF(5.6, 21)], '#7c5230'); q([onF(5.6, 3), onF(6.4, 3), onF(6.4, 11), onF(5.6, 11)], '#7c5230');
+  q([onF(5.75, 16), onF(6.25, 16), onF(6.25, 20), onF(5.75, 20)], night ? '#ffd98a' : '#bfe0ea');
+  { const [a, b] = onF(6.35, 11.5); P(x, a, b, '#d4a83c', 1, 2); }
+  // 門牌（漢字「島」）
+  q([onF(6.85, 18), onF(7.35, 18), onF(7.35, 22), onF(6.85, 22)], '#5e3c22'); { const [a, b] = onF(7.1, 21); x.fillStyle = '#efe4cc'; x.font = '4px serif'; x.fillText('島', a - 2, b + 3.5); }
+  // 門燈
+  q([onF(4.75, 21), onF(5.05, 21), onF(5.05, 25), onF(4.75, 25)], '#3a3836'); q([onF(4.8, 21.5), onF(5, 21.5), onF(5, 24.5), onF(4.8, 24.5)], night ? '#fff0c4' : '#f1e3c0');
+  if (night) emit.push(() => { const [a, b] = onF(4.9, 23); glow(a, b, 28, '255,196,110', .5); glow(a, b, 6, '255,240,200', .8); });
+  // 屋頂：正面那片斜下來（屋瓦一排一排），屋脊，簷口
+  const RO = .3, RY = (HY0 + HY1) / 2;
+  q([iso(HX0 - RO, HY0 - RO, WH - 3), iso(HX1 + RO, HY0 - RO, WH - 3), iso(HX1 + RO, RY, RH), iso(HX0 - RO, RY, RH)], '#8f4532');   // 後面那片（只露一點邊）
+  q([iso(HX0 - RO, RY, RH), iso(HX1 + RO, RY, RH), iso(HX1 + RO, HY1 + RO, WH - 3), iso(HX0 - RO, HY1 + RO, WH - 3)], '#b0573f');
+  for (let t = 0; t < 1; t += .16) { const jj = RY + t * (HY1 + RO - RY), zz = RH + t * (WH - 3 - RH); q([iso(HX0 - RO, jj, zz), iso(HX1 + RO, jj, zz), iso(HX1 + RO, jj + .08, zz - .7), iso(HX0 - RO, jj + .08, zz - .7)], '#8f4532'); }
+  for (let i = HX0; i < HX1 + RO; i += .5) for (let t = 0; t < 1; t += .16) { const jj = RY + (t + .08) * (HY1 + RO - RY), zz = RH + (t + .08) * (WH - 3 - RH); if (hash(i * 10 | 0, t * 10 | 0) > .82) { const [a, b] = iso(i, jj, zz); P(x, a, b, '#c86a50', 2, 1); } }
+  q([iso(HX0 - RO, HY1 + RO, WH - 3), iso(HX1 + RO, HY1 + RO, WH - 3), iso(HX1 + RO, HY1 + RO, WH - 5), iso(HX0 - RO, HY1 + RO, WH - 5)], '#7a3a2a');   // 簷口
+  q([iso(HX1 + RO, RY, RH), iso(HX1 + RO, HY1 + RO, WH - 3), iso(HX1 + RO, HY1 + RO, WH - 5), iso(HX1 + RO, RY, RH - 2)], '#6e3426');           // 山牆那側的屋簷板
+  q([iso(HX1 + RO, HY0 - RO, WH - 3), iso(HX1 + RO, RY, RH), iso(HX1 + RO, RY, RH - 2), iso(HX1 + RO, HY0 - RO, WH - 5)], '#6e3426');
+  q([iso(HX0 - RO, RY - .1, RH + 1.5), iso(HX1 + RO, RY - .1, RH + 1.5), iso(HX1 + RO, RY + .1, RH), iso(HX0 - RO, RY + .1, RH)], '#7a3a2a');      // 屋脊
+  // 煙囪
+  box(3.2, 2.2, 3.9, 2.9, 40, 56, '#a0948a'); top(3.25, 2.25, 3.85, 2.85, 56, '#4a4440');
+  if (!night) [[0, 0], [2, -4], [5, -9]].forEach(([u, v], k) => { const [a, b] = iso(3.55, 2.55, 58); x.fillStyle = `rgba(255,255,255,${.7 - k * .2})`; x.fillRect(Math.round(a + u), Math.round(b + v - 3), 4 + k, 3); });
+
+  // ---- 門廊、台階 ----
+  box(4.3, HY1, 8.7, 6.2, 0, 3, '#b07f50');
+  for (let i = 4.5; i < 8.7; i += .45) q([iso(i, HY1, 3), iso(i + .03, HY1, 3), iso(i + .03, 6.2, 3), iso(i, 6.2, 3)], '#9a6a40');
+  box(5.2, 6.2, 6.8, 6.8, 0, 1.6, '#c9bfae');
+  // 門廊的小桌子＋日記
+  [[7.5, 5.35], [8.2, 5.35], [7.5, 5.85], [8.2, 5.85]].forEach(([a, b]) => box(a, b, a + .08, b + .08, 3, 10, '#5e3c22'));
+  box(7.4, 5.25, 8.35, 6, 10, 11, '#8a5a36');
+  box(7.6, 5.4, 8.05, 5.8, 11, 12.3, '#b33a2f'); top(7.6, 5.4, 8.05, 5.8, 12.3, '#c9493c'); { const [a, b] = iso(7.83, 5.6, 12.4); P(x, a - 1, b, '#d4a83c', 3, 1); }
+  // 花圃（門廊左邊）
+  box(2.3, HY1 + .1, 4.1, 5.9, 0, 3, '#7c5230');
+  for (let k = 0; k < 14; k++) { const i = 2.45 + hash(k, 5) * 1.5, j = 5.2 + hash(5, k) * .6, [a, b] = iso(i, j, 4); P(x, a, b + 1, '#4f7a3e', 1, 2); P(x, a - 1, b - 1, ['#e46a5c', '#f2c14e', '#f5f0e6', '#c49ae0'][k % 4], 3, 2); }
+
+  // ---- 店貓坐在台階上（白天）----
+  if (!night) { const [a, b] = iso(5.6, 6.5, 1.6);
+    x.fillStyle = 'rgba(40,28,18,.2)'; x.fillRect(a - 4, b + 1, 9, 2);
+    x.fillStyle = '#c2803c'; x.fillRect(a - 3, b - 6, 7, 7); x.fillStyle = '#e3a25a'; x.fillRect(a - 3, b - 7, 6, 6);
+    x.fillStyle = '#e3a25a'; x.fillRect(a - 2, b - 12, 6, 5); x.fillStyle = '#c2803c'; x.fillRect(a - 2, b - 13, 1, 1); x.fillRect(a + 3, b - 13, 1, 1);
+    x.fillStyle = '#b06e2e'; x.fillRect(a, b - 12, 1, 2); x.fillRect(a - 2, b - 5, 1, 3); x.fillRect(a + 1, b - 5, 1, 3);
+    x.fillStyle = '#5a3d28'; x.fillRect(a - 1, b - 9, 1, 1); x.fillRect(a + 2, b - 9, 1, 1);
+    x.fillStyle = '#c2803c'; x.fillRect(a + 4, b - 1, 3, 1); x.fillRect(a + 6, b - 3, 1, 2);
+    x.fillStyle = '#9aa7b3'; x.fillRect(a + 6, b - 15, 1, 1); x.fillRect(a + 8, b - 17, 2, 1); }
+
+  // ---- 院子：樹、矮樹叢 ----
+  function tree(i, j) { const [a, b] = iso(i, j);
+    x.save(); x.globalAlpha = .2; x.fillStyle = '#2b2418'; x.beginPath(); x.ellipse(a + 4, b + 1, 10, 4, 0, 0, Math.PI * 2); x.fill(); x.restore();
+    x.fillStyle = '#6e4528'; x.fillRect(a - 1, b - 14, 3, 14); x.fillStyle = '#8a5a36'; x.fillRect(a - 1, b - 14, 1, 14);
+    for (let yy = -11; yy <= 11; yy++) for (let xx = -12; xx <= 12; xx++) { const e = xx * xx / 144 + yy * yy / 121; if (e > 1 || hash(xx + 40, yy + 40) > .97) continue; P(x, a + xx, b - 26 + yy, yy + xx * .3 < -4 ? '#7fae58' : yy < 4 ? '#5e8e44' : '#4a7436'); } }
+  tree(10.9, 7.2);
+  function bush(i, j, r) { const [a, b] = iso(i, j); for (let yy = -r; yy <= 1; yy++) for (let xx = -r - 2; xx <= r + 2; xx++) if (xx * xx / ((r + 2) * (r + 2)) + yy * yy / (r * r) <= 1) P(x, a + xx, b - 2 + yy, yy < -r / 2 ? '#7fae58' : '#5e8e44'); }
+  bush(1.2, 6.2, 3); bush(9.6, 6, 3); bush(1.4, 8.3, 2);
+
+  // ---- 信箱（院子前面、小路左邊）：白色木箱、紅旗子立起來、插著一張明信片 ----
+  box(3.9, 8.9, 4.05, 9.05, 0, 13, '#7c5230');
+  box(3.6, 8.75, 4.35, 9.25, 13, 19, '#f3efe6'); q([iso(3.6, 9.25, 19), iso(4.35, 9.25, 19), iso(4.35, 9.25, 21), iso(3.6, 9.25, 21)], '#e2dccf'); top(3.6, 8.75, 4.35, 9.25, 21, '#fbf9f4');
+  box(4.35, 8.85, 4.42, 8.92, 16, 24, '#b33a2f'); box(4.35, 8.85, 4.42, 9.15, 22, 24, '#b33a2f');
+  q([iso(3.75, 9.0, 21), iso(4.1, 9.0, 21), iso(4.1, 9.0, 25), iso(3.75, 9.0, 25)], '#f6e8c8'); { const [a, b] = iso(4.0, 9.0, 24.5); P(x, a, b, '#b33a2f', 2, 1); }
+
+  // ---- 地燈（小路兩邊）----
+  [[5.1, 7.6], [6.9, 8.6]].forEach(([i, j]) => { box(i, j, i + .18, j + .18, 0, 4, '#3a3836'); top(i + .02, j + .02, i + .16, j + .16, 4, night ? '#fff0c4' : '#d9cfbf'); if (night) emit.push(() => { const [a, b] = iso(i + .09, j + .09, 4); glow(a, b + 2, 14, '255,210,140', .45); }); });
+
+  // ---- 籬笆：前面、東邊，小路那裡留一扇小門 ----
+  const fence = (i0, j0, i1, j1) => { const L = Math.hypot(i1 - i0, j1 - j0), n = Math.round(L / .4);
+    for (let k = 0; k <= n; k++) { const i = i0 + (i1 - i0) * k / n, j = j0 + (j1 - j0) * k / n; q([iso(i - .05, j, 0), iso(i + .05, j, 0), iso(i + .05, j, 8), iso(i, j, 9), iso(i - .05, j, 8)], '#f6f1e6'); }
+    q([iso(i0, j0, 5), iso(i1, j1, 5), iso(i1, j1, 6), iso(i0, j0, 6)], '#e0d6c2'); q([iso(i0, j0, 2), iso(i1, j1, 2), iso(i1, j1, 3), iso(i0, j0, 3)], '#e0d6c2'); };
+  fence(0, YD - .1, 5.2, YD - .1); fence(6.8, YD - .1, YW - .1, YD - .1); fence(YW - .1, 3, YW - .1, YD - .1);
+
+  // ---- 夜晚 ----
+  if (night) {
+    x.save(); x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(16,22,58,.6)'; x.fillRect(0, 0, W, H); x.restore();
+    main.drawImage(off, 0, 0); x = main;
+    x.save(); x.globalCompositeOperation = 'lighter'; emit.forEach(e => e()); x.restore();
+    // 窗、門燈、地燈再畫亮一點
+    [[onF, 2.7, 4.2], [onF, 7.8, 9.3], [onE, 2.4, 3.6]].forEach(([at, a0, a1]) => { q([at(a0, 12), at(a1, 12), at(a1, 23), at(a0, 23)], '#ffd98a'); const m = (a0 + a1) / 2; q([at(m - .04, 12), at(m + .04, 12), at(m + .04, 23), at(m - .04, 23)], '#8f7f62'); q([at(a0, 17.5), at(a1, 17.5), at(a1, 18.3), at(a0, 18.3)], '#8f7f62'); });
+    q([onF(4.8, 21.5), onF(5, 21.5), onF(5, 24.5), onF(4.8, 24.5)], '#fff4d6'); q([onF(5.75, 16), onF(6.25, 16), onF(6.25, 20), onF(5.75, 20)], '#ffd98a');
+  }
+  function glow(a, b, r, col, al) { const g = x.createRadialGradient(a, b, 0, a, b, r); g.addColorStop(0, `rgba(${col},${al})`); g.addColorStop(1, `rgba(${col},0)`); x.fillStyle = g; x.fillRect(a - r, b - r, r * 2, r * 2); }
+}
+scene('day', false); scene('night', true);
+</script>
+</body>
+</html>
