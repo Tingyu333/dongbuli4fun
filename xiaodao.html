@@ -32,6 +32,7 @@
     <script src="assets/xiaodao-draw.js?v=20261122c"></script>
     <script src="assets/xiaodao-fx.js?v=20261122a"></script>
     <script src="assets/xiaodao-room.js?v=20261122d"></script>
+    <script src="assets/xiaodao-iso.js?v=20261123a"></script>
     <script src="assets/saveimg.js?v=20261116d"></script>
     <style>
         /* 整頁是一個 App：上面標題列、中間整座島、下面四顆鈕。島是另一個世界（精緻像素風），外框照網站的紙張色 */
@@ -95,6 +96,8 @@
         .rbar button { min-width: 64px; min-height: 36px; border: 1px solid rgba(239, 228, 207, .35); border-radius: 999px; background: transparent; color: #efe4cf; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: .12em; padding: 0 10px; touch-action: manipulation; }
         .rbar button.main { background: #efe4cf; color: #2c241e; border-color: #efe4cf; }
         .rfloors { display: flex; gap: 6px; justify-content: center; padding: 2px 12px 6px; font-family: 'Noto Sans TC', sans-serif; font-size: 11px; color: #c9b9a0; }
+        .rfloors { overflow-x: auto; scrollbar-width: none; justify-content: safe center; } .rfloors::-webkit-scrollbar { display: none; }
+        .rfloors button { flex: none; white-space: nowrap; letter-spacing: .06em; }
         .rfloors button { padding: 4px 12px; min-height: 30px; border-radius: 999px; border: 1px solid rgba(239, 228, 207, .3); background: transparent; color: #efe4cf; font: inherit; letter-spacing: .1em; touch-action: manipulation; }
         .rfloors button.on { background: rgba(239, 228, 207, .9); color: #2c241e; }
         .rstage { position: relative; flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; touch-action: none; }
@@ -112,7 +115,7 @@
         .tray { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 8px; touch-action: pan-x; }
         .tray .vchip { width: 72px; }
         .tray .vchip.on { border-color: rgb(var(--wabi-shu)); box-shadow: 0 0 0 1px rgb(var(--wabi-shu)); }
-        .tray .vimg { background: #c89b6a; }
+        .tray .vimg { background: #efe9de; }
         .sw { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 6px; touch-action: pan-x; }
         .sw button { flex: none; width: 64px; padding: 4px 3px; border: 1px solid rgb(var(--wabi-sub)); border-radius: 6px; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 2px; font-family: 'Noto Sans TC', sans-serif; font-size: 10px; color: rgb(var(--wabi-dark)); touch-action: manipulation; }
         .sw button.on { border-color: rgb(var(--wabi-shu)); box-shadow: 0 0 0 1px rgb(var(--wabi-shu)); }
@@ -122,7 +125,7 @@
         .cdots { display: inline-flex; gap: 5px; margin-left: 4px; vertical-align: middle; }
         .cdots button { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .25); padding: 0; touch-action: manipulation; }
         .cdots button.on { box-shadow: 0 0 0 2px rgb(var(--wabi-bg)), 0 0 0 3px rgb(var(--wabi-shu)); }
-        .thumb.f { background: #c89b6a; }
+        .thumb.f { background: #efe9de; }
         .thumb.f img { max-width: 60px; max-height: 48px; }
         /* 衣服、藏品、扭蛋、圖鑑（第五批） */
         .thumb.c { background: #e9e1d2; }
@@ -280,7 +283,7 @@
         <div id="room" class="room" hidden>
             <div class="rbar"><span id="rLeft"></span><b id="rName"></b><span id="rRight"></span></div>
             <div id="rFloors" class="rfloors"></div>
-            <div id="rStage" class="rstage"><canvas id="rcv" aria-label="屋內"></canvas><div class="rzoom"><button type="button" id="rzIn" aria-label="放大">＋</button><button type="button" id="rzOut" aria-label="縮小">－</button></div><p id="rHint" class="rhint"></p></div>
+            <div id="rStage" class="rstage"><canvas id="rcv" aria-label="屋內"></canvas><div class="rzoom"><button type="button" id="rzIn" aria-label="放大">＋</button><button type="button" id="rzOut" aria-label="縮小">－</button><button type="button" id="rzView" aria-label="切換平面圖、斜看" style="font-size:13px;font-family:'Noto Serif TC',serif">平</button></div><p id="rHint" class="rhint"></p></div>
             <div id="rPanel" class="rpanel"></div>
         </div>
 
@@ -510,7 +513,7 @@
             $('dn').onclick = () => { const t = document.querySelector('.theme-toggle'); if (t) t.click(); else document.documentElement.classList.toggle('night'); };
             new MutationObserver(() => { dnLabel(); draw(); if (typeof roomOn !== 'undefined' && roomOn) renderRoom(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
             dnLabel();
-            if (PREVIEW) window.__xiaodao = { fx: () => fx, cam, tap: (wx, wy) => tapAt(wx, wy) };   // 試玩時給測試用
+            if (PREVIEW) window.__xiaodao = { fx: () => fx, cam, tap: (wx, wy) => tapAt(wx, wy), room: () => ({ rio, rscale }) };   // 試玩時給測試用
             // 設施卡片的「出去一趟」
             const TRIP = { garage: '開一台出去兜風', dock: '開一艘出海繞一圈', airfield: '飛一架起來', launchpad: '發射' };
             function goTrip(k) { closeCard(); if (!fx || !fx.trip(k)) { showToast(k === 'dock' ? '船開不出去（碼頭外面不是海）' : '現在沒有空著的可以出去'); return; } nextFrame(); }
@@ -776,11 +779,13 @@
 
             // ===== 屋內（第四批）=====
             // 進屋：島和下面四顆藏起來，換成房間；一層一張圖，點樓層切換。三種模式：看（view）、擺放（place）、地板壁紙（deco）
-            const RM = XiaodaoRoom, rcv = $('rcv');
+            const RM = XiaodaoRoom, RI = XiaodaoIso, rcv = $('rcv');
+            // 斜看（2026-11-23，預設）：一次看一間（rri 是這層第幾間）；平面圖：舊的正上方、一層一張。存在這台手機
+            let rview = 'iso', rri = 0, rio = null; try { if (localStorage.getItem('dongbuli-xiaodao-rview') === 'flat') rview = 'flat'; } catch (e) { }
             let roomOn = false, rfl = 0, rmode = 'view', pm = null, rdeco = null, rscale = 1, rscale0 = 1, rzoom = 1, rpan = [0, 0], RZ = 1, rlay = null, fcat = '床', fcol = {}, roomLoaded = null;
             function openRoom(mode, pick) {
                 if (!X.level(S, 'house')) return;
-                roomLoaded = roomLoaded || RM.load('assets/xiaodao/', '20261122a', '20261122a');
+                roomLoaded = roomLoaded || Promise.all([RM.load('assets/xiaodao/', '20261122a', '20261122a'), RI.load('assets/xiaodao/', '20261122a')]);
                 rzoom = 1; rpan = [0, 0];
                 closeCard(); closeSheet(); if (park) exitPark();
                 roomOn = true; $('view').hidden = true; document.querySelector('.tabs').hidden = true; $('room').hidden = false;
@@ -793,20 +798,29 @@
                 if (!roomOn) return;
                 const fls = X.floorsOf(S); rfl = Math.min(rfl, fls.length - 1);
                 $('rName').textContent = X.FAC.house.levels[X.level(S, 'house') - 1];
-                $('rFloors').innerHTML = fls.length > 1 ? fls.map((f, i) => `<button type="button" class="${i === rfl ? 'on' : ''}" data-fl="${i}">${f.n}・${f.rooms.map(r => r.name).join('、')}</button>`).join('') : `<span>${fls[0].rooms.map(r => r.name).join('、')}</span>`;
-                $('rFloors').querySelectorAll('[data-fl]').forEach(b => b.onclick = () => { rfl = +b.dataset.fl; if (pm) { pm.ghost = null; if (pm.move) pm.move = null; } rdeco = null; renderRoom(); });
+                if (rview === 'iso') {   // 斜看：每一間一顆鈕
+                    rri = Math.min(rri, fls[rfl].rooms.length - 1);
+                    const all = []; fls.forEach((f, fi) => f.rooms.forEach((r, ri) => all.push([fi, ri, (fls.length > 1 ? f.n + '・' : '') + r.name])));
+                    $('rFloors').innerHTML = all.length > 1 ? all.map(([fi, ri, n]) => `<button type="button" class="${fi === rfl && ri === rri ? 'on' : ''}" data-fl="${fi}" data-ri="${ri}">${n}</button>`).join('') : `<span>${all[0][2]}</span>`;
+                } else $('rFloors').innerHTML = fls.length > 1 ? fls.map((f, i) => `<button type="button" class="${i === rfl ? 'on' : ''}" data-fl="${i}">${f.n}・${f.rooms.map(r => r.name).join('、')}</button>`).join('') : `<span>${fls[0].rooms.map(r => r.name).join('、')}</span>`;
+                { const on = $('rFloors').querySelector('.on'); if (on && on.scrollIntoView) on.scrollIntoView({ inline: 'center', block: 'nearest' }); }
+                $('rFloors').querySelectorAll('[data-fl]').forEach(b => b.onclick = () => { rfl = +b.dataset.fl; rri = +(b.dataset.ri || 0); if (pm) { pm.ghost = null; if (pm.move) pm.move = null; } if (rmode === 'deco') rdeco = X.floorsOf(S)[rfl].rooms[rview === 'iso' ? rri : 0].id; else rdeco = null; renderRoom(); });
                 // 上面左右：看的時候「← 回島上」；擺放、地板壁紙的時候「取消／完成」
                 if (rmode === 'view') { $('rLeft').innerHTML = `<button type="button" id="rBack">← 回島上</button>`; $('rRight').innerHTML = `<button type="button" id="rShop">買家具</button>`; $('rBack').onclick = closeRoom; $('rShop').onclick = () => openSheet('shop', 'furn'); }
                 else { $('rLeft').innerHTML = `<button type="button" id="rCancel">取消</button>`; $('rRight').innerHTML = `<button type="button" class="main" id="rDone">完成</button>`; $('rCancel').onclick = cancelMode; $('rDone').onclick = () => { rmode = 'view'; pm = null; rdeco = null; renderRoom(); }; }
                 // 畫房間（擺放中：選好的那件半透明預覽）
                 const g = pm && pm.ghost ? Object.assign({ k: pm.k, c: pm.c }, pm.ghost) : null;
                 // 畫的時候放大 RZ 倍（一格 10 顆 × RZ），手指放大看展示櫃裡的藏品才清楚；圖最寬約 2400 顆
-                const L0 = RM.layout(S, rfl); RZ = Math.max(2, Math.min(6, Math.floor(2400 / L0.W)));
-                const o = RM.render(S, rfl, { canvas: rcv, z: RZ, night: isNight(), ghost: g, hide: pm && pm.move && pm.ghost ? pm.move : null }); rlay = o.layout;
+                let o;
+                if (rview === 'iso') { const rid = fls[rfl].rooms[rri].id, info = RI.roomInfo(S, rfl, rid); RZ = Math.max(2, Math.min(6, Math.floor(2000 / info.W)));
+                    o = rio = RI.render(S, rfl, rid, { canvas: rcv, z: RZ, night: isNight(), ghost: g, hide: pm && pm.move && pm.ghost ? pm.move : null }); }
+                else { const L0 = RM.layout(S, rfl); RZ = Math.max(2, Math.min(6, Math.floor(2400 / L0.W))); rio = null;
+                    o = RM.render(S, rfl, { canvas: rcv, z: RZ, night: isNight(), ghost: g, hide: pm && pm.move && pm.ghost ? pm.move : null }); }
+                rlay = o.layout; $('rzView').textContent = rview === 'iso' ? '平' : '斜';
                 const st = $('rStage').getBoundingClientRect();
                 rscale0 = Math.min((st.width - 16) / rlay.W, (st.height - 28) / rlay.H);
                 // 地板壁紙：選到的房間框起來
-                if (rdeco) { const r = rlay.rooms.find(q => q.id === rdeco); if (r) { const x = rcv.getContext('2d'); x.setTransform(RZ, 0, 0, RZ, 0, 0); x.strokeStyle = '#b33a2f'; x.lineWidth = 2; x.strokeRect(r.x0 - 3, 1, r.w * RM.T + 6, RM.TOP + r.h * RM.T + 2); x.setTransform(1, 0, 0, 1, 0, 0); } }
+                if (rdeco && rview === 'flat') { const r = rlay.rooms.find(q => q.id === rdeco); if (r) { const x = rcv.getContext('2d'); x.setTransform(RZ, 0, 0, RZ, 0, 0); x.strokeStyle = '#b33a2f'; x.lineWidth = 2; x.strokeRect(r.x0 - 3, 1, r.w * RM.T + 6, RM.TOP + r.h * RM.T + 2); x.setTransform(1, 0, 0, 1, 0, 0); } }
                 applyRZ();
                 renderRoomPanel();
             }
@@ -814,7 +828,8 @@
             function renderRoomPanel() {
                 const P = $('rPanel'), here = rlay ? rlay.rooms.reduce((n, r) => n + X.placedIn(S, r.id).length, 0) : 0;
                 if (rmode === 'view') {
-                    rHint(here ? `這層擺了 ${here} 件家具・兩指可以放大，點展示櫃、衣櫃看裡面` : '這層還空空的，按「擺放」從倉庫拿家具出來');
+                    const where = rview === 'iso' ? '這間' : '這層';
+                    rHint(here ? `${where}擺了 ${here} 件家具・兩指可以放大，點展示櫃、衣櫃看裡面` : `${where}還空空的，按「擺放」從倉庫拿家具出來`);
                     P.innerHTML = `<div class="rrow"><button type="button" class="btn" data-r="deco">地板・壁紙</button><button type="button" class="btn" data-r="shot">${SaveImg.inApp ? '存一張圖' : navigator.canShare ? '分享一張圖' : '存一張圖'}</button><button type="button" class="btn main" data-r="place">擺放</button></div>`;
                     P.querySelector('[data-r=deco]').onclick = () => { rmode = 'deco'; rdeco = rlay.rooms[0].id; snap(); renderRoom(); };
                     P.querySelector('[data-r=place]').onclick = () => { startPlace(); renderRoom(); };
@@ -822,7 +837,7 @@
                 } else if (rmode === 'place') {
                     const stacks = S.items.filter(t => X.FURN[t.key] && t.in === 'depot');
                     const buyChip = `<button type="button" class="vchip" data-r="buy"><span class="vimg" style="background:transparent;border:1px dashed rgb(var(--wabi-accent));font-size:22px;color:rgb(var(--wabi-accent))">＋</span><b>買家具</b><i>商店</i></button>`;
-                    P.innerHTML = (stacks.length ? `<div class="tray">${buyChip}${stacks.map(t => `<button type="button" class="vchip ${pm.k === t.key && pm.c === t.c && !pm.move ? 'on' : ''}" data-k="${t.key}" data-c="${t.c}"><span class="vimg"><img src="${RM.thumb(t.key, t.c)}" alt="" style="${furnImgStyle(t.key)}"></span><b>${X.FURN[t.key].name}</b><i>×${t.qty}</i></button>`).join('')}</div>`
+                    P.innerHTML = (stacks.length ? `<div class="tray">${buyChip}${stacks.map(t => `<button type="button" class="vchip ${pm.k === t.key && pm.c === t.c && !pm.move ? 'on' : ''}" data-k="${t.key}" data-c="${t.c}"><span class="vimg">${furnImg(t.key, t.c)}</span><b>${X.FURN[t.key].name}</b><i>×${t.qty}</i></button>`).join('')}</div>`
                         : `<p class="note" style="margin:0 0 8px">倉庫裡沒有家具了。<button type="button" class="btn" data-r="shop" style="margin-left:6px;min-height:32px;padding:0 10px">去商店買</button></p>`)
                         + `<div class="rrow"><button type="button" class="btn" data-r="rot" ${pm.k ? '' : 'disabled'}>旋轉</button><button type="button" class="btn" data-r="stow" ${pm.move ? '' : 'disabled'}>收回</button><button type="button" class="btn main" data-r="put" ${pm.ghost && !pm.ghost.bad ? '' : 'disabled'}>放這裡</button></div>`;
                     const bc = P.querySelector('[data-r=buy]'); if (bc) bc.onclick = () => openSheet('shop', 'furn');
@@ -834,7 +849,7 @@
                     if (!pm.k) rHint(stacks.length ? '點下面一件家具，再點房間裡的一格；點擺好的家具可以移動' : '點擺好的家具可以移動、收回');
                 } else if (rmode === 'deco') {
                     const st = X.styleOf(S, rdeco), r = rlay.rooms.find(q => q.id === rdeco);
-                    rHint(`改「${r ? r.name : ''}」：點別間房間可以換`);
+                    rHint(rview === 'iso' ? `改「${r ? r.name : ''}」：上面點別間可以換` : `改「${r ? r.name : ''}」：點別間房間可以換`);
                     const sw = (kind, list) => list.map((x, i) => { const own = kind === 'floor' ? X.hasFloor(S, i) : X.hasPaper(S, i), on = (kind === 'floor' ? st.floor : st.paper) === i;
                         return `<button type="button" class="${on ? 'on' : ''}" data-${kind}="${i}"><img src="${RM.swatch(kind, i)}" alt="">${x.n}<i>${on ? '用著' : own ? '有了' : fmt(x.p)}</i></button>`; }).join('');
                     P.innerHTML = `<p class="swl">地板</p><div class="sw">${sw('floor', X.FLOORS)}</div><p class="swl">壁紙</p><div class="sw">${sw('paper', X.PAPERS)}</div>`;
@@ -842,6 +857,8 @@
                     P.querySelectorAll('[data-paper]').forEach(b => b.onclick = () => act({ t: 'deco', room: rdeco, paper: +b.dataset.paper }));
                 }
             }
+            // 家具小圖（2026-11-23 改成斜看的，跟屋內一樣）：塞進大約 50 顆的格子
+            function furnImg(k, c, box = 46) { const t = RI.thumb(k, c), z = Math.min(1.6, box / Math.max(t.w, t.h)); return `<img src="${t.url}" alt="" style="width:${Math.round(t.w * z)}px;height:${Math.round(t.h * z)}px;image-rendering:pixelated">`; }
             function furnImgStyle(k) { const f = X.FURN[k], w = f.w * 10, h = f.kind === 'pic' ? 16 : f.h * 10, z = Math.min(2, 46 / Math.max(w, h)); return `width:${Math.round(w * z)}px;height:${Math.round(h * z)}px;image-rendering:pixelated`; }
             // 取消：回到進這個模式之前（擺放、換地板壁紙都可以整個還原；花掉的錢也退回）
             function snap() { rsnap = { s: JSON.stringify(S), money }; }
@@ -864,6 +881,7 @@
                 rzoom = nz; rpan = nz === 1 ? [0, 0] : [p[0] - q[0] * nz, p[1] - q[1] * nz]; applyRZ();
             }
             $('rzIn').onclick = () => zoomRoom(rzoom * 1.6);
+            $('rzView').onclick = () => { rview = rview === 'iso' ? 'flat' : 'iso'; try { localStorage.setItem('dongbuli-xiaodao-rview', rview); } catch (e) { } if (pm) { pm.ghost = null; pm.move = null; } if (rmode === 'deco') rdeco = X.floorsOf(S)[rfl].rooms[rview === 'iso' ? rri : 0].id; rzoom = 1; rpan = [0, 0]; renderRoom(); showToast(rview === 'iso' ? '斜看：一次看一間' : '平面圖：一層一張'); };
             $('rzOut').onclick = () => zoomRoom(rzoom / 1.6 < 1.15 ? 1 : rzoom / 1.6);
             {   // 兩指放大、一指拖（放大了才拖得動）；拖過的那一下不算點
                 const ptr = new Map(), stage = $('rStage'); let pinch = null, drag = null;
@@ -887,6 +905,7 @@
             // 點房間：哪一間、哪一格（北牆那條是 y = -1，給掛畫）
             function cellAt(e) {
                 const b = rcv.getBoundingClientRect(), px = (e.clientX - b.left) / rscale, py = (e.clientY - b.top) / rscale;
+                if (rio) return rio.pick(px, py);
                 const r = rlay.rooms.find(q => px >= q.x0 - 2 && px < q.x0 + q.w * RM.T + 2); if (!r) return null;
                 const x = Math.max(0, Math.min(r.w - 1, Math.floor((px - r.x0) / RM.T)));
                 if (py < RM.TOP && py >= 2) return { r, x, y: -1 };
@@ -920,9 +939,10 @@
                 if (rmoved) { rmoved = false; return; }
                 if (!roomOn || !rlay) return; const at = cellAt(e); if (!at) return;
                 if (rmode === 'deco') { rdeco = at.r.id; renderRoom(); return; }
-                if (rmode === 'view') { const t = furnAt(at.r, at.x, at.y); if (t && X.HOLD[t.key]) openHold(t.id); else if (t) showToast(`${X.FURN[t.key].name}・${X.FURN[t.key].colors[t.c].n}`); return; }
+                const bb = rcv.getBoundingClientRect(), hid = rio ? rio.hit((e.clientX - bb.left) / rscale, (e.clientY - bb.top) / rscale) : null, hitT = hid ? S.items.find(q => q.id === hid) : null;
+                if (rmode === 'view') { const t = rio ? hitT : furnAt(at.r, at.x, at.y); if (t && X.HOLD[t.key]) openHold(t.id); else if (t) showToast(`${X.FURN[t.key].name}・${X.FURN[t.key].colors[t.c].n}`); return; }
                 // 擺放：點到擺好的家具 → 拿起來移動；不然把選好的那件放在這格
-                const t = (!pm.k || pm.move) ? furnAt(at.r, at.x, at.y) : null;
+                const t = (!pm.k || pm.move) ? (rio ? hitT : furnAt(at.r, at.x, at.y)) : null;
                 if (t && t.id !== pm.move) { pm = { snap: pm.snap, k: t.key, c: t.c, rot: t.rot, move: t.id, ghost: { room: at.r.id, x: t.at[0], y: t.at[1], rot: t.rot } }; checkGhost(); renderRoom(); checkGhost(); return; }
                 if (!pm.k) { rHint('先點下面一件家具'); return; }
                 if (X.FURN[pm.k].kind !== 'pic' && at.y === -1) at.y = 0;
@@ -945,10 +965,10 @@
                 showToast('放好了'); renderRoom();
             }
             async function shotRoom() {
-                const z = 3, o = RM.render(S, rfl, { z }), pad = 24, W = o.layout.W * z + pad * 2, H = o.layout.H * z + pad * 2 + 54;
+                const z = 3, o = rio ? RI.render(S, rfl, X.floorsOf(S)[rfl].rooms[rri].id, { z, night: isNight() }) : RM.render(S, rfl, { z }), pad = 24, W = o.layout.W * z + pad * 2, H = o.layout.H * z + pad * 2 + 54;
                 const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
                 x.fillStyle = '#fcfaf8'; x.fillRect(0, 0, W, H); x.drawImage(o.canvas, pad, pad);
-                x.fillStyle = '#2c2c2c'; x.font = '600 26px "Noto Serif TC", serif'; x.textBaseline = 'middle'; x.fillText(`我的小島・${X.FAC.house.levels[X.level(S, 'house') - 1]}・${o.layout.n}`, pad, H - 32);
+                x.fillStyle = '#2c2c2c'; x.font = '600 26px "Noto Serif TC", serif'; x.textBaseline = 'middle'; x.fillText(`我的小島・${X.FAC.house.levels[X.level(S, 'house') - 1]}・${rio ? o.layout.name : o.layout.n}`, pad, H - 32);
                 x.fillStyle = '#b33a2f'; x.font = '16px "Noto Sans TC", sans-serif'; x.textAlign = 'right'; x.fillText('DONGBULI・27F', W - pad, H - 32);
                 const blob = await new Promise(ok => c.toBlob(ok, 'image/png'));
                 await SaveImg.save(new File([blob], 'dongbuli-xiaodao-room.png', { type: 'image/png' }), { title: '我的小島', text: '我的小島的房間' });
@@ -964,7 +984,7 @@
                         <p class="sm" style="margin-top:6px">買了先放倉庫，進屋按「擺放」拿出來。一樣的會疊起來記數量。${X.level(S, 'house') < X.FURN_LUX_HOUSE ? `豪華的家具要先有「${X.FAC.house.levels[X.FURN_LUX_HOUSE - 1]}」。` : ''}</p>` + keys.map(k => {
                         const f = X.FURN[k], c = fcol[k] || 0, i = X.furnInfo(S, k), have = S.items.filter(t => t.key === k).reduce((n, t) => n + (t.in === 'depot' ? t.qty : 1), 0), can = i.ok && money >= f.price;
                         const label = !i.ok ? (f.tier === '豪華' && X.level(S, 'house') < X.FURN_LUX_HOUSE ? `要先有<br>「${X.FAC.house.levels[X.FURN_LUX_HOUSE - 1]}」` : '買不了') : money < f.price ? '錢包不夠' : `${have ? '再買' : '買'}<br>${fmt(f.price)}`;
-                        return `<div class="row"><div class="thumb f"><img src="${RM.thumb(k, c)}" alt="" style="${furnImgStyle(k)}"></div>
+                        return `<div class="row"><div class="thumb f">${furnImg(k, c)}</div>
                             <div class="info"><p class="nm">${f.name}${have ? `<span class="sm" style="margin-left:6px">有 ${have}</span>` : ''}</p><p class="sm">${f.tier}${f.note ? '・' + f.note : ''}・${f.kind === 'pic' ? `寬 ${f.w} 格` : `${f.w}×${f.h} 格`}・${fmt(f.price)}</p>
                             <p class="sm">${f.colors.length > 1 ? `<span class="cdots">${f.colors.map((cc, j) => `<button type="button" class="${j === c ? 'on' : ''}" style="background:${cc.sw}" data-fk="${k}" data-fc="${j}" aria-label="${cc.n}"></button>`).join('')}</span> ` : ''}${f.colors[c].n}</p></div>
                             <button type="button" class="buy" data-buyf="${k}" ${can ? '' : 'disabled'}>${label}</button></div>`;
@@ -976,7 +996,7 @@
                     const stacks = S.items.filter(t => X.FURN[t.key] && t.in === 'depot'), placed = S.items.filter(t => X.FURN[t.key] && t.in !== 'depot').length;
                     body.innerHTML = `<p class="sm" style="margin-top:6px">倉庫裡 ${stacks.reduce((n, t) => n + t.qty, 0)} 件、擺在屋裡 ${placed} 件（最多 ${X.FURN_MAX} 件）。${X.level(S, 'house') ? '' : '要先有家才能進屋擺。'}</p>` + stacks.map(t => {
                         const f = X.FURN[t.key], armed = sellArm && sellArm.k === t.key + ':' + t.c && performance.now() - sellArm.t < 4000;
-                        return `<div class="row"><div class="thumb f"><img src="${RM.thumb(t.key, t.c)}" alt="" style="${furnImgStyle(t.key)}"></div>
+                        return `<div class="row"><div class="thumb f">${furnImg(t.key, t.c)}</div>
                             <div class="info"><p class="nm">${f.name} <span class="sm">×${t.qty}</span></p><p class="sm">${f.colors[t.c].n}・${f.kind === 'pic' ? '掛北牆' : `${f.w}×${f.h} 格`}</p><p class="sm">賣一件拿回 ${fmt(X.furnSell(t.key))}</p></div>
                             <div class="acts"><button type="button" class="buy" data-putf="${t.key}" data-c="${t.c}" ${X.level(S, 'house') ? '' : 'disabled'}>擺到屋內</button><button type="button" class="buy ${armed ? 'warn' : 'ghost'}" data-sellf="${t.key}" data-c="${t.c}">${armed ? '確定賣一件' : '賣一件'}</button></div></div>`;
                     }).join('') + (stacks.length ? '' : `<button type="button" class="btn main" id="goShopF" style="width:100%;margin-top:14px">去商店買家具</button>`) + LEGAL;
@@ -1060,7 +1080,7 @@
                 boat: { n: '船', keys: () => X.VEH_KEYS.filter(k => X.VEH[k].fac === 'dock'), has: k => !!X.vehOf(S, k), ico: k => vimg(k, 1), how: '商店「載具」' },
                 plane: { n: '飛機', keys: () => X.VEH_KEYS.filter(k => X.VEH[k].fac === 'airfield'), has: k => !!X.vehOf(S, k), ico: k => vimg(k, 1), how: '商店「載具」' },
                 rocket: { n: '火箭', keys: () => X.VEH_KEYS.filter(k => X.VEH[k].fac === 'launchpad'), has: k => !!X.vehOf(S, k), ico: k => vimg(k, 1), how: '商店「載具」' },
-                furn: { n: '家具', keys: () => X.FURN_KEYS, has: k => S.items.some(t => t.key === k), ico: k => `<img src="${RM.thumb(k, 0)}" alt="" style="${furnImgStyle(k)}">`, how: '商店「家具」' },
+                furn: { n: '家具', keys: () => X.FURN_KEYS, has: k => S.items.some(t => t.key === k), ico: k => furnImg(k, 0), how: '商店「家具」' },
                 cloth: { n: '衣服', keys: () => X.CLOTH_KEYS, has: k => S.items.some(t => t.key === k && t.qty > 0), ico: k => clIco(k, 0, 1), how: '商店「衣服」' },
                 coll: { n: '藏品', keys: () => X.COLL_KEYS, has: k => X.collCount(S, k) > 0, ico: k => coIco(k, 2), how: '扭蛋' },
             };
@@ -1175,7 +1195,7 @@
             new ResizeObserver(() => { if (size()) { if (world) { if (zoomed()) { clampCam(); draw(); } else fit(); } } }).observe(view);
             renderTop();
             D.load('assets/xiaodao/', '20261122b').then(() => setTimeout(() => rebuild(true), 30));
-            roomLoaded = RM.load('assets/xiaodao/', '20261122a');   // 家具的圖先載好（商店、倉庫的小圖要用）
+            roomLoaded = Promise.all([RM.load('assets/xiaodao/', '20261122a', '20261122a'), RI.load('assets/xiaodao/', '20261122a')]);   // 家具的圖先載好（商店、倉庫的小圖要用）
             roomLoaded.then(() => { if ($('sheet').classList.contains('on')) renderSheet(); if (roomOn) renderRoom(); });
         }
     </script>
