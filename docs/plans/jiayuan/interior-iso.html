@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>屋內・斜四十五度</title>
+<style>
+  :root { --bg: #fcfaf8; --text: #4a4a4a; --dark: #2c2c2c; --accent: #8e8070; --sub: #dcdcdc; --shu: #b33a2f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', 'PingFang TC', sans-serif; }
+  main { max-width: 390px; margin: 0 auto; padding: 22px 16px 28px; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 300; font-size: 22px; letter-spacing: .3em; color: var(--dark); margin: 0; text-align: center; }
+  .sub { text-align: center; font-size: 11px; letter-spacing: .12em; color: var(--accent); margin: 6px 0 14px; line-height: 1.7; }
+  .card { border: 1px solid var(--sub); border-radius: 4px; padding: 12px; background: #fff; margin-top: 14px; }
+  .h { display: flex; align-items: baseline; gap: 8px; }
+  .no { font-size: 12px; color: var(--shu); border: 1px solid var(--shu); padding: 0 5px; line-height: 1.5; font-family: 'Noto Serif TC', serif; }
+  .name { font-family: 'Noto Serif TC', serif; font-size: 16px; letter-spacing: .2em; color: var(--dark); }
+  .tag { margin-left: auto; font-size: 10px; letter-spacing: .1em; color: var(--accent); }
+  canvas { display: block; width: 100%; border-radius: 3px; margin-top: 10px; image-rendering: pixelated; image-rendering: crisp-edges; }
+  .cap { font-size: 10.5px; letter-spacing: .08em; color: var(--accent); margin-top: 6px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<main>
+  <h1>屋內・斜看</h1>
+  <p class="sub">平房的客廳（10 × 8 格）・斜四十五度樣張<br>家具位置照現在的存檔格子，只是換畫法</p>
+
+  <section class="card">
+    <div class="h"><span class="no">壹</span><span class="name">白天</span><span class="tag">木地板・米色條紋</span></div>
+    <canvas id="day" width="240" height="176"></canvas>
+    <p class="cap">窗光斜斜照進來；沙發、茶几、電視櫃、金框展示櫃（裡面是扭到的藏品）、弧形落地燈、龜背芋、風景畫；店貓在地毯上睡覺</p>
+  </section>
+
+  <section class="card">
+    <div class="h"><span class="no">貳</span><span class="name">夜晚</span><span class="tag">開燈</span></div>
+    <canvas id="night" width="240" height="176"></canvas>
+    <p class="cap">落地燈、電視、展示櫃亮著；窗外是夜空</p>
+  </section>
+
+  <section class="card">
+    <div class="h"><span class="no">參</span><span class="name">換一套</span><span class="tag">榻榻米・和紙</span></div>
+    <canvas id="wa" width="240" height="176"></canvas>
+    <p class="cap">同一間、同樣的家具，只換地板和壁紙</p>
+  </section>
+</main>
+<script>
+const TAU = Math.PI * 2;
+const hash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+
+// 房間：i 往右下、j 往左下；(0,0) 是後面的牆角。一格 = 寬 24 顆、高 12 顆（TW、TH 是一半）
+const RW = 10, RD = 8, TW = 12, TH = 6, WH = 44, OX = 112, OY = 52, SLAB = 7;
+const iso = (i, j, z = 0) => [OX + (i - j) * TW, OY + (i + j) * TH - z];
+
+const SKIN = {
+  day: { floor: 'wood', paper: 'stripe' },
+  wa: { floor: 'tatami', paper: 'washi' }
+};
+const C = {
+  wood: ['#c99a66', '#bf8f5b', '#d3a674', '#b88553'], seam: '#9c6e42',
+  tat: ['#cdbf7f', '#c4b574', '#d6c98d'], tatEdge: '#5b4a2e', tatLine: '#b8a964',
+  stripe: ['#efe6d2', '#e5d9bf'], washi: ['#f1ece0', '#e9e2d2'], washiFib: '#ddd3bf',
+  skirt: '#7c5230', skirtHi: '#9a6a40', crown: '#d8ccb3',
+  slabTop: '#8a6a4a', slabL: '#6e5338', slabR: '#5a432c', wallTop: '#e9dfca', wallTopEdge: '#cbbd9f',
+  fab: '#7d9a8c', fabHi: '#94b1a2', fabLo: '#62796d', fabSeam: '#556a5f', pillow: '#e8c35a', pillowLo: '#c9a446',
+  wd: '#9a6a40', wdHi: '#b07f50', wdLo: '#7c5230', wdDk: '#5e3c22',
+  rug: '#b85c4a', rugLo: '#9a4b3c', rugEdge: '#e9dcc3', rugPat: '#d9a37a',
+  black: '#2b2b2e', screen: '#3b4a5e', screenHi: '#55677e',
+  gold: '#d4a83c', goldHi: '#efd27a', goldLo: '#a77f25', glass: 'rgba(200,230,236,.45)', glassHi: 'rgba(255,255,255,.55)', shelf: '#e9dfc9',
+  leaf: '#4f7a3e', leafHi: '#6e9a53', leafLo: '#3b5e2e', pot: '#c96f4a', potLo: '#a65a3b', potHi: '#de8a63',
+  metal: '#3a3a3a', shade: '#efe2c4', shadeLo: '#d6c49f',
+  sky: '#a8d4e8', skyHi: '#d4ecf5', cloud: '#ffffff', curtain: '#e7d7b4', curtainLo: '#cbb68c', frame: '#f6f1e6', frameLo: '#d9cfbb',
+  cat: '#e3a25a', catLo: '#c2803c', catHi: '#f2c48a', catStr: '#b06e2e',
+  shadow: 'rgba(40,28,18,.2)'
+};
+
+function setup(id) { const c = document.getElementById(id), x = c.getContext('2d'); x.imageSmoothingEnabled = false; return { c, x, W: c.width, H: c.height }; }
+function poly(x, pts, col) {   // 掃描線填多邊形（像素中心判斷，硬邊）
+  const ys = pts.map(p => p[1]), xs = pts.map(p => p[0]);
+  const y0 = Math.floor(Math.min(...ys)), y1 = Math.ceil(Math.max(...ys)), x0 = Math.floor(Math.min(...xs)), x1 = Math.ceil(Math.max(...xs));
+  x.fillStyle = col;
+  for (let y = y0; y <= y1; y++) { let run = -1;
+    for (let X = x0; X <= x1 + 1; X++) { const px = X + .5, py = y + .5; let inside = false;
+      if (X <= x1) for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside; }
+      if (inside && run < 0) run = X; if (!inside && run >= 0) { x.fillRect(run, y, X - run, 1); run = -1; } } }
+}
+const P = (x, a, b, col) => { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), 1, 1); };
+
+function scene(id, skin, night) {
+  const S = setup(id), x = S.x, W = S.W, H = S.H, q = (pts, col) => poly(x, pts, col);
+  const top = (i, j, w, d, z, col) => q([iso(i, j, z), iso(i + w, j, z), iso(i + w, j + d, z), iso(i, j + d, z)], col);
+  // 方塊：底 (i,j) 寬 w（沿 i）深 d（沿 j）高 h，z 起
+  function box(i, j, w, d, h, cT, cL, cR, z = 0) {
+    q([iso(i, j + d, z), iso(i + w, j + d, z), iso(i + w, j + d, z + h), iso(i, j + d, z + h)], cL);   // 左前面（朝 +j）
+    q([iso(i + w, j, z), iso(i + w, j + d, z), iso(i + w, j + d, z + h), iso(i + w, j, z + h)], cR);   // 右前面（朝 +i）
+    if (cT) top(i, j, w, d, z + h, cT);
+  }
+  const shadow = (i, j, w, d, s = .25) => q([iso(i + s, j + s * .4), iso(i + w + s, j + s * .4), iso(i + w + s, j + d + s), iso(i + s, j + d + s)], C.shadow);
+
+  // 背景
+  x.fillStyle = night ? '#1b2033' : '#efe9de'; x.fillRect(0, 0, W, H);
+
+  // 地板的厚度（像模型屋的底座）
+  q([iso(0, RD), iso(RW, RD), iso(RW, RD, -SLAB), iso(0, RD, -SLAB)], C.slabL);
+  q([iso(RW, 0), iso(RW, RD), iso(RW, RD, -SLAB), iso(RW, 0, -SLAB)], C.slabR);
+
+  // 地板：每一顆反算回格子座標，照木紋／榻榻米畫
+  const img = x.getImageData(0, 0, W, H), d = img.data, hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  const put = (px, py, col) => { const k = (py * W + px) * 4, [r, g, b] = hex(col); d[k] = r; d[k + 1] = g; d[k + 2] = b; d[k + 3] = 255; };
+  for (let py = 0; py < H; py++) for (let px = 0; px < W; px++) {
+    const a = (px + .5 - OX) / TW, b = (py + .5 - OY) / TH, i = (a + b) / 2, j = (b - a) / 2;
+    if (i < 0 || j < 0 || i >= RW || j >= RD) continue;
+    let col;
+    if (skin.floor === 'wood') {   // 木板沿 i 方向，一格兩條，接縫錯開
+      const row = Math.floor(j * 2), fr = j * 2 - row, seg = Math.floor((i + (row % 3) * 1.3) / 3.2), fi = (i + (row % 3) * 1.3) / 3.2 - seg;
+      col = C.wood[Math.floor(hash(row, seg) * 4)];
+      if (fr < .09 || fi < .025) col = C.seam;
+      else if (hash(px, py) > .93) col = C.wood[3];
+    } else {   // 榻榻米：2 × 1 格一疊，交錯，邊是深色布
+      const mi = Math.floor(i / 2), mj = Math.floor(j), off = mj % 2 ? 1 : 0, mi2 = Math.floor((i + off) / 2), fi = (i + off) / 2 - mi2, fj = j - mj;
+      col = C.tat[(px + py) % 3 === 0 ? 2 : (py % 2 ? 1 : 0)];
+      if (fj < .07 || fj > .93) col = C.tatEdge; else if (fi < .025 || fi > .975) col = C.tatLine;
+    }
+    put(px, py, col);
+  }
+  // 牆：左牆在 i = 0（沿 j），右牆在 j = 0（沿 i）；條紋是固定的 px，剛好是直的
+  for (let py = 0; py < H; py++) for (let px = 0; px < W; px++) {
+    let along, z, wall;
+    if (px <= OX) { along = (OX - px) / TW; z = OY + along * TH - (py + .5); wall = 'L'; if (along > RD) continue; }
+    else { along = (px - OX) / TW; z = OY + along * TH - (py + .5); wall = 'R'; if (along > RW) continue; }
+    if (z < 0 || z > WH) continue;
+    let col;
+    if (skin.paper === 'stripe') col = C.stripe[Math.floor(px / 3) % 2];
+    else { col = C.washi[hash(px >> 1, py >> 1) > .5 ? 0 : 1]; if (hash(px, py * 7) > .96) col = C.washiFib; }
+    if (wall === 'R') { const [r, g, b] = hex(col); col = '#' + [r, g, b].map(v => Math.max(0, v - 10).toString(16).padStart(2, '0')).join(''); }   // 右牆背光，暗一點
+    if (z < 4) col = z < 1 ? C.wdDk : (z > 3 ? C.skirtHi : C.skirt);
+    if (z > WH - 2) col = C.crown;
+    put(px, py, col);
+  }
+  x.putImageData(img, 0, 0);
+  // 牆頂（看得到牆的厚度）
+  q([iso(0, 0, WH), iso(0, RD, WH), iso(-.35, RD + .35, WH), iso(-.35, -.35, WH)], C.wallTop);
+  q([iso(-.35, -.35, WH), iso(RW + .35, -.35, WH), iso(RW, 0, WH), iso(0, 0, WH)], C.wallTop);
+  q([iso(-.35, RD + .35, WH), iso(0, RD, WH), iso(0, RD, WH - 1), iso(-.35, RD + .35, WH - 1)], C.wallTopEdge);
+  q([iso(RW, 0, WH), iso(RW + .35, -.35, WH), iso(RW + .35, -.35, WH - 1), iso(RW, 0, WH - 1)], C.wallTopEdge);
+  // 牆的前緣（剖面）
+  q([iso(-.35, RD + .35, WH), iso(-.35, RD + .35, -SLAB), iso(0, RD, -SLAB), iso(0, RD, WH)], C.wallTopEdge);
+  q([iso(RW + .35, -.35, WH), iso(RW + .35, -.35, -SLAB), iso(RW, 0, -SLAB), iso(RW, 0, WH)], '#bfb08f');
+
+  // ---- 右牆的窗（j = 0，i 4.2～6.6）----
+  const wi0 = 4.2, wi1 = 6.6, wz0 = 16, wz1 = 36, onR = (i, z) => iso(i, 0, z);
+  q([onR(wi0 - .15, wz0 - 2), onR(wi1 + .15, wz0 - 2), onR(wi1 + .15, wz1 + 2), onR(wi0 - .15, wz1 + 2)], C.frame);
+  q([onR(wi0, wz0), onR(wi1, wz0), onR(wi1, wz1), onR(wi0, wz1)], night ? '#1f2c4f' : C.sky);
+  if (!night) { q([onR(wi0, wz1 - 6), onR(wi1, wz1 - 6), onR(wi1, wz1), onR(wi0, wz1)], C.skyHi); for (let k = 0; k < 7; k++) { const [a, b] = onR(wi0 + .5 + k * .15, wz1 - 9 + (k % 3)); P(x, a, b, C.cloud); P(x, a + 1, b, C.cloud); } }
+  else { for (let k = 0; k < 9; k++) { const [a, b] = onR(wi0 + .2 + hash(k, 3) * 2.1, wz0 + 3 + hash(3, k) * 15); P(x, a, b, '#f4eed8'); } const [ma, mb] = onR(wi1 - .5, wz1 - 6); x.fillStyle = '#f6efc9'; x.fillRect(ma - 2, mb - 2, 4, 4); x.fillStyle = '#1f2c4f'; x.fillRect(ma, mb - 2, 2, 2); }
+  q([onR((wi0 + wi1) / 2 - .05, wz0), onR((wi0 + wi1) / 2 + .05, wz0), onR((wi0 + wi1) / 2 + .05, wz1), onR((wi0 + wi1) / 2 - .05, wz1)], C.frame);
+  q([onR(wi0, (wz0 + wz1) / 2), onR(wi1, (wz0 + wz1) / 2), onR(wi1, (wz0 + wz1) / 2 + 1), onR(wi0, (wz0 + wz1) / 2 + 1)], C.frame);
+  q([onR(wi0 - .15, wz0 - 3), onR(wi1 + .15, wz0 - 3), onR(wi1 + .15, wz0 - 2), onR(wi0 - .15, wz0 - 2)], C.frameLo);
+  // 窗簾
+  [[wi0 - .55, wi0 - .05], [wi1 + .05, wi1 + .55]].forEach(([a0, a1]) => { q([onR(a0, wz0 - 6), onR(a1, wz0 - 6), onR(a1, wz1 + 4), onR(a0, wz1 + 4)], C.curtain); for (let t = a0 + .12; t < a1; t += .17) q([onR(t, wz0 - 6), onR(t + .04, wz0 - 6), onR(t + .04, wz1 + 4), onR(t, wz1 + 4)], C.curtainLo); });
+  q([onR(wi0 - .7, wz1 + 4), onR(wi1 + .7, wz1 + 4), onR(wi1 + .7, wz1 + 5), onR(wi0 - .7, wz1 + 5)], C.wdDk);
+  // 白天：窗光照在地上
+  if (!night) { x.save(); x.globalAlpha = .22; q([iso(wi0 + .2, .1), iso(wi1 + .1, .1), iso(wi1 + 1.4, 3.6), iso(wi0 + 1.5, 3.6)], '#fff6d8'); x.restore(); }
+
+  // ---- 左牆的風景畫（i = 0，j 2.7～4.5）----
+  const onL = (j, z) => iso(0, j, z), pj0 = 2.6, pj1 = 4.6, pz0 = 20, pz1 = 34;
+  q([onL(pj0, pz0), onL(pj1, pz0), onL(pj1, pz1), onL(pj0, pz1)], C.gold);
+  q([onL(pj0 + .12, pz0 + 2), onL(pj1 - .12, pz0 + 2), onL(pj1 - .12, pz1 - 2), onL(pj0 + .12, pz1 - 2)], '#bfe0ea');
+  q([onL(pj0 + .12, pz0 + 2), onL(pj1 - .12, pz0 + 2), onL(pj1 - .12, pz0 + 6), onL(pj0 + .12, pz0 + 6)], '#8fb36a');
+  q([onL(pj0 + .5, pz0 + 6), onL(pj0 + 1.1, pz1 - 4), onL(pj0 + 1.7, pz0 + 6)], '#7d8fa0');
+  q([onL(pj0 + .95, pz1 - 5), onL(pj0 + 1.1, pz1 - 4), onL(pj0 + 1.25, pz1 - 5)], '#ffffff');
+  { const [a, b] = onL(pj1 - .45, pz1 - 4); x.fillStyle = '#f2c14e'; x.fillRect(a - 1, b - 1, 3, 3); }
+  q([onL(pj0, pz0 - 1), onL(pj1, pz0 - 1), onL(pj1, pz0), onL(pj0, pz0)], C.goldLo);
+
+  // ---- 地毯（i 2.4～7.4，j 2.4～6.4）----
+  top(2.4, 2.4, 5, 4, .5, C.rugEdge); top(2.6, 2.6, 4.6, 3.6, .5, C.rug); top(3.2, 3.2, 3.4, 2.4, .5, C.rugLo);
+  for (let k = 0; k < 8; k++) { const t = k / 8; top(3.2 + t * 3.4 - .05, 3.4, .1, 2, .6, C.rugPat); }
+  q([iso(2.4, 6.4, .5), iso(7.4, 6.4, .5), iso(7.4, 6.4, 0), iso(2.4, 6.4, 0)], C.rugLo);
+
+  // ---- 家具：從後面（i+j 小）畫到前面 ----
+  const items = [];
+  // 角落的小盆栽
+  items.push([.2, .2, 1, () => { box(.25, .25, .6, .6, 7, C.potHi, C.pot, C.potLo); top(.3, .3, .5, .5, 7, '#5a3d28');
+    const [a, b] = iso(.55, .55, 9); [[0, -9], [-4, -6], [4, -5], [-2, -12], [3, -10]].forEach(([u, v], k) => { x.fillStyle = k % 2 ? C.leaf : C.leafHi; x.fillRect(a + u - 2, b + v, 4, 3); x.fillStyle = C.leafLo; x.fillRect(a + u - 2, b + v + 2, 4, 1); }); }]);
+  // 電視櫃＋電視（靠右牆，i 3.6～6.9）
+  items.push([3.6, 0, 2, () => { shadow(3.6, .05, 3.3, .95);
+    box(3.6, .05, 3.3, .95, 9, C.wdHi, C.wd, C.wdLo);
+    for (let k = 1; k < 3; k++) q([iso(3.6 + k * 1.1, 1, 1), iso(3.6 + k * 1.1 + .04, 1, 1), iso(3.6 + k * 1.1 + .04, 1, 8), iso(3.6 + k * 1.1, 1, 8)], C.wdDk);
+    [4.15, 5.25, 6.35].forEach(t => { const [a, b] = iso(t, 1, 5); P(x, a, b, C.goldHi); });
+    box(4.3, .25, 1.9, .28, 14, C.black, C.black, '#1d1d20', 10);   // 電視（螢幕朝 +j）
+    q([iso(4.4, .53, 11.5), iso(6.1, .53, 11.5), iso(6.1, .53, 22.5), iso(4.4, .53, 22.5)], night ? '#6f8fc0' : C.screen);
+    if (!night) q([iso(4.5, .53, 19), iso(5, .53, 19), iso(5, .53, 22), iso(4.5, .53, 22)], C.screenHi);
+    box(5.15, .3, .2, .2, 1, C.black, C.black, C.black, 9);
+    box(3.75, .3, .35, .35, 4, '#e9e3d6', '#d6cfbf', '#c6bfaf', 9);   // 小喇叭
+  }]);
+  // 金框展示櫃（靠右牆，i 7.3～9.9），裡面是藏品
+  items.push([7.3, 0, 2, () => { shadow(7.3, .05, 2.6, .8);
+    const i0 = 7.3, w = 2.6, dd = .8, hh = 30;
+    box(i0, .05, w, dd, hh, C.goldHi, C.gold, C.goldLo);
+    // 玻璃門（左前面）挖空成三層
+    q([iso(i0 + .12, .85, 2), iso(i0 + w - .12, .85, 2), iso(i0 + w - .12, .85, hh - 2), iso(i0 + .12, .85, hh - 2)], '#c9e2e6');
+    [10, 19].forEach(z => q([iso(i0 + .12, .85, z), iso(i0 + w - .12, .85, z), iso(i0 + w - .12, .85, z + 1), iso(i0 + .12, .85, z + 1)], C.shelf));
+    // 藏品（從 collect.png 縮小貼在每一層）
+    const shelves = [[3, ['c_raccoon', 'c_julie', 'c_geode']], [12, ['c_daruma', 'c_shipbottle', 'c_kintsugi']], [21, ['c_goldcarrot', 'c_bonsai', 'c_cat']]];
+    shelves.forEach(([z, ks]) => ks.forEach((k, n) => { const [a, b] = iso(i0 + .45 + n * .85, .85, z), s = COORD[k]; if (COLL && s) { x.imageSmoothingEnabled = false; x.drawImage(COLL, s[0], s[1], 24, 24, Math.round(a - 4), Math.round(b - 8), 8, 8); } }));
+    x.save(); x.globalAlpha = .35; for (let t = 0; t < 3; t++) q([iso(i0 + .35 + t * .8, .85, 3), iso(i0 + .45 + t * .8, .85, 3), iso(i0 + .25 + t * .8, .85, hh - 3), iso(i0 + .15 + t * .8, .85, hh - 3)], '#ffffff'); x.restore();
+    if (night) { x.save(); x.globalCompositeOperation = 'lighter'; x.globalAlpha = .25; q([iso(i0 + .12, .85, 2), iso(i0 + w - .12, .85, 2), iso(i0 + w - .12, .85, hh - 2), iso(i0 + .12, .85, hh - 2)], '#ffd98a'); x.restore(); }
+  }]);
+  // 雙人布沙發（靠左牆，i 0～2，j 2.1～5.1，朝 +i）
+  items.push([0, 2.1, 3, () => { shadow(.1, 2.1, 2, 3);
+    box(.1, 2.1, .7, 3, 15, C.fabHi, C.fab, C.fabLo);              // 靠背
+    box(.1, 2.1, 1.95, .45, 10, C.fabHi, C.fab, C.fabLo);          // 遠的扶手
+    box(.8, 2.55, 1.25, 2.1, 6, C.fabHi, C.fab, C.fabLo);          // 座墊
+    q([iso(.8, 3.6, 6), iso(2.05, 3.6, 6), iso(2.05, 3.62, 6), iso(.8, 3.62, 6)], C.fabSeam);
+    box(.4, 2.8, .45, .7, 6, C.pillow, C.pillowLo, C.pillowLo, 6);  // 抱枕
+    box(.1, 4.65, 1.95, .45, 10, C.fabHi, C.fab, C.fabLo);         // 近的扶手
+    [[.2, 5.1], [1.9, 5.1]].forEach(([i, j]) => { const [a, b] = iso(i, j, 0); x.fillStyle = C.wdDk; x.fillRect(a, b - 1, 1, 2); });
+  }]);
+  // 木茶几（i 3.1～4.1，j 3.1～5.1）
+  items.push([3.1, 3.1, 3, () => { shadow(3.1, 3.1, 1, 2, .15);
+    [[3.2, 3.2], [3.95, 3.2], [3.2, 4.95], [3.95, 4.95]].forEach(([i, j]) => box(i, j, .1, .1, 6, C.wdLo, C.wdLo, C.wdDk));
+    box(3.1, 3.1, 1, 2, 1.5, C.wdHi, C.wd, C.wdLo, 6);
+    box(3.35, 3.4, .3, .3, 2.5, '#f3efe6', '#e2dccf', '#d1cabb', 7.5);   // 杯子
+    box(3.3, 4.2, .55, .7, 1.2, '#b33a2f', '#8f2c23', '#7a241d', 7.5);   // 書
+  }]);
+  // 店貓睡在地毯上
+  items.push([5.2, 4.6, 4, () => { const [a, b] = iso(5.6, 4.9, .5);
+    x.fillStyle = C.shadow; x.fillRect(a - 6, b + 1, 13, 2);
+    x.fillStyle = C.catLo; x.fillRect(a - 6, b - 4, 12, 5); x.fillStyle = C.cat; x.fillRect(a - 6, b - 5, 11, 4); x.fillStyle = C.catHi; x.fillRect(a - 5, b - 5, 6, 1);
+    [-3, 0, 3].forEach(u => { x.fillStyle = C.catStr; x.fillRect(a + u, b - 5, 1, 3); });
+    x.fillStyle = C.cat; x.fillRect(a + 3, b - 7, 5, 5); x.fillStyle = C.catLo; x.fillRect(a + 3, b - 8, 1, 1); x.fillRect(a + 7, b - 8, 1, 1);
+    x.fillStyle = '#5a3d28'; x.fillRect(a + 4, b - 5, 1, 1); x.fillRect(a + 6, b - 5, 1, 1);   // 閉著的眼睛
+    x.fillStyle = C.catLo; x.fillRect(a - 8, b - 1, 4, 1); x.fillRect(a - 9, b - 2, 2, 1);   // 尾巴
+    x.fillStyle = '#9aa7b3'; x.fillRect(a + 9, b - 10, 1, 1); x.fillRect(a + 11, b - 12, 2, 1);  // zz
+  }]);
+  // 弧形落地燈（左前角，i .3～1.3，j 6～7）
+  items.push([.3, 6, 3, () => { const [a, b] = iso(.75, 6.5, 0); x.fillStyle = C.shadow; x.fillRect(a - 3, b, 7, 2);
+    x.fillStyle = C.metal; x.fillRect(a - 3, b - 1, 6, 2); x.fillRect(a, b - 34, 1, 34);
+    for (let k = 0; k < 10; k++) P(x, a + k, b - 34 - Math.round(Math.sin(k / 10 * Math.PI / 1.4) * 5), C.metal);
+    const sx = a + 10, sy = b - 33;
+    x.fillStyle = '#a48c64'; x.fillRect(sx - 5, sy - 1, 11, 1); x.fillRect(sx - 6, sy, 1, 5); x.fillRect(sx + 6, sy, 1, 5); x.fillRect(sx - 6, sy + 5, 13, 1);   // 燈罩的邊
+    x.fillStyle = night ? '#fff0c4' : '#f4e6c3'; x.fillRect(sx - 5, sy, 11, 3); x.fillStyle = night ? '#ffe39a' : '#dcc596'; x.fillRect(sx - 5, sy + 3, 11, 2);
+    x.fillStyle = '#fffaf0'; x.fillRect(sx - 4, sy, 3, 1);
+    lamp = [sx, sy + 5];
+  }]);
+  // 龜背芋（右前，i 8～9.4，j 5.6～7）
+  items.push([8, 5.6, 4, () => { shadow(8.3, 5.9, .9, .9);
+    box(8.3, 5.9, .9, .9, 8, C.potHi, '#efe9dc', '#d9d1c1'); top(8.35, 5.95, .8, .8, 8, '#5a3d28');
+    const [a, b] = iso(8.75, 6.35, 9);
+    // 莖先畫，葉子（大片、有裂口）從後面畫到前面
+    [[-7, -8], [6, -10], [-2, -18], [5, -21], [-8, -19], [1, -27], [9, -16]].forEach(([u, v]) => { for (let k = 0; k <= 8; k++) P(x, a + u * k / 8, b + v * k / 8, C.leafLo); });
+    [[1, -27, 0], [-8, -19, 1], [5, -21, 0], [9, -15, 1], [-2, -17, 0], [-7, -8, 1], [6, -9, 0]].forEach(([u, v, s], n) => { const cx = a + u, cy = b + v, rx = 6, ry = 4;
+      for (let yy = -ry; yy <= ry; yy++) for (let xx = -rx; xx <= rx; xx++) { const e = xx * xx / (rx * rx) + yy * yy / (ry * ry); if (e > 1) continue;
+        if (Math.abs(xx) > 2 && Math.abs(yy) > 1 && (Math.abs(xx) + n) % 4 === 0 && e > .5) continue;   // 龜背芋的裂口
+        P(x, cx + xx, cy + yy, xx === 0 ? C.leafLo : yy < -1 ? (s ? '#8ab86a' : C.leafHi) : yy < 2 ? (s ? C.leafHi : C.leaf) : C.leafLo); } });
+  }]);
+  let lamp = null;
+  items.sort((p, r) => (p[0] + p[1] + p[2]) - (r[0] + r[1] + r[2])).forEach(it => it[3]());
+
+  // 前面兩道矮牆（剖開的牆，只看到牆頂）
+  box(-.35, RD, RW + .35, .35, 4, C.wallTop, C.wallTopEdge, C.wallTopEdge);
+  box(RW, -.35, .35, RD + .7, 4, C.wallTop, C.wallTopEdge, '#bfb08f');
+
+  // 夜晚：整間調暗，燈亮起來
+  if (night) {
+    x.save(); x.globalCompositeOperation = 'multiply'; x.fillStyle = '#5b6189'; x.fillRect(0, 0, W, H); x.restore();
+    const glow = (a, b, r, col, al) => { const g = x.createRadialGradient(a, b, 0, a, b, r); g.addColorStop(0, `rgba(${col},${al})`); g.addColorStop(1, `rgba(${col},0)`); x.fillStyle = g; x.fillRect(a - r, b - r, r * 2, r * 2); };
+    x.save(); x.globalCompositeOperation = 'lighter';
+    if (lamp) { glow(lamp[0], lamp[1] + 14, 46, '255,196,110', .42); glow(lamp[0], lamp[1], 10, '255,230,170', .8); }
+    { const [a, b] = iso(5.25, .55, 17); glow(a, b + 10, 30, '120,160,230', .3); }
+    { const [a, b] = iso(8.6, .85, 15); glow(a, b, 26, '255,210,130', .3); }
+    { const [a, b] = iso(5.4, 0, 26); glow(a, b, 22, '150,175,230', .18); }
+    x.restore();
+    // 燈罩、螢幕、窗外重畫亮一點
+    if (lamp) { x.fillStyle = '#fff2cf'; x.fillRect(lamp[0] - 4, lamp[1] - 5, 9, 4); x.fillStyle = '#ffd98a'; x.fillRect(lamp[0] - 5, lamp[1] - 2, 11, 2); }
+    q([iso(4.4, .53, 11.5), iso(6.1, .53, 11.5), iso(6.1, .53, 22.5), iso(4.4, .53, 22.5)], '#8fb0e0');
+    q([iso(4.5, .53, 13), iso(5.2, .53, 13), iso(5.2, .53, 21), iso(4.5, .53, 21)], '#b5cdf0');
+  }
+}
+
+let COLL = null, COORD = {};
+const LIST = { c_julie: [0, 0], c_raccoon: [50, 0], c_geode: [275, 0], c_daruma: [50, 25], c_shipbottle: [425, 0], c_kintsugi: [100, 25], c_goldcarrot: [450, 0], c_bonsai: [75, 25], c_cat: [125, 0] };
+COORD = LIST;
+const im = new Image();
+im.onload = () => { COLL = im; draw(); };
+im.onerror = draw;
+im.src = '../../../assets/xiaodao/collect.png';
+function draw() { scene('day', SKIN.day, false); scene('night', SKIN.day, true); scene('wa', SKIN.wa, false); }
+</script>
+</body>
+</html>
