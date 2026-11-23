@@ -110,6 +110,19 @@
         .rzoom button { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(243, 234, 216, .4); background: rgba(30, 24, 20, .6); color: #f3ead8; font-family: 'Noto Sans TC', sans-serif; font-size: 18px; line-height: 1; cursor: pointer; }
         .rzoom button:disabled { opacity: .3; }
         #rcv { flex: none; will-change: transform; }
+        /* 家門口的標籤：大門、信箱、日記上面各一張小牌子，會輕輕上下動；大門外面一圈慢慢亮 */
+        .dtags { position: absolute; inset: 0; pointer-events: none; }
+        .dtag { position: absolute; transform: translate(-50%, -100%); pointer-events: auto; border: 0; padding: 0 0 7px; background: none; touch-action: manipulation; animation: dbob 1.8s ease-in-out infinite; }
+        .dtag span { display: block; white-space: nowrap; padding: 4px 9px; border-radius: 999px; background: #efe4cf; color: #2c241e; font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: .14em; box-shadow: 0 2px 6px rgba(0, 0, 0, .35); }
+        .dtag::after { content: ''; position: absolute; left: 50%; bottom: 2px; margin-left: -5px; border: 5px solid transparent; border-bottom: 0; border-top-color: #efe4cf; }
+        .dtag.main span { background: #b33a2f; color: #fff6ea; font-size: 12px; padding: 5px 11px; }
+        .dtag.main::after { border-top-color: #b33a2f; }
+        .dtag.below { transform: translate(-50%, 0); padding: 7px 0 0; }
+        .dtag.below::after { bottom: auto; top: 2px; border: 5px solid transparent; border-top: 0; border-bottom-color: #efe4cf; }
+        .dring { position: absolute; pointer-events: none; border: 2px solid rgba(255, 236, 190, .95); border-radius: 4px; box-shadow: 0 0 10px rgba(255, 220, 150, .8); animation: dpulse 1.8s ease-in-out infinite; }
+        @keyframes dbob { 0%, 100% { margin-top: 0; } 50% { margin-top: -4px; } }
+        @keyframes dpulse { 0%, 100% { opacity: .15; } 50% { opacity: 1; } }
+        @media (prefers-reduced-motion: reduce) { .dtag, .dring { animation: none; } .dring { opacity: .7; } }
         .dbtns { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 8px; } .dbtns .btn { min-height: 44px; }
         #dcv { flex: none; image-rendering: pixelated; }
         .rpanel { flex: none; background: rgb(var(--wabi-bg)); color: rgb(var(--wabi-text)); padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(0, 0, 0, .2); }
@@ -286,7 +299,7 @@
         <!-- 家門口（2026-11-23）：島上點家先到這裡，點大門進屋 -->
         <div id="door" class="room" hidden>
             <div class="rbar"><span><button type="button" id="dBack">← 回島上</button></span><b id="dName"></b><span><button type="button" class="main" id="dIn">進屋</button></span></div>
-            <div id="dStage" class="rstage"><canvas id="dcv" aria-label="家門口"></canvas><p id="dHint" class="rhint">點大門進屋・點信箱、門廊上的日記看看</p></div>
+            <div id="dStage" class="rstage"><canvas id="dcv" aria-label="家門口"></canvas><div id="dTags" class="dtags"></div><p id="dHint" class="rhint">點大門進屋・信箱和日記也點得開</p></div>
             <div class="rpanel"><div class="dbtns"><button type="button" class="btn" data-d="mail">信箱</button><button type="button" class="btn" data-d="diary">小日記</button><button type="button" class="btn main" data-d="door">進屋</button></div></div>
         </div>
 
@@ -811,6 +824,18 @@
                 const o = XiaodaoDoor.render(lv, { canvas: $('dcv'), z: 4, night: isNight(), clothes: myClothes(), mail: false });
                 dspots = o.spots; dscale = Math.min((st.width - 8) / o.W, (st.height - 24) / o.H);
                 $('dcv').style.width = Math.round(o.W * dscale) + 'px'; $('dcv').style.height = Math.round(o.H * dscale) + 'px';
+                // 標籤貼在畫面上：大門「進屋」（朱色，外面一圈會亮）、信箱、日記
+                const sb = $('dStage').getBoundingClientRect(), cb = $('dcv').getBoundingClientRect(), ox = cb.left - sb.left, oy = cb.top - sb.top;
+                const T = { door: ['進屋', 'main'], mail: ['信箱', ''], diary: ['日記', ''] };
+                $('dTags').innerHTML = Object.keys(T).filter(k => dspots[k]).map(k => { const r = dspots[k], cx = ox + (r[0] + r[2] / 2) * dscale, ty = oy + r[1] * dscale - 2;
+                    return (k === 'door' ? `<i class="dring" style="left:${ox + r[0] * dscale}px;top:${oy + r[1] * dscale}px;width:${r[2] * dscale}px;height:${r[3] * dscale}px"></i>` : '')
+                        + `<button type="button" class="dtag ${T[k][1]}" data-dt="${k}" style="left:${cx}px;top:${ty}px"><span>${T[k][0]}</span></button>`; }).join('');
+                $('dTags').querySelectorAll('[data-dt]').forEach(b => b.onclick = () => doorDo(b.dataset.dt));
+                // 信箱、日記的牌子跟大門的牌子或那一圈疊到，就改掛在東西下面
+                const hit = (a, c) => a.left < c.right && c.left < a.right && a.top < c.bottom && c.top < a.bottom;
+                const busy = [...$('dTags').querySelectorAll('.dtag.main, .dring')].map(e => e.getBoundingClientRect());
+                $('dTags').querySelectorAll('.dtag:not(.main)').forEach(t => { if (busy.some(c => hit(t.getBoundingClientRect(), c))) { const r = dspots[t.dataset.dt]; t.classList.add('below'); t.style.top = (oy + (r[1] + r[3]) * dscale + 2) + 'px'; }
+                    busy.push(t.getBoundingClientRect()); });
             }
             function doorDo(k) {
                 if (k === 'door') { roomFrom = 'door'; doorOn = false; $('door').hidden = true; openRoom(); }
