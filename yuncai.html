@@ -230,7 +230,7 @@
         <section class="mt-10 text-[11px] font-sans tracking-wider leading-relaxed text-stone-500 space-y-1 px-1">
             <p>・押 TPVL 台灣職業排球：<b class="font-normal text-wabi-dark">誰贏</b>，或<b class="font-normal text-wabi-dark">局數比分</b>（3:0、3:1、3:2，反過來也行）。</p>
             <p>・<b class="font-normal text-wabi-dark">彩池分錢</b>：每一場的「誰贏」和「比分」各一個彩池。比完以後，押中的人照押的比例分掉整個彩池，二十七樓運動不抽成。</p>
-            <p>・二十七樓運動在每個選項先放 $100 萬保底，所以只有你一個人押也有得賺；保底那份押中了就消失。一格押太多會把別的選項的錢和保底吃光，再加也不會多賺，押之前會提醒你。</p>
+            <p>・二十七樓運動在每個選項先放 $100 萬保底，所以只有你一個人押也有得賺；保底那份押中了就消失。押的錢超過底池（別的選項的錢和保底）會標示「超出底池」，押中就按比例分配。</p>
             <p>・上面寫的 ×倍數是「照現在的彩池」算的，開賽前別人還會押，會一直變；最後照開賽那一刻的彩池算。</p>
             <p>・<b class="font-normal text-wabi-dark">只能押這週的比賽</b>（一週是週一到週日）。下週以後的只列賽程、不算倍數，週一 0:00 開放。</p>
             <p>・一注 $100～$1,000 萬，一場最多押 $1,000 萬。開賽就不能押，押了不能退。</p>
@@ -500,10 +500,10 @@
             const total = m[cur.kind].total + r.seed * n + a, on = o.pool + r.seed + a, est = a ? Math.floor(a * total / on) : 0;
             const lines = [];
             if (a) lines.push(`照現在的彩池，押中大約拿回 <b class="text-wabi-dark num">${fmt(est)}</b>（${xo(total / on)}）。開賽前別人還會押，倍數會變。`);
-            // 底池快被吃光（2026-11-23 使用者要的）：這一格押越多，賺的越接近「別的選項的錢＋保底」就停住；
-            // 自己佔這一格八成以上就提醒，再加只是多冒險
-            const others = total - on, share = on ? a / on : 0;
-            if (a && share >= .8) lines.push(`<span class="warn">底池快被你吃光了：這一格再怎麼押，最多也只能賺 ${fmt(others)}（別的選項的錢和保底），現在已經賺得到 ${Math.floor(share * 100)}%，再加幾乎不會多賺，只是多冒險。</span>`);
+            // 超出底池（2026-11-23 使用者要的，只標示、不擋）：押的比「別的選項的錢＋保底」還多，
+            // 押中也只是按比例分這些錢，押越多倍數越低
+            const others = total - on;
+            if (a && a > others) lines.push(`<span class="warn">超出底池：押中最多只能分到 ${fmt(others)}，會按比例分配，押越多倍數越低。</span>`);
             const lim = room(m);
             if (a && a < r.min) lines.push(`<span class="warn">一注最少 ${fmt(r.min)}。</span>`);
             else if (a > lim) lines.push(`<span class="warn">${Line.loggedIn && a > Wallet.money ? '錢包不夠' : `超過上限（一場最多 ${fmt(r.matchMax)}）`}，最多可押 ${fmt(lim)}。</span>`);
