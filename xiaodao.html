@@ -33,7 +33,7 @@
     <script src="assets/xiaodao-fx.js?v=20261124c"></script>
     <script src="assets/xiaodao-room.js?v=20261122d"></script>
     <script src="assets/xiaodao-iso.js?v=20261123b"></script>
-    <script src="assets/xiaodao-door.js?v=20261124b"></script>
+    <script src="assets/xiaodao-door.js?v=20261124c"></script>
     <script src="assets/saveimg.js?v=20261116d"></script>
     <style>
         /* 整頁是一個 App：上面標題列、中間整座島、下面四顆鈕。島是另一個世界（精緻像素風），外框照網站的紙張色 */
@@ -801,7 +801,7 @@
             let rview = 'iso', rri = 0, rio = null; try { if (localStorage.getItem('dongbuli-xiaodao-rview') === 'flat') rview = 'flat'; } catch (e) { }
             let roomOn = false, rfl = 0, rmode = 'view', pm = null, rdeco = null, rscale = 1, rscale0 = 1, rzoom = 1, rpan = [0, 0], RZ = 1, rlay = null, fcat = '床', fcol = {}, roomLoaded = null;
             // ----- 家門口（2026-11-23）：XiaodaoDoor 畫院子和整棟房子；晾的是你有的衣服；店貓先坐在台階上（之後換成來玩的角色）-----
-            let doorOn = false, dspots = null, dscale = 1, roomFrom = null;
+            let doorOn = false, dspots = null, dguests = [], dscale = 1, roomFrom = null;
             const CLOTH_T = k => /^bottom3/.test(k) ? 'skirt' : /^dress3/.test(k) ? 'bottom' : /^dress/.test(k) ? 'dress' : /^coat|^special1/.test(k) ? 'coat' : /^special2/.test(k) ? 'cape' : /^bottom/.test(k) ? 'bottom' : 'top';
             const myClothes = () => S.items.filter(i => X.CLOTH[i.key] && i.qty > 0).sort((a, b) => (a.key + a.c).localeCompare(b.key + b.c)).map(i => ({ t: CLOTH_T(i.key), c: X.CLOTH[i.key].colors[i.c].sw }));
             function openDoor() {
@@ -815,8 +815,8 @@
                 if (!doorOn) return;
                 const lv = X.level(S, 'house'), st = $('dStage').getBoundingClientRect(), info = XiaodaoDoor.SPEC[lv];
                 $('dName').textContent = X.FAC.house.levels[lv - 1];
-                const o = XiaodaoDoor.render(lv, { canvas: $('dcv'), z: 4, night: isNight(), clothes: myClothes(), mail: false });
-                dspots = o.spots; dscale = Math.min((st.width - 8) / o.W, (st.height - 24) / o.H);
+                const o = XiaodaoDoor.render(lv, { canvas: $('dcv'), z: 4, night: isNight(), clothes: myClothes(), mail: false, guests: XiaodaoDoor.todayGuests() });   // 白天隨機來兩三個角色，晚上回家
+                dspots = o.spots; dguests = o.guests || []; dscale = Math.min((st.width - 8) / o.W, (st.height - 24) / o.H);
                 $('dcv').style.width = Math.round(o.W * dscale) + 'px'; $('dcv').style.height = Math.round(o.H * dscale) + 'px';
             }
             function doorDo(k) {
@@ -828,6 +828,9 @@
             document.querySelectorAll('[data-d]').forEach(b => b.onclick = () => doorDo(b.dataset.d));
             $('dcv').addEventListener('click', e => {
                 if (!dspots) return; const b = $('dcv').getBoundingClientRect(), px = (e.clientX - b.left) / dscale, py = (e.clientY - b.top) / dscale;
+                // 點角色：說一句話（角色比門小、又坐在前面，先找）
+                const gq = dguests.find(g => px >= g.r[0] - 2 && px <= g.r[0] + g.r[2] + 2 && py >= g.r[1] - 2 && py <= g.r[1] + g.r[3] + 2);
+                if (gq) { const L = XiaodaoDoor.GUEST_SAY[gq.k]; showToast(`${XiaodaoDoor.GUEST_NAME[gq.k]}：「${L[Math.floor(Math.random() * L.length)].replace(/。$/, '')}」`); return; }
                 const hitK = ['door', 'mail', 'diary'].find(k => { const r = dspots[k]; return r && px >= r[0] - 4 && px <= r[0] + r[2] + 4 && py >= r[1] - 4 && py <= r[1] + r[3] + 4; });
                 if (hitK) doorDo(hitK);
             });

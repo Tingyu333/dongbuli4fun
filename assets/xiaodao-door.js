@@ -29,6 +29,24 @@
   // 用半顆的格子畫（畫在放大後的畫布上，比院子細一倍），原點在腳底中間；x 往右、y 往上是負的。白天才來。
   const GUEST_KEYS = ['julie', 'appleduck', 'raccoon', 'captain', 'cat', 'dog', 'mole', 'nugget', 'xiaowu'];
   const GUEST_NAME = { julie: '茱莉鴨', appleduck: '蘋果鴨', raccoon: '浣熊大王', captain: '青江菜船長', cat: '店貓', dog: '坐洗部的狗', mole: '鼴鼠', nugget: '雞塊', xiaowu: '小吳鴨' };
+  // 點角色說的話（2026-11-24）
+  const GUEST_SAY = {
+    julie: ['好想睡。', '這裡的風剛剛好，適合發呆。', '領結有沒有歪？'],
+    appleduck: ['頭上的蘋果不能吃喔。', '甜點店今天也很忙。', '你家門口好香。'],
+    raccoon: ['這座島，本王准了。', '披風被風吹亂了。', '有沒有閃亮亮的東西？'],
+    captain: ['船開不進來，我游過來的。', '哼，草地太軟。', '出航前先坐一下。'],
+    cat: ['喵。', '這個台階是我的。', '（伸了一個很長的懶腰）'],
+    dog: ['泡泡還沒沖掉。', '可以順便幫我吹乾嗎？', '汪！'],
+    mole: ['這裡的土挖起來很鬆。', '太陽好亮，眼睛睜不開。', '工地帽是借的。'],
+    nugget: ['不要沾醬，謝謝。', '剛炸好，有點燙。', '曬太陽會變更酥嗎？'],
+    xiaowu: ['書再疊一本就碰到天花板了。', '眼鏡起霧了。', '識別證掛著才進得來。'],
+  };
+  // 今天誰來：白天每三小時換一批，隨機兩三個（同一段時間怎麼重畫都一樣）
+  function todayGuests(d = new Date()) {
+    const day = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(), slot = Math.floor(d.getHours() / 3);
+    const keys = GUEST_KEYS.slice().sort((p, q) => hash(day + GUEST_KEYS.indexOf(p) * 7, slot) - hash(day + GUEST_KEYS.indexOf(q) * 7, slot));
+    return keys.slice(0, hash(day, slot + 50) < .5 ? 2 : 3);
+  }
   function guest(x, key, a, b) {
     const U = .5, c = (i, j, w, h, col) => { x.fillStyle = col; x.fillRect(a + i * U, b + j * U, w * U, h * U); };
     const el = (cx, cy, rx, ry, col) => { x.fillStyle = col; for (let j = Math.floor(cy - ry); j <= Math.ceil(cy + ry); j++) for (let i = Math.floor(cx - rx); i <= Math.ceil(cx + rx); i++) { const u = (i + .5 - cx) / rx, v = (j + .5 - cy) / ry; if (u * u + v * v <= 1) x.fillRect(a + i * U, b + j * U, U, U); } };
@@ -129,7 +147,7 @@
   const SEATS = {
     1: [[4.45, 5.7, 4], [6.55, 7.1, 4], [4.75, 7.2, 4], [2.6, 5.6, 0], [7.2, 7.9, 0]],   // 營火旁的三個木頭凳子＋草地
     2: [[4.7, 5.8, 1.2], [6.2, 7.4, 0], [2.6, 7.2, 0], [7.8, 7.6, 0], [5.4, 8.2, 0]],
-    3: [[5.6, 6.5, 1.6], [7.4, 8.4, 0], [2.2, 7.0, 0], [9.6, 8.4, 0], [5.2, 9.2, 0]],
+    3: [[5.6, 6.5, 1.6], [7.4, 8.4, 0], [1.6, 5.4, 0], [9.6, 8.4, 0], [5.2, 9.2, 0]],
     4: [[5.9, 7.0, 1.2], [8.6, 9.6, 0], [3.2, 9.6, 0], [10.6, 9.2, 0], [6.2, 10.2, 0]],
     5: [[10.6, 8.7, 3], [9.2, 11.2, 0], [4.2, 10.6, 0], [12.2, 6.2, 0], [6.6, 11.2, 0]],
   };
@@ -460,10 +478,11 @@
     }
     // 來玩的角色：坐在這棟房子的座位上（照前後順序畫，後面的先畫）
     if (opt.debugSeats) seats.forEach(([i, j, zz], n) => { const [a, b] = iso(i, j, zz); x.fillStyle = '#b33a2f'; x.fillRect(a - 3, b - 3, 6, 6); x.fillStyle = '#fff'; x.font = '6px sans-serif'; x.fillText(n, a - 1.6, b + 2); });
-    guests.slice(0, seats.length).map((k, n) => [k, seats[n]]).sort((A, B) => (A[1][0] + A[1][1]) - (B[1][0] + B[1][1])).forEach(([k, [i, j, zz]]) => { const [a, b] = iso(i, j, zz); guest(x, k, Math.round(a * 2) / 2, Math.round(b * 2) / 2); });
+    const gspots = [];
+    guests.slice(0, seats.length).map((k, n) => [k, seats[n]]).sort((A, B) => (A[1][0] + A[1][1]) - (B[1][0] + B[1][1])).forEach(([k, [i, j, zz]]) => { const [a, b] = iso(i, j, zz); guest(x, k, Math.round(a * 2) / 2, Math.round(b * 2) / 2); gspots.push({ k, r: [a - 6, b - 17, 12, 18] }); });
     main.setTransform(1, 0, 0, 1, 0, 0);
-    return { canvas: cv, W, H, spots, name: sp.name, seats: seats.length };
+    return { canvas: cv, W, H, spots, guests: gspots.reverse(), name: sp.name, seats: seats.length };   // guests：前面的排前面（點的時候先找到）
   }
 
-  root.XiaodaoDoor = { render, SPEC, guest, GUEST_KEYS, GUEST_NAME };
+  root.XiaodaoDoor = { render, SPEC, guest, GUEST_KEYS, GUEST_NAME, GUEST_SAY, todayGuests };
 })(window);
