@@ -276,93 +276,103 @@ stage('戊・現代像素（細顆粒）', X => {
   [[16, 238, 9, 220, -1], [16, 238, 25, 214, 1], [16, 238, 13, 204, -1], [16, 238, 29, 228, 1]].forEach(([sx, sy, lx, ly, d]) => { for (let t = 0; t <= 1; t += .05) px(Math.round(sx + (lx - sx) * t), Math.round(sy + (ly - sy) * t), C.gr0); leaf(lx, ly, 9, d); });
 
   // ---------- 角色 ----------
-  const by = 236;
-  // 2026-11-24 第四版：文組妹妹看了說「不可愛、像卡在桌子後面的貼紙」，美術指導翻成像素規格：
-  // 頭佔全身約 58%、豆豆眼＋白色反光、同一種淡粉圓腮紅（pk2）、配件放大 1.5 倍、有手／翅膀搭在桌上、有椅背和影子。
-  // 畫的順序：椅背 → 身體 → 頭 → 五官 → 桌子 → 手、杯子、鍵盤 → 全息螢幕。
-  const chair = cx => { R(cx - 17, by - 26, 34, 24, C.g2); R(cx - 17, by - 26, 2, 2, C.g4); R(cx + 15, by - 26, 2, 2, C.g4); R(cx - 15, by - 26, 30, 1, C.g3); R(cx - 17, by - 24, 1, 22, C.g3); R(cx + 16, by - 24, 1, 22, C.g1);
-    R(cx - 1, by + 5, 2, 19, C.ink3); R(cx - 8, by + 24, 16, 1, C.ink3); el(cx, by + 27, 18, 2, C.g3); };
-  const blush = (a, b) => { R(a + 1, b, 2, 1, C.pk2); R(a, b + 1, 4, 1, C.pk2); R(a + 1, b + 2, 2, 1, C.pk2); };
-  const bean = (a, b, w = 2, h = 3) => { R(a, b, w, h, C.ink); px(a, b, C.wh); };
+  // 2026-11-24 第五版：第四版（大頭、腮紅、配件放大、正面坐好）使用者說「好醜、有種說不出的感覺」，
+  // 文組妹妹：「像娃娃機的山寨三麗鷗，像拍證件照」。改成：每隻一個動作和一點歪斜、五官小小的擠在下面、平塗（只留一階陰影）、
+  // 剪影要認得出是鴨子（嘴凸出去、鴨屁股）。三隻是坐在桌上的小角色（吉伊卡哇的大小感），不用椅子。
+  // 每隻畫在自己的一層，再自動描邊（空格旁邊有顏色就塗那個顏色深一階），頭跟身體才會接成一整隻。
+  const by = 236, S = 1.35;
+  C.kh = '#3b4250';
+  const Lay = () => new Array(W * H).fill(null);
+  const lp = (L, a, b, col) => { a = Math.round(a); b = Math.round(b); if (a >= 0 && b >= 0 && a < W && b < H) L[b * W + a] = col; };
+  const lel = (L, cx, cy, rx, ry, col, th = 0, only) => { const m = Math.max(rx, ry) + 1, cs = Math.cos(th), sn = Math.sin(th);
+    for (let j = Math.floor(cy - m); j <= cy + m; j++) for (let i = Math.floor(cx - m); i <= cx + m; i++) { const dx = i + .5 - cx, dy = j + .5 - cy, u = (dx * cs + dy * sn) / rx, v = (-dx * sn + dy * cs) / ry;
+      if (u * u + v * v <= 1 && i >= 0 && j >= 0 && i < W && j < H && (!only || L[j * W + i] === only)) L[j * W + i] = col; } };
+  const OLC = { [C.wh]: C.g2, [C.g4]: C.g2, [C.o2]: C.o0, [C.o1]: C.o0, [C.o3]: C.o0, [C.k1]: C.ink0, [C.kh]: C.ink0, [C.g3]: C.g1 };
+  const outline = L => { const add = [];
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { if (L[j * W + i]) continue; let col = null;
+      for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) { const ni = i + dx, nj = j + dy; if (ni < 0 || nj < 0 || ni >= W || nj >= H) continue; const n = L[nj * W + ni]; if (n) { col = OLC[n] || C.ink2; if (dy === -1) break; } }
+      if (col) add.push([i, j, col]); }
+    add.forEach(([i, j, col]) => L[j * W + i] = col); };
+  const blitL = (L, maxY = H) => { for (let k = 0; k < W * H; k++) if (L[k] && ((k / W) | 0) < maxY) px(k % W, (k / W) | 0, L[k]); };
   const deskBase = cx => {
-    R(cx - 40, by - 2, 80, 1, C.wh); checker(cx - 40, by - 1, 80, 5, C.sky3, C.g5); R(cx - 12, by, 24, 3, C.g3); R(cx - 40, by + 4, 80, 1, C.g2);   // 玻璃桌、隔著玻璃的透影
+    R(cx - 40, by - 2, 80, 1, C.wh); checker(cx - 40, by - 1, 80, 5, C.sky3, C.g5); R(cx - 40, by + 4, 80, 1, C.g2);
     R(cx - 34, by + 5, 2, 21, C.g2); R(cx - 33, by + 5, 1, 21, C.g5); R(cx + 32, by + 5, 2, 21, C.g2);
     R(cx - 36, by + 26, 72, 1, C.g2); for (let j = 1; j <= 6; j++) R(cx - 34 + j, by + 26 + j, 68 - j * 2, 1, j % 2 ? C.g3 : C.g4);
   };
-  const holo = cx => {
-    R(cx + 25, by - 4, 6, 2, C.ink2); px(cx + 27, by - 5, C.cy2); px(cx + 28, by - 5, C.cy2);
-    const sx = cx + 18, sy = by - 27, sw = 20, sh = 17;   // 統一放角色右邊，不擋臉
+  deskBase(66); deskBase(188); deskBase(310);
+
+  // ---- 茱莉鴨：趴在桌上睡，嘴往前凸、鴨屁股翹翹、泡泡從嘴尖鼓出來 ----
+  { const cx = 74, L = Lay(), E = (a, b, rx, ry, col, th, only) => lel(L, cx + a * S, by + b * S, rx * S, ry * S, col, th, only);
+    R(cx - 30, by - 1, 52, 1, C.g3);                                     // 桌上的影子
+    E(8, -7, 12, 9, C.wh, -.1); E(19, -11, 5, 2.4, C.wh, -.55); E(23, -15, 2, 1.4, C.wh, -.9);   // 垮下來的背、鴨屁股
+    E(-3, -2, 11, 3, C.g4);                                              // 翅膀疊起來當枕頭
+    E(-6, -10, 11.5, 9.5, C.wh, -.3);                                    // 頭側躺
+    E(-19, -7, 4.6, 1.9, C.o2, .12); E(-22.5, -8, 1.5, 1.3, C.o2);       // 鴨嘴往前凸，嘴尖微翹
+    E(13, -2, 8, 2.6, C.g4, 0, C.wh);                                    // 只留一階陰影
+    E(-19, -5.6, 4, .55, C.o1, .12, C.o2);
+    outline(L);
+    { const hcx = cx - 6 * S, hcy = by - 10 * S, rx = 11.5 * S, ry = 9.5 * S, cs = Math.cos(-.3), sn = Math.sin(-.3), inH = (i, j) => { const dx = i + .5 - hcx, dy = j + .5 - hcy, u = (dx * cs + dy * sn) / rx, v = (-dx * sn + dy * cs) / ry; return u * u + v * v <= 1; };
+      for (let j = Math.floor(hcy - ry - 2); j < hcy + ry + 2; j++) for (let i = Math.floor(hcx); i < hcx + rx + 3; i++) if (inH(i, j) && !inH(i + 1, j) && L[j * W + i + 1] === C.wh && j < by - 4) L[j * W + i] = C.g3; }   // 頭跟背中間一道淡線
+    const hx = cx - 6 * S, hy = by - 10 * S;
+    [[-7, 2], [0, -1]].forEach(([a, b]) => { const ex = Math.round(hx + a), ey = Math.round(hy + b); lp(L, ex, ey, C.ink2); lp(L, ex + 1, ey + 1, C.ink2); lp(L, ex + 2, ey + 1, C.ink2); lp(L, ex + 3, ey, C.ink2); });   // 閉眼：小、靠近、偏下
+    [[-7, 5], [1, 2]].forEach(([a, b]) => { lp(L, hx + a, hy + b, C.pk2); lp(L, hx + a + 1, hy + b, C.pk2); });
+    for (let k = 0; k < 3; k++) lp(L, cx - 16 + k * 3, by - 3, C.g3);  // 枕頭上的羽毛縫
+    const bx = Math.round(cx + 5), byy = Math.round(by - 5);             // 領結：在脖子上
+    lel(L, bx - 3, byy, 2.6, 2, C.b1, -.3); lel(L, bx + 3, byy - 1, 2.6, 2, C.b1, -.3); lp(L, bx, byy - 1, C.b0); lp(L, bx - 1, byy - 1, C.b0); lp(L, bx, byy, C.b0); lp(L, bx - 1, byy, C.b0); lp(L, bx - 4, byy - 1, C.b2);
+    blitL(L, by);
+    const qx = Math.round(cx - 27 * S), qy = Math.round(by - 12 * S);   // 鼻涕泡泡
+    for (let k = 0; k < 28; k++) { const t = k / 28 * Math.PI * 2; px(Math.round(qx + Math.cos(t) * 3.6), Math.round(qy + Math.sin(t) * 3.6), C.cy); }
+    el(qx, qy, 3, 3, C.cy2); px(qx - 2, qy - 2, C.wh); px(qx - 1, qy - 2, C.wh); px(qx - 2, qy - 1, C.wh);
+  }
+  // ---- 小吳鴨：整隻往前湊看螢幕，小圓嘴伸出去、短尾巴、圓眼鏡裡看得到眼睛 ----
+  { const cx = 176, L = Lay(), E = (a, b, rx, ry, col, th, only) => lel(L, cx + a * S, by + b * S, rx * S, ry * S, col, th, only);
+    R(cx - 20, by - 1, 40, 1, C.g3);
+    R(cx + 10, by - 4, 18, 2, C.g3); R(cx + 10, by - 4, 18, 1, C.g5); for (let i = cx + 11; i < cx + 27; i += 3) px(i, by - 3, C.g2);   // 鍵盤
+    E(-2, -9, 10, 9, C.k1, .35); E(7, -21, 10, 9.5, C.k1); E(-11, -13, 4, 2, C.k1, .7); E(12, -3, 4.5, 2.2, C.k1, -.2);
+    E(17.5, -18.5, 3.2, 2.2, C.g3, .05);                                 // 短短圓圓的小嘴
+    E(2, -26.5, 3.2, 1.5, C.kh, -.3, C.k1); E(-7, -14.5, 2, 1, C.kh, .5, C.k1);   // 頭頂、背上一點亮
+    E(18, -17.5, 2.6, .9, C.g2, .05, C.g3);
+    outline(L);
+    const tx = Math.round(cx + 5 * S), ty = Math.round(by - 31 * S);    // 一撮細細往前捲的毛（1 顆寬，不描邊才不會像貓耳）
+    [[0, 0], [0, -1], [1, -2], [2, -3], [3, -3], [4, -2]].forEach(([a, b]) => lp(L, tx + a, ty + b, C.ink0));
+    const lens = (lx, ly) => { lel(L, lx, ly, 3, 3, C.wh); for (let k = 0; k < 24; k++) { const t = k / 24 * Math.PI * 2; lp(L, lx - .5 + Math.cos(t) * 3.4, ly - .5 + Math.sin(t) * 3.4, C.au1); }
+      lp(L, lx, ly - 1, C.ink0); lp(L, lx + 1, ly - 1, C.ink0); lp(L, lx, ly, C.ink0); lp(L, lx + 1, ly, C.ink0); };   // 黑豆豆往右看
+    const ly = Math.round(by - 21 * S); lens(Math.round(cx + 6 * S), ly); lens(Math.round(cx + 13 * S), ly); lp(L, Math.round(cx + 9.5 * S), ly - 1, C.au1);
+    const kx = Math.round(cx + 4), ky = Math.round(by - 15);              // 識別證，因為往前湊所以晃出來
+    [[0, 0], [1, 1], [2, 2], [10, 0], [9, 1], [8, 2]].forEach(([a, b]) => lp(L, kx + a, ky + b, C.b1));
+    for (let j = 0; j < 10; j++) for (let i = 0; i < 9; i++) lp(L, kx + 1 + i, ky + 3 + j, j === 0 ? C.b1 : (i === 0 || j === 9 || i === 8) ? C.g3 : C.wh);
+    for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) lp(L, kx + 2 + i, ky + 5 + j, C.o2);
+    [[6, 5, 2], [6, 7, 2], [2, 10, 6]].forEach(([a, b, w]) => { for (let i = 0; i < w; i++) lp(L, kx + a + i, ky + b, C.g2); });
+    blitL(L, by);
+    // 全息螢幕：飄在他嘴前面
+    const sx = cx + 32, sy = by - 46, sw = 22, sh = 17;
+    R(sx + 8, by - 4, 7, 2, C.ink2); px(sx + 10, by - 5, C.cy2); px(sx + 11, by - 5, C.cy2);
+    for (let j = sy + sh + 1; j < by - 5; j++) { const t = j - sy - sh; for (let i = sx + 4 + Math.round(t * .35); i < sx + sw - 4 - Math.round(t * .35); i += 2) if ((i + j) % 2 === 0) px(i, j, C.cy2); }
     R(sx, sy - 1, sw, 1, C.cy); R(sx, sy + sh, sw, 1, C.cy); R(sx - 1, sy, 1, sh, C.cy); R(sx + sw, sy, 1, sh, C.cy);
-    for (let i = sx + 1; i < sx + sw; i += 2) px(i, sy - 2, C.cy2); for (let j = sy + 1; j < sy + sh; j += 2) px(sx + sw + 1, j, C.cy2);
     R(sx, sy, sw, sh, C.cy2); for (let j = sy + 2; j < sy + sh; j += 3) R(sx, j, sw, 1, C.cy);
     R(sx, sy, sw, 1, C.wh); R(sx, sy, 1, sh, C.wh); R(sx, sy + sh - 1, sw, 1, C.cy0); R(sx + sw - 1, sy, 1, sh, C.cy0);
-    [[3, 4, 11], [3, 7, 14], [3, 10, 7], [3, 13, 12]].forEach(([dx, dy, w]) => R(sx + dx, sy + dy, w, 1, C.cy0));
-    for (let j = sy + sh + 1; j < by - 4; j++) { const t = j - sy - sh; for (let i = sx + 6 + t; i < sx + sw - 6 - t; i += 2) if ((i + j) % 2 === 0) px(i, j, C.cy2); }
-  };
-  const handShadow = (a, w) => R(a, by - 1, w, 1, C.g2);
-  // ---- 茱莉鴨：大頭小饅頭、歪頭 10 度、往下彎的閉眼、鼻涕泡泡、嘴貼在眼睛下、放大的領結、小翅膀、馬克杯 ----
-  const julie = cx => {
-    chair(cx);
-    const T = { olL: C.g1, olD: C.ink3, d: C.g3, m: C.g4, l: C.wh, rim: C.cy2 };
-    clipAbove(by - 2, () => blob(cx, by - 11, 12, 9, T)); R(cx + 13, by - 20, 1, 18, C.g1);
-    blob(cx, by - 30, 14, 12.5, { ...T, th: .17 });
-    [[-4, 0], [4, 1]].forEach(([d, dy]) => { const y = by - 28 + dy; px(cx + d - 2, y, C.ink2); px(cx + d + 2, y, C.ink2); R(cx + d - 1, y + 1, 3, 1, C.ink2); });   // 往下彎的閉眼
-    R(cx - 3, by - 25, 7, 3, C.o2); R(cx - 4, by - 24, 9, 1, C.o2); px(cx - 2, by - 25, C.o3); px(cx - 1, by - 25, C.o3); R(cx - 3, by - 22, 7, 2, C.o1); R(cx - 2, by - 20, 5, 1, C.o1);   // 嘴：上下兩片
-    blush(cx - 10, by - 26); blush(cx + 7, by - 25);
-    el(cx + 10, by - 21, 3, 3, C.cy); el(cx + 10, by - 21, 2, 2, C.cy2); px(cx + 9, by - 23, C.wh);   // 鼻涕泡泡
-    for (let i = 0; i < 7; i++) { const h = 3 + Math.round(i * 6 / 7); R(cx - 9 + i, by - 15 - Math.floor(h / 2), 1, h, C.b1); R(cx + 8 - i, by - 15 - Math.floor(h / 2), 1, h, C.b1); }   // 領結 1.5 倍
-    R(cx - 2, by - 17, 4, 4, C.b0); px(cx - 8, by - 18, C.b2); px(cx + 7, by - 18, C.b2);
-  };
-  const julieFront = cx => {
-    [[-13], [13]].forEach(([d]) => { el(cx + d, by - 4, 3.5, 2.5, C.g4); R(cx + d - 2, by - 6, 4, 1, C.wh); R(cx + d - 2, by - 2, 4, 1, C.g1); handShadow(cx + d - 3, 7); });   // 小翅膀搭在桌上
-    R(cx + 20, by - 10, 6, 8, C.wh); R(cx + 19, by - 10, 1, 8, C.g1); R(cx + 26, by - 10, 1, 8, C.g1); R(cx + 19, by - 2, 8, 1, C.g1); R(cx + 21, by - 10, 4, 1, C.o0);   // 馬克杯
-    R(cx + 27, by - 8, 2, 1, C.g1); R(cx + 28, by - 7, 1, 2, C.g1); R(cx + 27, by - 5, 2, 1, C.g1); px(cx + 22, by - 13, C.cy2); px(cx + 23, by - 15, C.cy2); handShadow(cx + 19, 8);
-  };
-  // ---- 小吳鴨：黑色兩階、頭頂小反光弧、三根翹毛、往左尖的三角嘴、瞳孔 2×2、1.5 倍識別證、小翅膀、鍵盤 ----
-  const xiaowu = cx => {
-    chair(cx);
-    const T = { olL: C.ink0, olD: C.ink0, d: C.ink0, m: C.k1, l: C.k1, rim: C.rimK };
-    clipAbove(by - 2, () => blob(cx, by - 11, 12, 9, T)); R(cx + 13, by - 20, 1, 18, C.g1);
-    blob(cx, by - 31, 13, 12, T);
-    R(cx - 7, by - 41, 4, 1, C.ink3); R(cx - 6, by - 40, 4, 1, C.ink3); px(cx - 6, by - 41, C.g1);   // 頭頂反光
-    px(cx - 3, by - 44, C.k1); px(cx - 4, by - 45, C.k1); R(cx, by - 46, 1, 3, C.k1); px(cx + 1, by - 47, C.k1); px(cx + 3, by - 44, C.k1); px(cx + 4, by - 45, C.k1);   // 翹毛
-    [[-6], [6]].forEach(([d]) => { el(cx + d, by - 31, 5.5, 5.5, C.au0); el(cx + d - .5, by - 31.5, 5, 5, C.au1); el(cx + d, by - 31, 3.6, 3.6, C.g4); px(cx + d - 4, by - 35, C.au2); px(cx + d - 3, by - 35, C.au2);
-      R(cx + d - 1, by - 31, 2, 2, C.ink0); px(cx + d - 1, by - 31, C.wh); px(cx + d - 2, by - 33, C.wh); });
-    R(cx - 1, by - 32, 2, 1, C.au1);
-    [[-4, -24], [-8, -23], [-12, -22], [-7, -21]].forEach(([l, dy]) => R(cx + l, by + dy, -l, 1, C.ink3)); R(cx - 4, by - 24, 4, 1, C.g1); px(cx - 3, by - 24, C.g3); R(cx - 7, by - 21, 7, 1, C.ink2);   // 往左尖的三角嘴
-    blush(cx - 11, by - 26); blush(cx + 8, by - 25);
-    for (let k = 0; k <= 4; k++) { px(cx - 7 + Math.round(k * .75), by - 20 + k, C.b1); px(cx + 7 - Math.round(k * .75), by - 20 + k, C.b1); }   // 掛繩
-    R(cx - 6, by - 16, 12, 13, C.g3); R(cx - 5, by - 15, 10, 11, C.g5); R(cx - 4, by - 13, 4, 4, C.o3); px(cx - 1, by - 11, C.o2); R(cx + 1, by - 13, 3, 1, C.g2); R(cx + 1, by - 11, 3, 1, C.g2); R(cx - 4, by - 7, 8, 1, C.g2);
-  };
-  const xiaowuFront = cx => {
-    R(cx + 4, by - 4, 14, 2, C.g3); R(cx + 4, by - 4, 14, 1, C.g5); handShadow(cx + 4, 14);   // 鍵盤
-    [[-14], [14]].forEach(([d]) => { el(cx + d, by - 5, 3.5, 2.5, C.k1); R(cx + d - 2, by - 7, 3, 1, C.ink2); px(cx + d + (d > 0 ? 2 : -3), by - 4, C.g4); px(cx + d + (d > 0 ? 3 : -4), by - 5, C.g4); handShadow(cx + d - 3, 7); });
-  };
-  // ---- 雞塊：直立的圓角馬鈴薯、凸兩顆、五官放大上移、ω 嘴、圓腮紅、米黃麵衣、小手 ----
-  const nugget = cx => {
-    chair(cx);
-    const T = { olL: C.o1, olD: C.o0, d: C.o1, m: C.o2, l: C.o2 };
-    clipAbove(by - 2, () => { el(cx + .5, by - 22.5, 15, 21, C.o0); el(cx + .5, by - 11.5, 16, 11, C.o0); el(cx - .5, by - 23.5, 14.5, 20.5, C.o1); el(cx - .5, by - 12.5, 15.5, 10.5, C.o1);
-      el(cx + 1, by - 23, 14, 20, C.o1); el(cx + 1, by - 12, 15, 10, C.o1); el(cx, by - 23, 13, 19, C.o2); el(cx, by - 12, 14, 9, C.o2);
-      el(cx - 13, by - 34, 1.6, 1.6, C.o2); el(cx + 14, by - 20, 1.6, 1.6, C.o1); });
-    R(cx + 13, by - 30, 1, 28, C.g1);
-    for (let t = 0; t < 1; t += .04) { const ang = Math.PI * (1.08 + t * .42); px(Math.round(cx + Math.cos(ang) * 12), Math.round(by - 24 + Math.sin(ang) * 17), C.o3); px(Math.round(cx + Math.cos(ang) * 11), Math.round(by - 24 + Math.sin(ang) * 16), C.o3); }
-    px(cx - 9, by - 36, C.wh); px(cx - 7, by - 38, C.wh);
-    let n = 0, seed = 11; while (n < 18) { seed = (seed * 9301 + 49297) % 233280; const i = Math.round(cx - 13 + (seed / 233280) * 26); seed = (seed * 9301 + 49297) % 233280; const j = Math.round(by - 41 + (seed / 233280) * 36);
-      const u = (i - cx) / 12, v = (j - (by - 22)) / 18; if (u * u + v * v > .85 || (i > cx - 13 && i < cx + 12 && j > by - 32 && j < by - 18) || j > by - 5) continue; px(i, j, C.warm); px(i + 1, j + 1, C.o1); n++; }
-    bean(cx - 6, by - 29, 3, 4); bean(cx + 4, by - 29, 3, 4);
-    [[-2, -23], [0, -23], [2, -23], [-1, -22], [1, -22]].forEach(([p, q]) => px(cx + p, by + q, C.o0));   // ω
-    blush(cx - 11, by - 25); blush(cx + 7, by - 25);
-  };
-  const nuggetFront = cx => { [[-12], [12]].forEach(([d]) => { el(cx + d, by - 4, 2.5, 2, C.o2); px(cx + d, by - 6, C.o3); R(cx + d - 2, by - 2, 4, 1, C.o0); handShadow(cx + d - 3, 6); }); };
-
-  julie(66); xiaowu(188); nugget(310);
-  deskBase(66); deskBase(188); deskBase(310);
-  julieFront(66); xiaowuFront(188); nuggetFront(310);
-  holo(188); holo(310);
+    [[3, 4, 12], [3, 7, 15], [3, 10, 8], [3, 13, 13]].forEach(([a, b, w]) => R(sx + a, sy + b, w, 1, C.cy0));
+  }
+  // ---- 雞塊：坐在桌上舉手揮，橫的歪雞塊形、臉小小的 ----
+  { const cx = 304, L = Lay(), E = (a, b, rx, ry, col, th, only) => lel(L, cx + a * S, by + b * S, rx * S, ry * S, col, th, only);
+    R(cx - 22, by - 1, 44, 1, C.g3);
+    E(0, -11, 13, 10, C.o2, .12); E(-8, -6, 7.5, 6, C.o2); E(9, -7, 6.5, 7, C.o2); E(2, -18, 8, 3.5, C.o2, .1);
+    E(-12.5, -17, 2.6, 3, C.o2, -.6); E(-15, -21.5, 3, 3, C.o2); E(12, -3, 2.6, 2, C.o2);
+    E(7, -2, 11, 4.5, C.o1, -.1, C.o2); E(13, -8, 3, 5, C.o1, 0, C.o2);   // 一階陰影
+    E(-5, -18, 3.5, 1.4, C.o3, .1, C.o2); E(-16, -23, 1.2, .9, C.o3, 0, C.o2);   // 一點亮
+    outline(L);
+    const fx = Math.round(cx), fy = Math.round(by - 12 * S);
+    [[-5, 0], [2, 0]].forEach(([a]) => { lp(L, fx + a, fy, C.ink0); lp(L, fx + a + 1, fy, C.ink0); lp(L, fx + a, fy + 1, C.ink0); lp(L, fx + a + 1, fy + 1, C.ink0); lp(L, fx + a, fy + 2, C.ink0); lp(L, fx + a + 1, fy + 2, C.ink0); lp(L, fx + a, fy, C.wh); });   // 豆豆眼
+    lp(L, fx - 2, fy + 4, C.o0); lp(L, fx - 1, fy + 4, C.o0); lp(L, fx, fy + 4, C.o0); lp(L, fx - 1, fy + 5, C.pink);   // 開心張嘴
+    [[-9, 3], [5, 3]].forEach(([a, b]) => { lp(L, fx + a, fy + b, C.pk2); lp(L, fx + a + 1, fy + b, C.pk2); lp(L, fx + a + 2, fy + b, C.pk2); });
+    [[-15, -17], [-17, -8], [16, -15], [18, -7], [8, -25], [-4, -24]].forEach(([a, b]) => { lp(L, cx + a, by + b, C.warm); });   // 麵衣只留邊邊幾顆
+    blitL(L, by);
+    const hx = Math.round(cx - 15 * S), hy = Math.round(by - 21.5 * S);   // 揮手的小線
+    R(hx - 1, hy - 8, 1, 3, C.o1); R(hx - 7, hy - 3, 3, 1, C.o1); R(hx + 4, hy - 7, 1, 2, C.o1); R(hx - 6, hy - 7, 1, 1, C.o1);
+  }
   // 睡覺的 Z：三種大小往上飄
   const Zp = (a, b, s) => { R(a, b, 3 * s, s, C.cy0); px(a + 2 * s, b + s, C.cy0); if (s > 1) R(a + 2 * s, b + s, s, s, C.cy0); R(a + s, b + 2 * s, s, s, C.cy0); R(a, b + 3 * s, 3 * s, s, C.cy0); };
-  Zp(80, 196, 1); Zp(86, 184, 1.34); Zp(93, 170, 1.67);
+  Zp(72, 200, 1); Zp(78, 190, 1.34); Zp(85, 178, 1.67);
   X.imageSmoothingEnabled = false; X.drawImage(c, 0, 0, W, H);
 });
 </script>
