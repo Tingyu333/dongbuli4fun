@@ -19,6 +19,20 @@
   .top .money { font-family: 'Noto Sans TC', sans-serif; color: #b33a2f; font-size: 14px; }
   .sub { padding: 0 18px 12px; display: flex; align-items: center; gap: 10px; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; color: #8e8070; letter-spacing: .08em; }
   .seal { border: 1.5px solid #b33a2f; color: #b33a2f; padding: 2px 8px; font-family: 'Noto Serif TC', serif; font-size: 13px; letter-spacing: .2em; transform: rotate(-3deg); display: inline-block; }
+  /* 公司階段的銘牌（2026-11-24 使用者：不要蓋章樣式，正式一點、越來越華麗） */
+  .np { display: inline-flex; align-items: center; gap: 6px; font-family: 'Noto Serif TC', serif; font-size: 13px; letter-spacing: .28em; padding: 4px 10px 4px 12px; line-height: 1.3; white-space: nowrap; position: relative; }
+  .np1 { background: #f6f1e6; color: #6b6052; border: 1px solid #cfc6b6; }
+  .np2 { background: linear-gradient(#c19866, #a77d4c); color: #fbf3e2; border: 1px solid #7d5c3c; box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 1px 2px rgba(0,0,0,.2); text-shadow: 0 1px 0 rgba(0,0,0,.25); }
+  .np2::before, .np2::after { content: ''; width: 3px; height: 3px; border-radius: 50%; background: #e6cf9c; box-shadow: inset 0 0 0 1px #6b4a2a; }
+  .np2::after { order: 2; }
+  .np3 { background: linear-gradient(#f3f4f6, #c9ccd1 55%, #e2e4e7); color: #34373d; border: 3px double #8f949b; box-shadow: 0 1px 3px rgba(0,0,0,.2); text-shadow: 0 1px 0 rgba(255,255,255,.7); padding: 4px 14px; }
+  .np4 { background: #26282c; color: #e2c26a; border: 1px solid #b89a4a; box-shadow: inset 0 0 0 3px #26282c, inset 0 0 0 4px #b89a4a, 0 2px 4px rgba(0,0,0,.3); padding: 6px 16px; letter-spacing: .32em; }
+  .np5 { background: radial-gradient(ellipse at 30% 0%, #3a3330, #15110f 70%); color: transparent; background-clip: padding-box; border: 2px solid transparent; border-image: linear-gradient(135deg, #f6e3a1, #b8862b 30%, #fff1bd 50%, #a8761f 70%, #f6e3a1) 1; padding: 7px 18px; box-shadow: 0 3px 8px rgba(0,0,0,.35); }
+  .np5 span { background: linear-gradient(#fff3c4, #e2b44a 55%, #a8761f); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: .34em; }
+  .np5::before, .np5::after { content: ''; width: 5px; height: 5px; transform: rotate(45deg); background: linear-gradient(135deg, #fff1bd, #b8862b); }
+  .np6 { background: linear-gradient(115deg, #a8761f, #f6dc8a 22%, #fff6d0 32%, #d9a940 48%, #f3d27a 66%, #b8862b 82%, #f6dc8a); color: #3b2a0c; border: 1px solid #8a6216; box-shadow: inset 0 0 0 2px rgba(255,248,214,.7), inset 0 0 0 3px #a8761f, 0 4px 10px rgba(120,80,10,.35); padding: 8px 20px; letter-spacing: .36em; text-shadow: 0 1px 0 rgba(255,245,210,.8); font-weight: 600; }
+  .np6::before, .np6::after { content: '❖'; font-size: 10px; color: #6b4a12; letter-spacing: 0; text-shadow: none; }
+  .np small { font-family: 'Noto Sans TC', sans-serif; font-size: 9.5px; letter-spacing: .15em; opacity: .75; }
   canvas.office { display: block; width: 375px; image-rendering: pixelated; }
   .sec { padding: 12px 18px 0; }
   .sec h2 { margin: 0 0 8px; font-weight: 400; font-size: 14px; letter-spacing: .3em; color: #2c2c2c; display: flex; justify-content: space-between; align-items: baseline; }
@@ -72,7 +86,14 @@
   /* 升級 */
   .ladder { padding: 4px 18px 0; position: relative; }
   .ladder::before { content: ''; position: absolute; left: 39px; top: 16px; bottom: 30px; width: 1px; background: #d9d1c3; }
+  .ladder2 { padding: 2px 18px 0; }
+  .st2 { padding: 9px 0 9px; border-bottom: 1px dotted #d9d1c3; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-family: 'Noto Sans TC', sans-serif; font-size: 11.5px; }
+  .st2 .d { flex-basis: 100%; color: #8e8070; letter-spacing: .04em; }
+  .st2 .pr { margin-left: auto; color: #4a4a4a; font-size: 12.5px; }
+  .st2 .here { margin-left: auto; font-size: 11px; color: #fcfaf8; background: #2c2c2c; padding: 2px 8px; border-radius: 999px; letter-spacing: .15em; }
+  .st2.lock .d { color: #b9ad99; }
   .step { display: flex; gap: 12px; align-items: flex-start; padding: 7px 0; position: relative; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; }
+  .step .np { flex: none; min-width: 0; }
   .step .n { width: 42px; height: 42px; flex: none; border: 1.5px solid #cfc6b6; border-radius: 50%; background: #fcfaf8; display: flex; align-items: center; justify-content: center; font-family: 'Noto Serif TC', serif; font-size: 13px; color: #b9ad99; z-index: 1; }
   .step.done .n { border-color: #8e8070; color: #8e8070; }
   .step.now .n { border-color: #b33a2f; color: #fff; background: #b33a2f; }
@@ -90,7 +111,7 @@
   <div>
   <div class="phone">
     <div class="top"><span class="back">← 會員</span><h1>開公司</h1><span class="money">$184,300</span></div>
-    <div class="sub"><span class="seal">車庫創業</span><span>丼步喱設計社・員工 3 人</span></div>
+    <div class="sub"><span class="np np1">車庫創業</span><span>丼步喱設計社・員工 3 人</span></div>
     <canvas class="office" id="office" width="250" height="184"></canvas>
     <div class="sec">
       <h2>進行中 <small>做完才拿錢</small></h2>
@@ -142,7 +163,7 @@
   <div>
   <div class="phone">
     <div class="top"><span class="back">← 會員</span><h1>開公司</h1><span class="money">$184,300</span></div>
-    <div class="sub"><span class="seal">車庫創業</span><span>丼步喱設計社・員工 3 人</span></div>
+    <div class="sub"><span class="np np1">車庫創業</span><span>丼步喱設計社・員工 3 人</span></div>
     <canvas class="office" id="office2" width="250" height="184"></canvas>
     <div class="sec"><h2>進行中</h2><div class="job"><div class="row"><span>坐洗部的會員卡設計</span><span style="color:#8e8070">6:20</span></div><div class="bar"><i style="width:45%"></i></div></div></div>
     <div class="dim"></div>
@@ -165,13 +186,13 @@
   <div class="phone">
     <div class="top"><span class="back">← 辦公室</span><h1>公司</h1><span class="money">$184,300</span></div>
     <div class="sub"><span>丼步喱設計社・創始執行長</span><span style="margin-left:auto">做完 128 件</span></div>
-    <div class="ladder">
-      <div class="step now"><span class="n">壹</span><div><div class="t">車庫創業</div><div class="d">員工 3 人・同時做 3 件<br>案子最大到 4 小時、$10 萬</div></div></div>
-      <div class="step"><span class="n">貳</span><div><div class="t">小辦公室</div><div class="d">員工 5 人・同時做 4 件<br>開始有人寄履歷來</div></div><span class="pr">$120,000</span></div>
-      <div class="step lock"><span class="n">參</span><div><div class="t">整層樓</div><div class="d">員工 8 人・同時做 6 件・有茶水間</div></div><span class="pr">$800,000</span></div>
-      <div class="step lock"><span class="n">肆</span><div><div class="t">二十七樓整層</div><div class="d">員工 12 人・可以接跨夜的大案</div></div><span class="pr">$5,000,000</span></div>
-      <div class="step lock"><span class="n">伍</span><div><div class="t">自己的大樓</div><div class="d">員工 20 人・樓頂掛公司招牌</div></div><span class="pr">$30,000,000</span></div>
-      <div class="step lock ipo"><span class="n">上市</span><div><div class="t">掛牌上市</div><div class="d">變成股市・炒的一檔股票<br>你是執行長，可以發公告</div></div></div>
+    <div class="ladder2">
+      <div class="st2 now"><span class="np np1">車庫創業</span><span class="here">現在</span><div class="d">員工 3 人・同時做 3 件・案子最大到 4 小時、$10 萬</div></div>
+      <div class="st2"><span class="np np2">小辦公室</span><span class="pr">$120,000</span><div class="d">員工 5 人・同時做 4 件・開始有人寄履歷來</div></div>
+      <div class="st2 lock"><span class="np np3">整層樓</span><span class="pr">$800,000</span><div class="d">員工 8 人・同時做 6 件・有茶水間</div></div>
+      <div class="st2 lock"><span class="np np4">二十七樓整層</span><span class="pr">$5,000,000</span><div class="d">員工 12 人・可以接跨夜的大案</div></div>
+      <div class="st2 lock"><span class="np np5"><span>自己的大樓</span></span><span class="pr">$30,000,000</span><div class="d">員工 20 人・樓頂掛公司招牌</div></div>
+      <div class="st2 lock"><span class="np np6">掛牌上市</span><div class="d">變成股市的一檔股票・你是執行長，可以發公告</div></div>
     </div>
     <div style="padding:6px 18px 0"><button class="btn main" style="width:100%;padding:12px 0;font-size:13px">搬到小辦公室・$120,000</button></div>
     <div class="tabs"><span>辦公室</span><span>委託板</span><span>員工</span><span class="on">公司</span></div>
