@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<title>公司・開・介面風格比較</title>
+<!-- 2026-11-24 使用者：「有點復古了，我不要，我要現代日式＋科技感」。像素辦公室和角色保留，只換介面。
+     同一個辦公室主畫面做三種：甲＝無印良品＋儀表板、乙＝近未來毛玻璃、丙＝和風終端機（車站告示）。 -->
+<script src="../../../assets/xiaodao-door.js"></script>
+<script src="sprites.js"></script>
+<script src="office.js"></script>
+<style>
+  body { margin: 0; background: #e4e2dd; font-family: 'Noto Sans TC', sans-serif; }
+  .wrap { display: flex; gap: 26px; padding: 26px; align-items: flex-start; width: max-content; }
+  .phone { width: 375px; height: 760px; border-radius: 28px; overflow: hidden; position: relative; box-shadow: 0 14px 34px rgba(0,0,0,.2); display: flex; flex-direction: column; }
+  .cap { text-align: center; font-size: 13px; letter-spacing: .2em; color: #6b6052; margin-top: 12px; }
+  canvas { display: block; width: 100%; }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+  /* ===== 甲：無印良品＋儀表板 ===== */
+  .a { background: #f7f6f3; color: #3a3a3a; }
+  .a .hd { padding: 20px 20px 12px; display: flex; justify-content: space-between; align-items: flex-end; }
+  .a .hd .t { font-size: 11px; letter-spacing: .25em; color: #9a968e; }
+  .a .hd h1 { margin: 2px 0 0; font-size: 20px; font-weight: 300; letter-spacing: .12em; color: #1f1f1f; }
+  .a .hd .m { text-align: right; } .a .hd .m b { display: block; font-size: 22px; font-weight: 300; letter-spacing: .02em; color: #1f1f1f; } .a .hd .m small { font-size: 10px; letter-spacing: .2em; color: #9a968e; }
+  .a .tag { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; letter-spacing: .2em; color: #3a3a3a; border: 1px solid #d6d3cc; border-radius: 999px; padding: 3px 10px; margin-top: 6px; }
+  .a .tag i { width: 6px; height: 6px; border-radius: 50%; background: #3a3a3a; } .a .tag em { font-style: normal; color: #9a968e; }
+  .a .scene { margin: 0 16px; border-radius: 14px; overflow: hidden; }
+  .a .kpi { display: grid; grid-template-columns: repeat(3, 1fr); margin: 14px 16px 0; border-top: 1px solid #e2dfd8; border-bottom: 1px solid #e2dfd8; }
+  .a .kpi div { padding: 10px 0 10px 12px; } .a .kpi div + div { border-left: 1px solid #e2dfd8; }
+  .a .kpi small { display: block; font-size: 10px; letter-spacing: .2em; color: #9a968e; } .a .kpi b { font-size: 17px; font-weight: 300; color: #1f1f1f; }
+  .a .sec { padding: 14px 20px 0; display: flex; justify-content: space-between; align-items: center; font-size: 11px; letter-spacing: .25em; color: #9a968e; }
+  .a .pill { font-size: 12px; letter-spacing: .12em; background: #1f1f1f; color: #f7f6f3; border-radius: 999px; padding: 8px 14px; min-height: 36px; border: 0; }
+  .a .job { display: flex; align-items: center; gap: 12px; padding: 10px 20px; }
+  .a .ring { width: 34px; height: 34px; flex: none; border-radius: 50%; background: conic-gradient(#1f1f1f var(--p), #e7e4dd 0); display: grid; place-items: center; }
+  .a .ring::after { content: ''; width: 28px; height: 28px; border-radius: 50%; background: #f7f6f3; }
+  .a .ring.done { background: #1f1f1f; } .a .ring.done::after { content: '收'; display: grid; place-items: center; font-size: 11px; color: #f7f6f3; background: none; }
+  .a .job .tt { flex: 1; font-size: 13px; color: #1f1f1f; letter-spacing: .04em; } .a .job .tt small { display: block; font-size: 10.5px; color: #9a968e; margin-top: 2px; letter-spacing: .06em; }
+  .a .job .r { font-size: 12.5px; color: #1f1f1f; } .a .job .r.w { color: #9a968e; }
+  .a .tabs { margin-top: auto; display: grid; grid-template-columns: repeat(4, 1fr); padding: 10px 0 18px; border-top: 1px solid #e2dfd8; font-size: 11px; letter-spacing: .2em; text-align: center; color: #9a968e; }
+  .a .tabs span.on { color: #1f1f1f; } .a .tabs span.on::before { content: ''; display: block; width: 4px; height: 4px; border-radius: 50%; background: #b33a2f; margin: 0 auto 5px; } .a .tabs span:not(.on)::before { content: ''; display: block; height: 9px; }
+
+  /* ===== 乙：近未來毛玻璃 ===== */
+  .b { background: #dfe3e6; color: #26303a; }
+  .b .bg { position: absolute; inset: 0; } .b .bg canvas { width: 100%; height: auto; position: absolute; left: 0; top: 56px; }
+  .b .fade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(223,227,230,0) 0%, rgba(223,227,230,0) 52%, rgba(223,227,230,.7) 56%, #dfe3e6 62%); }
+  .b .glass { background: rgba(250,252,253,.58); backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3); border: 1px solid rgba(255,255,255,.75); box-shadow: 0 8px 24px rgba(40,60,80,.12), inset 0 1px 0 rgba(255,255,255,.9); border-radius: 16px; }
+  .b .hd { position: relative; margin: 16px 14px 0; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; }
+  .b .hd h1 { margin: 0; font-size: 16px; font-weight: 400; letter-spacing: .3em; } .b .hd .lv { display: flex; align-items: center; gap: 6px; font-size: 10.5px; letter-spacing: .2em; color: #51606d; margin-top: 3px; }
+  .b .dot { width: 6px; height: 6px; border-radius: 50%; background: #3fb98b; box-shadow: 0 0 0 3px rgba(63,185,139,.2), 0 0 8px rgba(63,185,139,.8); }
+  .b .hd .m { text-align: right; font-size: 18px; font-weight: 300; } .b .hd .m small { display: block; font-size: 9.5px; letter-spacing: .2em; color: #6a7884; }
+  .b .panel { position: relative; margin: 0 14px; padding: 6px 0 4px; }
+  .b .row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; font-size: 12.5px; } .b .row + .row { border-top: 1px solid rgba(120,140,155,.18); }
+  .b .row .tt { flex: 1; letter-spacing: .03em; } .b .row .tt small { display: block; font-size: 10.5px; color: #6a7884; margin-top: 2px; }
+  .b .bar { height: 2px; background: rgba(120,140,155,.2); border-radius: 2px; margin-top: 6px; overflow: hidden; } .b .bar i { display: block; height: 100%; background: linear-gradient(90deg, #6aa9d8, #8fd3e0); box-shadow: 0 0 6px #8fd3e0; }
+  .b .chip { font-size: 11px; letter-spacing: .1em; padding: 4px 10px; border-radius: 999px; background: rgba(179,58,47,.1); color: #b33a2f; border: 1px solid rgba(179,58,47,.35); }
+  .b .cta { position: relative; margin: 10px 14px 0; display: flex; gap: 8px; } .b .cta button { flex: 1; min-height: 44px; border-radius: 12px; font-size: 12.5px; letter-spacing: .18em; border: 1px solid rgba(255,255,255,.8); background: rgba(250,252,253,.6); color: #26303a; backdrop-filter: blur(10px); }
+  .b .cta button.main { background: #26303a; color: #f2f6f8; border-color: #26303a; box-shadow: 0 6px 16px rgba(38,48,58,.3); }
+  .b .kp { position: relative; margin: 10px 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; } .b .kp div { padding: 8px 10px; } .b .kp small { display: block; font-size: 9.5px; letter-spacing: .2em; color: #6a7884; } .b .kp b { font-size: 16px; font-weight: 300; }
+  .b .tabs { position: relative; margin: auto 14px 14px; display: grid; grid-template-columns: repeat(4, 1fr); padding: 10px 0; font-size: 11px; letter-spacing: .2em; text-align: center; color: #6a7884; }
+  .b .tabs span.on { color: #26303a; text-shadow: 0 0 10px rgba(143,211,224,.9); }
+  .b .spacer { height: 262px; }
+
+  /* ===== 丙：和風終端機（車站告示） ===== */
+  .c { background: #121416; color: #e9e6df; }
+  .c .hd { display: grid; grid-template-columns: auto 1fr auto; align-items: stretch; border-bottom: 1px solid #2d3134; }
+  .c .hd .k { writing-mode: vertical-rl; font-family: 'Noto Serif TC', serif; font-size: 15px; letter-spacing: .3em; padding: 14px 12px; background: #b33a2f; color: #fff6ea; }
+  .c .hd .t { padding: 12px 14px; } .c .hd .t small { font-size: 10px; letter-spacing: .3em; color: #8b8f92; } .c .hd .t h1 { margin: 4px 0 0; font-size: 17px; font-weight: 500; letter-spacing: .12em; } .c .hd .t .en { font-size: 9.5px; letter-spacing: .25em; color: #6b7073; margin-top: 2px; }
+  .c .hd .m { padding: 12px 14px; text-align: right; border-left: 1px solid #2d3134; } .c .hd .m small { font-size: 9.5px; letter-spacing: .25em; color: #8b8f92; } .c .hd .m b { display: block; font-size: 20px; font-weight: 400; color: #f1c86a; margin-top: 4px; font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+  .c .scene { border-bottom: 1px solid #2d3134; position: relative; } .c .scene::after { content: '27F ・ GARAGE ・ 3 STAFF'; position: absolute; left: 10px; bottom: 8px; font-family: ui-monospace, Menlo, monospace; font-size: 9px; letter-spacing: .2em; color: #e9e6df; background: rgba(18,20,22,.75); padding: 2px 6px; }
+  .c .stat { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid #2d3134; } .c .stat div { padding: 9px 12px; } .c .stat div + div { border-left: 1px solid #2d3134; }
+  .c .stat small { display: block; font-size: 9.5px; letter-spacing: .25em; color: #8b8f92; } .c .stat b { font-family: ui-monospace, Menlo, monospace; font-size: 15px; font-weight: 400; }
+  .c .lbl { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px 6px; font-size: 10px; letter-spacing: .3em; color: #8b8f92; } .c .lbl b { color: #e9e6df; font-weight: 500; font-size: 12px; letter-spacing: .25em; }
+  .c .go { font-size: 11.5px; letter-spacing: .15em; background: #f1c86a; color: #121416; border: 0; padding: 8px 12px; min-height: 36px; font-weight: 600; }
+  .c .ln { display: grid; grid-template-columns: 46px 1fr auto; align-items: center; gap: 10px; padding: 9px 14px; border-top: 1px solid #22262a; font-size: 12.5px; }
+  .c .ln .no { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: #8b8f92; border: 1px solid #3a3f43; text-align: center; padding: 3px 0; }
+  .c .ln .no.ok { background: #3fb98b; color: #121416; border-color: #3fb98b; }
+  .c .ln small { display: block; font-size: 10px; color: #8b8f92; margin-top: 2px; letter-spacing: .08em; } .c .ln .r { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; } .c .ln .r.ok { color: #3fb98b; }
+  .c .seg { display: flex; gap: 2px; margin-top: 5px; } .c .seg i { flex: 1; height: 3px; background: #2d3134; } .c .seg i.on { background: #f1c86a; }
+  .c .tabs { margin-top: auto; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid #2d3134; text-align: center; } .c .tabs span { padding: 10px 0 16px; font-size: 11px; letter-spacing: .2em; color: #8b8f92; } .c .tabs span small { display: block; font-family: ui-monospace, Menlo, monospace; font-size: 8.5px; letter-spacing: .15em; color: #5a5f63; margin-bottom: 3px; }
+  .c .tabs span.on { color: #e9e6df; box-shadow: inset 0 2px 0 #b33a2f; } .c .tabs span.on small { color: #b33a2f; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div><div class="phone a">
+    <div class="hd"><div><div class="t">丼步喱設計社</div><h1>公司・開</h1><span class="tag"><i></i>車庫創業<em>Lv.1</em></span></div><div class="m"><small>公司帳戶</small><b class="num">$57,300</b></div></div>
+    <div class="scene"><canvas id="ca"></canvas></div>
+    <div class="kpi"><div><small>每小時</small><b class="num">$2,996</b></div><div><small>進行中</small><b class="num">1 / 3</b></div><div><small>閒著</small><b class="num">1 人</b></div></div>
+    <div class="sec"><span>進行中</span><button class="pill">全部收款 $1,127</button></div>
+    <div class="job"><span class="ring done"></span><span class="tt">〈大橋頭麥克早餐店・菜單改版〉<small>雞塊・做完了</small></span><span class="r num">$343</span></div>
+    <div class="job"><span class="ring done"></span><span class="tt">〈坐洗部・會員集點卡〉<small>青蛙・阿呱・做完了</small></span><span class="r num">$784</span></div>
+    <div class="job"><span class="ring" style="--p:18%"></span><span class="tt">〈城堡官網・第七次改版〉<small>茱莉鴨・睡著了，慢一點</small></span><span class="r w num">3:12:40</span></div>
+    <div class="tabs"><span class="on">辦公室</span><span>委託</span><span>員工</span><span>公司</span></div>
+  </div><div class="cap">甲・無印良品＋儀表板</div></div>
+
+  <div><div class="phone b">
+    <div class="bg"><canvas id="cb"></canvas></div><div class="fade"></div>
+    <div class="hd glass"><div><h1>公司・開</h1><div class="lv"><span class="dot"></span>車庫創業・營業中</div></div><div class="m num"><small>公司帳戶</small>$57,300</div></div>
+    <div class="spacer"></div>
+    <div class="kp"><div class="glass"><small>每小時</small><b class="num">$2,996</b></div><div class="glass"><small>進行中</small><b class="num">1 / 3</b></div><div class="glass"><small>閒著</small><b class="num">1 人</b></div></div>
+    <div class="panel glass">
+      <div class="row"><span class="tt">〈大橋頭麥克早餐店・菜單改版〉<small>雞塊</small></span><span class="chip num">完成 $343</span></div>
+      <div class="row"><span class="tt">〈坐洗部・會員集點卡〉<small>青蛙・阿呱</small></span><span class="chip num">完成 $784</span></div>
+      <div class="row"><span class="tt">〈城堡官網・第七次改版〉<small>茱莉鴨・睡著了</small><div class="bar"><i style="width:18%"></i></div></span><span class="num" style="font-size:12px;color:#6a7884">3:12:40</span></div>
+    </div>
+    <div class="cta"><button>委託</button><button class="main">全部收款 $1,127</button></div>
+    <div class="tabs glass"><span class="on">辦公室</span><span>委託</span><span>員工</span><span>公司</span></div>
+  </div><div class="cap">乙・近未來毛玻璃</div></div>
+
+  <div><div class="phone c">
+    <div class="hd"><div class="k">公司</div><div class="t"><small>COMPANY No.027</small><h1>丼步喱設計社</h1><div class="en">DONGBULI DESIGN ・ 車庫創業</div></div><div class="m"><small>公司帳戶</small><b class="num">57,300</b></div></div>
+    <div class="scene"><canvas id="cc"></canvas></div>
+    <div class="stat"><div><small>每小時</small><b class="num">2,996</b></div><div><small>進行中</small><b class="num">1/3</b></div><div><small>閒著</small><b class="num">01</b></div></div>
+    <div class="lbl"><b>進行中</b><button class="go">全部收款 1,127</button></div>
+    <div class="ln"><span class="no ok">完</span><span>〈大橋頭麥克早餐店・菜單改版〉<small>雞塊</small></span><span class="r ok num">+343</span></div>
+    <div class="ln"><span class="no ok">完</span><span>〈坐洗部・會員集點卡〉<small>青蛙・阿呱</small></span><span class="r ok num">+784</span></div>
+    <div class="ln"><span class="no">03</span><span>〈城堡官網・第七次改版〉<small>茱莉鴨・睡著了</small><div class="seg"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></span><span class="r num">3:12:40</span></div>
+    <div class="tabs"><span class="on"><small>01</small>辦公室</span><span><small>02</small>委託</span><span><small>03</small>員工</span><span><small>04</small>公司</span></div>
+  </div><div class="cap">丙・和風終端機（車站告示）</div></div>
+
+</div>
+<script>
+  const P = [{ g: 'julie' }, { g: 'xiaowu' }, { g: 'nugget' }];
+  ['ca', 'cb', 'cc'].forEach(id => drawOffice(document.getElementById(id), 0, P, { sleep: true }));
+</script>
+</body>
+</html>
