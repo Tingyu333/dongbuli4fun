@@ -28,8 +28,8 @@
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
-    <script src="assets/xiaodao-rules.js?v=20261122e"></script>
-    <script src="assets/xiaodao-draw.js?v=20261124a"></script>
+    <script src="assets/xiaodao-rules.js?v=20261124a"></script>
+    <script src="assets/xiaodao-draw.js?v=20261124b"></script>
     <script src="assets/xiaodao-fx.js?v=20261124a"></script>
     <script src="assets/xiaodao-room.js?v=20261122d"></script>
     <script src="assets/xiaodao-iso.js?v=20261123b"></script>
@@ -431,7 +431,7 @@
             }
             function refocus() {
                 if (!sel || !card.classList.contains('on')) return;
-                if (sel.t === 'plot') focus(...X.world().center[sel.p]);
+                if (sel.t === 'plot') focus(...X.lotCenter(sel.p));
                 else { const r = X.rect(sel.k, Math.max(1, X.level(S, sel.k))); focus(r.x + r.w / 2, r.y + r.h / 2); }
             }
             const zoomed = () => cam.s > cam.base * 1.05;
@@ -463,7 +463,7 @@
                 const Wd = X.world();
                 const tint = (plots, col) => { ctx.fillStyle = col; plots.forEach(p => Wd.cells[p].forEach(c => ctx.fillRect((c % X.GW) * X.C, Math.floor(c / X.GW) * X.C, X.C, X.C))); };
                 let pinAt = null;
-                if (sel && sel.t === 'plot') { tint([sel.p], 'rgba(255,255,255,.32)'); pinAt = Wd.center[sel.p]; }
+                if (sel && sel.t === 'plot') { tint(X.plotInfo(S, sel.p).plots || [sel.p], 'rgba(255,255,255,.32)'); pinAt = X.lotCenter(sel.p); }
                 if (sel && sel.t === 'fac') {
                     const lv = X.level(S, sel.k), r = X.rect(sel.k, Math.max(1, lv)), info = X.facInfo(S, sel.k);
                     if (info.miss) tint(info.miss, 'rgba(179,58,47,.28)');
@@ -568,7 +568,7 @@
                 if (hit) { sel = { t: 'fac', k: hit }; openFac(hit); draw(); const r = X.rect(hit, Math.max(1, X.level(S, hit))); focus(r.x + r.w / 2, r.y + r.h / 2); return; }
                 const cx = Math.floor(wx / X.C), cy = Math.floor(wy / X.C);
                 const p = cx >= 0 && cy >= 0 && cx < X.GW && cy < X.GH ? X.world().id[cy * X.GW + cx] : -1;
-                if (p >= 0 && X.plotInfo(S, p).ok) { sel = { t: 'plot', p }; openPlot(p); draw(); focus(...X.world().center[p]); return; }
+                if (p >= 0 && X.plotInfo(S, p).ok) { sel = { t: 'plot', p }; openPlot(p); draw(); focus(...X.lotCenter(p)); return; }
                 if (p >= 0 && X.island(S).plots.includes(p)) { closeCard(); return; }
                 closeCard();
             }
@@ -585,10 +585,10 @@
             function openPlot(p) {
                 const i = X.plotInfo(S, p), n = X.island(S).plots.length, nt = X.TIERS[X.tierOf(S) + 1];
                 const left = nt ? nt.n - n : 0;
-                card.innerHTML = `<h2>買這塊地</h2>
-                    <p class="line">${i.size} 格・跟你的地連著，會填海接起來</p>
+                card.innerHTML = `<h2>${i.lot ? X.FAC[i.lot.k].name + '的工地' : '買這塊地'}</h2>
+                    <p class="line">${i.size} 格・${i.n > 1 ? `${i.n} 塊地合成一塊，一次買下` : '跟你的地連著，會填海接起來'}</p>
                     <p class="price">${fmt(i.price)}</p>
-                    <p class="note">價錢之後會變：越後面買的地越貴。${nt ? (left === 1 ? `買了這塊，島就升到「${nt.name}」：${unlockText(X.tierOf(S) + 1)}。` : `再買 ${left} 塊，島升到「${nt.name}」：${unlockText(X.tierOf(S) + 1)}。`) : ''}</p>
+                    <p class="note">價錢之後會變：越後面買的地越貴。${nt ? (left <= i.n ? `買了這塊，島就升到「${nt.name}」：${unlockText(X.tierOf(S) + 1)}。` : `再買 ${left} 塊，島升到「${nt.name}」：${unlockText(X.tierOf(S) + 1)}。`) : ''}</p>
                     <div class="btns"><button type="button" class="btn" data-a="no">先不要</button><button type="button" class="btn main" data-a="buy" ${money < i.price ? 'disabled' : ''}>${money < i.price ? '錢包不夠' : '買下來'}</button></div>`;
                 card.classList.add('on');
                 card.querySelector('[data-a=no]').onclick = closeCard;
@@ -603,7 +603,13 @@
                 let note = '', btn = '';
                 if (i.max) note = '已經蓋到最高了。';
                 else if (i.ok) btn = `<button type="button" class="btn main" data-a="build" ${money < i.price ? 'disabled' : ''}>${money < i.price ? '錢包不夠' : (lv ? '升級' : '蓋') + `：${i.name} ${fmt(i.price)}`}</button>`;
-                else { note = i.why + (i.miss ? '（地圖上紅色那幾塊，點有鎖的地就能買）' : '') + '。'; btn = `<button type="button" class="btn main" disabled>${lv ? '升級' : '蓋'}：${i.name} ${fmt(i.price)}</button>`; }
+                else if (i.miss) {   // 工地的地還沒買齊：卡片上直接買（不用在地圖上瞄準那一小塊）
+                    const q = i.miss.find(p => X.plotInfo(S, p).ok), pi = q != null ? X.plotInfo(S, q) : null;
+                    note = pi ? `工地還差 ${i.miss.length} 塊地（地圖上紅色的），先買下來才能${lv ? '升級' : '蓋'}。` : `工地還差 ${i.miss.length} 塊地（地圖上紅色的），要先買到跟工地連著的地。`;
+                    btn = pi ? `<button type="button" class="btn main" data-a="lot" ${money < pi.price ? 'disabled' : ''}>${money < pi.price ? '錢包不夠' : `買工地的地：${pi.n} 塊 ${fmt(pi.price)}`}</button>` : `<button type="button" class="btn main" disabled>${lv ? '升級' : '蓋'}：${i.name} ${fmt(i.price)}</button>`;
+                    card.dataset.lot = q != null ? q : '';
+                }
+                else { note = i.why + '。'; btn = `<button type="button" class="btn main" disabled>${lv ? '升級' : '蓋'}：${i.name} ${fmt(i.price)}</button>`; }
                 const sl = lv && f.slots ? X.slotsOf(S, k) : null;
                 card.innerHTML = `<h2>${lv ? f.levels[lv - 1] : f.name + '・空地'}${lv ? `<span class="seal lvseal">${NUM[lv]}</span>` : ''}</h2>
                     <p class="line">${f.name}・${facLine(k)}</p>
@@ -618,6 +624,7 @@
                 const ib = card.querySelector('[data-a=in]'); if (ib) ib.onclick = () => openDoor();
                 const tb = card.querySelector('[data-a=trip]'); if (tb) tb.onclick = () => goTrip(k);
                 const b = card.querySelector('[data-a=build]'); if (b) b.onclick = () => act({ t: 'build', k });
+                const lb = card.querySelector('[data-a=lot]'); if (lb) lb.onclick = () => act({ t: 'plot', p: +card.dataset.lot, f: k });
             }
             function refreshUI() {
                 if (park) openParkCard();
@@ -632,7 +639,7 @@
                 if (!r.ok) { showToast(r.err); return; }
                 S = r.state; money -= r.cost; save();
                 const V = a.k && X.VEH[a.k], F = V && X.FAC[V.fac];
-                if (a.t === 'plot') { showToast('買下來了・海岸線長出去'); sel = null; card.classList.remove('on'); }
+                if (a.t === 'plot') { showToast('買下來了・海岸線長出去'); if (!a.f) { sel = null; card.classList.remove('on'); } }   // 從設施卡片買工地的地：卡片留著，接著就能蓋
                 else if (a.t === 'build') { const off = before - X.vehicles(S).filter(v => v.in !== 'depot').length; showToast(`${X.FAC[a.k].levels[r.lv - 1]}・蓋好了` + (off > 0 ? `（${off} 台先收進寄放處）` : '')); }
                 else if (a.t === 'buyv') showToast(V.fac === 'launchpad' ? (r.parked ? (r.bumped ? `立上發射台了・${X.VEH[r.bumped].name}先收起來` : '立上發射台了') : '發射台上已經有一枚，先放寄放處') : r.parked ? (r.bumped ? `停進${F.name}了・${X.VEH[r.bumped].name}先讓位` : `停進${F.name}了`) : `${F.name}沒有空位，先放寄放處`);
                 else if (a.t === 'park') showToast(`${V.name}・${V.fac === 'launchpad' ? '立上去了' : '停好了'}`);
@@ -733,7 +740,7 @@
                     body.querySelectorAll('.buy[data-k]').forEach(b => b.onclick = () => { act({ t: 'build', k: b.dataset.k }); });
                 } else if (smode === 'shop' && stab === 'plot') {
                     const nextP = X.plotPrice(X.island(S).bought + 1);
-                    body.innerHTML = `<p class="sm" style="margin-top:6px;line-height:1.9">點地圖上<b style="font-weight:500;color:rgb(var(--wabi-dark))">有鎖、灰色虛線</b>的地就能買（要跟你的地連著）。買了海岸線會長出去，越後面買的地越貴。</p>
+                    body.innerHTML = `<p class="sm" style="margin-top:6px;line-height:1.9">點地圖上<b style="font-weight:500;color:rgb(var(--wabi-dark))">有鎖、灰色虛線</b>的地就能買（要跟你的地連著）。設施工地底下的地合成一大塊，一次買下（照裡面有幾塊算錢、算島的等級）；點設施的卡片也能直接買。買了海岸線會長出去，越後面買的地越貴。</p>
                         <p class="price" style="margin-top:8px;font-family:'Noto Sans TC',sans-serif;color:rgb(var(--wabi-shu))">下一塊 ${fmt(nextP)}</p>
                         <p class="sm">已經有 ${n} 塊（一開始送 ${X.world().start.length} 塊），買過 ${X.island(S).bought} 塊。</p>
                         <table class="tier-table">${X.TIERS.map((x, i) => `<tr class="${i === t ? 'now' : ''}"><td style="white-space:nowrap">島 ${x.name}</td><td style="white-space:nowrap">${i ? x.n + ' 塊' : '一開始'}</td><td>${i ? unlockText(i) : '家、車庫、碼頭，最高到貳'}</td></tr>`).join('')}</table>

@@ -178,10 +178,12 @@
     // 地塊的邊：自己的地之間淡淡白點；能買的地灰色虛線＋鎖
     const buyable = []; for (let p = 0; p < Wd.P; p++) if (X.plotInfo(s, p).ok) buyable.push(p);
     const isBuy = new Set(buyable);
-    plotEdges(B, Wd.id, (a, b) => own.has(a) && own.has(b), 'rgba(255,255,255,.4)', 4);
-    plotEdges(B, Wd.id, (a, b) => isBuy.has(a) && isBuy.has(b), 'rgba(215,208,196,.35)', 6);
+    // 工地那一大塊（X.lotOf）裡面不畫邊、只放一個鎖；還沒買的那幾塊外面一圈照樣畫
+    const same = (a, b) => a >= 0 && b >= 0 && Wd.lots.of[a] && Wd.lots.of[a] === Wd.lots.of[b];
+    plotEdges(B, Wd.id, (a, b) => own.has(a) && own.has(b) && !same(a, b), 'rgba(255,255,255,.4)', 4);
+    plotEdges(B, Wd.id, (a, b) => isBuy.has(a) && isBuy.has(b) && !same(a, b), 'rgba(215,208,196,.35)', 6);
     plotEdges(B, Wd.id, (a, b) => (isBuy.has(a) && !isBuy.has(b) && !own.has(b)) || (isBuy.has(b) && !isBuy.has(a) && !own.has(a)), '#d7d0c4', 6);
-    if (opt.locks !== false) buyable.forEach(p => { const [cx, cy] = Wd.center[p]; lockIcon(B, Math.round(cx), Math.round(cy)); });
+    if (opt.locks !== false) { const done = new Set(); buyable.forEach(p => { const g = Wd.lots.of[p]; if (g) { if (done.has(g)) return; done.add(g); } const [cx, cy] = X.lotCenter(p); lockIcon(B, Math.round(cx), Math.round(cy)); }); }
     forest(B, T, occ, seed);
     road.forEach(p => trail(B, p.dots, rr, tier >= 2 ? 'stone' : 'dirt'));
     const cv = (opt.canvas || document.createElement('canvas')); cv.width = WW; cv.height = HH;

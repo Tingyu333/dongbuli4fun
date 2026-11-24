@@ -336,6 +336,7 @@
     const center = cells.map(cs => { let sx = 0, sy = 0; cs.forEach(k => { sx += k % GW; sy += Math.floor(k / GW); }); return [(sx / cs.length + .5) * C, (sy / cs.length + .5) * C]; });
     WORLD = { id, P, cells, nb: nb.map(s => [...s].sort((a, b) => a - b)), border, center };
     WORLD.start = startPlots();
+    WORLD.lots = makeLots();
     return WORLD;
   }
 
@@ -359,6 +360,23 @@
     }
     return { plots: [...out].sort((a, b) => a - b), bad };
   }
+  // 工地的地合成一大塊（2026-11-24 使用者說有設施的地切太碎、不好點、容易誤觸）：
+  // 每種設施每一階新多出來的那幾塊（不算送的、前面已經併過的）併成一塊「工地」，連著的才併在一起。
+  // 只是畫面上、點的時候當一塊：價錢、島的等級還是照裡面有幾塊算（一次買 n 塊 = 第 b+1～b+n 塊的價錢加起來），存檔也還是一塊一塊記。
+  function makeLots() {
+    const W = WORLD, of = new Array(W.P).fill(null), list = [], start = new Set(W.start);
+    FAC_KEYS.forEach(k => { const seen = new Set(); FAC[k].levels.forEach((_, l) => {
+      const ps = needPlots(k, l + 1).plots, inc = new Set(ps.filter(p => !seen.has(p) && !start.has(p) && !W.border[p] && !of[p])); ps.forEach(p => seen.add(p));
+      inc.forEach(p => { if (of[p]) return; const g = [p], q = [p]; of[p] = g; while (q.length) { const c = q.pop(); W.nb[c].forEach(d => { if (inc.has(d) && !of[d]) { of[d] = g; g.push(d); q.push(d); } }); }
+        g.sort((a, b) => a - b); if (g.length > 1) { g.k = k; g.lv = l + 1; list.push(g); } else of[p] = null; });
+    }); });
+    const center = g => { let sx = 0, sy = 0, n = 0; g.forEach(p => W.cells[p].forEach(c => { sx += c % GW; sy += Math.floor(c / GW); n++; })); return [(sx / n + .5) * C, (sy / n + .5) * C]; };
+    list.forEach(g => { g.center = center(g); });
+    return { of, list };
+  }
+  const lotOf = p => { const W = world(); return (W.lots.of[p]) || [p]; };
+  const lotCenter = p => { const W = world(), g = W.lots.of[p]; return g ? g.center : W.center[p]; };
+
   // 一開始送的地：帳篷、腳踏車棚、小木台底下那幾塊＋把它們連起來
   function startPlots() {
     const W = WORLD, own = new Set();
@@ -473,9 +491,11 @@
     if (!(p >= 0 && p < W.P)) return { ok: false, why: '沒有這塊地' };
     if (own.has(p)) return { ok: false, why: '已經是你的了', owned: true };
     if (W.border[p]) return { ok: false, why: '太外海了，船開不到' };
-    const price = plotPrice(island(s).bought + 1), size = W.cells[p].length;
-    if (!W.nb[p].some(q => own.has(q))) return { ok: false, why: '要跟你的地連著才能買', price, size };
-    return { ok: true, price, size };
+    const g = lotOf(p), plots = g.filter(q => !own.has(q) && !W.border[q]), b = island(s).bought;
+    let price = 0; plots.forEach((_, i) => { price += plotPrice(b + 1 + i); });
+    const size = plots.reduce((n, q) => n + W.cells[q].length, 0), lot = g.length > 1 ? { k: g.k, lv: g.lv } : null;
+    if (!plots.some(q => W.nb[q].some(r => own.has(r)))) return { ok: false, why: '要跟你的地連著才能買', price, size, plots, n: plots.length, lot };
+    return { ok: true, price, size, plots, n: plots.length, lot };
   }
   // 某種設施的下一級：能不能蓋、差什麼
   function facInfo(s, k) {
@@ -606,7 +626,7 @@
       if (!info.ok) return { ok: false, err: info.why };
       if (!(money >= info.price)) return { ok: false, err: '錢包不夠' };
       const before = tierOf(s), isl = island(s);
-      isl.plots.push(p); isl.plots.sort((a, b) => a - b); isl.bought++;
+      info.plots.forEach(q => isl.plots.push(q)); isl.plots.sort((a, b) => a - b); isl.bought += info.n;   // 工地那一大塊：一次買 n 塊
       const after = tierOf(s);
       return { ok: true, cost: info.price, state: s, tierUp: after > before ? after : 0 };
     }
@@ -753,7 +773,7 @@
   }
   const worth = s => worthParts(s).total;
 
-  const R = { CLOTH, CLOTH_KEYS, CLOTH_MAX, COLL, COLL_KEYS, GACHA, RARE, HOLD, holders, wrStacks, caseItems, clothCount, collCount, clothSell, rollGacha, FURN, FURN_KEYS, FURN_MAX, FURN_LUX_HOUSE, FLOORS, PAPERS, STYLE0, ROOMS, floorsOf, roomOf, fpOf, layerOf, placedIn, wallRots, canPlace, furnCount, deco, styleOf, hasFloor, hasPaper, furnInfo, furnSell, VEH, VEH_KEYS, CLS_NAME, vehOf, vehicles, slotsOf, fitWhy, vehInfo, freeSlot, sellPrice, C, GW, GH, COAST, SEA, FAC, FAC_KEYS, TIERS, START, hash, vnoise, inSea, world, rect, needPlots, plotPrice, fresh, clean, island, level, tierOf, nextTier, plotInfo, facInfo, apply, worth, worthParts };
+  const R = { lotOf, lotCenter, CLOTH, CLOTH_KEYS, CLOTH_MAX, COLL, COLL_KEYS, GACHA, RARE, HOLD, holders, wrStacks, caseItems, clothCount, collCount, clothSell, rollGacha, FURN, FURN_KEYS, FURN_MAX, FURN_LUX_HOUSE, FLOORS, PAPERS, STYLE0, ROOMS, floorsOf, roomOf, fpOf, layerOf, placedIn, wallRots, canPlace, furnCount, deco, styleOf, hasFloor, hasPaper, furnInfo, furnSell, VEH, VEH_KEYS, CLS_NAME, vehOf, vehicles, slotsOf, fitWhy, vehInfo, freeSlot, sellPrice, C, GW, GH, COAST, SEA, FAC, FAC_KEYS, TIERS, START, hash, vnoise, inSea, world, rect, needPlots, plotPrice, fresh, clean, island, level, tierOf, nextTier, plotInfo, facInfo, apply, worth, worthParts };
   root.XiaodaoRules = R;
   if (typeof module !== 'undefined' && module.exports) module.exports = R;
 })(typeof window !== 'undefined' ? window : this);
