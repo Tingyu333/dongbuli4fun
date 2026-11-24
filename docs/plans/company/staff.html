@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<title>開公司・員工樣張</title>
+<!-- 2026-11-24 員工機制的樣張：應徵（三位、刷新要錢、定時免費換）、員工名冊（解雇）、結案單（扣薪水、升級）、做砸了（薪水扣一半）。
+     一般員工是八種小動物（這裡畫的 npc()），特殊角色用 assets/xiaodao-door.js 的 guest()。數字都是先填的。 -->
+<link rel="stylesheet" href="../../../assets/theme.css">
+<script src="../../../assets/xiaodao-door.js"></script>
+<style>
+  body { margin: 0; background: #e9e4da; font-family: 'Noto Serif TC', serif; color: #4a4a4a; }
+  .wrap { display: flex; gap: 22px; padding: 26px; align-items: flex-start; width: max-content; }
+  .phone { width: 375px; height: 760px; background: #fcfaf8; border-radius: 26px; overflow: hidden; position: relative; box-shadow: 0 12px 30px rgba(0,0,0,.18); display: flex; flex-direction: column; }
+  .cap { text-align: center; font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: .2em; color: #8e8070; margin-top: 10px; }
+  .top { padding: 18px 18px 10px; display: flex; align-items: center; justify-content: space-between; }
+  .top .back { font-family: 'Noto Sans TC', sans-serif; font-size: 13px; color: #8e8070; letter-spacing: .1em; }
+  .top h1 { margin: 0; font-weight: 400; font-size: 19px; letter-spacing: .35em; color: #2c2c2c; }
+  .top .money { font-family: 'Noto Sans TC', sans-serif; color: #b33a2f; font-size: 14px; }
+  .sub { padding: 0 18px 10px; display: flex; align-items: center; gap: 10px; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; color: #8e8070; letter-spacing: .06em; }
+  .btn { font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: .15em; padding: 7px 12px; border-radius: 4px; border: 1px solid #2c2c2c; background: transparent; color: #2c2c2c; white-space: nowrap; }
+  .btn.main { background: #2c2c2c; color: #fcfaf8; }
+  .btn.off { border-color: #d9d1c3; color: #b9ad99; }
+  .tabs { margin-top: auto; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid #e3ddd1; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: .15em; text-align: center; }
+  .tabs span { padding: 13px 0 18px; color: #8e8070; } .tabs span.on { color: #2c2c2c; box-shadow: inset 0 2px 0 #b33a2f; }
+  .dots { letter-spacing: 1px; color: #b33a2f; } .dots s { color: #d9d1c3; text-decoration: none; }
+  /* 應徵卡 */
+  .cards { padding: 0 14px; display: flex; flex-direction: column; gap: 10px; }
+  .app { display: flex; gap: 12px; padding: 12px; background: #f6f1e6; border: 1px solid #e3dccd; border-radius: 6px; font-family: 'Noto Sans TC', sans-serif; font-size: 11.5px; position: relative; }
+  .app canvas { width: 66px; height: 66px; flex: none; background: #e9e1d1; border-radius: 6px; image-rendering: pixelated; }
+  .app .nm { font-family: 'Noto Serif TC', serif; font-size: 15px; color: #2c2c2c; letter-spacing: .1em; }
+  .app .kind { font-size: 10.5px; color: #8e8070; margin-left: 6px; letter-spacing: .08em; }
+  .app .st { display: grid; grid-template-columns: auto auto; column-gap: 10px; color: #6b6052; margin-top: 4px; font-size: 11px; }
+  .app .trait { color: #6b6052; margin-top: 4px; line-height: 1.5; }
+  .app .fee { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; color: #4a4a4a; }
+  .app .fee b { font-weight: 500; }
+  .app.sp { background: linear-gradient(#fbf3dc, #f5e8c4); border: 1px solid #c9a24a; box-shadow: inset 0 0 0 3px #fbf3dc, inset 0 0 0 4px #d9b866; }
+  .app.sp canvas { background: #efdcae; }
+  .app .badge { position: absolute; right: 10px; top: 10px; font-family: 'Noto Serif TC', serif; font-size: 11px; letter-spacing: .2em; color: #7a5a14; background: linear-gradient(#f6e3a1, #d9b24a); padding: 2px 8px; border: 1px solid #a8761f; }
+  .app .skill { margin-top: 4px; padding: 4px 8px; background: rgba(255,255,255,.6); border-left: 2px solid #c9a24a; color: #5a4a2a; }
+  .refresh { margin: 12px 14px 0; display: flex; align-items: center; justify-content: space-between; font-family: 'Noto Sans TC', sans-serif; font-size: 11.5px; color: #8e8070; letter-spacing: .05em; }
+  /* 名冊 */
+  .list { padding: 0 18px; }
+  .emp { display: flex; gap: 10px; align-items: center; padding: 9px 0; border-bottom: 1px dotted #d9d1c3; font-family: 'Noto Sans TC', sans-serif; font-size: 11.5px; }
+  .emp canvas { width: 48px; height: 48px; background: #efe9de; border-radius: 6px; image-rendering: pixelated; flex: none; }
+  .emp .nm { font-family: 'Noto Serif TC', serif; font-size: 14px; color: #2c2c2c; letter-spacing: .08em; }
+  .emp .lv { font-size: 10.5px; color: #8e8070; margin-left: 4px; }
+  .emp .st { display: grid; grid-template-columns: auto auto; column-gap: 8px; font-size: 10.5px; color: #6b6052; margin-top: 2px; }
+  .emp .xp { height: 3px; background: #ece6da; margin-top: 4px; width: 150px; } .emp .xp i { display: block; height: 100%; background: #8e8070; }
+  .emp .r { margin-left: auto; text-align: right; display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
+  .emp .state { font-size: 10.5px; color: #8e8070; }
+  .emp.spx .nm::after { content: '特別'; font-family: 'Noto Sans TC', sans-serif; font-size: 9.5px; letter-spacing: .1em; color: #7a5a14; background: #f3dd94; padding: 0 4px; margin-left: 5px; vertical-align: 2px; }
+  /* 結案單 */
+  .dim { position: absolute; inset: 0; background: rgba(28,24,20,.45); }
+  .receipt { position: absolute; left: 22px; right: 22px; top: 120px; background: #fbf6ea; padding: 20px 18px 16px; box-shadow: 0 12px 30px rgba(0,0,0,.4); font-family: 'Noto Sans TC', sans-serif; font-size: 12.5px; }
+  .receipt::before, .receipt::after { content: ''; position: absolute; left: 0; right: 0; height: 8px; background: radial-gradient(circle at 5px -1px, transparent 5px, #fbf6ea 5.5px) 0 0 / 10px 8px repeat-x; }
+  .receipt::before { top: -8px; transform: scaleY(-1); } .receipt::after { bottom: -8px; }
+  .receipt h3 { margin: 0; font-family: 'Noto Serif TC', serif; font-weight: 400; font-size: 17px; letter-spacing: .3em; color: #2c2c2c; text-align: center; }
+  .receipt .t { text-align: center; color: #8e8070; font-size: 11.5px; margin: 4px 0 12px; letter-spacing: .08em; }
+  .receipt table { width: 100%; border-collapse: collapse; }
+  .receipt td { padding: 5px 0; letter-spacing: .04em; } .receipt td:last-child { text-align: right; white-space: nowrap; }
+  .receipt td.ind { padding-left: 14px; color: #8e8070; font-size: 11.5px; }
+  .receipt tr.sum td { border-top: 1px solid #2c2c2c; padding-top: 8px; font-size: 15px; color: #2c2c2c; }
+  .receipt tr.sum td:last-child { color: #b33a2f; }
+  .receipt .minus { color: #4a4a4a; }
+  .receipt .up { margin-top: 12px; padding: 8px 10px; background: #fff; border-left: 2px solid #8e8070; font-size: 12px; line-height: 1.7; }
+  .receipt .up b { font-weight: 500; color: #2c2c2c; }
+  .receipt .stamp { position: absolute; right: 16px; top: 16px; border: 2px solid #b33a2f; color: #b33a2f; font-family: 'Noto Serif TC', serif; font-size: 13px; padding: 3px 6px; transform: rotate(10deg); letter-spacing: .15em; opacity: .85; }
+  .receipt .stamp.bad { border-color: #6b6052; color: #6b6052; }
+  .receipt .ok { margin-top: 14px; text-align: center; background: #2c2c2c; color: #fcfaf8; padding: 11px 0; letter-spacing: .3em; border-radius: 3px; }
+  .receipt .why { margin-top: 10px; font-family: 'Noto Serif TC', serif; font-size: 13px; line-height: 1.8; color: #4a4a4a; letter-spacing: .05em; }
+  .confirm { position: absolute; left: 30px; right: 30px; bottom: 120px; background: #fbf6ea; padding: 16px; box-shadow: 0 10px 26px rgba(0,0,0,.4); font-family: 'Noto Sans TC', sans-serif; font-size: 12.5px; }
+  .confirm p { margin: 0 0 12px; line-height: 1.7; letter-spacing: .04em; }
+  .confirm .row { display: flex; gap: 8px; } .confirm .row .btn { flex: 1; padding: 10px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div><div class="phone">
+    <div class="top"><span class="back">← 員工</span><h1>應徵</h1><span class="money">$184,300</span></div>
+    <div class="sub"><span>員工 2／3（還能請 1 位）</span></div>
+    <div class="cards">
+      <div class="app"><canvas data-n="pigeon" data-c="0"></canvas><div style="flex:1"><div><span class="nm">鴿子・阿財</span><span class="kind">一般</span></div>
+        <div class="st"><span>速度 <span class="dots">●●●<s>●●</s></span></span><span>細心 <span class="dots">●●<s>●●●</s></span></span><span>研究 <span class="dots">●<s>●●●●</s></span></span><span>談判 <span class="dots">●●<s>●●●</s></span></span></div>
+        <div class="trait">送件很快，常常在窗邊發呆</div>
+        <div class="fee"><span>簽約金 <b>$3,000</b>・每分鐘 $12</span><button class="btn main">聘用</button></div></div></div>
+      <div class="app sp"><span class="badge">特別人選</span><canvas data-g="cat"></canvas><div style="flex:1"><div><span class="nm">店貓</span></div>
+        <div class="st"><span>速度 <span class="dots">●●●<s>●●</s></span></span><span>細心 <span class="dots">●●●●<s>●</s></span></span><span>研究 <span class="dots">●●●<s>●●</s></span></span><span>談判 <span class="dots">●●●●<s>●</s></span></span></div>
+        <div class="skill">招財：結案多拿 10%，但常常不在位子上</div>
+        <div class="fee"><span>簽約金 <b>$60,000</b>・每分鐘 $45</span><button class="btn main">聘用</button></div></div></div>
+      <div class="app"><canvas data-n="hedgehog" data-c="1"></canvas><div style="flex:1"><div><span class="nm">刺蝟・小刺</span><span class="kind">一般</span></div>
+        <div class="st"><span>速度 <span class="dots">●<s>●●●●</s></span></span><span>細心 <span class="dots">●●●●<s>●</s></span></span><span>研究 <span class="dots">●●●<s>●●</s></span></span><span>談判 <span class="dots">●<s>●●●●</s></span></span></div>
+        <div class="trait">做事很仔細，不太敢跟客人講話</div>
+        <div class="fee"><span>簽約金 <b>$4,500</b>・每分鐘 $14</span><button class="btn main">聘用</button></div></div></div>
+    </div>
+    <div class="refresh"><span>下一批 2:41:10 後免費換</span><button class="btn">現在換一批 $500</button></div>
+    <div class="tabs"><span>辦公室</span><span>委託板</span><span class="on">員工</span><span>公司</span></div>
+  </div><div class="cap">一・應徵（三位、刷新要錢）</div></div>
+
+  <div><div class="phone">
+    <div class="top"><span class="back">← 辦公室</span><h1>員工</h1><span class="money">$184,300</span></div>
+    <div class="sub"><span>3／3 人・車庫創業最多 3 人</span><button class="btn" style="margin-left:auto">看應徵的人</button></div>
+    <div class="list">
+      <div class="emp spx"><canvas data-g="julie"></canvas><div><div><span class="nm">茱莉鴨</span><span class="lv">Lv.4</span></div><div class="st"><span>速度 <span class="dots">●●<s>●●●</s></span></span><span>細心 <span class="dots">●●●●●</span></span><span>研究 <span class="dots">●●●<s>●●</s></span></span><span>談判 <span class="dots">●●<s>●●●</s></span></span></div><div class="xp"><i style="width:65%"></i></div></div>
+        <div class="r"><span class="state">做會員卡・6:20</span><button class="btn off">解雇</button></div></div>
+      <div class="emp spx"><canvas data-g="xiaowu"></canvas><div><div><span class="nm">小吳鴨</span><span class="lv">Lv.3</span></div><div class="st"><span>速度 <span class="dots">●●●<s>●●</s></span></span><span>細心 <span class="dots">●●●<s>●●</s></span></span><span>研究 <span class="dots">●●●●●</span></span><span>談判 <span class="dots">●●<s>●●●</s></span></span></div><div class="xp"><i style="width:30%"></i></div></div>
+        <div class="r"><span class="state">閒著</span><button class="btn">解雇</button></div></div>
+      <div class="emp"><canvas data-n="frog" data-c="0"></canvas><div><div><span class="nm">青蛙・阿呱</span><span class="lv">Lv.2</span></div><div class="st"><span>速度 <span class="dots">●●<s>●●●</s></span></span><span>細心 <span class="dots">●●<s>●●●</s></span></span><span>研究 <span class="dots">●●<s>●●●</s></span></span><span>談判 <span class="dots">●●●<s>●●</s></span></span></div><div class="xp"><i style="width:80%"></i></div></div>
+        <div class="r"><span class="state">閒著</span><button class="btn">解雇</button></div></div>
+    </div>
+    <div class="dim" style="top:auto;height:100%;background:rgba(28,24,20,.35)"></div>
+    <div class="confirm"><p>要請<b>青蛙・阿呱</b>走嗎？<br><span style="color:#8e8070;font-size:11.5px">簽約金 $2,800 不退。做過的 18 件會記在公司的紀錄裡。</span></p><div class="row"><button class="btn">再想想</button><button class="btn main">請他走</button></div></div>
+    <div class="tabs"><span>辦公室</span><span>委託板</span><span class="on">員工</span><span>公司</span></div>
+  </div><div class="cap">二・員工名冊（做案子中的不能解雇）</div></div>
+
+  <div><div class="phone">
+    <div class="top"><span class="back">← 會員</span><h1>開公司</h1><span class="money">$187,580</span></div>
+    <div class="dim"></div>
+    <div class="receipt">
+      <span class="stamp">結案</span>
+      <h3>結案單</h3><div class="t">坐洗部的會員卡設計・坐洗部的狗</div>
+      <table>
+        <tr><td>案子</td><td>$3,800</td></tr>
+        <tr><td>做得好（茱莉鴨細心）</td><td>+$380</td></tr>
+        <tr><td>薪水</td><td class="minus">−$900</td></tr>
+        <tr><td class="ind">茱莉鴨 Lv.4・12 分鐘</td><td class="ind">$600</td></tr>
+        <tr><td class="ind">青蛙・阿呱 Lv.2・12 分鐘</td><td class="ind">$300</td></tr>
+        <tr class="sum"><td>入帳</td><td>$3,280</td></tr>
+      </table>
+      <div class="up"><b>青蛙・阿呱升到 Lv.3</b>：談判 +1，每分鐘薪水 $25 → $28<br>茱莉鴨 經驗 +12</div>
+      <div class="ok">收下</div>
+    </div>
+    <div class="tabs" style="position:relative"><span class="on">辦公室</span><span>委託板</span><span>員工</span><span>公司</span></div>
+  </div><div class="cap">三・結案單（扣薪水、升級）</div></div>
+
+  <div><div class="phone">
+    <div class="top"><span class="back">← 會員</span><h1>開公司</h1><span class="money">$188,230</span></div>
+    <div class="dim"></div>
+    <div class="receipt">
+      <span class="stamp bad">做砸了</span>
+      <h3>結案單</h3><div class="t">礦坑的安全手冊・鼴鼠</div>
+      <div class="why">雞塊把「安全帽要戴好」寫成「安全帽要戴炸」。鼴鼠說只付三成。</div>
+      <table style="margin-top:8px">
+        <tr><td>案子（只付三成）</td><td>$4,800</td></tr>
+        <tr><td>薪水（做砸了扣一半）</td><td class="minus">−$870</td></tr>
+        <tr><td class="ind">雞塊 Lv.2・60 分鐘</td><td class="ind">$900 → $450</td></tr>
+        <tr><td class="ind">青蛙・阿呱 Lv.3・60 分鐘</td><td class="ind">$840 → $420</td></tr>
+        <tr class="sum"><td>入帳</td><td>$3,930</td></tr>
+      </table>
+      <div class="up">要求是研究 4 以上，這組只有 2。下次派小吳鴨去。</div>
+      <div class="ok">收下</div>
+    </div>
+    <div class="tabs" style="position:relative"><span class="on">辦公室</span><span>委託板</span><span>員工</span><span>公司</span></div>
+  </div><div class="cap">四・做砸了（薪水扣一半）</div></div>
+
+  <div><div class="phone" style="height:auto;padding-bottom:16px">
+    <div class="top"><span class="back"></span><h1>一般員工</h1><span></span></div>
+    <div class="sub"><span>八種小動物，顏色隨機</span></div>
+    <canvas id="zoo" style="width:372px;margin:0 auto;display:block;image-rendering:pixelated"></canvas>
+  </div><div class="cap">五・一般員工的樣子</div></div>
+
+</div>
+<script>
+  // 一般員工：八種小動物，半顆的格子、原點在腳底中間（跟 guest() 一樣的畫法）
+  const NPC = {
+    pigeon: { name: '鴿子', cols: [['#a7adb8', '#8b919c', '#5f9e7d', '#8a6aa8'], ['#d9d4ce', '#b9b3ab', '#6aa7a0', '#9a7ab0'], ['#7d8390', '#636975', '#4f8f6a', '#7a5a98']] },
+    sparrow: { name: '麻雀', cols: [['#a8764a', '#e8d9bf', '#7d5434'], ['#b58a5a', '#efe2c8', '#8a6440']] },
+    squirrel: { name: '松鼠', cols: [['#c8743a', '#f0d6b0', '#a45a28'], ['#8e7a6a', '#e6dccf', '#6f5e50']] },
+    hamster: { name: '倉鼠', cols: [['#f0b860', '#fbf1de', '#d89a40'], ['#d9d2c8', '#fbf6ee', '#b9b0a4'], ['#e09a70', '#fbeee2', '#c27a52']] },
+    rabbit: { name: '兔子', cols: [['#f6f3ee', '#dcd6cc', '#f3b2b8'], ['#b9a48e', '#97826c', '#f3b2b8'], ['#8e8a86', '#706c68', '#f3b2b8']] },
+    hedgehog: { name: '刺蝟', cols: [['#7d6450', '#5e4a3a', '#efdcc0'], ['#9a8470', '#7a6450', '#f3e4cc']] },
+    frog: { name: '青蛙', cols: [['#6fae48', '#4f8f3a', '#e8f0c8'], ['#9ac24a', '#78a032', '#f0f4cc']] },
+    turtle: { name: '烏龜', cols: [['#8cb86a', '#6f9a50', '#9a6a3a', '#7a522a'], ['#a8c47a', '#86a45c', '#b07a44', '#8a5e30']] },
+  };
+  function npc(x, key, ci, a, b) {
+    const U = .5, K = '#2e2a27', WH = '#fff', col = NPC[key].cols[ci % NPC[key].cols.length];
+    const c = (i, j, w, h, cl) => { x.fillStyle = cl; x.fillRect(a + i * U, b + j * U, w * U, h * U); };
+    const el = (cx, cy, rx, ry, cl) => { x.fillStyle = cl; for (let j = Math.floor(cy - ry); j <= Math.ceil(cy + ry); j++) for (let i = Math.floor(cx - rx); i <= Math.ceil(cx + rx); i++) { const u = (i + .5 - cx) / rx, v = (j + .5 - cy) / ry; if (u * u + v * v <= 1) x.fillRect(a + i * U, b + j * U, U, U); } };
+    const eyes = (y, dx = 3) => { c(-dx - 1, y, 2, 2, K); c(dx - 1, y, 2, 2, K); c(-dx - 1, y, 1, 1, WH); c(dx - 1, y, 1, 1, WH); };
+    el(0, 0, 9, 2.2, 'rgba(40,28,18,.22)');
+    ({
+      pigeon() { const [B, S, G, P] = col; c(-4, -1, 3, 1, '#d77a7a'); c(1, -1, 3, 1, '#d77a7a'); el(.6, -7, 8, 7, S); el(0, -7, 7.6, 6.8, B); el(-6, -7, 2.4, 4.5, S); el(6, -7, 2.4, 4.5, S);
+        el(0, -12, 6, 2, G); c(-5, -12, 4, 1, P); c(1, -11, 4, 1, P); el(.4, -18, 6, 5.6, S); el(0, -18, 5.6, 5.4, B); eyes(-19, 2.5); c(-1, -16, 2, 2, '#4a4a4a'); c(-1, -17, 2, 1, '#f3efe6'); },
+      sparrow() { const [B, W, D] = col; c(-3, -1, 2, 1, '#c98a5a'); c(1, -1, 2, 1, '#c98a5a'); el(.5, -7, 7.6, 7, D); el(0, -7, 7.2, 6.8, B); el(0, -6, 4.6, 5, W); for (let k = -6; k <= 4; k += 3) c(k, -9, 2, 1, D);
+        el(.3, -18, 6.6, 5.8, D); el(0, -18, 6.4, 5.6, W); el(0, -21, 6, 3, B); eyes(-19, 2.5); c(-1, -16, 2, 2, '#3a3a3a'); c(-2, -13, 4, 1, D); },
+      squirrel() { const [B, W, D] = col; el(8, -14, 4.5, 9, D); el(7.6, -14.4, 4, 8.5, B); el(8, -22, 3.4, 3, B);
+        el(.4, -7, 6.6, 7, D); el(0, -7, 6.2, 6.8, B); el(0, -6, 3.6, 4.6, W); c(-4, -1, 3, 1, D); c(1, -1, 3, 1, D); c(-6, -25, 3, 4, B); c(3, -25, 3, 4, B); c(-6, -26, 1, 1, D); c(5, -26, 1, 1, D);
+        el(.3, -18, 6.4, 5.6, D); el(0, -18, 6, 5.4, B); el(0, -15.5, 3.4, 2.2, W); eyes(-19, 2.5); c(-1, -17, 2, 1, '#5a3a2a'); },
+      hamster() { const [B, W, D] = col; el(0, -10, 9, 9.6, D); el(-.3, -10.3, 8.6, 9.2, B); el(0, -8, 6, 6.4, W); el(-5, -11, 3, 2.4, W); el(5, -11, 3, 2.4, W);
+        el(-6, -19, 2, 2, D); el(6, -19, 2, 2, D); el(-6, -19, 1.2, 1.2, '#f3b2b8'); el(6, -19, 1.2, 1.2, '#f3b2b8'); eyes(-14, 3); c(-1, -12, 2, 1, '#e58a8a'); c(-3, -3, 2, 2, '#f3b2b8'); c(1, -3, 2, 2, '#f3b2b8'); },
+      rabbit() { const [B, S, P] = col; el(-3, -27, 2, 6, S); el(3, -27, 2, 6, S); el(-3, -27, 1.6, 5.6, B); el(3, -27, 1.6, 5.6, B); c(-3, -30, 1, 6, P); c(3, -30, 1, 6, P);
+        el(.4, -7, 7, 7, S); el(0, -7, 6.6, 6.8, B); c(-4, -1, 3, 1, S); c(1, -1, 3, 1, S); el(.3, -17, 6.6, 5.6, S); el(0, -17, 6.2, 5.4, B); eyes(-18, 3); c(-1, -15, 2, 1, P); c(-4, -15, 2, 1, '#f3c8cc'); c(2, -15, 2, 1, '#f3c8cc'); },
+      hedgehog() { const [B, D, F] = col; el(0, -10, 10, 9, D); for (let k = -9; k <= 9; k += 2) for (let j = -18; j <= -4; j += 3) if ((k + j) % 4 === 0) c(k, j, 1, 2, '#3e2e22');
+        el(0, -9, 6.4, 7, F); c(-1, -20, 2, 1, B); c(-9, -16, 1, 2, B); c(8, -16, 1, 2, B); eyes(-11, 2.6); c(-1, -8, 2, 2, K); c(-4, -1, 3, 1, F); c(1, -1, 3, 1, F); },
+      frog() { const [B, D, W] = col; el(0, -7, 9, 7, D); el(-.3, -7.3, 8.6, 6.6, B); el(0, -6, 5.6, 4.6, W); c(-9, -2, 4, 2, D); c(5, -2, 4, 2, D);
+        el(0, -15, 8, 4.6, D); el(-.3, -15.3, 7.6, 4.2, B); el(-4.5, -19, 3, 3, D); el(4.5, -19, 3, 3, D); el(-4.5, -19.4, 2.4, 2.4, W); el(4.5, -19.4, 2.4, 2.4, W); c(-5, -20, 2, 2, K); c(4, -20, 2, 2, K);
+        c(-5, -13, 10, 1, '#2e4a22'); c(-6, -14, 1, 1, '#2e4a22'); c(5, -14, 1, 1, '#2e4a22'); c(-7, -15, 2, 1, '#f3a6a0'); c(5, -15, 2, 1, '#f3a6a0'); },
+      turtle() { const [B, D, S, s2] = col; el(0, -8, 10, 7.6, s2); el(-.3, -8.3, 9.4, 7, S); [[-4, -10], [3, -10], [0, -5], [-6, -5], [6, -5], [0, -13]].forEach(([i, j]) => { el(i, j, 2, 1.6, s2); });
+        c(-9, -2, 3, 2, D); c(6, -2, 3, 2, D); el(.3, -18, 5.4, 5, D); el(0, -18, 5, 4.8, B); eyes(-19, 2.4); c(-2, -15, 4, 1, '#2e4a22'); },
+    })[key]();
+  }
+  document.querySelectorAll('canvas[data-n], canvas[data-g]').forEach(c => { const Z = c.width = c.height = 132; const x = c.getContext('2d'); x.setTransform(6, 0, 0, 6, 0, 0); x.imageSmoothingEnabled = false;
+    if (c.dataset.n) npc(x, c.dataset.n, +c.dataset.c, 11, 19.5); else XiaodaoDoor.guest(x, c.dataset.g, 11, 19.5); });
+  // 動物園：八種，每種一列，顏色排成一排
+  (() => { const cv = document.getElementById('zoo'), keys = Object.keys(NPC), S = 6, W = 62, RH = 30;
+    cv.width = W * S; cv.height = keys.length / 2 * RH * S + 8; const x = cv.getContext('2d'); x.fillStyle = '#fcfaf8'; x.fillRect(0, 0, cv.width, cv.height); x.setTransform(S, 0, 0, S, 0, 0);
+    keys.forEach((k, n) => { const ox = (n % 2) * 31, oy = Math.floor(n / 2) * RH; x.fillStyle = '#4a4a4a'; x.font = '3.2px "Noto Serif TC", serif'; x.fillText(NPC[k].name, ox + 2, oy + 4);
+      NPC[k].cols.forEach((_, ci) => npc(x, k, ci, ox + 6 + ci * 10, oy + 27)); }); })();
+</script>
+</body>
+</html>
