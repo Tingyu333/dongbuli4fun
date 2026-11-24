@@ -6,7 +6,7 @@
   const X = root.XiaodaoRules, C = X.C, WW = X.GW * C, HH = X.GH * C, hash = X.hash, TAU = Math.PI * 2;
   const K = {
     g1: '#97ad6f', g2: '#86a061', g3: '#a6bb7c', g4: '#738d51', sand: '#e6d3a3', sand2: '#d8c18b', sand3: '#efe0b8',
-    sea: '#6b97a6', sea2: '#7ea9b5', shallow: '#9cc5c8', foam: '#e3efed', deep: '#4f7d8f',
+    sea: '#3fb0c9', sea2: '#5ec8d6', shallow: '#9ee6dc', foam: '#f4fcfa', deep: '#2b93b8',   // 2026-11-24 使用者要海開朗一點：從灰藍綠換成清澈的土耳其藍
     leaf1: '#5d7c43', leaf2: '#4a6634', leaf3: '#7a9a55', leafHi: '#9cb96f',
     stone: '#a39b8e', stone2: '#8b8377', stone3: '#bdb6aa', shadow: 'rgba(30,40,30,.24)',
   };

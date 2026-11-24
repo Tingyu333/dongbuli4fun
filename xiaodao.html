@@ -29,11 +29,11 @@
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
     <script src="assets/xiaodao-rules.js?v=20261122e"></script>
-    <script src="assets/xiaodao-draw.js?v=20261122c"></script>
-    <script src="assets/xiaodao-fx.js?v=20261122a"></script>
+    <script src="assets/xiaodao-draw.js?v=20261124a"></script>
+    <script src="assets/xiaodao-fx.js?v=20261124a"></script>
     <script src="assets/xiaodao-room.js?v=20261122d"></script>
     <script src="assets/xiaodao-iso.js?v=20261123b"></script>
-    <script src="assets/xiaodao-door.js?v=20261123a"></script>
+    <script src="assets/xiaodao-door.js?v=20261124a"></script>
     <script src="assets/saveimg.js?v=20261116d"></script>
     <style>
         /* 整頁是一個 App：上面標題列、中間整座島、下面四顆鈕。島是另一個世界（精緻像素風），外框照網站的紙張色 */
@@ -63,7 +63,7 @@
         .trial { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding: 5px 8px; border: 1px dashed rgb(var(--wabi-shu) / .6); border-radius: 3px; font-family: 'Noto Sans TC', sans-serif; font-size: 10.5px; letter-spacing: .06em; color: rgb(var(--wabi-shu)); }
         .trial button { flex: none; font: inherit; color: rgb(var(--wabi-dark)); border: 1px solid rgb(var(--wabi-accent) / .5); border-radius: 999px; padding: 3px 9px; background: transparent; min-height: 28px; }
         /* 島 */
-        .view { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; background: #4f7d8f; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+        .view { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; background: #2b93b8; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
         #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; }
         .loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: .3em; color: #e3efed; }
         .hint { position: absolute; left: 12px; bottom: 12px; padding: 5px 10px; border-radius: 999px; background: rgba(30, 40, 30, .55); color: #f3f1ec; font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: .08em; pointer-events: none; transition: opacity .3s; }
@@ -194,7 +194,7 @@
         .stabs { touch-action: pan-x; }
         .row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgb(var(--wabi-sub) / .6); }
         .thumb { flex: none; width: 64px; height: 52px; border-radius: 6px; background: #97ad6f; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .thumb.sea { background: linear-gradient(#97ad6f 0 38%, #e6d3a3 38% 46%, #7ea9b5 46%); }
+        .thumb.sea { background: linear-gradient(#97ad6f 0 38%, #e6d3a3 38% 46%, #5ec8d6 46%); }
         .thumb img { max-width: 60px; max-height: 48px; image-rendering: pixelated; }
         .row .info { flex: 1; min-width: 0; }
         .row .nm { font-family: 'Noto Serif TC', serif; font-size: 15px; letter-spacing: .12em; color: rgb(var(--wabi-dark)); }
@@ -204,7 +204,7 @@
         .buy { flex: none; min-width: 84px; min-height: 44px; padding: 0 8px; border: 1px solid rgb(var(--wabi-dark)); background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: .08em; line-height: 1.35; border-radius: 3px; touch-action: manipulation; }
         .buy:disabled { background: transparent; color: rgb(var(--wabi-accent)); border-color: rgb(var(--wabi-sub)); }
         .thumb.v { background: #c4beb3; }
-        .thumb.v.sea, .vchip .vimg.sea { background: #7ea9b5; }
+        .thumb.v.sea, .vchip .vimg.sea { background: #5ec8d6; }
         .thumb.v.air, .vchip .vimg.air { background: #5a5d60; }
         .thumb.v.sky, .vchip .vimg.sky { background: linear-gradient(#bad2d8 0 80%, #c4beb3 80%); }
         .subk { display: flex; gap: 6px; margin: 4px 0 2px; }
@@ -217,7 +217,7 @@
         .vchip { flex: none; width: 76px; padding: 6px 4px 5px; border: 1px solid rgb(var(--wabi-sub)); border-radius: 6px; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 3px; touch-action: manipulation; }
         .vchip:disabled { opacity: .4; }
         .vchip .vimg { width: 60px; height: 52px; border-radius: 4px; background: #c4beb3; display: flex; align-items: center; justify-content: center; }
-        .vchip .vimg.sea { background: #7ea9b5; }
+        .vchip .vimg.sea { background: #5ec8d6; }
         .vchip img { image-rendering: pixelated; }
         .vchip b { font-family: 'Noto Serif TC', serif; font-weight: 500; font-size: 11px; letter-spacing: .04em; color: rgb(var(--wabi-dark)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; }
         .vchip i { font-style: normal; font-family: 'Noto Sans TC', sans-serif; font-size: 9.5px; letter-spacing: .02em; color: rgb(var(--wabi-accent)); line-height: 1.3; text-align: center; }
@@ -450,7 +450,7 @@
             function paint() {
                 raf = 0; if (!world) return;
                 const night = isNight(), base = night && fx ? fx.night(world) : world;
-                ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = night ? '#1f2c42' : '#4f7d8f'; ctx.fillRect(0, 0, cv.width, cv.height);
+                ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = night ? '#1f2c42' : '#2b93b8'; ctx.fillRect(0, 0, cv.width, cv.height);
                 const k = dpr * cam.s; ctx.imageSmoothingEnabled = false;
                 ctx.setTransform(k, 0, 0, k, -cam.x * k, -cam.y * k);
                 ctx.drawImage(base, 0, 0);

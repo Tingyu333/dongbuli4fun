@@ -41,7 +41,7 @@
     for (let n = 0; n < N; n++) {
       const front = .27 + .18 * (n / N), c = cv(w, h), x = c.getContext('2d'), img = x.createImageData(w, h), d = img.data;
       band.forEach(k => { const f = F[(y0 + Math.floor(k / w)) * W + x0 + k % w] + jit[k], gap = front - f; if (gap < 0 || gap > .02) return;
-        const a = (gap < .008 ? 200 : 110) * (.55 + .45 * (n / N)), p = k * 4; d[p] = 227; d[p + 1] = 239; d[p + 2] = 237; d[p + 3] = a; });
+        const a = (gap < .008 ? 200 : 110) * (.55 + .45 * (n / N)), p = k * 4; d[p] = 244; d[p + 1] = 252; d[p + 2] = 250; d[p + 3] = a; });
       x.putImageData(img, 0, 0); frames.push(c);
     }
     // 海上零星的閃光

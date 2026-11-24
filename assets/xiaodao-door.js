@@ -50,7 +50,7 @@
     if (night) for (let k = 0; k < 50; k++) { main.fillStyle = hash(k, k) > .7 ? '#f4eed8' : '#8f96b8'; main.fillRect(Math.round(hash(k, 1) * W), Math.round(hash(2, k) * H * .45), 1, 1); }
     else [[.12, .1], [.78, .07], [.88, .17]].forEach(([a, b]) => { const px = Math.round(a * W), py = Math.round(b * H); main.fillStyle = '#ffffff'; main.fillRect(px, py, 18, 4); main.fillRect(px + 4, py - 3, 10, 3); main.fillStyle = '#e8f1f4'; main.fillRect(px, py + 3, 18, 1); });
     if (lv === 5) {   // 遠方的海
-      const sy = Math.round(H * .42); main.fillStyle = night ? '#1b2a4a' : '#7fb8d0'; main.fillRect(0, sy, W, H - sy); main.fillStyle = night ? '#26385e' : '#a8d4e4'; main.fillRect(0, sy, W, 2);
+      const sy = Math.round(H * .42); main.fillStyle = night ? '#1b2a4a' : '#4fbcd0'; main.fillRect(0, sy, W, H - sy); main.fillStyle = night ? '#26385e' : '#9ee6dc'; main.fillRect(0, sy, W, 2);
       for (let k = 0; k < 40; k++) { main.fillStyle = night ? 'rgba(200,215,255,.5)' : 'rgba(255,255,255,.8)'; main.fillRect(Math.round(hash(k, 9) * W), sy + 4 + Math.round(hash(9, k) * (H - sy - 4)), 3, 1); }
       if (night) { main.fillStyle = '#f6efc9'; main.fillRect(Math.round(W * .82), Math.round(H * .12), 5, 5); for (let k = 0; k < 8; k++) { main.fillStyle = 'rgba(246,239,201,.5)'; main.fillRect(Math.round(W * .82) - 3 + (k % 2) * 3, sy + 3 + k * 4, 8 - (k % 3), 1); } }
     }
