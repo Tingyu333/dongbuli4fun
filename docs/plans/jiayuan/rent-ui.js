@@ -76,7 +76,7 @@ const OUT = '/home/claude/work/';
   await p.waitForTimeout(700);
   await p.evaluate(() => { const card = document.getElementById('card'), line = card.querySelector('.line');
     const a = document.createElement('p'); a.className = 'rline'; a.innerHTML = '遊艇出租・每小時 <b>$362</b> <small>（含停著的船）</small>'; line.after(a);
-    const b = document.createElement('button'); b.className = 'rbtn'; b.textContent = '收租 $241・還不到一小時'; a.after(b);
+    const b = document.createElement('button'); b.className = 'rbtn'; b.textContent = '收租 $241'; a.after(b);
     const u = document.createElement('p'); u.className = 'rline'; u.innerHTML = '升到漁港碼頭：每小時多賺 <b>$540</b>・回本約 7 天'; card.querySelector('.btns').before(u);
     document.getElementById('nextTier').innerHTML = '每小時 <b style="color:rgb(var(--wabi-shu));font-weight:500">$2,235</b>'; });
   await shot(3);
