@@ -7,7 +7,7 @@
      甲＝等角 2.5D 扁平、乙＝日式線稿插畫、丙＝柔和 3D（像會員頭像 avatar.js 那種圓潤漸層）。下面都套毛玻璃介面。 -->
 <style>
   body { margin: 0; background: #e4e2dd; font-family: 'Noto Sans TC', sans-serif; }
-  .wrap { display: grid; grid-template-columns: repeat(4, 375px); gap: 26px; padding: 26px; align-items: flex-start; width: max-content; }
+  .wrap { display: grid; grid-template-columns: repeat(5, 375px); gap: 26px; padding: 26px; align-items: flex-start; width: max-content; }
   .phone { width: 375px; height: 760px; border-radius: 28px; overflow: hidden; position: relative; box-shadow: 0 14px 34px rgba(0,0,0,.2); display: flex; flex-direction: column; background: #dfe3e6; color: #26303a; }
   .cap { text-align: center; font-size: 13px; letter-spacing: .2em; color: #6b6052; margin-top: 12px; }
   .num { font-variant-numeric: tabular-nums; }
@@ -210,6 +210,73 @@ stage('丁・近未來柔和 3D', x => {
   };
   who(70, 'julie'); who(190, 'xiaowu'); who(308, 'nugget');
   [[92, 128, 8], [102, 112, 11]].forEach(([a, b, r]) => { x.shadowColor = 'rgba(143,211,224,1)'; x.shadowBlur = 8; x.fillStyle = 'rgba(106,169,216,.95)'; x.font = `600 ${r * 1.4}px sans-serif`; x.fillText('Z', a, b); });
+});
+
+// ===================== 戊：現代像素（細顆粒） =====================
+// 使用者 2026-11-24：「多一個現代感像素風，顆粒細一點」。畫在 375×330 的小畫布（一顆＝1 個 CSS 像素，比原本細一倍半），
+// 再不平滑地放大貼上；冷色、乾淨，跟毛玻璃介面同一組顏色。光從左上，輪廓用深藍灰，右邊一圈青色邊光。
+stage('戊・現代像素（細顆粒）', X => {
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  const R = (a, b, w, h, col) => { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), Math.round(w), Math.round(h)); };
+  const el = (cx, cy, rx, ry, col) => { x.fillStyle = col; for (let j = Math.floor(cy - ry); j <= Math.ceil(cy + ry); j++) for (let i = Math.floor(cx - rx); i <= Math.ceil(cx + rx); i++) { const u = (i + .5 - cx) / rx, v = (j + .5 - cy) / ry; if (u * u + v * v <= 1) x.fillRect(i, j, 1, 1); } };
+  // 抖色漸層（像素風的漸層：兩色交錯）
+  const dith = (a, b, w, h, c1, c2, steps = 6) => { for (let k = 0; k < steps; k++) { const y0 = b + Math.round(h * k / steps), y1 = b + Math.round(h * (k + 1) / steps); R(a, y0, w, y1 - y0, c1); for (let j = y0; j < y1; j++) for (let i = a + (j % 2); i < a + w; i += 2) if ((i + j) % (steps - k + 1) === 0) R(i, j, 1, 1, c2); } };
+  const OL = '#26303a', CY = '#8fd3e0';
+  // 牆、落地窗、城市
+  R(0, 0, W, 230, '#e9eef2');
+  dith(14, 58, 347, 166, '#cfe2ec', '#b9cfdc', 8);
+  [[20, 150, 26], [50, 120, 18], [72, 168, 30], [108, 100, 22], [134, 140, 34], [172, 126, 20], [196, 160, 28], [228, 96, 18], [250, 134, 30], [286, 112, 24], [314, 150, 26], [340, 128, 20]].forEach(([a, b, w], k) => {
+    R(a, b, w, 224 - b, k % 2 ? '#a3bccb' : '#afc6d4'); R(a, b, 1, 224 - b, '#c7d9e3');
+    for (let j = b + 4; j < 220; j += 5) for (let i = a + 3; i < a + w - 2; i += 4) R(i, j, 2, 2, (i * 7 + j * 3) % 11 < 3 ? '#e8f3f8' : '#bcd0dc'); });
+  for (let i = 100; i < 361; i += 87) R(i, 58, 2, 166, '#f4f8fa'); R(14, 58, 347, 2, '#f4f8fa'); R(14, 222, 347, 2, '#9fb3c0');
+  // 發光的公司名牌
+  R(150, 100, 76, 18, '#f7fafc'); R(150, 100, 76, 1, '#ffffff'); R(150, 117, 76, 1, '#b8cad6'); R(149, 101, 1, 16, CY); R(226, 101, 1, 16, CY);
+  x.fillStyle = OL; x.font = '500 10px sans-serif'; x.textAlign = 'center'; x.fillText('丼步喱設計社', 188, 113); x.textAlign = 'left';
+  // 地板：亮面、細格線、窗光
+  R(0, 230, W, 100, '#d5dee5'); for (let j = 236; j < H; j += 9) R(0, j, W, 1, '#cbd5dd'); R(0, 230, W, 2, '#b8c6d0');
+  for (let j = 232; j < 300; j++) for (let i = 40 + (j - 232) * .6; i < 230 + (j - 232) * .9; i += 2) if ((i + j) % 4 === 0) R(i, j, 1, 1, '#e4ebf0');
+  // 盆栽（龜背芋）
+  R(18, 206, 18, 24, '#e9edf0'); R(18, 206, 18, 2, '#ffffff'); R(34, 208, 2, 22, '#c3ccd3');
+  [[14, 186, 10, 7], [30, 180, 11, 8], [22, 170, 9, 7], [38, 196, 8, 6]].forEach(([a, b, rx, ry]) => { el(a, b, rx, ry, '#3f8a5a'); el(a - 2, b - 2, rx - 3, ry - 3, '#5aa874'); R(a, b - ry + 2, 1, ry * 2 - 4, '#2f6e47'); });
+  // 角色（細顆粒）：一倍＝1 顆，大概 34 顆高
+  const who = (cx, k) => {
+    const by = 206;
+    if (k === 'julie') {
+      el(cx, by - 12, 17, 15, OL); el(cx, by - 12, 16, 14, '#dfe3e6'); el(cx - 2, by - 14, 14, 12, '#ffffff');
+      el(cx, by - 38, 16, 15, OL); el(cx, by - 38, 15, 14, '#e2e6e9'); el(cx - 2, by - 40, 13, 12, '#ffffff'); R(cx - 8, by - 47, 4, 2, '#ffffff');
+      R(cx - 9, by - 40, 6, 1, OL); R(cx + 3, by - 40, 6, 1, OL); R(cx - 9, by - 41, 6, 1, '#c9cfd4'); R(cx + 3, by - 41, 6, 1, '#c9cfd4');
+      el(cx, by - 31, 9, 4, '#c97a2e'); el(cx, by - 32, 8, 3, '#f0a04b'); R(cx - 4, by - 34, 5, 1, '#ffc98a');
+      [[-1, 1], [1, 1]].forEach(([s]) => { for (let i = 0; i < 7; i++) R(cx + s * (2 + i) - (s < 0 ? 1 : 0), by - 22 - Math.ceil(i / 2), 1, 2 + Math.ceil(i / 2) * 2, i > 4 ? '#2b5290' : '#3d6fb6'); });
+      R(cx - 2, by - 23, 4, 4, '#2b5290'); R(cx - 1, by - 23, 2, 1, '#7fa8e6');
+    }
+    if (k === 'xiaowu') {
+      el(cx, by - 12, 17, 15, '#14161a'); el(cx, by - 12, 16, 14, '#2a2d35'); el(cx - 3, by - 15, 11, 9, '#3a3f4b');
+      el(cx, by - 38, 16, 15, '#14161a'); el(cx, by - 38, 15, 14, '#2a2d35'); el(cx - 4, by - 42, 9, 7, '#3d4250'); R(cx - 1, by - 54, 2, 5, '#2a2d35'); R(cx + 1, by - 53, 2, 3, '#2a2d35');
+      [-7, 7].forEach(d => { el(cx + d, by - 39, 6, 6, '#e2b44a'); el(cx + d, by - 39, 4.6, 4.6, '#d8e7ef'); el(cx + d, by - 39, 2, 2, '#14161a'); R(cx + d - 2, by - 41, 1, 1, '#ffffff'); }); R(cx - 1, by - 40, 2, 1, '#e2b44a');
+      el(cx, by - 30, 4, 2.6, '#5a5f6a'); R(cx - 7, by - 22, 1, 6, '#3d6fb6'); R(cx + 6, by - 22, 1, 6, '#3d6fb6'); R(cx - 6, by - 16, 12, 9, '#b48618'); R(cx - 5, by - 15, 10, 7, '#f3d36a'); R(cx - 3, by - 13, 6, 1, '#b48618'); R(cx - 3, by - 11, 4, 1, '#c9a24a');
+    }
+    if (k === 'nugget') {
+      el(cx, by - 22, 22, 24, OL); el(cx, by - 22, 21, 23, '#c98a2c'); el(cx - 2, by - 24, 19, 21, '#e3aa4a'); el(cx - 7, by - 32, 9, 8, '#f3c66e'); R(cx - 10, by - 38, 4, 2, '#fff0c4');
+      [[-12, -10], [10, -36], [-4, -42], [14, -16], [-16, -28], [6, -6], [16, -30], [-8, -4]].forEach(([p, q]) => { R(cx + p, by + q, 2, 2, '#b8792a'); R(cx + p, by + q, 1, 1, '#f6d58a'); });
+      [-7, 7].forEach(d => { R(cx + d - 2, by - 28, 4, 5, OL); R(cx + d - 1, by - 28, 1, 1, '#ffffff'); }); R(cx - 14, by - 20, 5, 2, '#f08a80'); R(cx + 9, by - 20, 5, 2, '#f08a80');
+      R(cx - 4, by - 17, 8, 1, OL); R(cx - 5, by - 18, 1, 1, OL); R(cx + 4, by - 18, 1, 1, OL);
+    }
+    // 右邊一圈青色邊光
+    x.globalCompositeOperation = 'source-atop'; x.globalCompositeOperation = 'source-over';
+    for (let j = by - 52; j < by; j++) { const d = j < by - 24 ? 15 : 17; R(cx + d - 1, j, 1, 1, 'rgba(143,211,224,.9)'); }
+    // 玻璃桌：半透明＋白色亮邊；全息螢幕
+    R(cx - 40, by - 2, 80, 7, 'rgba(232,242,248,.7)'); R(cx - 40, by - 2, 80, 1, '#ffffff'); R(cx - 40, by + 5, 80, 1, '#b8cad6'); R(cx - 34, by + 6, 2, 26, '#c3d1db'); R(cx + 32, by + 6, 2, 26, '#c3d1db');
+    for (let i = cx - 36; i < cx + 36; i++) R(i, 232, 1, 2, (i % 3) ? 'rgba(80,100,120,.12)' : 'rgba(80,100,120,.2)');
+    if (k !== 'julie') { R(cx + 12, by - 34, 26, 20, 'rgba(143,211,224,.45)'); R(cx + 12, by - 34, 26, 1, '#d6f2f8'); R(cx + 12, by - 34, 1, 20, '#d6f2f8'); R(cx + 37, by - 34, 1, 20, '#6aa9d8');
+      R(cx + 15, by - 30, 12, 1, '#ffffff'); R(cx + 15, by - 27, 17, 1, '#ffffff'); R(cx + 15, by - 24, 9, 1, '#ffffff'); R(cx + 15, by - 20, 14, 2, 'rgba(255,255,255,.6)');
+      for (let j = by - 14; j < by - 2; j++) for (let i = cx + 16 + (j - by + 14) * .3; i < cx + 34 - (j - by + 14) * .3; i += 2) if ((i + j) % 2 === 0) R(i, j, 1, 1, 'rgba(143,211,224,.5)'); }
+    else { R(cx + 12, by - 30, 26, 16, 'rgba(60,70,85,.4)'); R(cx + 12, by - 30, 26, 1, '#9fb0bc'); }
+  };
+  who(66, 'julie'); who(188, 'xiaowu'); who(310, 'nugget');
+  // 睡覺的 Z（像素字）
+  const Zp = (a, b, s, col) => { R(a, b, 4 * s, s, col); R(a + 3 * s, b + s, s, s, col); R(a + 2 * s, b + 2 * s, s, s, col); R(a + s, b + 3 * s, s, s, col); R(a, b + 4 * s, 4 * s, s, col); };
+  Zp(86, 150, 1, '#6aa9d8'); Zp(94, 136, 2, '#6aa9d8');
+  X.imageSmoothingEnabled = false; X.drawImage(c, 0, 0, W, H);
 });
 </script>
 </body>
