@@ -35,7 +35,9 @@
   .app .fee b { font-weight: 500; }
   .app.sp { background: linear-gradient(#fbf3dc, #f5e8c4); border: 1px solid #c9a24a; box-shadow: inset 0 0 0 3px #fbf3dc, inset 0 0 0 4px #d9b866; }
   .app.sp canvas { background: #efdcae; }
-  .app .badge { position: absolute; right: 10px; top: 10px; font-family: 'Noto Serif TC', serif; font-size: 11px; letter-spacing: .2em; color: #7a5a14; background: linear-gradient(#f6e3a1, #d9b24a); padding: 2px 8px; border: 1px solid #a8761f; }
+  /* 特別人選：用金色星星圖示（2026-11-24 使用者：特別人選用 icon 顯示） */
+  .star { display: inline-block; width: 16px; height: 16px; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23fff1bd'/><stop offset='.55' stop-color='%23e2b44a'/><stop offset='1' stop-color='%23a8761f'/></linearGradient></defs><path d='M12 1.8l3.1 6.6 7.1.8-5.3 4.9 1.5 7.1L12 17.6l-6.4 3.6 1.5-7.1-5.3-4.9 7.1-.8z' fill='url(%23g)' stroke='%237a5a14' stroke-width='1.2' stroke-linejoin='round'/></svg>") center / contain no-repeat; vertical-align: -2px; filter: drop-shadow(0 1px 1px rgba(122,90,20,.35)); }
+  .app .star { position: absolute; right: 10px; top: 10px; width: 22px; height: 22px; }
   .app .skill { margin-top: 4px; padding: 4px 8px; background: rgba(255,255,255,.6); border-left: 2px solid #c9a24a; color: #5a4a2a; }
   .refresh { margin: 12px 14px 0; display: flex; align-items: center; justify-content: space-between; font-family: 'Noto Sans TC', sans-serif; font-size: 11.5px; color: #8e8070; letter-spacing: .05em; }
   /* 名冊 */
@@ -48,7 +50,7 @@
   .emp .xp { height: 3px; background: #ece6da; margin-top: 4px; width: 150px; } .emp .xp i { display: block; height: 100%; background: #8e8070; }
   .emp .r { margin-left: auto; text-align: right; display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
   .emp .state { font-size: 10.5px; color: #8e8070; }
-  .emp.spx .nm::after { content: '特別'; font-family: 'Noto Sans TC', sans-serif; font-size: 9.5px; letter-spacing: .1em; color: #7a5a14; background: #f3dd94; padding: 0 4px; margin-left: 5px; vertical-align: 2px; }
+  .emp.spx .nm::after { content: ''; display: inline-block; width: 13px; height: 13px; margin-left: 4px; vertical-align: -1px; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23fff1bd'/><stop offset='.55' stop-color='%23e2b44a'/><stop offset='1' stop-color='%23a8761f'/></linearGradient></defs><path d='M12 1.8l3.1 6.6 7.1.8-5.3 4.9 1.5 7.1L12 17.6l-6.4 3.6 1.5-7.1-5.3-4.9 7.1-.8z' fill='url(%23g)' stroke='%237a5a14' stroke-width='1.2' stroke-linejoin='round'/></svg>") center / contain no-repeat; }
   /* 結案單 */
   .dim { position: absolute; inset: 0; background: rgba(28,24,20,.45); }
   .receipt { position: absolute; left: 22px; right: 22px; top: 120px; background: #fbf6ea; padding: 20px 18px 16px; box-shadow: 0 12px 30px rgba(0,0,0,.4); font-family: 'Noto Sans TC', sans-serif; font-size: 12.5px; }
@@ -84,7 +86,7 @@
         <div class="st"><span>速度 <span class="dots">●●●<s>●●</s></span></span><span>細心 <span class="dots">●●<s>●●●</s></span></span><span>研究 <span class="dots">●<s>●●●●</s></span></span><span>談判 <span class="dots">●●<s>●●●</s></span></span></div>
         <div class="trait">送件很快，常常在窗邊發呆</div>
         <div class="fee"><span>簽約金 <b>$3,000</b>・每分鐘 $12</span><button class="btn main">聘用</button></div></div></div>
-      <div class="app sp"><span class="badge">特別人選</span><canvas data-g="cat"></canvas><div style="flex:1"><div><span class="nm">店貓</span></div>
+      <div class="app sp"><span class="star" title="特別人選"></span><canvas data-g="cat"></canvas><div style="flex:1"><div><span class="nm">店貓</span></div>
         <div class="st"><span>速度 <span class="dots">●●●<s>●●</s></span></span><span>細心 <span class="dots">●●●●<s>●</s></span></span><span>研究 <span class="dots">●●●<s>●●</s></span></span><span>談判 <span class="dots">●●●●<s>●</s></span></span></div>
         <div class="skill">招財：結案多拿 10%，但常常不在位子上</div>
         <div class="fee"><span>簽約金 <b>$60,000</b>・每分鐘 $45</span><button class="btn main">聘用</button></div></div></div>
