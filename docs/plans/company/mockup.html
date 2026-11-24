@@ -16,7 +16,8 @@
   .top { padding: 18px 18px 10px; display: flex; align-items: center; justify-content: space-between; }
   .top .back { font-family: 'Noto Sans TC', sans-serif; font-size: 13px; color: #8e8070; letter-spacing: .1em; }
   .top h1 { margin: 0; font-weight: 400; font-size: 19px; letter-spacing: .35em; color: #2c2c2c; }
-  .top .money { font-family: 'Noto Sans TC', sans-serif; color: #b33a2f; font-size: 14px; }
+  .top .money { font-family: 'Noto Sans TC', sans-serif; color: #2c2c2c; font-size: 13px; text-align: right; line-height: 1.25; }
+  .top .money small { display: block; font-size: 10px; color: #8e8070; letter-spacing: .1em; }
   .sub { padding: 0 18px 12px; display: flex; align-items: center; gap: 10px; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; color: #8e8070; letter-spacing: .08em; }
   .seal { border: 1.5px solid #b33a2f; color: #b33a2f; padding: 2px 8px; font-family: 'Noto Serif TC', serif; font-size: 13px; letter-spacing: .2em; transform: rotate(-3deg); display: inline-block; }
   /* 公司階段的銘牌（2026-11-24 使用者：不要蓋章樣式，正式一點、越來越華麗） */
@@ -110,14 +111,14 @@
   <!-- 1 辦公室 -->
   <div>
   <div class="phone">
-    <div class="top"><span class="back">← 會員</span><h1>開公司</h1><span class="money">$184,300</span></div>
+    <div class="top"><span class="back">← 會員</span><h1>公司・開</h1><span class="money"><small>公司帳戶</small>$57,300</span></div>
     <div class="sub"><span class="np np1">車庫創業</span><span>丼步喱設計社・員工 3 人</span></div>
     <canvas class="office" id="office" width="250" height="184"></canvas>
     <div class="sec">
       <h2>進行中 <small>做完才拿錢</small></h2>
-      <div class="job"><div class="row"><span>幫早餐店做菜單</span><button class="btn shu">收款 $1,200</button></div><div class="who">雞塊・做完了</div></div>
-      <div class="job"><div class="row"><span>二十七樓證交所的新招牌</span><span style="color:#8e8070">0:42</span></div><div class="who">小吳鴨</div><div class="bar"><i style="width:72%"></i></div></div>
-      <div class="job"><div class="row"><span>浣熊大王的城堡官網</span><span style="color:#8e8070">3:12:40</span></div><div class="who">茱莉鴨・睡著了，慢一點</div><div class="bar"><i style="width:18%"></i></div></div>
+      <div class="job"><div class="row"><span>〈大橋頭麥克早餐店・菜單改版〉</span><button class="btn shu">收款 $343</button></div><div class="who">雞塊・做完了</div></div>
+      <div class="job"><div class="row"><span>〈「頭上的蘋果不能吃」告示〉</span><span style="color:#8e8070">0:42</span></div><div class="who">小吳鴨・蘋果鴨甜點店</div><div class="bar"><i style="width:72%"></i></div></div>
+      <div class="job"><div class="row"><span>〈城堡官網・第七次改版〉</span><span style="color:#8e8070">3:12:40</span></div><div class="who">茱莉鴨・睡著了，慢一點</div><div class="bar"><i style="width:18%"></i></div></div>
     </div>
     <div class="tabs"><span class="on">辦公室</span><span>委託板</span><span>員工</span><span>公司</span></div>
   </div>
@@ -127,13 +128,13 @@
   <!-- 2 委託板 -->
   <div>
   <div class="phone">
-    <div class="top"><span class="back">← 辦公室</span><h1>委託板</h1><span class="money">$184,300</span></div>
+    <div class="top"><span class="back">← 辦公室</span><h1>委託板</h1><span class="money"><small>公司帳戶</small>$57,300</span></div>
     <div class="sub"><span>新的案子 2:41 後貼上來</span><span style="margin-left:auto">可以同時做 3 件（做著 2）</span></div>
     <div class="board">
-      <div class="note"><span class="pay">$450</span><b>幫甜點店寫菜單</b><div class="meta"><span>蘋果鴨</span><span>30 秒</span></div><div class="need"><span class="tag">1 人</span><span class="tag">什麼都行</span></div></div>
-      <div class="note"><span class="pay">$3,800</span><b>坐洗部的會員卡設計</b><div class="meta"><span>坐洗部的狗</span><span>12 分鐘</span></div><div class="need"><span class="tag">2 人</span><span class="tag">細心 3 以上</span></div></div>
-      <div class="note"><span class="pay">$16,000</span><b>礦坑的安全手冊</b><div class="meta"><span>鼴鼠</span><span>1 小時</span></div><div class="need"><span class="tag">2 人</span><span class="tag">研究 4 以上</span></div><span class="stamp">急件</span></div>
-      <div class="note"><span class="pay">$88,000</span><b>貨運・航的新船型錄</b><div class="meta"><span>青江菜船長</span><span>4 小時</span></div><div class="need"><span class="tag">3 人</span><span class="tag r">要先談：談判 5</span></div><span class="stamp">大案</span></div>
+      <div class="note"><span class="pay">$215</span><b>〈台階所有權登記〉</b><div class="meta"><span>店貓</span><span>3 分鐘</span></div><div class="need"><span class="tag">1 人</span><span class="tag">什麼都行</span></div></div>
+      <div class="note"><span class="pay">$980</span><b>〈坐洗部・會員集點卡〉</b><div class="meta"><span>坐洗部的狗</span><span>12 分鐘</span></div><div class="need"><span class="tag">2 人</span><span class="tag">細心 3 以上</span></div></div>
+      <div class="note"><span class="pay">$4,780</span><b>〈工地帽歸還道歉信〉</b><div class="meta"><span>鼴鼠</span><span>1 小時</span></div><div class="need"><span class="tag">2 人</span><span class="tag">研究 4 以上</span></div><span class="stamp">急件</span></div>
+      <div class="note"><span class="pay">$22,060</span><b>〈城堡官網・第七次改版〉</b><div class="meta"><span>浣熊大王</span><span>4 小時</span></div><div class="need"><span class="tag">3 人</span><span class="tag r">要先談：談判 5</span></div><span class="stamp">大案</span></div>
     </div>
     <div style="height:12px"></div>
     <div class="tabs"><span>辦公室</span><span class="on">委託板</span><span>員工</span><span>公司</span></div>
@@ -144,13 +145,13 @@
   <!-- 3 派人 -->
   <div>
   <div class="phone">
-    <div class="top"><span class="back">← 委託板</span><h1>派誰去</h1><span class="money">$184,300</span></div>
-    <div class="chosen"><b>坐洗部的會員卡設計</b><br>12 分鐘・$3,800・2 人・細心 3 以上</div>
+    <div class="top"><span class="back">← 委託板</span><h1>派誰去</h1><span class="money"><small>公司帳戶</small>$57,300</span></div>
+    <div class="chosen"><b>〈坐洗部・會員集點卡〉</b><br>12 分鐘・$980・2 人・細心 3 以上</div>
     <div class="sec">
       <div class="emp on"><canvas data-g="julie"></canvas><div><div><span class="nm">茱莉鴨</span><span class="lv">Lv.4</span></div><div class="st"><span>速度 <span class="dots">●●<s>●●●</s></span></span><span>細心 <span class="dots">●●●●●</span></span><span>研究 <span class="dots">●●<s>●●●</s></span></span><span>談判 <span class="dots">●<s>●●●●</s></span></span></div><div class="trait">很細心，但每隔一陣子會睡著</div></div><span class="ck">✓</span></div>
       <div class="emp on"><canvas data-g="nugget"></canvas><div><div><span class="nm">雞塊</span><span class="lv">Lv.2</span></div><div class="st"><span>速度 <span class="dots">●●●<s>●●</s></span></span><span>細心 <span class="dots">●●<s>●●●</s></span></span><span>研究 <span class="dots">●●<s>●●●</s></span></span><span>談判 <span class="dots">●●<s>●●●</s></span></span></div><div class="trait">薪水最便宜，什麼都會一點</div></div><span class="ck">✓</span></div>
       <div class="emp busy"><canvas data-g="xiaowu"></canvas><div><div><span class="nm">小吳鴨</span><span class="lv">Lv.3</span></div><div class="st"><span>速度 <span class="dots">●●●<s>●●</s></span></span><span>細心 <span class="dots">●●●<s>●●</s></span></span><span>研究 <span class="dots">●●●●●</span></span><span>談判 <span class="dots">●<s>●●●●</s></span></span></div><div class="trait">在做招牌，0:42 後回來</div></div><span class="ck"></span></div>
-      <div class="emp"><canvas data-g="raccoon"></canvas><div><div><span class="nm">浣熊大王</span><span class="lv">還沒請</span></div><div class="st"><span>速度 <span class="dots">●●●<s>●●</s></span></span><span>細心 <span class="dots">●<s>●●●●</s></span></span><span>研究 <span class="dots">●<s>●●●●</s></span></span><span>談判 <span class="dots">●●●●●</span></span></div><div class="trait">大案子談得下來，但會順手摸走東西</div></div><button class="btn" style="margin-left:auto">請他 $20,000</button></div>
+      <div class="emp"><canvas data-g="raccoon"></canvas><div><div><span class="nm">浣熊大王</span><span class="lv">還沒請</span></div><div class="st"><span>速度 <span class="dots">●●●<s>●●</s></span></span><span>細心 <span class="dots">●<s>●●●●</s></span></span><span>研究 <span class="dots">●<s>●●●●</s></span></span><span>談判 <span class="dots">●●●●●</span></span></div><div class="trait">大案子談得下來，但會順手摸走東西</div></div><button class="btn" style="margin-left:auto">請他 $90,000</button></div>
     </div>
     <div class="est"><span>預計 <b>11 分鐘</b>（茱莉鴨會睡一下）</span><span>做得好 <b>九成</b></span></div>
     <div style="padding:12px 18px 0"><button class="btn main" style="width:100%;padding:12px 0;font-size:13px">開工</button></div>
@@ -162,10 +163,10 @@
   <!-- 4 突發 -->
   <div>
   <div class="phone">
-    <div class="top"><span class="back">← 會員</span><h1>開公司</h1><span class="money">$184,300</span></div>
+    <div class="top"><span class="back">← 會員</span><h1>公司・開</h1><span class="money"><small>公司帳戶</small>$57,300</span></div>
     <div class="sub"><span class="np np1">車庫創業</span><span>丼步喱設計社・員工 3 人</span></div>
     <canvas class="office" id="office2" width="250" height="184"></canvas>
-    <div class="sec"><h2>進行中</h2><div class="job"><div class="row"><span>坐洗部的會員卡設計</span><span style="color:#8e8070">6:20</span></div><div class="bar"><i style="width:45%"></i></div></div></div>
+    <div class="sec"><h2>進行中</h2><div class="job"><div class="row"><span>〈坐洗部・會員集點卡〉</span><span style="color:#8e8070">6:20</span></div><div class="bar"><i style="width:45%"></i></div></div></div>
     <div class="dim"></div>
     <div class="event">
       <span class="timer">8 秒後自己選第一個</span>
@@ -184,17 +185,17 @@
   <!-- 5 升級 -->
   <div>
   <div class="phone">
-    <div class="top"><span class="back">← 辦公室</span><h1>公司</h1><span class="money">$184,300</span></div>
+    <div class="top"><span class="back">← 辦公室</span><h1>公司</h1><span class="money"><small>公司帳戶</small>$57,300</span></div>
     <div class="sub"><span>丼步喱設計社・創始執行長</span><span style="margin-left:auto">做完 128 件</span></div>
     <div class="ladder2">
-      <div class="st2 now"><span class="np np1">車庫創業</span><span class="here">現在</span><div class="d">員工 3 人・同時做 3 件・案子最大到 4 小時、$10 萬</div></div>
-      <div class="st2"><span class="np np2">小辦公室</span><span class="pr">$120,000</span><div class="d">員工 5 人・同時做 4 件・開始有人寄履歷來</div></div>
-      <div class="st2 lock"><span class="np np3">整層樓</span><span class="pr">$800,000</span><div class="d">員工 8 人・同時做 6 件・有茶水間</div></div>
-      <div class="st2 lock"><span class="np np4">二十七樓整層</span><span class="pr">$5,000,000</span><div class="d">員工 12 人・可以接跨夜的大案</div></div>
-      <div class="st2 lock"><span class="np np5"><span>自己的大樓</span></span><span class="pr">$30,000,000</span><div class="d">員工 20 人・樓頂掛公司招牌</div></div>
+      <div class="st2 now"><span class="np np1">車庫創業</span><span class="here">現在</span><div class="d">員工 3 人・同時做 3 件・案子最長 4 小時</div></div>
+      <div class="st2"><span class="np np2">小辦公室</span><span class="pr">$90,000・做完 20 件</span><div class="d">員工 5 人・同時做 4 件・可以接跨夜 8 小時的案子</div></div>
+      <div class="st2 lock"><span class="np np3">整層樓</span><span class="pr">$700,000・80 件</span><div class="d">員工 8 人・同時做 6 件・有茶水間</div></div>
+      <div class="st2 lock"><span class="np np4">二十七樓整層</span><span class="pr">$2,600,000・250 件</span><div class="d">員工 12 人・同時做 8 件・跨夜 12 小時的大案</div></div>
+      <div class="st2 lock"><span class="np np5"><span>自己的大樓</span></span><span class="pr">$6,600,000・600 件</span><div class="d">員工 20 人・同時做 12 件・樓頂掛公司招牌</div></div>
       <div class="st2 lock"><span class="np np6">掛牌上市</span><div class="d">變成股市的一檔股票・你是執行長，可以發公告</div></div>
     </div>
-    <div style="padding:6px 18px 0"><button class="btn main" style="width:100%;padding:12px 0;font-size:13px">搬到小辦公室・$120,000</button></div>
+    <div style="padding:6px 18px 0"><button class="btn main" style="width:100%;padding:12px 0;font-size:13px">搬到小辦公室・$90,000（還差 2 件）</button></div>
     <div class="tabs"><span>辦公室</span><span>委託板</span><span>員工</span><span class="on">公司</span></div>
   </div>
   <div class="cap">五・公司升級</div>
