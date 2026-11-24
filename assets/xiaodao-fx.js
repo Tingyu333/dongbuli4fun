@@ -99,15 +99,34 @@
 
   // ---------- 會動的 ----------
   // 一段路：pts 折線、dur 秒、back 倒車（車頭朝反方向）、alt [起, 終] 離地多高（0 地上、1 天上）、ease、face 固定朝哪（直升機升降）
+  // 2026-11-24 使用者說車船飛機動起來卡卡的：原本每一段各自 ease，接起來速度會突然跳（跑道盡頭 71→104）、船繞完一圈沒停就直接倒車。
+  // 改成「一段路 leg」：轉角先磨圓（Chaikin），照真的加速度起步、巡航、煞車（梯形速度），段跟段之間速度接得起來；要倒車一定先停。
+  function chaikin(pts, n = 2) {
+    for (let k = 0; k < n; k++) { if (pts.length < 3) break; const o = [pts[0]];
+      for (let i = 0; i < pts.length - 1; i++) { const a = pts[i], b = pts[i + 1]; if (i > 0) o.push([a[0] * .75 + b[0] * .25, a[1] * .75 + b[1] * .25]); if (i < pts.length - 2) o.push([a[0] * .25 + b[0] * .75, a[1] * .25 + b[1] * .75]); }
+      o.push(pts[pts.length - 1]); pts = o; }
+    return pts;
+  }
+  // 梯形速度：v0 起速、v1 末速、vm 巡航、acc 加速度（顆／秒²）→ { dur, d(t) 走了多遠 }
+  function trap(len, v0, v1, vm, acc) {
+    let da = (vm * vm - v0 * v0) / (2 * acc), dd = (vm * vm - v1 * v1) / (2 * acc);
+    if (da + dd > len) { vm = Math.sqrt(Math.max(v0 * v0, v1 * v1, (2 * acc * len + v0 * v0 + v1 * v1) / 2)); da = Math.max(0, (vm * vm - v0 * v0) / (2 * acc)); dd = Math.max(0, len - da); }
+    const ta = (vm - v0) / acc, tc = Math.max(0, (len - da - dd) / vm), td = dd > 0 ? 2 * dd / (vm + v1) : 0, dec = td > 0 ? (vm - v1) / td : 0;
+    return { dur: Math.max(.001, ta + tc + td), d: t => t < ta ? v0 * t + acc * t * t / 2 : t < ta + tc ? da + vm * (t - ta) : Math.min(len, da + vm * tc + vm * (t - ta - tc) - dec * Math.pow(t - ta - tc, 2) / 2) };
+  }
+  function leg(pts, o = {}) {
+    const P = o.round === false ? pts : chaikin(pts), g = seg(P, 1, o), T = trap(g.len, o.v0 || 0, o.v1 || 0, o.vm || 28, o.acc || 16);
+    g.dur = T.dur; g.dist = T.d; return g;
+  }
   function seg(pts, dur, o = {}) {
     const L = [0]; for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
     return Object.assign({ pts, L, len: L[L.length - 1], dur, ease: 'inout', alt: [0, 0], back: false }, o);
   }
   function at(sg, u) {
     if (sg.pts.length === 1) return [sg.pts[0][0], sg.pts[0][1], sg.alt[0]];
-    const e = ease[sg.ease](u), d = e * sg.len; let i = 1; while (i < sg.pts.length - 1 && sg.L[i] < d) i++;
+    const d = sg.dist ? sg.dist(u * sg.dur) : ease[sg.ease](u) * sg.len; let i = 1; while (i < sg.pts.length - 1 && sg.L[i] < d) i++;
     const a = sg.pts[i - 1], b = sg.pts[i], l = sg.L[i] - sg.L[i - 1] || 1, t = Math.max(0, Math.min(1, (d - sg.L[i - 1]) / l));
-    const alt = typeof sg.alt === 'function' ? sg.alt(u) : sg.alt[0] + (sg.alt[1] - sg.alt[0]) * u;
+    const alt = sg.altD ? sg.altD(d) : typeof sg.alt === 'function' ? sg.alt(u) : sg.alt[0] + (sg.alt[1] - sg.alt[0]) * u;
     return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, alt];
   }
   // 照時間排好的一串路，可以倒著放（飛機降落＝起飛倒過來）
@@ -125,8 +144,9 @@
     function carTrip(v) {
       const road = (out.paths || []).find(p => p.k === v.f); if (!road || road.dots.length < 10) return null;
       const V = vparts(v.img), c = [v.x + V.w / 2, v.y + V.h / 2], front = [c[0], c[1] + v.sl.h * .8 + 6], door = road.dots[road.dots.length - 1], home = road.dots[0];
-      const dots = road.dots.filter((q, i) => i % 3 === 0), back = dots.slice().reverse(), sp = 30;
-      return track([seg([c, front], 1.4, { ease: 'in' }), seg([front, door], Math.hypot(door[0] - front[0], door[1] - front[1]) / 20 + .3, { ease: 'lin' }), seg(back, road.dots.length / sp, { ease: 'lin' }), seg([home], 2.4), seg(dots, road.dots.length / sp, { ease: 'lin' }), seg([door, front], Math.hypot(door[0] - front[0], door[1] - front[1]) / 20 + .3, { ease: 'lin' }), seg([front, c], 1.6, { ease: 'out', back: true })]);
+      const dots = road.dots.filter((q, i) => i % 3 === 0), back = dots.slice().reverse();
+      // 開出車位接上小路一路開到家（起步、轉彎、到了慢慢停）→ 停一下 → 開回車位前面停好 → 慢慢倒車入庫
+      return track([leg([c, front].concat(back), { vm: 30, acc: 22 }), seg([home], 2.4), leg(dots.concat([front]), { vm: 30, acc: 22 }), leg([front, c], { vm: 9, acc: 12, back: true, round: false })]);
     }
     // 船：往海上開、繞一大圈、倒退回碼頭
     function boatTrip(v) {
@@ -135,7 +155,8 @@
       for (const [out2, r] of [[70, 38], [56, 30], [44, 24], [34, 18]]) for (const dir of [1, -1]) {
         const P = [c[0], c[1] + out2 + V.h / 2], cx = P[0] + r * dir, pts = []; for (let k = 0; k <= 40; k++) { const th = dir > 0 ? Math.PI - k / 40 * TAU : k / 40 * TAU; pts.push([cx + Math.cos(th) * r, P[1] + Math.sin(th) * r]); }
         if (!pts.every(q => sea(q[0], q[1]) && sea(q[0] + 6, q[1]) && sea(q[0] - 6, q[1])) || !sea(P[0], P[1])) continue;
-        return track([seg([c, P], 2 + out2 / 30, { ease: 'in' }), seg(pts, 3 + r / 6, { ease: 'lin' }), seg([P, c], 2.4 + out2 / 30, { ease: 'out', back: true })]);
+        // 出港、繞一圈回到港口外面慢慢停下 → 停穩了再倒退進碼頭
+        return track([leg([c].concat(pts), { vm: 26, acc: 9 }), seg([P], .6), leg([P, c], { vm: 11, acc: 7, back: true, round: false })]);
       }
       return null;
     }
@@ -149,7 +170,10 @@
       const ry = RUNWAY[lv];
       if (ry == null) { const p1 = [c[0], c[1] - 50], p2 = [c[0] + 80, c[1] - 420]; return track([seg([c, p1], 3, { ease: 'in', alt: u => Math.max(0, (u - .5) / .5) * .5 }), seg([p1, p2], 4, { ease: 'lin', alt: [.5, 1.6] })]); }
       const y = r.y + ry, a = [c[0], y], end = [r.x + r.w + 20, y], away = [r.x + r.w + 420, y - 110];
-      return track([seg([c, a], Math.abs(y - c[1]) / 16 + 1, { ease: 'inout' }), seg([a, end], 4.2, { ease: 'in', alt: u => Math.pow(Math.max(0, (u - .62) / .38), 1.5) * .5 }), seg([end, away], 4, { ease: 'lin', alt: [.5, 1.6] })]);
+      // 滑行到跑道頭停一下 → 一路加速、跑道後段離地、爬升飛走（速度接得起來）；降落是整段倒著放（慢慢減速）
+      const run = end[0] - a[0], fly = Math.hypot(away[0] - end[0], away[1] - end[1]), lift = run * .62;
+      const alt = d => d < lift ? 0 : d < run ? Math.pow((d - lift) / (run - lift), 1.5) * .5 : .5 + (d - run) / fly * 1.1;
+      return track([leg([c, a], { vm: 12, acc: 8, round: false }), seg([a], .5), leg([a, end, away], { vm: 110, v1: 110, acc: 16, round: false, altD: alt })]);
     }
     function start(v, tr, kind) {
       const V = vparts(v.img), a = { v, V, tr, kind, t: 0, dir: 1, ang: baseAng(v.key), wake: [], last: null };
@@ -200,8 +224,9 @@
       // 船尾的浪花
       if (a.kind === 'dock') { a.wake.push([px, py, 1]); a.wake.forEach(w => { w[2] -= dt * .5; }); a.wake = a.wake.filter(w => w[2] > 0).slice(-90); a.wake.forEach(([wx, wy, l], i) => { if (i % 2) return; x.fillStyle = `rgba(227,239,237,${l * .7})`; x.fillRect(Math.round(wx - Math.sin(a.ang) * 0), Math.round(wy), 2, 1); }); }
       // 影子（越高離越遠、越淡）
-      x.save(); x.globalAlpha = .24 * (1 - Math.min(1, alt) * .55) * fade; x.translate(px + 2 + alt * 16, py + 2 + alt * 12); x.rotate(rot); x.drawImage(V.shadow, -V.w / 2, -V.h / 2); x.restore();
-      x.save(); x.globalAlpha = fade; x.translate(px, py); x.rotate(rot); x.scale(sc, sc); x.drawImage(night ? V.nbody : V.body, -V.w / 2, -V.h / 2); x.restore();
+      // 在動的車船飛機開平滑：位置不在整數顆、又會轉，不開的話邊緣一直閃、看起來一格一格
+      x.save(); x.imageSmoothingEnabled = true; x.globalAlpha = .24 * (1 - Math.min(1, alt) * .55) * fade; x.translate(px + 2 + alt * 16, py + 2 + alt * 12); x.rotate(rot); x.drawImage(V.shadow, -V.w / 2, -V.h / 2); x.restore();
+      x.save(); x.imageSmoothingEnabled = true; x.globalAlpha = fade; x.translate(px, py); x.rotate(rot); x.scale(sc, sc); x.drawImage(night ? V.nbody : V.body, -V.w / 2, -V.h / 2); x.restore();
       // 夜裡車頭燈
       if (night && a.kind === 'garage') { const fx = px + Math.cos(a.ang) * V.h * .5, fy = py + Math.sin(a.ang) * V.h * .5; x.globalCompositeOperation = 'lighter'; glow(x, fx + Math.cos(a.ang) * 8, fy + Math.sin(a.ang) * 8, 11, WARM, .45); x.globalCompositeOperation = 'source-over'; }
       if (night && a.kind === 'plane' && alt > 0) { const on = Math.floor(performance.now() / 500) % 2; if (on) { x.fillStyle = '#ff5a4a'; x.fillRect(px, py, 1.5, 1.5); } }
@@ -225,7 +250,7 @@
       x.save(); x.globalAlpha = .24 * Math.max(0, 1 - lift * 2); x.drawImage(V.shadow, a.v.x + 2, a.v.y + 2); x.restore();
       // 火焰（在火箭底下，俯瞰看到的是一圈亮光）
       if (flame) { x.globalCompositeOperation = 'lighter'; glow(x, g[0] + shake, g[1] - up * .3, 9 * flame * (1 + lift), 'rgba(255,170,80,A)', .8); glow(x, g[0] + shake, g[1] - up * .3, 4 * flame * (1 + lift), 'rgba(255,245,210,A)', .9); x.globalCompositeOperation = 'source-over'; }
-      x.save(); x.globalAlpha = al; x.translate(g[0] + shake, g[1] - up); x.scale(sc, sc); x.drawImage(night ? V.nbody : V.body, -XV.ax, -XV.ay); x.restore();
+      x.save(); x.imageSmoothingEnabled = lift > 0; x.globalAlpha = al; x.translate(g[0] + shake, g[1] - up); x.scale(sc, sc); x.drawImage(night ? V.nbody : V.body, -XV.ax, -XV.ay); x.restore();
       return false;
     }
     return fxs;
