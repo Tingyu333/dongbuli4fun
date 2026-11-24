@@ -213,69 +213,135 @@ stage('丁・近未來柔和 3D', x => {
 });
 
 // ===================== 戊：現代像素（細顆粒） =====================
-// 使用者 2026-11-24：「多一個現代感像素風，顆粒細一點」。畫在 375×330 的小畫布（一顆＝1 個 CSS 像素，比原本細一倍半），
-// 再不平滑地放大貼上；冷色、乾淨，跟毛玻璃介面同一組顏色。光從左上，輪廓用深藍灰，右邊一圈青色邊光。
+// 2026-11-24 使用者選了這個，覺得粗糙，請像素美術指導盯細節後重畫（第二版）：
+// 固定 28 色調色盤、全部不透明；選擇性描邊（左上淺、右下深）；三階明暗＋反光；邊光是 1 顆寬的月牙；
+// 身體在桌面切掉；全息螢幕棋盤格底＋亮暗邊框＋外圈發光；天空三條橫帶；城市遠中近三層；窗框 3 顆；地板透視格線；底部抖色接到介面。
 stage('戊・現代像素（細顆粒）', X => {
   const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  const C = { ink0: '#1c2229', ink: '#26303a', ink2: '#3a4656', ink3: '#56677a', g1: '#7a8c9d', g2: '#9fb1c0', g3: '#c2d0da', ui: '#dfe3e6', g4: '#e6ecf0', g5: '#f2f6f8', wh: '#ffffff',
+    sky1: '#c3d8e4', sky3: '#e2edf2', city2: '#a3bccb', city3: '#869fb1', cy0: '#4fa9bf', cy: '#8fd3e0', cy2: '#c9f0f6', b0: '#2b5290', b1: '#3d6fb6', b2: '#7fa8e6',
+    o0: '#8a4f1c', o1: '#c97a2e', o2: '#f0a04b', o3: '#ffd08a', k1: '#262a33', k2: '#5b5f8a', gr0: '#2f6e47', gr1: '#3f8a5a', gr2: '#6cb487', pink: '#f08a80', warm: '#f4dfa8',
+    sky2: '#d3e3eb', city1: '#c3d6e1', au0: '#8a5a14', au1: '#e2b44a', au2: '#ffe9a0', rimK: '#5f8ea0' };   // 固定 34 色（第三版收齊）
   const R = (a, b, w, h, col) => { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), Math.round(w), Math.round(h)); };
+  const px = (a, b, col) => R(a, b, 1, 1, col);
   const el = (cx, cy, rx, ry, col) => { x.fillStyle = col; for (let j = Math.floor(cy - ry); j <= Math.ceil(cy + ry); j++) for (let i = Math.floor(cx - rx); i <= Math.ceil(cx + rx); i++) { const u = (i + .5 - cx) / rx, v = (j + .5 - cy) / ry; if (u * u + v * v <= 1) x.fillRect(i, j, 1, 1); } };
-  // 抖色漸層（像素風的漸層：兩色交錯）
-  const dith = (a, b, w, h, c1, c2, steps = 6) => { for (let k = 0; k < steps; k++) { const y0 = b + Math.round(h * k / steps), y1 = b + Math.round(h * (k + 1) / steps); R(a, y0, w, y1 - y0, c1); for (let j = y0; j < y1; j++) for (let i = a + (j % 2); i < a + w; i += 2) if ((i + j) % (steps - k + 1) === 0) R(i, j, 1, 1, c2); } };
-  const OL = '#26303a', CY = '#8fd3e0';
-  // 牆、落地窗、城市
-  R(0, 0, W, 230, '#e9eef2');
-  dith(14, 58, 347, 166, '#cfe2ec', '#b9cfdc', 8);
-  [[20, 150, 26], [50, 120, 18], [72, 168, 30], [108, 100, 22], [134, 140, 34], [172, 126, 20], [196, 160, 28], [228, 96, 18], [250, 134, 30], [286, 112, 24], [314, 150, 26], [340, 128, 20]].forEach(([a, b, w], k) => {
-    R(a, b, w, 224 - b, k % 2 ? '#a3bccb' : '#afc6d4'); R(a, b, 1, 224 - b, '#c7d9e3');
-    for (let j = b + 4; j < 220; j += 5) for (let i = a + 3; i < a + w - 2; i += 4) R(i, j, 2, 2, (i * 7 + j * 3) % 11 < 3 ? '#e8f3f8' : '#bcd0dc'); });
-  for (let i = 100; i < 361; i += 87) R(i, 58, 2, 166, '#f4f8fa'); R(14, 58, 347, 2, '#f4f8fa'); R(14, 222, 347, 2, '#9fb3c0');
-  // 發光的公司名牌
-  R(150, 100, 76, 18, '#f7fafc'); R(150, 100, 76, 1, '#ffffff'); R(150, 117, 76, 1, '#b8cad6'); R(149, 101, 1, 16, CY); R(226, 101, 1, 16, CY);
-  x.fillStyle = OL; x.font = '500 10px sans-serif'; x.textAlign = 'center'; x.fillText('丼步喱設計社', 188, 113); x.textAlign = 'left';
-  // 地板：亮面、細格線、窗光
-  R(0, 230, W, 100, '#d5dee5'); for (let j = 236; j < H; j += 9) R(0, j, W, 1, '#cbd5dd'); R(0, 230, W, 2, '#b8c6d0');
-  for (let j = 232; j < 300; j++) for (let i = 40 + (j - 232) * .6; i < 230 + (j - 232) * .9; i += 2) if ((i + j) % 4 === 0) R(i, j, 1, 1, '#e4ebf0');
-  // 盆栽（龜背芋）
-  R(18, 206, 18, 24, '#e9edf0'); R(18, 206, 18, 2, '#ffffff'); R(34, 208, 2, 22, '#c3ccd3');
-  [[14, 186, 10, 7], [30, 180, 11, 8], [22, 170, 9, 7], [38, 196, 8, 6]].forEach(([a, b, rx, ry]) => { el(a, b, rx, ry, '#3f8a5a'); el(a - 2, b - 2, rx - 3, ry - 3, '#5aa874'); R(a, b - ry + 2, 1, ry * 2 - 4, '#2f6e47'); });
-  // 角色（細顆粒）：一倍＝1 顆，大概 34 顆高
-  const who = (cx, k) => {
-    const by = 206;
-    if (k === 'julie') {
-      el(cx, by - 12, 17, 15, OL); el(cx, by - 12, 16, 14, '#dfe3e6'); el(cx - 2, by - 14, 14, 12, '#ffffff');
-      el(cx, by - 38, 16, 15, OL); el(cx, by - 38, 15, 14, '#e2e6e9'); el(cx - 2, by - 40, 13, 12, '#ffffff'); R(cx - 8, by - 47, 4, 2, '#ffffff');
-      R(cx - 9, by - 40, 6, 1, OL); R(cx + 3, by - 40, 6, 1, OL); R(cx - 9, by - 41, 6, 1, '#c9cfd4'); R(cx + 3, by - 41, 6, 1, '#c9cfd4');
-      el(cx, by - 31, 9, 4, '#c97a2e'); el(cx, by - 32, 8, 3, '#f0a04b'); R(cx - 4, by - 34, 5, 1, '#ffc98a');
-      [[-1, 1], [1, 1]].forEach(([s]) => { for (let i = 0; i < 7; i++) R(cx + s * (2 + i) - (s < 0 ? 1 : 0), by - 22 - Math.ceil(i / 2), 1, 2 + Math.ceil(i / 2) * 2, i > 4 ? '#2b5290' : '#3d6fb6'); });
-      R(cx - 2, by - 23, 4, 4, '#2b5290'); R(cx - 1, by - 23, 2, 1, '#7fa8e6');
-    }
-    if (k === 'xiaowu') {
-      el(cx, by - 12, 17, 15, '#14161a'); el(cx, by - 12, 16, 14, '#2a2d35'); el(cx - 3, by - 15, 11, 9, '#3a3f4b');
-      el(cx, by - 38, 16, 15, '#14161a'); el(cx, by - 38, 15, 14, '#2a2d35'); el(cx - 4, by - 42, 9, 7, '#3d4250'); R(cx - 1, by - 54, 2, 5, '#2a2d35'); R(cx + 1, by - 53, 2, 3, '#2a2d35');
-      [-7, 7].forEach(d => { el(cx + d, by - 39, 6, 6, '#e2b44a'); el(cx + d, by - 39, 4.6, 4.6, '#d8e7ef'); el(cx + d, by - 39, 2, 2, '#14161a'); R(cx + d - 2, by - 41, 1, 1, '#ffffff'); }); R(cx - 1, by - 40, 2, 1, '#e2b44a');
-      el(cx, by - 30, 4, 2.6, '#5a5f6a'); R(cx - 7, by - 22, 1, 6, '#3d6fb6'); R(cx + 6, by - 22, 1, 6, '#3d6fb6'); R(cx - 6, by - 16, 12, 9, '#b48618'); R(cx - 5, by - 15, 10, 7, '#f3d36a'); R(cx - 3, by - 13, 6, 1, '#b48618'); R(cx - 3, by - 11, 4, 1, '#c9a24a');
-    }
-    if (k === 'nugget') {
-      el(cx, by - 22, 22, 24, OL); el(cx, by - 22, 21, 23, '#c98a2c'); el(cx - 2, by - 24, 19, 21, '#e3aa4a'); el(cx - 7, by - 32, 9, 8, '#f3c66e'); R(cx - 10, by - 38, 4, 2, '#fff0c4');
-      [[-12, -10], [10, -36], [-4, -42], [14, -16], [-16, -28], [6, -6], [16, -30], [-8, -4]].forEach(([p, q]) => { R(cx + p, by + q, 2, 2, '#b8792a'); R(cx + p, by + q, 1, 1, '#f6d58a'); });
-      [-7, 7].forEach(d => { R(cx + d - 2, by - 28, 4, 5, OL); R(cx + d - 1, by - 28, 1, 1, '#ffffff'); }); R(cx - 14, by - 20, 5, 2, '#f08a80'); R(cx + 9, by - 20, 5, 2, '#f08a80');
-      R(cx - 4, by - 17, 8, 1, OL); R(cx - 5, by - 18, 1, 1, OL); R(cx + 4, by - 18, 1, 1, OL);
-    }
-    // 右邊一圈青色邊光
-    x.globalCompositeOperation = 'source-atop'; x.globalCompositeOperation = 'source-over';
-    for (let j = by - 52; j < by; j++) { const d = j < by - 24 ? 15 : 17; R(cx + d - 1, j, 1, 1, 'rgba(143,211,224,.9)'); }
-    // 玻璃桌：半透明＋白色亮邊；全息螢幕
-    R(cx - 40, by - 2, 80, 7, 'rgba(232,242,248,.7)'); R(cx - 40, by - 2, 80, 1, '#ffffff'); R(cx - 40, by + 5, 80, 1, '#b8cad6'); R(cx - 34, by + 6, 2, 26, '#c3d1db'); R(cx + 32, by + 6, 2, 26, '#c3d1db');
-    for (let i = cx - 36; i < cx + 36; i++) R(i, 232, 1, 2, (i % 3) ? 'rgba(80,100,120,.12)' : 'rgba(80,100,120,.2)');
-    if (k !== 'julie') { R(cx + 12, by - 34, 26, 20, 'rgba(143,211,224,.45)'); R(cx + 12, by - 34, 26, 1, '#d6f2f8'); R(cx + 12, by - 34, 1, 20, '#d6f2f8'); R(cx + 37, by - 34, 1, 20, '#6aa9d8');
-      R(cx + 15, by - 30, 12, 1, '#ffffff'); R(cx + 15, by - 27, 17, 1, '#ffffff'); R(cx + 15, by - 24, 9, 1, '#ffffff'); R(cx + 15, by - 20, 14, 2, 'rgba(255,255,255,.6)');
-      for (let j = by - 14; j < by - 2; j++) for (let i = cx + 16 + (j - by + 14) * .3; i < cx + 34 - (j - by + 14) * .3; i += 2) if ((i + j) % 2 === 0) R(i, j, 1, 1, 'rgba(143,211,224,.5)'); }
-    else { R(cx + 12, by - 30, 26, 16, 'rgba(60,70,85,.4)'); R(cx + 12, by - 30, 26, 1, '#9fb0bc'); }
+  const checker = (a, b, w, h, c1, c2) => { for (let j = b; j < b + h; j++) for (let i = a; i < a + w; i++) px(i, j, (i + j) % 2 ? c1 : c2); };
+  const bitmap = (a, b, rows, col) => rows.forEach((r, j) => [...r].forEach((ch, i) => { if (ch === '#') px(a + i, b + j, col); }));
+  // 一顆有體積的圓：選擇性描邊（右下深、左上淺）→ 邊光月牙 → 暗、中、亮三階 → 下緣反光
+  const blob = (cx, cy, rx, ry, t) => {
+    el(cx + .5, cy + .5, rx + 1, ry + 1, t.olD); el(cx - .5, cy - .5, rx + .5, ry + .5, t.olL);
+    if (t.rim) el(cx + 1, cy, rx, ry, t.rim);
+    el(cx, cy, rx, ry, t.d); el(cx - 1, cy - 1, rx - 1.5, ry - 1.5, t.m); el(cx - rx * .35, cy - ry * .38, rx * (t.ls || .42), ry * (t.ls || .42) * .8, t.l);
+    if (t.bounce) for (let i = Math.round(cx - rx * .5); i < cx + rx * .3; i++) px(i, Math.round(cy + ry - 1), t.bounce);
   };
-  who(66, 'julie'); who(188, 'xiaowu'); who(310, 'nugget');
-  // 睡覺的 Z（像素字）
-  const Zp = (a, b, s, col) => { R(a, b, 4 * s, s, col); R(a + 3 * s, b + s, s, s, col); R(a + 2 * s, b + 2 * s, s, s, col); R(a + s, b + 3 * s, s, s, col); R(a, b + 4 * s, 4 * s, s, col); };
-  Zp(86, 150, 1, '#6aa9d8'); Zp(94, 136, 2, '#6aa9d8');
+  const clipAbove = (y, fn) => { x.save(); x.beginPath(); x.rect(0, 0, W, y); x.clip(); fn(); x.restore(); };
+
+  // ---------- 牆、落地窗 ----------
+  R(0, 0, W, 222, C.g4);
+  const WY = 78, WB = 202;
+  R(14, WY, 347, 46, C.sky1); R(14, WY + 46, 347, 50, C.sky2); R(14, WY + 96, 347, WB - WY - 96, C.sky3);
+  checker(14, WY + 45, 347, 2, C.sky1, C.sky2); checker(14, WY + 95, 347, 2, C.sky2, C.sky3);
+  // 城市：遠（剪影）、中（1×1 窗、稀）、近（2×1 窗、水塔天線、左緣亮）
+  [[18, 150, 30], [52, 138, 24], [96, 156, 36], [150, 132, 26], [200, 150, 40], [262, 140, 28], [300, 156, 34], [336, 146, 24]].forEach(([a, b, w]) => R(a, b, w, WB - b, C.city1));
+  [[30, 128, 22], [80, 112, 18], [128, 136, 26], [178, 118, 20], [226, 128, 26], [280, 116, 18], [318, 130, 30]].forEach(([a, b, w], k) => { R(a, b, w, WB - b, C.city2); R(a, b, 1, WB - b, C.sky1);
+    for (let j = b + 4; j < WB - 2; j += 4) for (let i = a + 3; i < a + w - 2; i += 3) if ((i * 13 + j * 7 + k) % 5 === 0) px(i, j, (i + j * 3) % 37 === 0 ? C.warm : C.g3); });
+  [[6, 150, 30, 1], [62, 166, 28, 0], [112, 144, 24, 1], [244, 158, 32, 0], [334, 142, 26, 1]].forEach(([a, b, w, ant], k) => { R(a, b, w, WB - b, C.city3); R(a, b, 1, WB - b, C.city2);
+    if (ant) { R(a + 6, b - 7, 1, 7, C.city3); px(a + 6, b - 8, C.cy); } else { R(a + w - 10, b - 6, 7, 6, C.city3); R(a + w - 10, b - 6, 7, 1, C.city2); }
+    for (let j = b + 4; j < WB - 2; j += 4) for (let i = a + 3; i < a + w - 3; i += 4) R(i, j, 2, 1, (i * 7 + j * 11 + k) % 19 === 0 ? C.warm : C.city2); });
+  // 窗框 3 顆、窗台 4 顆、每格玻璃左上兩道 45° 反光
+  const mull = xx => { R(xx, WY, 1, WB - WY, C.g5); R(xx + 1, WY, 1, WB - WY, C.g3); R(xx + 2, WY, 1, WB - WY, C.g1); };
+  [14, 100, 187, 274, 358].forEach(mull); R(14, WY - 3, 347, 1, C.g5); R(14, WY - 2, 347, 1, C.g3); R(14, WY - 1, 347, 1, C.g1);
+  R(10, WB, 355, 1, C.g5); R(10, WB + 1, 355, 2, C.g3); R(10, WB + 3, 355, 1, C.g1);
+  [17, 103, 190, 277].forEach(xx => { for (let k = 0; k < 9; k++) { px(xx + 6 + k, WY + 14 - k, C.g5); if (k < 6) px(xx + 12 + k, WY + 14 - k, C.g5); } });
+  // 名牌：手點的「丼」＋青色底線（全名交給上面的介面）
+  R(176, 92, 23, 21, C.g5); R(176, 92, 23, 1, C.wh); R(176, 112, 23, 1, C.g3); R(175, 93, 1, 19, C.cy); R(199, 93, 1, 19, C.cy);
+  bitmap(183, 97, ['..#...#..', '#########', '..#...#..', '..#.#.#..', '..#...#..', '#########', '..#...#..', '.#....#..', '#.....#..'], C.ink); R(180, 110, 15, 1, C.cy);
+
+  // ---------- 地板：透視格線、窗光、底部抖色接介面 ----------
+  R(0, 218, W, 112, C.g4); R(0, 218, W, 1, C.g2);
+  let fy = 218; [4, 5, 7, 9, 12, 15, 19].forEach(d => { fy += d; if (fy < 306) R(0, fy, W, 1, C.g3); });
+  for (let j = 219; j < 262; j++) { const t = j - 219, a0 = Math.round(60 + t * .9), w0 = Math.round(150 + t * .4); for (let i = a0; i < a0 + w0; i++) if ((i + j) % 2 === 0) px(i, j, C.g5); }
+  checker(0, 306, W, 4, C.g4, C.ui); for (let j = 310; j < 318; j++) for (let i = (j % 2); i < W; i += 2) px(i, j, C.ui); R(0, 318, W, 12, C.ui);
+
+  // ---------- 盆栽（龜背芋）：葉柄連回盆子、扁心形葉、缺口切到葉脈、三階綠、梯形盆 ----------
+  for (let j = 0; j < 22; j++) { const w0 = 18 + Math.round(j * .2); R(16 - w0 / 2, 240 + j, w0, 1, C.g2); px(16 - w0 / 2, 240 + j, C.g3); px(16 + w0 / 2 - 1, 240 + j, C.g1); }
+  R(6, 238, 20, 3, C.g1); R(6, 238, 20, 1, C.g3); R(3, 262, 26, 1, C.g3);
+  const leaf = (lx, ly, r, dir) => {
+    el(lx - r * .38, ly - r * .1, r * .62, r * .5, C.gr0); el(lx + r * .38, ly - r * .1, r * .62, r * .5, C.gr0); el(lx, ly + r * .15, r * .72, r * .48, C.gr0);   // 扁心形
+    el(lx - r * .38, ly - r * .2, r * .5, r * .38, C.gr1); el(lx + r * .38, ly - r * .2, r * .5, r * .38, C.gr1); el(lx - r * .45, ly - r * .3, r * .26, r * .16, C.gr2);
+    R(lx, ly - r * .5, 1, r * 1.05, C.gr0);   // 葉脈
+    for (let k = 0; k < 2; k++) { const yy = Math.round(ly - r * .15 + k * r * .4); const side = dir > 0 ? 1 : -1; for (let i = 1; i < r * .65; i++) px(lx + side * (Math.round(r * .9) - i + 1), yy, C.g4); }   // 缺口切到葉脈
+  };
+  [[16, 238, 9, 220, -1], [16, 238, 25, 214, 1], [16, 238, 13, 204, -1], [16, 238, 29, 228, 1]].forEach(([sx, sy, lx, ly, d]) => { for (let t = 0; t <= 1; t += .05) px(Math.round(sx + (lx - sx) * t), Math.round(sy + (ly - sy) * t), C.gr0); leaf(lx, ly, 9, d); });
+
+  // ---------- 角色 ----------
+  const by = 236;
+  const desk = (cx, holo) => {
+    // 玻璃桌：亮邊、淡青透明（棋盤格，不用半透明色）、腳、倒影
+    R(cx - 40, by - 2, 80, 1, C.wh); checker(cx - 40, by - 1, 80, 5, C.sky3, C.g5); R(cx - 40, by + 4, 80, 1, C.g2);
+    R(cx - 34, by + 5, 2, 21, C.g2); R(cx - 33, by + 5, 1, 21, C.g5); R(cx + 32, by + 5, 2, 21, C.g2);
+    R(cx - 36, by + 26, 72, 1, C.g2); for (let j = 1; j <= 6; j++) R(cx - 34 + j, by + 26 + j, 68 - j * 2, 1, j % 2 ? C.g3 : C.g4);
+    if (holo === 'off') { R(cx + 18, by - 4, 16, 2, C.g1); R(cx + 18, by - 4, 16, 1, C.g3); return; }   // 闔起來的筆電
+    // 全息螢幕：投影座、棋盤格底、左上白右下深的邊、外圈發光、文字線
+    R(cx + 24, by - 4, 6, 2, C.ink2); px(cx + 26, by - 5, C.cy2); px(cx + 27, by - 5, C.cy2);
+    const sx = cx + 16, sy = by - 28, sw = 22, sh = 18;   // 螢幕放在角色右邊，不擋臉
+    R(sx, sy - 1, sw, 1, C.cy); R(sx, sy + sh, sw, 1, C.cy); R(sx - 1, sy, 1, sh, C.cy); R(sx + sw, sy, 1, sh, C.cy);   // 緊貼的發光外圈（四角挖掉）
+    for (let i = sx + 1; i < sx + sw; i += 2) px(i, sy - 2, C.cy2); for (let j = sy + 1; j < sy + sh; j += 2) px(sx + sw + 1, j, C.cy2);   // 第二圈只上緣、右緣
+    R(sx, sy, sw, sh, C.cy2); for (let j = sy + 2; j < sy + sh; j += 3) R(sx, j, sw, 1, C.cy);   // 實心＋掃描線
+    R(sx, sy, sw, 1, C.wh); R(sx, sy, 1, sh, C.wh); R(sx, sy + sh - 1, sw, 1, C.cy0); R(sx + sw - 1, sy, 1, sh, C.cy0);
+    [[3, 4, 12], [3, 7, 16], [3, 10, 8], [3, 13, 13]].forEach(([dx, dy, w]) => R(sx + dx, sy + dy, w, 1, C.cy0));
+    for (let j = sy + sh + 1; j < by - 4; j++) { const t = j - sy - sh; for (let i = sx + 7 + t; i < sx + sw - 7 - t; i += 2) if ((i + j) % 2 === 0) px(i, j, C.cy2); }
+  };
+  // 茱莉鴨：梨形、頭往右前方垂、半睜死魚眼、嘴偏右扁寬、領結、翅膀搭在桌上
+  const julie = cx => {
+    const T = { olD: C.g1, olL: C.g2, rim: C.cy2, d: C.g3, m: C.g4, l: C.wh, bounce: C.cy2 };
+    clipAbove(by - 2, () => blob(cx, by - 13, 18, 15, T));
+    blob(cx + 4, by - 34, 13, 12.5, T); const hx = cx + 2, hy = by + 2;   // 頭往右前方垂
+    // 眼睛：眼白 5×3，上半眼皮蓋住，瞳孔 2×2 沉在下緣
+    [[-6], [5]].forEach(([d]) => { R(hx + d - 2, hy - 38, 5, 1, C.ink2); px(hx + d - 3, hy - 39, C.ink2); px(hx + d + 3, hy - 39, C.ink2); });   // 閉眼弧線
+    // 嘴：偏右、扁寬 12×5，上片、嘴縫、下片、亮點
+    R(hx - 2, hy - 33, 12, 2, C.o2); R(hx - 3, hy - 32, 1, 1, C.o1); R(hx - 2, hy - 31, 12, 1, C.o1); R(hx - 1, hy - 30, 10, 2, C.o2); R(hx + 9, hy - 32, 1, 2, C.o0); R(hx, hy - 33, 3, 1, C.o3);
+    // 領結：中間 3×3 結，兩翼各一顆亮點
+    for (let i = 0; i < 5; i++) { R(cx - 6 + i, by - 24 - Math.floor(i / 2), 1, 3 + Math.floor(i / 2) * 2, C.b1); R(cx + 5 - i, by - 24 - Math.floor(i / 2), 1, 3 + Math.floor(i / 2) * 2, C.b1); }
+    R(cx - 1, by - 24, 3, 3, C.b0); px(cx - 5, by - 24, C.b2); px(cx + 3, by - 24, C.b2);
+    // 翅膀搭在桌上
+    [[-1], [1]].forEach(([sd]) => { const wx = cx + sd * 13 - 3; R(wx, by - 6, 7, 3, C.g4); R(wx + 1, by - 7, 5, 1, C.wh); R(wx, by - 3, 7, 1, C.g1); px(wx + (sd > 0 ? 6 : 0), by - 5, C.g3); });   // 翅膀：扁平水滴平貼在桌上
+  };
+  // 小吳鴨：藍紫光澤、粗嘴朝左加剛毛、金框圓眼鏡（暗邊亮點、斜反光）、彎三段的呆毛、斜掛繩、白卡識別證貼鴨照片
+  const xiaowu = cx => {
+    const T = { olD: C.ink0, olL: C.ink, rim: C.rimK, d: C.ink0, m: C.k1, l: C.ink2, ls: .18 };
+    clipAbove(by - 2, () => blob(cx, by - 13, 18, 15, T));
+    blob(cx, by - 36, 13.5, 12.5, T); for (let k = 0; k < 6; k++) px(cx - 9 + k, by - 45 + Math.floor(k / 2), C.k2); for (let k = 0; k < 4; k++) px(cx - 8 + k, by - 44 + Math.floor(k / 2), C.k2);
+    R(cx, by - 51, 1, 3, C.k1); R(cx + 1, by - 53, 1, 2, C.k1); R(cx + 2, by - 54, 2, 1, C.k1);
+    [[-6], [6]].forEach(([d]) => { el(cx + d, by - 37, 5.5, 5.5, C.au0); el(cx + d - .5, by - 37.5, 5, 5, C.au1); el(cx + d, by - 37, 3.6, 3.6, C.g4); px(cx + d - 4, by - 41, C.au2); px(cx + d - 3, by - 41, C.au2);
+      R(cx + d - 1, by - 37, 2, 2, C.ink0); px(cx + d - 2, by - 39, C.wh); px(cx + d - 1, by - 40, C.wh); });
+    R(cx - 1, by - 38, 2, 1, C.au1);
+    for (let i = 0; i <= 11; i++) { const h = Math.round(4 - i * 2 / 11), xx = cx + 1 - i; R(xx, by - 31, 1, h, C.ink3); px(xx, by - 31, C.g1); px(xx, by - 31 + h, C.ink2); }   // 楔形嘴朝左
+    px(cx - 3, by - 33, C.k1); px(cx - 1, by - 33, C.k1);
+    for (let k = 0; k < 9; k++) { px(cx - 9 + Math.floor(k * .6), by - 24 + k, C.b1); px(cx + 9 - Math.floor(k * .6), by - 24 + k, C.b1); }
+    R(cx - 5, by - 15, 10, 12, C.g3); R(cx - 4, by - 14, 8, 10, C.g5); R(cx - 3, by - 12, 3, 3, C.o3); px(cx - 2, by - 11, C.o2); R(cx + 1, by - 12, 3, 1, C.g2); R(cx + 1, by - 10, 2, 1, C.g2);
+  };
+  // 雞塊：寬 40 高 34、底部壓平、邊緣凸起、月牙亮面、24 顆麵衣（避開臉）、2×3 眼睛、抖色腮紅
+  const nugget = cx => {
+    const T = { olD: C.o0, olL: C.o1, rim: C.o3, d: C.o1, m: C.o2, l: C.o2 };
+    clipAbove(by - 2, () => { blob(cx, by - 18, 20, 17, T); [[-13, -30], [-3, -34], [8, -33], [16, -25]].forEach(([p, q]) => { el(cx + p, by + q, 2.4, 2, C.o1); el(cx + p - .4, by + q - .4, 1.8, 1.5, C.o2); }); });
+    for (let t = 0; t < 1; t += .04) { const ang = Math.PI * (1.05 + t * .45); px(Math.round(cx - 1 + Math.cos(ang) * 16), Math.round(by - 19 + Math.sin(ang) * 13), C.o3); px(Math.round(cx - 1 + Math.cos(ang) * 15), Math.round(by - 19 + Math.sin(ang) * 12), C.o3); }   // 左上 2 顆寬的亮弧
+    px(cx - 12, by - 27, C.wh); px(cx - 10, by - 29, C.wh);
+    const face = (i, j) => i > cx - 12 && i < cx + 12 && j > by - 26 && j < by - 10;
+    let n = 0, seed = 7; while (n < 24) { seed = (seed * 9301 + 49297) % 233280; const i = Math.round(cx - 17 + (seed / 233280) * 34); seed = (seed * 9301 + 49297) % 233280; const j = Math.round(by - 32 + (seed / 233280) * 28);
+      const u = (i - cx) / 18, v = (j - (by - 18)) / 15; if (u * u + v * v > .9 || face(i, j) || j > by - 4) continue; px(i, j, C.o3); px(i + 1, j + 1, C.o0); n++; }
+    [[-6], [5]].forEach(([d]) => { R(cx + d, by - 22, 2, 3, C.ink); px(cx + d, by - 22, C.wh); });
+    [[-12], [9]].forEach(([d]) => { R(cx + d, by - 17, 3, 2, C.pink); px(cx + d - 1, by - 17, C.pink); px(cx + d + 3, by - 16, C.pink); });
+    R(cx - 3, by - 14, 7, 1, C.ink); px(cx - 4, by - 15, C.ink); px(cx + 4, by - 15, C.ink);
+  };
+  // 螢幕照到臉的右邊 3 顆
+  const glow = (cx) => { for (let j = by - 40; j < by - 30; j++) px(cx + 14, j, C.cy2); };
+  julie(66); xiaowu(188); nugget(310);
+  desk(66, 'off'); desk(188, 'on'); desk(310, 'on');
+  glow(188);
+  // 睡覺的 Z：三種大小往上飄
+  const Zp = (a, b, s) => { R(a, b, 3 * s, s, C.cy0); px(a + 2 * s, b + s, C.cy0); if (s > 1) R(a + 2 * s, b + s, s, s, C.cy0); R(a + s, b + 2 * s, s, s, C.cy0); R(a, b + 3 * s, 3 * s, s, C.cy0); };
+  Zp(84, 186, 1); Zp(90, 176, 1.34); Zp(97, 162, 1.67);
   X.imageSmoothingEnabled = false; X.drawImage(c, 0, 0, W, H);
 });
 </script>
