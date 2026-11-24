@@ -25,7 +25,8 @@
     v = { body: b, shadow: sh, nbody: nb, nimg: ni, w, h }; vcache.set(img, v); return v;
   }
   // 圖的朝向：車、船、直升機頭朝下，飛機頭朝上
-  const baseAng = key => /^(fly|prop|jet|airshow|show)/.test(key) ? -Math.PI / 2 : Math.PI / 2;
+  // 圖裡車頭／船頭／機頭朝哪：全部都朝下（+y）。2026-11-24 以前飛機和演出船當成朝上，結果倒著飛、倒著開（使用者發現的）
+  const baseAng = () => Math.PI / 2;
   const isHeli = key => /^heli/.test(key);
   const isRocket = key => X.VEH[key] && X.VEH[key].ax != null;
 
