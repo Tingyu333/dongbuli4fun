@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-TW"><head><meta charset="utf-8"><title>公司・開　角色姿勢草稿</title>
+<style>
+body { margin: 0; background: #e4e2dd; font-family: "Noto Sans TC", sans-serif; color: #26303a; }
+.wrap { display: inline-block; padding: 24px 28px 28px; background: #f2f6f8; }
+h1 { font-size: 18px; font-weight: 500; letter-spacing: .15em; margin: 0 0 4px; }
+p { font-size: 13px; margin: 0 0 14px; color: #56677a; }
+.row { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
+.tag { writing-mode: vertical-rl; font-size: 13px; letter-spacing: .3em; color: #56677a; }
+canvas { image-rendering: pixelated; width: 990px; height: 330px; display: block; border-radius: 10px; }
+.names { display: flex; margin-left: 28px; } .names div { width: 330px; text-align: center; font-size: 14px; letter-spacing: .2em; margin-top: 6px; }
+.names small { display: block; font-size: 12px; color: #56677a; letter-spacing: .05em; margin-top: 2px; }
+</style></head><body><div class="wrap">
+<h1>角色姿勢草稿（第五版方向）</h1>
+<p>照文組妹妹的三點：每隻一個動作、五官縮小往下擠、平塗少細節。上排只看剪影，下排是平塗草稿。</p>
+<div class="row"><div class="tag">剪影</div><canvas id="a" width="330" height="110"></canvas></div>
+<div class="row"><div class="tag">平塗草稿</div><canvas id="b" width="330" height="110"></canvas></div>
+<div class="names">
+  <div>茱莉鴨<small>趴在桌上睡，泡泡從嘴尖鼓出來</small></div>
+  <div>小吳鴨<small>整隻往前湊去看螢幕</small></div>
+  <div>雞塊<small>舉手揮，歪歪的雞塊形</small></div>
+</div>
+</div>
+<script>
+const C = { ink0: '#1c2229', ink2: '#3a4656', ink3: '#56677a', g1: '#7a8c9d', g2: '#9fb1c0', g3: '#c2d0da', g4: '#e6ecf0', g5: '#f2f6f8', wh: '#ffffff',
+  sky1: '#c3d8e4', sky3: '#e2edf2', city: '#a3bccb', cy0: '#4fa9bf', cy: '#8fd3e0', cy2: '#c9f0f6', b0: '#2b5290', b1: '#3d6fb6',
+  o0: '#8a4f1c', o1: '#c97a2e', o2: '#f0a04b', o3: '#ffd08a', k0: '#14181d', k1: '#2a2f39', k2: '#444b5a', au1: '#e2b44a', pk2: '#f8c3bc', tan: '#d9c6a8' };
+const W = 330, H = 110, dy = 84;   // dy：桌面高度
+
+// 一層像素（角色要先畫在自己的層，才能自動加外框）
+const Layer = () => ({ a: new Array(W * H).fill(null) });
+const put = (L, x, y, c) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < W && y < H) L.a[y * W + x] = c; };
+const el = (L, cx, cy, rx, ry, c, th = 0) => { const m = Math.max(rx, ry) + 1, cs = Math.cos(th), sn = Math.sin(th);
+  for (let j = Math.floor(cy - m); j <= cy + m; j++) for (let i = Math.floor(cx - m); i <= cx + m; i++) { const dx = i + .5 - cx, dy2 = j + .5 - cy, u = (dx * cs + dy2 * sn) / rx, v = (-dx * sn + dy2 * cs) / ry; if (u * u + v * v <= 1) put(L, i, j, c); } };
+const rect = (L, x, y, w, h, c) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) put(L, x + i, y + j, c); };
+// 外框：空格子旁邊有顏色，就塗那個顏色的「深一階」
+const OL = { [C.wh]: C.g2, [C.g4]: C.g2, [C.o2]: C.o0, [C.o1]: C.o0, [C.o3]: C.o0, [C.k1]: C.k0, [C.k2]: C.k0, [C.b1]: C.b0, [C.g3]: C.g1 };
+const outline = L => { const add = [];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { if (L.a[y * W + x]) continue; let c = null;
+    for (const [dx, dy2] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) { const nx = x + dx, ny = y + dy2; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue; const n = L.a[ny * W + nx]; if (n) { c = OL[n] || C.ink2; if (dy2 === -1) break; } }
+    if (c) add.push([x, y, c]); }
+  add.forEach(([x, y, c]) => L.a[y * W + x] = c); };
+const blit = (X, L, sil) => { for (let i = 0; i < W * H; i++) if (L.a[i]) { X.fillStyle = sil ? C.ink2 : L.a[i]; X.fillRect(i % W, (i / W) | 0, 1, 1); } };
+
+function scene(X, sil) {
+  const R = (x, y, w, h, c) => { X.fillStyle = c; X.fillRect(x, y, w, h); };
+  // 背景：一格一格的玻璃窗，乾淨一點
+  R(0, 0, W, H, C.g4); R(0, 6, W, 46, C.sky1);
+  for (let i = 0; i < W; i += 110) { R(i + 10, 20, 18, 32, C.city); R(i + 34, 28, 22, 24, C.sky3); R(i + 62, 14, 16, 38, C.city); R(i + 84, 32, 20, 20, C.sky3); R(i + 108, 6, 2, 46, C.g5); }
+  R(0, 52, W, 2, C.g5); R(0, 54, W, 1, C.g3);
+  const back = [Layer(), Layer(), Layer()], front = [Layer(), Layer(), Layer()];
+
+  // ---------- 茱莉鴨：趴在桌上睡 ----------
+  { const cx = 52, B = back[0], F = front[0];
+    el(B, cx + 8, dy - 7, 13, 10, C.wh, -.15);            // 垮下來的背
+    el(B, cx + 21, dy - 15, 3.5, 2, C.wh, -.7);           // 屁股翹毛
+    el(F, cx - 3, dy - 2, 11, 3, C.g4);                   // 翅膀疊起來當枕頭
+    el(F, cx - 6, dy - 10, 11.5, 9.5, C.wh, -.3);         // 頭側躺在翅膀上
+    el(F, cx - 17, dy - 6, 3.5, 2, C.o2, .35);            // 小扁嘴，往左下
+    if (!sil) { outline(F); outline(B); }
+    else { outline(F); outline(B); }
+    if (!sil) {
+      // 領結：在頭跟背中間，歪一邊
+      el(F, cx + 4, dy - 9, 2.6, 1.8, C.b1, .5); el(F, cx + 8, dy - 6, 2.6, 1.8, C.b1, .5); put(F, cx + 6, dy - 8, C.b0); put(F, cx + 6, dy - 7, C.b0);
+      // 閉眼（小小的、往下擠、靠近）＋腮紅
+      [[cx - 12, dy - 9], [cx - 6, dy - 11]].forEach(([x, y]) => { put(F, x, y, C.ink2); put(F, x + 1, y + 1, C.ink2); put(F, x + 2, y + 1, C.ink2); put(F, x + 3, y, C.ink2); });
+      put(F, cx - 11, dy - 6, C.pk2); put(F, cx - 10, dy - 6, C.pk2); put(F, cx - 4, dy - 8, C.pk2); put(F, cx - 3, dy - 8, C.pk2);
+      put(F, cx - 2, dy - 15, C.g5); put(F, cx - 1, dy - 16, C.g5);   // 頭上一點亮
+    }
+  }
+  // ---------- 小吳鴨：往前湊看螢幕 ----------
+  { const cx = 150, B = back[1], F = front[1];
+    el(B, cx - 2, dy - 9, 10, 9, C.k1, .35);              // 身體往右前傾
+    el(B, cx + 7, dy - 21, 10, 9.5, C.k1);                // 頭往前
+    put(B, cx + 3, dy - 31, C.k1); put(B, cx + 2, dy - 32, C.k1); put(B, cx + 2, dy - 33, C.k1); put(B, cx + 3, dy - 34, C.k1);   // 一根捲毛
+    rect(B, cx + 15, dy - 19, 3, 2, C.g3); put(B, cx + 18, dy - 19, C.g3); put(B, cx + 15, dy - 17, C.g3); put(B, cx + 16, dy - 17, C.g3);   // 小尖嘴朝螢幕
+    el(F, cx + 12, dy - 3, 4.5, 2.2, C.k1, -.2);          // 翅膀伸到鍵盤
+    outline(B); outline(F);
+    if (!sil) {
+      // 圓眼鏡：細細一圈金邊，眼睛是豆豆（看向右邊）
+      const ring = (x, y) => { for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2; put(B, x + Math.cos(a) * 2.6, y + Math.sin(a) * 2.6, C.au1); } put(B, x + 1, y, C.wh); put(B, x + 1, y + 1, C.wh); put(B, x + 2, y, C.wh); };
+      ring(cx + 6, dy - 21); ring(cx + 13, dy - 21); put(B, cx + 9, dy - 21, C.au1);
+      put(B, cx + 7, dy - 21, C.wh); put(B, cx + 7, dy - 20, C.wh);
+      put(B, cx + 7, dy - 21, C.ink0); put(B, cx + 7, dy - 20, C.ink0); put(B, cx + 14, dy - 21, C.ink0); put(B, cx + 14, dy - 20, C.ink0);
+      put(B, cx + 5, dy - 27, C.k2); put(B, cx + 6, dy - 28, C.k2); put(B, cx + 7, dy - 28, C.k2);   // 頭頂一點亮
+      // 識別證往前晃
+      put(B, cx + 4, dy - 12, C.b1); put(B, cx + 6, dy - 10, C.b1); rect(B, cx + 6, dy - 9, 5, 6, C.wh); rect(B, cx + 7, dy - 8, 2, 2, C.o2);
+    }
+  }
+  // ---------- 雞塊：舉手揮 ----------
+  { const cx = 272, B = back[2], F = front[2];
+    el(B, cx, dy - 11, 13, 10, C.o2, .12);               // 歪歪的雞塊：橫的、下面胖、上面平平凹凸
+    el(B, cx - 8, dy - 6, 7.5, 6, C.o2); el(B, cx + 9, dy - 7, 6.5, 7, C.o2); el(B, cx + 2, dy - 18, 8, 3.5, C.o2, .1);
+    el(B, cx - 16, dy - 19, 2.6, 4.4, C.o2, -.5);         // 舉起來的手
+    el(F, cx + 11, dy - 2, 3.2, 2, C.o2);                 // 另一隻手搭桌上
+    outline(B); outline(F);
+    if (!sil) {
+      put(B, cx - 3, dy - 12, C.ink0); put(B, cx - 3, dy - 11, C.ink0); put(B, cx + 2, dy - 12, C.ink0); put(B, cx + 2, dy - 11, C.ink0);   // 豆豆眼，小、近、偏下
+      put(B, cx - 1, dy - 9, C.o0); put(B, cx, dy - 9, C.o0); put(B, cx - 1, dy - 8, C.o0); put(B, cx, dy - 8, C.o0);   // 開心張嘴
+      put(B, cx - 6, dy - 9, C.pk2); put(B, cx - 5, dy - 9, C.pk2); put(B, cx + 4, dy - 9, C.pk2); put(B, cx + 5, dy - 9, C.pk2);
+      [[-11, -13], [-13, -6], [12, -12], [14, -6], [6, -19], [-4, -19]].forEach(([a, b]) => put(B, cx + a, dy + b, C.o3));   // 麵衣只留邊邊幾顆
+      put(B, cx - 6, dy - 17, C.o3); put(B, cx - 5, dy - 18, C.o3); put(B, cx - 4, dy - 18, C.o3);   // 一點亮
+    }
+  }
+  // 畫順序：身體 → 桌子 → 桌上的手和頭
+  back.forEach(L => blit(X, L, sil));
+  // 桌子：一片玻璃、兩根腳
+  [[8, 96], [118, 96], [228, 96]].forEach(([x, w]) => { R(x, dy, w, 1, C.wh); R(x, dy + 1, w, 3, sil ? C.g3 : C.cy2); R(x, dy + 4, w, 1, C.g2); R(x + 6, dy + 5, 2, 21, C.g2); R(x + w - 8, dy + 5, 2, 21, C.g2); });
+  front.forEach(L => blit(X, L, sil));
+  if (!sil) {
+    // 茱莉鴨：泡泡、Z、咖啡
+    X.fillStyle = C.cy; [[0, -3], [1, -3], [-1, -2], [2, -2], [-2, -1], [3, -1], [-2, 0], [3, 0], [-1, 1], [2, 1], [0, 2], [1, 2]].forEach(([a, b]) => X.fillRect(31 + a, dy - 10 + b, 1, 1));
+    R(31, dy - 11, 2, 3, C.cy2); R(30, dy - 12, 1, 1, C.wh);
+    [[66, dy - 24, 3], [71, dy - 31, 4]].forEach(([x, y, s]) => { R(x, y, s, 1, C.cy0); for (let k = 1; k < s - 1; k++) R(x + s - 1 - k, y + k, 1, 1, C.cy0); R(x, y + s - 1, s, 1, C.cy0); });
+    R(86, dy - 7, 5, 7, C.wh); R(85, dy - 7, 1, 7, C.g2); R(91, dy - 7, 1, 7, C.g2); R(86, dy - 7, 5, 1, C.o0); R(92, dy - 5, 1, 3, C.g2);
+    // 小吳鴨的螢幕：飄在他前面
+    const sx = 175, sy = dy - 32;
+    R(sx, sy, 22, 17, C.cy2); R(sx, sy, 22, 1, C.wh); R(sx, sy + 16, 22, 1, C.cy0); R(sx + 21, sy, 1, 17, C.cy0);
+    [[3, 4, 12], [3, 7, 15], [3, 10, 8], [3, 13, 13]].forEach(([a, b, w]) => R(sx + a, sy + b, w, 1, C.cy0));
+    R(sx + 9, dy - 4, 6, 2, C.ink2);
+    // 雞塊揮手的小線
+    R(254, dy - 28, 1, 3, C.o1); R(250, dy - 24, 2, 1, C.o1); R(260, dy - 28, 1, 2, C.o1);
+  } else {
+    R(175, dy - 32, 22, 17, C.g3); R(86, dy - 7, 5, 7, C.g3);
+  }
+}
+scene(document.getElementById('a').getContext('2d'), true);
+scene(document.getElementById('b').getContext('2d'), false);
+</script></body></html>
