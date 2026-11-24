@@ -52,16 +52,16 @@ function scene(X, sil) {
 
   // ---------- 茱莉鴨：趴在桌上睡 ----------
   { const cx = 52, B = back[0], F = front[0];
-    el(B, cx + 8, dy - 7, 13, 10, C.wh, -.15);            // 垮下來的背
-    el(B, cx + 21, dy - 15, 3.5, 2, C.wh, -.7);           // 屁股翹毛
+    el(B, cx + 8, dy - 7, 12, 9, C.wh, -.1);              // 垮下來的背
+    el(B, cx + 19, dy - 11, 5, 2.4, C.wh, -.55); el(B, cx + 23, dy - 15, 2, 1.4, C.wh, -.9);   // 短短翹翹的鴨屁股
     el(F, cx - 3, dy - 2, 11, 3, C.g4);                   // 翅膀疊起來當枕頭
     el(F, cx - 6, dy - 10, 11.5, 9.5, C.wh, -.3);         // 頭側躺在翅膀上
-    el(F, cx - 17, dy - 6, 3.5, 2, C.o2, .35);            // 小扁嘴，往左下
+    el(F, cx - 19, dy - 7, 5, 2.2, C.o2, .12); el(F, cx - 23, dy - 8, 1.6, 1.4, C.o2);   // 鴨嘴往前凸出去，嘴尖微翹
     if (!sil) { outline(F); outline(B); }
     else { outline(F); outline(B); }
     if (!sil) {
       // 領結：在頭跟背中間，歪一邊
-      el(F, cx + 4, dy - 9, 2.6, 1.8, C.b1, .5); el(F, cx + 8, dy - 6, 2.6, 1.8, C.b1, .5); put(F, cx + 6, dy - 8, C.b0); put(F, cx + 6, dy - 7, C.b0);
+      el(F, cx + 2, dy - 3, 2.4, 1.8, C.b1, -.3); el(F, cx + 7, dy - 4, 2.4, 1.8, C.b1, -.3); put(F, cx + 4, dy - 4, C.b0); put(F, cx + 5, dy - 4, C.b0); put(F, cx + 4, dy - 3, C.b0);
       // 閉眼（小小的、往下擠、靠近）＋腮紅
       [[cx - 12, dy - 9], [cx - 6, dy - 11]].forEach(([x, y]) => { put(F, x, y, C.ink2); put(F, x + 1, y + 1, C.ink2); put(F, x + 2, y + 1, C.ink2); put(F, x + 3, y, C.ink2); });
       put(F, cx - 11, dy - 6, C.pk2); put(F, cx - 10, dy - 6, C.pk2); put(F, cx - 4, dy - 8, C.pk2); put(F, cx - 3, dy - 8, C.pk2);
@@ -72,27 +72,27 @@ function scene(X, sil) {
   { const cx = 150, B = back[1], F = front[1];
     el(B, cx - 2, dy - 9, 10, 9, C.k1, .35);              // 身體往右前傾
     el(B, cx + 7, dy - 21, 10, 9.5, C.k1);                // 頭往前
-    put(B, cx + 3, dy - 31, C.k1); put(B, cx + 2, dy - 32, C.k1); put(B, cx + 2, dy - 33, C.k1); put(B, cx + 3, dy - 34, C.k1);   // 一根捲毛
-    rect(B, cx + 15, dy - 19, 3, 2, C.g3); put(B, cx + 18, dy - 19, C.g3); put(B, cx + 15, dy - 17, C.g3); put(B, cx + 16, dy - 17, C.g3);   // 小尖嘴朝螢幕
+    put(B, cx + 4, dy - 31, C.k1); put(B, cx + 3, dy - 32, C.k1); put(B, cx + 2, dy - 32, C.k1); put(B, cx + 1, dy - 31, C.k1);   // 往後捲的一撮毛
+    el(B, cx - 11, dy - 13, 4, 2, C.k1, .7);               // 短短翹起的鴨尾巴
+    el(B, cx + 19, dy - 18, 4.5, 1.9, C.g3, .08); put(B, cx + 23, dy - 18, C.g3);   // 小鴨嘴尖尖伸向螢幕
     el(F, cx + 12, dy - 3, 4.5, 2.2, C.k1, -.2);          // 翅膀伸到鍵盤
     outline(B); outline(F);
     if (!sil) {
       // 圓眼鏡：細細一圈金邊，眼睛是豆豆（看向右邊）
-      const ring = (x, y) => { for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2; put(B, x + Math.cos(a) * 2.6, y + Math.sin(a) * 2.6, C.au1); } put(B, x + 1, y, C.wh); put(B, x + 1, y + 1, C.wh); put(B, x + 2, y, C.wh); };
-      ring(cx + 6, dy - 21); ring(cx + 13, dy - 21); put(B, cx + 9, dy - 21, C.au1);
-      put(B, cx + 7, dy - 21, C.wh); put(B, cx + 7, dy - 20, C.wh);
-      put(B, cx + 7, dy - 21, C.ink0); put(B, cx + 7, dy - 20, C.ink0); put(B, cx + 14, dy - 21, C.ink0); put(B, cx + 14, dy - 20, C.ink0);
+      const lens = (x, y) => { el(B, x, y, 3.2, 3.2, C.au1); el(B, x, y, 2.4, 2.4, C.wh); put(B, x + .5, y - .5, C.ink0); put(B, x + 1.5, y - .5, C.ink0); put(B, x + .5, y + .5, C.ink0); put(B, x + 1.5, y + .5, C.ink0); put(B, x + .5, y - .5, C.wh); };
+      lens(cx + 6, dy - 21); lens(cx + 13, dy - 21); put(B, cx + 9.5, dy - 22, C.au1);   // 白鏡片、黑豆豆往右看
       put(B, cx + 5, dy - 27, C.k2); put(B, cx + 6, dy - 28, C.k2); put(B, cx + 7, dy - 28, C.k2);   // 頭頂一點亮
       // 識別證往前晃
-      put(B, cx + 4, dy - 12, C.b1); put(B, cx + 6, dy - 10, C.b1); rect(B, cx + 6, dy - 9, 5, 6, C.wh); rect(B, cx + 7, dy - 8, 2, 2, C.o2);
+      put(B, cx + 3, dy - 13, C.b1); put(B, cx + 4, dy - 12, C.b1); put(B, cx + 11, dy - 13, C.b1); put(B, cx + 10, dy - 12, C.b1);
+      rect(B, cx + 4, dy - 11, 8, 9, C.wh); rect(B, cx + 5, dy - 10, 3, 3, C.o2); rect(B, cx + 9, dy - 10, 2, 1, C.g2); rect(B, cx + 9, dy - 8, 2, 1, C.g2); rect(B, cx + 5, dy - 6, 6, 1, C.g2); rect(B, cx + 4, dy - 11, 8, 1, C.b1);   // 識別證
     }
   }
   // ---------- 雞塊：舉手揮 ----------
   { const cx = 272, B = back[2], F = front[2];
     el(B, cx, dy - 11, 13, 10, C.o2, .12);               // 歪歪的雞塊：橫的、下面胖、上面平平凹凸
     el(B, cx - 8, dy - 6, 7.5, 6, C.o2); el(B, cx + 9, dy - 7, 6.5, 7, C.o2); el(B, cx + 2, dy - 18, 8, 3.5, C.o2, .1);
-    el(B, cx - 16, dy - 19, 2.6, 4.4, C.o2, -.5);         // 舉起來的手
-    el(F, cx + 11, dy - 2, 3.2, 2, C.o2);                 // 另一隻手搭桌上
+    el(B, cx - 13, dy - 18, 1.8, 3.2, C.o2, -.5); el(B, cx - 16, dy - 23, 3, 3, C.o2);   // 短短圓圓、高高舉起來的小手
+    el(B, cx + 12, dy - 3, 2.6, 2, C.o2);                 // 另一隻小手搭在桌邊
     outline(B); outline(F);
     if (!sil) {
       put(B, cx - 3, dy - 12, C.ink0); put(B, cx - 3, dy - 11, C.ink0); put(B, cx + 2, dy - 12, C.ink0); put(B, cx + 2, dy - 11, C.ink0);   // 豆豆眼，小、近、偏下
@@ -109,8 +109,8 @@ function scene(X, sil) {
   front.forEach(L => blit(X, L, sil));
   if (!sil) {
     // 茱莉鴨：泡泡、Z、咖啡
-    X.fillStyle = C.cy; [[0, -3], [1, -3], [-1, -2], [2, -2], [-2, -1], [3, -1], [-2, 0], [3, 0], [-1, 1], [2, 1], [0, 2], [1, 2]].forEach(([a, b]) => X.fillRect(31 + a, dy - 10 + b, 1, 1));
-    R(31, dy - 11, 2, 3, C.cy2); R(30, dy - 12, 1, 1, C.wh);
+    X.fillStyle = C.cy; [[0, -3], [1, -3], [-1, -2], [2, -2], [-2, -1], [3, -1], [-2, 0], [3, 0], [-1, 1], [2, 1], [0, 2], [1, 2]].forEach(([a, b]) => X.fillRect(28 + a, dy - 10 + b, 1, 1));
+    R(28, dy - 11, 2, 3, C.cy2); R(27, dy - 12, 1, 1, C.wh);
     [[66, dy - 24, 3], [71, dy - 31, 4]].forEach(([x, y, s]) => { R(x, y, s, 1, C.cy0); for (let k = 1; k < s - 1; k++) R(x + s - 1 - k, y + k, 1, 1, C.cy0); R(x, y + s - 1, s, 1, C.cy0); });
     R(86, dy - 7, 5, 7, C.wh); R(85, dy - 7, 1, 7, C.g2); R(91, dy - 7, 1, 7, C.g2); R(86, dy - 7, 5, 1, C.o0); R(92, dy - 5, 1, 3, C.g2);
     // 小吳鴨的螢幕：飄在他前面
@@ -119,7 +119,7 @@ function scene(X, sil) {
     [[3, 4, 12], [3, 7, 15], [3, 10, 8], [3, 13, 13]].forEach(([a, b, w]) => R(sx + a, sy + b, w, 1, C.cy0));
     R(sx + 9, dy - 4, 6, 2, C.ink2);
     // 雞塊揮手的小線
-    R(254, dy - 28, 1, 3, C.o1); R(250, dy - 24, 2, 1, C.o1); R(260, dy - 28, 1, 2, C.o1);
+    R(255, dy - 32, 1, 3, C.o1); R(250, dy - 27, 2, 1, C.o1); R(261, dy - 31, 1, 2, C.o1);
   } else {
     R(175, dy - 32, 22, 17, C.g3); R(86, dy - 7, 5, 7, C.g3);
   }
