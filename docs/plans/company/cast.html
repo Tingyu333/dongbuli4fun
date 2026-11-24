@@ -159,7 +159,7 @@ function scene(X, sil) {
     F(L, ex - 5, ey - 3, [[0, 0], [1, 1], [2, 1]], C.ink0); F(L, ex + 2, ey - 2, [[0, 0], [1, 0], [2, -1]], C.ink0);   // 生氣的粗眉
     F(L, ex - 1, ey + 6, [[0, 0], [1, 0], [2, 0]], C.ink2);
     blit(L, dy);
-    const Sa = Lay(); { const [a1, b1] = at(7, -16.5), [a2, b2] = at(8.2, -21.6); lel(Sa, a1, b1, 2.3, 4.6, C.st, -.4); lel(Sa, a2, b2, 4.6, 2.3, C.lf, -.35); lel(Sa, a2 + 2, b2 - 1, 1.5, 1, C.vein, -.35, C.lf); outline(Sa); lp(Sa, a2 - 1, b2, C.vein); lp(Sa, a2, b2 - 1, C.vein); blit(Sa, dy); }   // 菜梗伸出來的小手，葉子尖碰帽簷敬禮
+    const Sa = Lay(); { const [a1, b1] = at(7, -16.5), [a2, b2] = at(8.2, -21.6); lel(Sa, a1, b1, 2.3, 4.6, C.st, -.4); lel(Sa, a2, b2, 4.6, 2.3, C.st2, -.35); lel(Sa, a2 - 1, b2 - 1, 2, 1, C.st, -.35, C.st2);   // 手是菜梗的淺綠，才不會看成多一片葉子 outline(Sa); blit(Sa, dy); }   // 菜梗伸出來的小手，葉子尖碰帽簷敬禮
     // 杯子：水用棋盤格（看得到泡在裡面的菜梗）、水面、杯緣、左邊一道反光
     if (!sil) { for (let j = dy - 16; j < dy - 1; j++) for (let i = cx - 10; i < cx + 10; i++) if ((i + j) % 2 === 0) px(i, j, C.cy2); R(cx - 10, dy - 17, 20, 1, C.cy); [[-5, -6], [3, -11], [-2, -13]].forEach(([a, b]) => px(cx + a, dy + b, C.wh)); }
     N(cx - 11, dy - 22, 1, 21, C.g2); N(cx + 10, dy - 22, 1, 21, C.g1); N(cx - 11, dy - 2, 22, 2, C.g3); N(cx - 9, dy - 20, 1, 15, C.wh);
