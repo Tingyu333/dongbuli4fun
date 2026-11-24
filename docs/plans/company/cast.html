@@ -18,11 +18,11 @@ canvas { image-rendering: pixelated; display: block; border-radius: 10px; }
   <div class="col"><h2>平塗</h2><canvas id="b" width="375" height="220"></canvas>
     <div class="names">
       <div>蘋果鴨<small>站在蛋糕架上，翅膀端著一塊蛋糕</small></div>
-      <div>浣熊大王<small>坐在紅絨布墊上，咬金幣驗真假</small></div>
+      <div>浣熊大王<small>坐在紫色絨布墊上，捧著金幣咬</small></div>
       <div>青江菜船長<small>泡在一杯水裡，敬禮</small></div>
       <div>店貓<small>窩在文件盤裡，把筆推下桌</small></div>
       <div>坐洗部的狗<small>坐在洗頭盆裡，頭頂泡泡、搖尾巴</small></div>
-      <div>鼴鼠<small>從筆筒裡鑽出來，頭燈亮著</small></div>
+      <div>鼴鼠<small>從插滿筆的筆筒鑽出來，頭燈亮著</small></div>
     </div>
   </div>
 </div>
@@ -72,7 +72,7 @@ function scene(X, sil) {
       if (col) add.push([i, j, force || col]); }
     add.forEach(([i, j, col]) => L[j * W + i] = col); };
   const blit = (L, maxY = H) => { for (let k = 0; k < W * H; k++) if (L[k] && ((k / W) | 0) < maxY) R(k % W, (k / W) | 0, 1, 1, sil ? C.ink2 : L[k]); };
-  const mk = (cx, by) => { const L = Lay(); return { L,
+  const mk = (cx, by, S = 1.35) => { const L = Lay(); return { L,
     E: (a, b, rx, ry, col, th, only) => lel(L, cx + a * S, by + b * S, rx * S, ry * S, col, th, only),
     PG: (pts, col, only) => lpoly(L, pts.map(([a, b]) => [cx + a * S, by + b * S]), col, only),
     at: (a, b) => [Math.round(cx + a * S), Math.round(by + b * S)] }; };
@@ -95,7 +95,7 @@ function scene(X, sil) {
     N(cx - 9, dy - 2, 18, 1, C.g2); N(cx - 7, dy - 3, 14, 1, C.g4); N(cx - 2, dy - 10, 4, 7, C.g4); N(cx + 1, dy - 10, 1, 7, C.g3);   // 高腳蛋糕架的腳
     N(cx - 23, dy - 13, 46, 1, C.au1); N(cx - 22, dy - 12, 44, 2, C.wh); N(cx - 22, dy - 10, 44, 1, C.g3); N(cx - 18, dy - 9, 36, 1, C.g2);   // 盤子＋金邊
     if (!sil) for (let i = cx - 20; i < cx + 21; i += 4) px(i, dy - 11, C.pk2);
-    const by = dy - 13, { L, E, PG, at } = mk(cx, by);
+    const SA = 1.18, by = dy - 13, { L, E, PG, at } = mk(cx, by, SA);   // 小一號（妹妹：「比別人大一號、黃色很搶眼」）
     E(-3, .3, 2.4, 1, C.o2); E(5, .3, 2.4, 1, C.o2);                                                         // 小腳丫
     E(4, -7, 11, 7, C.y1); E(14, -10, 4, 2, C.y1, -.6); E(16.5, -12.5, 1.8, 1.2, C.y1, -1);                  // 身體、翹尾巴
     E(-5, -18.5, 9, 8.5, C.y1);                                                                             // 頭
@@ -111,7 +111,7 @@ function scene(X, sil) {
     F(L, ex - 5, ey + 4, [[0, 0], [1, 0]], C.pink); F(L, ex + 5, ey + 4, [[0, 0], [1, 0]], C.pink);
     const [fx, fy] = at(-1, -2.5); F(L, fx - 6, fy, [[0, 0], [2, 1], [4, 1], [6, 1], [8, 1], [10, 0]], C.pk2);   // 圍裙的花邊
     blit(L, dy - 12);
-    const Wg = Lay(); { const [a, b] = at(10.5, -15.5); lel(Wg, a, b, 2.4 * S, 6.5 * S, C.y1, -.15); lel(Wg, a + 1, b + 3, 1.4 * S, 3 * S, C.y2, -.15, C.y1); outline(Wg); blit(Wg, dy - 12); }   // 舉起來托盤子的翅膀（另一層、整圈描邊才看得出來）
+    const Wg = Lay(); { const [a, b] = at(10.5, -15.5); lel(Wg, a, b, 2.4 * SA, 6.5 * SA, C.y1, -.15); lel(Wg, a + 1, b + 3, 1.4 * SA, 3 * SA, C.y2, -.15, C.y1); outline(Wg); blit(Wg, dy - 12); }   // 舉起來托盤子的翅膀（另一層、整圈描邊才看得出來）
     // 翅膀上托著的盤子＋蛋糕
     const Kc = Lay(), [kx, ky] = at(11.8, -22.5);
     lel(Kc, kx, ky, 6.5, 1.4, C.wh); lpoly(Kc, [[kx - 4, ky - 1], [kx + 5, ky - 1], [kx + 5, ky - 6]], C.wh); for (let i = kx - 3; i <= kx + 4; i++) lp(Kc, i, ky - 3, C.pk2); lp(Kc, kx + 4, ky - 5, C.pk2);
@@ -159,7 +159,7 @@ function scene(X, sil) {
     F(L, ex - 5, ey - 3, [[0, 0], [1, 1], [2, 1]], C.ink0); F(L, ex + 2, ey - 2, [[0, 0], [1, 0], [2, -1]], C.ink0);   // 生氣的粗眉
     F(L, ex - 1, ey + 6, [[0, 0], [1, 0], [2, 0]], C.ink2);
     blit(L, dy);
-    const Sa = Lay(); { const [a1, b1] = at(6.8, -16.5), [a2, b2] = at(8.5, -20.8); lel(Sa, a1, b1, 1.6, 3.4, C.st, -.45); lel(Sa, a2, b2, 3, 1.6, C.lf, -.55); outline(Sa); lp(Sa, a2 - 1, b2, C.vein); lp(Sa, a2, b2 - 1, C.vein); blit(Sa, dy); }   // 菜梗伸出來的小手，葉子尖碰帽簷敬禮
+    const Sa = Lay(); { const [a1, b1] = at(7, -16.5), [a2, b2] = at(8.2, -21.6); lel(Sa, a1, b1, 2.3, 4.6, C.st, -.4); lel(Sa, a2, b2, 4.6, 2.3, C.lf, -.35); lel(Sa, a2 + 2, b2 - 1, 1.5, 1, C.vein, -.35, C.lf); outline(Sa); lp(Sa, a2 - 1, b2, C.vein); lp(Sa, a2, b2 - 1, C.vein); blit(Sa, dy); }   // 菜梗伸出來的小手，葉子尖碰帽簷敬禮
     // 杯子：水用棋盤格（看得到泡在裡面的菜梗）、水面、杯緣、左邊一道反光
     if (!sil) { for (let j = dy - 16; j < dy - 1; j++) for (let i = cx - 10; i < cx + 10; i++) if ((i + j) % 2 === 0) px(i, j, C.cy2); R(cx - 10, dy - 17, 20, 1, C.cy); [[-5, -6], [3, -11], [-2, -13]].forEach(([a, b]) => px(cx + a, dy + b, C.wh)); }
     N(cx - 11, dy - 22, 1, 21, C.g2); N(cx + 10, dy - 22, 1, 21, C.g1); N(cx - 11, dy - 2, 22, 2, C.g3); N(cx - 9, dy - 20, 1, 15, C.wh);
@@ -220,10 +220,10 @@ function scene(X, sil) {
   }
   // ---- 鼴鼠：從薄荷色筆筒裡鑽出來（插滿筆，不像垃圾桶），小一號的工地帽、頭燈亮著，豆豆眼、粉紅大鼻子 ----
   { const cx = 310, dy = 202;
-    N(cx - 15, dy - 1, 30, 1, C.g3);
-    N(cx - 10, dy - 36, 2, 18, C.au1); N(cx - 10, dy - 38, 2, 2, C.pk2); N(cx - 10, dy - 36, 2, 1, C.g2);   // 鉛筆
-    N(cx + 7, dy - 34, 2, 16, C.b1); N(cx + 7, dy - 35, 2, 1, C.ink0); N(cx + 10, dy - 31, 2, 13, C.red); N(cx + 10, dy - 32, 2, 1, C.ink0);   // 藍筆、紅筆
-    N(cx - 6, dy - 30, 3, 12, C.au2); for (let j = dy - 29; j < dy - 19; j += 2) N(cx - 6, j, 1, 1, C.au0);   // 尺
+    N(cx - 21, dy - 1, 42, 1, C.g3);
+    N(cx - 16, dy - 37, 3, 18, C.au1); N(cx - 16, dy - 37, 1, 18, C.au2); N(cx - 16, dy - 39, 3, 2, C.pk2); N(cx - 16, dy - 37, 3, 1, C.g2);   // 鉛筆（插在左邊，看得到）
+    N(cx - 12, dy - 31, 2, 12, C.red); N(cx - 12, dy - 32, 2, 1, C.ink0);   // 紅筆
+    N(cx + 12, dy - 35, 2, 16, C.b1); N(cx + 12, dy - 36, 2, 1, C.ink0); N(cx + 15, dy - 32, 3, 13, C.au2); for (let j = dy - 31; j < dy - 19; j += 2) N(cx + 17, j, 1, 1, C.au0);   // 藍筆、尺（右邊）
     const by = dy - 24, { L, E, PG, at } = mk(cx, by);
     E(0, -1, 8.5, 8.5, C.br); E(0, 2, 5.5, 3.5, C.brl, 0, C.br); E(4.5, -3, 3.5, 5.5, C.br2, 0, C.br);
     E(0, -10.5, 6.6, 3.2, C.hat, .1); PG([[-8.5, -9.6], [8.5, -8.1], [8.5, -7], [-8.5, -8.5]], C.hat2);   // 小一號的工地帽
@@ -236,8 +236,8 @@ function scene(X, sil) {
     blit(L, dy - 19);
     if (!sil) { for (let k = 2; k < 13; k++) for (let w = -Math.floor(k / 3); w <= Math.floor(k / 3); w++) { const p = lx - k, q = ly - Math.round(k * .5) + w; if ((p + q) % 2 === 0) px(p, q, C.au2); } }
     // 薄荷色陶瓷筆筒、兩條白線
-    N(cx - 11, dy - 19, 22, 18, C.mt); N(cx + 5, dy - 19, 6, 18, C.mt2); N(cx - 12, dy - 20, 24, 1, C.mt0); N(cx - 12, dy - 19, 1, 18, C.mt0); N(cx + 11, dy - 19, 1, 18, C.mt0); N(cx - 11, dy - 2, 22, 1, C.mt0);
-    N(cx - 11, dy - 14, 22, 1, C.wh); N(cx - 11, dy - 7, 22, 1, C.wh); N(cx - 9, dy - 18, 1, 15, C.wh);
+    N(cx - 18, dy - 19, 36, 18, C.mt); N(cx + 10, dy - 19, 8, 18, C.mt2); N(cx - 19, dy - 20, 38, 1, C.mt0); N(cx - 19, dy - 19, 1, 18, C.mt0); N(cx + 18, dy - 19, 1, 18, C.mt0); N(cx - 18, dy - 2, 36, 1, C.mt0);
+    N(cx - 18, dy - 14, 36, 1, C.wh); N(cx - 18, dy - 7, 36, 1, C.wh); N(cx - 16, dy - 18, 1, 15, C.wh);
     const Cl = Lay(); [[-5], [5]].forEach(([a]) => lel(Cl, cx + a, dy - 20, 3, 2, C.br)); outline(Cl);
     [[-5], [5]].forEach(([a]) => { [-2, 0, 2].forEach(d => lp(Cl, cx + a + d, dy - 18, C.mpk)); }); blit(Cl, dy);
   }
