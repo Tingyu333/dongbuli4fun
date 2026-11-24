@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<title>開公司・五種辦公室</title>
+<!-- 2026-11-24 照美術審稿重畫的五種辦公室（office.js），每升一階換一間。 -->
+<script src="../../../assets/xiaodao-door.js"></script>
+<script src="sprites.js"></script>
+<script src="office.js"></script>
+<style>
+  body { margin: 0; background: #e9e4da; font-family: 'Noto Serif TC', serif; color: #4a4a4a; }
+  .wrap { display: grid; grid-template-columns: repeat(3, 375px); gap: 26px 22px; padding: 26px; width: max-content; align-items: start; }
+  .card { background: #fcfaf8; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 26px rgba(0,0,0,.15); }
+  .card canvas { display: block; width: 375px; }
+  .cap { padding: 10px 14px 12px; font-size: 14px; letter-spacing: .2em; color: #2c2c2c; }
+  .cap small { display: block; font-family: 'Noto Sans TC', sans-serif; font-size: 11px; letter-spacing: .06em; color: #8e8070; margin-top: 3px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrap" id="w"></div>
+<script>
+  const L = [
+    ['車庫創業', '鐵捲門半開，外面是巷口和電線桿；工具釘板、白板「營收 $0」、機車、電風扇、泡麵、油漬、延長線', [{ g: 'julie' }, { g: 'xiaowu' }, { g: 'nugget' }], true],
+    ['小辦公室', '對面老公寓的鐵窗、冷氣機上的鴿子；軟木委託板、影印機、飲水機', [{ n: 'frog' }, { g: 'julie' }, { n: 'hamster', c: 1 }, { n: 'sparrow' }]],
+    ['整層樓', '一整排窗看到樓頂水塔和遠山；隔板座位、茶水間（冰箱、咖啡機）、玻璃會議室、便利貼白板', [{ g: 'xiaowu' }, { n: 'rabbit' }, { g: 'raccoon' }, { n: 'squirrel' }]],
+    ['二十七樓整層', '落地窗外的天際線（晚上換首頁的 27 樓夜景）；公司 logo 牆、獎盃櫃、股價大螢幕、會客沙發', [{ g: 'appleduck' }, { g: 'captain' }, { n: 'turtle' }, { g: 'cat' }]],
+    ['自己的大樓', '開羅式剖面：樓頂招牌、電梯、一樓大廳警衛；窗外有雲，遠方是小島和貨運船', [{ g: 'julie' }, { g: 'mole' }, { n: 'pigeon', c: 1 }, { g: 'dog' }, { n: 'hedgehog' }]],
+  ];
+  const w = document.getElementById('w');
+  L.forEach(([name, desc, ppl, sleep], i) => { const d = document.createElement('div'); d.className = 'card'; const c = document.createElement('canvas'); d.appendChild(c); d.insertAdjacentHTML('beforeend', `<div class="cap">${['壹', '貳', '參', '肆', '伍'][i]}・${name}<small>${desc}</small></div>`); w.appendChild(d); drawOffice(c, i, ppl, { sleep }); });
+</script>
+</body>
+</html>

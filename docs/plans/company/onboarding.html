@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<title>開公司・第一次進來</title>
+<!-- 2026-11-24 照審稿意見畫的第一次進來（新進玩家、介面、文案都提）：開場三張紙條 → 取公司名字 → 送一個試用期員工、雞塊敲門帶 30 秒教學案 → 第一張結案單、印名片、去應徵；另外一張是離線回來的「你不在的時候」。 -->
+<link rel="stylesheet" href="../../../assets/theme.css">
+<script src="../../../assets/xiaodao-door.js"></script>
+<script src="sprites.js"></script>
+<script src="office.js"></script>
+<style>
+  body { margin: 0; background: #e9e4da; font-family: 'Noto Serif TC', serif; color: #4a4a4a; }
+  .wrap { display: flex; gap: 22px; padding: 26px; align-items: flex-start; width: max-content; }
+  .phone { width: 375px; height: 760px; background: #fcfaf8; border-radius: 26px; overflow: hidden; position: relative; box-shadow: 0 12px 30px rgba(0,0,0,.18); display: flex; flex-direction: column; }
+  .cap { text-align: center; font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: .2em; color: #8e8070; margin-top: 10px; }
+  .top { padding: 18px 18px 10px; display: flex; align-items: center; justify-content: space-between; }
+  .top .back { font-family: 'Noto Sans TC', sans-serif; font-size: 13px; color: #8e8070; letter-spacing: .1em; }
+  .top h1 { margin: 0; font-weight: 400; font-size: 19px; letter-spacing: .35em; color: #2c2c2c; }
+  .top .money { font-family: 'Noto Sans TC', sans-serif; color: #2c2c2c; font-size: 13px; text-align: right; line-height: 1.25; } .top .money small { display: block; font-size: 10px; color: #8e8070; letter-spacing: .1em; }
+  canvas.office { display: block; width: 375px; }
+  .btn { min-height: 44px; font-family: 'Noto Sans TC', sans-serif; font-size: 13px; letter-spacing: .2em; padding: 8px 14px; border-radius: 4px; border: 1px solid #2c2c2c; background: transparent; color: #2c2c2c; }
+  .btn.main { background: #2c2c2c; color: #fcfaf8; } .btn.shu { background: #b33a2f; border-color: #b33a2f; color: #fff6ea; }
+  .skip { position: absolute; right: 18px; top: 22px; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; color: #b9ad99; letter-spacing: .15em; }
+  .paper { background: #fbf6ea; box-shadow: 0 6px 18px rgba(0,0,0,.18); padding: 16px 16px 14px; position: relative; }
+  .paper .from { font-family: 'Noto Sans TC', sans-serif; font-size: 11px; color: #8e8070; letter-spacing: .2em; }
+  .paper p { margin: 6px 0 0; font-size: 14.5px; line-height: 1.9; letter-spacing: .06em; color: #2c2c2c; }
+  .paper .seal { position: absolute; right: 14px; bottom: 12px; border: 1.5px solid #b33a2f; color: #b33a2f; font-size: 12px; padding: 2px 6px; transform: rotate(-8deg); letter-spacing: .1em; }
+  .dots3 { display: flex; gap: 6px; justify-content: center; margin-top: 14px; } .dots3 i { width: 6px; height: 6px; border-radius: 50%; background: #d9d1c3; } .dots3 i.on { background: #2c2c2c; }
+  .np1 { display: inline-flex; font-family: 'Noto Serif TC', serif; font-size: 15px; letter-spacing: .28em; padding: 6px 12px 6px 14px; background: #f6f1e6; color: #6b6052; border: 1px solid #cfc6b6; }
+  .field { border: 0; border-bottom: 1px solid #2c2c2c; width: 100%; font-family: 'Noto Serif TC', serif; font-size: 18px; padding: 8px 0; letter-spacing: .12em; background: transparent; color: #2c2c2c; outline: none; }
+  .hint { font-family: 'Noto Sans TC', sans-serif; font-size: 11.5px; color: #8e8070; letter-spacing: .06em; line-height: 1.7; }
+  .sugg { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; } .sugg span { font-family: 'Noto Sans TC', sans-serif; font-size: 11.5px; border: 1px solid #d9d1c3; padding: 4px 10px; border-radius: 999px; color: #6b6052; }
+  .bubble { position: absolute; background: #2c2c2c; color: #fcfaf8; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; letter-spacing: .08em; padding: 8px 12px; border-radius: 6px; line-height: 1.6; box-shadow: 0 4px 10px rgba(0,0,0,.25); }
+  .bubble::after { content: ''; position: absolute; left: 24px; top: -6px; border: 6px solid transparent; border-top: 0; border-bottom-color: #2c2c2c; }
+  .note { background: #fbf6ea; padding: 10px 12px; box-shadow: 0 2px 5px rgba(0,0,0,.25); position: relative; font-family: 'Noto Sans TC', sans-serif; font-size: 12px; transform: rotate(-.8deg); }
+  .note::before { content: ''; position: absolute; top: -4px; left: 50%; width: 9px; height: 9px; margin-left: -4px; border-radius: 50%; background: #b33a2f; }
+  .note b { font-family: 'Noto Serif TC', serif; font-weight: 500; font-size: 14px; color: #2c2c2c; } .note .pay { position: absolute; right: 12px; top: 10px; color: #b33a2f; font-size: 14px; }
+  .note .meta { color: #8e8070; margin-top: 4px; }
+  .ring { box-shadow: 0 0 0 3px #fcfaf8, 0 0 0 5px #b33a2f; }
+  .board { background: #c9a97a; background-image: radial-gradient(rgba(0,0,0,.06) 1px, transparent 1px); background-size: 6px 6px; margin: 0 14px; padding: 16px 10px; border-radius: 6px; box-shadow: inset 0 0 0 4px #8a6a42; }
+  .dim { position: absolute; inset: 0; background: rgba(28,24,20,.45); }
+  .receipt { position: absolute; left: 22px; right: 22px; background: #fbf6ea; padding: 18px; box-shadow: 0 12px 30px rgba(0,0,0,.4); font-family: 'Noto Sans TC', sans-serif; font-size: 12.5px; }
+  .receipt h3 { margin: 0; font-family: 'Noto Serif TC', serif; font-weight: 400; font-size: 17px; letter-spacing: .3em; color: #2c2c2c; text-align: center; }
+  .receipt .t { text-align: center; color: #8e8070; font-size: 11.5px; margin: 4px 0 10px; }
+  .receipt table { width: 100%; border-collapse: collapse; } .receipt td { padding: 5px 0; } .receipt td:last-child { text-align: right; }
+  .receipt tr.sum td { border-top: 1px solid #2c2c2c; padding-top: 8px; font-size: 15px; color: #2c2c2c; } .receipt tr.sum td:last-child { color: #b33a2f; }
+  .receipt .q { margin-top: 10px; padding: 8px 10px; background: #fff; border-left: 2px solid #8e8070; font-family: 'Noto Serif TC', serif; font-size: 13px; line-height: 1.7; }
+  .receipt .stamp { position: absolute; right: 16px; top: 14px; border: 2px solid #b33a2f; color: #b33a2f; font-family: 'Noto Serif TC', serif; font-size: 13px; padding: 3px 6px; transform: rotate(10deg); letter-spacing: .15em; }
+  .card { display: flex; gap: 10px; align-items: center; margin-top: 12px; padding: 10px; border: 1px dashed #cfc6b6; }
+  .away { position: absolute; left: 18px; right: 18px; top: 150px; background: #fbf6ea; padding: 18px; box-shadow: 0 12px 30px rgba(0,0,0,.4); font-family: 'Noto Sans TC', sans-serif; font-size: 12.5px; }
+  .away h3 { margin: 0 0 2px; font-family: 'Noto Serif TC', serif; font-weight: 400; font-size: 17px; letter-spacing: .25em; color: #2c2c2c; }
+  .away .t { color: #8e8070; font-size: 11.5px; letter-spacing: .06em; }
+  .away ul { list-style: none; margin: 12px 0 0; padding: 0; } .away li { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px dotted #d9d1c3; letter-spacing: .04em; } .away li b { font-weight: 500; color: #2c2c2c; }
+  .away .star { display: inline-block; width: 14px; height: 14px; vertical-align: -2px; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 1.8l3.1 6.6 7.1.8-5.3 4.9 1.5 7.1L12 17.6l-6.4 3.6 1.5-7.1-5.3-4.9 7.1-.8z' fill='%23e2b44a' stroke='%237a5a14' stroke-width='1.2'/></svg>") center / contain no-repeat; }
+  .away .say { margin-top: 12px; padding: 8px 10px; background: #fff; border-left: 2px solid #8e8070; font-family: 'Noto Serif TC', serif; font-size: 13px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 1 開場三張紙條 -->
+  <div><div class="phone" style="background:#2c241e">
+    <span class="skip">略過</span>
+    <div style="padding:90px 26px 0;display:flex;flex-direction:column;gap:-10px">
+      <div class="paper" style="transform:rotate(-2deg)"><div class="from">許願池的回信</div><p>「創一家公司，讓我當執行長。」<br>准了。<br>但執行長自己出錢。</p><span class="seal">准</span></div>
+      <div class="paper" style="transform:rotate(1.5deg);margin-top:-18px;opacity:.96"><div class="from">茱莉鴨留在門口的紙條</div><p>車庫借你。<br>條件是，下午兩點到四點不要吵我。</p></div>
+      <div class="paper" style="transform:rotate(-.6deg);margin-top:-14px"><div class="from">咚、咚、咚</div><p>雞塊站在鐵捲門外面，手裡拿著一張紙：<br>「聽說這裡開了公司？我有一件小事想拜託。」</p></div>
+    </div>
+    <div class="dots3"><i></i><i></i><i class="on"></i></div>
+    <div style="margin-top:auto;padding:0 26px 30px"><button class="btn main" style="width:100%;background:#fbf6ea;color:#2c2c2c;border-color:#fbf6ea">開門</button></div>
+  </div><div class="cap">一・開場三張紙條（可以略過）</div></div>
+
+  <!-- 2 取名字 -->
+  <div><div class="phone">
+    <div class="top"><span class="back"></span><h1>公司・開</h1><span></span></div>
+    <canvas class="office" id="o1"></canvas>
+    <div style="padding:18px 22px 0">
+      <div class="hint">先幫公司取個名字（最多 12 個字，之後可以改一次）</div>
+      <input class="field" value="丼步喱設計社" readonly>
+      <div style="display:flex;justify-content:space-between" class="hint"><span>名片和排行榜都會寫這個</span><span>6／12</span></div>
+      <div class="sugg"><span>換一個：二十七樓萬事屋</span><span>午睡設計所</span><span>不要沾醬有限公司</span></div>
+      <div style="margin-top:16px;display:flex;align-items:center;gap:10px"><span class="np1">車庫創業</span><span class="hint">你的第一張名片：<br>丼步喱設計社・創始執行長</span></div>
+    </div>
+    <div style="margin-top:auto;padding:0 22px 26px"><button class="btn main" style="width:100%">就叫這個</button></div>
+  </div><div class="cap">二・取公司名字（12 字）</div></div>
+
+  <!-- 3 教學案 -->
+  <div><div class="phone">
+    <div class="top"><span class="back"></span><h1>委託板</h1><span class="money"><small>公司帳戶</small>$0</span></div>
+    <div style="padding:0 18px 10px" class="hint">送你一位試用期的員工：<b style="color:#2c2c2c;font-weight:500">倉鼠・小麥</b>（簽約金免了，薪水照抽）</div>
+    <div class="board">
+      <div class="note ring"><span class="pay">$70</span><b>〈「不要沾醬」識別標誌〉</b><div class="meta">雞塊・30 秒・1 人・一定做得好</div></div>
+      <div style="height:70px"></div>
+    </div>
+    <div class="bubble" style="left:30px;top:190px">點這張紙條，派小麥去做。<br>30 秒就好，這次一定成功。</div>
+    <canvas id="nug" style="position:absolute;left:30px;top:330px;width:120px;height:120px;image-rendering:pixelated"></canvas>
+    <div class="hint" style="position:absolute;left:160px;right:24px;top:360px;font-size:13px;font-family:'Noto Serif TC',serif;color:#2c2c2c">雞塊：「讓客人一眼看懂我不要沾醬。」</div>
+  </div><div class="cap">三・送一位員工、雞塊的 30 秒教學案</div></div>
+
+  <!-- 4 第一張結案單 -->
+  <div><div class="phone">
+    <div class="top"><span class="back">← 會員</span><h1>公司・開</h1><span class="money"><small>公司帳戶</small>$49</span></div>
+    <canvas class="office" id="o2"></canvas>
+    <div class="dim"></div>
+    <div class="receipt" style="top:150px"><span class="stamp">結案</span>
+      <h3>第一張結案單</h3><div class="t">〈「不要沾醬」識別標誌〉・雞塊</div>
+      <table><tr><td>案子</td><td>$70</td></tr><tr><td>薪水（小麥抽三成）</td><td>−$21</td></tr><tr class="sum"><td>入帳公司帳戶</td><td>$49</td></tr></table>
+      <div class="q">雞塊：「看得懂！以後有案子都找你。」</div>
+      <div class="card"><span class="np1" style="font-size:13px">車庫創業</span><span class="hint" style="color:#2c2c2c">名片印好了<br><span style="color:#8e8070">丼步喱設計社・創始執行長</span></span></div>
+      <div class="hint" style="margin-top:12px">下一步：委託板會開始貼新的案子。人手不夠的話，去「員工」看看應徵的人。</div>
+      <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" style="flex:1">去看應徵的人</button><button class="btn main" style="flex:1">收下</button></div>
+    </div>
+  </div><div class="cap">四・第一張結案單、印好名片、下一步</div></div>
+
+  <!-- 5 離線回來 -->
+  <div><div class="phone">
+    <div class="top"><span class="back">← 會員</span><h1>公司・開</h1><span class="money"><small>公司帳戶</small>$57,300</span></div>
+    <canvas class="office" id="o3"></canvas>
+    <div class="dim"></div>
+    <div class="away">
+      <h3>你不在的時候</h3><div class="t">昨天 22:41 到今天 08:03，9 小時 22 分</div>
+      <ul>
+        <li><span>做完的案子</span><b>3 件・$24,180</b></li>
+        <li><span>做砸的</span><b>0 件</b></li>
+        <li><span>員工</span><b>茱莉鴨升到 Lv.5</b></li>
+        <li><span>委託板</span><b>貼了 4 張新的（1 張特好賺）</b></li>
+        <li><span>應徵的人</span><b>換了一批，有一位 <span class="star"></span></b></li>
+      </ul>
+      <div class="say">小吳鴨：「昨天的大案交了。浣熊大王說還要再閃一點。」</div>
+      <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" style="flex:1">先看應徵的人</button><button class="btn shu" style="flex:1.3;letter-spacing:.08em">全部收款 $24,180</button></div>
+    </div>
+  </div><div class="cap">五・離線回來的「你不在的時候」</div></div>
+
+</div>
+<script>
+  drawOffice(document.getElementById('o1'), 0, []);
+  drawOffice(document.getElementById('o2'), 0, [{ n: 'hamster', c: 0 }]);
+  drawOffice(document.getElementById('o3'), 0, [{ g: 'julie' }, { g: 'xiaowu' }, { n: 'frog' }]);
+  const c = document.getElementById('nug'); c.width = c.height = 132; const x = c.getContext('2d'); x.setTransform(6, 0, 0, 6, 0, 0); XiaodaoDoor.guest(x, 'nugget', 11, 19.5);
+</script>
+</body>
+</html>
