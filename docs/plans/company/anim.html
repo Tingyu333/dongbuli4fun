@@ -85,10 +85,10 @@ let x = bgc.getContext('2d');
     for (let j = Math.floor(cy - m); j <= cy + m; j++) for (let i = Math.floor(cx - m); i <= cx + m; i++) { const dx = i + .5 - cx, dy = j + .5 - cy, u = (dx * cs + dy * sn) / rx, v = (-dx * sn + dy * cs) / ry;
       if (u * u + v * v <= 1 && i >= 0 && j >= 0 && i < W && j < H && (!only || L[j * W + i] === only)) L[j * W + i] = col; } };
   const OLC = { [C.wh]: C.g2, [C.g4]: C.g2, [C.o2]: C.o0, [C.o1]: C.o0, [C.o3]: C.o0, [C.k1]: C.ink0, [C.kh]: C.ink0, [C.g3]: C.g1 };
-  const outline = L => { const add = [];
+  const outline = (L, force) => { const add = [];
     for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { if (L[j * W + i]) continue; let col = null;
       for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) { const ni = i + dx, nj = j + dy; if (ni < 0 || nj < 0 || ni >= W || nj >= H) continue; const n = L[nj * W + ni]; if (n) { col = OLC[n] || C.ink2; if (dy === -1) break; } }
-      if (col) add.push([i, j, col]); }
+      if (col) add.push([i, j, force || col]); }
     add.forEach(([i, j, col]) => L[j * W + i] = col); };
   const blitL = (L, maxY = H) => { for (let k = 0; k < W * H; k++) if (L[k] && ((k / W) | 0) < maxY) px(k % W, (k / W) | 0, L[k]); };
   const deskBase = cx => {
@@ -130,7 +130,7 @@ function chars(t) {
 
   // ---- 茱莉鴨：泡泡慢慢吹大 → 啵 → 整隻彈一下、眼睛變圓點、愣一秒 → 慢慢睡回去（不會真的醒） ----
   { const POP = 3.0, since = tt - POP;
-    const startled = since >= 0 && since < 1.1, drowsy = since >= 1.1 && since < 1.6, gone = since >= 0 && since < 1.6;
+    const startled = since >= 0 && since < 1.2, drowsy = since >= 1.2 && since < 1.9, gone = since >= 0 && since < 1.9;
     const hop = since >= 0 && since < .32 ? Math.round(Math.sin(since / .32 * Math.PI) * 3) : 0;
     const br = gone ? 0 : (Math.sin(tt * Math.PI) + 1) / 2;   // 睡覺呼吸，2 秒一次
     const by = DY - 7 - hop, cx = 74, L = Lay(), E = (a, b, rx, ry, col, th, only) => lel(L, cx + a * S, by + b * S, rx * S, ry * S, col, th, only);
@@ -146,7 +146,8 @@ function chars(t) {
     const hx = cx - 6 * S, hy = by - 10 * S;
     [[-7, 2], [0, -1]].forEach(([a, b]) => { const ex = Math.round(hx + a), ey = Math.round(hy + b);
       if (startled) { lp(L, ex + 1, ey - 1, C.ink0); lp(L, ex + 2, ey - 1, C.ink0); lp(L, ex + 1, ey, C.ink0); lp(L, ex + 2, ey, C.ink0); }   // 眼睛變兩顆圓點
-      else if (drowsy) { lp(L, ex, ey, C.ink2); lp(L, ex + 1, ey, C.ink2); lp(L, ex + 2, ey, C.ink2); lp(L, ex + 3, ey, C.ink2); }          // 眼皮慢慢闔上
+      else if (drowsy && since < 1.55) { lp(L, ex, ey, C.ink2); lp(L, ex + 1, ey, C.ink2); lp(L, ex + 2, ey, C.ink2); lp(L, ex + 3, ey, C.ink2); lp(L, ex + 1, ey + 1, C.ink0); lp(L, ex + 2, ey + 1, C.ink0); }   // 半睜半閉
+      else if (drowsy) { lp(L, ex, ey, C.ink2); lp(L, ex + 1, ey, C.ink2); lp(L, ex + 2, ey, C.ink2); lp(L, ex + 3, ey, C.ink2); }          // 瞇成一條線
       else { lp(L, ex, ey, C.ink2); lp(L, ex + 1, ey + 1, C.ink2); lp(L, ex + 2, ey + 1, C.ink2); lp(L, ex + 3, ey, C.ink2); } });
     [[-7, 5], [1, 2]].forEach(([a, b]) => { lp(L, hx + a, hy + b, C.pk2); lp(L, hx + a + 1, hy + b, C.pk2); });
     for (let k = 0; k < 3; k++) lp(L, cx - 16 + k * 3, by - 3, C.g3);
@@ -155,7 +156,7 @@ function chars(t) {
     blitL(L, DY - 7);
     const qx = Math.round(cx - 27 * S), qy = Math.round(DY - 7 - 12 * S);
     if (!gone) {   // 泡泡：破掉 1.6 秒後重新吹，吹 6.4 秒
-      const ph = ((tt - (POP + 1.6)) % LOOP + LOOP) % LOOP / (LOOP - 1.6), r = .8 + 3.2 * ph + br * .35, cxq = qx + Math.round(2 - 2 * ph);
+      const ph = ((tt - (POP + 1.9)) % LOOP + LOOP) % LOOP / (LOOP - 1.9), r = .8 + 3.2 * ph + br * .35, cxq = qx + Math.round(2 - 2 * ph);
       if (r > 1.4) { for (let k = 0; k < 32; k++) { const a = k / 32 * Math.PI * 2; px(Math.round(cxq + Math.cos(a) * r), Math.round(qy + Math.sin(a) * r), C.cy); }
         el(cxq, qy, r - .6, r - .6, C.cy2); if (r > 2.4) { px(cxq - Math.round(r * .5), qy - Math.round(r * .5), C.wh); px(cxq - Math.round(r * .5) + 1, qy - Math.round(r * .5), C.wh); } }
       else px(cxq, qy, C.cy);
@@ -165,12 +166,18 @@ function chars(t) {
     }
     if (!gone) {   // Z：一個一個往上飄
       for (let k = 0; k < 3; k++) { const p = (tt * .4 + k / 3) % 1, s = p < .33 ? 1 : p < .66 ? 1.34 : 1.67; Zp(Math.round(cx - 6 + p * 14), Math.round(DY - 34 - p * 30), s); }
-    } else if (startled) { R(cx - 10, DY - 47, 1, 4, C.cy0); px(cx - 10, DY - 42, C.cy0); }   // 驚嚇的「！」
+    } else if (startled) {
+      const hx = cx - 9, hy = DY - 7 - hop - 34;
+      if (since < .45) { R(hx, hy, 1, 4, C.cy0); px(hx, hy + 5, C.cy0); R(hx + 1, hy, 1, 4, C.cy0); px(hx + 1, hy + 5, C.cy0); }   // 「！」
+      else { [[0, 0], [1, 0], [2, 0], [3, 1], [3, 2], [2, 3], [1, 4], [1, 5], [1, 7]].forEach(([a, b]) => px(hx - 1 + a, hy - 1 + b, C.cy0)); }   // 然後變成「？」
+      const sy = Math.round(by - 21 * S + Math.min(4, (since - .2) * 6)); if (since > .2) { px(cx + 1, sy, C.cy); R(cx, sy + 1, 3, 2, C.cy); px(cx + 1, sy + 3, C.cy); px(cx, sy + 1, C.cy2); }   // 一滴汗滑下來
+    }
+    if (drowsy && since > 1.55) Zp(cx - 4, DY - 36, 1);   // 第一個 Z 先冒出來
   }
 
   // ---- 小吳鴨：一直盯著螢幕看（眼睛左右掃），5 秒時用翅膀尖推眼鏡，鏡片閃一下 ----
   { const pp = tt - 5.0, w = pp < 0 || pp > .95 ? 0 : pp < .25 ? ease(pp / .25) : pp < .65 ? 1 : ease(1 - (pp - .65) / .3);
-    const gy = pp > .3 && pp < .7 ? -1 : 0, glint = pp > .42 && pp < .78;
+    const gy = pp > .28 && pp < .45 ? -1 : pp >= .45 && pp < .75 ? -2 : pp >= .75 && pp < .85 ? -1 : 0, glint = pp > .42 && pp < .82;
     const by = DY - 9, cx = 176, L = Lay(), E = (a, b, rx, ry, col, th, only) => lel(L, cx + a * S, by + b * S, rx * S, ry * S, col, th, only);
     E(-2, -9, 10, 9, C.k1, .35); E(7, -21, 10, 9.5, C.k1); E(-11, -13, 4, 2, C.k1, .7);
     if (w < .05) E(12, -3, 4.5, 2.2, C.k1, -.2);
@@ -184,7 +191,7 @@ function chars(t) {
     const lens = (lx, ly) => { lel(L, lx, ly, 3, 3, C.wh); for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2; lp(L, lx - .5 + Math.cos(a) * 3.4, ly - .5 + Math.sin(a) * 3.4, C.au1); }
       const ex = lx + look; lp(L, ex, ly - 1 - gy, C.ink0); lp(L, ex + 1, ly - 1 - gy, C.ink0); lp(L, ex, ly - gy, C.ink0); lp(L, ex + 1, ly - gy, C.ink0); };
     const ly = Math.round(by - 21 * S) + gy; lens(Math.round(cx + 6 * S), ly); lens(Math.round(cx + 13 * S), ly); lp(L, Math.round(cx + 9.5 * S), ly - 1, C.au1);
-    if (glint) { const gx = Math.round(cx + 13 * S); [[-2, 1], [-1, 0], [0, -1], [1, -2]].forEach(([a, b]) => lp(L, gx + a, ly + b, C.wh)); }
+    if (glint) { const gx = Math.round(cx + 13 * S); [[-2, 1], [-1, 0], [0, -1], [1, -2], [-1, 1], [0, 0], [1, -1]].forEach(([a, b]) => lp(L, gx + a, ly + b, C.wh)); }
     const kx = Math.round(cx + 4), ky = Math.round(by - 15);
     [[0, 0], [1, 1], [2, 2], [10, 0], [9, 1], [8, 2]].forEach(([a, b]) => lp(L, kx + a, ky + b, C.b1));
     for (let j = 0; j < 10; j++) for (let i = 0; i < 9; i++) lp(L, kx + 1 + i, ky + 3 + j, j === 0 ? C.b1 : (i === 0 || j === 9 || i === 8) ? C.g3 : C.wh);
@@ -192,9 +199,9 @@ function chars(t) {
     [[6, 5, 2], [6, 7, 2], [2, 10, 6]].forEach(([a, b, wd]) => { for (let i = 0; i < wd; i++) lp(L, kx + a + i, ky + b, C.g2); });
     blitL(L, by);
     if (w >= .05) {   // 舉起來的翅膀另外一層，疊在臉前面才看得到
-      const Wg = Lay(); lel(Wg, cx + (12 + 2 * w) * S, by + (-3 - 13 * w) * S, 4.5 * S, 2.2 * S, C.k1, -.2 - w * 1.0); outline(Wg); blitL(Wg, by);
+      const Wg = Lay(); lel(Wg, cx + (12 + 2 * w) * S, by + (-3 - 13 * w) * S, 4.5 * S, 2.2 * S, C.k1, -.2 - w * 1.0); lel(Wg, cx + (11 + 2 * w) * S, by + (-4.2 - 13 * w) * S, 3 * S, .9 * S, C.kh, -.2 - w * 1.0, C.k1); outline(Wg, C.g1); blitL(Wg, by);   // 翅膀邊緣淺一點，疊在黑臉上才看得到
     }
-    if (glint) { const gx = Math.round(cx + 13 * S) + 4, gy2 = ly - 5; px(gx, gy2, C.wh); px(gx - 1, gy2, C.cy2); px(gx + 1, gy2, C.cy2); px(gx, gy2 - 1, C.cy2); px(gx, gy2 + 1, C.cy2); }
+    if (glint && pp > .5) { const gx = Math.round(cx + 13 * S) + 5, gy2 = ly - 6, r = pp < .66 ? 3 : 2; R(gx - 1, gy2 - 1, 3, 3, C.wh); for (let k = 2; k <= r; k++) { px(gx - k, gy2, C.wh); px(gx + k, gy2, C.wh); px(gx, gy2 - k, C.wh); px(gx, gy2 + k, C.wh); } px(gx - r - 1, gy2, C.cy2); px(gx + r + 1, gy2, C.cy2); px(gx, gy2 - r - 1, C.cy2); px(gx, gy2 + r + 1, C.cy2); }   // 清楚的白色小星星
     // 全息螢幕＋往下掃的掃描線
     const sx = cx + 32, sy = by - 44, sw = 22, sh = 17;
     R(sx + 8, DY - 4, 7, 2, C.ink2); px(sx + 10, DY - 5, C.cy2); px(sx + 11, DY - 5, C.cy2);
@@ -233,7 +240,7 @@ function chars(t) {
     if (wv > .3) [[-9, -2], [-10, -1], [-10, 0], [-10, 1], [-9, 2]].forEach(([a, b]) => px(hx + a, hy + b, C.o1));
     if (wv > .6) [[-12, -3], [-13, -2], [-13, -1], [-13, 0], [-13, 1], [-13, 2], [-12, 3]].forEach(([a, b]) => px(hx + a, hy + b, C.o1));
     boxFront(cx);
-    if (jp >= .5 && jp < .9) { const d = Math.round((jp - .5) * 20); [[-24 - d, -2], [24 + d, -2], [-22 - d, -5], [22 + d, -5]].forEach(([a, b]) => px(cx + a, DY + b, C.warm)); }   // 落地彈出麵衣屑
+    if (jp >= .5 && jp < 1.1) { const q = (jp - .5) / .6; [[-1, 14, 9], [1, 15, 8], [-1, 9, 12], [1, 10, 11]].forEach(([dir, vx, vy]) => { const a = Math.round(cx + dir * (16 + vx * q)), b = Math.round(DY - 13 - vy * q + 26 * q * q); if (b < DY - 1) { R(a, b, 2, 2, C.warm); px(a + 1, b + 1, C.o1); } }); }   // 落地噴出兩三顆麵衣屑，畫弧掉到桌上
   }
 }
 
