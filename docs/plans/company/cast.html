@@ -129,7 +129,8 @@ function scene(X, sil) {
     [[-15, 0], [-15, -2], [-15, -4], [-11, 0], [14, 0], [14, -2], [10, 0], [-4, 0], [3, 0], [-7, -1.5], [7, -1.5], [0, -1.5]].forEach(([a, b]) => coin(cx + a, dy - 8 + b));
     if (!sil) [[-19, -17], [18, -14]].forEach(([a, b]) => { px(cx + a, dy + b, C.wh); px(cx + a - 1, dy + b, C.au2); px(cx + a + 1, dy + b, C.au2); px(cx + a, dy + b - 1, C.au2); px(cx + a, dy + b + 1, C.au2); });
     const by = dy - 10, { L, E, PG, at } = mk(cx, by);
-    E(11, -9, 3.6, 7.5, C.rw, -.45); [[12.6, -13], [11, -9], [9.4, -5.2]].forEach(([a, b]) => E(a, b, 1.6, 4, C.mask, -.45 + 1.57, C.rw)); E(12.8, -15.5, 2.2, 2, C.mask, 0, C.rw);   // 蓬蓬的條紋尾巴往上翹
+    { const Tl = Lay(); const tp = t => at(9 + t * 10, -1 - t * 19 + t * t * 4); for (let k = 0; k <= 24; k++) { const t = k / 24, [p, q] = tp(t); lel(Tl, p, q, (3.2 - t * .7) * S, (3.2 - t * .7) * S, C.rw); }
+      [.52, .7, .88].forEach(t => { const [p, q] = tp(t), ang = Math.atan2(-19 + 8 * t, 10); lel(Tl, p, q, .9 * S, 4 * S, C.mask, ang, C.rw); }); { const [p, q] = tp(1.02); lel(Tl, p, q, 2 * S, 2 * S, C.mask, 0, C.rw); } outline(Tl); blit(Tl, dy); }   // 灰黑條紋的蓬蓬尾巴，從屁股旁邊翹出來（另一層，畫在身體後面）
     E(0, -4.5, 11, 6, C.cape); E(5, -2, 5, 3.5, C.cape2, 0, C.cape);                                       // 整件紅披風
     E(0, -3.6, 8.5, 4.8, C.rw); E(0, -3, 5.2, 3.2, C.fur, 0, C.rw);                                         // 矮矮圓圓的肚子
     E(-4, .3, 2.5, 1.5, C.rw); E(4, .3, 2.5, 1.5, C.rw);                                                     // 兩隻小腳
@@ -148,13 +149,13 @@ function scene(X, sil) {
     [[-4.6, -19.2], [4.6, -19.2]].forEach(([a, b]) => { const [p, q] = at(a, b); F(L, p - 2, q + 1, [[0, 0], [1, -1], [2, -2], [3, -1], [4, 0]], C.wh); });   // 大大的 ^ ^ 得意眼
     const [ex, ey] = at(0, -16);
     F(L, ex - 1, ey + 1, [[0, 0], [1, 0]], C.ink0);
-    F(L, ex - 3, ey + 4, [[0, 0], [1, 0], [2, 0], [3, -1], [4, -1]], C.ink2); F(L, ex + 1, ey + 5, [[0, 0]], C.wh);   // 斜斜的壞笑、一顆門牙
+    F(L, ex - 3, ey + 3, [[0, 0], [1, 1], [2, 1], [3, 1], [4, 0], [5, -1]], C.ink2); F(L, ex + 1, ey + 5, [[0, 0]], C.wh);   // 嘴角往上斜的壞笑、一顆門牙
     F(L, ex - 8, ey + 2, [[0, 0], [1, 0]], C.pk2); F(L, ex + 7, ey + 2, [[0, 0], [1, 0]], C.pk2);
     blit(L, dy);
     const Cn = Lay(), [kx, ky] = at(4.8, -13.2);                                                             // 咬在嘴角的金幣
     lel(Cn, kx, ky, 2.6, 3.2, C.au1, .3); outline(Cn); lel(Cn, kx, ky, 1.3, 1.8, C.au2, .3, C.au1); lp(Cn, kx - 1, ky - 2, C.wh); blit(Cn, dy);
     const Th = Lay(), [tx, ty] = at(-11.5, -9);                                                              // 舉到肩膀旁邊比讚
-    lel(Th, tx, ty, 2.8, 2.5, C.rw); lel(Th, tx + .3, ty - 4, 1.4, 2.6, C.rw, -.15); outline(Th); blit(Th, dy);
+    lel(Th, tx, ty, 3, 2.2, C.rw); lel(Th, tx - .5, ty - 4.5, 1.2, 2.8, C.rw); outline(Th); lp(Th, tx - 1, ty - 7, C.wh); for (let i = -3; i <= 2; i++) lp(Th, tx + i, ty - 1, C.rw2); blit(Th, dy);   // 拳頭橫的、大拇指直直往上
     if (!sil) { const sx = kx + 5, sy = ky - 4; px(sx, sy, C.wh); px(sx - 1, sy, C.au2); px(sx + 1, sy, C.au2); px(sx, sy - 1, C.au2); px(sx, sy + 1, C.au2); }
   }
   // ---- 青江菜船長：泡在一杯水裡，一片葉子舉到帽簷敬禮，生氣的粗眉 ----
