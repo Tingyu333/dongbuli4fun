@@ -18,7 +18,7 @@ canvas { image-rendering: pixelated; display: block; border-radius: 10px; }
   <div class="col"><h2>平塗</h2><canvas id="b" width="375" height="220"></canvas>
     <div class="names">
       <div>蘋果鴨<small>站在蛋糕架上，翅膀端著一塊蛋糕</small></div>
-      <div>浣熊大王<small>坐在一堆金幣上，咬著金幣比讚</small></div>
+      <div>浣熊大王<small>坐在一堆金幣上，舉金幣炫耀</small></div>
       <div>青江菜船長<small>泡在一杯水裡，敬禮</small></div>
       <div>店貓<small>窩在文件盤裡，把筆推下桌</small></div>
       <div>坐洗部的狗<small>坐在洗頭盆裡，頭頂泡泡、搖尾巴</small></div>
@@ -29,7 +29,7 @@ canvas { image-rendering: pixelated; display: block; border-radius: 10px; }
 </div>
 <script>
 const W = 375, H = 220, S = 1.35;
-const RV = +(new URLSearchParams(location.search).get('rv') || 0);   // 浣熊大王的手和尾巴試版（0 = 現在這版）
+const RV = +(new URLSearchParams(location.search).get('rv') ?? 3);   // 浣熊大王的手和尾巴：3 = 定稿（舉金幣炫耀、尾巴攤在金幣上、不咬金幣）；0～2 是試過的版本
 const C = { ink0: '#1c2229', ink2: '#3a4656', ink3: '#56677a', g1: '#7a8c9d', g2: '#9fb1c0', g3: '#c2d0da', g4: '#e6ecf0', g5: '#f2f6f8', wh: '#ffffff',
   sky1: '#c3d8e4', sky3: '#e2edf2', city: '#a3bccb', cy0: '#4fa9bf', cy: '#8fd3e0', cy2: '#c9f0f6', b0: '#2b5290', b1: '#3d6fb6', b2: '#7fa8e6',
   o0: '#8a4f1c', o1: '#c97a2e', o2: '#f0a04b', o3: '#ffd08a', au0: '#8a5a14', au1: '#e2b44a', au2: '#ffe9a0', gr0: '#2f6e47', gr1: '#3f8a5a', gr2: '#6cb487',
@@ -156,8 +156,9 @@ function scene(X, sil) {
     F(L, ex - 3, ey + 3, [[0, 0], [1, 1], [2, 1], [3, 1], [4, 0], [5, -1]], C.ink2); F(L, ex + 1, ey + 5, [[0, 0]], C.wh);   // 嘴角往上斜的壞笑、一顆門牙
     F(L, ex - 8, ey + 2, [[0, 0], [1, 0]], C.pk2); F(L, ex + 7, ey + 2, [[0, 0], [1, 0]], C.pk2);
     blit(L, dy);
-    const Cn = Lay(), [kx, ky] = at(4.8, -13.2);                                                             // 咬在嘴角的金幣
-    lel(Cn, kx, ky, 2.6, 3.2, C.au1, .3); outline(Cn); lel(Cn, kx, ky, 1.3, 1.8, C.au2, .3, C.au1); lp(Cn, kx - 1, ky - 2, C.wh); blit(Cn, dy);
+    const [kx, ky] = at(4.8, -13.2);
+    if (RV !== 3) { const Cn = Lay();                                                                       // 咬在嘴角的金幣（定稿版不咬）
+    lel(Cn, kx, ky, 2.6, 3.2, C.au1, .3); outline(Cn); lel(Cn, kx, ky, 1.3, 1.8, C.au2, .3, C.au1); lp(Cn, kx - 1, ky - 2, C.wh); blit(Cn, dy); }
     if (RV === 0) { const Th = Lay(), [tx, ty] = at(-11.5, -9);                                              // 舉到肩膀旁邊比讚
       lel(Th, tx, ty, 3, 2.2, C.rw); lel(Th, tx - .5, ty - 5.2, 1.7, 3.6, C.rw); outline(Th); lp(Th, tx - 1, ty - 8, C.wh); for (let i = -3; i <= 2; i++) lp(Th, tx + i, ty - 1, C.rw2); blit(Th, dy); }
     if (RV === 1) { const Th = Lay(); [[-4.4, -4.2], [4.4, -4.2]].forEach(([a, b]) => { const [p, q] = at(a, b); lel(Th, p, q, 1.8 * S, 1.5 * S, C.rw); }); outline(Th); blit(Th, dy);   // 試版一：兩隻小手滿足地放在肚子上
@@ -170,7 +171,7 @@ function scene(X, sil) {
       lel(Th, tx + 1.5, ty + 3.5, 2, 2.4, C.rw); lel(Th, tx, ty, 2.6, 2.4, C.rw); outline(Th); blit(Th, dy);
       const Cx = Lay(); lel(Cx, tx, ty - 4, 3.4, 3.4, C.au1); outline(Cx); lel(Cx, tx, ty - 4, 2, 2, C.au2, 0, C.au1); lp(Cx, tx - 2, ty - 6, C.wh); lp(Cx, tx, ty - 4, C.au0); lp(Cx, tx, ty - 3, C.au0); blit(Cx, dy);
       if (!sil) [[-6, -10], [5, -9]].forEach(([a, b]) => { px(tx + a, ty + b, C.wh); px(tx + a - 1, ty + b, C.au2); px(tx + a + 1, ty + b, C.au2); px(tx + a, ty + b - 1, C.au2); px(tx + a, ty + b + 1, C.au2); }); }
-    if (!sil) { const sx = kx + 5, sy = ky - 4; px(sx, sy, C.wh); px(sx - 1, sy, C.au2); px(sx + 1, sy, C.au2); px(sx, sy - 1, C.au2); px(sx, sy + 1, C.au2); }
+    if (!sil && RV !== 3) { const sx = kx + 5, sy = ky - 4; px(sx, sy, C.wh); px(sx - 1, sy, C.au2); px(sx + 1, sy, C.au2); px(sx, sy - 1, C.au2); px(sx, sy + 1, C.au2); }
   }
   // ---- 青江菜船長：泡在一杯水裡，一片葉子舉到帽簷敬禮，生氣的粗眉 ----
   { const cx = 310, dy = 92;
