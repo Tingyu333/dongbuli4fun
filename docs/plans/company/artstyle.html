@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<title>公司・開・畫風比較</title>
+<!-- 2026-11-24 使用者選了介面乙（近未來毛玻璃），問畫風能不能改。同一間車庫、同三個角色（茱莉鴨、小吳鴨、雞塊），三種畫風：
+     甲＝等角 2.5D 扁平、乙＝日式線稿插畫、丙＝柔和 3D（像會員頭像 avatar.js 那種圓潤漸層）。下面都套毛玻璃介面。 -->
+<style>
+  body { margin: 0; background: #e4e2dd; font-family: 'Noto Sans TC', sans-serif; }
+  .wrap { display: grid; grid-template-columns: repeat(4, 375px); gap: 26px; padding: 26px; align-items: flex-start; width: max-content; }
+  .phone { width: 375px; height: 760px; border-radius: 28px; overflow: hidden; position: relative; box-shadow: 0 14px 34px rgba(0,0,0,.2); display: flex; flex-direction: column; background: #dfe3e6; color: #26303a; }
+  .cap { text-align: center; font-size: 13px; letter-spacing: .2em; color: #6b6052; margin-top: 12px; }
+  .num { font-variant-numeric: tabular-nums; }
+  .bg { position: absolute; left: 0; top: 0; width: 375px; height: 330px; }
+  .bg canvas { width: 375px; height: 330px; display: block; }
+  .fade { position: absolute; left: 0; right: 0; top: 280px; height: 70px; background: linear-gradient(180deg, rgba(223,227,230,0), #dfe3e6); }
+  .glass { background: rgba(250,252,253,.58); backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3); border: 1px solid rgba(255,255,255,.75); box-shadow: 0 8px 24px rgba(40,60,80,.12), inset 0 1px 0 rgba(255,255,255,.9); border-radius: 16px; }
+  .hd { position: relative; margin: 16px 14px 0; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; }
+  .hd h1 { margin: 0; font-size: 16px; font-weight: 400; letter-spacing: .3em; } .hd .lv { display: flex; align-items: center; gap: 6px; font-size: 10.5px; letter-spacing: .2em; color: #51606d; margin-top: 3px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: #3fb98b; box-shadow: 0 0 0 3px rgba(63,185,139,.2), 0 0 8px rgba(63,185,139,.8); }
+  .hd .m { text-align: right; font-size: 18px; font-weight: 300; } .hd .m small { display: block; font-size: 9.5px; letter-spacing: .2em; color: #6a7884; }
+  .spacer { height: 262px; }
+  .kp { position: relative; margin: 10px 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; } .kp div { padding: 8px 10px; } .kp small { display: block; font-size: 9.5px; letter-spacing: .2em; color: #6a7884; } .kp b { font-size: 16px; font-weight: 300; }
+  .panel { position: relative; margin: 0 14px; padding: 6px 0 4px; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; font-size: 12.5px; } .row + .row { border-top: 1px solid rgba(120,140,155,.18); }
+  .row .tt { flex: 1; } .row .tt small { display: block; font-size: 10.5px; color: #6a7884; margin-top: 2px; }
+  .chip { font-size: 11px; letter-spacing: .1em; padding: 4px 10px; border-radius: 999px; background: rgba(179,58,47,.1); color: #b33a2f; border: 1px solid rgba(179,58,47,.35); }
+  .bar { height: 2px; background: rgba(120,140,155,.2); margin-top: 6px; } .bar i { display: block; height: 100%; width: 18%; background: linear-gradient(90deg, #6aa9d8, #8fd3e0); box-shadow: 0 0 6px #8fd3e0; }
+  .cta { position: relative; margin: 10px 14px 0; display: flex; gap: 8px; } .cta button { flex: 1; min-height: 44px; border-radius: 12px; font-size: 12.5px; letter-spacing: .18em; border: 1px solid rgba(255,255,255,.8); background: rgba(250,252,253,.6); color: #26303a; }
+  .cta button.main { background: #26303a; color: #f2f6f8; border-color: #26303a; }
+  .tabs { position: relative; margin: auto 14px 14px; display: grid; grid-template-columns: repeat(4, 1fr); padding: 10px 0; font-size: 11px; letter-spacing: .2em; text-align: center; color: #6a7884; } .tabs span.on { color: #26303a; text-shadow: 0 0 10px rgba(143,211,224,.9); }
+</style>
+</head>
+<body>
+<div class="wrap" id="w"></div>
+<script>
+const UI = `<div class="fade"></div>
+  <div class="hd glass"><div><h1>公司・開</h1><div class="lv"><span class="dot"></span>車庫創業・營業中</div></div><div class="m num"><small>公司帳戶</small>$57,300</div></div>
+  <div class="spacer"></div>
+  <div class="kp"><div class="glass"><small>每小時</small><b class="num">$2,996</b></div><div class="glass"><small>進行中</small><b class="num">1 / 3</b></div><div class="glass"><small>閒著</small><b class="num">1 人</b></div></div>
+  <div class="panel glass">
+    <div class="row"><span class="tt">〈大橋頭麥克早餐店・菜單改版〉<small>雞塊</small></span><span class="chip num">完成 $343</span></div>
+    <div class="row"><span class="tt">〈坐洗部・會員集點卡〉<small>青蛙・阿呱</small></span><span class="chip num">完成 $784</span></div>
+    <div class="row"><span class="tt">〈城堡官網・第七次改版〉<small>茱莉鴨・睡著了</small><div class="bar"><i></i></div></span><span class="num" style="font-size:12px;color:#6a7884">3:12:40</span></div>
+  </div>
+  <div class="cta"><button>委託</button><button class="main">全部收款 $1,127</button></div>
+  <div class="tabs glass"><span class="on">辦公室</span><span>委託</span><span>員工</span><span>公司</span></div>`;
+const W = 375, H = 330, Z = 3;
+function stage(name, draw) {
+  const d = document.createElement('div'); d.innerHTML = `<div class="phone"><div class="bg"><canvas></canvas></div>${UI}</div><div class="cap">${name}</div>`;
+  document.getElementById('w').appendChild(d);
+  const c = d.querySelector('canvas'); c.width = W * Z; c.height = H * Z; const x = c.getContext('2d'); x.scale(Z, Z); draw(x);
+}
+const P = (x, pts, f, s, lw = 1) => { x.beginPath(); pts.forEach(([a, b], i) => i ? x.lineTo(a, b) : x.moveTo(a, b)); x.closePath(); if (f) { x.fillStyle = f; x.fill(); } if (s) { x.strokeStyle = s; x.lineWidth = lw; x.stroke(); } };
+const E = (x, cx, cy, rx, ry, f, s, lw = 1) => { x.beginPath(); x.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); if (f) { x.fillStyle = f; x.fill(); } if (s) { x.strokeStyle = s; x.lineWidth = lw; x.stroke(); } };
+
+// ===================== 甲：等角 2.5D 扁平 =====================
+stage('甲・等角 2.5D 扁平', x => {
+  const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#e9eef2'); g.addColorStop(1, '#dfe3e6'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  const T = 19, ox = 187, oy = 118;                                   // 等角：i 往右下、j 往左下
+  const iso = (i, j, z = 0) => [ox + (i - j) * T, oy + (i + j) * T / 2 - z];
+  const quad = (a, b, c, d, f) => P(x, [a, b, c, d], f);
+  const boxI = (i, j, w, d, h, z, top, left, right) => { // 立方體：三個看得到的面
+    quad(iso(i, j, z + h), iso(i + w, j, z + h), iso(i + w, j + d, z + h), iso(i, j + d, z + h), top);
+    quad(iso(i, j + d, z), iso(i + w, j + d, z), iso(i + w, j + d, z + h), iso(i, j + d, z + h), left);
+    quad(iso(i + w, j, z), iso(i + w, j + d, z), iso(i + w, j + d, z + h), iso(i + w, j, z + h), right); };
+  // 地板、兩面牆
+  quad(iso(0, 0), iso(10, 0), iso(10, 10), iso(0, 10), '#cfd6dc');
+  for (let k = 1; k < 10; k++) { x.strokeStyle = 'rgba(255,255,255,.35)'; x.lineWidth = .6; x.beginPath(); x.moveTo(...iso(k, 0)); x.lineTo(...iso(k, 10)); x.moveTo(...iso(0, k)); x.lineTo(...iso(10, k)); x.stroke(); }
+  quad(iso(0, 0), iso(10, 0), iso(10, 0, 92), iso(0, 0, 92), '#eef1f4');          // 右牆
+  quad(iso(0, 0), iso(0, 10), iso(0, 10, 92), iso(0, 0, 92), '#e2e7eb');          // 左牆
+  // 左牆：半開的鐵捲門＋外面的光
+  quad(iso(0, 3), iso(0, 8), iso(0, 8, 70), iso(0, 3, 70), '#9fb3c2'); quad(iso(0, 3), iso(0, 8), iso(0, 8, 34), iso(0, 3, 34), '#cfe6f2');
+  for (let z = 38; z < 70; z += 5) { x.strokeStyle = '#8aa0b0'; x.lineWidth = .8; x.beginPath(); x.moveTo(...iso(0, 3, z)); x.lineTo(...iso(0, 8, z)); x.stroke(); }
+  P(x, [iso(0, 3), iso(0, 8), iso(5, 9), iso(5, 4)], 'rgba(255,248,225,.45)');
+  // 右牆：白板、釘板、時鐘
+  quad(iso(5, 0, 50), iso(9, 0, 50), iso(9, 0, 74), iso(5, 0, 74), '#ffffff'); x.strokeStyle = '#3d6fb6'; x.lineWidth = 1.2; x.beginPath(); x.moveTo(...iso(5.4, 0, 66)); x.lineTo(...iso(7, 0, 66)); x.moveTo(...iso(5.4, 0, 60)); x.lineTo(...iso(8, 0, 60)); x.stroke();
+  x.strokeStyle = '#b33a2f'; x.beginPath(); x.moveTo(...iso(7.6, 0, 70)); x.lineTo(...iso(8.6, 0, 70)); x.stroke();
+  quad(iso(1.5, 0, 46), iso(4, 0, 46), iso(4, 0, 72), iso(1.5, 0, 72), '#d8c3a0');
+  [[2, 52, '#3d6fb6'], [2.8, 50, '#e2b44a'], [3.4, 54, '#b33a2f']].forEach(([i, z, c]) => quad(iso(i, 0, z), iso(i + .35, 0, z), iso(i + .35, 0, z + 14), iso(i, 0, z + 14), c));
+  E(x, ...iso(9.5, 0, 82), 5, 5, '#ffffff', '#26303a', 1);
+  // 三張桌子＋角色（等角的角色：圓頭身體＋特徵）
+  const seat = (i, j, who) => {
+    const [a, b] = iso(i + .6, j + .2, 26);
+    if (who === 'julie') { E(x, a, b + 4, 9, 8, '#f6f4ef'); E(x, a, b - 8, 8.5, 8, '#ffffff'); x.fillStyle = '#26303a'; x.fillRect(a - 5, b - 9, 3, 1); x.fillRect(a + 2, b - 9, 3, 1); E(x, a, b - 4, 5, 2.4, '#f0a04b'); P(x, [[a - 5, b], [a, b + 2], [a + 5, b], [a + 5, b + 4], [a, b + 2], [a - 5, b + 4]], '#3d6fb6'); }
+    if (who === 'xiaowu') { E(x, a, b + 4, 9, 8, '#2f3340'); E(x, a, b - 8, 8.5, 8, '#2a2d36'); E(x, a - 3.5, b - 9, 3, 3, null, '#e2b44a', 1.2); E(x, a + 3.5, b - 9, 3, 3, null, '#e2b44a', 1.2); E(x, a, b - 4, 2.5, 1.8, '#5a5f6a'); x.fillStyle = '#f3d36a'; x.fillRect(a - 3, b + 2, 6, 5); }
+    if (who === 'nugget') { E(x, a, b - 2, 11, 12, '#e3aa4a'); E(x, a - 3, b - 7, 5, 4, '#f3c66e'); [[-6, 2], [5, -6], [3, 5], [-2, -10]].forEach(([p, q]) => E(x, a + p, b + q, 1, 1, '#c98a2c')); x.fillStyle = '#26303a'; x.fillRect(a - 4, b - 4, 2, 2); x.fillRect(a + 2, b - 4, 2, 2); E(x, a - 6, b, 2, 1, '#f3a6a0'); E(x, a + 6, b, 2, 1, '#f3a6a0'); }
+    boxI(i, j + 1, 2.4, 1.4, 4, 20, '#c9a07a', '#b48a62', '#9c744e');          // 桌面
+    boxI(i + .1, j + 2.2, .2, .2, 20, 0, '#7d5c3c', '#7d5c3c', '#6b4a2a'); boxI(i + 2.1, j + 2.2, .2, .2, 20, 0, '#7d5c3c', '#7d5c3c', '#6b4a2a');
+    boxI(i + 1.4, j + 1.2, .8, .6, 1, 24, '#3a3d44', '#2a2c33', '#2a2c33'); quad(iso(i + 1.4, j + 1.2, 25), iso(i + 2.2, j + 1.2, 25), iso(i + 2.2, j + 1.2, 33), iso(i + 1.4, j + 1.2, 33), who === 'julie' ? '#2a2c33' : '#9fd0e6');
+  };
+  seat(1.5, 2, 'julie'); seat(4.5, 2, 'xiaowu'); seat(7.2, 2, 'nugget');
+  boxI(1, 7.5, 2.2, 1, 6, 0, '#e8564a', '#c94a3f', '#a8392f'); E(x, ...iso(1.3, 8.7, 3), 3, 3, '#26303a'); E(x, ...iso(3.1, 8.7, 3), 3, 3, '#26303a');   // 機車
+  // 睡覺的 Z
+  x.fillStyle = '#6aa9d8'; x.font = '600 11px sans-serif'; x.fillText('z', ...iso(1.6, 1.4, 58)); x.font = '600 14px sans-serif'; x.fillText('Z', ...iso(1.9, 1.2, 70));
+});
+
+// ===================== 乙：日式線稿插畫 =====================
+stage('乙・日式線稿插畫', x => {
+  const K = '#2b2b2b', LW = 1.4;
+  x.fillStyle = '#f4efe5'; x.fillRect(0, 0, W, H);
+  // 錯版的色塊（印刷沒對準的感覺）＋線稿
+  const blob = (pts, f, dx = 3, dy = 2) => { x.save(); x.translate(dx, dy); P(x, pts, f); x.restore(); P(x, pts, null, K, LW); };
+  x.fillStyle = '#e8dcc6'; x.fillRect(0, 232, W, 98); x.strokeStyle = K; x.lineWidth = LW; x.beginPath(); x.moveTo(0, 232); x.lineTo(W, 232); x.stroke();
+  // 鐵捲門（只畫幾條線）
+  blob([[22, 62], [130, 62], [130, 232], [22, 232]], '#c9d9df'); for (let y = 70; y < 140; y += 8) { x.beginPath(); x.moveTo(22, y); x.lineTo(130, y); x.stroke(); }
+  x.beginPath(); x.moveTo(96, 140); x.lineTo(96, 232); x.moveTo(84, 160); x.lineTo(108, 160); x.stroke();   // 外面的電線桿
+  // 白板、時鐘、盆栽
+  blob([[214, 70], [330, 70], [330, 140], [214, 140]], '#ffffff'); x.beginPath(); x.moveTo(228, 92); x.lineTo(270, 92); x.moveTo(228, 108); x.lineTo(300, 108); x.stroke(); x.strokeStyle = '#c4453a'; x.beginPath(); x.moveTo(290, 86); x.lineTo(312, 86); x.stroke(); x.strokeStyle = K;
+  E(x, 352, 70, 10, 10, '#f4efe5', K, LW); x.beginPath(); x.moveTo(352, 70); x.lineTo(352, 63); x.moveTo(352, 70); x.lineTo(357, 72); x.stroke();
+  blob([[150, 200], [170, 200], [166, 232], [154, 232]], '#c4453a'); x.beginPath(); x.moveTo(160, 200); x.quadraticCurveTo(150, 176, 140, 172); x.moveTo(160, 200); x.quadraticCurveTo(168, 178, 182, 174); x.moveTo(160, 200); x.lineTo(160, 168); x.stroke();
+  // 角色：線稿＋錯版色塊
+  const who = (cx, k) => {
+    const by = 206;
+    if (k === 'julie') { blob([[cx - 22, by], [cx - 18, by - 24], [cx, by - 30], [cx + 18, by - 24], [cx + 22, by]], '#ffffff', 0, 0); E(x, cx, by - 46, 20, 18, '#ffffff', K, LW); x.beginPath(); x.moveTo(cx - 12, by - 48); x.lineTo(cx - 5, by - 48); x.moveTo(cx + 5, by - 48); x.lineTo(cx + 12, by - 48); x.stroke(); blob([[cx - 11, by - 38], [cx + 11, by - 38], [cx + 8, by - 31], [cx - 8, by - 31]], '#f0a04b'); blob([[cx - 9, by - 28], [cx, by - 24], [cx + 9, by - 28], [cx + 9, by - 20], [cx, by - 24], [cx - 9, by - 20]], '#3d6fb6'); }
+    if (k === 'xiaowu') { blob([[cx - 22, by], [cx - 18, by - 24], [cx, by - 30], [cx + 18, by - 24], [cx + 22, by]], '#3a3f4a'); E(x, cx + 2, by - 44, 20, 18, '#3a3f4a'); E(x, cx, by - 46, 20, 18, null, K, LW); E(x, cx - 8, by - 47, 6, 6, '#f4efe5', K, LW); E(x, cx + 8, by - 47, 6, 6, '#f4efe5', K, LW); E(x, cx - 8, by - 47, 1.6, 1.6, K); E(x, cx + 8, by - 47, 1.6, 1.6, K); blob([[cx - 6, by - 20], [cx + 6, by - 20], [cx + 6, by - 8], [cx - 6, by - 8]], '#e2b44a'); }
+    if (k === 'nugget') { blob([[cx - 24, by], [cx - 26, by - 30], [cx - 14, by - 52], [cx + 6, by - 56], [cx + 22, by - 44], [cx + 26, by - 16], [cx + 20, by]], '#e8b45a'); E(x, cx - 7, by - 34, 2, 2, K); E(x, cx + 7, by - 34, 2, 2, K); x.beginPath(); x.arc(cx, by - 28, 6, .2, Math.PI - .2); x.stroke(); [[-14, -12], [12, -40], [-6, -46], [16, -20]].forEach(([p, q]) => { x.beginPath(); x.arc(cx + p, by + q, 1.5, 0, 7); x.stroke(); }); }
+    // 桌子：一條桌面線＋兩條腳
+    blob([[cx - 40, by - 6], [cx + 40, by - 6], [cx + 40, by + 4], [cx - 40, by + 4]], '#d9b98e', 0, 3); x.beginPath(); x.moveTo(cx - 34, by + 4); x.lineTo(cx - 34, 232); x.moveTo(cx + 34, by + 4); x.lineTo(cx + 34, 232); x.stroke();
+    blob([[cx + 14, by - 26], [cx + 36, by - 26], [cx + 36, by - 8], [cx + 14, by - 8]], k === 'julie' ? '#3a3f4a' : '#bfe0ee');
+  };
+  who(70, 'julie'); who(190, 'xiaowu'); who(308, 'nugget');
+  x.fillStyle = K; x.font = 'italic 600 14px serif'; x.fillText('z', 88, 132); x.font = 'italic 600 18px serif'; x.fillText('Z', 98, 116);
+});
+
+// ===================== 丙：柔和 3D =====================
+stage('丙・柔和 3D', x => {
+  const lg = (y0, y1, a, b) => { const g = x.createLinearGradient(0, y0, 0, y1); g.addColorStop(0, a); g.addColorStop(1, b); return g; };
+  const rg = (cx, cy, r, a, b, c) => { const g = x.createRadialGradient(cx - r * .35, cy - r * .4, r * .1, cx, cy, r * 1.05); g.addColorStop(0, a); g.addColorStop(.55, b); g.addColorStop(1, c); return g; };
+  const rr = (a, b, w, h, r, f) => { x.beginPath(); x.roundRect(a, b, w, h, r); x.fillStyle = f; x.fill(); };
+  x.fillStyle = lg(0, 230, '#f3eee7', '#e4ddd2'); x.fillRect(0, 0, W, 230);
+  x.fillStyle = lg(230, H, '#d8cfc2', '#c7bcac'); x.fillRect(0, 230, W, 100);
+  x.fillStyle = 'rgba(0,0,0,.06)'; x.fillRect(0, 226, W, 6);
+  // 鐵捲門：圓角、柔和的光
+  rr(20, 60, 112, 168, 10, lg(60, 228, '#d7e3ea', '#b9c9d3')); for (let y = 70; y < 140; y += 9) rr(24, y, 104, 5, 3, 'rgba(255,255,255,.45)');
+  x.fillStyle = 'rgba(255,245,215,.35)'; x.beginPath(); x.moveTo(24, 228); x.lineTo(128, 228); x.lineTo(190, 300); x.lineTo(10, 300); x.fill();
+  // 白板、時鐘
+  x.shadowColor = 'rgba(80,60,40,.18)'; x.shadowBlur = 10; x.shadowOffsetY = 4;
+  rr(212, 66, 120, 74, 10, '#ffffff'); x.shadowColor = 'transparent';
+  rr(228, 88, 44, 4, 2, '#7fa6cf'); rr(228, 102, 70, 4, 2, '#c8ced4'); rr(228, 116, 56, 4, 2, '#c8ced4'); rr(290, 84, 22, 4, 2, '#e07a6e');
+  x.fillStyle = rg(352, 74, 13, '#ffffff', '#f2eee8', '#d8d1c6'); x.beginPath(); x.arc(352, 74, 13, 0, 7); x.fill(); x.strokeStyle = '#5a5048'; x.lineWidth = 2; x.lineCap = 'round'; x.beginPath(); x.moveTo(352, 74); x.lineTo(352, 66); x.moveTo(352, 74); x.lineTo(358, 77); x.stroke();
+  // 盆栽
+  x.fillStyle = rg(160, 214, 14, '#e8a07a', '#c97a52', '#a65e3a'); x.beginPath(); x.roundRect(148, 200, 24, 28, 6); x.fill();
+  [[150, 186, 12], [168, 182, 13], [159, 172, 12]].forEach(([a, b, r]) => { x.fillStyle = rg(a, b, r, '#a8d77a', '#6fae48', '#4f8f3a'); x.beginPath(); x.arc(a, b, r, 0, 7); x.fill(); });
+  // 角色：球體＋高光＋接觸陰影
+  const shadow = (cx, cy, rx) => { x.fillStyle = 'rgba(70,50,30,.16)'; x.beginPath(); x.ellipse(cx, cy, rx, rx * .28, 0, 0, 7); x.fill(); };
+  const ball = (cx, cy, r, a, b, c) => { x.fillStyle = rg(cx, cy, r, a, b, c); x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill(); };
+  const who = (cx, k) => {
+    const by = 204;
+    if (k === 'julie') { ball(cx, by - 10, 22, '#ffffff', '#f4f2ee', '#d9d3c9'); ball(cx, by - 42, 20, '#ffffff', '#f6f4f0', '#dcd6cc');
+      x.strokeStyle = '#3a3533'; x.lineWidth = 2.2; x.lineCap = 'round'; x.beginPath(); x.moveTo(cx - 11, by - 45); x.quadraticCurveTo(cx - 7, by - 43, cx - 4, by - 45); x.moveTo(cx + 4, by - 45); x.quadraticCurveTo(cx + 7, by - 43, cx + 11, by - 45); x.stroke();
+      x.fillStyle = rg(cx, by - 34, 10, '#ffc27a', '#f0a04b', '#c97a2e'); x.beginPath(); x.ellipse(cx, by - 34, 11, 5.5, 0, 0, 7); x.fill();
+      x.fillStyle = rg(cx, by - 22, 8, '#7fa8e6', '#3d6fb6', '#2b5290'); x.beginPath(); x.moveTo(cx, by - 22); x.lineTo(cx - 10, by - 28); x.lineTo(cx - 10, by - 16); x.closePath(); x.moveTo(cx, by - 22); x.lineTo(cx + 10, by - 28); x.lineTo(cx + 10, by - 16); x.closePath(); x.fill(); ball(cx, by - 22, 3, '#6a96d8', '#3d6fb6', '#2b5290'); }
+    if (k === 'xiaowu') { ball(cx, by - 10, 22, '#5a6070', '#33373f', '#1d1f24'); ball(cx, by - 42, 20, '#5d6373', '#2f333b', '#1a1c21');
+      [[-8], [8]].forEach(([d]) => { x.strokeStyle = '#e2b44a'; x.lineWidth = 2.4; x.beginPath(); x.arc(cx + d, by - 44, 6.5, 0, 7); x.stroke(); x.fillStyle = 'rgba(220,235,245,.55)'; x.fill(); x.fillStyle = '#16181c'; x.beginPath(); x.arc(cx + d, by - 44, 2.2, 0, 7); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(cx + d - .8, by - 45, .8, 0, 7); x.fill(); });
+      x.fillStyle = '#6b7080'; x.beginPath(); x.ellipse(cx, by - 34, 4, 3, 0, 0, 7); x.fill(); rr(cx - 7, by - 20, 14, 11, 3, lg(by - 20, by - 9, '#ffe7a0', '#e2b44a')); }
+    if (k === 'nugget') { x.fillStyle = rg(cx, by - 22, 30, '#ffd88a', '#e3aa4a', '#b8792a'); x.beginPath(); x.moveTo(cx - 26, by - 4); x.bezierCurveTo(cx - 34, by - 30, cx - 18, by - 58, cx + 2, by - 56); x.bezierCurveTo(cx + 26, by - 54, cx + 34, by - 26, cx + 24, by - 4); x.closePath(); x.fill();
+      [[-14, -14], [12, -42], [-6, -48], [18, -20], [-20, -34], [6, -10]].forEach(([p, q]) => { x.fillStyle = 'rgba(160,100,30,.45)'; x.beginPath(); x.arc(cx + p, by + q, 2, 0, 7); x.fill(); x.fillStyle = 'rgba(255,240,190,.7)'; x.beginPath(); x.arc(cx + p - .6, by + q - .6, .9, 0, 7); x.fill(); });
+      [[-8], [8]].forEach(([d]) => { x.fillStyle = '#3a2a1a'; x.beginPath(); x.arc(cx + d, by - 32, 2.8, 0, 7); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(cx + d - 1, by - 33, 1, 0, 7); x.fill(); });
+      x.fillStyle = 'rgba(240,120,110,.45)'; x.beginPath(); x.ellipse(cx - 14, by - 25, 4, 2.4, 0, 0, 7); x.ellipse(cx + 14, by - 25, 4, 2.4, 0, 0, 7); x.fill(); x.strokeStyle = '#3a2a1a'; x.lineWidth = 2; x.beginPath(); x.arc(cx, by - 26, 5, .3, Math.PI - .3); x.stroke(); }
+    // 桌子：圓角厚板＋接觸陰影
+    shadow(cx, 232, 46); x.shadowColor = 'rgba(80,55,30,.22)'; x.shadowBlur = 8; x.shadowOffsetY = 4;
+    rr(cx - 42, by - 4, 84, 12, 6, lg(by - 4, by + 8, '#e0bd92', '#b48a5e')); x.shadowColor = 'transparent';
+    rr(cx - 36, by + 8, 7, 22, 3, '#a27a52'); rr(cx + 29, by + 8, 7, 22, 3, '#a27a52');
+    x.shadowColor = 'rgba(30,40,60,.25)'; x.shadowBlur = 6; x.shadowOffsetY = 2; rr(cx + 12, by - 28, 26, 20, 4, '#3a3d44'); x.shadowColor = 'transparent';
+    rr(cx + 14, by - 26, 22, 15, 3, k === 'julie' ? '#2a2c33' : lg(by - 26, by - 11, '#d6eef8', '#8fc6df')); rr(cx + 10, by - 8, 30, 3, 1.5, '#55585f');
+  };
+  who(70, 'julie'); who(190, 'xiaowu'); who(308, 'nugget');
+  [[92, 128, 8], [102, 112, 11]].forEach(([a, b, r]) => { x.fillStyle = 'rgba(106,169,216,.85)'; x.font = `600 ${r * 1.4}px sans-serif`; x.fillText('Z', a, b); });
+});
+// ===================== 丁：近未來柔和 3D（配毛玻璃介面） =====================
+stage('丁・近未來柔和 3D', x => {
+  const lg = (y0, y1, a, b) => { const g = x.createLinearGradient(0, y0, 0, y1); g.addColorStop(0, a); g.addColorStop(1, b); return g; };
+  const rg = (cx, cy, r, a, b, c) => { const g = x.createRadialGradient(cx - r * .35, cy - r * .4, r * .1, cx, cy, r * 1.05); g.addColorStop(0, a); g.addColorStop(.55, b); g.addColorStop(1, c); return g; };
+  const rr = (a, b, w, h, r, f) => { x.beginPath(); x.roundRect(a, b, w, h, r); x.fillStyle = f; x.fill(); };
+  x.fillStyle = lg(0, 230, '#eef3f6', '#dbe3e9'); x.fillRect(0, 0, W, 230);
+  // 一整面落地窗：模糊的城市光點
+  rr(12, 56, 351, 168, 14, lg(56, 224, '#cfe0ea', '#b6cbd8')); [[40, 150, 18, .5], [90, 120, 26, .35], [150, 160, 14, .45], [230, 130, 30, .3], [300, 150, 20, .4], [340, 110, 16, .35], [200, 175, 12, .5]].forEach(([a, b, r, o]) => { const g = x.createRadialGradient(a, b, 0, a, b, r); g.addColorStop(0, `rgba(255,255,255,${o})`); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.beginPath(); x.arc(a, b, r, 0, 7); x.fill(); });
+  for (let i = 99; i < 363; i += 88) rr(i, 56, 2, 168, 1, 'rgba(255,255,255,.6)');
+  x.fillStyle = lg(230, H, '#d3dce3', '#c4ced6'); x.fillRect(0, 230, W, 100);
+  x.fillStyle = 'rgba(0,0,0,.06)'; x.fillRect(0, 226, W, 6);
+  x.shadowColor = 'rgba(143,211,224,.9)'; x.shadowBlur = 12; rr(150, 96, 76, 22, 11, 'rgba(255,255,255,.55)'); x.shadowColor = 'transparent';
+  x.fillStyle = '#26303a'; x.font = '500 11px sans-serif'; x.textAlign = 'center'; x.fillText('丼步喱設計社', 188, 111); x.textAlign = 'left';
+  // 角色：球體＋高光＋接觸陰影
+  const shadow = (cx, cy, rx) => { x.fillStyle = 'rgba(70,50,30,.16)'; x.beginPath(); x.ellipse(cx, cy, rx, rx * .28, 0, 0, 7); x.fill(); };
+  const ball = (cx, cy, r, a, b, c) => { x.fillStyle = rg(cx, cy, r, a, b, c); x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill(); };
+  const who = (cx, k) => {
+    const by = 204;
+    if (k === 'julie') { ball(cx, by - 10, 22, '#ffffff', '#f4f2ee', '#d9d3c9'); ball(cx, by - 42, 20, '#ffffff', '#f6f4f0', '#dcd6cc');
+      x.strokeStyle = '#3a3533'; x.lineWidth = 2.2; x.lineCap = 'round'; x.beginPath(); x.moveTo(cx - 11, by - 45); x.quadraticCurveTo(cx - 7, by - 43, cx - 4, by - 45); x.moveTo(cx + 4, by - 45); x.quadraticCurveTo(cx + 7, by - 43, cx + 11, by - 45); x.stroke();
+      x.fillStyle = rg(cx, by - 34, 10, '#ffc27a', '#f0a04b', '#c97a2e'); x.beginPath(); x.ellipse(cx, by - 34, 11, 5.5, 0, 0, 7); x.fill();
+      x.fillStyle = rg(cx, by - 22, 8, '#7fa8e6', '#3d6fb6', '#2b5290'); x.beginPath(); x.moveTo(cx, by - 22); x.lineTo(cx - 10, by - 28); x.lineTo(cx - 10, by - 16); x.closePath(); x.moveTo(cx, by - 22); x.lineTo(cx + 10, by - 28); x.lineTo(cx + 10, by - 16); x.closePath(); x.fill(); ball(cx, by - 22, 3, '#6a96d8', '#3d6fb6', '#2b5290'); }
+    if (k === 'xiaowu') { ball(cx, by - 10, 22, '#5a6070', '#33373f', '#1d1f24'); ball(cx, by - 42, 20, '#5d6373', '#2f333b', '#1a1c21');
+      [[-8], [8]].forEach(([d]) => { x.strokeStyle = '#e2b44a'; x.lineWidth = 2.4; x.beginPath(); x.arc(cx + d, by - 44, 6.5, 0, 7); x.stroke(); x.fillStyle = 'rgba(220,235,245,.55)'; x.fill(); x.fillStyle = '#16181c'; x.beginPath(); x.arc(cx + d, by - 44, 2.2, 0, 7); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(cx + d - .8, by - 45, .8, 0, 7); x.fill(); });
+      x.fillStyle = '#6b7080'; x.beginPath(); x.ellipse(cx, by - 34, 4, 3, 0, 0, 7); x.fill(); rr(cx - 7, by - 20, 14, 11, 3, lg(by - 20, by - 9, '#ffe7a0', '#e2b44a')); }
+    if (k === 'nugget') { x.fillStyle = rg(cx, by - 22, 30, '#ffd88a', '#e3aa4a', '#b8792a'); x.beginPath(); x.moveTo(cx - 26, by - 4); x.bezierCurveTo(cx - 34, by - 30, cx - 18, by - 58, cx + 2, by - 56); x.bezierCurveTo(cx + 26, by - 54, cx + 34, by - 26, cx + 24, by - 4); x.closePath(); x.fill();
+      [[-14, -14], [12, -42], [-6, -48], [18, -20], [-20, -34], [6, -10]].forEach(([p, q]) => { x.fillStyle = 'rgba(160,100,30,.45)'; x.beginPath(); x.arc(cx + p, by + q, 2, 0, 7); x.fill(); x.fillStyle = 'rgba(255,240,190,.7)'; x.beginPath(); x.arc(cx + p - .6, by + q - .6, .9, 0, 7); x.fill(); });
+      [[-8], [8]].forEach(([d]) => { x.fillStyle = '#3a2a1a'; x.beginPath(); x.arc(cx + d, by - 32, 2.8, 0, 7); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(cx + d - 1, by - 33, 1, 0, 7); x.fill(); });
+      x.fillStyle = 'rgba(240,120,110,.45)'; x.beginPath(); x.ellipse(cx - 14, by - 25, 4, 2.4, 0, 0, 7); x.ellipse(cx + 14, by - 25, 4, 2.4, 0, 0, 7); x.fill(); x.strokeStyle = '#3a2a1a'; x.lineWidth = 2; x.beginPath(); x.arc(cx, by - 26, 5, .3, Math.PI - .3); x.stroke(); }
+    // 玻璃桌：半透明、白色亮邊；上面浮一片發光的全息螢幕
+    shadow(cx, 232, 44);
+    rr(cx - 42, by - 2, 84, 8, 4, 'rgba(235,245,250,.55)'); rr(cx - 42, by - 2, 84, 1.5, 1, 'rgba(255,255,255,.95)'); rr(cx - 34, by + 6, 3, 24, 1.5, 'rgba(200,215,225,.8)'); rr(cx + 31, by + 6, 3, 24, 1.5, 'rgba(200,215,225,.8)');
+    if (k !== 'julie') { x.shadowColor = 'rgba(110,200,225,.9)'; x.shadowBlur = 10; const hg = x.createLinearGradient(0, by - 34, 0, by - 10); hg.addColorStop(0, 'rgba(143,211,224,.55)'); hg.addColorStop(1, 'rgba(106,169,216,.15)'); rr(cx + 12, by - 34, 28, 22, 3, hg); x.shadowColor = 'transparent';
+      x.fillStyle = 'rgba(255,255,255,.85)'; x.fillRect(cx + 16, by - 29, 14, 1.2); x.fillRect(cx + 16, by - 25, 18, 1.2); x.fillRect(cx + 16, by - 21, 10, 1.2); x.fillStyle = 'rgba(143,211,224,.35)'; x.beginPath(); x.moveTo(cx + 18, by - 10); x.lineTo(cx + 34, by - 10); x.lineTo(cx + 30, by - 2); x.lineTo(cx + 22, by - 2); x.fill(); }
+    else { rr(cx + 12, by - 30, 28, 18, 3, 'rgba(60,70,85,.35)'); }
+    // 邊光：右邊一圈青色
+    x.strokeStyle = 'rgba(143,211,224,.9)'; x.lineWidth = 1.6; x.beginPath(); x.arc(cx, by - 42, 20.5, -1.1, .7); x.stroke(); x.beginPath(); x.arc(cx, by - 10, 22.5, -1.0, .2); x.stroke();
+    // 地板倒影
+    x.save(); x.globalAlpha = .07; x.translate(0, 2 * 232); x.scale(1, -1); ball(cx, by - 10 + 0, 22, '#ffffff', '#c8d4dc', '#9fb0bc'); x.restore();
+  };
+  who(70, 'julie'); who(190, 'xiaowu'); who(308, 'nugget');
+  [[92, 128, 8], [102, 112, 11]].forEach(([a, b, r]) => { x.shadowColor = 'rgba(143,211,224,1)'; x.shadowBlur = 8; x.fillStyle = 'rgba(106,169,216,.95)'; x.font = `600 ${r * 1.4}px sans-serif`; x.fillText('Z', a, b); });
+});
+</script>
+</body>
+</html>
