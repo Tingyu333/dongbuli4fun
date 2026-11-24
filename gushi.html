@@ -233,7 +233,6 @@
             <p>・一天最多漲跌 10%（妖股 20%）。漲停的時候買不到，跌停的時候賣不掉，可以掛單排隊，打開了才用漲停／跌停價成交，收盤前沒排到就取消。</p>
             <p>・買、賣各收 1% 手續費。今天買的要等明天 9:00 開盤後才能賣。</p>
             <p>・半夜也可以買賣，用 24:00 的收盤價成交。</p>
-            <p>・一檔最多買 $50 萬、全部最多 $200 萬（照成本算），超過只能賣。</p>
             <p>・要用 LINE 登入才能買賣，沒登入只能看盤。賺賠不算進打工榜和花錢榜。</p>
             <p class="pt-2 text-stone-400">遊戲幣，不是真的股票。二十七樓證券交易所不對晚報的任何內容負責。</p>
         </section>
@@ -513,8 +512,9 @@
             $('sRange').textContent = day ? `漲停 ${pf(s.up)}・跌停 ${pf(s.down)}` : `30 日最高 ${pf(Math.max(...a))}・最低 ${pf(Math.min(...a))}`;
         }
         const qty = () => Math.max(0, Math.floor(Number($('q').value) || 0));
-        function room(s) {   // 這一檔還能買多少錢（錢包、一檔上限、全部上限）
+        function room(s) {   // 這一檔還能買多少錢：2026-11-24 起不限額，只看錢包（舊後端還會給上限，就照舊算）
             const h = holdOf(s.code), one = (h ? h.cost : 0) + (M ? M.orders.filter(o => o.code === s.code && o.side === 'buy').reduce((t, o) => t + Math.round(o.price * o.n * 1.01), 0) : 0);
+            if (Q.rules.capOne == null) return Wallet.money;
             return Math.min(Wallet.money, Q.rules.capOne - one, Q.rules.capAll - (M ? M.cost : 0));
         }
         const cost = (p, n) => { const a = Math.round(p * n); return { amount: a, fee: Math.ceil(a * Q.rules.fee) }; };
@@ -541,7 +541,7 @@
             const lines = [`${n} 股 × ${pf(s.price)} ＝ ${fmt(amt.amount)}`, `買進付 <b class="text-wabi-dark">${fmt(amt.amount + amt.fee)}</b>（含手續費 ${fmt(amt.fee)}）・賣出拿回 ${fmt(amt.amount - amt.fee)}`];
             if (s.state === 'up') lines.push('<span class="warn">漲停中：買單會排隊，先扣錢；漲停打開才用漲停價成交，收盤前沒排到就退錢。</span>');
             if (s.state === 'down') lines.push('<span class="warn">跌停中：賣單會排隊；跌停打開才用跌停價成交，收盤前沒排到就取消。</span>');
-            if (n && amt.amount + amt.fee > lim) lines.push(`<span class="warn">${amt.amount + amt.fee > Wallet.money ? '錢包不夠' : '超過持股上限（一檔 $50 萬、全部 $200 萬）'}，最多可買 ${maxBuy(s)} 股。</span>`);
+            if (n && amt.amount + amt.fee > lim) lines.push(`<span class="warn">${amt.amount + amt.fee > Wallet.money ? '錢包不夠' : '超過持股上限'}，最多可買 ${maxBuy(s)} 股。</span>`);
             $('sCost').innerHTML = lines.join('<br>');
             $('buy').textContent = busy ? '…' : s.state === 'up' ? '掛漲停買單' : '買進';
             $('sell').textContent = busy ? '…' : s.state === 'down' ? '掛跌停賣單' : '賣出';

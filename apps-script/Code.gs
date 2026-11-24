@@ -73,7 +73,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-23a';
+var BACKEND_VERSION = '2026-11-24a';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1 };
 
@@ -1877,7 +1877,7 @@ var STOCK_DRIFT = 0.006;                          // 沒上新聞的每天也有
 var STOCK_REVERT = 0.004;                         // 每小時往起始價拉回：偏離 50% 就拉 0.2%
 var STOCK_SHOCK = 0.10, STOCK_SHOCK_SIZE = [0.09, 0.16];  // 沒有晚報預告的突發大漲大跌：每天 10% 機會挑一檔（不是上新聞那檔）
 var STOCK_FEE = 0.01;                             // 買、賣各 1%（零頭進位）
-var STOCK_CAP_ONE = 500000, STOCK_CAP_ALL = 2000000;  // 持股成本上限：一檔、全部（含掛單預留的錢）
+// 持股上限：2026-11-24 使用者說「改不限額」，拿掉了（以前一檔 $50 萬、全部 $200 萬）；只看錢包夠不夠
 var STOCK_HISTORY_DAYS = 30;                      // 第一次開市假裝上市幾天了
 var STOCK_OPS_PER_HOUR = 300;
 var STOCK_TRADE_HEADERS = ['timestamp', 'line_id', 'code', 'side', 'shares', 'price', 'amount', 'fee', 'pl', 'kind', 'money'];
@@ -2214,7 +2214,7 @@ function stockQuoteData(nowMs) {
     // news／newsNow 是第一則（舊頁面用），newsList／newsNowList 是整份（一則或兩則）
     stocks: stocks, news: stockPublicNews((news[newsDay] || [])[0]), newsNow: stockPublicNews((news[today] || [])[0]),
     newsList: stockPublicList(news[newsDay]), newsNowList: stockPublicList(news[today]),
-    rules: { fee: STOCK_FEE, capOne: STOCK_CAP_ONE, capAll: STOCK_CAP_ALL, limit: STOCK_LIMIT, newsHour: STOCK_NEWS_HOUR }
+    rules: { fee: STOCK_FEE, capOne: null, capAll: null, limit: STOCK_LIMIT, newsHour: STOCK_NEWS_HOUR }
   };
   cache.put(key, JSON.stringify(out), 180);
   return out;
@@ -2399,10 +2399,6 @@ function stockTrade(input) {
   if (Number(input.slot) !== quote.slot) return stockReply(p, now, { result: 'moved', error: '價格剛跳了，再看一次' });
   var amt = stockAmount(q.price, n);
   if (side === 'buy') {
-    var held = st.h[code] ? st.h[code].cost : 0;
-    var reservedOne = st.o.filter(function (o) { return o.code === code && o.side === 'buy'; }).reduce(function (t, o) { return t + o.reserve; }, 0);
-    if (held + reservedOne + amt.amount + amt.fee > STOCK_CAP_ONE) return { result: 'error', error: '一檔最多買 $' + STOCK_CAP_ONE.toLocaleString() + '（照成本算）' };
-    if (stockCostAll(st) + amt.amount + amt.fee > STOCK_CAP_ALL) return { result: 'error', error: '全部持股最多 $' + STOCK_CAP_ALL.toLocaleString() + '，先賣一些' };
     if (p.money < amt.amount + amt.fee) return { result: 'error', error: '錢包不夠' };
     p.money -= amt.amount + amt.fee;
     if (q.state === 'up') {
