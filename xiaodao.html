@@ -28,7 +28,7 @@
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
-    <script src="assets/xiaodao-rules.js?v=20261124a"></script>
+    <script src="assets/xiaodao-rules.js?v=20261124b"></script>
     <script src="assets/xiaodao-draw.js?v=20261124b"></script>
     <script src="assets/xiaodao-fx.js?v=20261124c"></script>
     <script src="assets/xiaodao-room.js?v=20261122d"></script>
@@ -685,7 +685,7 @@
                 openParkCard(); draw();
             }
             function exitPark() { park = null; card.classList.remove('on'); fit(); }
-            const vimg = (k, max = 2) => { const v = X.VEH[k]; let z = Math.min(max, 48 / Math.max(v.h, v.w * 1.1)); if (z >= 1) z = Math.floor(z); return `<img src="assets/xiaodao/v/${k}.png" alt="" style="width:${Math.round(v.w * z)}px;height:${Math.round(v.h * z)}px">`; };
+            const vimg = (k, max = 2) => { const v = X.VEH[k]; let z = Math.min(max, 48 / Math.max(v.h, v.w * 1.1)); if (z >= 1) z = Math.floor(z); return `<img src="assets/xiaodao/v/${k}.png?v=20261124a" alt="" style="width:${Math.round(v.w * z)}px;height:${Math.round(v.h * z)}px">`; };
             function openParkCard() {
                 const f = park.f, lv = X.level(S, f), F = X.FAC[f], list = X.slotsOf(S, f), K = KIND[f];
                 const n = list.filter(q => q.v).length;
@@ -1244,7 +1244,7 @@
             size();
             new ResizeObserver(() => { if (size()) { if (world) { if (zoomed()) { clampCam(); draw(); } else fit(); } } }).observe(view);
             renderTop();
-            D.load('assets/xiaodao/', '20261122b').then(() => setTimeout(() => rebuild(true), 30));
+            D.load('assets/xiaodao/', '20261124a').then(() => setTimeout(() => rebuild(true), 30));
             roomLoaded = Promise.all([RM.load('assets/xiaodao/', '20261122a', '20261122a'), RI.load('assets/xiaodao/', '20261122a')]);   // 家具的圖先載好（商店、倉庫的小圖要用）
             roomLoaded.then(() => { if ($('sheet').classList.contains('on')) renderSheet(); if (roomOn) renderRoom(); });
         }
