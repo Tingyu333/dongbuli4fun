@@ -18,7 +18,7 @@ canvas { image-rendering: pixelated; display: block; border-radius: 10px; }
   <div class="col"><h2>平塗</h2><canvas id="b" width="375" height="220"></canvas>
     <div class="names">
       <div>蘋果鴨<small>站在蛋糕架上，翅膀端著一塊蛋糕</small></div>
-      <div>浣熊大王<small>坐在一堆金幣上，咬著金幣比讚</small></div>
+      <div>浣熊大王<small>坐在一堆金幣上，嘴角咬金幣、比讚</small></div>
       <div>青江菜船長<small>泡在一杯水裡，敬禮</small></div>
       <div>店貓<small>窩在文件盤裡，把筆推下桌</small></div>
       <div>坐洗部的狗<small>坐在洗頭盆裡，頭頂泡泡、搖尾巴</small></div>
@@ -44,6 +44,7 @@ const C = { ink0: '#1c2229', ink2: '#3a4656', ink3: '#56677a', g1: '#7a8c9d', g2
   // 坐洗部的狗
   cr: '#fdf0d6', cr2: '#ead1a0', cr0: '#a8874f', ear: '#d9b47a', ear2: '#b48a52', bub0: '#96b9d7', tub: '#b5d2e6', tub2: '#8fb5d1', tub0: '#4f7894',
   // 鼴鼠
+  rm: '#5a5156', rb: '#e8e0d4', rh: '#5f5659', rh0: '#352f31',
   rw: '#b4aba7', rw2: '#968b88', rw0: '#5a504e', soot: '#6f6566',
   pu: '#7c5cae', pu2: '#5f4490', pu0: '#36245a', puh: '#a68ad6', mt: '#a6d8c8', mt2: '#7fbfac', mt0: '#3f7f6c',
   br: '#8f6a56', br2: '#6e4f40', br0: '#3a271e', brl: '#b8957f', hat: '#f2c230', hat2: '#cc9c1e', hat0: '#7a5a10', mpk: '#f39aa8' };
@@ -51,7 +52,7 @@ const C = { ink0: '#1c2229', ink2: '#3a4656', ink3: '#56677a', g1: '#7a8c9d', g2
 const OLC = { [C.wh]: C.g2, [C.y1]: C.y0, [C.y2]: C.y0, [C.red]: C.red0, [C.red2]: C.red0, [C.redh]: C.red0, [C.gr1]: C.gr0, [C.b1]: C.b0, [C.o2]: C.o0, [C.o1]: C.o0,
   [C.rg]: C.rg0, [C.rg2]: C.rg0, [C.mask]: C.rg0, [C.fur]: C.rg0, [C.cape]: C.cape0, [C.cape2]: C.cape0, [C.au1]: C.au0, [C.au2]: C.au0,
   [C.lf]: C.lf0, [C.lf2]: C.lf0, [C.st]: C.st0, [C.st2]: C.st0, [C.ct]: C.ct0, [C.ct2]: C.ct0, [C.cw]: C.ct0, [C.cr]: C.cr0, [C.cr2]: C.cr0, [C.ear]: C.cr0, [C.ear2]: C.cr0,
-  [C.br]: C.br0, [C.br2]: C.br0, [C.brl]: C.br0, [C.hat]: C.hat0, [C.hat2]: C.hat0, [C.pk2]: C.pink, [C.mpk]: C.red2, [C.pu]: C.pu0, [C.rw]: C.rw0, [C.rw2]: C.rw0, [C.mt]: C.mt0 };
+  [C.br]: C.br0, [C.br2]: C.br0, [C.brl]: C.br0, [C.hat]: C.hat0, [C.hat2]: C.hat0, [C.pk2]: C.pink, [C.mpk]: C.red2, [C.pu]: C.pu0, [C.rw]: C.rw0, [C.rw2]: C.rw0, [C.rh]: C.rh0, [C.rb]: C.rw0, [C.mt]: C.mt0 };
 
 function scene(X, sil) {
   const R = (a, b, w, h, col) => { X.fillStyle = col; X.fillRect(Math.round(a), Math.round(b), Math.round(w), Math.round(h)); };
@@ -118,45 +119,55 @@ function scene(X, sil) {
     lel(Kc, kx, ky, 6.5, 1.4, C.wh); lpoly(Kc, [[kx - 4, ky - 1], [kx + 5, ky - 1], [kx + 5, ky - 6]], C.wh); for (let i = kx - 3; i <= kx + 4; i++) lp(Kc, i, ky - 3, C.pk2); lp(Kc, kx + 4, ky - 5, C.pk2);
     outline(Kc); lel(Kc, kx + 3, ky - 8, 1.6, 1.6, C.red); lp(Kc, kx + 3, ky - 10, C.gr1); lp(Kc, kx + 2, ky - 9, C.redh); blit(Kc, dy);
   }
-  // ---- 浣熊大王（第三版，妹妹：「現在是乖，還沒到想捏」）：頭大身小圓滾滾、暖灰、小熊貓那種小眼罩、
-  //      瞇眼壞笑（酷洛米的「哼～我最棒」）、金幣咬在嘴角露一顆門牙、另一手比讚、屁股下一顆一顆的金幣、整件紅披風＋白毛領。
-  //      第四版（妹妹：「變成灰色泰迪熊」）：眼罩改回一條橫過眼睛、兩頰蓬毛、蓬蓬條紋尾巴往上翹、身體矮一半、^ ^ 畫大、拿掉煤灰 ----
+  // ---- 浣熊大王（第六版：浣熊專家＋妹妹的定案清單）----
+  //  使用者說上一版「很詭異」。專家：眼罩畫反了（分開的眼圈＋中間白線是貉／熊貓，浣熊是一條連起來的面罩、白色在上面當眉毛）、
+  //  黑底白 ^ 像空眼窩、沒有吻部臉是平的、毛領黑點像一排牙、肚子像第二張臉、手像細棍、尾巴從肩膀長出來。
+  //  定案：一條深灰面罩（眉心細、兩端往下斜）＋兩道白眉（一邊挑高）；黑豆眼＋亮點、下緣彎；白色小倒三角吻部、鼻子比眼睛大；
+  //  一邊嘴角上揚、金幣橫咬在那邊露一顆小牙；圓豆坐姿頭稍大、肚子奶油淺灰、毛領乾淨、披風垂在背後鋪在金幣上；
+  //  手短胖深色像戴手套、胸前拳頭豎拇指、叉腰只露手肘；環紋尾巴從屁股後面繞上來、尾尖深色；耳朵白邊；小皇冠歪戴。
   { const cx = 188, dy = 92;
     N(cx - 24, dy - 1, 48, 1, C.g3);
     el(cx, dy - 5, 23, 4.5, C.pu0); el(cx, dy - 5, 22, 3.6, C.pu); el(cx + 2, dy - 3.5, 20, 1.6, C.pu2); el(cx - 8, dy - 7, 8, .8, C.puh);
     [[-22, -3], [22, -3]].forEach(([a, b]) => { N(cx + a - 1, dy + b, 2, 3, C.au1); N(cx + a - 1, dy + b + 3, 2, 1, C.au0); });
-    const coin = (x0, y0) => { el(x0, y0, 3.4, 1.4, C.au0); el(x0, y0 - .5, 3, .9, C.au1); px(x0 - 1, y0 - 1, C.au2); px(x0, y0 - 1, C.au2); };   // 一顆一顆的金幣
+    const coin = (x0, y0) => { el(x0, y0, 3.4, 1.4, C.au0); el(x0, y0 - .5, 3, .9, C.au1); px(x0 - 1, y0 - 1, C.au2); px(x0, y0 - 1, C.au2); };
     [[-15, 0], [-15, -2], [-15, -4], [-11, 0], [14, 0], [14, -2], [10, 0], [-4, 0], [3, 0], [-7, -1.5], [7, -1.5], [0, -1.5]].forEach(([a, b]) => coin(cx + a, dy - 8 + b));
-    if (!sil) [[-19, -17], [18, -14]].forEach(([a, b]) => { px(cx + a, dy + b, C.wh); px(cx + a - 1, dy + b, C.au2); px(cx + a + 1, dy + b, C.au2); px(cx + a, dy + b - 1, C.au2); px(cx + a, dy + b + 1, C.au2); });
+    if (!sil) [[-19, -17], [19, -13]].forEach(([a, b]) => { px(cx + a, dy + b, C.wh); px(cx + a - 1, dy + b, C.au2); px(cx + a + 1, dy + b, C.au2); px(cx + a, dy + b - 1, C.au2); px(cx + a, dy + b + 1, C.au2); });
     const by = dy - 10, { L, E, PG, at } = mk(cx, by);
-    { const Tl = Lay(); const tp = t => at(9 + t * 10, -1 - t * 19 + t * t * 4); for (let k = 0; k <= 24; k++) { const t = k / 24, [p, q] = tp(t); lel(Tl, p, q, (3.2 - t * .7) * S, (3.2 - t * .7) * S, C.rw); }
-      [.52, .7, .88].forEach(t => { const [p, q] = tp(t), ang = Math.atan2(-19 + 8 * t, 10); lel(Tl, p, q, .9 * S, 4 * S, C.mask, ang, C.rw); }); { const [p, q] = tp(1.02); lel(Tl, p, q, 2 * S, 2 * S, C.mask, 0, C.rw); } outline(Tl); blit(Tl, dy); }   // 灰黑條紋的蓬蓬尾巴，從屁股旁邊翹出來（另一層，畫在身體後面）
-    E(0, -4.5, 11, 6, C.cape); E(5, -2, 5, 3.5, C.cape2, 0, C.cape);                                       // 整件紅披風
-    E(0, -3.6, 8.5, 4.8, C.rw); E(0, -3, 5.2, 3.2, C.fur, 0, C.rw);                                         // 矮矮圓圓的肚子
-    E(-4, .3, 2.5, 1.5, C.rw); E(4, .3, 2.5, 1.5, C.rw);                                                     // 兩隻小腳
-    E(8.2, -4, 2, 2.2, C.rw);                                                                                // 叉腰的手
-    E(0, -8.5, 9.5, 2.3, C.fur);                                                                             // 白毛領
-    E(-8.5, -26.5, 3.2, 3.2, C.rw); E(8.5, -26.5, 3.2, 3.2, C.rw); E(-8.5, -26, 1.6, 1.6, C.rw2, 0, C.rw); E(8.5, -26, 1.6, 1.6, C.rw2, 0, C.rw);
-    E(0, -18, 11.5, 9.5, C.rw);                                                                              // 頭
-    PG([[-10.5, -16], [-14.8, -13], [-9.5, -11.5]], C.rw); PG([[10.5, -16], [14.8, -13], [9.5, -11.5]], C.rw);   // 兩頰的蓬毛（浣熊的招牌）
-    E(-4.6, -19.2, 4.7, 2.7, C.mask, .12, C.rw); E(4.6, -19.2, 4.7, 2.7, C.mask, -.12, C.rw); E(0, -21, 1.2, 3, C.fur, 0, C.mask);   // 一條橫過眼睛的黑眼罩，中間一道白
-    E(0, -14.5, 5, 3, C.fur, 0, C.rw);
-    E(6, -12, 4, 2.4, C.rw2, 0, C.rw);
-    PG([[2, -26.5], [2, -31], [4.3, -29], [6.5, -33], [8.6, -29.2], [11, -30.6], [10.6, -26]], C.au1);     // 小皇冠，歪戴在一邊
+    { const Tl = Lay(), tp = t => at(6 + t * 9, -2 - t * 15 + t * t * 3);                                // 環紋尾巴：從屁股後面繞上來
+      for (let k = 0; k <= 24; k++) { const t = k / 24, [p, q] = tp(t); lel(Tl, p, q, (3.1 - t * .6) * S, (3.1 - t * .6) * S, C.rw); }
+      [.48, .66, .84].forEach(t => { const [p, q] = tp(t), ang = Math.atan2(-15 + 6 * t, 9); lel(Tl, p, q, .9 * S, 4 * S, C.rm, ang, C.rw); });
+      { const [p, q] = tp(1.03); lel(Tl, p, q, 2 * S, 2 * S, C.rm, 0, C.rw); }
+      outline(Tl); blit(Tl, dy); }
+    E(0, -5.5, 10.5, 6.5, C.cape); E(0, -.8, 13, 2.4, C.cape); E(6, -2, 5, 3, C.cape2, 0, C.cape);        // 披風垂在背後、鋪在金幣上
+    E(0, -6, 8.5, 6.2, C.rw); E(0, -5.2, 5.6, 4.4, C.rb, 0, C.rw);                                        // 圓豆身體、奶油淺灰肚子
+    E(9, -5.5, 2.2, 2.4, C.rw);                                                                              // 叉腰：只露手肘
+    E(0, -11.6, 8.6, 1.9, C.fur);                                                                            // 乾淨的白毛領
+    PG([[-11.5, -26.5], [-9.6, -33], [-5, -29]], C.fur); PG([[11.5, -26.5], [9.6, -33], [5, -29]], C.fur);   // 耳朵：白邊
+    PG([[-10.4, -27.4], [-9.4, -31.3], [-6.4, -29]], C.rw2); PG([[10.4, -27.4], [9.4, -31.3], [6.4, -29]], C.rw2);
+    E(0, -21, 12.6, 9.4, C.rw);                                                                              // 頭：寬過高
+    PG([[-11.6, -23.5], [-15.8, -20.2], [-11.4, -17.8]], C.rw); PG([[11.6, -23.5], [15.8, -20.2], [11.4, -17.8]], C.rw);   // 眼罩高度的兩撮頰毛
+    PG([[-11.5, -19.3], [-10.8, -23], [-6.2, -24.6], [-2.2, -23.4], [0, -22.4], [2.2, -23.4], [6.2, -24.6], [10.8, -23], [11.5, -19.3],
+        [8.2, -17.6], [5, -19.4], [2.2, -20.4], [0, -20.9], [-2.2, -20.4], [-5, -19.4], [-8.2, -17.6]], C.rm, C.rw);   // 一條連起來的深灰面罩，眉心細、兩端往下斜
+    E(0, -26.5, .7, 2.4, C.rm, 0, C.rw);                                                                     // 額頭中間一道深色線
+    E(-5.6, -26.3, 3.3, 1, C.fur, -.12, C.rw); E(5.8, -27.6, 3.3, 1, C.fur, .32, C.rw);                     // 兩道白眉，右邊挑高
+    E(0, -16.8, 4, 3, C.fur, 0, C.rw); PG([[-4.4, -18.6], [4.4, -18.6], [0, -13.2]], C.fur, C.rw);           // 白色倒三角吻部
+    E(0, -18.9, 3.6, 1, C.fur, 0, C.rm);
+    E(-2, -14.8, 1.8, .6, C.rb, 0, C.fur);
+    PG([[1.2, -29], [1.2, -33.3], [3.4, -31.4], [5.6, -35.3], [7.7, -31.5], [10, -32.8], [9.6, -28.4]], C.au1);   // 小皇冠歪戴在右耳上
     outline(L);
-    const [kr, kq] = at(6.5, -29.5); F(L, kr - 3, kq + 1, [[0, 0]], C.red); F(L, kr, kq - 1, [[0, 0]], C.b1); F(L, kr + 3, kq, [[0, 0]], C.gr1);
-    [[-6, -1.5], [-2, -2], [2, -2], [6, -1.5]].forEach(([a, b]) => { const [p, q] = at(a, b - 7); F(L, p, q, [[0, 0]], C.ink2); });
-    [[-4.6, -19.2], [4.6, -19.2]].forEach(([a, b]) => { const [p, q] = at(a, b); F(L, p - 2, q + 1, [[0, 0], [1, -1], [2, -2], [3, -1], [4, 0]], C.wh); });   // 大大的 ^ ^ 得意眼
-    const [ex, ey] = at(0, -16);
-    F(L, ex - 1, ey + 1, [[0, 0], [1, 0]], C.ink0);
-    F(L, ex - 3, ey + 3, [[0, 0], [1, 1], [2, 1], [3, 1], [4, 0], [5, -1]], C.ink2); F(L, ex + 1, ey + 5, [[0, 0]], C.wh);   // 嘴角往上斜的壞笑、一顆門牙
-    F(L, ex - 8, ey + 2, [[0, 0], [1, 0]], C.pk2); F(L, ex + 7, ey + 2, [[0, 0], [1, 0]], C.pk2);
+    const [kr, kq] = at(5.6, -30.8); F(L, kr - 3, kq + 1, [[0, 0]], C.red); F(L, kr, kq - 1, [[0, 0]], C.b1); F(L, kr + 3, kq, [[0, 0]], C.gr1);
+    [[-5.4, -21.6], [5.4, -21.6]].forEach(([a, b]) => { const [p, q] = at(a, b);                             // 黑豆眼＋亮點，下緣彎彎（得意、微微瞇）
+      F(L, p - 1, q, [[0, 0], [1, 0], [2, 0], [1, 1], [2, 1], [1, 2]], C.ink0); F(L, p - 1, q + 1, [[0, 0]], C.ink0); F(L, p, q + 1, [[0, 0]], C.wh); });
+    const [nx, ny] = at(0, -18.8); F(L, nx - 2, ny - 1, [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [1, 1], [2, 1], [3, 1], [2, 2]], C.ink0); F(L, nx - 1, ny - 1, [[0, 0]], C.g2);   // 鼻子比眼睛大
+    const [mx, my] = at(0, -15.6); F(L, mx - 2, my, [[0, 0], [1, 1], [2, 1], [3, 0], [4, -1]], C.ink2); F(L, mx + 2, my + 2, [[0, 0]], C.wh);   // 一邊嘴角上揚、一顆小牙
+    [[-8.6, -16.8], [8.8, -17.2]].forEach(([a, b]) => { const [p, q] = at(a, b); F(L, p, q, [[0, 0], [1, 0]], C.pk2); });
     blit(L, dy);
-    const Cn = Lay(), [kx, ky] = at(4.8, -13.2);                                                             // 咬在嘴角的金幣
-    lel(Cn, kx, ky, 2.6, 3.2, C.au1, .3); outline(Cn); lel(Cn, kx, ky, 1.3, 1.8, C.au2, .3, C.au1); lp(Cn, kx - 1, ky - 2, C.wh); blit(Cn, dy);
-    const Th = Lay(), [tx, ty] = at(-11.5, -9);                                                              // 舉到肩膀旁邊比讚
-    lel(Th, tx, ty, 3, 2.2, C.rw); lel(Th, tx - .5, ty - 5.2, 1.7, 3.6, C.rw); outline(Th); lp(Th, tx - 1, ty - 8, C.wh); for (let i = -3; i <= 2; i++) lp(Th, tx + i, ty - 1, C.rw2); blit(Th, dy);   // 拳頭橫的、大拇指直直往上
-    if (!sil) { const sx = kx + 5, sy = ky - 4; px(sx, sy, C.wh); px(sx - 1, sy, C.au2); px(sx + 1, sy, C.au2); px(sx, sy - 1, C.au2); px(sx, sy + 1, C.au2); }
+    const Cn = Lay(), [kx, ky] = at(5.6, -15.4);                                                             // 金幣橫咬在上揚那邊的嘴角
+    lel(Cn, kx, ky, 3.4, 2.2, C.au1, -.2); outline(Cn); lel(Cn, kx, ky, 2, 1.1, C.au2, -.2, C.au1); lp(Cn, kx - 2, ky - 1, C.wh); lp(Cn, kx, ky, C.au0); blit(Cn, dy);
+    const Hd = Lay(), [hx, hy] = at(-2.4, -8.2);                                                             // 胸前的拳頭＋豎起來的拇指（深色手套）
+    lel(Hd, hx - 5, hy + 2, 2.6, 2.6, C.rw); lel(Hd, hx, hy + 1.5, 3, 3.4, C.rh); lel(Hd, hx - 2.6, hy - 3, 1.3, 2.4, C.rh, -.4);
+    outline(Hd); [0, 2, 4].forEach(d => { lp(Hd, hx, hy + d - 1, C.rh0); lp(Hd, hx + 1, hy + d - 1, C.rh0); }); lp(Hd, hx - 3, hy - 4, C.g1); blit(Hd, dy);   // 比讚：拳頭直的、手指一節一節橫著彎起來，拇指在左上角斜斜豎起（不要放正中間，免得被看成別的手勢）
+    if (!sil) { const sx = kx + 6, sy = ky - 4; px(sx, sy, C.wh); px(sx - 1, sy, C.au2); px(sx + 1, sy, C.au2); px(sx, sy - 1, C.au2); px(sx, sy + 1, C.au2); }
   }
   // ---- 青江菜船長：泡在一杯水裡，一片葉子舉到帽簷敬禮，生氣的粗眉 ----
   { const cx = 310, dy = 92;
