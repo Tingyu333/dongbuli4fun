@@ -184,7 +184,7 @@ function scene(X, sil) {
     N(cx - 15, dy - 1, 30, 1, C.g3);
     N(cx - 11, dy - 22, 22, 21, C.g5);                                                                       // 杯子後面那片玻璃
     const by = dy - 3, { L, E, PG, at } = mk(cx, by);
-    const su = win(3.4, .9), drop = su < 0 ? 0 : su < .4 ? ease(su / .4) * 9 : su < .5 ? (1 - (su - .4) / .1) * 9 : su < .7 ? -Math.sin((su - .5) / .2 * Math.PI) * 1 : 0, sway = Math.sin(TT * 2) * .05, jx = su >= .45 && su < .75 ? Math.sin((su - .45) * Math.PI * 12) * 1.3 * (1 - (su - .45) / .3) : 0;   // 動畫（jx：啪的時候整株抖）
+    const su = win(3.4, .9), drop = su < 0 ? 0 : su < .4 ? ease(su / .4) * 15 : su < .5 ? (1 - (su - .4) / .1) * 15 : su < .7 ? -Math.sin((su - .5) / .2 * Math.PI) * 1 : 0, sway = Math.sin(TT * 2) * .05, jx = su >= .45 && su < .75 ? Math.sin((su - .45) * Math.PI * 12) * 1.3 * (1 - (su - .45) / .3) : 0;   // 動畫（jx：啪的時候整株抖）
     E(-9 + jx, -27, 5, 10, C.lf, -.55 - sway); E(9 + jx, -27.5, 5, 10, C.lf, .55 + sway); E(jx, -31, 6, 11, C.lf2);                 // 三片深綠大葉
     E(0, -10, 6.5, 12, C.st); E(3, -7, 3, 9, C.st2, 0, C.st);                                                // 白綠菜梗（臉在這裡）
     E(0, -24, 7.5, 2.6, C.wh); PG([[-6.5, -24], [-5.5, -29], [5.5, -29], [6.5, -24]], C.wh);             // 船長帽：白頂
@@ -196,11 +196,11 @@ function scene(X, sil) {
     F(L, ex - 5, ey - 3, [[0, 0], [1, 1], [2, 1]], C.ink0); F(L, ex + 2, ey - 2, [[0, 0], [1, 0], [2, -1]], C.ink0);   // 生氣的粗眉
     F(L, ex - 1, ey + 6, [[0, 0], [1, 0], [2, 0]], C.ink2);
     blit(L, dy);
-    const Sa = Lay(); { const [a1, b1] = at(7, -16.5 + drop / S * .6), [a2, b2] = at(8.2, -21.6 + drop / S); lel(Sa, a1, b1, 2.3, 4.6, C.st, -.4); lel(Sa, a2, b2, 4.6, 2.3, C.st2, -.35); lel(Sa, a2 - 1, b2 - 1, 2, 1, C.st, -.35, C.st2); outline(Sa); blit(Sa, dy); }   // 菜梗伸出來的小手，葉子尖碰帽簷敬禮（手是菜梗的淺綠，才不會看成多一片葉子）
+    const Sa = Lay(); { const [a1, b1] = at(7 + drop / 15, -16.5 + drop / S * .45), [a2, b2] = at(8.2 + drop / 8, -21.6 + drop / S); /* 放下時手垂到杯子邊 */ lel(Sa, a1, b1, 2.3, 4.6, C.st, -.4); lel(Sa, a2, b2, 4.6, 2.3, C.st2, -.35); lel(Sa, a2 - 1, b2 - 1, 2, 1, C.st, -.35, C.st2); outline(Sa); blit(Sa, dy); }   // 菜梗伸出來的小手，葉子尖碰帽簷敬禮（手是菜梗的淺綠，才不會看成多一片葉子）
     // 杯子：水用棋盤格（看得到泡在裡面的菜梗）、水面、杯緣、左邊一道反光
     if (!sil) { for (let j = dy - 16; j < dy - 1; j++) for (let i = cx - 10; i < cx + 10; i++) if ((i + j) % 2 === 0) px(i, j, C.cy2); R(cx - 10, dy - 17, 20, 1, C.cy); [[-5, 0], [3, 5], [-2, 9], [5, 2]].forEach(([a, k]) => { const bx = cx + a + Math.round(Math.sin(TT * 3 + k) * .6), byy = dy - 4 - Math.floor((TT * 5 + k) % 12); R(bx, byy, 2, 2, C.wh); px(bx + 1, byy + 1, C.cy); }); }   // 泡泡往上冒
     N(cx - 11, dy - 22, 1, 21, C.g2); N(cx + 10, dy - 22, 1, 21, C.g1); N(cx - 11, dy - 2, 22, 2, C.g3); N(cx - 9, dy - 20, 1, 15, C.wh);
-    if (!sil && su >= .4 && su < .75) { const [hx2, hy2] = at(8.2, -21.6); [[6, -2], [7, 0], [6, 2]].forEach(([a, b]) => R(hx2 + a, hy2 + b, 2, 1, C.st0)); }   // 「啪」敬禮的線
+    if (!sil && su >= .45 && su < .85) { const [hx2, hy2] = at(8.2, -21.6); [[0, 0], [1, -1], [2, -1], [3, -2]].forEach(([a, b]) => { px(hx2 + 8 + a, hy2 - 2 + b, C.ink2); px(hx2 + 9 + a, hy2 + 2 + b, C.ink2); }); }   // 「啪」敬禮的兩條動作線
   }
 
   // ================= 第二排 =================
