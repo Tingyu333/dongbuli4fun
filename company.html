@@ -622,7 +622,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             ${S.applicants.map((s, k) => { const sp = s.special ? R.SPECIALS[s.key] : null, fee = R.hireFee(S.stage, s);
                 return `<div class="app glass${sp ? ' gold' : ''}" style="margin:10px 0 0">${avaHtml(spriteKey(s))}<div><div class="nm">${esc(R.staffName(s))}${sp ? '<span class="star"></span><small>特別人選</small>' : '<small>一般・' + R.COLORS[s.color] + '</small>'}</div>${statsHtml(s)}<div class="say">${esc(sp ? sp.skill + '：' + sp.skillText : s.say)}</div></div>
                 <div class="ft num"><span>簽約金 <b>${R.fmt(fee)}</b>・薪水抽 ${sp ? 1.5 : 1} 份</span><button data-k="${k}" ${full ? 'disabled' : ''}>聘用</button></div></div>`; }).join('') || '<div class="empty">這一批都請完了</div>'}
-            <div class="cta"><button class="num" disabled>${R.clock(left / 1000)} 後免費換</button><button class="main num" id="aRef" style="flex:1">現在換一批 ${R.fmt(st().refresh)}</button></div>`);
+            <div class="cta"><button class="num" id="aFree" disabled>${R.clock(left / 1000)} 後免費換</button><button class="main num" id="aRef" style="flex:1">現在換一批 ${R.fmt(st().refresh)}</button></div>`);
         $('aClose').onclick = hide;
         document.querySelectorAll('#sheet .ft button').forEach(b => b.onclick = () => {
             const s = S.applicants[+b.dataset.k], fee = R.hireFee(S.stage, s);
@@ -631,7 +631,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             S.applicants.splice(+b.dataset.k, 1); s.id = 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1e4); S.staff.push(s); if (s.special) S.hiredSp.push(s.key); addDex(s);
             save(); render(); openApply(); toast(R.staffName(s) + '來上班了');
         });
-        $('aRef').onclick = () => { if (!payWallet(st().refresh)) return; S.applicants = R.applicants(S.stage, S.hiredSp); S.applyAt = now() + R.FREE_REFRESH * 60000; save(); openApply(); };
+        $('aRef').onclick = () => { if (!payWallet(st().refresh)) return; S.applicants = R.applicants(S.stage, S.hiredSp); save(); openApply(); };   // 付錢換不動免費換的時間（使用者：換一批不會刷新免費更換時間）
     }
     $('openApply').onclick = openApply;
 
@@ -664,6 +664,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         if (view === 'office') renderOffice(); else if (view === 'board') renderBoard(); else if (view === 'staff') renderStaff(); else renderCompany();
     }
     function renderLive() {   // 每秒只更新倒數和進度
+        if ($('aFree')) $('aFree').textContent = R.clock((S.applyAt - now()) / 1000) + ' 後免費換';
         if (view === 'office') { renderRun(); drawScene(); }
         if (view === 'board') $('boardNext').textContent = S.tut ? '先做完雞塊的這件' : '新案子 ' + R.clock((S.nextBoardAt - now()) / 1000) + ' 後';
     }
