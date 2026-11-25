@@ -308,9 +308,9 @@ stage('戊・現代像素（細顆粒）', X => {
   function JULIE_AWAKE() { const cx = 76, by = DY - 8, L = Lay(), E = (a, b, rx, ry, col, th, only) => lel(L, cx + a * S, by + b * S, rx * S, ry * S, col, th, only);
     E(4, -6.5, 12, 8, C.wh); E(15, -10.5, 4.2, 2.2, C.wh, -.6); E(18, -13.5, 1.8, 1.2, C.wh, -1);   // 圓圓的身體坐著、鴨屁股翹起來
     E(-3.5, -15, 8.8, 8, C.wh);                                            // 頭：抬起來、往前（左）探
-    E(-12.8, -12.8, 4.2, 1.7, C.o2, .45); E(-15.6, -11.2, 1.4, 1.2, C.o2);   // 鴨嘴往前、微微往下（在看文件）
+    { const b0x = Math.round(cx - 25), b0y = Math.round(by - 12.9 * S) - 2; ['..oooooooo', '.ooooooooo', 'oooooooooo', '.OOOOOOOO.'].forEach((r, j) => [...r].forEach((ch, i) => { if (ch !== '.') lp(L, b0x + i, b0y + j, ch === 'O' ? C.o1 : C.o2); })); }   // 鴨嘴：跟睡覺那張一樣扁扁平平往前，只微微往下（使用者：嘴巴怎麼了——原本斜 26 度又大又塊，像歪掉）
     E(9, -2.6, 8, 2.6, C.g4, 0, C.wh);                                    // 一階陰影
-    E(-12.6, -11.4, 3.6, .5, C.o1, .45, C.o2);
+       // 嘴縫在下緣（畫在上面那張小圖裡）
     E(-5, -6, 6.5, 2.6, C.g4, -.45);                                       // 翅膀往前伸（拿放大鏡）
     outline(L);
     const hx = cx - 3.5 * S, hy = by - 15 * S;
