@@ -59,6 +59,20 @@ window.CompanyRules = (() => {
     xiaowu: { who: '小吳鴨', series: '書塔系列', jobs: ['精裝書目錄', '書背標籤', '疊書安全規範', '圖書館導覽', '世界最高的書塔'], gift: '一本精裝書', other: ['借書證', '「不要碰我的書」告示'] },
   };
 
+  // ---------- 委託卡片的小圖：看案子名字是哪一類（不用角色的照片，使用者 2026-11-25） ----------
+  const KINDS = [
+    ['web', '網站', /官網|網站|改版|第一版/],
+    ['photo', '拍照', /拍照/],
+    ['sign', '招牌', /招牌|標誌|名牌|識別/],
+    ['map', '地圖', /地圖|航線圖|艙設計/],
+    ['book', '書', /目錄|日誌|書背|手冊|圖書館|借書/],
+    ['event', '活動', /典禮|節$|日$|股東會|導覽|聯名|開幕|投影片|比賽|書塔/],
+    ['card', '卡片', /卡|券|名片|貼紙|印章|制服|盒/],
+    ['poster', '海報', /海報|告示|標語|價目表|菜單|規定|規範|時刻表|排班表|標示/],
+    ['doc', '文件', /./],
+  ];
+  const kindOf = title => KINDS.find(k => k[2].test(title))[0];
+
   // ---------- 突發狀況（只有開著畫面才跳，幾秒沒選就選第一個） ----------
   const INCIDENTS = [
     { t: '店貓睡在鍵盤上', d: '檔案多了一萬個「f」。店貓沒有要走的意思。', o: [['等牠自己走', '多等 2 分鐘', { delay: 2 }], ['拿逗貓棒引開', '花一點錢', { cost: .05 }], ['直接交出去', '三成機會客人說「很前衛」，多拿五成；不然要重做', { bet: true }]] },
@@ -211,5 +225,5 @@ window.CompanyRules = (() => {
   const incidentCost = (stage, k) => Math.round(STAGES[stage].base * 60 * 3 * k * 10) / 10 > 0 ? Math.max(100, Math.round(STAGES[stage].base * 60 * 3 * k / 10) * 10) : 100;
 
   return { STAGES, DURS, STATS, SPECIALS, SPECIES, COLORS, CLIENTS, INCIDENTS, EQUIP, EQUIP_BOOST, SALARY, BOARD_EVERY, BOARD_MAX, SUPER_LIFE, FREE_REFRESH, MAX_LV,
-    pick, fmt, dur, clock, odds, staffName, shares, expNeed, newStaff, applicants, hireFee, newCase, tutorialCase, plan, autoPick, start, settle, gainExp, trainPrice, overtimePrice, incidentCost };
+    KINDS, kindOf, pick, fmt, dur, clock, odds, staffName, shares, expNeed, newStaff, applicants, hireFee, newCase, tutorialCase, plan, autoPick, start, settle, gainExp, trainPrice, overtimePrice, incidentCost };
 })();

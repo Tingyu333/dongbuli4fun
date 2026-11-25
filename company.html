@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="assets/theme.css?v=20261116d">
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/company-office.js?v=20261125a"></script>
-    <script src="assets/company-rules.js?v=20261125a"></script>
+    <script src="assets/company-rules.js?v=20261125b"></script>
     <style>
 /* 毛玻璃介面（跟 docs/plans/company/ui.css 的樣張同一套） */
 body { margin: 0; font-family: "Noto Sans TC", sans-serif; color: #26303a; }
@@ -273,6 +273,11 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
 .lvl.can { background: rgba(143,211,224,.12); }
 .shelf .slot { cursor: pointer; }
 .tutline { position: relative; margin: 8px 12px 0; display: flex; justify-content: center; } .tutline[hidden] { display: none; }
+.ava.job canvas { position: absolute; left: 50%; top: 50%; width: 32px; height: 32px; margin: -16px 0 0 -16px; image-rendering: pixelated; }
+.rc h2 .ava.job canvas { width: 32px; height: 32px; }
+.k-card { background: linear-gradient(#e9f7f4, #cfeae4) !important; } .k-poster { background: linear-gradient(#fdf3e2, #f3e0bd) !important; } .k-web { background: linear-gradient(#e8f0fb, #cddcf2) !important; }
+.k-doc { background: linear-gradient(#eef2f5, #dde4ea) !important; } .k-sign { background: linear-gradient(#fbf1d8, #efdcae) !important; } .k-event { background: linear-gradient(#fcecef, #f3d3da) !important; }
+.k-photo { background: linear-gradient(#efecf8, #dcd6ee) !important; } .k-book { background: linear-gradient(#ecf6ec, #d3e8d4) !important; } .k-map { background: linear-gradient(#e6f5f7, #c9e6ea) !important; }
 .ask { text-align: center; padding: 20px 18px 16px !important; } .ask h3 { margin: 0 0 8px; font-size: 15px; font-weight: 500; letter-spacing: .12em; } .ask p { margin: 0; font-size: 12px; line-height: 1.8; color: #51606d; letter-spacing: .05em; }
 .ask .cta { margin: 16px 0 0; } .ask .cta button.warn { background: #b33a2f; border-color: #b33a2f; color: #fff; box-shadow: 0 6px 16px rgba(179,58,47,.3); }
 .tutline .tut { position: relative; left: auto; transform: none; }
@@ -354,6 +359,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     let spritesLeft = Object.keys(ANCHOR).length;
     Object.keys(ANCHOR).forEach(k => { const im = new Image(); im.onload = () => { if (--spritesLeft === 0) drawScene(); }; im.src = 'assets/company/' + k + '.png?v=20261125a'; SP[k] = im; });
     const spriteKey = s => s.key;
+    const jobHtml = c => `<div class="ava job k-${R.kindOf(c.title)}"><canvas width="16" height="16" data-job="${R.kindOf(c.title)}"></canvas></div>`;   // 委託的小圖：案子是哪一類（卡片、海報、網站…），不放角色
     const avaHtml = (key, cls = 'ava') => `<div class="${cls}"><img class="px" src="assets/company/${key}.png?v=20261125a" alt=""></div>`;
 
     // ---------- 共用 ----------
@@ -506,7 +512,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         S.jobs = S.jobs.filter(x => x !== j); save(); render();
         const cl = R.CLIENTS[c.client];
         show(`<div class="rc glass" style="margin:0"><div class="lb${r.ok ? '' : ' bad'}"><span class="dot"${r.ok ? '' : ' style="background:#b33a2f;box-shadow:0 0 0 3px rgba(179,58,47,.2),0 0 8px rgba(179,58,47,.8)"'}></span>${c.tutorial ? '第一張結案單' : r.ok ? '結案單' : '做砸了'}</div>
-              <h2>${avaHtml(c.client)}<span>〈${esc(c.title)}〉<div class="who">${esc(cl.who)}・${team.map(s => esc(R.staffName(s))).join('、') || '—'}做的</div></span></h2>
+              <h2>${jobHtml(c)}<span>〈${esc(c.title)}〉<div class="who">${esc(cl.who)}・${team.map(s => esc(R.staffName(s))).join('、') || '—'}做的</div></span></h2>
               <div class="ln num" style="margin-top:10px"><span>案子${r.ok ? '' : '（只付一成）'}</span><span>${R.fmt(r.base)}</span></div>
               ${r.extra.map(([t, v]) => `<div class="ln num"><span>${esc(t)}</span><span class="up">+${R.fmt(v)}</span></div>`).join('')}
               <div class="ln num"><span>薪水（${r.ok ? '案子的三成' : '做砸了扣一半'}）</span><span class="dn">−${R.fmt(r.salary)}</span></div>
@@ -699,7 +705,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         const t = now();
         $('cards').innerHTML = S.board.map((c, k) => {
             const cl = R.CLIENTS[c.client];
-            return `<div class="card glass${c.tag === 'big' ? ' big' : ''}${c.tutorial ? ' tutc' : ''}" data-k="${k}">${avaHtml(c.client)}<div><h3>〈${esc(c.title)}〉</h3><div class="who">${esc(cl.who)}・${c.tutorial ? '30 秒' : R.dur(c.m)}</div></div>
+            return `<div class="card glass${c.tag === 'big' ? ' big' : ''}${c.tutorial ? ' tutc' : ''}" data-k="${k}">${jobHtml(c)}<div><h3>〈${esc(c.title)}〉</h3><div class="who">${esc(cl.who)}・${c.tutorial ? '30 秒' : R.dur(c.m)}</div></div>
                 <div class="pay num">${R.fmt(c.gross)}<small>${c.seriesNo ? '系列 ' + c.seriesNo + ' / 5' : c.tag === 'super' || c.tag === 'rush' ? R.clock((c.expires - t) / 1000) + ' 後撤' : ''}</small></div>
                 <div class="req"><span class="chip mute">${c.ppl} 人</span>${c.req.map(q => `<span class="chip">${reqText(q)}</span>`).join('')}${c.tutorial ? '<span class="chip">一定做得好</span>' : ''}${tagChip(c)}${c.seriesNo === 5 ? '<span class="chip gold">做完送紀念品</span>' : ''}</div></div>`;
         }).join('') || '<div class="empty glass">委託板空了・新案子等一下就來</div>';
@@ -781,6 +787,13 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         fan: ['...GGGGGG...', '..G.c..c.G..', '.G.cc..cc.G.', '.Gc..kk..cG.', '.G..kGGk..G.', '.Gc..kk..cG.', '.G.cc..cc.G.', '..G.c..c.G..', '...GGGGGG...', '.....kk.....', '.....kk.....', '...kkkkkk...'],
         printer: ['............', '...wwwwww...', '...wgggww...', '.kkkkkkkkkk.', '.kGGGGGGGGk.', '.kGGGGGGcGk.', '.kkkkkkkkkk.', '..wwwwwwww..', '..wggggggw..', '..wwwwwwww..', '............', '............'],
     };
+    const JOB_ICONS = {"card": ["................", "................", "................", ".kkkkkkkkkkkkkk.", ".kwwwwwwwwwwwwk.", ".kCCCCCCCCCCCCk.", ".kwwwwwwwwwwwwk.", ".kwrrwrrwggwggk.", ".kwrrwrrwggwggk.", ".kwwwwwwwwwwwwk.", ".kwGGGGGGwwwwwk.", ".kwwwwwwwwwwwwk.", ".kkkkkkkkkkkkkk.", "................", "................", "................"], "poster": [".......rr.......", ".......rr.......", "...kkkkkkkkkk...", "...kwwwwwwwwk...", "...kwyyyyyywk...", "...kwyYYYYywk...", "...kwyyyyyywk...", "...kwwwwwwwwk...", "...kwGGGGGGwk...", "...kwwwwwwwwk...", "...kwGGGGwwwk...", "...kwwwwwwwwk...", "...kwGGGGGGwk...", "...kwwwwwwwwk...", "...kkkkkkkkkk...", "................"], "web": ["................", ".kkkkkkkkkkkkkk.", ".krgygegggggggk.", ".kkkkkkkkkkkkkk.", ".kwwwwwwwwwwwwk.", ".kwbbbbbbbbbbwk.", ".kwbbbbbbbbbbwk.", ".kwwwwwwwwwwwwk.", ".kwcccwwGGGGGwk.", ".kwcccwwwwwwwwk.", ".kwcccwwGGGGwwk.", ".kwwwwwwwwwwwwk.", ".kkkkkkkkkkkkkk.", "................", "................", "................"], "doc": ["................", "...kkkkkkkk.....", "...kwwwwwwkk....", "...kwwwwwwkgk...", "...kwwwwwwkkkk..", "...kwGGGGGGwwk..", "...kwwwwwwwwwk..", "...kwGGGGGGGwk..", "...kwwwwwwwwwk..", "...kwGGGGGwwwk..", "...kwwwwwwwwwk..", "...kwGGGGGGGwk..", "...kwwwwwwwwwk..", "...kkkkkkkkkkk..", "................", "................"], "sign": ["................", ".GGGGGGGGGGGGGG.", "..k..........k..", "..k..........k..", "..k..........k..", ".kkkkkkkkkkkkkk.", ".knnnnnnnnnnnnk.", ".knyyyyyyyyyynk.", ".knyNNyyNNyyynk.", ".knyNNyyNNyyynk.", ".knyyyyyyyyyynk.", ".knnnnnnnnnnnnk.", ".kkkkkkkkkkkkkk.", "................", "................", "................"], "event": ["................", ".k............k.", ".kk..........kk.", ".GGGGGGGGGGGGGG.", ".rrr.yyy.bbb.eee", "..r...y...b...e.", "................", "................", "......YY........", ".....YyyY.......", "....YyyyyY......", ".....YyyY.......", "......YY........", "................", "................", "................"], "photo": ["................", "................", "....kkkk........", ".kkkkkkkkkkkkkk.", ".kgggggggggggrk.", ".kggggkkkkggggk.", ".kgggkcCCckgggk.", ".kgggkCwCCkgggk.", ".kgggkcCCckgggk.", ".kggggkkkkggggk.", ".kggggggggggggk.", ".kkkkkkkkkkkkkk.", "................", "................", "................", "................"], "book": ["................", "................", "..kkkkk..kkkkk..", ".kwwwwwkkwwwwwk.", ".kwGGGwkkwGGGwk.", ".kwwwwwkkwwwwwk.", ".kwGGGwkkwGGGwk.", ".kwwwwwkkwwwwwk.", ".kwGGwwkkwGGGwk.", ".kwwwwwkkwwwwwk.", ".kkkkkkkkkkkkkk.", "..eeeeeeeeeeee..", "................", "................", "................", "................"], "map": ["................", "................", ".kkkkkkkkkkkkkk.", ".kcccGeeeeGcrck.", ".kcccGeeeeGrwrk.", ".kcccGeeeeGcrck.", ".kcccGeeerGrRck.", ".kcccGeereGccck.", ".kcccGereeGccck.", ".kccrGreeeGccck.", ".kcrcGeeeeGccck.", ".kcccGeeeeGccck.", ".kkkkkkkkkkkkkk.", "................", "................", "................"]};
+    const JPAL = { k: '#3a4656', w: '#ffffff', g: '#c2d0da', G: '#9fb1c0', c: '#8fd3e0', C: '#4fa9bf', r: '#e05a4f', R: '#b33a2f', y: '#e2b44a', Y: '#ffe9a0', b: '#3d6fb6', e: '#6cb487', n: '#a77a4c', N: '#7a5634' };
+    function drawJobIcons() {
+        document.querySelectorAll('canvas[data-job]').forEach(cv => { if (cv.dataset.drawn) return; cv.dataset.drawn = 1; const x = cv.getContext('2d');
+            JOB_ICONS[cv.dataset.job].forEach((r, j) => [...r].forEach((ch, i) => { if (ch === '.') return; x.fillStyle = JPAL[ch]; x.fillRect(i, j, 1, 1); })); });
+    }
+    new MutationObserver(drawJobIcons).observe(document.body, { childList: true, subtree: true });   // 卡片、結案單一畫出來就補上小圖
     function drawIcons() {
         document.querySelectorAll('canvas[data-ic]').forEach(cv => {
             const x = cv.getContext('2d'), rows = ICONS[cv.dataset.ic], off = cv.dataset.off;
