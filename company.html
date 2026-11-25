@@ -552,8 +552,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
             S.series[c.client] = Math.min(5, Math.max(S.series[c.client] || 0, c.seriesNo - 1 + step));
             if (S.series[c.client] >= 5 && !S.gifts.includes(c.client)) { S.gifts.push(c.client); gift = c.client; }
         }
-        if (c.tutorial) { S.tut = 0; const t0 = now(); for (let k = 0; k < 3; k++) S.board.push(R.newCase(S.stage, { now: t0, easy: true, client: ['dog', 'apple', 'cat'][k] }));   // 教學完的第一批：沒有條件、短、人少，新手一定接得起來
- S.nextBoardAt = t0 + R.BOARD_EVERY * 60000; }
+        if (c.tutorial) endTut();
         return gift;
     }
     $('openHelp').onclick = () => openHelp();
@@ -845,7 +844,14 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         const a = $('coachArrow'), bx = box.getBoundingClientRect(); a.style.left = Math.max(14, Math.min(bx.width - 26, r.left + r.width / 2 - bx.left - 6)) + 'px';
         a.style.top = below ? '-6px' : ''; a.style.bottom = below ? '' : '-6px';
     }
-    $('coachSkip').onclick = () => { if ($('coach').classList.contains('tour')) { S.ctour = S.ctour >= TOUR.length ? 0 : S.ctour + 1; if (!S.ctour) { setSeg('move'); window.scrollTo(0, 0); } } else S.coach = S.coach === 5.5 ? 6 : 0; save(); updateCoach(); };
+    // 教學結束（做完雞塊那件，或按了略過教學）：委託板開始正常貼案子，先送三張簡單的（使用者 2026-11-25：略過教學就沒有委託）
+    function endTut() {
+        if (!S.tut) return; S.tut = 0; const t0 = now();
+        S.board = S.board.filter(c => !c.tutorial);   // 還沒派的教學案拿掉；已經在做的照做
+        for (let k = 0; k < 3; k++) S.board.push(R.newCase(S.stage, { now: t0, easy: true, client: ['dog', 'apple', 'cat'][k] }));   // 第一批：沒有條件、短、人少，新手一定接得起來
+        S.nextBoardAt = t0 + R.BOARD_EVERY * 60000;
+    }
+    $('coachSkip').onclick = () => { if ($('coach').classList.contains('tour')) { S.ctour = S.ctour >= TOUR.length ? 0 : S.ctour + 1; if (!S.ctour) { setSeg('move'); window.scrollTo(0, 0); } } else { S.coach = S.coach === 5.5 ? 6 : 0; if (!S.coach) { endTut(); render(); } } save(); updateCoach(); };
     $('coachX').onclick = () => { S.ctour = 0; save(); updateCoach(); };
     setInterval(() => { if (S && S.name) updateCoach(); }, 300);
     window.addEventListener('scroll', () => { if (S && (S.coach || S.ctour)) updateCoach(); }, { passive: true });
