@@ -379,10 +379,10 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     const SP = {};
     const ANCHOR = { apple: 27, raccoon: 24, captain: 22, cat: 40, dog: 24, mole: 21, pigeon: 20, sparrow: 17, squirrel: 18, hamster: 17, rabbit: 16, hedgehog: 20, frog: 17, turtle: 25, xiaowu: 20, nugget: 24, julie: 29, 'julie-sleep': 36 };
     let spritesLeft = Object.keys(ANCHOR).length;
-    Object.keys(ANCHOR).forEach(k => { const im = new Image(); im.onload = () => { if (--spritesLeft === 0) drawScene(); }; im.src = 'assets/company/' + k + '.png?v=20261125a'; SP[k] = im; });
+    Object.keys(ANCHOR).forEach(k => { const im = new Image(); im.onload = () => { if (--spritesLeft === 0) drawScene(); }; im.src = 'assets/company/' + k + '.png?v=20261125b'; SP[k] = im; });
     const spriteKey = s => s.key;
     const jobHtml = c => `<div class="ava job k-${R.kindOf(c.title)}"><canvas width="16" height="16" data-job="${R.kindOf(c.title)}"></canvas></div>`;   // 委託的小圖：案子是哪一類（卡片、海報、網站…），不放角色
-    const avaHtml = (key, cls = 'ava') => `<div class="${cls}"><img class="px" src="assets/company/${key}.png?v=20261125a" alt=""></div>`;
+    const avaHtml = (key, cls = 'ava') => `<div class="${cls}"><img class="px" src="assets/company/${key}.png?v=20261125b" alt=""></div>`;
 
     // ---------- 共用 ----------
     const st = () => R.STAGES[S.stage];
@@ -936,8 +936,8 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             const n = Object.keys(S.dex.sp).length + genKeys.reduce((a, k) => a + (S.dex.gen[k] || []).length, 0);
             const COL = ['#9fb1c0', '#f2f6f8', '#c9ad7c', '#3a4656'];
             B.innerHTML = `<div class="dex glass"><div class="ttl">員工圖鑑<b class="num">${n} / 41</b></div>
-                <div class="sub2">特別人選・9</div><div class="g" style="grid-template-columns:repeat(5,1fr)">${spKeys.map(k => `<div class="c sp${S.dex.sp[k] ? '' : ' off'}"><img src="assets/company/${k}.png?v=20261125a" alt=""></div>`).join('')}</div>
-                <div class="sub2">一般員工・8 種 × 4 色（右上角有顏色的是收集到的，灰點是還沒有）</div><div class="g" style="grid-template-columns:repeat(4,1fr)">${genKeys.map(k => { const got = S.dex.gen[k] || []; return `<div class="c${got.length ? '' : ' off'}" style="height:58px"><img src="assets/company/${k}.png?v=20261125a" alt=""><b class="dots4">${[0, 1, 2, 3].map(c => got.includes(c) ? `<i style="background:${COL[c]};box-shadow:0 0 0 1px rgba(40,50,60,.65)"></i>` : '<i style="background:rgba(120,140,155,.16);transform:scale(.6)"></i>').join('')}</b></div>`; }).join('')}</div>
+                <div class="sub2">特別人選・9</div><div class="g" style="grid-template-columns:repeat(5,1fr)">${spKeys.map(k => `<div class="c sp${S.dex.sp[k] ? '' : ' off'}"><img src="assets/company/${k}.png?v=20261125b" alt=""></div>`).join('')}</div>
+                <div class="sub2">一般員工・8 種 × 4 色（右上角有顏色的是收集到的，灰點是還沒有）</div><div class="g" style="grid-template-columns:repeat(4,1fr)">${genKeys.map(k => { const got = S.dex.gen[k] || []; return `<div class="c${got.length ? '' : ' off'}" style="height:58px"><img src="assets/company/${k}.png?v=20261125b" alt=""><b class="dots4">${[0, 1, 2, 3].map(c => got.includes(c) ? `<i style="background:${COL[c]};box-shadow:0 0 0 1px rgba(40,50,60,.65)"></i>` : '<i style="background:rgba(120,140,155,.16);transform:scale(.6)"></i>').join('')}</b></div>`; }).join('')}</div>
                 <div class="miles">${DEX_MILES.map(([m, t]) => `<span class="${n >= m ? 'done' : ''}">${m === 41 ? '全部' : m + ' 格'}<br>${t}</span>`).join('')}</div>
                 <div class="kv" style="display:block;line-height:1.7"><span>每到一格送一次免費換應徵＋稱號。員工是聘過就算收集到；特別人選偶爾出現在應徵名單裡（金框）。</span></div></div>`;
         }

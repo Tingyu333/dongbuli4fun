@@ -116,7 +116,8 @@ function scene(X, sil) {
   const cushion = (cx, dy, n) => { N(cx - 16, dy - 1, 32, 1, C.g3);
     for (let j = 0; j < 9; j++) { const ins = j === 0 || j === 8 ? 2 : j === 1 || j === 7 ? 1 : 0; N(cx - 14 + ins, dy - 9 + j, 28 - ins * 2, 1, j === 0 ? C.g1 : j === 8 ? C.g1 : j < 3 ? C.g4 : j > 6 ? C.g2 : C.g3); N(cx - 14 + ins, dy - 9 + j, 1, 1, C.g1); N(cx + 13 - ins, dy - 9 + j, 1, 1, C.g1); }
     N(cx - 15, dy - 9, 2, 2, C.g2); N(cx + 13, dy - 9, 2, 2, C.g2); N(cx - 15, dy - 2, 2, 2, C.g2); N(cx + 13, dy - 2, 2, 2, C.g2);   // 四個角鼓起來的小穗
-    if (!sil) { const str = String(n).padStart(2, '0'); [...str].forEach((d, k) => { const g = DIG[d]; for (let q = 0; q < 15; q++) if (g[q] === '1') px(cx - 4 + k * 4 + q % 3, dy - 7 + Math.floor(q / 3), C.g1); }); } };   // 繡上去的員工編號：跟坐墊同色系、淡淡的（妹妹：深藍粗字像號碼牌）
+    if (false && !sil) { const str = String(n).padStart(2, '0');   // 使用者 2026-11-25：坐墊不要有數字（先關掉，要的話把 false 拿掉）
+      [...str].forEach((d, k) => { const g = DIG[d]; for (let q = 0; q < 15; q++) if (g[q] === '1') px(cx - 4 + k * 4 + q % 3, dy - 7 + Math.floor(q / 3), C.g1); }); } };   // 繡上去的員工編號：跟坐墊同色系、淡淡的（妹妹：深藍粗字像號碼牌）
   const blush = (L, x, y) => F(L, x, y, [[0, 0], [1, 0]], C.pk2);
 
   // ---- 鴿子：胖胖的灰鴿，脖子一圈綠紫光，頭往前點 ----
