@@ -398,7 +398,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         const L = [['幾人', '這件要派幾個人去'], ['速度 3 以上', '條件：派去的人裡要有一位這項能力夠；不夠也能做，成功機率會掉'], ['成功機率', '開工前就寫好。沒成功叫「做砸了」：客人只付一成，薪水照扣一半'], ['做得好', '成功之後再加的運氣，多拿一成'],
             ['系列 1 / 5', '同一位委託人的連續委託，做完一件下一件才會貼出來；五件都做完送紀念品，之後他的案子多拿 5%'], ['急件', TAG_TEXT.rush.slice(3)], ['大案', TAG_TEXT.big.slice(3)], ['要先談', TAG_TEXT.talk.slice(4)], ['特好賺', TAG_TEXT.super.slice(4)],
             ['○○ 後撤', '時間到沒人接，委託人就找別家了。一般的案子貼四個小時'], ['同時 3 件', '一次最多接幾件。搬到大一點的辦公室會變多'], ['薪水抽 1 份', '每件案子的三成是薪水，派去的人照份數分。特別人選 1.5 份，每升一級多 0.1 份'],
-            ['公司帳戶', '案子賺的錢進這裡，搬家只能用這裡的錢'], ['錢包', '你自己的錢：付簽約金、訓練、設備、廣告、加班費']];
+            ['公司帳戶', '案子賺的錢進這裡，搬家只能用這裡的錢'], ['本色／淺色／花色／深色', '一般員工的毛色，只跟圖鑑收集有關，不影響能力'], ['員工的一句話', '個性，好玩而已，沒有效果；特別人選的「本事」才有效果'], ['突發狀況', '員工做事的時候偶爾跳出來，15 秒沒選就照第一個。賭一把輸了整件會做砸'], ['錢包', '你自己的錢：付簽約金、訓練、設備、廣告、加班費']];
         show(`<div class="hd2"><h2>看不懂的字</h2><button class="x" id="hClose">關</button></div><div class="panel glass" style="margin:0;padding:4px 14px">${L.map(([a, b]) => `<div class="kv" style="display:block;line-height:1.7;margin:0;padding:9px 0;border-bottom:1px solid rgba(120,140,155,.15)"><b style="display:block;font-size:12px">${a}</b><span>${b}</span></div>`).join('')}</div>`);
         $('hClose').onclick = hide;
     }
@@ -553,7 +553,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
               ${r.per.map(([s, full, paid]) => `<div class="ln sub num"><span>${esc(R.staffName(s))} Lv.${s.lv}・${R.shares(s).toFixed(1).replace('.0', '')} 份</span><span>${r.ok ? R.fmt(paid) : R.fmt(full) + ' → ' + R.fmt(paid)}</span></div>`).join('')}
               <div class="ln tot num"><span>入帳公司帳戶</span><span class="v ${r.net < 0 ? 'dn' : ''}">${R.fmt(r.net)}</span></div>
               ${upsHtml(j.ups)}${gift ? giftHtml(gift) : ''}
-              ${!r.ok ? `<div class="kv" style="display:block;line-height:1.7"><span>${j.why ? '做砸的原因：' + esc(j.why) + '。' : '開工前寫的成功機率是' + R.odds(j.p) + '，這次運氣不好。'}做砸了客人只付一成、薪水扣一半。</span></div>` : ''}${j.trialOver ? `<div class="lvup"><b>${esc(j.trialOver)}試用期過了，轉正！</b></div>` : ''}
+              ${!r.ok ? `<div class="kv" style="display:block;line-height:1.7"><span>${j.why ? '做砸的原因：' + esc(j.why) + '。' : '開工前寫的成功機率是' + R.odds(j.p) + '，這次運氣不好。'}做砸了客人只付一成、薪水扣一半。</span></div>` : ''}${j.spent ? `<div class="kv"><span>另外：突發狀況當時已經從公司帳戶付了 ${R.fmt(j.spent)}，不在上面這筆裡</span></div>` : ''}${j.trialOver ? `<div class="lvup"><b>${esc(j.trialOver)}試用期過了，轉正！</b></div>` : ''}
               ${c.tutorial ? `<div class="kv" style="display:block;line-height:1.8"><span>名片印好了：${esc(S.name)}・創始執行長。<br>錢先扣員工薪水（三成），剩下進<b>公司帳戶</b>，存著搬家用。</span></div>` : ''}</div>
               <div class="cta"><button class="main" id="xOk" style="flex:1">收下</button></div>`, { center: true });
         $('xOk').onclick = () => { hide(); if (c.tutorial) { if (S.coach) S.coach = 6; save(); go('staff'); } };
@@ -610,7 +610,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         const j = R.pick(pool), inc = R.pick(R.INCIDENTS);
         incOpen = { j, inc, at: t };
         show(`<div class="timer"><i id="incBar" style="width:100%"></i></div>
-              <div class="modal" style="position:static;padding:0;background:none;box-shadow:none;border:0"><div class="lb">突發狀況・〈${esc(j.c.title)}〉</div><h2>${inc.t}</h2><p>${inc.d}</p>
+              <div class="modal" style="position:static;padding:0;background:none;box-shadow:none;border:0"><div class="lb">突發狀況・〈${esc(j.c.title)}〉</div><h2>${inc.t}</h2><p>${inc.d}</p><div class="kv" style="margin:-4px 0 8px"><span>上面那條是倒數：15 秒沒選，就照「沒選就是這個」</span></div>
               ${inc.o.map(([a, b, e], k) => `<div class="opt${k === 0 ? ' def' : ''}${e.bet ? ' bet' : ''}" data-k="${k}">${k === 0 ? '<span class="tag">沒選就是這個</span>' : e.bet ? '<span class="tag">賭一把</span>' : ''}${a}<small>${e.cost ? '花 ' + R.fmt(R.incidentCost(S.stage, e.cost)) + '（公司帳戶）' : b}</small></div>`).join('')}</div>`, { center: true, lock: true });
         document.querySelectorAll('#sheet .opt').forEach(e => e.onclick = () => applyInc(+e.dataset.k));
     }
@@ -618,7 +618,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         if (!incOpen) return;
         const { j, inc } = incOpen, e = inc.o[k][2], team = j.team.map(staffById).filter(Boolean);
         let msg = '';
-        if (e.cost) { const n = R.incidentCost(S.stage, e.cost); if (S.acct < n) { toast('公司帳戶不夠，只好等一下'); j.end += 2 * 60000; } else { S.acct -= n; msg = '花了 ' + R.fmt(n); } }
+        if (e.cost) { const n = R.incidentCost(S.stage, e.cost); if (S.acct < n) { toast('公司帳戶不夠，只好等一下'); j.end += 2 * 60000; } else { S.acct -= n; j.spent = (j.spent || 0) + n; msg = '花了 ' + R.fmt(n) + '（公司帳戶）'; } }
         if (e.neg) { if (team.some(s => s.st[3] >= e.neg)) msg = '談成了，沒事'; else { if (e.delay) j.end += e.delay * 60000; if (e.fail) j.ok = false; msg = e.fail ? '沒談成……這件會做砸' : '沒談成，慢一點'; if (e.fail) j.why = '突發狀況「' + inc.t + '」沒談成'; } }
         else if (e.delay) { j.end += e.delay * 60000; msg = '多等 ' + e.delay + ' 分鐘'; }
         if (e.bonus) j.bonus = (j.bonus || 0) + e.bonus;
@@ -646,7 +646,10 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         $('sTrain').onclick = () => { if (!payWallet(tp)) return; s.exp = 0; s.lv++; const can = [0, 1, 2, 3].filter(i => s.st[i] < 5); if (can.length) s.st[R.pick(can)]++; save(); toast(R.staffName(s) + '升到 Lv.' + s.lv); openStaff(s); render(); };
         $('sFire').onclick = async () => { if (!await ask('請' + esc(R.staffName(s)) + '走？', '簽約金不退。', { ok: '請他走', warn: true })) return; S.staff = S.staff.filter(x => x !== s); if (s.special) S.hiredSp = S.hiredSp.filter(k => k !== s.key); save(); hide(); render(); toast(R.staffName(s) + '收拾東西走了'); };
     }
-    function addDex(s) { if (s.special) S.dex.sp[s.key] = S.dex.sp[s.key] || Date.now(); else { const a = S.dex.gen[s.key] = S.dex.gen[s.key] || []; if (!a.includes(s.color)) a.push(s.color); } }
+    const DEX_MILES = [[10, '小動物收容所'], [20, '萬事屋人力銀行'], [41, '全員到齊']];
+    const dexCount = () => Object.keys(S.dex.sp).length + Object.keys(R.SPECIES).reduce((a, k) => a + (S.dex.gen[k] || []).length, 0);
+    function addDex(s) { addDex0(s); const n = dexCount(); S.dexMiles = S.dexMiles || []; DEX_MILES.forEach(([m, t]) => { if (n >= m && !S.dexMiles.includes(m)) { S.dexMiles.push(m); S.freeRef = (S.freeRef || 0) + 1; setTimeout(() => toast('圖鑑 ' + m + ' 格・' + t + '！送一次免費換應徵'), 600); } }); }
+    function addDex0(s) { if (s.special) S.dex.sp[s.key] = S.dex.sp[s.key] || Date.now(); else { const a = S.dex.gen[s.key] = S.dex.gen[s.key] || []; if (!a.includes(s.color)) a.push(s.color); } }
     function openApply() {
         const full = S.staff.length >= st().seats, left = Math.max(0, S.applyAt - now());
         show(`<div class="hd2"><h2>應徵</h2><button class="x" id="aClose">關</button></div>
@@ -654,7 +657,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             ${S.applicants.map((s, k) => { const sp = s.special ? R.SPECIALS[s.key] : null, fee = R.hireFee(S.stage, s);
                 return `<div class="app glass${sp ? ' gold' : ''}" style="margin:10px 0 0">${avaHtml(spriteKey(s))}<div><div class="nm">${esc(R.staffName(s))}${sp ? '<span class="star"></span><small>特別人選</small>' : '<small>一般・' + R.COLORS[s.color] + '</small>'}</div>${statsHtml(s)}<div class="say">${esc(sp ? sp.skill + '：' + sp.skillText : s.say)}</div></div>
                 <div class="ft num"><span>簽約金 <b>${R.fmt(fee)}</b>・薪水抽 ${sp ? 1.5 : 1} 份</span><button data-k="${k}" ${full ? 'disabled' : ''}>聘用</button></div></div>`; }).join('') || '<div class="empty">這一批都請完了</div>'}
-            <div class="cta"><button class="num" id="aFree" disabled>${R.clock(left / 1000)} 後免費換</button><button class="main num" id="aRef" style="flex:1">現在換一批 ${R.fmt(st().refresh)}</button></div>`);
+            <div class="cta"><button class="num" id="aFree" disabled>${R.clock(left / 1000)} 後免費換</button><button class="main num" id="aRef" style="flex:1">${S.freeRef ? '圖鑑獎勵・免費換 ×' + S.freeRef : '現在換一批 ' + R.fmt(st().refresh)}</button></div>`);
         $('aClose').onclick = hide;
         document.querySelectorAll('#sheet .ft button').forEach(b => b.onclick = () => {
             const s = S.applicants[+b.dataset.k], fee = R.hireFee(S.stage, s);
@@ -666,7 +669,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             if (S.coach === 6 || S.coach === 7) S.coach = 8;
             save(); render(); if (S.coach === 8) hide(); else openApply(); toast(R.staffName(s) + '來上班了');
         });
-        $('aRef').onclick = () => { if (!payWallet(st().refresh)) return; S.applicants = R.applicants(S.stage, S.hiredSp); save(); openApply(); };   // 付錢換不動免費換的時間（使用者：換一批不會刷新免費更換時間）
+        $('aRef').onclick = () => { if (S.freeRef) S.freeRef--; else if (!payWallet(st().refresh)) return; S.applicants = R.applicants(S.stage, S.hiredSp); save(); openApply(); };   // 付錢換不動免費換的時間（使用者：換一批不會刷新免費更換時間）
     }
     $('openApply').onclick = () => { if (S.coach === 6) S.coach = 7; openApply(); };
 
@@ -855,8 +858,9 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
                   <div style="text-align:right"><button class="linkbtn num" id="out" ${S.acct > 0 ? '' : 'disabled'}>把公司帳戶的錢轉進錢包</button></div></div>
                 <div class="trial glass">試玩錢包 <b class="num">${R.fmt(S.wallet)}</b>（只在這支手機、不動真的錢包）
                   <div class="tool"><button id="tAdd">錢包 +100 萬</button><button id="tSkip">快轉 10 分鐘</button><button id="tSkip2">快轉 1 小時</button><button id="tReset">整個重來</button></div></div>
+                <div class="kv" style="justify-content:center;margin:14px 0 0"><span class="help2" style="color:#2f7d90;letter-spacing:.15em;cursor:pointer;padding:6px">看不懂的字 ›</span></div>
                 <p class="foot">這裡的錢都是遊戲幣，不能儲值，也不能換現金或獎品。</p>`;
-            paintThumbs(); $('allOffices').onclick = openOffices;
+            paintThumbs(); $('allOffices').onclick = openOffices; document.querySelectorAll('.help2').forEach(e => e.onclick = openHelp);
             if ($('mv')) $('mv').onclick = async () => { if (!await ask('搬到' + next.name + '？', '用公司帳戶付 ' + R.fmt(next.cost) + '。舊燈泡會一起帶走。', { ok: '搬家' })) return; const old = st(); S.acct -= next.cost; S.stage++; S.look = S.stage; S.applicants = R.applicants(S.stage, S.hiredSp); save(); go('office'); movedCard(old); };
             $('inj').onclick = async () => { const n = Math.min(injLeft, S.wallet); if (!n) return toast('錢包沒錢'); if (!await ask('執行長增資？', '從錢包轉 ' + R.fmt(n) + ' 進公司帳戶。錢包的錢只能這樣進公司，' + st().name + '每天最多增資 ' + R.fmt(st().inject) + '。', { ok: '增資' })) return; S.wallet -= n; S.acct += n; S.inject.amt += n; save(); renderCompany(); toast('增資 ' + R.fmt(n)); };
             $('out').onclick = async () => { const n = Math.max(0, S.acct); if (!await ask('轉進錢包？', '把公司帳戶的 ' + R.fmt(n) + ' 全部轉進錢包。' + (next ? '搬家只能用公司帳戶付，' : '') + '轉出去不能直接轉回來，只能靠增資（每天最多 ' + R.fmt(st().inject) + '）。', { ok: '轉進錢包', warn: true })) return; S.acct -= n; S.wallet += n; save(); renderCompany(); };
@@ -886,7 +890,8 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             B.innerHTML = `<div class="dex glass"><div class="ttl">員工圖鑑<b class="num">${n} / 41</b></div>
                 <div class="sub2">特別人選・9</div><div class="g" style="grid-template-columns:repeat(5,1fr)">${spKeys.map(k => `<div class="c sp${S.dex.sp[k] ? '' : ' off'}"><img src="assets/company/${k}.png?v=20261125a" alt=""></div>`).join('')}</div>
                 <div class="sub2">一般員工・8 種 × 4 色（右上角有顏色的是收集到的，灰點是還沒有）</div><div class="g" style="grid-template-columns:repeat(4,1fr)">${genKeys.map(k => { const got = S.dex.gen[k] || []; return `<div class="c${got.length ? '' : ' off'}" style="height:58px"><img src="assets/company/${k}.png?v=20261125a" alt=""><b class="dots4">${[0, 1, 2, 3].map(c => got.includes(c) ? `<i style="background:${COL[c]};box-shadow:0 0 0 1px rgba(40,50,60,.65)"></i>` : '<i style="background:rgba(120,140,155,.16);transform:scale(.6)"></i>').join('')}</b></div>`; }).join('')}</div>
-                <div class="miles">${[[10, '免費刷新'], [20, '小動物收容所'], [41, '全員到齊']].map(([m, t]) => `<span class="${n >= m ? 'done' : ''}">${m === 41 ? '全部' : m + ' 格'}<br>${t}</span>`).join('')}</div></div>`;
+                <div class="miles">${DEX_MILES.map(([m, t]) => `<span class="${n >= m ? 'done' : ''}">${m === 41 ? '全部' : m + ' 格'}<br>${t}</span>`).join('')}</div>
+                <div class="kv" style="display:block;line-height:1.7"><span>每到一格送一次免費換應徵＋稱號。員工是聘過就算收集到；特別人選偶爾出現在應徵名單裡（金框）。</span></div></div>`;
         }
     }
     // 紀念品、設備的小圖（12×12 像素）
