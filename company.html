@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- 開發中：還沒開放，不給搜尋引擎收（使用者試過、接好後端才開放，開放時拿掉） -->
+    <meta name="robots" content="noindex">
+    <title>公司・開 | 丼步喱</title>
+    <meta name="description" content="從一間車庫開始接案。請員工、派人、收款，一路搬到自己的大樓。">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="丼步喱・絆">
+    <meta property="og:title" content="公司・開｜丼步喱">
+    <meta property="og:description" content="從一間車庫開始接案。請員工、派人、收款，一路搬到自己的大樓。">
+    <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
+    <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/company.html">
+    <meta name="twitter:card" content="summary">
+    <!-- 公司・開：企劃和樣張在 docs/plans/company/，這一頁的說明在 docs/pages/company.md。規則 assets/company-rules.js、辦公室畫法 assets/company-office.js、角色圖 assets/company/。網站不放 emoji -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/theme.css?v=20261116d">
+    <script src="assets/theme.js?v=20261117c"></script>
+    <script src="assets/company-office.js?v=20261125a"></script>
+    <script src="assets/company-rules.js?v=20261125a"></script>
+    <style>
+/* 毛玻璃介面（跟 docs/plans/company/ui.css 的樣張同一套） */
+body { margin: 0; font-family: "Noto Sans TC", sans-serif; color: #26303a; }
+  img.px { image-rendering: pixelated; display: block; }
+  .num { font-variant-numeric: tabular-nums; }
+  .glass { background: rgba(250,252,253,.6); backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3); border: 1px solid rgba(255,255,255,.78); box-shadow: 0 8px 24px rgba(40,60,80,.12), inset 0 1px 0 rgba(255,255,255,.9); border-radius: 16px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: #3fb98b; box-shadow: 0 0 0 3px rgba(63,185,139,.2), 0 0 8px rgba(63,185,139,.8); display: inline-block; }
+
+  /* 上面的標題列 */
+  .hd { position: relative; z-index: 3; margin: 14px 12px 0; padding: 10px 14px; display: grid; grid-template-columns: 58px 1fr auto; align-items: center; }
+  .hd .bk { font-size: 11px; letter-spacing: .15em; color: #6a7884; }
+  .hd h1 { margin: 0; font-size: 15px; font-weight: 400; letter-spacing: .32em; text-align: center; }
+  .hd .m { text-align: right; font-size: 15px; font-weight: 300; } .hd .m small { display: block; font-size: 9px; letter-spacing: .2em; color: #6a7884; }
+  .sub { position: relative; z-index: 3; margin: 8px 14px 0; display: flex; align-items: center; gap: 8px; font-size: 11px; letter-spacing: .12em; color: #51606d; }
+  .sub .r { margin-left: auto; }
+
+  /* 辦公室畫面 */
+  .hero { position: absolute; left: 0; top: 0; width: 375px; height: 300px; }
+  .hero img { position: absolute; left: 0; top: 96px; }
+  .hero::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 96px; background: linear-gradient(#e6eaed, #cfd5d9); }
+  .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(223,227,230,.0) 0%, rgba(223,227,230,0) 82%, #dfe3e6 100%); }
+  .space { height: 196px; flex: none; }
+
+  .kp { position: relative; margin: 10px 12px 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; } .kp div { padding: 8px 10px; border-radius: 14px; } .kp small { display: block; font-size: 9.5px; letter-spacing: .2em; color: #6a7884; } .kp b { font-size: 16px; font-weight: 300; }
+  .panel { position: relative; margin: 10px 12px 0; padding: 4px 0; }
+  .ph { display: flex; align-items: center; padding: 8px 14px 4px; font-size: 11px; letter-spacing: .25em; color: #6a7884; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; font-size: 12.5px; } .row + .row { border-top: 1px solid rgba(120,140,155,.18); }
+  .row .tt { flex: 1; min-width: 0; } .row .tt small { display: block; font-size: 10.5px; color: #6a7884; margin-top: 2px; letter-spacing: .04em; }
+  .bar { height: 3px; background: rgba(120,140,155,.2); border-radius: 2px; margin-top: 6px; overflow: hidden; } .bar i { display: block; height: 100%; background: linear-gradient(90deg, #6aa9d8, #8fd3e0); box-shadow: 0 0 6px #8fd3e0; }
+  .chip { flex: none; font-size: 10.5px; letter-spacing: .08em; padding: 3px 9px; border-radius: 999px; background: rgba(79,169,191,.12); color: #2f7d90; border: 1px solid rgba(79,169,191,.45); white-space: nowrap; }
+  .chip.shu { background: rgba(179,58,47,.08); color: #b33a2f; border-color: rgba(179,58,47,.4); }
+  .chip.gold { background: rgba(201,163,90,.14); color: #8a6a26; border-color: rgba(201,163,90,.6); }
+  .chip.mute { background: rgba(120,140,155,.1); color: #6a7884; border-color: rgba(120,140,155,.35); }
+  .cta { position: relative; margin: 10px 12px 0; display: flex; gap: 8px; } .cta button { flex: 1; min-height: 46px; border-radius: 14px; font: inherit; font-size: 12.5px; letter-spacing: .18em; border: 1px solid rgba(255,255,255,.85); background: rgba(250,252,253,.65); color: #26303a; backdrop-filter: blur(10px); }
+  .cta button.main { background: #26303a; color: #f2f6f8; border-color: #26303a; box-shadow: 0 6px 16px rgba(38,48,58,.3); flex: 1.6; }
+  .tabs { position: absolute; z-index: 3; left: 12px; right: 12px; bottom: 14px; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); padding: 11px 0 9px; font-size: 11px; letter-spacing: .2em; text-align: center; color: #6a7884; flex: none; }
+  .tabs span { position: relative; } .tabs span.on { color: #26303a; text-shadow: 0 0 10px rgba(143,211,224,.9); } .tabs span.on::after { content: ''; position: absolute; left: 50%; bottom: -6px; width: 14px; height: 2px; margin-left: -7px; border-radius: 2px; background: #8fd3e0; box-shadow: 0 0 6px #8fd3e0; }
+  .tabs em { position: absolute; top: -9px; left: 50%; margin-left: 12px; font-style: normal; font-size: 8.5px; letter-spacing: .05em; padding: 1px 5px; border-radius: 999px; background: #b33a2f; color: #fff; }
+  .tabs em.c { background: #2f7d90; }
+
+  /* 委託板 */
+  .cards { position: relative; margin: 10px 12px 0; display: flex; flex-direction: column; gap: 8px; }
+  .card { padding: 9px 12px 9px; display: grid; grid-template-columns: 46px 1fr auto; gap: 4px 10px; align-items: start; }
+  .ava { width: 46px; height: 46px; border-radius: 12px; background: linear-gradient(#eef3f6, #dce5ea); overflow: hidden; position: relative; box-shadow: inset 0 0 0 1px rgba(255,255,255,.9); }
+  .ava img { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%); }
+  .card h3 { margin: 0; font-size: 13px; font-weight: 500; letter-spacing: .04em; }
+  .card .who { font-size: 10.5px; color: #6a7884; margin-top: 3px; letter-spacing: .05em; }
+  .card .pay { text-align: right; font-size: 16px; font-weight: 300; } .card .pay small { display: block; font-size: 9.5px; color: #6a7884; letter-spacing: .1em; }
+  .card .req { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
+  .card.big { border-color: rgba(201,163,90,.7); box-shadow: 0 8px 24px rgba(40,60,80,.12), 0 0 0 1px rgba(201,163,90,.35), inset 0 1px 0 rgba(255,255,255,.9); }
+  .blurbg { position: absolute; inset: 0; overflow: hidden; } .blurbg img { position: absolute; left: -30px; top: 40px; width: 435px; filter: blur(10px) saturate(.9); opacity: .55; image-rendering: auto; }
+
+  /* 派人 */
+  .case { position: relative; margin: 10px 12px 0; padding: 11px 14px; }
+  .case h3 { margin: 0; font-size: 13.5px; font-weight: 500; } .case .who { font-size: 10.5px; color: #6a7884; margin-top: 3px; }
+  .need { display: flex; align-items: center; gap: 8px; margin-top: 9px; padding-top: 9px; border-top: 1px solid rgba(120,140,155,.18); font-size: 11.5px; }
+  .ok { width: 16px; height: 16px; border-radius: 50%; background: #3fb98b; color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 8px rgba(63,185,139,.6); }
+  .staff { display: grid; grid-template-columns: 46px 1fr 24px; gap: 10px; align-items: center; padding: 9px 12px; }
+  .staff + .staff { border-top: 1px solid rgba(120,140,155,.18); }
+  .staff .nm { font-size: 13px; } .staff .nm small { font-size: 10px; color: #6a7884; margin-left: 4px; letter-spacing: .05em; }
+  .st { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; margin-top: 4px; font-size: 9.5px; color: #6a7884; letter-spacing: .08em; }
+  .st span { display: flex; align-items: center; gap: 5px; } .seg { display: inline-flex; gap: 2px; } .seg i { width: 6px; height: 4px; border-radius: 1px; background: rgba(120,140,155,.25); } .seg i.f { background: #6ab9cf; box-shadow: 0 0 4px rgba(143,211,224,.9); } .seg.hi i.f { background: #3fb98b; box-shadow: 0 0 4px rgba(63,185,139,.8); }
+  .staff .say { font-size: 10px; color: #51606d; margin-top: 4px; }
+  .chk { width: 22px; height: 22px; border-radius: 7px; border: 1px solid rgba(120,140,155,.45); background: rgba(255,255,255,.6); display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .chk.on { background: #26303a; border-color: #26303a; color: #8fd3e0; box-shadow: 0 0 0 3px rgba(143,211,224,.25); }
+  .staff.busy { opacity: .45; }
+  .est { position: relative; margin: 10px 12px 0; padding: 10px 14px; display: flex; justify-content: space-between; font-size: 12px; } .est b { font-weight: 500; color: #2f7d90; }
+
+  /* 突發狀況 */
+  .dim { position: absolute; inset: 0; background: rgba(38,48,58,.38); backdrop-filter: blur(3px); z-index: 4; }
+  .modal { position: absolute; left: 16px; right: 16px; top: 250px; z-index: 5; padding: 16px 16px 14px; background: rgba(250,252,253,.78); }
+  .timer { height: 3px; border-radius: 3px; background: rgba(120,140,155,.2); overflow: hidden; } .timer i { display: block; width: 62%; height: 100%; background: linear-gradient(90deg, #b33a2f, #e0786c); box-shadow: 0 0 6px rgba(224,120,108,.8); }
+  .modal .lb { margin-top: 12px; font-size: 10.5px; letter-spacing: .3em; color: #b33a2f; display: flex; align-items: center; gap: 6px; } .modal .lb::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #b33a2f; box-shadow: 0 0 6px rgba(179,58,47,.8); }
+  .modal h2 { margin: 6px 0 6px; font-size: 18px; font-weight: 500; letter-spacing: .1em; }
+  .modal p { margin: 0 0 12px; font-size: 12px; line-height: 1.7; color: #51606d; }
+  .opt { display: block; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.7); border: 1px solid rgba(120,140,155,.25); margin-top: 8px; font-size: 12.5px; } .opt small { display: block; font-size: 10.5px; color: #6a7884; margin-top: 3px; }
+  .opt.def { border-color: rgba(79,169,191,.6); box-shadow: 0 0 0 3px rgba(143,211,224,.2); } .opt .tag { float: right; font-size: 9.5px; color: #2f7d90; letter-spacing: .1em; }
+  .opt.bet .tag { color: #b33a2f; }
+
+  /* 公司 */
+  .co { position: relative; margin: 8px 12px 0; padding: 9px 14px; display: flex; justify-content: space-between; align-items: center; }
+  .co b { font-weight: 500; font-size: 14px; letter-spacing: .08em; } .co small { display: block; font-size: 10px; color: #6a7884; letter-spacing: .15em; margin-top: 3px; }
+  .lvls { position: relative; margin: 10px 12px 0; padding: 4px 0; }
+  .lvl { display: grid; grid-template-columns: 80px 1fr; gap: 10px; padding: 6px 12px; align-items: center; }
+  .lvl + .lvl { border-top: 1px solid rgba(120,140,155,.18); }
+  .lvl .th { width: 80px; height: 42px; flex: none; border-radius: 9px; overflow: hidden; position: relative; box-shadow: inset 0 0 0 1px rgba(255,255,255,.7); }
+  .lvl .th img { width: 80px; height: 42px; image-rendering: pixelated; }
+  .lvl .info { min-width: 0; } .lvl .top { display: flex; align-items: center; gap: 6px; } .lvl .pr { margin-left: auto; font-size: 11px; color: #51606d; white-space: nowrap; }
+  .lvl .pr2 { color: #26303a; margin-top: 2px; }
+  .lvl .d { font-size: 10px; color: #6a7884; margin-top: 3px; letter-spacing: .04em; }
+  .lvl.lock .th img { filter: grayscale(.6) brightness(1.08); opacity: .7; }
+  .lvl.now { background: rgba(143,211,224,.12); }
+  .lvl.ipo .th { background: repeating-linear-gradient(135deg, #f6e7b4 0 6px, #f1dc98 6px 12px); display: flex; align-items: center; justify-content: center; font-size: 10px; color: #8a6a26; letter-spacing: .2em; }
+  .goal { position: relative; margin: 10px 12px 0; padding: 10px 14px 12px; }
+  .goal .gt { display: flex; font-size: 11px; letter-spacing: .2em; color: #51606d; } .goal .gt .r { margin-left: auto; letter-spacing: .1em; color: #2f7d90; }
+  .goal .gl { display: flex; justify-content: space-between; font-size: 10.5px; color: #6a7884; margin-top: 8px; } .goal .gl b { font-weight: 400; color: #26303a; }
+  .goal .bar { margin-top: 4px; } .goal .g2 { display: grid; grid-template-columns: 1fr 1.4fr; gap: 14px; }
+  .card.off { opacity: .55; }
+  .ad { position: relative; margin: 8px 12px 0; padding: 10px 14px; display: flex; align-items: center; gap: 10px; font-size: 12px; } .ad small { display: block; font-size: 10px; color: #6a7884; margin-top: 2px; } .ad button { margin-left: auto; font: inherit; font-size: 11.5px; letter-spacing: .12em; padding: 8px 14px; border-radius: 10px; border: 1px solid #26303a; background: #26303a; color: #f2f6f8; }
+  .foot { position: relative; margin: 8px 18px 0; font-size: 10px; color: #6a7884; text-align: center; letter-spacing: .06em; }
+
+  .np { display: inline-flex; align-items: center; gap: 6px; font-family: 'Noto Serif TC', serif; font-size: 13px; letter-spacing: .28em; padding: 4px 10px 4px 12px; line-height: 1.3; white-space: nowrap; position: relative; }
+  .np1 { background: #f6f1e6; color: #6b6052; border: 1px solid #cfc6b6; }
+  .np2 { background: linear-gradient(#c19866, #a77d4c); color: #fbf3e2; border: 1px solid #7d5c3c; box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 1px 2px rgba(0,0,0,.2); text-shadow: 0 1px 0 rgba(0,0,0,.25); }
+  .np2::before, .np2::after { content: ''; width: 3px; height: 3px; border-radius: 50%; background: #e6cf9c; box-shadow: inset 0 0 0 1px #6b4a2a; }
+  .np2::after { order: 2; }
+  .np3 { background: linear-gradient(#f3f4f6, #c9ccd1 55%, #e2e4e7); color: #34373d; border: 3px double #8f949b; box-shadow: 0 1px 3px rgba(0,0,0,.2); text-shadow: 0 1px 0 rgba(255,255,255,.7); padding: 4px 14px; }
+  /* 第 4～6 階：像素金屬（美術審稿：滑順漸層跟像素畫不搭）——硬邊色帶、一顆斜面、四角鉚釘 */
+  .np4 { background: #1f2125; color: #d9b75e; border: 1px solid #6b5a2c; box-shadow: inset 0 0 0 2px #1f2125, inset 0 0 0 3px #a88c45; padding: 6px 16px; letter-spacing: .3em; }   /* 二十七樓：黑底金字，簡單一條細金線，沒有釘子、沒有框（使用者：整層跟大樓沒差異） */
+  .np5 { position: relative; background: linear-gradient(170deg, #3a3330 0 18%, #15110f 32%, #241d19 100%); color: #f3d27a; border: 4px solid; border-color: #ffe9a0 #8a6216 #6b4a12 #f6dc8a; box-shadow: inset 0 0 0 1px #3b2a0c, inset 0 0 0 2px #c9a35a, 0 2px 6px rgba(60,40,10,.35); padding: 8px 26px; letter-spacing: .34em; font-weight: 600; text-shadow: 0 -1px 0 #fff3c4, 0 1px 0 #4a3410; }   /* 自己的大樓：黑漆（有一道亮漆反光）＋厚金框（左上亮右下暗）＋內圈細金線＋兩邊金色菱形 */
+  .np5::before, .np5::after { content: ''; position: absolute; top: 50%; width: 7px; height: 7px; margin-top: -4px; background: linear-gradient(135deg, #ffe9a0, #c9a35a 60%, #8a6216); transform: rotate(45deg); box-shadow: 0 0 0 1px #3b2a0c; } .np5::before { left: 8px; } .np5::after { right: 8px; }
+  .np5 span { color: inherit; }
+  .np6 { background: linear-gradient(#6b4a12,#6b4a12) left 3px top 3px/3px 3px no-repeat, linear-gradient(#6b4a12,#6b4a12) right 3px top 3px/3px 3px no-repeat, linear-gradient(#6b4a12,#6b4a12) left 3px bottom 3px/3px 3px no-repeat, linear-gradient(#6b4a12,#6b4a12) right 3px bottom 3px/3px 3px no-repeat, linear-gradient(#fff1b8 0 3px, #f3d27a 3px 50%, #dcae48 50% calc(100% - 3px), #a8761f calc(100% - 3px)); color: #3b2a0c; border: 2px solid #6b4a12; box-shadow: inset 2px 2px 0 #fff6d0, inset -2px -2px 0 #8a6216, 0 3px 0 rgba(107,74,18,.35); padding: 8px 22px; letter-spacing: .36em; font-weight: 600; text-shadow: 1px 1px 0 #fff3c4; }
+
+/* ===== 第二批（ui2.html）===== */
+.star { display: inline-block; width: 11px; height: 11px; background: linear-gradient(#f6dc8a, #c9a35a); clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); vertical-align: -1px; filter: drop-shadow(0 0 2px rgba(201,163,90,.8)); }
+.app { position: relative; margin: 10px 12px 0; padding: 12px 12px 12px; display: grid; grid-template-columns: 64px 1fr; gap: 6px 12px; }
+.app .ava { width: 64px; height: 64px; border-radius: 14px; }
+.app .nm { font-size: 14px; display: flex; align-items: center; gap: 6px; } .app .nm small { font-size: 10px; color: #6a7884; letter-spacing: .1em; }
+.app .say { font-size: 10.5px; color: #51606d; margin-top: 4px; }
+.app .ft { grid-column: 1 / 3; display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid rgba(120,140,155,.18); font-size: 11px; color: #51606d; }
+.app .ft b { font-weight: 400; color: #26303a; } .app .ft button { margin-left: auto; font: inherit; font-size: 12px; letter-spacing: .15em; padding: 8px 18px; border-radius: 10px; border: 1px solid #26303a; background: #26303a; color: #f2f6f8; }
+.app.gold { border-color: rgba(201,163,90,.8); box-shadow: 0 8px 24px rgba(40,60,80,.12), 0 0 0 1px rgba(201,163,90,.4), 0 0 18px rgba(246,220,138,.35), inset 0 1px 0 rgba(255,255,255,.9); }
+.app.gold .ava { background: linear-gradient(#fbf1d3, #f0dfae); }
+.mate { display: grid; grid-template-columns: 46px 1fr auto; gap: 10px; align-items: center; padding: 9px 12px; } .mate + .mate { border-top: 1px solid rgba(120,140,155,.18); }
+.mate .nm { font-size: 13px; } .mate .nm small { font-size: 10px; color: #6a7884; margin-left: 4px; } .mate .stt { font-size: 10.5px; color: #6a7884; margin-top: 3px; } .mate .go { color: #9fb1c0; font-size: 16px; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; padding: 14px 16px 90px; border-radius: 26px 26px 0 0; background: rgba(250,252,253,.86); }
+.sheet .grab { width: 36px; height: 4px; border-radius: 4px; background: rgba(120,140,155,.4); margin: 0 auto 12px; }
+.sheet .top { display: grid; grid-template-columns: 76px 1fr; gap: 12px; align-items: center; }
+.sheet .top .ava { width: 76px; height: 76px; border-radius: 16px; }
+.bubble { position: relative; padding: 8px 11px; border-radius: 12px; background: #fff; font-size: 11.5px; line-height: 1.55; color: #26303a; box-shadow: 0 2px 8px rgba(40,60,80,.1); }
+.bubble::before { content: ''; position: absolute; left: -5px; top: 14px; width: 10px; height: 10px; background: #fff; transform: rotate(45deg); }
+.kv { display: flex; justify-content: space-between; font-size: 11px; color: #6a7884; margin-top: 10px; } .kv b { font-weight: 400; color: #26303a; }
+.skill { margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: rgba(246,220,138,.18); border: 1px solid rgba(201,163,90,.45); font-size: 11px; color: #6b5420; } .skill b { font-weight: 500; }
+.btns { display: flex; gap: 8px; margin-top: 12px; } .btns button { flex: 1; min-height: 42px; border-radius: 12px; font: inherit; font-size: 12px; letter-spacing: .12em; border: 1px solid rgba(120,140,155,.35); background: rgba(255,255,255,.7); color: #26303a; } .btns button.main { background: #26303a; color: #f2f6f8; border-color: #26303a; } .btns button.warn { color: #b33a2f; border-color: rgba(179,58,47,.35); flex: .8; }
+.rc { position: relative; margin: 12px 14px 0; padding: 14px 16px 12px; }
+.rc .lb { font-size: 10.5px; letter-spacing: .3em; color: #2f7d90; display: flex; align-items: center; gap: 6px; } .rc .lb.bad { color: #b33a2f; }
+.rc h2 { margin: 6px 0 2px; font-size: 15px; font-weight: 500; letter-spacing: .04em; display: flex; align-items: center; gap: 8px; } .rc .who { font-size: 10.5px; color: #6a7884; }
+.rc .ava { width: 40px; height: 40px; border-radius: 10px; flex: none; }
+.ln { display: flex; justify-content: space-between; font-size: 12px; padding: 7px 0; border-top: 1px dashed rgba(120,140,155,.3); } .ln.sub { font-size: 11px; color: #6a7884; padding: 3px 0 3px 12px; border-top: 0; } .ln .up { color: #2f7d90; } .ln .dn { color: #b33a2f; }
+.ln.tot { border-top: 1px solid rgba(38,48,58,.5); margin-top: 4px; padding-top: 9px; font-size: 13.5px; font-weight: 500; } .ln.tot .v { font-size: 18px; font-weight: 300; }
+.story { font-size: 11.5px; line-height: 1.7; color: #51606d; margin: 8px 0 4px; }
+.quote { font-size: 11.5px; line-height: 1.6; color: #26303a; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,.65); border-left: 2px solid #8fd3e0; margin-top: 8px; display: flex; gap: 8px; align-items: center; } .quote .ava { width: 32px; height: 32px; border-radius: 8px; }
+.lvup { margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: rgba(143,211,224,.16); border: 1px solid rgba(79,169,191,.4); font-size: 11px; color: #2f6f80; }
+.note { position: absolute; z-index: 4; left: 20px; right: 20px; top: 330px; padding: 20px 20px 16px; }
+.note .from { font-size: 10.5px; letter-spacing: .3em; color: #6a7884; } .note p { margin: 12px 0 0; font-family: 'Noto Serif TC', serif; font-size: 16px; line-height: 1.9; letter-spacing: .08em; color: #26303a; }
+.note .nx { margin-top: 18px; display: flex; align-items: center; } .note .dots { display: flex; gap: 6px; } .note .dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(120,140,155,.35); } .note .dots i.on { background: #2f7d90; box-shadow: 0 0 6px #8fd3e0; }
+.note button { margin-left: auto; font: inherit; font-size: 12px; letter-spacing: .2em; padding: 9px 22px; border-radius: 12px; border: 0; background: #26303a; color: #f2f6f8; }
+.skip { position: absolute; z-index: 4; right: 18px; top: 22px; font-size: 11px; letter-spacing: .2em; color: #51606d; padding: 6px 12px; }
+.namef { position: relative; margin: 14px 12px 0; padding: 16px; }
+.namef .q { font-size: 13px; } .namef .q small { display: block; font-size: 10.5px; color: #6a7884; margin-top: 3px; }
+.namef .in { margin-top: 14px; display: flex; align-items: center; padding: 11px 12px; border-radius: 12px; background: rgba(255,255,255,.85); border: 1px solid rgba(79,169,191,.6); box-shadow: 0 0 0 3px rgba(143,211,224,.25); font-size: 15px; letter-spacing: .1em; } .namef .in .cur { width: 1px; height: 18px; background: #2f7d90; margin-left: 2px; } .namef .in small { margin-left: auto; font-size: 10.5px; color: #6a7884; }
+.namef .sug { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.card-biz { position: relative; margin: 14px auto 0; width: 260px; height: 140px; border-radius: 6px; background: #fff; box-shadow: 0 10px 30px rgba(40,60,80,.2); padding: 18px 20px; box-sizing: border-box; }
+.card-biz .lg { width: 26px; height: 26px; } .card-biz .n { position: absolute; left: 20px; bottom: 34px; font-family: 'Noto Serif TC', serif; font-size: 16px; letter-spacing: .2em; } .card-biz .t { position: absolute; left: 20px; bottom: 16px; font-size: 10px; letter-spacing: .3em; color: #6a7884; } .card-biz .dt { position: absolute; right: 18px; top: 18px; width: 6px; height: 6px; border-radius: 50%; background: #b33a2f; }
+.tut { position: absolute; z-index: 5; left: 50%; transform: translateX(-50%); padding: 7px 12px; border-radius: 10px; background: #26303a; color: #f2f6f8; font-size: 11px; letter-spacing: .1em; white-space: nowrap; box-shadow: 0 6px 16px rgba(38,48,58,.3); }
+.tut::after { content: ''; position: absolute; left: 50%; bottom: -5px; margin-left: -5px; width: 10px; height: 10px; background: #26303a; transform: rotate(45deg); }
+.pulse { box-shadow: 0 0 0 3px rgba(143,211,224,.6), 0 0 18px rgba(143,211,224,.9), 0 8px 24px rgba(40,60,80,.12) !important; border-color: #8fd3e0 !important; }
+.away { position: relative; margin: 10px 12px 0; padding: 12px 14px; }
+.away .tm { font-size: 10.5px; color: #6a7884; letter-spacing: .08em; margin-top: 2px; }
+.away .big { display: flex; align-items: baseline; justify-content: space-between; margin-top: 10px; } .away .big b { font-size: 26px; font-weight: 300; } .away .big span { font-size: 11px; color: #6a7884; }
+.it { display: flex; align-items: center; gap: 10px; padding: 9px 14px; font-size: 12px; } .it + .it { border-top: 1px solid rgba(120,140,155,.18); } .it .k { width: 64px; font-size: 10.5px; color: #6a7884; letter-spacing: .15em; flex: none; } .it .v { flex: 1; }
+
+/* ===== 第三批（ui3.html：中期目標）===== */
+.seg3 { position: relative; margin: 10px 12px 0; display: grid; grid-template-columns: repeat(4, 1fr); padding: 4px; border-radius: 14px; font-size: 11.5px; letter-spacing: .15em; text-align: center; color: #6a7884; }
+.seg3 span { padding: 7px 0; border-radius: 10px; } .seg3 span.on { background: #26303a; color: #f2f6f8; box-shadow: 0 4px 10px rgba(38,48,58,.25); }
+.shelf { position: relative; margin: 10px 12px 0; padding: 12px 12px 10px; }
+.shelf .ttl { display: flex; font-size: 11px; letter-spacing: .2em; color: #51606d; } .shelf .ttl span:last-child { margin-left: auto; letter-spacing: .05em; color: #2f7d90; }
+.shelf .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px 6px; margin-top: 10px; }
+.shelf .slot { height: 52px; border-radius: 10px; background: linear-gradient(#f4ead9, #e8d6b0); box-shadow: inset 0 -3px 0 #c9ad7c, inset 0 1px 0 #fff; display: flex; align-items: center; justify-content: center; }
+.shelf .slot.off { background: linear-gradient(#eef2f4, #dfe5e9); box-shadow: inset 0 -3px 0 #c2d0da, inset 0 1px 0 #fff; }
+.shelf .slot canvas { image-rendering: pixelated; width: 36px; height: 36px; }
+.ser { display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; align-items: center; padding: 8px 12px; } .ser + .ser { border-top: 1px solid rgba(120,140,155,.18); }
+.ser .ava { width: 40px; height: 40px; border-radius: 10px; } .ser .nm { font-size: 12px; } .ser .nx { font-size: 10px; color: #6a7884; margin-top: 2px; }
+.pips { display: flex; gap: 3px; margin-top: 4px; } .pips i { width: 14px; height: 4px; border-radius: 2px; background: rgba(120,140,155,.25); } .pips i.f { background: #6ab9cf; box-shadow: 0 0 4px rgba(143,211,224,.9); } .pips i.big { width: 20px; }
+.ser .gift { width: 30px; height: 30px; border-radius: 8px; background: rgba(255,255,255,.7); display: flex; align-items: center; justify-content: center; } .ser .gift canvas { width: 24px; height: 24px; image-rendering: pixelated; }
+.dex { position: relative; margin: 10px 12px 0; padding: 10px 10px 12px; }
+.dex .ttl { display: flex; padding: 2px 4px 8px; font-size: 11px; letter-spacing: .2em; color: #51606d; } .dex .ttl b { margin-left: auto; font-weight: 400; color: #2f7d90; letter-spacing: .05em; }
+.dex .g { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+.dex .c { height: 50px; border-radius: 9px; background: linear-gradient(#eef3f6, #dce5ea); position: relative; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,.9); }
+.dex .c img { position: absolute; left: 50%; bottom: 1px; transform: translateX(-50%); image-rendering: pixelated; }
+.dex .c.off img { filter: brightness(0); opacity: .16; }
+.dex .c.sp { background: linear-gradient(#fbf1d3, #f0dfae); } .dex .c.sp.off { background: linear-gradient(#eef3f6, #dce5ea); }
+.dex .c i { position: absolute; right: 3px; top: 3px; width: 6px; height: 6px; border-radius: 50%; } 
+.dex .sub2 { font-size: 10px; letter-spacing: .15em; color: #6a7884; margin: 10px 4px 6px; }
+.miles { display: flex; gap: 6px; margin: 10px 2px 0; } .miles span { flex: 1; text-align: center; font-size: 10px; padding: 6px 0; border-radius: 9px; background: rgba(255,255,255,.6); border: 1px solid rgba(120,140,155,.25); color: #6a7884; } .miles span.done { border-color: rgba(79,169,191,.6); color: #2f7d90; background: rgba(143,211,224,.15); }
+.rk { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; padding: 10px 14px; } .rk + .rk { border-top: 1px solid rgba(120,140,155,.18); }
+.rk .no { font-size: 16px; font-weight: 300; text-align: center; color: #6a7884; } .rk .no.top { color: #8a6a26; font-weight: 400; }
+.rk .co2 { font-size: 13px; } .rk .co2 small { display: block; font-size: 10px; color: #6a7884; margin-top: 4px; letter-spacing: .05em; }
+.rk .v { text-align: right; font-size: 14px; font-weight: 300; } .rk .v small { display: block; font-size: 9.5px; color: #6a7884; letter-spacing: .1em; }
+.rk.me { background: rgba(143,211,224,.14); }
+.rk .np { font-size: 12px; padding: 3px 9px 3px 10px; letter-spacing: .16em; } .rk .co2 small { margin-top: 5px; }
+.eq { display: grid; grid-template-columns: 56px 1fr auto; gap: 12px; align-items: center; padding: 10px 14px; } .eq + .eq { border-top: 1px solid rgba(120,140,155,.18); }
+.eq .ic { width: 56px; height: 56px; border-radius: 12px; background: linear-gradient(#eef3f6, #dce5ea); display: flex; align-items: center; justify-content: center; } .eq .ic canvas { width: 48px; height: 48px; image-rendering: pixelated; }
+.eq .nm { font-size: 13px; } .eq .d { font-size: 10.5px; color: #6a7884; margin-top: 3px; }
+.eq button { font: inherit; font-size: 11.5px; letter-spacing: .1em; padding: 8px 12px; border-radius: 10px; border: 1px solid #26303a; background: #26303a; color: #f2f6f8; white-space: nowrap; } .eq button.got { background: rgba(143,211,224,.15); color: #2f7d90; border-color: rgba(79,169,191,.5); }
+
+.dex .dots4 { position: absolute; right: 4px; top: 4px; display: flex; gap: 2px; } .dex .dots4 i { position: static; width: 6px; height: 6px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(60,70,80,.35); }
+
+.lvl .stg { font-size: 10.5px; color: #51606d; letter-spacing: .15em; white-space: nowrap; } .lvl .np { font-size: 11.5px; letter-spacing: .2em; }
+
+/* ===== 這一頁自己的（App 版面） ===== */
+html, body { background: #dfe3e6 !important; }
+body { min-height: 100vh; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+.shell { position: relative; max-width: 420px; margin: 0 auto; min-height: 100vh; padding-bottom: 96px; background: #dfe3e6; }
+button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
+.hd { position: sticky; top: 8px; z-index: 6; } .hd a.bk { text-decoration: none; }
+.scene { position: relative; margin: 10px 0 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.scene::-webkit-scrollbar { display: none; }
+.scene canvas { display: block; image-rendering: pixelated; }
+.scene .hint { position: absolute; right: 10px; bottom: 6px; font-size: 10px; letter-spacing: .15em; color: #fff; background: rgba(38,48,58,.45); padding: 2px 8px; border-radius: 999px; pointer-events: none; }
+.tabs { position: fixed; left: 50%; transform: translateX(-50%); width: min(396px, calc(100% - 24px)); bottom: calc(12px + env(safe-area-inset-bottom)); right: auto; z-index: 7; }
+.tabs span { cursor: pointer; padding: 4px 0; } .tabs em { white-space: nowrap; }
+.view[hidden] { display: none; }
+.empty { padding: 18px 14px; text-align: center; font-size: 12px; color: #6a7884; letter-spacing: .1em; }
+.row .acts { display: flex; gap: 6px; align-items: center; } .row .mini { font: inherit; font-size: 10.5px; padding: 4px 8px; border-radius: 8px; border: 1px solid rgba(120,140,155,.4); background: rgba(255,255,255,.7); color: #51606d; }
+.row.done { cursor: pointer; }
+.card { cursor: pointer; } .card .exp { font-size: 9.5px; color: #6a7884; }
+.card.tutc { border-color: #8fd3e0; box-shadow: 0 0 0 3px rgba(143,211,224,.6), 0 0 18px rgba(143,211,224,.9); }
+.mate { cursor: pointer; }
+/* 蓋在上面的一層（派人、員工、應徵、結案單、突發狀況…） */
+.layer { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; justify-content: flex-end; }
+.layer[hidden] { display: none; }
+.layer .back { position: absolute; inset: 0; background: rgba(38,48,58,.3); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+.layer .sheet { position: relative; max-width: 420px; width: 100%; margin: 0 auto; max-height: 88vh; overflow-y: auto; padding: 14px 14px calc(18px + env(safe-area-inset-bottom)); box-sizing: border-box; border-radius: 26px 26px 0 0; background: rgba(246,248,250,.94); }
+.layer .sheet .hd2 { display: flex; align-items: center; margin-bottom: 8px; } .layer .sheet .hd2 h2 { margin: 0; font-size: 15px; font-weight: 500; letter-spacing: .2em; } .layer .sheet .hd2 .x { margin-left: auto; font: inherit; font-size: 12px; letter-spacing: .15em; color: #6a7884; background: none; border: 0; padding: 6px 4px; }
+.layer.center { justify-content: center; } .layer.center .sheet { border-radius: 22px; width: calc(100% - 32px); max-width: 390px; padding: 16px; }
+.sheet .case, .sheet .panel, .sheet .cta, .sheet .rc, .sheet .est, .sheet .app, .sheet .goal { margin-left: 0; margin-right: 0; }
+.staff { cursor: pointer; } .staff.busy { cursor: default; }
+.req2 { display: flex; align-items: center; gap: 8px; font-size: 11.5px; padding: 4px 0; } .req2 .r2 { margin-left: auto; } .bad2 { width: 16px; height: 16px; border-radius: 50%; background: #e0786c; color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; }
+.note { position: relative; left: auto; right: auto; top: auto; margin: 0 auto; }
+.namef .in input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; font-size: 15px; letter-spacing: .1em; color: #26303a; outline: none; }
+.sug .chip { cursor: pointer; }
+.money2 { display: flex; gap: 8px; margin-top: 10px; } .money2 button, .tool button { flex: 1; font: inherit; font-size: 11.5px; letter-spacing: .1em; padding: 9px 6px; border-radius: 11px; border: 1px solid rgba(120,140,155,.35); background: rgba(255,255,255,.7); color: #26303a; }
+.tool { display: flex; gap: 6px; margin-top: 8px; }
+.trial { position: relative; margin: 10px 12px 0; padding: 10px 14px; font-size: 11px; color: #51606d; }
+.trial b { font-weight: 400; color: #26303a; }
+.gate { max-width: 360px; margin: 18vh auto 0; text-align: center; padding: 28px 20px; } .gate h1 { font-size: 18px; font-weight: 400; letter-spacing: .4em; margin: 0 0 10px; } .gate p { font-size: 12px; color: #6a7884; line-height: 1.8; letter-spacing: .1em; } .gate a { display: inline-block; margin-top: 14px; font-size: 12px; letter-spacing: .2em; color: #26303a; }
+.toast { z-index: 40 !important; }
+.theme-toggle { display: none !important; }
+.lvl.can { background: rgba(143,211,224,.12); }
+.shelf .slot { cursor: pointer; }
+.tutline { position: relative; margin: 8px 12px 0; display: flex; justify-content: center; } .tutline[hidden] { display: none; }
+.tutline .tut { position: relative; left: auto; transform: none; }
+    </style>
+</head>
+
+<body>
+<div class="shell" id="app">
+    <!-- 還沒開放：網址加 ?preview 才進得去（試玩錢包，存在這支手機） -->
+    <div class="gate glass" id="gate" hidden>
+        <h1>公司・開</h1>
+        <p>車庫已經借到了，<br>鐵捲門還在修。<br>開張那天會在會員中心貼公告。</p>
+        <a href="member.html">回會員・我</a>
+    </div>
+
+    <div id="main" hidden>
+        <div class="hd glass"><a class="bk" href="member.html">‹ 會員</a><h1 id="title">公司・開</h1><div class="m num"><small id="moneyLab">公司帳戶</small><span id="money">$0</span></div></div>
+
+        <!-- 一　辦公室 -->
+        <section class="view" id="v-office">
+            <div class="sub"><span class="np" id="plate"></span><span id="stageLine"></span></div>
+            <div class="scene" id="scene"><canvas id="cv" width="375" height="190"></canvas><span class="hint" id="sceneHint" hidden>左右滑</span></div>
+            <div class="kp"><div class="glass"><small>今天賺</small><b class="num" id="kToday">$0</b></div><div class="glass"><small>進行中</small><b class="num" id="kRun">0</b></div><div class="glass"><small>閒著</small><b class="num" id="kIdle">0</b></div></div>
+            <div class="panel glass"><div class="ph">進行中<span style="margin-left:auto;letter-spacing:.1em" id="concLine"></span></div><div id="runList"></div></div>
+            <div class="cta"><button id="goBoard">委託</button><button class="main num" id="collectAll" disabled>全部收款</button></div>
+            <div class="goal glass" id="goal"></div>
+        </section>
+
+        <!-- 二　委託 -->
+        <section class="view" id="v-board" hidden>
+            <div class="sub"><span class="dot"></span><span class="num" id="boardNext"></span><span class="num" id="boardConc"></span><span class="r chip gold num" id="adBtn" style="cursor:pointer"></span></div>
+            <div class="tutline" id="tutHint" hidden><div class="tut">點這張，派小麥去做。30 秒，這次一定成功</div></div>
+            <div class="cards" id="cards"></div>
+        </section>
+
+        <!-- 三　員工 -->
+        <section class="view" id="v-staff" hidden>
+            <div class="sub"><span class="num" id="staffLine"></span><span class="r chip" id="openApply" style="cursor:pointer">看應徵的人 ›</span></div>
+            <div class="panel glass" id="roster"></div>
+        </section>
+
+        <!-- 四　公司 -->
+        <section class="view" id="v-company" hidden>
+            <div class="seg3 glass" id="seg"><span data-seg="move" class="on">搬家</span><span data-seg="gift">紀念品</span><span data-seg="equip">設備</span><span data-seg="dex">圖鑑</span></div>
+            <div id="segBody"></div>
+        </section>
+
+        <div class="tabs glass" id="tabs"><span data-v="office" class="on">辦公室</span><span data-v="board">委託</span><span data-v="staff">員工</span><span data-v="company">公司</span></div>
+    </div>
+</div>
+
+<!-- 蓋上來的那一層 -->
+<div class="layer" id="layer" hidden><div class="back" id="layerBack"></div><div class="sheet glass" id="sheet"></div></div>
+
+<script>
+(() => {
+    const R = CompanyRules, $ = id => document.getElementById(id);
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const OPEN = false;                                  // 使用者試過、接好後端才開放
+    const PREVIEW = /[?&]preview\b/.test(location.search);
+    if (!OPEN && !PREVIEW) { $('gate').hidden = false; return; }
+    $('main').hidden = false;
+
+    // ---------- 存檔（試玩：存在這支手機，不動真的錢包、不碰後端） ----------
+    const KEY = 'dongbuli-company-preview', TRIAL_MONEY = 300000;
+    let S = null;
+    try { S = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { S = null; }
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } };
+    const now = () => Date.now() + (S ? S.shift || 0 : 0);   // 試玩可以「快轉」
+    const fresh = () => ({ v: 1, name: '', stage: 0, acct: 0, wallet: TRIAL_MONEY, jobsDone: 0, staff: [], board: [], jobs: [], done: [], applicants: [], applyAt: 0, nextBoardAt: 0, adUntil: 0,
+        series: {}, gifts: [], equip: {}, dex: { sp: {}, gen: {} }, hiredSp: [], last: null, today: { d: '', net: 0 }, inject: { d: '', amt: 0 }, lastSeen: 0, shift: 0, tut: 0, created: Date.now() });
+
+    // ---------- 角色圖 ----------
+    const SP = {};
+    const ANCHOR = { apple: 27, raccoon: 24, captain: 22, cat: 40, dog: 24, mole: 21, pigeon: 20, sparrow: 17, squirrel: 18, hamster: 17, rabbit: 16, hedgehog: 20, frog: 17, turtle: 25, xiaowu: 20, nugget: 24, julie: 29, 'julie-sleep': 36 };
+    let spritesLeft = Object.keys(ANCHOR).length;
+    Object.keys(ANCHOR).forEach(k => { const im = new Image(); im.onload = () => { if (--spritesLeft === 0) drawScene(); }; im.src = 'assets/company/' + k + '.png?v=20261125a'; SP[k] = im; });
+    const spriteKey = s => s.key;
+    const avaHtml = (key, cls = 'ava') => `<div class="${cls}"><img class="px" src="assets/company/${key}.png?v=20261125a" alt=""></div>`;
+
+    // ---------- 共用 ----------
+    const st = () => R.STAGES[S.stage];
+    const staffById = id => S.staff.find(s => s.id === id);
+    const idle = () => S.staff.filter(s => !s.job);
+    const running = () => S.jobs.filter(j => !j.fin);
+    const today = () => new Date(now()).toLocaleDateString('sv-SE');
+    const plateCls = () => 'np np' + (S.stage + 1);
+    const reqText = ([i, n]) => R.STATS[i][1] + ' ' + n + ' 以上';
+    const tagChip = c => c.tag === 'super' ? '<span class="chip gold">特好賺</span>' : c.tag === 'rush' ? '<span class="chip shu">急件</span>' : c.tag === 'big' ? '<span class="chip gold">大案</span>' : c.tag === 'talk' ? '<span class="chip">要先談</span>' : '';
+    const segHtml = (n, hi) => '<i class="seg' + (hi ? ' hi' : '') + '">' + [0, 1, 2, 3, 4].map(k => k < n ? '<i class="f"></i>' : '<i></i>').join('') + '</i>';
+    const statsHtml = s => '<div class="st">' + R.STATS.map(([, lab], i) => `<span>${lab}${segHtml(s.st[i], s.st[i] >= 5)}</span>`).join('') + '</div>';
+    const toast = m => (window.showToast ? showToast(m) : alert(m));
+    function payWallet(n) { if (S.wallet < n) { toast('試玩錢包不夠了（公司頁最下面可以加）'); return false; } S.wallet -= n; return true; }
+
+    // ---------- 開場（三張紙條 → 取名字 → 送一位試用員工＋雞塊的教學案） ----------
+    const NOTES = [
+        ['許願池的回信', '「創一家公司，讓我當執行長。」<br>准了。但執行長自己出錢。', '准'],
+        ['茱莉鴨留在門口的紙條', '車庫借你。<br>條件是，下午兩點到四點不要吵我。', '好'],
+        ['咚、咚、咚', '雞塊站在鐵捲門外面，手裡拿著一張紙：<br>「聽說這裡開了公司？我有一件小事想拜託。」', '開門'],
+    ];
+    function openNote(i) {
+        if (i >= NOTES.length) return openName();
+        const [from, text, btn] = NOTES[i];
+        show(`<div class="note glass" style="margin:0"><div class="from">${from}</div><p>${text}</p><div class="nx"><div class="dots">${NOTES.map((_, k) => `<i${k === i ? ' class="on"' : ''}></i>`).join('')}</div><button id="nNext">${btn}</button></div></div>
+              <div style="text-align:center;margin-top:10px"><button class="x" id="nSkip" style="font:inherit;font-size:11px;letter-spacing:.2em;color:#6a7884;background:none;border:0">略過</button></div>`, { center: true, lock: true });
+        $('nNext').onclick = () => openNote(i + 1); $('nSkip').onclick = () => openName();
+    }
+    function openName() {
+        const SUG = ['丼步喱設計社', '二十七樓萬事屋', '午睡設計所', '不要沾醬有限公司'];
+        show(`<div class="hd2"><h2>先幫公司取個名字</h2></div>
+              <div class="namef" style="margin:0;padding:0"><div class="q"><small>最多 12 個字・名片和排行榜都會寫這個・之後可以改一次</small></div>
+              <div class="in"><input id="nm" maxlength="12" placeholder="公司名字" value="${esc(SUG[0])}"><small class="num" id="nmCount"></small></div>
+              <div class="sug">${SUG.map(s => `<span class="chip" data-s="${esc(s)}">${esc(s)}</span>`).join('')}</div></div>
+              <div class="cta" style="margin-top:16px"><button class="main" id="nmOk" style="flex:1">就叫這個</button></div>`, { center: true, lock: true });
+        const upd = () => { $('nmCount').textContent = [...$('nm').value].length + ' / 12'; };
+        upd(); $('nm').oninput = upd;
+        document.querySelectorAll('.sug .chip').forEach(c => c.onclick = () => { $('nm').value = c.dataset.s; upd(); });
+        $('nmOk').onclick = () => {
+            const name = [...$('nm').value.trim()].slice(0, 12).join('');
+            if (!name) return toast('先取個名字');
+            S = fresh(); S.name = name; S.lastSeen = Date.now();
+            const trial = R.newStaff('hamster', false); trial.nick = '小麥'; trial.trial = true; trial.st = [3, 3, 2, 2]; trial.color = 0;
+            S.staff.push(trial); addDex(trial);
+            S.board = [R.tutorialCase(now())]; S.nextBoardAt = now() + 60000; S.tut = 1;
+            S.applicants = R.applicants(0, []); S.applyAt = now() + R.FREE_REFRESH * 60000;
+            save(); hide(); go('board'); toast('送你一位試用期的員工：倉鼠・小麥');
+        };
+    }
+
+    // ---------- 蓋上來的那一層 ----------
+    let layerLock = false;
+    function show(html, opt = {}) { $('sheet').innerHTML = html; $('layer').hidden = false; $('layer').classList.toggle('center', !!opt.center); layerLock = !!opt.lock; $('sheet').scrollTop = 0; }
+    function hide() { $('layer').hidden = true; $('sheet').innerHTML = ''; layerLock = false; incOpen = null; }
+    $('layerBack').onclick = () => { if (!layerLock) hide(); };
+
+    // ---------- 分頁 ----------
+    let view = 'office', seg = 'move';
+    function go(v) { view = v; document.querySelectorAll('.view').forEach(e => e.hidden = e.id !== 'v-' + v); document.querySelectorAll('#tabs span').forEach(e => e.classList.toggle('on', e.dataset.v === v)); render(); window.scrollTo(0, 0); }
+    document.querySelectorAll('#tabs span').forEach(e => e.onclick = () => go(e.dataset.v));
+    document.querySelectorAll('#seg span').forEach(e => e.onclick = () => { seg = e.dataset.seg; document.querySelectorAll('#seg span').forEach(x => x.classList.toggle('on', x === e)); renderCompany(); });
+    $('goBoard').onclick = () => go('board');
+
+    // ---------- 時間往前走：做完、貼新案子、撤掉過期的 ----------
+    function tick() {
+        if (!S || !S.name) return;
+        const t = now(); let changed = false;
+        for (const j of S.jobs) if (!j.fin && j.end <= t) { finish(j); changed = true; }
+        const before = S.board.length;
+        S.board = S.board.filter(c => c.tutorial || c.expires > t);
+        if (S.board.length !== before) changed = true;
+        const max = R.BOARD_MAX + (S.adUntil > t ? 1 : 0);
+        if (!S.tut) {
+            if (S.nextBoardAt <= t) {
+                while (S.board.length < max && S.nextBoardAt <= t) { addCase(S.nextBoardAt); S.nextBoardAt += R.BOARD_EVERY * 60000; changed = true; }
+                if (S.nextBoardAt <= t) S.nextBoardAt = t + R.BOARD_EVERY * 60000;
+            }
+        }
+        if (S.applyAt <= t) { S.applicants = R.applicants(S.stage, S.hiredSp); S.applyAt = t + R.FREE_REFRESH * 60000; changed = true; }
+        if (changed) { save(); render(); }
+        else renderLive();
+        incidentTick(t);
+    }
+    function addCase(at) {
+        const onBoard = S.board.filter(c => c.seriesNo).map(c => c.client).concat(S.jobs.filter(j => !j.collected && j.c.seriesNo).map(j => j.c.client));
+        const superOn = S.board.some(c => c.tag === 'super');
+        let c = null;
+        for (let k = 0; k < 6; k++) { c = R.newCase(S.stage, { now: at, series: S.series, onBoard, noSuper: superOn }); if (!S.board.some(b => b.title === c.title && b.client === c.client)) break; }   // 同一張不要貼兩次
+        if (!superOn && !c.seriesNo && S.adUntil > at && Math.random() < .1) { c.tag = 'super'; c.gross *= 2; c.expires = at + R.SUPER_LIFE * 60000; }
+        S.board.push(c);
+    }
+    function finish(j) {
+        j.fin = true;
+        const team = j.team.map(staffById).filter(Boolean);
+        const ctx = { souvenir: S.gifts.includes(j.c.client), equip: (S.equip[S.stage] || []).length };
+        j.res = R.settle(j, team, ctx);
+        j.ups = [];
+        team.forEach(s => { s.job = null; s.done++; if (!j.ok) s.failed++; const ups = R.gainExp(s, j.ok ? (j.great ? 2 : 1) : 1); ups.forEach(([lv, i]) => j.ups.push([s.id, lv, i])); });
+        j.finAt = j.end;
+    }
+
+    // ---------- 收款 ----------
+    function collect(j) {
+        if (j.collected) return null;
+        j.collected = true;
+        S.acct += j.res.net; S.jobsDone++;
+        if (S.today.d !== today()) S.today = { d: today(), net: 0 };
+        S.today.net += j.res.net;
+        let gift = null;
+        const c = j.c;
+        if (j.ok && c.seriesNo) {
+            const team = j.team.map(staffById).filter(Boolean);
+            const step = team.some(s => s.special && s.key === 'mole') ? 2 : 1;
+            S.series[c.client] = Math.min(5, Math.max(S.series[c.client] || 0, c.seriesNo - 1 + step));
+            if (S.series[c.client] >= 5 && !S.gifts.includes(c.client)) { S.gifts.push(c.client); gift = c.client; }
+        }
+        if (c.tutorial) { S.tut = 0; const t0 = now(); for (let k = 0; k < 3; k++) addCase(t0); S.nextBoardAt = t0 + R.BOARD_EVERY * 60000; }
+        return gift;
+    }
+    $('collectAll').onclick = () => {
+        const ready = S.jobs.filter(j => j.fin && !j.collected);
+        if (!ready.length) return;
+        if (ready.length === 1) return openReceipt(ready[0]);
+        let sum = 0, okN = 0, bad = 0; const gifts = [];
+        ready.forEach(j => { sum += j.res.net; j.ok ? okN++ : bad++; const g = collect(j); if (g) gifts.push(g); });
+        S.jobs = S.jobs.filter(j => !j.collected); save(); render();
+        show(`<div class="hd2"><h2>全部收款</h2><button class="x" id="xClose">關</button></div>
+              <div class="rc glass" style="margin:0"><div class="lb"><span class="dot"></span>${ready.length} 件結案</div>
+              ${ready.map(j => `<div class="ln num"><span>〈${esc(j.c.title)}〉${j.ok ? '' : '<span class="dn">做砸了</span>'}</span><span class="${j.res.net < 0 ? 'dn' : ''}">${R.fmt(j.res.net)}</span></div>`).join('')}
+              <div class="ln tot num"><span>入帳公司帳戶</span><span class="v">${R.fmt(sum)}</span></div>
+              ${upsHtml(ready.flatMap(j => j.ups))}${gifts.map(giftHtml).join('')}</div>
+              <div class="cta"><button class="main" id="xOk" style="flex:1">收下</button></div>`, { center: true });
+        $('xClose').onclick = $('xOk').onclick = hide;
+    };
+    const upsHtml = ups => ups.length ? `<div class="lvup">${ups.map(([id, lv, i]) => { const s = staffById(id); return s ? `<b>${esc(R.staffName(s))}升到 Lv.${lv}</b>${i >= 0 ? '：' + R.STATS[i][1] + ' +1' : ''}` : ''; }).join('<br>')}</div>` : '';
+    const giftHtml = k => `<div class="skill" style="margin-top:10px"><b>拿到紀念品・${esc(R.CLIENTS[k].gift)}</b><br>${esc(R.CLIENTS[k].who)}的系列五件都做完了。之後他的案子多拿 5%。</div>`;
+    function openReceipt(j) {
+        const team = j.team.map(staffById).filter(Boolean), r = j.res, c = j.c;
+        const gift = collect(j);
+        S.jobs = S.jobs.filter(x => x !== j); save(); render();
+        const cl = R.CLIENTS[c.client];
+        show(`<div class="rc glass" style="margin:0"><div class="lb${r.ok ? '' : ' bad'}"><span class="dot"${r.ok ? '' : ' style="background:#b33a2f;box-shadow:0 0 0 3px rgba(179,58,47,.2),0 0 8px rgba(179,58,47,.8)"'}></span>${c.tutorial ? '第一張結案單' : r.ok ? '結案單' : '做砸了'}</div>
+              <h2>${avaHtml(c.client)}<span>〈${esc(c.title)}〉<div class="who">${esc(cl.who)}・${team.map(s => esc(R.staffName(s))).join('、') || '—'}做的</div></span></h2>
+              <div class="ln num" style="margin-top:10px"><span>案子${r.ok ? '' : '（只付一成）'}</span><span>${R.fmt(r.base)}</span></div>
+              ${r.extra.map(([t, v]) => `<div class="ln num"><span>${esc(t)}</span><span class="up">+${R.fmt(v)}</span></div>`).join('')}
+              <div class="ln num"><span>薪水（${r.ok ? '案子的三成' : '做砸了扣一半'}）</span><span class="dn">−${R.fmt(r.salary)}</span></div>
+              ${r.per.map(([s, full, paid]) => `<div class="ln sub num"><span>${esc(R.staffName(s))} Lv.${s.lv}・${R.shares(s).toFixed(1).replace('.0', '')} 份</span><span>${r.ok ? R.fmt(paid) : R.fmt(full) + ' → ' + R.fmt(paid)}</span></div>`).join('')}
+              <div class="ln tot num"><span>入帳公司帳戶</span><span class="v ${r.net < 0 ? 'dn' : ''}">${R.fmt(r.net)}</span></div>
+              ${upsHtml(j.ups)}${gift ? giftHtml(gift) : ''}
+              ${!r.ok ? `<div class="kv"><span>開工前寫的做得好機率是 ${R.odds(j.p)}</span></div>` : ''}
+              ${c.tutorial ? `<div class="kv" style="display:block;line-height:1.7"><span>名片印好了：${esc(S.name)}・創始執行長。<br>委託那頁會開始貼新的案子，人手不夠就去「員工」看應徵的人。</span></div>` : ''}</div>
+              <div class="cta"><button class="main" id="xOk" style="flex:1">收下</button></div>`, { center: true });
+        $('xOk').onclick = () => { hide(); if (c.tutorial) go('staff'); };
+    }
+
+    // ---------- 派人 ----------
+    let pickSel = [];
+    function openDispatch(c) {
+        if (running().length >= st().conc && !c.tutorial) return toast('同時只能做 ' + st().conc + ' 件，等一件做完');
+        const free = idle();
+        pickSel = (S.last && S.last.ppl === c.ppl ? S.last.ids.filter(id => free.some(s => s.id === id)) : []).slice(0, c.ppl);
+        if (c.tutorial) pickSel = [];
+        drawDispatch(c);
+    }
+    function drawDispatch(c) {
+        const free = idle(), team = pickSel.map(staffById).filter(Boolean), pl = R.plan(c, team);
+        const enough = team.length === c.ppl;
+        const cl = R.CLIENTS[c.client];
+        show(`<div class="hd2"><h2>派誰去</h2><button class="x" id="dClose">關</button></div>
+            <div class="case glass" style="margin:0"><h3>〈${esc(c.title)}〉</h3><div class="who num">${esc(cl.who)}・${c.tutorial ? '30 秒' : R.dur(c.m)}・${R.fmt(c.gross)}・${c.ppl} 人${c.seriesNo ? '・系列 ' + c.seriesNo + ' / 5' : ''}</div>
+              ${c.req.length ? '<div class="need" style="display:block">' + c.req.map((q, k) => { const w = pl.who[k]; return `<div class="req2"><span>${reqText(q)}</span><span class="r2" style="color:${w ? '#2f7d90' : '#b33a2f'}">${w ? '合（' + esc(R.staffName(w)) + ' ' + w.st[q[0]] + '）' : team.length ? '缺 ' + pl.short[k] : '還沒選人'}</span>${w ? '<span class="ok">✓</span>' : '<span class="bad2">!</span>'}</div>`; }).join('') + '</div>' : ''}</div>
+            <div class="cta"><button class="main" id="dAuto" style="flex:1">幫我派</button><button id="dLast" ${S.last && S.last.ppl === c.ppl ? '' : 'disabled'}>照上次的組合</button></div>
+            <div class="panel glass" style="margin-top:10px">${S.staff.map(s => { const on = pickSel.includes(s.id), busy = !!s.job; const j = busy ? S.jobs.find(x => x.id === s.job) : null;
+                return `<div class="staff${busy ? ' busy' : ''}" data-id="${s.id}">${avaHtml(spriteKey(s))}<div><div class="nm">${esc(R.staffName(s))}<small>Lv.${s.lv}${s.trial ? '・試用期' : ''}</small></div>${statsHtml(s)}<div class="say">${busy ? '在做〈' + esc(j ? j.c.title : '') + '〉・' + R.clock(j ? (j.end - now()) / 1000 : 0) + ' 後回來' : esc(s.special ? R.SPECIALS[s.key].skill + '：' + R.SPECIALS[s.key].skillText : s.say)}</div></div><div class="chk${on ? ' on' : ''}">${on ? '✓' : ''}</div></div>`; }).join('') || '<div class="empty">還沒有員工</div>'}</div>
+            <div class="est glass num" style="margin-top:10px"><span>${enough ? '預計 <b>' + (c.tutorial ? '30 秒' : R.dur(Math.max(1, Math.round(pl.m)))) + '</b>' + (pl.napper ? '（茱莉鴨可能睡一下）' : '') : '要選 ' + c.ppl + ' 人（選了 ' + team.length + '）'}</span><span>做得好 <b>${enough ? R.odds(pl.p) : '—'}</b></span></div>
+            <div class="cta"><button class="main" id="dGo" style="flex:1" ${enough ? '' : 'disabled'}>開工</button></div>`);
+        if (c.tutorial) { $('sheet').scrollTop = 0; }
+        $('dClose').onclick = hide;
+        $('dAuto').onclick = () => { const t = R.autoPick(c, idle()); if (!t) return toast('閒著的人不夠 ' + c.ppl + ' 位'); pickSel = t.map(s => s.id); drawDispatch(c); };
+        $('dLast').onclick = () => { const ids = S.last.ids.filter(id => idle().some(s => s.id === id)); if (ids.length < c.ppl) return toast('上次的人有的在忙'); pickSel = ids.slice(0, c.ppl); drawDispatch(c); };
+        document.querySelectorAll('#sheet .staff').forEach(e => e.onclick = () => { const id = e.dataset.id, s = staffById(id); if (s.job) return; if (pickSel.includes(id)) pickSel = pickSel.filter(x => x !== id); else if (pickSel.length < c.ppl) pickSel.push(id); else { pickSel.shift(); pickSel.push(id); } drawDispatch(c); });
+        $('dGo').onclick = () => {
+            if (pl.p < .5 && !confirm('做得好的機率只有' + R.odds(pl.p) + '，還是要開工嗎？')) return;
+            const j = R.start(c, team, now());
+            if (c.tutorial) { j.ok = true; j.great = false; j.napped = false; j.tip = false; j.end = now() + 30000; }
+            team.forEach(s => s.job = j.id);
+            S.jobs.push(j); S.board = S.board.filter(x => x !== c); S.last = { ppl: c.ppl, ids: team.map(s => s.id) };
+            save(); hide(); go('office'); toast('開工了');
+        };
+    }
+
+    // ---------- 突發狀況（只有開著畫面才跳；15 秒沒選就選第一個） ----------
+    let incAt = 0, incOpen = null, incTimer = 0;
+    function incidentTick(t) {
+        if (document.hidden || !S.name || S.tut) return;
+        const pool = running().filter(j => !j.c.tutorial && j.end - t > 60000);
+        if (!pool.length) { incAt = 0; return; }
+        if (!incAt) incAt = t + (4 + Math.random() * 5) * 60000;
+        if (incOpen) { const left = 15 - (t - incOpen.at) / 1000; const bar = $('incBar'); if (bar) bar.style.width = Math.max(0, left / 15 * 100) + '%'; if (left <= 0) applyInc(0); return; }
+        if (t < incAt || !$('layer').hidden) return;
+        incAt = 0;
+        const j = R.pick(pool), inc = R.pick(R.INCIDENTS);
+        incOpen = { j, inc, at: t };
+        show(`<div class="timer"><i id="incBar" style="width:100%"></i></div>
+              <div class="modal" style="position:static;padding:0;background:none;box-shadow:none;border:0"><div class="lb">突發狀況・〈${esc(j.c.title)}〉</div><h2>${inc.t}</h2><p>${inc.d}</p>
+              ${inc.o.map(([a, b, e], k) => `<div class="opt${k === 0 ? ' def' : ''}${e.bet ? ' bet' : ''}" data-k="${k}">${k === 0 ? '<span class="tag">沒選就是這個</span>' : e.bet ? '<span class="tag">賭一把</span>' : ''}${a}<small>${e.cost ? '花 ' + R.fmt(R.incidentCost(S.stage, e.cost)) + '（公司帳戶）' : b}</small></div>`).join('')}</div>`, { center: true, lock: true });
+        document.querySelectorAll('#sheet .opt').forEach(e => e.onclick = () => applyInc(+e.dataset.k));
+    }
+    function applyInc(k) {
+        if (!incOpen) return;
+        const { j, inc } = incOpen, e = inc.o[k][2], team = j.team.map(staffById).filter(Boolean);
+        let msg = '';
+        if (e.cost) { const n = R.incidentCost(S.stage, e.cost); if (S.acct < n) { toast('公司帳戶不夠，只好等一下'); j.end += 2 * 60000; } else { S.acct -= n; msg = '花了 ' + R.fmt(n); } }
+        if (e.neg) { if (team.some(s => s.st[3] >= e.neg)) msg = '談成了，沒事'; else { if (e.delay) j.end += e.delay * 60000; if (e.fail) j.ok = false; msg = e.fail ? '沒談成……要重做' : '沒談成，慢一點'; } }
+        else if (e.delay) { j.end += e.delay * 60000; msg = '多等 ' + e.delay + ' 分鐘'; }
+        if (e.bonus) j.bonus = (j.bonus || 0) + e.bonus;
+        if (e.odds && j.ok && Math.random() < -e.odds / Math.max(.1, j.p)) j.ok = false;
+        if (e.bet) { if (Math.random() < .3) { j.ok = true; j.bonus = (j.bonus || 0) + .5; msg = '賭贏了！'; } else { j.ok = false; msg = '賭輸了……'; } }
+        incOpen = null; save(); hide(); render(); if (msg) toast(msg);
+    }
+
+    // ---------- 員工 ----------
+    function openStaff(s) {
+        const sp = s.special ? R.SPECIALS[s.key] : null, j = s.job ? S.jobs.find(x => x.id === s.job) : null;
+        const say = sp ? R.pick(sp.say) : '「' + s.say + '」';
+        const need = R.expNeed(s.lv), tp = R.trainPrice(S.stage, s);
+        show(`<div class="hd2"><h2>${esc(R.staffName(s))}</h2><button class="x" id="sClose">關</button></div>
+            <div class="top" style="display:grid;grid-template-columns:76px 1fr;gap:12px;align-items:center">${avaHtml(spriteKey(s), 'ava" style="width:76px;height:76px;border-radius:16px')}<div class="bubble">${esc(say)}</div></div>
+            <div style="margin-top:12px;font-size:10.5px;color:#6a7884">Lv.${s.lv}・${s.special ? '特別人選 <span class="star"></span>' : s.trial ? '試用期' : '一般員工・' + R.COLORS[s.color]}</div>
+            ${statsHtml(s)}
+            ${sp ? `<div class="skill"><b>本事・${sp.skill}</b>：${sp.skillText}</div>` : ''}
+            <div class="kv num"><span>薪水抽 ${R.shares(s).toFixed(1).replace('.0', '')} 份・做過 ${s.done} 件（做砸 ${s.failed} 件）</span></div>
+            <div class="kv num"><span>經驗</span><b>${s.lv >= R.MAX_LV ? '滿級' : Math.floor(s.exp / need * 100) + '%・再做約 ' + Math.ceil(need - s.exp) + ' 件升 Lv.' + (s.lv + 1)}</b></div><div class="bar"><i style="width:${s.lv >= R.MAX_LV ? 100 : s.exp / need * 100}%"></i></div>
+            ${j ? `<div class="kv num"><span>在做〈${esc(j.c.title)}〉・${R.clock((j.end - now()) / 1000)}</span></div>` : ''}
+            <div class="btns"><button class="num" id="sTrain" ${s.lv >= R.MAX_LV ? 'disabled' : ''}>訓練 ${R.fmt(tp)}<br><small style="font-size:9.5px;color:#6a7884">錢包付</small></button><button class="warn" id="sFire" ${s.job ? 'disabled' : ''}>請他走</button></div>
+            <div class="kv" style="justify-content:flex-end;margin-top:6px"><span>${s.job ? '做事中不能請走' : '請走的話簽約金不退'}</span></div>`);
+        $('sClose').onclick = hide;
+        $('sTrain').onclick = () => { if (!payWallet(tp)) return; s.exp = 0; s.lv++; const can = [0, 1, 2, 3].filter(i => s.st[i] < 5); if (can.length) s.st[R.pick(can)]++; save(); toast(R.staffName(s) + '升到 Lv.' + s.lv); openStaff(s); render(); };
+        $('sFire').onclick = () => { if (!confirm('確定要請' + R.staffName(s) + '走嗎？簽約金不退。')) return; S.staff = S.staff.filter(x => x !== s); if (s.special) S.hiredSp = S.hiredSp.filter(k => k !== s.key); save(); hide(); render(); toast(R.staffName(s) + '收拾東西走了'); };
+    }
+    function addDex(s) { if (s.special) S.dex.sp[s.key] = S.dex.sp[s.key] || Date.now(); else { const a = S.dex.gen[s.key] = S.dex.gen[s.key] || []; if (!a.includes(s.color)) a.push(s.color); } }
+    function openApply() {
+        const full = S.staff.length >= st().seats, left = Math.max(0, S.applyAt - now());
+        show(`<div class="hd2"><h2>應徵</h2><button class="x" id="aClose">關</button></div>
+            <div class="sub" style="margin:0 2px"><span class="num">員工 ${S.staff.length} / ${st().seats}${full ? '・坐滿了，搬家才有位子' : '・還能請 ' + (st().seats - S.staff.length) + ' 位'}</span><span class="r num">錢包 ${R.fmt(S.wallet)}</span></div>
+            ${S.applicants.map((s, k) => { const sp = s.special ? R.SPECIALS[s.key] : null, fee = R.hireFee(S.stage, s);
+                return `<div class="app glass${sp ? ' gold' : ''}" style="margin:10px 0 0">${avaHtml(spriteKey(s))}<div><div class="nm">${esc(R.staffName(s))}${sp ? '<span class="star"></span><small>特別人選</small>' : '<small>一般・' + R.COLORS[s.color] + '</small>'}</div>${statsHtml(s)}<div class="say">${esc(sp ? sp.skill + '：' + sp.skillText : s.say)}</div></div>
+                <div class="ft num"><span>簽約金 <b>${R.fmt(fee)}</b>・薪水抽 ${sp ? 1.5 : 1} 份</span><button data-k="${k}" ${full ? 'disabled' : ''}>聘用</button></div></div>`; }).join('') || '<div class="empty">這一批都請完了</div>'}
+            <div class="cta"><button class="num" disabled>${R.clock(left / 1000)} 後免費換</button><button class="main num" id="aRef" style="flex:1">現在換一批 ${R.fmt(st().refresh)}</button></div>`);
+        $('aClose').onclick = hide;
+        document.querySelectorAll('#sheet .ft button').forEach(b => b.onclick = () => {
+            const s = S.applicants[+b.dataset.k], fee = R.hireFee(S.stage, s);
+            if (S.staff.length >= st().seats) return toast('位子坐滿了');
+            if (!payWallet(fee)) return;
+            S.applicants.splice(+b.dataset.k, 1); s.id = 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1e4); S.staff.push(s); if (s.special) S.hiredSp.push(s.key); addDex(s);
+            save(); render(); openApply(); toast(R.staffName(s) + '來上班了');
+        });
+        $('aRef').onclick = () => { if (!payWallet(st().refresh)) return; S.applicants = R.applicants(S.stage, S.hiredSp); S.applyAt = now() + R.FREE_REFRESH * 60000; save(); openApply(); };
+    }
+    $('openApply').onclick = openApply;
+
+    // ---------- 畫辦公室 ----------
+    let baseCv = null, baseStage = -1, seats = [];
+    function drawScene() {
+        if (!S || !S.name) return;
+        const cv = $('cv'), x = cv.getContext('2d');
+        if (baseStage !== S.stage) { baseCv = document.createElement('canvas'); seats = CompanyOffice.paint(baseCv, S.stage + 1).slice(); baseStage = S.stage; cv.width = baseCv.width; cv.height = baseCv.height; cv.style.width = baseCv.width + 'px'; cv.style.height = baseCv.height + 'px'; $('sceneHint').hidden = baseCv.width <= 380; requestAnimationFrame(() => { $('scene').scrollLeft = S.stage === 4 ? 250 : 0; }); }   // 大樓一打開先看辦公區，大廳往左滑
+        x.imageSmoothingEnabled = false; x.drawImage(baseCv, 0, 0);
+        const order = seats.map((p, i) => [p, i]).sort((a, b) => a[0][1] - b[0][1]);   // 後排先畫
+        const t = now();
+        order.forEach(([[sx, sy], i]) => {
+            const s = S.staff[i]; if (!s) return;
+            let key = spriteKey(s);
+            const j = s.job ? S.jobs.find(q => q.id === s.job) : null;
+            if (s.key === 'julie' && j && j.napped) { const u = (t - j.start) / (j.end - j.start); if (u > .35 && u < .7) key = 'julie-sleep'; }
+            const im = SP[key]; if (!im || !im.complete || !im.naturalWidth) return;
+            x.drawImage(im, Math.round(sx) - ANCHOR[key], Math.round(sy) + 1 - im.naturalHeight);
+            if (j) { const u = Math.min(1, Math.max(0, (t - j.start) / (j.end - j.start))); x.fillStyle = 'rgba(38,48,58,.55)'; x.fillRect(Math.round(sx) - 9, Math.round(sy) + 3, 18, 2); x.fillStyle = '#8fd3e0'; x.fillRect(Math.round(sx) - 9, Math.round(sy) + 3, Math.round(18 * u), 2); }
+        });
+    }
+
+    // ---------- 畫面 ----------
+    function render() {
+        if (!S || !S.name) return;
+        $('money').textContent = R.fmt(S.acct);
+        const readyN = S.jobs.filter(j => j.fin && !j.collected).length, newN = S.board.length;
+        document.querySelectorAll('#tabs span').forEach(e => { const v = e.dataset.v; e.innerHTML = { office: '辦公室', board: '委託', staff: '員工', company: '公司' }[v] + (v === 'office' && readyN ? '<em class="c">可收</em>' : v === 'board' && newN ? '<em>' + newN + '</em>' : v === 'staff' && idle().length ? '<em class="c">閒 ' + idle().length + '</em>' : ''); });
+        if (view === 'office') renderOffice(); else if (view === 'board') renderBoard(); else if (view === 'staff') renderStaff(); else renderCompany();
+    }
+    function renderLive() {   // 每秒只更新倒數和進度
+        if (view === 'office') { renderRun(); drawScene(); }
+        if (view === 'board') $('boardNext').textContent = S.tut ? '先做完雞塊的這件' : '新案子 ' + R.clock((S.nextBoardAt - now()) / 1000) + ' 後';
+    }
+    function renderOffice() {
+        $('title').textContent = '公司・開'; $('moneyLab').textContent = '公司帳戶';
+        $('plate').className = plateCls(); $('plate').textContent = S.name;
+        $('stageLine').textContent = st().name + '・員工 ' + S.staff.length + ' 人';
+        if (S.today.d !== today()) S.today = { d: today(), net: 0 };
+        $('kToday').textContent = R.fmt(S.today.net);
+        $('kRun').textContent = running().length + ' / ' + st().conc;
+        $('kIdle').textContent = idle().length + ' 人';
+        $('concLine').textContent = '同時 ' + st().conc + ' 件';
+        renderRun(); drawScene();
+        const next = R.STAGES[S.stage + 1];
+        $('goal').hidden = !next;
+        if (next) $('goal').innerHTML = `<div class="gt"><span>下一步・搬到${next.name}</span><span class="r" style="cursor:pointer" id="goMove">公司頁 ›</span></div>
+            <div class="g2"><div><div class="gl num"><span>案子</span><b>${Math.min(S.jobsDone, next.jobs)} / ${next.jobs} 件</b></div><div class="bar"><i style="width:${Math.min(100, S.jobsDone / next.jobs * 100)}%"></i></div></div>
+            <div><div class="gl num"><span>帳戶</span><b>${R.fmt(S.acct)} / ${R.fmt(next.cost)}</b></div><div class="bar"><i style="width:${Math.min(100, Math.max(0, S.acct / next.cost * 100))}%"></i></div></div></div>`;
+        if ($('goMove')) $('goMove').onclick = () => { seg = 'move'; document.querySelectorAll('#seg span').forEach(x => x.classList.toggle('on', x.dataset.seg === 'move')); go('company'); };
+    }
+    function renderRun() {
+        const t = now(), list = S.jobs.slice().sort((a, b) => (b.fin ? 1 : 0) - (a.fin ? 1 : 0) || a.end - b.end);
+        const ready = list.filter(j => j.fin && !j.collected);
+        $('collectAll').disabled = !ready.length;
+        $('collectAll').textContent = ready.length ? '全部收款 ' + R.fmt(ready.reduce((a, j) => a + j.res.net, 0)) : '全部收款';
+        $('runList').innerHTML = list.map(j => {
+            const names = j.team.map(staffById).filter(Boolean).map(s => R.staffName(s)).join('、');
+            if (j.fin) return `<div class="row done" data-j="${j.id}"><span class="tt">〈${esc(j.c.title)}〉<small>${esc(names)}</small></span><span class="chip${j.ok ? '' : ' shu'} num">${j.ok ? '完成' : '做砸了'}・${R.fmt(j.res.net)}</span></div>`;
+            const u = Math.min(1, (t - j.start) / (j.end - j.start)), sleeping = j.napped && u > .35 && u < .7 && j.team.some(id => { const s = staffById(id); return s && s.key === 'julie'; });
+            return `<div class="row"><span class="tt">〈${esc(j.c.title)}〉<small>${esc(names)}${sleeping ? '・茱莉鴨睡著了，慢一點' : ''}</small><div class="bar"><i style="width:${u * 100}%"></i></div></span><span class="acts"><span class="num" style="font-size:12px;color:#6a7884">${R.clock((j.end - t) / 1000)}</span>${j.c.tutorial ? '' : `<button class="mini num" data-ot="${j.id}">加班 ${R.fmt(R.overtimePrice(j))}</button>`}</span></div>`;
+        }).join('') || '<div class="empty">沒有在做的案子・去委託接一件</div>';
+        document.querySelectorAll('#runList .row.done').forEach(e => e.onclick = () => openReceipt(S.jobs.find(j => j.id === e.dataset.j)));
+        document.querySelectorAll('#runList [data-ot]').forEach(b => b.onclick = ev => { ev.stopPropagation(); const j = S.jobs.find(x => x.id === b.dataset.ot); if (!j || j.fin) return; if (!confirm('付加班費 ' + R.fmt(R.overtimePrice(j)) + '（錢包），馬上做完？')) return; if (!payWallet(R.overtimePrice(j))) return; j.end = now(); tick(); });
+    }
+    function renderBoard() {
+        $('title').textContent = '委託'; $('moneyLab').textContent = '公司帳戶';
+        $('boardNext').textContent = S.tut ? '先做完雞塊的這件' : '新案子 ' + R.clock((S.nextBoardAt - now()) / 1000) + ' 後';
+        $('boardConc').textContent = '同時 ' + st().conc + ' 件・做著 ' + running().length;
+        const adOn = S.adUntil > now();
+        $('adBtn').textContent = adOn ? '廣告中・' + R.clock((S.adUntil - now()) / 1000) : '打廣告 ' + R.fmt(st().ad);
+        $('adBtn').onclick = () => { if (S.adUntil > now()) return toast('廣告還在播'); if (!confirm('打廣告一小時 ' + R.fmt(st().ad) + '（錢包）：委託多一張、特好賺比較常出現')) return; if (!payWallet(st().ad)) return; S.adUntil = now() + 3600000; S.nextBoardAt = Math.min(S.nextBoardAt, now()); save(); tick(); render(); };
+        $('tutHint').hidden = !S.tut;
+        const t = now();
+        $('cards').innerHTML = S.board.map((c, k) => {
+            const cl = R.CLIENTS[c.client];
+            return `<div class="card glass${c.tag === 'big' ? ' big' : ''}${c.tutorial ? ' tutc' : ''}" data-k="${k}">${avaHtml(c.client)}<div><h3>〈${esc(c.title)}〉</h3><div class="who">${esc(cl.who)}・${c.tutorial ? '30 秒' : R.dur(c.m)}</div></div>
+                <div class="pay num">${R.fmt(c.gross)}<small>${c.seriesNo ? '系列 ' + c.seriesNo + ' / 5' : c.tag === 'super' || c.tag === 'rush' ? R.clock((c.expires - t) / 1000) + ' 後撤' : ''}</small></div>
+                <div class="req"><span class="chip mute">${c.ppl} 人</span>${c.req.map(q => `<span class="chip">${reqText(q)}</span>`).join('')}${c.tutorial ? '<span class="chip">一定做得好</span>' : ''}${tagChip(c)}${c.seriesNo === 5 ? '<span class="chip gold">做完送紀念品</span>' : ''}</div></div>`;
+        }).join('') || '<div class="empty glass">委託板空了・新案子等一下就來</div>';
+        document.querySelectorAll('#cards .card').forEach(e => e.onclick = () => openDispatch(S.board[+e.dataset.k]));
+    }
+    function renderStaff() {
+        $('title').textContent = '員工'; $('moneyLab').textContent = '錢包'; $('money').textContent = R.fmt(S.wallet);
+        $('staffLine').textContent = S.staff.length + ' / ' + st().seats + ' 人・' + st().name + '最多 ' + st().seats + ' 人';
+        $('roster').innerHTML = S.staff.map((s, k) => { const j = s.job ? S.jobs.find(x => x.id === s.job) : null;
+            return `<div class="mate" data-k="${k}">${avaHtml(spriteKey(s))}<div><div class="nm">${esc(R.staffName(s))}<small>Lv.${s.lv}${s.trial ? '・試用期' : ''}${s.special ? ' <span class="star"></span>' : ''}</small></div><div class="stt num">${j ? '在做〈' + esc(j.c.title) + '〉・' + R.clock((j.end - now()) / 1000) : '閒著'}</div></div><span class="go">›</span></div>`; }).join('') || '<div class="empty">還沒有員工</div>';
+        document.querySelectorAll('#roster .mate').forEach(e => e.onclick = () => openStaff(S.staff[+e.dataset.k]));
+    }
+    function renderCompany() {
+        $('title').textContent = '公司'; $('moneyLab').textContent = seg === 'equip' ? '錢包' : '公司帳戶'; $('money').textContent = R.fmt(seg === 'equip' ? S.wallet : S.acct);
+        const B = $('segBody');
+        if (seg === 'move') {
+            const next = R.STAGES[S.stage + 1], canMove = next && S.acct >= next.cost && S.jobsDone >= next.jobs;
+            if (S.inject.d !== today()) S.inject = { d: today(), amt: 0 };
+            const injLeft = Math.max(0, st().inject - S.inject.amt);
+            B.innerHTML = `<div class="co glass"><div><b>${esc(S.name)}</b><small>創始執行長・成立第 ${Math.floor((now() - S.created) / 864e5) + 1} 天</small></div><div style="text-align:right"><b class="num" style="font-weight:300">${S.jobsDone} 件</b><small>做完的案子</small></div></div>
+                <div class="lvls glass">${R.STAGES.map((g, i) => `<div class="lvl${i === S.stage ? ' now' : i === S.stage + 1 && canMove ? ' can' : i > S.stage ? ' lock' : ''}"><div class="th" style="background:#dfe3e6"><canvas data-th="${i}" width="80" height="42" style="width:80px;height:42px;image-rendering:pixelated"></canvas></div><div class="info"><div class="top"><span class="np np${i + 1}">${esc(S.name)}</span><span class="stg">${g.name}</span>${i === S.stage ? '<span class="chip" style="margin-left:auto">現在</span>' : ''}</div><div class="d">${g.seats} 人・同時 ${g.conc} 件${g.maxDur >= 480 ? '・跨夜 ' + g.maxDur / 60 + ' 小時' : ''}</div>${i > 0 ? `<div class="d pr2 num">${R.fmt(g.cost)}・做完 ${g.jobs} 件</div>` : ''}</div></div>`).join('')}</div>
+                ${next ? `<div class="cta"><button class="main num" id="mv" style="flex:1" ${canMove ? '' : 'disabled'}>搬到${next.name}・${R.fmt(next.cost)}${S.jobsDone < next.jobs ? '（還差 ' + (next.jobs - S.jobsDone) + ' 件）' : S.acct < next.cost ? '（帳戶還差 ' + R.fmt(next.cost - S.acct) + '）' : ''}</button></div>` : ''}
+                <div class="goal glass"><div class="gt"><span>公司帳戶和錢包</span><span class="r num">錢包 ${R.fmt(S.wallet)}</span></div>
+                  <div class="money2"><button class="num" id="inj" ${injLeft ? '' : 'disabled'}>執行長增資（今天還能 ${R.fmt(injLeft)}）</button></div>
+                  <div class="money2"><button class="num" id="out" ${S.acct > 0 ? '' : 'disabled'}>轉 ${R.fmt(Math.max(0, S.acct))} 進錢包</button></div>
+                  <div class="kv"><span>搬家只能用公司帳戶付；錢包可以付簽約金、刷新、訓練、設備、廣告、加班費</span></div></div>
+                <div class="trial glass">試玩錢包 <b class="num">${R.fmt(S.wallet)}</b>（只在這支手機、不動真的錢包）
+                  <div class="tool"><button id="tAdd">錢包 +100 萬</button><button id="tSkip">快轉 10 分鐘</button><button id="tSkip2">快轉 1 小時</button><button id="tReset">整個重來</button></div></div>
+                <p class="foot">這裡的錢都是遊戲幣，不能儲值，也不能換現金或獎品。</p>`;
+            document.querySelectorAll('canvas[data-th]').forEach(cv => { const i = +cv.dataset.th, b = document.createElement('canvas'); CompanyOffice.paint(b, i + 1); const [sx, sy] = [[96, 104], [150, 48], [60, 36], [4, 30], [60, 74]][i]; cv.getContext('2d').drawImage(b, sx, sy, 80, 42, 0, 0, 80, 42); });
+            if ($('mv')) $('mv').onclick = () => { if (!confirm('搬到' + next.name + '，用公司帳戶付 ' + R.fmt(next.cost) + '？')) return; S.acct -= next.cost; S.stage++; S.applicants = R.applicants(S.stage, S.hiredSp); save(); go('office'); toast('搬到' + next.name + '了！'); };
+            $('inj').onclick = () => { const n = Math.min(injLeft, S.wallet); if (!n) return toast('錢包沒錢'); if (!confirm('從錢包轉 ' + R.fmt(n) + ' 進公司帳戶？（錢包不能直接轉進公司，只有執行長增資，每天有上限）')) return; S.wallet -= n; S.acct += n; S.inject.amt += n; save(); renderCompany(); toast('增資 ' + R.fmt(n)); };
+            $('out').onclick = () => { const n = Math.max(0, S.acct); if (!confirm('把公司帳戶的 ' + R.fmt(n) + ' 轉進錢包？')) return; S.acct -= n; S.wallet += n; save(); renderCompany(); };
+            $('tAdd').onclick = () => { S.wallet += 1000000; save(); renderCompany(); };
+            $('tSkip').onclick = () => { S.shift = (S.shift || 0) + 600000; tick(); toast('快轉了 10 分鐘'); render(); };
+            $('tSkip2').onclick = () => { S.shift = (S.shift || 0) + 3600000; tick(); toast('快轉了 1 小時'); render(); };
+            $('tReset').onclick = () => { if (!confirm('整個公司重來（試玩的存檔會清掉）？')) return; localStorage.removeItem(KEY); location.reload(); };
+        } else if (seg === 'gift') {
+            const ks = Object.keys(R.CLIENTS);
+            B.innerHTML = `<div class="shelf glass"><div class="ttl"><span>紀念品櫃</span><span class="num">${S.gifts.length} / ${ks.length}${S.gifts.length >= ks.length ? '・全城的老客戶' : '・收齊有稱號'}</span></div><div class="grid">${ks.map(k => `<div class="slot${S.gifts.includes(k) ? '' : ' off'}" data-k="${k}"><canvas width="12" height="12" data-ic="${k}"${S.gifts.includes(k) ? '' : ' data-off="1"'}></canvas></div>`).join('')}</div></div>
+                <div class="panel glass" style="padding:2px 0">${ks.map(k => { const C = R.CLIENTS[k], n = S.series[k] || 0, lock = (C.minStage || 0) > S.stage;
+                    return `<div class="ser">${avaHtml(k)}<div><div class="nm">${esc(C.who)}・${esc(C.series)}</div><div class="pips">${[0, 1, 2, 3, 4].map(i => `<i class="${i < n ? 'f' : ''}${i === 4 ? ' big' : ''}"></i>`).join('')}</div><div class="nx">${n >= 5 ? '做完了・之後的案子多拿 5%' : lock ? '搬到' + R.STAGES[C.minStage].name + '才會來' : '下一件：〈' + esc(C.jobs[n]) + '〉'}</div></div><div class="gift"><canvas width="12" height="12" data-ic="${k}"${n >= 5 ? '' : ' data-off="1"'}></canvas></div></div>`; }).join('')}</div>`;
+            drawIcons();
+            document.querySelectorAll('.shelf .slot').forEach(e => e.onclick = () => { const C = R.CLIENTS[e.dataset.k]; toast(S.gifts.includes(e.dataset.k) ? C.gift + '（' + C.who + '送的）' : '做完' + C.who + '的五件系列才拿得到'); });
+        } else if (seg === 'equip') {
+            const own = S.equip[S.stage] || [], list = R.EQUIP[S.stage];
+            B.innerHTML = `<div class="sub" style="margin-top:12px"><span>${st().name}的設備・買了 ${own.length} / 3</span><span class="r num">現在 +${Math.round(own.length * R.EQUIP_BOOST * 100)}%</span></div>
+                <div class="panel glass" style="padding:2px 0">${list.map(([k, n, d]) => `<div class="eq"><div class="ic"><canvas width="12" height="12" data-ic="${k}"></canvas></div><div><div class="nm">${n}</div><div class="d">${d}・賺的 +8%</div></div>${own.includes(k) ? '<button class="got">已經有了</button>' : `<button class="num" data-e="${k}">${R.fmt(st().equip)}</button>`}</div>`).join('')}</div>
+                <div class="goal glass"><div class="gt"><span>買滿三樣</span><span class="r num">賺的約 +25%</span></div><div class="bar" style="margin-top:8px"><i style="width:${own.length / 3 * 100}%"></i></div></div>
+                ${R.EQUIP[S.stage + 1] ? `<div class="sub" style="margin-top:10px"><span>搬家後換新的一組（${R.STAGES[S.stage + 1].name}：${R.EQUIP[S.stage + 1].map(e => e[1]).join('、')}）</span></div>` : ''}`;
+            drawIcons();
+            document.querySelectorAll('[data-e]').forEach(b => b.onclick = () => { const k = b.dataset.e; if (!confirm('用錢包買 ' + R.fmt(st().equip) + '？')) return; if (!payWallet(st().equip)) return; (S.equip[S.stage] = S.equip[S.stage] || []).push(k); save(); renderCompany(); toast('買好了，之後的案子多賺 8%'); });
+        } else {
+            const spKeys = Object.keys(R.SPECIALS), genKeys = Object.keys(R.SPECIES);
+            const n = Object.keys(S.dex.sp).length + genKeys.reduce((a, k) => a + (S.dex.gen[k] || []).length, 0);
+            const COL = ['#9fb1c0', '#f2f6f8', '#c9ad7c', '#3a4656'];
+            B.innerHTML = `<div class="dex glass"><div class="ttl">員工圖鑑<b class="num">${n} / 41</b></div>
+                <div class="sub2">特別人選・9</div><div class="g" style="grid-template-columns:repeat(5,1fr)">${spKeys.map(k => `<div class="c sp${S.dex.sp[k] ? '' : ' off'}"><img src="assets/company/${k}.png?v=20261125a" alt=""></div>`).join('')}</div>
+                <div class="sub2">一般員工・8 種 × 4 色（右上角四格是收集到的顏色）</div><div class="g" style="grid-template-columns:repeat(4,1fr)">${genKeys.map(k => { const got = S.dex.gen[k] || []; return `<div class="c${got.length ? '' : ' off'}" style="height:58px"><img src="assets/company/${k}.png?v=20261125a" alt=""><b class="dots4">${[0, 1, 2, 3].map(c => got.includes(c) ? `<i style="background:${COL[c]};box-shadow:0 0 0 1px rgba(40,50,60,.65)"></i>` : '<i style="background:transparent;box-shadow:0 0 0 1px rgba(120,140,155,.3)"></i>').join('')}</b></div>`; }).join('')}</div>
+                <div class="miles">${[[10, '免費刷新'], [20, '小動物收容所'], [41, '全員到齊']].map(([m, t]) => `<span class="${n >= m ? 'done' : ''}">${m === 41 ? '全部' : m + ' 格'}<br>${t}</span>`).join('')}</div></div>`;
+        }
+    }
+    // 紀念品、設備的小圖（12×12 像素）
+    const PAL = { k: '#3a4656', w: '#ffffff', g: '#c2d0da', G: '#9fb1c0', y: '#e2b44a', Y: '#ffe9a0', o: '#f0a04b', O: '#c97a2e', r: '#e05a4f', R: '#b33a2f', c: '#8fd3e0', C: '#4fa9bf', b: '#3d6fb6', B: '#2b5290', n: '#a77a4c', N: '#7a5634', e: '#6cb487', E: '#2f6e47', s: '#f8e6cf', S: '#ecc9a6' };
+    const ICONS = {
+        dog: ['....kk......', '....kk......', '...kkkk.....', '....gg...w..', '...gccg.w.w.', '..gcccCg.w..', '..gcwcCg....', '..gcccCg....', '..gcccCg....', '..gCCCCg....', '..gggggg....', '............'],
+        nugget: ['..GGG.......', '.G...G......', '.G...G......', '..GGG.......', '...G........', '..oooOO.....', '.oYoooOO....', '.ooooooO....', '.oooYooO....', '..OoooO.....', '...OOO......', '............'],
+        apple: ['.....E......', '....EeE.....', '.....n......', '..rrr.rrr...', '.rrwrrrrrR..', '.rwrrrrrrR..', '.rrrrrrrrR..', '.rrrrrrrRR..', '..rrrrrRR...', '...RRRRR....', '............', '............'],
+        raccoon: ['............', '...yyyyy....', '..yYYYYYy...', '.yYyyyyyYy..', '.yYyYYyyYy..', '.yYyYyyyYy..', '.yYyyyyyYy..', '.yYyyyyyYy..', '..yYYYYYy...', '...yyyyy....', '............', '............'],
+        captain: ['............', '.....n......', '..n..n..n...', '...nnnnn....', '...n...n....', '.nnn.N.nnn..', '...n...n....', '...nnnnn....', '..n..n..n...', '.....n......', '............', '............'],
+        mole: ['............', '............', '............', '....yyyy....', '...yYYyyy...', '..yYyyyyyy..', '..yyyyyyyy..', '..yyyyyyyy..', 'yyyyyyyyyyyy', '.OOOOOOOOOO.', '............', '............'],
+        cat: ['............', '...nn.......', '...nn.......', '..nnnn......', '.NNNNNN.....', '.rrrrrr.....', '........r.r.', '.......r...r', '........rrr.', '.......rrrrr', '.......rrrrr', '........rrr.'],
+        julie: ['............', '............', '............', '.SssssssssS.', '.ssssssssss.', '.sssSSSSsss.', '.ssssssssss.', '.ssssssssss.', '.SssssssssS.', '............', '............', '............'],
+        xiaowu: ['............', '..bbbbbbbb..', '..bBBBBBBbw.', '..byyyyyybw.', '..bBBBBBBbw.', '..bBBBBBBbw.', '..byyyyyybw.', '..bBBBBBBbw.', '..bbbbbbbbw.', '...wwwwwwww.', '............', '............'],
+        strip: ['............', '............', '............', '.wwwwwwwwww.', '.wkwkwkwkGw.', '.wwwwwwwwrw.', '.GGGGGGGGGG.', '..........k.', '.........k..', '........k...', '............', '............'],
+        fan: ['...GGGGGG...', '..G.c..c.G..', '.G.cc..cc.G.', '.Gc..kk..cG.', '.G..kGGk..G.', '.Gc..kk..cG.', '.G.cc..cc.G.', '..G.c..c.G..', '...GGGGGG...', '.....kk.....', '.....kk.....', '...kkkkkk...'],
+        printer: ['............', '...wwwwww...', '...wgggww...', '.kkkkkkkkkk.', '.kGGGGGGGGk.', '.kGGGGGGcGk.', '.kkkkkkkkkk.', '..wwwwwwww..', '..wggggggw..', '..wwwwwwww..', '............', '............'],
+    };
+    function drawIcons() {
+        document.querySelectorAll('canvas[data-ic]').forEach(cv => {
+            const x = cv.getContext('2d'), rows = ICONS[cv.dataset.ic], off = cv.dataset.off;
+            x.clearRect(0, 0, 12, 12);
+            if (!rows) { x.fillStyle = off ? '#b8c5cf' : '#9fb1c0'; x.fillRect(3, 3, 6, 6); x.fillStyle = off ? '#dfe5e9' : '#e6ecf0'; x.fillRect(4, 4, 4, 4); return; }   // 之後的設備還沒畫小圖
+            rows.forEach((r, j) => [...r].forEach((ch, i) => { if (ch === '.') return; x.fillStyle = off ? '#b8c5cf' : PAL[ch]; x.fillRect(i, j, 1, 1); }));
+        });
+    }
+
+    // ---------- 你不在的時候 ----------
+    function away() {
+        const gap = Date.now() - (S.lastSeen || Date.now());
+        if (gap < 10 * 60000) return;
+        const from = now() - gap;
+        const finished = S.jobs.filter(j => !j.collected && j.end > from && j.end <= now());
+        tick();
+        const ready = S.jobs.filter(j => j.fin && !j.collected), sum = ready.reduce((a, j) => a + j.res.net, 0);
+        const h = Math.floor(gap / 3600000), m = Math.floor(gap % 3600000 / 60000);
+        const ups = finished.flatMap(j => j.ups || []);
+        show(`<div class="away glass" style="margin:0"><div class="lb" style="font-size:10.5px;letter-spacing:.3em;color:#2f7d90;display:flex;gap:6px;align-items:center"><span class="dot"></span>你不在的時候</div>
+              <div class="tm num">${h ? h + ' 小時 ' : ''}${m} 分鐘</div>
+              <div class="big num"><b>${R.fmt(sum)}</b><span>做完 ${finished.filter(j => j.ok).length} 件・做砸 ${finished.filter(j => !j.ok).length} 件</span></div></div>
+              <div class="panel glass" style="margin:10px 0 0">
+                <div class="it"><span class="k">員工</span><span class="v">${ups.length ? ups.map(([id, lv]) => { const s = staffById(id); return s ? esc(R.staffName(s)) + '升到 Lv.' + lv : ''; }).join('、') : '大家都在'}</span></div>
+                <div class="it"><span class="k">委託</span><span class="v">委託板上有 ${S.board.length} 張${S.board.some(c => c.tag === 'super') ? '・<span style="color:#8a6a26">1 張特好賺</span>' : ''}</span></div>
+              </div>
+              <div class="cta"><button id="awOk">好</button>${ready.length ? `<button class="main num" id="awAll">全部收款 ${R.fmt(sum)}</button>` : ''}</div>`, { center: true });
+        $('awOk').onclick = hide; if ($('awAll')) $('awAll').onclick = () => { hide(); go('office'); $('collectAll').click(); };
+    }
+
+    // ---------- 開始 ----------
+    if (!S || !S.name) { openNote(0); }
+    else { tick(); render(); away(); }
+    setInterval(() => { if (S && S.name) { tick(); S.lastSeen = Date.now(); save(); } }, 1000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && S && S.name) { away(); tick(); } else if (S && S.name) { S.lastSeen = Date.now(); save(); } });
+    window.__company = { get S() { return S; }, tick, render, R, inc() { incAt = 1; }, away };   // 試玩時給測試用
+})();
+</script>
+</body>
+
+</html>
