@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="assets/theme.css?v=20261116d">
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/company-office.js?v=20261125a"></script>
-    <script src="assets/company-rules.js?v=20261125g"></script>
+    <script src="assets/company-rules.js?v=20261125h"></script>
     <style>
 /* 毛玻璃介面（跟 docs/plans/company/ui.css 的樣張同一套） */
 body { margin: 0; font-family: "Noto Sans TC", sans-serif; color: #26303a; }
@@ -108,9 +108,9 @@ body { margin: 0; font-family: "Noto Sans TC", sans-serif; color: #26303a; }
   .co { position: relative; margin: 8px 12px 0; padding: 9px 14px; display: flex; justify-content: space-between; align-items: center; }
   .co b { font-weight: 500; font-size: 14px; letter-spacing: .08em; } .co small { display: block; font-size: 10px; color: #6a7884; letter-spacing: .15em; margin-top: 3px; }
   .lvls { position: relative; margin: 10px 12px 0; padding: 4px 0; }
-  .lvl { display: grid; grid-template-columns: 80px 1fr; gap: 10px; padding: 6px 12px; align-items: center; }
+  .lvl { display: grid; grid-template-columns: 96px 1fr; gap: 10px; padding: 6px 12px; align-items: center; }
   .lvl + .lvl { border-top: 1px solid rgba(120,140,155,.18); }
-  .lvl .th { width: 80px; height: 42px; flex: none; border-radius: 9px; overflow: hidden; position: relative; box-shadow: inset 0 0 0 1px rgba(255,255,255,.7); }
+  .lvl .th { width: 96px; height: 49px; flex: none; border-radius: 9px; overflow: hidden; position: relative; box-shadow: inset 0 0 0 1px rgba(255,255,255,.7); }
   .lvl .th img { width: 80px; height: 42px; image-rendering: pixelated; }
   .lvl .info { min-width: 0; } .lvl .top { display: flex; align-items: center; gap: 6px; } .lvl .pr { margin-left: auto; font-size: 11px; color: #51606d; white-space: nowrap; }
   .lvl .pr2 { color: #26303a; margin-top: 2px; }
@@ -205,7 +205,8 @@ body { margin: 0; font-family: "Noto Sans TC", sans-serif; color: #26303a; }
 .dex .ttl { display: flex; padding: 2px 4px 8px; font-size: 11px; letter-spacing: .2em; color: #51606d; } .dex .ttl b { margin-left: auto; font-weight: 400; color: #2f7d90; letter-spacing: .05em; }
 .dex .g { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
 .dex .c { height: 50px; border-radius: 9px; background: linear-gradient(#eef3f6, #dce5ea); position: relative; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,.9); }
-.dex .c img { position: absolute; left: 50%; bottom: 1px; transform: translateX(-50%); image-rendering: pixelated; }
+.dex .c img { position: absolute; left: 50%; bottom: 1px; transform: translateX(-50%); image-rendering: pixelated; max-width: calc(100% - 4px); max-height: calc(100% - 4px); object-fit: contain; }   /* 使用者：特別人選的剪影被裁掉——整隻縮進格子 */
+.dex .c.sp { height: 68px !important; }
 .dex .c.off img { filter: brightness(0); opacity: .16; }
 .dex .c.sp { background: linear-gradient(#fbf1d3, #f0dfae); } .dex .c.sp.off { background: linear-gradient(#eef3f6, #dce5ea); }
 .dex .c i { position: absolute; right: 3px; top: 3px; width: 6px; height: 6px; border-radius: 50%; } 
@@ -324,7 +325,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         <!-- 二　委託 -->
         <section class="view" id="v-board" hidden>
             <div class="sub"><span class="dot"></span><span class="num" id="boardNext"></span><span class="num" id="boardConc"></span><span class="r chip gold num" id="adBtn" style="cursor:pointer"></span></div>
-            <div class="tutline" id="tutHint" hidden><div class="tut">點這張，派小麥去做。10 秒，這次一定成功</div></div>
+            <div class="tutline" id="tutHint" hidden><div class="tut">點這張，派小麥去做。3 秒，這次一定成功</div></div>
             <div class="cards" id="cards"></div>
             <div class="kv" style="justify-content:center;margin:14px 0 4px"><span id="openHelp" style="color:#2f7d90;letter-spacing:.15em;cursor:pointer;padding:6px">標籤看不懂？ ›</span></div>
         </section>
@@ -573,13 +574,13 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         const enough = team.length === c.ppl;
         const cl = R.CLIENTS[c.client];
         show(`<div class="hd2"><h2>派誰去</h2><button class="x" id="dClose">關</button></div>
-            <div class="case glass" style="margin:0"><h3>〈${esc(c.title)}〉</h3><div class="who num">${esc(cl.who)}・${c.tutorial ? '10 秒' : R.dur(c.m)}・${R.fmt(c.gross)}・${c.ppl} 人${c.seriesNo ? '・系列 ' + c.seriesNo + ' / 5' : ''}</div>
+            <div class="case glass" style="margin:0"><h3>〈${esc(c.title)}〉</h3><div class="who num">${esc(cl.who)}・${c.tutorial ? '3 秒' : R.dur(c.m)}・${R.fmt(c.gross)}・${c.ppl} 人${c.seriesNo ? '・系列 ' + c.seriesNo + ' / 5' : ''}</div>
               ${tagLines(c).map(t => `<div class="kv" style="margin-top:6px;line-height:1.6"><span>${esc(t)}</span></div>`).join('')}
               ${c.req.length ? '<div class="need" style="display:block">' + c.req.map((q, k) => { const w = pl.who[k]; return `<div class="req2"><span>${reqText(q)}</span><span class="r2" style="color:${w ? '#2f7d90' : '#b33a2f'}">${w ? '合（' + esc(R.staffName(w)) + ' ' + w.st[q[0]] + '）' : team.length ? '缺 ' + pl.short[k] : '還沒選人'}</span>${w ? '<span class="ok">✓</span>' : '<span class="bad2">!</span>'}</div>`; }).join('') + '</div>' : ''}</div>
             <div class="cta"><button class="main" id="dAuto" style="flex:1">幫我派</button><button id="dLast" ${S.last && S.last.ppl === c.ppl ? '' : 'disabled'}>照上次的組合</button></div>
             <div class="panel glass" style="margin-top:10px">${S.staff.map(s => { const on = pickSel.includes(s.id), busy = !!s.job; const j = busy ? S.jobs.find(x => x.id === s.job) : null;
                 return `<div class="staff${busy ? ' busy' : ''}" data-id="${s.id}">${avaHtml(spriteKey(s))}<div><div class="nm">${esc(R.staffName(s))}<small>Lv.${s.lv}${s.trial ? '・試用期' : ''}</small></div>${statsHtml(s)}<div class="say">${busy ? '在做〈' + esc(j ? j.c.title : '') + '〉・' + R.clock(j ? (j.end - now()) / 1000 : 0) + ' 後回來' : esc(s.special ? R.SPECIALS[s.key].skill + '：' + R.SPECIALS[s.key].skillText : s.say)}</div></div><div class="chk${on ? ' on' : ''}">${on ? '✓' : ''}</div></div>`; }).join('') || '<div class="empty">還沒有員工</div>'}</div>
-            <div class="est glass num" style="margin-top:10px"><span>${enough ? '預計 <b>' + (c.tutorial ? '10 秒' : R.dur(Math.max(1, Math.round(pl.m)))) + '</b>' + (pl.napper ? '（茱莉鴨可能睡一下）' : '') : '要選 ' + c.ppl + ' 人（選了 ' + team.length + '）'}</span><span>成功機率 <b>${enough ? R.odds(pl.p) : '—'}</b></span></div>
+            <div class="est glass num" style="margin-top:10px"><span>${enough ? '預計 <b>' + (c.tutorial ? '3 秒' : R.dur(Math.max(1, Math.round(pl.m)))) + '</b>' + (pl.napper ? '（茱莉鴨可能睡一下）' : '') : '要選 ' + c.ppl + ' 人（選了 ' + team.length + '）'}</span><span>成功機率 <b>${enough ? R.odds(pl.p) : '—'}</b></span></div>
             <div class="cta"><button class="main" id="dGo" style="flex:1" ${enough ? '' : 'disabled'}>開工</button></div>`);
         if (c.tutorial) { $('sheet').scrollTop = 0; }
         $('dClose').onclick = hide;
@@ -589,7 +590,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         $('dGo').onclick = async () => {
             if (pl.p < .5 && !await ask('還是要開工嗎？', '成功機率只有' + R.odds(pl.p) + '。做砸了客人只付一成、薪水扣一半。', { ok: '開工' })) return;
             const j = R.start(c, team, now());
-            if (c.tutorial) { j.ok = true; j.great = false; j.napped = false; j.tip = false; j.end = now() + 10000; }
+            if (c.tutorial) { j.ok = true; j.great = false; j.napped = false; j.tip = false; j.end = now() + 3000; }
             team.forEach(s => s.job = j.id);
             S.jobs.push(j); S.board = S.board.filter(x => x !== c); S.last = { ppl: c.ppl, ids: team.map(s => s.id) };
             if (S.coach && S.coach <= 3) S.coach = 4; else if (S.coach === 8) S.coach = 9;
@@ -703,7 +704,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         const inDispatch = layer && sheet.querySelector('#dGo'), inApply = layer && sheet.querySelector('#aRef');
         if (k === 1 && !layer) return view === 'board' ? ['.card.tutc', '雞塊來委託了！<b>點這張</b>看看要做什麼。'] : ['[data-v=board]', '先到<b>委託</b>看看有什麼案子。'];
         if (k <= 3 && inDispatch) return pickSel.length ? ['#dGo', '小麥選好了，按<b>開工</b>。'] : ['#sheet .staff', '這件只要 1 個人。<b>點小麥</b>，派她去。'];
-        if (k === 4 && !layer && view === 'office') { const j = S.jobs.find(x => x.c.tutorial); if (j && j.fin) { S.coach = 5; return coachStep(); } return ['#runList .row', '小麥開始做了，那條是進度。<b>10 秒</b>後做完。（等的時候員工會坐在上面的位子上）']; }
+        if (k === 4 && !layer && view === 'office') { const j = S.jobs.find(x => x.c.tutorial); if (j && j.fin) { S.coach = 5; return coachStep(); } return ['#runList .row', '小麥開始做了，那條是進度。<b>3 秒</b>後做完。（等的時候員工會坐在上面的位子上）']; }
         if (k === 5 && !layer) return view === 'office' ? ['#runList .row.done', '做完了！<b>點這一行</b>看結案單，把錢收進公司帳戶。'] : ['[data-v=office]', '小麥做完了，回<b>辦公室</b>收款。'];
         if (k === 6 && !layer) return view === 'staff' ? ['#openApply', '案子會越來越多，一個人忙不過來。按這裡<b>招募新員工</b>，簽約金從你的<b>錢包</b>付。'] : ['[data-v=staff]', '去<b>員工</b>請人。'];
         if (k === 7 && inApply) return ['#sheet .ft button:not([disabled])', '往下滑看看三位，挑一位按<b>聘用</b>。能力條越長越好。', 'top'];   // 泡泡放最上面，不要蓋住應徵的人
@@ -792,7 +793,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         const list = S.board.map((c, k) => [c, k, why(c)]).sort((a, b) => (a[2] ? 1 : 0) - (b[2] ? 1 : 0));
         $('cards').innerHTML = list.map(([c, k, no]) => {
             const cl = R.CLIENTS[c.client];
-            return `<div class="card glass${c.tag === 'big' ? ' big' : ''}${c.tutorial ? ' tutc' : ''}${c.easy ? ' easyc' : ''}${no ? ' cant' : ''}" data-k="${k}">${jobHtml(c)}<div><h3>〈${esc(c.title)}〉</h3><div class="who">${esc(cl.who)}・${c.tutorial ? '10 秒' : R.dur(c.m)}</div></div>
+            return `<div class="card glass${c.tag === 'big' ? ' big' : ''}${c.tutorial ? ' tutc' : ''}${c.easy ? ' easyc' : ''}${no ? ' cant' : ''}" data-k="${k}">${jobHtml(c)}<div><h3>〈${esc(c.title)}〉</h3><div class="who">${esc(cl.who)}・${c.tutorial ? '3 秒' : R.dur(c.m)}</div></div>
                 <div class="pay num">${R.fmt(c.gross)}<small>${c.seriesNo ? '系列 ' + c.seriesNo + ' / 5' : c.tag === 'super' || c.tag === 'rush' || c.expires - t < 3600000 ? R.clock((c.expires - t) / 1000) + ' 後撤' : ''}</small></div>
                 <div class="req"><span class="chip mute">${c.ppl} 人</span>${c.req.map(q => `<span class="chip">${reqText(q)}</span>`).join('')}${c.tutorial || c.easy ? '<span class="chip">' + (c.easy ? '新手・' : '') + '一定成功</span>' : ''}${tagChip(c)}${c.seriesNo === 5 ? '<span class="chip gold">做完送紀念品</span>' : ''}</div>${no ? `<div class="cantw">${esc(no)}</div>` : ''}</div>`;
         }).join('') || '<div class="empty glass">委託板空了・新案子等一下就來</div>';
@@ -810,13 +811,15 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     }
     function lvlRow(i, opt = {}) {
         const g = R.STAGES[i], got = i <= S.stage, using = got && look() === i;
-        return `<div class="lvl${i === S.stage && !opt.all ? ' now' : ''}${got ? '' : ' lock'}${using && opt.all ? ' now' : ''}"><div class="th" style="background:#dfe3e6"><canvas data-th="${i}" width="80" height="42" style="width:80px;height:42px;image-rendering:pixelated"></canvas></div>
+        return `<div class="lvl${i === S.stage && !opt.all ? ' now' : ''}${got ? '' : ' lock'}${using && opt.all ? ' now' : ''}"><div class="th" style="background:#dfe3e6"><canvas data-th="${i}" width="288" height="146" style="width:96px;height:49px;display:block"></canvas></div>
             <div class="info"><div class="top"><span class="np np${i + 1}"${got ? '' : ' style="filter:grayscale(1);opacity:.5"'}>${esc(S.name)}</span>${opt.all ? (using ? '<span class="chip" style="margin-left:auto">正在用</span>' : got ? `<button class="mini" data-look="${i}" style="margin-left:auto;font:inherit;font-size:10.5px;padding:4px 9px;border-radius:9px;border:1px solid #26303a;background:#26303a;color:#f2f6f8">換成這間</button>` : '') : '<span class="chip" style="margin-left:auto">現在</span>'}</div>
             <div class="d"><b style="font-weight:500;color:#26303a">${g.name}</b>・${g.seats} 人・同時 ${g.conc} 件・案子最長 ${g.maxDur / 60} 小時</div>${got ? '' : `<div class="d pr2 num">${R.fmt(g.cost)}・做完 ${g.jobs} 件・搬過去才解鎖</div>`}</div></div>`;
     }
     function paintThumbs() {
-        document.querySelectorAll('canvas[data-th]').forEach(cv => { if (cv.dataset.drawn) return; cv.dataset.drawn = 1; const i = +cv.dataset.th, b = document.createElement('canvas'); CompanyOffice.paint(b, i + 1); const [sx, sy] = [[96, 104], [150, 48], [60, 36], [4, 30], [60, 74]][i];
-            const x = cv.getContext('2d'); if (i > S.stage) x.filter = 'grayscale(1) brightness(1.15) blur(1.5px)'; x.drawImage(b, sx, sy, 80, 42, 0, 0, 80, 42); });   // 還沒解鎖的：灰、糊糊的，看不清楚
+        document.querySelectorAll('canvas[data-th]').forEach(cv => { if (cv.dataset.drawn) return; cv.dataset.drawn = 1; const i = +cv.dataset.th, b = document.createElement('canvas'); CompanyOffice.paint(b, i + 1); // 使用者：辦公室截圖很怪（以前是切一小塊）——改成整間縮小；比較寬的二十七樓、大樓取左邊一個畫面寬（門口、招牌、辦公區）
+            const x = cv.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+            if (i > S.stage) x.filter = 'grayscale(1) blur(2px)';   // 還沒解鎖的：灰、糊糊的，看不清楚
+            x.drawImage(b, 0, 0, 375, 190, 0, 0, cv.width, cv.height); });
     }
     // 所有辦公室：解鎖了才亮起來，搬過的可以換回去當辦公室的畫面（位子、同時幾件還是照現在這間）
     function openOffices() {
