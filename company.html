@@ -273,6 +273,8 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
 .lvl.can { background: rgba(143,211,224,.12); }
 .shelf .slot { cursor: pointer; }
 .tutline { position: relative; margin: 8px 12px 0; display: flex; justify-content: center; } .tutline[hidden] { display: none; }
+.ask { text-align: center; padding: 20px 18px 16px !important; } .ask h3 { margin: 0 0 8px; font-size: 15px; font-weight: 500; letter-spacing: .12em; } .ask p { margin: 0; font-size: 12px; line-height: 1.8; color: #51606d; letter-spacing: .05em; }
+.ask .cta { margin: 16px 0 0; } .ask .cta button.warn { background: #b33a2f; border-color: #b33a2f; color: #fff; box-shadow: 0 6px 16px rgba(179,58,47,.3); }
 .tutline .tut { position: relative; left: auto; transform: none; }
     </style>
 </head>
@@ -308,7 +310,8 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
 
         <!-- 三　員工 -->
         <section class="view" id="v-staff" hidden>
-            <div class="sub"><span class="num" id="staffLine"></span><span class="r chip" id="openApply" style="cursor:pointer">看應徵的人 ›</span></div>
+            <div class="sub"><span class="num" id="staffLine"></span></div>
+            <div class="cta"><button class="main num" id="openApply" style="flex:1"></button></div>
             <div class="panel glass" id="roster"></div>
         </section>
 
@@ -322,6 +325,8 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     </div>
 </div>
 
+<!-- 確認視窗（不用瀏覽器的 alert／confirm） -->
+<div class="layer center" id="askLayer" hidden style="z-index:30"><div class="back" id="askBack"></div><div class="sheet glass ask" id="askBox"></div></div>
 <!-- 蓋上來的那一層 -->
 <div class="layer" id="layer" hidden><div class="back" id="layerBack"></div><div class="sheet glass" id="sheet"></div></div>
 
@@ -362,7 +367,16 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     const tagChip = c => c.tag === 'super' ? '<span class="chip gold">特好賺</span>' : c.tag === 'rush' ? '<span class="chip shu">急件</span>' : c.tag === 'big' ? '<span class="chip gold">大案</span>' : c.tag === 'talk' ? '<span class="chip">要先談</span>' : '';
     const segHtml = (n, hi) => '<i class="seg' + (hi ? ' hi' : '') + '">' + [0, 1, 2, 3, 4].map(k => k < n ? '<i class="f"></i>' : '<i></i>').join('') + '</i>';
     const statsHtml = s => '<div class="st">' + R.STATS.map(([, lab], i) => `<span>${lab}${segHtml(s.st[i], s.st[i] >= 5)}</span>`).join('') + '</div>';
-    const toast = m => { document.querySelectorAll('.toast').forEach(e => e.remove()); window.showToast ? showToast(m) : alert(m); };   // 一次只留一張，不然會疊在一起
+    const toast = m => { document.querySelectorAll('.toast').forEach(e => e.remove()); if (window.showToast) showToast(m); };   // 一次只留一張，不然會疊在一起
+    // 確認視窗：ask('標題', '說明', { ok: '確定', warn: true }) → Promise<true/false>
+    function ask(title, text = '', opt = {}) {
+        return new Promise(res => {
+            $('askBox').innerHTML = `<h3>${title}</h3>${text ? '<p>' + text + '</p>' : ''}<div class="cta"><button id="askNo">${opt.no || '取消'}</button><button class="main${opt.warn ? ' warn' : ''}" id="askYes">${opt.ok || '確定'}</button></div>`;
+            $('askLayer').hidden = false;
+            const done = v => { $('askLayer').hidden = true; res(v); };
+            $('askYes').onclick = () => done(true); $('askNo').onclick = $('askBack').onclick = () => done(false);
+        });
+    }
     function payWallet(n) { if (S.wallet < n) { toast('試玩錢包不夠了（公司頁最下面可以加）'); return false; } S.wallet -= n; return true; }
 
     // ---------- 開場（三張紙條 → 取名字 → 送一位試用員工＋雞塊的教學案） ----------
@@ -531,8 +545,8 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         $('dAuto').onclick = () => { const t = R.autoPick(c, idle()); if (!t) return toast('閒著的人不夠 ' + c.ppl + ' 位'); pickSel = t.map(s => s.id); drawDispatch(c); };
         $('dLast').onclick = () => { const ids = S.last.ids.filter(id => idle().some(s => s.id === id)); if (ids.length < c.ppl) return toast('上次的人有的在忙'); pickSel = ids.slice(0, c.ppl); drawDispatch(c); };
         document.querySelectorAll('#sheet .staff').forEach(e => e.onclick = () => { const id = e.dataset.id, s = staffById(id); if (s.job) return; if (pickSel.includes(id)) pickSel = pickSel.filter(x => x !== id); else if (pickSel.length < c.ppl) pickSel.push(id); else { pickSel.shift(); pickSel.push(id); } drawDispatch(c); });
-        $('dGo').onclick = () => {
-            if (pl.p < .5 && !confirm('做得好的機率只有' + R.odds(pl.p) + '，還是要開工嗎？')) return;
+        $('dGo').onclick = async () => {
+            if (pl.p < .5 && !await ask('還是要開工嗎？', '做得好的機率只有' + R.odds(pl.p) + '。做砸了客人只付一成、薪水扣一半。', { ok: '開工' })) return;
             const j = R.start(c, team, now());
             if (c.tutorial) { j.ok = true; j.great = false; j.napped = false; j.tip = false; j.end = now() + 30000; }
             team.forEach(s => s.job = j.id);
@@ -588,7 +602,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             <div class="kv" style="justify-content:flex-end;margin-top:6px"><span>${s.job ? '做事中不能請走' : '請走的話簽約金不退'}</span></div>`);
         $('sClose').onclick = hide;
         $('sTrain').onclick = () => { if (!payWallet(tp)) return; s.exp = 0; s.lv++; const can = [0, 1, 2, 3].filter(i => s.st[i] < 5); if (can.length) s.st[R.pick(can)]++; save(); toast(R.staffName(s) + '升到 Lv.' + s.lv); openStaff(s); render(); };
-        $('sFire').onclick = () => { if (!confirm('確定要請' + R.staffName(s) + '走嗎？簽約金不退。')) return; S.staff = S.staff.filter(x => x !== s); if (s.special) S.hiredSp = S.hiredSp.filter(k => k !== s.key); save(); hide(); render(); toast(R.staffName(s) + '收拾東西走了'); };
+        $('sFire').onclick = async () => { if (!await ask('請' + esc(R.staffName(s)) + '走？', '簽約金不退。', { ok: '請他走', warn: true })) return; S.staff = S.staff.filter(x => x !== s); if (s.special) S.hiredSp = S.hiredSp.filter(k => k !== s.key); save(); hide(); render(); toast(R.staffName(s) + '收拾東西走了'); };
     }
     function addDex(s) { if (s.special) S.dex.sp[s.key] = S.dex.sp[s.key] || Date.now(); else { const a = S.dex.gen[s.key] = S.dex.gen[s.key] || []; if (!a.includes(s.color)) a.push(s.color); } }
     function openApply() {
@@ -636,7 +650,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         if (!S || !S.name) return;
         $('money').textContent = R.fmt(S.acct);
         const readyN = S.jobs.filter(j => j.fin && !j.collected).length, newN = S.board.length;
-        document.querySelectorAll('#tabs span').forEach(e => { const v = e.dataset.v; e.innerHTML = { office: '辦公室', board: '委託', staff: '員工', company: '公司' }[v] + (v === 'office' && readyN ? '<em class="c">可收</em>' : v === 'board' && newN ? '<em>' + newN + '</em>' : v === 'staff' && idle().length ? '<em class="c">閒 ' + idle().length + '</em>' : ''); });
+        document.querySelectorAll('#tabs span').forEach(e => { const v = e.dataset.v; e.innerHTML = { office: '辦公室', board: '委託', staff: '員工', company: '公司' }[v] + (v === 'office' && readyN ? '<em class="c">可收</em>' : v === 'board' && newN ? '<em>' + newN + '</em>' : ''); });
         if (view === 'office') renderOffice(); else if (view === 'board') renderBoard(); else if (view === 'staff') renderStaff(); else renderCompany();
     }
     function renderLive() {   // 每秒只更新倒數和進度
@@ -672,7 +686,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             return `<div class="row"><span class="tt">〈${esc(j.c.title)}〉<small>${esc(names)}${sleeping ? '・茱莉鴨睡著了，慢一點' : ''}</small><div class="bar"><i style="width:${u * 100}%"></i></div></span><span class="acts"><span class="num" style="font-size:12px;color:#6a7884">${R.clock((j.end - t) / 1000)}</span>${j.c.tutorial ? '' : `<button class="mini num" data-ot="${j.id}">加班 ${R.fmt(R.overtimePrice(j))}</button>`}</span></div>`;
         }).join('') || '<div class="empty">沒有在做的案子・去委託接一件</div>';
         document.querySelectorAll('#runList .row.done').forEach(e => e.onclick = () => openReceipt(S.jobs.find(j => j.id === e.dataset.j)));
-        document.querySelectorAll('#runList [data-ot]').forEach(b => b.onclick = ev => { ev.stopPropagation(); const j = S.jobs.find(x => x.id === b.dataset.ot); if (!j || j.fin) return; if (!confirm('付加班費 ' + R.fmt(R.overtimePrice(j)) + '（錢包），馬上做完？')) return; if (!payWallet(R.overtimePrice(j))) return; j.end = now(); tick(); });
+        document.querySelectorAll('#runList [data-ot]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const j = S.jobs.find(x => x.id === b.dataset.ot); if (!j || j.fin) return; if (!await ask('付加班費？', '用錢包付 ' + R.fmt(R.overtimePrice(j)) + '，〈' + esc(j.c.title) + '〉馬上做完。', { ok: '付加班費' })) return; if (!payWallet(R.overtimePrice(j))) return; j.end = now(); tick(); });
     }
     function renderBoard() {
         $('title').textContent = '委託'; $('moneyLab').textContent = '公司帳戶';
@@ -680,7 +694,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         $('boardConc').textContent = '同時 ' + st().conc + ' 件・做著 ' + running().length;
         const adOn = S.adUntil > now();
         $('adBtn').textContent = adOn ? '廣告中・' + R.clock((S.adUntil - now()) / 1000) : '打廣告 ' + R.fmt(st().ad);
-        $('adBtn').onclick = () => { if (S.adUntil > now()) return toast('廣告還在播'); if (!confirm('打廣告一小時 ' + R.fmt(st().ad) + '（錢包）：委託多一張、特好賺比較常出現')) return; if (!payWallet(st().ad)) return; S.adUntil = now() + 3600000; S.nextBoardAt = Math.min(S.nextBoardAt, now()); save(); tick(); render(); };
+        $('adBtn').onclick = async () => { if (S.adUntil > now()) return toast('廣告還在播'); if (!await ask('打廣告一小時？', '用錢包付 ' + R.fmt(st().ad) + '。這一小時委託板多一張，特好賺的案子比較常出現。', { ok: '打廣告' })) return; if (!payWallet(st().ad)) return; S.adUntil = now() + 3600000; S.nextBoardAt = Math.min(S.nextBoardAt, now()); save(); tick(); render(); };
         $('tutHint').hidden = !S.tut;
         const t = now();
         $('cards').innerHTML = S.board.map((c, k) => {
@@ -694,6 +708,9 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     function renderStaff() {
         $('title').textContent = '員工'; $('moneyLab').textContent = '錢包'; $('money').textContent = R.fmt(S.wallet);
         $('staffLine').textContent = S.staff.length + ' / ' + st().seats + ' 人・' + st().name + '最多 ' + st().seats + ' 人';
+        const seatsLeft = st().seats - S.staff.length;   // 使用者：招募按鈕不明顯——改成整條的深色按鈕
+        $('openApply').textContent = seatsLeft > 0 ? '招募新員工・還能請 ' + seatsLeft + ' 位' : '看應徵的人・位子坐滿了';
+        $('openApply').classList.toggle('main', seatsLeft > 0);
         $('roster').innerHTML = S.staff.map((s, k) => { const j = s.job ? S.jobs.find(x => x.id === s.job) : null;
             return `<div class="mate" data-k="${k}">${avaHtml(spriteKey(s))}<div><div class="nm">${esc(R.staffName(s))}<small>Lv.${s.lv}${s.trial ? '・試用期' : ''}${s.special ? ' <span class="star"></span>' : ''}</small></div><div class="stt num">${j ? '在做〈' + esc(j.c.title) + '〉・' + R.clock((j.end - now()) / 1000) : '閒著'}</div></div><span class="go">›</span></div>`; }).join('') || '<div class="empty">還沒有員工</div>';
         document.querySelectorAll('#roster .mate').forEach(e => e.onclick = () => openStaff(S.staff[+e.dataset.k]));
@@ -716,13 +733,13 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
                   <div class="tool"><button id="tAdd">錢包 +100 萬</button><button id="tSkip">快轉 10 分鐘</button><button id="tSkip2">快轉 1 小時</button><button id="tReset">整個重來</button></div></div>
                 <p class="foot">這裡的錢都是遊戲幣，不能儲值，也不能換現金或獎品。</p>`;
             document.querySelectorAll('canvas[data-th]').forEach(cv => { const i = +cv.dataset.th, b = document.createElement('canvas'); CompanyOffice.paint(b, i + 1); const [sx, sy] = [[96, 104], [150, 48], [60, 36], [4, 30], [60, 74]][i]; cv.getContext('2d').drawImage(b, sx, sy, 80, 42, 0, 0, 80, 42); });
-            if ($('mv')) $('mv').onclick = () => { if (!confirm('搬到' + next.name + '，用公司帳戶付 ' + R.fmt(next.cost) + '？')) return; S.acct -= next.cost; S.stage++; S.applicants = R.applicants(S.stage, S.hiredSp); save(); go('office'); toast('搬到' + next.name + '了！'); };
-            $('inj').onclick = () => { const n = Math.min(injLeft, S.wallet); if (!n) return toast('錢包沒錢'); if (!confirm('從錢包轉 ' + R.fmt(n) + ' 進公司帳戶？（錢包不能直接轉進公司，只有執行長增資，每天有上限）')) return; S.wallet -= n; S.acct += n; S.inject.amt += n; save(); renderCompany(); toast('增資 ' + R.fmt(n)); };
-            $('out').onclick = () => { const n = Math.max(0, S.acct); if (!confirm('把公司帳戶的 ' + R.fmt(n) + ' 轉進錢包？')) return; S.acct -= n; S.wallet += n; save(); renderCompany(); };
+            if ($('mv')) $('mv').onclick = async () => { if (!await ask('搬到' + next.name + '？', '用公司帳戶付 ' + R.fmt(next.cost) + '。舊燈泡會一起帶走。', { ok: '搬家' })) return; S.acct -= next.cost; S.stage++; S.applicants = R.applicants(S.stage, S.hiredSp); save(); go('office'); toast('搬到' + next.name + '了！'); };
+            $('inj').onclick = async () => { const n = Math.min(injLeft, S.wallet); if (!n) return toast('錢包沒錢'); if (!await ask('執行長增資？', '從錢包轉 ' + R.fmt(n) + ' 進公司帳戶。錢包不能直接轉進公司，只有增資，每天有上限。', { ok: '增資' })) return; S.wallet -= n; S.acct += n; S.inject.amt += n; save(); renderCompany(); toast('增資 ' + R.fmt(n)); };
+            $('out').onclick = async () => { const n = Math.max(0, S.acct); if (!await ask('轉進錢包？', '把公司帳戶的 ' + R.fmt(n) + ' 轉進錢包。轉出去就不能直接轉回來了。', { ok: '轉進錢包' })) return; S.acct -= n; S.wallet += n; save(); renderCompany(); };
             $('tAdd').onclick = () => { S.wallet += 1000000; save(); renderCompany(); };
             $('tSkip').onclick = () => { S.shift = (S.shift || 0) + 600000; tick(); toast('快轉了 10 分鐘'); render(); };
             $('tSkip2').onclick = () => { S.shift = (S.shift || 0) + 3600000; tick(); toast('快轉了 1 小時'); render(); };
-            $('tReset').onclick = () => { if (!confirm('整個公司重來（試玩的存檔會清掉）？')) return; localStorage.removeItem(KEY); location.reload(); };
+            $('tReset').onclick = async () => { if (!await ask('整個公司重來？', '試玩的存檔會清掉，從開場紙條重新開始。', { ok: '重來', warn: true })) return; localStorage.removeItem(KEY); location.reload(); };
         } else if (seg === 'gift') {
             const ks = Object.keys(R.CLIENTS);
             B.innerHTML = `<div class="shelf glass"><div class="ttl"><span>紀念品櫃</span><span class="num">${S.gifts.length} / ${ks.length}${S.gifts.length >= ks.length ? '・全城的老客戶' : '・收齊有稱號'}</span></div><div class="grid">${ks.map(k => `<div class="slot${S.gifts.includes(k) ? '' : ' off'}" data-k="${k}"><canvas width="12" height="12" data-ic="${k}"${S.gifts.includes(k) ? '' : ' data-off="1"'}></canvas></div>`).join('')}</div></div>
@@ -737,7 +754,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
                 <div class="goal glass"><div class="gt"><span>買滿三樣</span><span class="r num">賺的約 +25%</span></div><div class="bar" style="margin-top:8px"><i style="width:${own.length / 3 * 100}%"></i></div></div>
                 ${R.EQUIP[S.stage + 1] ? `<div class="sub" style="margin-top:10px"><span>搬家後換新的一組（${R.STAGES[S.stage + 1].name}：${R.EQUIP[S.stage + 1].map(e => e[1]).join('、')}）</span></div>` : ''}`;
             drawIcons();
-            document.querySelectorAll('[data-e]').forEach(b => b.onclick = () => { const k = b.dataset.e; if (!confirm('用錢包買 ' + R.fmt(st().equip) + '？')) return; if (!payWallet(st().equip)) return; (S.equip[S.stage] = S.equip[S.stage] || []).push(k); save(); renderCompany(); toast('買好了，之後的案子多賺 8%'); });
+            document.querySelectorAll('[data-e]').forEach(b => b.onclick = async () => { const k = b.dataset.e; if (!await ask('買這樣設備？', '用錢包付 ' + R.fmt(st().equip) + '，之後的案子多賺 8%。', { ok: '買' })) return; if (!payWallet(st().equip)) return; (S.equip[S.stage] = S.equip[S.stage] || []).push(k); save(); renderCompany(); toast('買好了，之後的案子多賺 8%'); });
         } else {
             const spKeys = Object.keys(R.SPECIALS), genKeys = Object.keys(R.SPECIES);
             const n = Object.keys(S.dex.sp).length + genKeys.reduce((a, k) => a + (S.dex.gen[k] || []).length, 0);
