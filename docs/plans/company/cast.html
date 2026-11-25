@@ -57,6 +57,7 @@ const OLC = { [C.wh]: C.g2, [C.y1]: C.y0, [C.y2]: C.y0, [C.red]: C.red0, [C.red2
 let TT = 0;   // 動畫時間（秒）；靜態圖是 0，所有動作都在 0 秒以後才開始，所以靜態圖跟原本一樣
 const LOOP = 8, win = (t0, d) => { const u = ((TT % LOOP) - t0) / d; return u >= 0 && u <= 1 ? u : -1; };
 const hump = u => u < 0 ? 0 : Math.sin(u * Math.PI), ease = v => v <= 0 ? 0 : v >= 1 ? 1 : v * v * (3 - 2 * v);
+const BARE = location.search.includes('bare');
 function scene(X, sil) {
   const R = (a, b, w, h, col) => { X.fillStyle = col; X.fillRect(Math.round(a), Math.round(b), Math.round(w), Math.round(h)); };
   const px = (a, b, col) => R(a, b, 1, 1, col);
@@ -85,6 +86,7 @@ function scene(X, sil) {
   const bean = (L, x0, y0, h = 3) => { for (let j = 0; j < h; j++) { F(L, x0, y0 + j, [[0, 0], [1, 0]], C.ink0); } F(L, x0, y0, [[0, 0]], C.wh); };
 
   // ---------- 背景：兩排辦公室（同一個戊的窗、桌） ----------
+  if (!BARE) {   // ?bare：只畫角色（給介面樣張拿去貼在辦公室裡）
   for (const y0 of [0, 110]) {
     R(0, y0, W, 110, C.g4); R(0, y0 + 6, W, 48, C.sky1);
     for (let i = 0; i < W; i += 125) { R(i + 8, y0 + 22, 20, 32, C.city); R(i + 34, y0 + 30, 26, 24, C.sky3); R(i + 66, y0 + 14, 18, 40, C.city); R(i + 90, y0 + 34, 24, 20, C.sky3); R(i + 123, y0 + 6, 2, 48, C.g5); }
@@ -92,6 +94,7 @@ function scene(X, sil) {
     [66, 188, 310].forEach(cx => { const dy = y0 + 92; R(cx - 52, dy, 104, 1, C.wh); R(cx - 52, dy + 1, 104, 3, sil ? C.g3 : C.cy2); R(cx - 52, dy + 4, 104, 1, C.g2); R(cx - 46, dy + 5, 2, 13, C.g2); R(cx + 44, dy + 5, 2, 13, C.g2); });
   }
   R(0, 109, W, 1, C.g3);
+  }
 
   // ================= 第一排 =================
   // ---- 蘋果鴨：甜點店老闆，站在高腳蛋糕架上，穿白圍裙、有小腳（不像洗澡的小黃鴨），翅膀托著一盤草莓蛋糕 ----

@@ -59,6 +59,7 @@ const OLC = { [C.wh]: C.g2, [C.y1]: C.y0, [C.y2]: C.y0, [C.red]: C.red0, [C.red2
 let TT = 0;   // 動畫時間（秒）；靜態圖是 0，所有動作都在 0 秒以後才開始，所以靜態圖跟原本一樣
 const LOOP = 8, win = (t0, d) => { const u = ((TT % LOOP) - t0) / d; return u >= 0 && u <= 1 ? u : -1; };
 const hump = u => u < 0 ? 0 : Math.sin(u * Math.PI), ease = v => v <= 0 ? 0 : v >= 1 ? 1 : v * v * (3 - 2 * v);
+const BARE = location.search.includes('bare');
 function scene(X, sil) {
   const R = (a, b, w, h, col) => { X.fillStyle = col; X.fillRect(Math.round(a), Math.round(b), Math.round(w), Math.round(h)); };
   const px = (a, b, col) => R(a, b, 1, 1, col);
@@ -100,6 +101,7 @@ function scene(X, sil) {
 
   // ---------- 背景：兩排辦公室，每排四個位子 ----------
   const XS = [47, 141, 235, 329];
+  if (!BARE) {   // ?bare：只畫角色（給介面樣張拿去貼在辦公室裡）
   for (const y0 of [0, 110]) {
     R(0, y0, W, 110, C.g4); R(0, y0 + 6, W, 48, C.sky1);
     for (let i = 0; i < W; i += 125) { R(i + 8, y0 + 22, 20, 32, C.city); R(i + 34, y0 + 30, 26, 24, C.sky3); R(i + 66, y0 + 14, 18, 40, C.city); R(i + 90, y0 + 34, 24, 20, C.sky3); R(i + 123, y0 + 6, 2, 48, C.g5); }
@@ -107,6 +109,7 @@ function scene(X, sil) {
     XS.forEach(cx => { const dy = y0 + 92; R(cx - 42, dy, 84, 1, C.wh); R(cx - 42, dy + 1, 84, 3, sil ? C.g3 : C.cy2); R(cx - 42, dy + 4, 84, 1, C.g2); R(cx - 37, dy + 5, 2, 13, C.g2); R(cx + 35, dy + 5, 2, 13, C.g2); });
   }
   R(0, 109, W, 1, C.g3);
+  }
   // 公司配發的灰色方坐墊（每隻都一樣，跟特殊角色的小窩分開）
   // 公司配發的坐墊：方方鼓鼓，正面繡員工編號（妹妹：扁扁一條像坐在鍵盤上）
   const DIG = { 0: '111101101101111', 1: '010110010010111', 2: '111001111100111', 3: '111001111001111', 4: '101101111001001', 5: '111100111001111', 6: '111100111101111', 7: '111001010010010', 8: '111101111101111', 9: '111101111001111' };

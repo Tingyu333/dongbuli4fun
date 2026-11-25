@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<title>公司・開・介面樣張（近未來毛玻璃）</title>
+<!-- 2026-11-25：使用者選了乙（近未來毛玻璃）介面＋戊（現代像素・細顆粒）畫風，舊樣張 mockup.html 還是選風格之前的紙條、軟木板，照新風格重做。
+     圖都在 ui/：hero-garage.png（office5 車庫＋三隻坐上去）、thumb1～5（五間辦公室）、角色（cast／staffcast／artstyle 用 ?bare 拍出來的）。重拍見 README。 -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #eceff1; font-family: 'Noto Sans TC', sans-serif; color: #26303a; }
+  .wrap { display: flex; gap: 28px; padding: 28px; width: max-content; align-items: flex-start; }
+  .cap { text-align: center; font-size: 12px; letter-spacing: .2em; color: #6a7884; margin-top: 12px; }
+  .phone { width: 375px; height: 780px; border-radius: 34px; overflow: hidden; position: relative; background: #dfe3e6; box-shadow: 0 20px 50px rgba(40,60,80,.18); display: flex; flex-direction: column; }
+  img.px { image-rendering: pixelated; display: block; }
+  .num { font-variant-numeric: tabular-nums; }
+  .glass { background: rgba(250,252,253,.6); backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3); border: 1px solid rgba(255,255,255,.78); box-shadow: 0 8px 24px rgba(40,60,80,.12), inset 0 1px 0 rgba(255,255,255,.9); border-radius: 16px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: #3fb98b; box-shadow: 0 0 0 3px rgba(63,185,139,.2), 0 0 8px rgba(63,185,139,.8); display: inline-block; }
+
+  /* 上面的標題列 */
+  .hd { position: relative; z-index: 3; margin: 14px 12px 0; padding: 10px 14px; display: grid; grid-template-columns: 58px 1fr auto; align-items: center; }
+  .hd .bk { font-size: 11px; letter-spacing: .15em; color: #6a7884; }
+  .hd h1 { margin: 0; font-size: 15px; font-weight: 400; letter-spacing: .32em; text-align: center; }
+  .hd .m { text-align: right; font-size: 15px; font-weight: 300; } .hd .m small { display: block; font-size: 9px; letter-spacing: .2em; color: #6a7884; }
+  .sub { position: relative; z-index: 3; margin: 8px 14px 0; display: flex; align-items: center; gap: 8px; font-size: 11px; letter-spacing: .12em; color: #51606d; }
+  .sub .r { margin-left: auto; }
+
+  /* 辦公室畫面 */
+  .hero { position: absolute; left: 0; top: 0; width: 375px; height: 300px; }
+  .hero img { position: absolute; left: 0; top: 96px; }
+  .hero::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 96px; background: linear-gradient(#e6eaed, #cfd5d9); }
+  .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(223,227,230,.0) 0%, rgba(223,227,230,0) 82%, #dfe3e6 100%); }
+  .space { height: 196px; flex: none; }
+
+  .kp { position: relative; margin: 10px 12px 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; } .kp div { padding: 8px 10px; border-radius: 14px; } .kp small { display: block; font-size: 9.5px; letter-spacing: .2em; color: #6a7884; } .kp b { font-size: 16px; font-weight: 300; }
+  .panel { position: relative; margin: 10px 12px 0; padding: 4px 0; }
+  .ph { display: flex; align-items: center; padding: 8px 14px 4px; font-size: 11px; letter-spacing: .25em; color: #6a7884; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; font-size: 12.5px; } .row + .row { border-top: 1px solid rgba(120,140,155,.18); }
+  .row .tt { flex: 1; min-width: 0; } .row .tt small { display: block; font-size: 10.5px; color: #6a7884; margin-top: 2px; letter-spacing: .04em; }
+  .bar { height: 3px; background: rgba(120,140,155,.2); border-radius: 2px; margin-top: 6px; overflow: hidden; } .bar i { display: block; height: 100%; background: linear-gradient(90deg, #6aa9d8, #8fd3e0); box-shadow: 0 0 6px #8fd3e0; }
+  .chip { flex: none; font-size: 10.5px; letter-spacing: .08em; padding: 3px 9px; border-radius: 999px; background: rgba(79,169,191,.12); color: #2f7d90; border: 1px solid rgba(79,169,191,.45); white-space: nowrap; }
+  .chip.shu { background: rgba(179,58,47,.08); color: #b33a2f; border-color: rgba(179,58,47,.4); }
+  .chip.gold { background: rgba(201,163,90,.14); color: #8a6a26; border-color: rgba(201,163,90,.6); }
+  .chip.mute { background: rgba(120,140,155,.1); color: #6a7884; border-color: rgba(120,140,155,.35); }
+  .cta { position: relative; margin: 10px 12px 0; display: flex; gap: 8px; } .cta button { flex: 1; min-height: 46px; border-radius: 14px; font: inherit; font-size: 12.5px; letter-spacing: .18em; border: 1px solid rgba(255,255,255,.85); background: rgba(250,252,253,.65); color: #26303a; backdrop-filter: blur(10px); }
+  .cta button.main { background: #26303a; color: #f2f6f8; border-color: #26303a; box-shadow: 0 6px 16px rgba(38,48,58,.3); flex: 1.6; }
+  .tabs { position: absolute; z-index: 3; left: 12px; right: 12px; bottom: 14px; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); padding: 11px 0 9px; font-size: 11px; letter-spacing: .2em; text-align: center; color: #6a7884; flex: none; }
+  .tabs span { position: relative; } .tabs span.on { color: #26303a; text-shadow: 0 0 10px rgba(143,211,224,.9); } .tabs span.on::after { content: ''; position: absolute; left: 50%; bottom: -6px; width: 14px; height: 2px; margin-left: -7px; border-radius: 2px; background: #8fd3e0; box-shadow: 0 0 6px #8fd3e0; }
+  .tabs em { position: absolute; top: -9px; left: 50%; margin-left: 12px; font-style: normal; font-size: 8.5px; letter-spacing: .05em; padding: 1px 5px; border-radius: 999px; background: #b33a2f; color: #fff; }
+  .tabs em.c { background: #2f7d90; }
+
+  /* 委託板 */
+  .cards { position: relative; margin: 10px 12px 0; display: flex; flex-direction: column; gap: 8px; }
+  .card { padding: 9px 12px 9px; display: grid; grid-template-columns: 46px 1fr auto; gap: 4px 10px; align-items: start; }
+  .ava { width: 46px; height: 46px; border-radius: 12px; background: linear-gradient(#eef3f6, #dce5ea); overflow: hidden; position: relative; box-shadow: inset 0 0 0 1px rgba(255,255,255,.9); }
+  .ava img { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%); }
+  .card h3 { margin: 0; font-size: 13px; font-weight: 500; letter-spacing: .04em; }
+  .card .who { font-size: 10.5px; color: #6a7884; margin-top: 3px; letter-spacing: .05em; }
+  .card .pay { text-align: right; font-size: 16px; font-weight: 300; } .card .pay small { display: block; font-size: 9.5px; color: #6a7884; letter-spacing: .1em; }
+  .card .req { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
+  .card.big { border-color: rgba(201,163,90,.7); box-shadow: 0 8px 24px rgba(40,60,80,.12), 0 0 0 1px rgba(201,163,90,.35), inset 0 1px 0 rgba(255,255,255,.9); }
+  .blurbg { position: absolute; inset: 0; overflow: hidden; } .blurbg img { position: absolute; left: -30px; top: 40px; width: 435px; filter: blur(10px) saturate(.9); opacity: .55; image-rendering: auto; }
+
+  /* 派人 */
+  .case { position: relative; margin: 10px 12px 0; padding: 11px 14px; }
+  .case h3 { margin: 0; font-size: 13.5px; font-weight: 500; } .case .who { font-size: 10.5px; color: #6a7884; margin-top: 3px; }
+  .need { display: flex; align-items: center; gap: 8px; margin-top: 9px; padding-top: 9px; border-top: 1px solid rgba(120,140,155,.18); font-size: 11.5px; }
+  .ok { width: 16px; height: 16px; border-radius: 50%; background: #3fb98b; color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 8px rgba(63,185,139,.6); }
+  .staff { display: grid; grid-template-columns: 46px 1fr 24px; gap: 10px; align-items: center; padding: 9px 12px; }
+  .staff + .staff { border-top: 1px solid rgba(120,140,155,.18); }
+  .staff .nm { font-size: 13px; } .staff .nm small { font-size: 10px; color: #6a7884; margin-left: 4px; letter-spacing: .05em; }
+  .st { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; margin-top: 4px; font-size: 9.5px; color: #6a7884; letter-spacing: .08em; }
+  .st span { display: flex; align-items: center; gap: 5px; } .seg { display: inline-flex; gap: 2px; } .seg i { width: 6px; height: 4px; border-radius: 1px; background: rgba(120,140,155,.25); } .seg i.f { background: #6ab9cf; box-shadow: 0 0 4px rgba(143,211,224,.9); } .seg.hi i.f { background: #3fb98b; box-shadow: 0 0 4px rgba(63,185,139,.8); }
+  .staff .say { font-size: 10px; color: #51606d; margin-top: 4px; }
+  .chk { width: 22px; height: 22px; border-radius: 7px; border: 1px solid rgba(120,140,155,.45); background: rgba(255,255,255,.6); display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .chk.on { background: #26303a; border-color: #26303a; color: #8fd3e0; box-shadow: 0 0 0 3px rgba(143,211,224,.25); }
+  .staff.busy { opacity: .45; }
+  .est { position: relative; margin: 10px 12px 0; padding: 10px 14px; display: flex; justify-content: space-between; font-size: 12px; } .est b { font-weight: 500; color: #2f7d90; }
+
+  /* 突發狀況 */
+  .dim { position: absolute; inset: 0; background: rgba(38,48,58,.38); backdrop-filter: blur(3px); z-index: 4; }
+  .modal { position: absolute; left: 16px; right: 16px; top: 250px; z-index: 5; padding: 16px 16px 14px; background: rgba(250,252,253,.78); }
+  .timer { height: 3px; border-radius: 3px; background: rgba(120,140,155,.2); overflow: hidden; } .timer i { display: block; width: 62%; height: 100%; background: linear-gradient(90deg, #b33a2f, #e0786c); box-shadow: 0 0 6px rgba(224,120,108,.8); }
+  .modal .lb { margin-top: 12px; font-size: 10.5px; letter-spacing: .3em; color: #b33a2f; display: flex; align-items: center; gap: 6px; } .modal .lb::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #b33a2f; box-shadow: 0 0 6px rgba(179,58,47,.8); }
+  .modal h2 { margin: 6px 0 6px; font-size: 18px; font-weight: 500; letter-spacing: .1em; }
+  .modal p { margin: 0 0 12px; font-size: 12px; line-height: 1.7; color: #51606d; }
+  .opt { display: block; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.7); border: 1px solid rgba(120,140,155,.25); margin-top: 8px; font-size: 12.5px; } .opt small { display: block; font-size: 10.5px; color: #6a7884; margin-top: 3px; }
+  .opt.def { border-color: rgba(79,169,191,.6); box-shadow: 0 0 0 3px rgba(143,211,224,.2); } .opt .tag { float: right; font-size: 9.5px; color: #2f7d90; letter-spacing: .1em; }
+  .opt.bet .tag { color: #b33a2f; }
+
+  /* 公司 */
+  .co { position: relative; margin: 8px 12px 0; padding: 9px 14px; display: flex; justify-content: space-between; align-items: center; }
+  .co b { font-weight: 500; font-size: 14px; letter-spacing: .08em; } .co small { display: block; font-size: 10px; color: #6a7884; letter-spacing: .15em; margin-top: 3px; }
+  .lvls { position: relative; margin: 10px 12px 0; padding: 4px 0; }
+  .lvl { display: grid; grid-template-columns: 80px 1fr; gap: 10px; padding: 6px 12px; align-items: center; }
+  .lvl + .lvl { border-top: 1px solid rgba(120,140,155,.18); }
+  .lvl .th { width: 80px; height: 42px; flex: none; border-radius: 9px; overflow: hidden; position: relative; box-shadow: inset 0 0 0 1px rgba(255,255,255,.7); }
+  .lvl .th img { width: 80px; height: 42px; image-rendering: pixelated; }
+  .lvl .info { min-width: 0; } .lvl .top { display: flex; align-items: center; gap: 6px; } .lvl .pr { margin-left: auto; font-size: 11px; color: #51606d; white-space: nowrap; }
+  .lvl .pr2 { color: #26303a; margin-top: 2px; }
+  .lvl .d { font-size: 10px; color: #6a7884; margin-top: 3px; letter-spacing: .04em; }
+  .lvl.lock .th img { filter: grayscale(.6) brightness(1.08); opacity: .7; }
+  .lvl.now { background: rgba(143,211,224,.12); }
+  .lvl.ipo .th { background: repeating-linear-gradient(135deg, #f6e7b4 0 6px, #f1dc98 6px 12px); display: flex; align-items: center; justify-content: center; font-size: 10px; color: #8a6a26; letter-spacing: .2em; }
+  .goal { position: relative; margin: 10px 12px 0; padding: 10px 14px 12px; }
+  .goal .gt { display: flex; font-size: 11px; letter-spacing: .2em; color: #51606d; } .goal .gt .r { margin-left: auto; letter-spacing: .1em; color: #2f7d90; }
+  .goal .gl { display: flex; justify-content: space-between; font-size: 10.5px; color: #6a7884; margin-top: 8px; } .goal .gl b { font-weight: 400; color: #26303a; }
+  .goal .bar { margin-top: 4px; } .goal .g2 { display: grid; grid-template-columns: 1fr 1.4fr; gap: 14px; }
+  .card.off { opacity: .55; }
+  .ad { position: relative; margin: 8px 12px 0; padding: 10px 14px; display: flex; align-items: center; gap: 10px; font-size: 12px; } .ad small { display: block; font-size: 10px; color: #6a7884; margin-top: 2px; } .ad button { margin-left: auto; font: inherit; font-size: 11.5px; letter-spacing: .12em; padding: 8px 14px; border-radius: 10px; border: 1px solid #26303a; background: #26303a; color: #f2f6f8; }
+  .foot { position: relative; margin: 8px 18px 0; font-size: 10px; color: #6a7884; text-align: center; letter-spacing: .06em; }
+</style>
+<!-- 公司階段銘牌：從 mockup.html 搬過來（紙名片 → 木牌 → 拉絲銀牌 → 黑底金字 → 黑漆金框 → 金箔） -->
+<style id="np">
+  .np { display: inline-flex; align-items: center; gap: 6px; font-family: 'Noto Serif TC', serif; font-size: 13px; letter-spacing: .28em; padding: 4px 10px 4px 12px; line-height: 1.3; white-space: nowrap; position: relative; }
+  .np1 { background: #f6f1e6; color: #6b6052; border: 1px solid #cfc6b6; }
+  .np2 { background: linear-gradient(#c19866, #a77d4c); color: #fbf3e2; border: 1px solid #7d5c3c; box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 1px 2px rgba(0,0,0,.2); text-shadow: 0 1px 0 rgba(0,0,0,.25); }
+  .np2::before, .np2::after { content: ''; width: 3px; height: 3px; border-radius: 50%; background: #e6cf9c; box-shadow: inset 0 0 0 1px #6b4a2a; }
+  .np2::after { order: 2; }
+  .np3 { background: linear-gradient(#f3f4f6, #c9ccd1 55%, #e2e4e7); color: #34373d; border: 3px double #8f949b; box-shadow: 0 1px 3px rgba(0,0,0,.2); text-shadow: 0 1px 0 rgba(255,255,255,.7); padding: 4px 14px; }
+  /* 第 4～6 階：像素金屬（美術審稿：滑順漸層跟像素畫不搭）——硬邊色帶、一顆斜面、四角鉚釘 */
+  .np4 { background: linear-gradient(#b89a4a,#b89a4a) left 3px top 3px/3px 3px no-repeat, linear-gradient(#b89a4a,#b89a4a) right 3px top 3px/3px 3px no-repeat, linear-gradient(#b89a4a,#b89a4a) left 3px bottom 3px/3px 3px no-repeat, linear-gradient(#b89a4a,#b89a4a) right 3px bottom 3px/3px 3px no-repeat, #26282c; color: #e2c26a; border: 2px solid #b89a4a; box-shadow: inset 2px 2px 0 #3a3d44, inset -2px -2px 0 #15161a; padding: 6px 18px; letter-spacing: .32em; }
+  .np5 { background: linear-gradient(#f6dc8a,#f6dc8a) left 3px top 3px/3px 3px no-repeat, linear-gradient(#f6dc8a,#f6dc8a) right 3px top 3px/3px 3px no-repeat, linear-gradient(#f6dc8a,#f6dc8a) left 3px bottom 3px/3px 3px no-repeat, linear-gradient(#f6dc8a,#f6dc8a) right 3px bottom 3px/3px 3px no-repeat, linear-gradient(#2e2824 0 50%, #1d1916 50%); color: #e9c25a; border: 3px solid; border-color: #f6dc8a #8a6216 #8a6216 #f6dc8a; padding: 7px 20px; text-shadow: 2px 2px 0 #4a3410; letter-spacing: .34em; }
+  .np5 span { color: inherit; }
+  .np6 { background: linear-gradient(#6b4a12,#6b4a12) left 3px top 3px/3px 3px no-repeat, linear-gradient(#6b4a12,#6b4a12) right 3px top 3px/3px 3px no-repeat, linear-gradient(#6b4a12,#6b4a12) left 3px bottom 3px/3px 3px no-repeat, linear-gradient(#6b4a12,#6b4a12) right 3px bottom 3px/3px 3px no-repeat, linear-gradient(#fff1b8 0 3px, #f3d27a 3px 50%, #dcae48 50% calc(100% - 3px), #a8761f calc(100% - 3px)); color: #3b2a0c; border: 2px solid #6b4a12; box-shadow: inset 2px 2px 0 #fff6d0, inset -2px -2px 0 #8a6216, 0 3px 0 rgba(107,74,18,.35); padding: 8px 22px; letter-spacing: .36em; font-weight: 600; text-shadow: 1px 1px 0 #fff3c4; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 一　辦公室 -->
+  <div><div class="phone">
+    <div class="hero"><img class="px" src="ui/hero-garage.png" width="375" height="190" alt=""></div>
+    <div class="hd glass"><span class="bk">‹ 會員</span><h1>公司・開</h1><div class="m num"><small>公司帳戶</small>$57,300</div></div>
+    <div class="sub"><span class="np np1">車庫創業</span><span>丼步喱設計社・員工 3 人</span></div>
+    <div class="space"></div>
+    <div class="kp"><div class="glass"><small>每小時</small><b class="num">$2,996</b></div><div class="glass"><small>進行中</small><b class="num">3 / 3</b></div><div class="glass"><small>閒著</small><b class="num">0 人</b></div></div>
+    <div class="panel glass">
+      <div class="ph">進行中<span style="margin-left:auto;letter-spacing:.1em">同時 3 件</span></div>
+      <div class="row"><span class="tt">〈大橋頭麥克早餐店・菜單改版〉<small>雞塊</small></span><span class="chip num">完成・$343</span></div>
+      <div class="row"><span class="tt">〈坐洗部・會員集點卡〉<small>小吳鴨</small></span><span class="chip num">完成・$784</span></div>
+      <div class="row"><span class="tt">〈城堡官網・第七次改版〉<small>茱莉鴨・睡著了，慢一點</small><div class="bar"><i style="width:18%"></i></div></span><span class="num" style="font-size:12px;color:#6a7884">3:12:40</span></div>
+    </div>
+    <div class="cta"><button>委託</button><button class="main num">全部收款 $1,127</button></div>
+    <div class="goal glass"><div class="gt"><span>下一步・搬到小辦公室</span><span class="r">公司頁 ›</span></div>
+      <div class="g2"><div><div class="gl num"><span>案子</span><b>18 / 20 件</b></div><div class="bar"><i style="width:90%"></i></div></div>
+      <div><div class="gl num"><span>帳戶</span><b>$57,300 / $90,000</b></div><div class="bar"><i style="width:64%"></i></div></div></div></div>
+    <div class="tabs glass"><span class="on">辦公室<em class="c">可收</em></span><span>委託<em>新</em></span><span>員工</span><span>公司</span></div>
+  </div><div class="cap">一・辦公室（坐著的就是正在做事的）</div></div>
+
+  <!-- 二　委託 -->
+  <div><div class="phone">
+    <div class="blurbg"><img src="ui/hero-garage.png" alt=""></div>
+    <div class="hd glass"><span class="bk">‹ 會員</span><h1>委託</h1><div class="m num"><small>公司帳戶</small>$57,300</div></div>
+    <div class="sub"><span class="dot"></span><span class="num">新案子 2:41 後</span><span class="num">同時 3 件・做著 2</span><span class="r chip gold num">打廣告 $300</span></div>
+    <div class="cards">
+      <div class="card glass"><div class="ava"><img class="px" src="ui/cat.png" alt=""></div><div><h3>〈台階所有權登記〉</h3><div class="who">店貓・3 分鐘</div></div><div class="pay num">$215</div>
+        <div class="req"><span class="chip mute">1 人</span><span class="chip mute">什麼都行</span></div></div>
+      <div class="card glass"><div class="ava"><img class="px" src="ui/dog.png" alt=""></div><div><h3>〈坐洗部・會員集點卡〉</h3><div class="who">坐洗部的狗・12 分鐘</div></div><div class="pay num">$980</div>
+        <div class="req"><span class="chip mute">2 人</span><span class="chip">細心 3 以上</span></div></div>
+      <div class="card glass"><div class="ava"><img class="px" src="ui/mole.png" alt=""></div><div><h3>〈工地帽歸還道歉信〉</h3><div class="who">鼴鼠・1 小時</div></div><div class="pay num">$4,780<small>急件</small></div>
+        <div class="req"><span class="chip mute">2 人</span><span class="chip">研究 4 以上</span><span class="chip shu">急件・2:00:00 內</span></div></div>
+      <div class="card glass big"><div class="ava"><img class="px" src="ui/raccoon.png" alt=""></div><div><h3>〈城堡官網・第七次改版〉</h3><div class="who">浣熊大王・4 小時</div></div><div class="pay num">$22,060<small>大案</small></div>
+        <div class="req"><span class="chip mute">3 人・缺 2 人</span><span class="chip">要先談：談判 5</span><span class="chip gold">大案</span></div></div>
+      <div class="card glass"><div class="ava"><img class="px" src="ui/apple.png" alt=""></div><div><h3>〈甜點店・冬季菜單拍照〉</h3><div class="who">蘋果鴨・30 分鐘</div></div><div class="pay num">$1,620<small>系列 2 / 5</small></div>
+        <div class="req"><span class="chip mute">1 人</span><span class="chip">速度 3 以上</span><span class="chip gold">做完五件送紀念品</span></div></div>
+      <div class="card glass off"><div class="ava"><img class="px" src="ui/captain.png" alt=""></div><div><h3>〈航海日誌打字〉</h3><div class="who">青江菜船長・8 小時・跨夜</div></div><div class="pay num">$9,400</div>
+        <div class="req"><span class="chip mute">搬到小辦公室才能接</span></div></div>
+    </div>
+    <div class="tabs glass"><span>辦公室<em class="c">可收</em></span><span class="on">委託<em>新</em></span><span>員工</span><span>公司</span></div>
+  </div><div class="cap">二・委託（缺幾人直接寫在卡片上）</div></div>
+
+  <!-- 三　派誰去 -->
+  <div><div class="phone">
+    <div class="hd glass"><span class="bk">‹ 上一頁</span><h1>派誰去</h1><div class="m num"><small>公司帳戶</small>$57,300</div></div>
+    <div class="case glass"><h3>〈坐洗部・會員集點卡〉</h3><div class="who num">坐洗部的狗・12 分鐘・$980・2 人</div>
+      <div class="need"><span>細心 3 以上</span><span style="margin-left:auto;color:#2f7d90">合（茱莉鴨 5）</span><span class="ok">✓</span></div></div>
+    <div class="cta"><button class="main" style="flex:1">幫我派</button><button>照上次的組合</button></div>
+    <div class="panel glass">
+      <div class="staff"><div class="ava"><img class="px" src="ui/julie.png" style="bottom:0" alt=""></div><div><div class="nm">茱莉鴨<small>Lv.4</small></div>
+        <div class="st"><span>速度<i class="seg"><i class="f"></i><i class="f"></i><i></i><i></i><i></i></i></span><span>細心<i class="seg hi"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></i></span><span>研究<i class="seg"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></i></span><span>談判<i class="seg"><i class="f"></i><i></i><i></i><i></i><i></i></i></span></div>
+        <div class="say">很細心，但每隔一陣子會睡著</div></div><div class="chk on">✓</div></div>
+      <div class="staff"><div class="ava"><img class="px" src="ui/frog.png" alt=""></div><div><div class="nm">青蛙・阿呱<small>Lv.2</small></div>
+        <div class="st"><span>速度<i class="seg"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></i></span><span>細心<i class="seg"><i class="f"></i><i class="f"></i><i></i><i></i><i></i></i></span><span>研究<i class="seg"><i class="f"></i><i class="f"></i><i></i><i></i><i></i></i></span><span>談判<i class="seg"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i></i></span></div>
+        <div class="say">嗓門大，客人都記得他</div></div><div class="chk on">✓</div></div>
+      <div class="staff busy"><div class="ava"><img class="px" src="ui/xiaowu.png" alt=""></div><div><div class="nm">小吳鴨<small>Lv.3</small></div>
+        <div class="st"><span>速度<i class="seg"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></i></span><span>細心<i class="seg"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></i></span><span>研究<i class="seg"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></i></span><span>談判<i class="seg"><i class="f"></i><i></i><i></i><i></i><i></i></i></span></div>
+        <div class="say num">在做〈頭上的蘋果不能吃〉告示・0:42 後回來</div></div><div class="chk"></div></div>
+      <div class="staff"><div class="ava"><img class="px" src="ui/pigeon.png" alt=""></div><div><div class="nm">鴿子・咕咕<small>Lv.1</small></div>
+        <div class="st"><span>速度<i class="seg"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i></i></span><span>細心<i class="seg"><i class="f"></i><i class="f"></i><i></i><i></i><i></i></i></span><span>研究<i class="seg"><i class="f"></i><i></i><i></i><i></i><i></i></i></span><span>談判<i class="seg"><i class="f"></i><i class="f"></i><i></i><i></i><i></i></i></span></div>
+        <div class="say">細心不到 3，派去的話做得好會掉到七成</div></div><div class="chk"></div></div>
+    </div>
+    <div class="est glass num"><span>預計 <b>11 分鐘</b>（茱莉鴨會睡一下）</span><span>做得好 <b>九成</b></span></div>
+    <div class="cta" style="margin-bottom:0"><button class="main" style="flex:1">開工</button></div>
+    <div class="tabs glass"><span>辦公室<em class="c">可收</em></span><span class="on">委託<em>新</em></span><span>員工</span><span>公司</span></div>
+  </div><div class="cap">三・派誰去（條件合不合、幫我派、照上次）</div></div>
+
+  <!-- 四　突發狀況 -->
+  <div><div class="phone">
+    <div class="hero"><img class="px" src="ui/hero-garage.png" width="375" height="190" alt=""></div>
+    <div class="hd glass"><span class="bk">‹ 會員</span><h1>公司・開</h1><div class="m num"><small>公司帳戶</small>$57,300</div></div>
+    <div class="sub"><span class="np np1">車庫創業</span><span>丼步喱設計社・員工 3 人</span></div>
+    <div class="space"></div>
+    <div class="kp"><div class="glass"><small>每小時</small><b class="num">$2,996</b></div><div class="glass"><small>進行中</small><b class="num">3 / 3</b></div><div class="glass"><small>閒著</small><b class="num">0 人</b></div></div>
+    <div class="tabs glass"><span class="on">辦公室</span><span>委託</span><span>員工</span><span>公司</span></div>
+    <div class="dim"></div>
+    <div class="modal glass">
+      <div class="timer"><i></i></div>
+      <div class="lb">突發狀況・〈坐洗部・會員集點卡〉</div>
+      <h2>店貓睡在鍵盤上</h2>
+      <p>集點卡的檔案多了一萬個「f」。店貓沒有要走的意思。</p>
+      <div class="opt def"><span class="tag">沒選就是這個</span>等牠自己走<small>多等 2 分鐘</small></div>
+      <div class="opt">拿逗貓棒引開<small class="num">花 $200・牠下次更常不在位子上</small></div>
+      <div class="opt bet"><span class="tag">賭一把</span>直接交出去<small>三成機會客戶說「很前衛」，多拿五成；不然要重做</small></div>
+    </div>
+  </div><div class="cap">四・突發狀況（上面那條線是倒數）</div></div>
+
+  <!-- 五　公司 -->
+  <div><div class="phone">
+    <div class="hd glass"><span class="bk">‹ 會員</span><h1>公司</h1><div class="m num"><small>公司帳戶</small>$57,300</div></div>
+    <div class="co glass"><div><b>丼步喱設計社</b><small>創始執行長・成立 3 天</small></div><div style="text-align:right"><b class="num" style="font-weight:300">18 件</b><small>做完的案子</small></div></div>
+    <div class="lvls glass">
+      <div class="lvl now"><div class="th"><img src="ui/thumb1.png" alt=""></div><div class="info"><div class="top"><span class="np np1">車庫創業</span><span class="chip" style="margin-left:auto">現在</span></div><div class="d">3 人・同時 3 件・案子最長 4 小時</div></div></div>
+      <div class="lvl"><div class="th"><img src="ui/thumb2.png" alt=""></div><div class="info"><div class="top"><span class="np np2">小辦公室</span></div><div class="d">5 人・同時 4 件・可以接跨夜 8 小時的案子</div><div class="d pr2 num">$90,000・做完 20 件</div></div></div>
+      <div class="lvl lock"><div class="th"><img src="ui/thumb3.png" alt=""></div><div class="info"><div class="top"><span class="np np3">整層樓</span></div><div class="d">8 人・同時 6 件・有茶水間</div><div class="d pr2 num">$700,000・80 件</div></div></div>
+      <div class="lvl lock"><div class="th"><img src="ui/thumb4.png" alt=""></div><div class="info"><div class="top"><span class="np np4">二十七樓整層</span></div><div class="d">12 人・同時 8 件・跨夜 12 小時的大案</div><div class="d pr2 num">$2,600,000・250 件</div></div></div>
+      <div class="lvl lock"><div class="th"><img src="ui/thumb5.png" alt=""></div><div class="info"><div class="top"><span class="np np5">自己的大樓</span></div><div class="d">20 人・同時 12 件・樓頂掛公司招牌</div><div class="d pr2 num">$6,600,000・600 件</div></div></div>
+      <div class="lvl lock ipo"><div class="th">上市</div><div class="info"><div class="top"><span class="np np6">掛牌上市</span><span class="chip mute" style="margin-left:auto">之後才有</span></div><div class="d">變成股市的一檔股票，你是執行長、可以發公告</div></div></div>
+    </div>
+    <div class="cta"><button class="main num" style="flex:1">搬到小辦公室・$90,000（還差 2 件）</button></div>
+    <p class="foot">這裡的錢都是遊戲幣，不能儲值，也不能換現金或獎品。</p>
+    <div class="tabs glass"><span>辦公室<em class="c">可收</em></span><span>委託<em>新</em></span><span>員工</span><span class="on">公司</span></div>
+  </div><div class="cap">五・公司（每一階的辦公室和銘牌）</div></div>
+
+</div>
+</body>
+</html>
