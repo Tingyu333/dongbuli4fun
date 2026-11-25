@@ -231,7 +231,7 @@ html, body { background: #dfe3e6 !important; }
 body { min-height: 100vh; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
 .shell { position: relative; max-width: 420px; margin: 0 auto; min-height: 100vh; padding-bottom: 96px; background: #dfe3e6; }
 button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
-.hd { position: sticky; top: 8px; z-index: 6; } .hd a.bk { text-decoration: none; }
+.hd { position: sticky; top: 8px; z-index: 6; grid-template-columns: 58px 1fr 58px !important; } .hd a.bk { text-decoration: none; }
 .scene { position: relative; margin: 10px 0 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .scene::-webkit-scrollbar { display: none; }
 .scene canvas { display: block; image-rendering: pixelated; }
@@ -297,13 +297,13 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     </div>
 
     <div id="main" hidden>
-        <div class="hd glass"><a class="bk" href="member.html">‹ 會員</a><h1 id="title">公司・開</h1><div class="m num"><small id="moneyLab">公司帳戶</small><span id="money">$0</span></div></div>
+        <div class="hd glass"><a class="bk" href="member.html">‹ 會員</a><h1 id="title">公司・開</h1><span class="m" aria-hidden="true"></span><span id="money" hidden></span><span id="moneyLab" hidden></span></div>
 
         <!-- 一　辦公室 -->
         <section class="view" id="v-office">
             <div class="sub"><span class="np" id="plate"></span><span id="stageLine"></span></div>
             <div class="scene" id="scene"><canvas id="cv" width="375" height="190"></canvas><span class="hint" id="sceneHint" hidden>左右滑</span></div>
-            <div class="kp"><div class="glass"><small>今天賺</small><b class="num" id="kToday">$0</b></div><div class="glass"><small>進行中</small><b class="num" id="kRun">0</b></div><div class="glass"><small>閒著</small><b class="num" id="kIdle">0</b></div></div>
+            <div class="kp"><div class="glass"><small>公司帳戶</small><b class="num" id="kAcct">$0</b></div><div class="glass"><small>今天賺</small><b class="num" id="kToday">$0</b></div><div class="glass"><small>進行中</small><b class="num" id="kRun">0</b></div></div>
             <div class="panel glass"><div class="ph">進行中<span style="margin-left:auto;letter-spacing:.1em" id="concLine"></span></div><div id="runList"></div></div>
             <div class="cta"><button id="goBoard">委託</button><button class="main num" id="collectAll" disabled>全部收款</button></div>
             <div class="goal glass" id="goal"></div>
@@ -675,7 +675,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         if (S.today.d !== today()) S.today = { d: today(), net: 0 };
         $('kToday').textContent = R.fmt(S.today.net);
         $('kRun').textContent = running().length + ' / ' + st().conc;
-        $('kIdle').textContent = idle().length + ' 人';
+        $('kAcct').textContent = R.fmt(S.acct);
         $('concLine').textContent = '同時 ' + st().conc + ' 件';
         renderRun(); drawScene();
         const next = R.STAGES[S.stage + 1];
@@ -718,7 +718,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     }
     function renderStaff() {
         $('title').textContent = '員工'; $('moneyLab').textContent = '錢包'; $('money').textContent = R.fmt(S.wallet);
-        $('staffLine').textContent = S.staff.length + ' / ' + st().seats + ' 人・' + st().name + '最多 ' + st().seats + ' 人';
+        $('staffLine').textContent = S.staff.length + ' / ' + st().seats + ' 人・' + st().name + '最多 ' + st().seats + ' 人・錢包 ' + R.fmt(S.wallet);
         const seatsLeft = st().seats - S.staff.length;   // 使用者：招募按鈕不明顯——改成整條的深色按鈕
         $('openApply').textContent = seatsLeft > 0 ? '招募新員工・還能請 ' + seatsLeft + ' 位' : '看應徵的人・位子坐滿了';
         $('openApply').classList.toggle('main', seatsLeft > 0);
@@ -736,7 +736,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             B.innerHTML = `<div class="co glass"><div><b>${esc(S.name)}</b><small>創始執行長・成立第 ${Math.floor((now() - S.created) / 864e5) + 1} 天</small></div><div style="text-align:right"><b class="num" style="font-weight:300">${S.jobsDone} 件</b><small>做完的案子</small></div></div>
                 <div class="lvls glass">${R.STAGES.map((g, i) => i < S.stage || i > S.stage + 1 ? '' : `<div class="lvl${i === S.stage ? ' now' : i === S.stage + 1 && canMove ? ' can' : i > S.stage ? ' lock' : ''}"><div class="th" style="background:#dfe3e6"><canvas data-th="${i}" width="80" height="42" style="width:80px;height:42px;image-rendering:pixelated"></canvas></div><div class="info"><div class="top"><span class="np np${i + 1}">${esc(S.name)}</span>${i === S.stage ? '<span class="chip" style="margin-left:auto">現在</span>' : ''}</div><div class="d"><b style="font-weight:500;color:#26303a">${g.name}</b>・${g.seats} 人・同時 ${g.conc} 件${g.maxDur >= 480 ? '・跨夜 ' + g.maxDur / 60 + ' 小時' : ''}</div>${i > 0 ? `<div class="d pr2 num">${R.fmt(g.cost)}・做完 ${g.jobs} 件</div>` : ''}</div></div>`).join('')}${S.stage + 2 < R.STAGES.length ? `<div class="lvl lock" style="display:block;text-align:center;font-size:10.5px;color:#6a7884;letter-spacing:.15em;padding:10px">之後還有 ${R.STAGES.length - S.stage - 2} 間・搬過去才看得到</div>` : ''}</div>
                 ${next ? `<div class="cta"><button class="main num" id="mv" style="flex:1" ${canMove ? '' : 'disabled'}>搬到${next.name}・${R.fmt(next.cost)}${S.jobsDone < next.jobs ? '（還差 ' + (next.jobs - S.jobsDone) + ' 件）' : S.acct < next.cost ? '（帳戶還差 ' + R.fmt(next.cost - S.acct) + '）' : ''}</button></div>` : ''}
-                <div class="goal glass"><div class="gt"><span>公司帳戶和錢包</span><span class="r num">錢包 ${R.fmt(S.wallet)}</span></div>
+                <div class="goal glass"><div class="gt"><span>公司帳戶 <b class="num" style="font-weight:400;color:#26303a">${R.fmt(S.acct)}</b></span><span class="r num">錢包 ${R.fmt(S.wallet)}</span></div>
                   <div class="money2"><button class="num" id="inj" ${injLeft ? '' : 'disabled'}>執行長增資（今天還能 ${R.fmt(injLeft)}）</button></div>
                   <div class="money2"><button class="num" id="out" ${S.acct > 0 ? '' : 'disabled'}>轉 ${R.fmt(Math.max(0, S.acct))} 進錢包</button></div>
                   <div class="kv"><span>搬家只能用公司帳戶付；錢包可以付簽約金、刷新、訓練、設備、廣告、加班費</span></div></div>
@@ -760,7 +760,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             document.querySelectorAll('.shelf .slot').forEach(e => e.onclick = () => { const C = R.CLIENTS[e.dataset.k]; toast(S.gifts.includes(e.dataset.k) ? C.gift + '（' + C.who + '送的）' : '做完' + C.who + '的五件系列才拿得到'); });
         } else if (seg === 'equip') {
             const own = S.equip[S.stage] || [], list = R.EQUIP[S.stage];
-            B.innerHTML = `<div class="sub" style="margin-top:12px"><span>${st().name}的設備・買了 ${own.length} / 3</span><span class="r num">現在 +${Math.round(own.length * R.EQUIP_BOOST * 100)}%</span></div>
+            B.innerHTML = `<div class="sub" style="margin-top:12px"><span>${st().name}的設備・買了 ${own.length} / 3・現在 +${Math.round(own.length * R.EQUIP_BOOST * 100)}%</span><span class="r num">錢包 ${R.fmt(S.wallet)}</span></div>
                 <div class="panel glass" style="padding:2px 0">${list.map(([k, n, d]) => `<div class="eq"><div class="ic"><canvas width="12" height="12" data-ic="${k}"></canvas></div><div><div class="nm">${n}</div><div class="d">${d}・賺的 +8%</div></div>${own.includes(k) ? '<button class="got">已經有了</button>' : `<button class="num" data-e="${k}">${R.fmt(st().equip)}</button>`}</div>`).join('')}</div>
                 <div class="goal glass"><div class="gt"><span>買滿三樣</span><span class="r num">賺的約 +25%</span></div><div class="bar" style="margin-top:8px"><i style="width:${own.length / 3 * 100}%"></i></div></div>
                 ${R.EQUIP[S.stage + 1] ? `<div class="sub" style="margin-top:10px"><span>搬家後換新的一組（${R.STAGES[S.stage + 1].name}：${R.EQUIP[S.stage + 1].map(e => e[1]).join('、')}）</span></div>` : ''}`;
