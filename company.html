@@ -557,7 +557,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
               ${!r.ok ? `<div class="kv" style="display:block;line-height:1.7"><span>${j.why ? '做砸的原因：' + esc(j.why) + '。' : '開工前寫的成功機率是' + R.odds(j.p) + '，這次運氣不好。'}做砸了客人只付一成、薪水扣一半。</span></div>` : ''}${j.spent ? `<div class="kv"><span>另外：突發狀況當時已經從公司帳戶付了 ${R.fmt(j.spent)}，不在上面這筆裡</span></div>` : ''}${j.trialOver ? `<div class="lvup"><b>${esc(j.trialOver)}試用期過了，轉正！</b></div>` : ''}
               ${c.tutorial ? `<div class="kv" style="display:block;line-height:1.8"><span>名片印好了：${esc(S.name)}・創始執行長。<br>錢先扣員工薪水（三成），剩下進<b>公司帳戶</b>，存著搬家用。</span></div>` : ''}</div>
               <div class="cta"><button class="main" id="xOk" style="flex:1">收下</button></div>`, { center: true });
-        $('xOk').onclick = () => { hide(); if (c.tutorial) { if (S.coach) S.coach = 6; save(); go('staff'); } };
+        $('xOk').onclick = () => { hide(); if (c.tutorial) { if (S.coach) S.coach = 5.5; save(); go(S.coach ? 'office' : 'staff'); } };   // 5.5：先講賺到的錢進哪裡（使用者：加到新手說明）
     }
 
     // ---------- 派人 ----------
@@ -706,6 +706,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         if (k <= 3 && inDispatch) return pickSel.length ? ['#dGo', '小麥選好了，按<b>開工</b>。'] : ['#sheet .staff', '這件只要 1 個人。<b>點小麥</b>，派她去。'];
         if (k === 4 && !layer && view === 'office') { const j = S.jobs.find(x => x.c.tutorial); if (j && j.fin) { S.coach = 5; return coachStep(); } return ['#runList .row', '小麥開始做了，那條是進度。<b>3 秒</b>後做完。（等的時候員工會坐在上面的位子上）']; }
         if (k === 5 && !layer) return view === 'office' ? ['#runList .row.done', '做完了！<b>點這一行</b>看結案單，把錢收進公司帳戶。'] : ['[data-v=office]', '小麥做完了，回<b>辦公室</b>收款。'];
+        if (k === 5.5 && !layer) return view === 'office' ? ['#kAcct', '賺到的錢進<b>公司帳戶</b>（就是這格）：案子的錢先扣三成給員工當薪水，剩下的都進這裡。搬家只能用公司帳戶的錢。<br>你自己的<b>錢包</b>另外算，付簽約金、訓練、設備；公司帳戶的錢也可以在公司頁轉進錢包。'] : ['[data-v=office]', '回<b>辦公室</b>看看錢進了哪裡。'];
         if (k === 6 && !layer) return view === 'staff' ? ['#openApply', '案子會越來越多，一個人忙不過來。按這裡<b>招募新員工</b>，簽約金從你的<b>錢包</b>付。'] : ['[data-v=staff]', '去<b>員工</b>請人。'];
         if (k === 7 && inApply) return ['#sheet .ft button:not([disabled])', '往下滑看看三位，挑一位按<b>聘用</b>。能力條越長越好。', 'top'];   // 泡泡放最上面，不要蓋住應徵的人
         if (k === 7 && !layer) return view === 'staff' ? ['#openApply', '按這裡<b>招募新員工</b>。'] : ['[data-v=staff]', '去<b>員工</b>請人。'];
@@ -719,11 +720,11 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         const c = coachStep(), box = $('coach');
         if (coachTarget) { coachTarget.classList.remove('coachT'); coachTarget = null; }
         if (!c) { box.hidden = true; return; }
-        const el = document.querySelector(c[0]);
+        const el = c[0] === '#kAcct' ? $('kAcct').parentElement : document.querySelector(c[0]);
         if (!el) { box.hidden = true; return; }
         coachTarget = el; el.classList.add('coachT');
         const pinTop = c[2] === 'top';
-        if (S.coach !== box.dataset.step || c[1] !== box.dataset.text) { $('coachText').innerHTML = c[1]; box.dataset.text = c[1]; box.dataset.step = S.coach; $('coachSkip').textContent = S.coach === 9 ? '知道了' : '略過教學'; }
+        if (S.coach !== box.dataset.step || c[1] !== box.dataset.text) { $('coachText').innerHTML = c[1]; box.dataset.text = c[1]; box.dataset.step = S.coach; $('coachSkip').textContent = S.coach === 9 ? '知道了' : S.coach === 5.5 ? '懂了，下一步' : '略過教學'; }
         box.hidden = false;
         const r = el.getBoundingClientRect(), bh = box.offsetHeight, below = r.bottom + bh + 18 < innerHeight - 90 || r.top < bh + 30;
         if (r.bottom < 0 || r.top > innerHeight) el.scrollIntoView({ block: 'center' });
@@ -732,7 +733,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         const a = $('coachArrow'), bx = box.getBoundingClientRect(); a.style.left = Math.max(14, Math.min(bx.width - 26, r.left + r.width / 2 - bx.left - 6)) + 'px';
         a.style.top = below ? '-6px' : ''; a.style.bottom = below ? '' : '-6px';
     }
-    $('coachSkip').onclick = () => { S.coach = 0; save(); updateCoach(); };
+    $('coachSkip').onclick = () => { S.coach = S.coach === 5.5 ? 6 : 0; save(); updateCoach(); };
     setInterval(() => { if (S && S.name) updateCoach(); }, 300);
     window.addEventListener('scroll', () => { if (S && S.coach) updateCoach(); }, { passive: true });
     function render() {
