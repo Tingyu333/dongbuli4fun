@@ -729,7 +729,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     const TOUR = [
         ['move', '#segBody .lvls', '這是你現在的辦公室。點<b>看所有辦公室</b>可以看之後的五個家；搬過的可以換回去當辦公室的畫面。'],
         ['move', '#mv', '<b>搬家</b>：做滿件數、公司帳戶的錢也夠了，就按這裡。搬過去位子、同時能做的件數都會變多，案子也更值錢。'],
-        ['move', '#inj', '<b>執行長增資</b>：把你錢包的錢轉進公司帳戶。搬家差一點的時候用，每天有上限。'],
+        ['move', '#inj', '<b>執行長增資</b>：把你錢包的錢轉進公司帳戶，金額可以自己加減。搬家差一點的時候用，每天有上限。'],
         ['move', '#out', '反過來，把公司帳戶的錢<b>轉進錢包</b>。轉出去就不能直接轉回來，存搬家錢的時候小心。'],
         ['gift', '#segBody .shelf', '<b>紀念品</b>：同一位委託人的系列五件都做完，他就送一個，之後他的案子多拿 5%。下面看得到每位做到第幾件，九個收齊有稱號。'],
         ['equip', '#segBody .panel', '<b>設備</b>：用錢包買，一樣讓每件案子多賺 8%，三樣買滿約 +25%。只在現在這間有用，搬家後換新的一組。'],
@@ -890,6 +890,36 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         const cv = $('mvCv'); CompanyOffice.paint(cv, S.stage + 1);
         $('mvOk').onclick = hide;
     }
+    // 執行長增資：自己選金額，＋／－一次 1,000（使用者 2026-11-25）；長按會一直加
+    function openInject(injLeft, next) {
+        const max = Math.min(injLeft, S.wallet);
+        if (max <= 0) return toast(injLeft ? '錢包沒錢' : '今天的增資額度用完了');
+        const short = next ? Math.max(0, next.cost - S.acct) : 0, lo = Math.min(1000, max);
+        let amt = short ? Math.min(max, Math.ceil(short / 1000) * 1000) : lo;   // 預設：搬家還差多少（沒差就 1,000）
+        const clamp = v => Math.max(lo, Math.min(max, v));
+        show(`<div class="hd2"><h2>執行長增資</h2><button class="x" id="iClose">關</button></div>
+            <div class="panel glass" style="margin:0;padding:16px 14px;text-align:center">
+              <div class="kv" style="justify-content:center;margin:0"><span>從錢包轉進公司帳戶</span></div>
+              <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:14px 0 6px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none">
+                <button class="num" id="iMinus" style="width:66px;height:44px;border-radius:12px;border:1px solid rgba(38,48,58,.25);background:rgba(255,255,255,.7);font:inherit;font-size:13px;color:#26303a;touch-action:manipulation">−1,000</button>
+                <b class="num" id="iAmt" style="font-weight:300;font-size:26px;min-width:120px;color:#26303a"></b>
+                <button class="num" id="iPlus" style="width:66px;height:44px;border-radius:12px;border:1px solid rgba(38,48,58,.25);background:rgba(255,255,255,.7);font:inherit;font-size:13px;color:#26303a;touch-action:manipulation">+1,000</button></div>
+              <div class="kv num" style="justify-content:center;margin-top:4px"><span style="line-height:1.7">今天還能增資 ${R.fmt(injLeft)}・錢包 ${R.fmt(S.wallet)}${short ? '<br>公司帳戶離搬家還差 ' + R.fmt(short) : ''}</span></div>
+              <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">${short && Math.ceil(short / 1000) * 1000 <= max ? '<button class="mini num" id="iShort" style="font:inherit;font-size:11px;padding:6px 12px;border-radius:10px;border:1px solid rgba(47,125,144,.5);background:none;color:#2f7d90">補到能搬家</button>' : ''}<button class="mini num" id="iMax" style="font:inherit;font-size:11px;padding:6px 12px;border-radius:10px;border:1px solid rgba(47,125,144,.5);background:none;color:#2f7d90">全部 ${R.fmt(max)}</button></div></div>
+            <div class="kv" style="display:block;line-height:1.7;margin-top:10px"><span>錢包的錢只能這樣進公司，${st().name}每天最多增資 ${R.fmt(st().inject)}。</span></div>
+            <div class="cta"><button class="main num" id="iGo" style="flex:1"></button></div>`, { center: true });
+        const draw = () => { $('iAmt').textContent = R.fmt(amt); $('iGo').textContent = '增資 ' + R.fmt(amt); $('iMinus').disabled = amt <= lo; $('iPlus').disabled = amt >= max; };
+        const step = d => { amt = clamp(d < 0 && amt % 1000 ? Math.floor(amt / 1000) * 1000 : amt + d); draw(); };   // 不是整千的（例如上限 $33,500）先對齊到整千
+        [['iMinus', -1000], ['iPlus', 1000]].forEach(([id, d]) => { const b = $(id); let t1 = 0, t2 = 0;
+            const stop = () => { clearTimeout(t1); clearInterval(t2); };
+            b.onpointerdown = e => { e.preventDefault(); step(d); t1 = setTimeout(() => { t2 = setInterval(() => step(d), 70); }, 420); };   // 長按一直加
+            b.onpointerup = b.onpointerleave = b.onpointercancel = stop; b.oncontextmenu = e => e.preventDefault(); });
+        if ($('iShort')) $('iShort').onclick = () => { amt = clamp(Math.ceil(short / 1000) * 1000); draw(); };
+        $('iMax').onclick = () => { amt = max; draw(); };
+        $('iClose').onclick = hide;
+        $('iGo').onclick = () => { if (amt > Math.min(st().inject - S.inject.amt, S.wallet)) return toast('超過今天的額度了'); S.wallet -= amt; S.acct += amt; S.inject.amt += amt; save(); hide(); renderCompany(); toast('增資 ' + R.fmt(amt)); };
+        draw();
+    }
     function renderCompany() {
         $('title').textContent = '公司'; $('moneyLab').textContent = seg === 'equip' ? '錢包' : '公司帳戶'; $('money').textContent = R.fmt(seg === 'equip' ? S.wallet : S.acct);
         const B = $('segBody');
@@ -910,7 +940,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
                 <p class="foot">這裡的錢都是遊戲幣，不能儲值，也不能換現金或獎品。</p>`;
             paintThumbs(); $('allOffices').onclick = openOffices; document.querySelectorAll('.help2').forEach(e => e.onclick = openHelp);
             if ($('mv')) $('mv').onclick = async () => { if (!await ask('搬到' + next.name + '？', '用公司帳戶付 ' + R.fmt(next.cost) + '。舊燈泡會一起帶走。', { ok: '搬家' })) return; const old = st(); S.acct -= next.cost; S.stage++; S.look = S.stage; S.applicants = R.applicants(S.stage, S.hiredSp); save(); go('office'); movedCard(old); };
-            $('inj').onclick = async () => { const n = Math.min(injLeft, S.wallet); if (!n) return toast('錢包沒錢'); if (!await ask('執行長增資？', '從錢包轉 ' + R.fmt(n) + ' 進公司帳戶。錢包的錢只能這樣進公司，' + st().name + '每天最多增資 ' + R.fmt(st().inject) + '。', { ok: '增資' })) return; S.wallet -= n; S.acct += n; S.inject.amt += n; save(); renderCompany(); toast('增資 ' + R.fmt(n)); };
+            $('inj').onclick = () => openInject(injLeft, next);
             $('out').onclick = async () => { const n = Math.max(0, S.acct); if (!await ask('轉進錢包？', '把公司帳戶的 ' + R.fmt(n) + ' 全部轉進錢包。' + (next ? '搬家只能用公司帳戶付，' : '') + '轉出去不能直接轉回來，只能靠增資（每天最多 ' + R.fmt(st().inject) + '）。', { ok: '轉進錢包', warn: true })) return; S.acct -= n; S.wallet += n; save(); renderCompany(); };
             $('tAdd').onclick = () => { S.wallet += 1000000; save(); renderCompany(); };
             $('tSkip').onclick = () => { S.shift = (S.shift || 0) + 600000; tick(); toast('快轉了 10 分鐘'); render(); };
