@@ -357,7 +357,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     const tagChip = c => c.tag === 'super' ? '<span class="chip gold">特好賺</span>' : c.tag === 'rush' ? '<span class="chip shu">急件</span>' : c.tag === 'big' ? '<span class="chip gold">大案</span>' : c.tag === 'talk' ? '<span class="chip">要先談</span>' : '';
     const segHtml = (n, hi) => '<i class="seg' + (hi ? ' hi' : '') + '">' + [0, 1, 2, 3, 4].map(k => k < n ? '<i class="f"></i>' : '<i></i>').join('') + '</i>';
     const statsHtml = s => '<div class="st">' + R.STATS.map(([, lab], i) => `<span>${lab}${segHtml(s.st[i], s.st[i] >= 5)}</span>`).join('') + '</div>';
-    const toast = m => (window.showToast ? showToast(m) : alert(m));
+    const toast = m => { document.querySelectorAll('.toast').forEach(e => e.remove()); window.showToast ? showToast(m) : alert(m); };   // 一次只留一張，不然會疊在一起
     function payWallet(n) { if (S.wallet < n) { toast('試玩錢包不夠了（公司頁最下面可以加）'); return false; } S.wallet -= n; return true; }
 
     // ---------- 開場（三張紙條 → 取名字 → 送一位試用員工＋雞塊的教學案） ----------
