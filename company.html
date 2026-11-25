@@ -23,7 +23,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/theme.css?v=20261116d">
     <script src="assets/theme.js?v=20261117c"></script>
-    <script src="assets/company-office.js?v=20261125a"></script>
+    <script src="assets/company-office.js?v=20261125b"></script>
     <script src="assets/company-rules.js?v=20261125h"></script>
     <style>
 /* 毛玻璃介面（跟 docs/plans/company/ui.css 的樣張同一套） */
@@ -503,6 +503,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         j.ups = [];
         team.forEach(s => { if (s.trial) { s.trial = false; j.trialOver = R.staffName(s); } s.job = null; s.done++; if (!j.ok) s.failed++; const ups = R.gainExp(s, j.ok ? (j.great ? 2 : 1) : 1); ups.forEach(([lv, i]) => j.ups.push([s.id, lv, i])); });
         j.finAt = j.end;
+        if (view === 'office') { const T = performance.now() / 1000; j.team.forEach((id, k) => { const i = S.staff.findIndex(s => s.id === id), p = seats[i]; if (p && k === 0) floats.push({ x: Math.round(p[0]), y: Math.round(p[1]) - 40, txt: (j.res.net < 0 ? '−' : '+') + R.fmt(Math.abs(j.res.net)).replace('−', ''), bad: !j.ok, t0: T }); }); }
     }
 
     // ---------- 收款 ----------
@@ -676,13 +677,28 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     $('openApply').onclick = () => { if (S.coach === 6) S.coach = 7; openApply(); };
 
     // ---------- 畫辦公室 ----------
-    let baseCv = null, baseStage = -1, seats = [];
+    // 使用者 2026-11-25：辦公室完全靜態——加動態：燈泡的光會呼吸（舊燈泡偶爾閃一下）、光裡有灰塵飄、螢幕上的字一行一行打、
+    // 做事的員工跟著打字點頭、閒著的偶爾伸個懶腰、茱莉鴨睡著冒 Z、案子做完在頭上飄「+$」
+    let baseCv = null, baseStage = -1, seats = [], ofx = { mon: [], bulb: [] }, dust = [], monBg = [], floats = [];
     function drawScene() {
         if (!S || !S.name) return;
         const cv = $('cv'), x = cv.getContext('2d');
         const L = look();
-        if (baseStage !== L) { baseCv = document.createElement('canvas'); seats = CompanyOffice.paint(baseCv, L + 1).slice(); baseStage = L; cv.width = baseCv.width; cv.height = baseCv.height; cv.style.width = baseCv.width + 'px'; cv.style.height = baseCv.height + 'px'; $('sceneHint').hidden = baseCv.width <= 380; requestAnimationFrame(() => { $('scene').scrollLeft = L === 4 ? 250 : 0; }); }   // 大樓一打開先看辦公區，大廳往左滑
+        if (baseStage !== L) { baseCv = document.createElement('canvas'); seats = CompanyOffice.paint(baseCv, L + 1).slice(); ofx = CompanyOffice.fx(L + 1); baseStage = L;
+            const bx = baseCv.getContext('2d'); monBg = ofx.mon.map(([mx, my]) => { const d = bx.getImageData(mx + 6, my + 3, 1, 1).data; return 'rgb(' + d[0] + ',' + d[1] + ',' + d[2] + ')'; });
+            dust = []; ofx.bulb.forEach(([lx, ly]) => { for (let k = 0; k < 7; k++) dust.push({ cx: lx, cy: ly, a: Math.random() * 6.28, r: 4 + Math.random() * 16, h: Math.random(), sp: .5 + Math.random() }); }); cv.width = baseCv.width; cv.height = baseCv.height; cv.style.width = baseCv.width + 'px'; cv.style.height = baseCv.height + 'px'; $('sceneHint').hidden = baseCv.width <= 380; requestAnimationFrame(() => { $('scene').scrollLeft = L === 4 ? 250 : 0; }); }   // 大樓一打開先看辦公區，大廳往左滑
         x.imageSmoothingEnabled = false; x.drawImage(baseCv, 0, 0);
+        const T = performance.now() / 1000;
+        // 燈泡：光暈慢慢呼吸；舊燈泡每 9 秒左右閃一下
+        ofx.bulb.forEach(([lx, ly, old], k) => { let a = .16 + .06 * Math.sin(T * 1.7 + k * 2); if (old && (T + k * 3.1) % 9 < .18) a = .02;
+            const g = x.createRadialGradient(lx, ly, 1, lx, ly, 22); g.addColorStop(0, 'rgba(255,226,150,' + a + ')'); g.addColorStop(1, 'rgba(255,226,150,0)'); x.fillStyle = g; x.fillRect(lx - 22, ly - 22, 44, 44); });
+        // 光裡的灰塵：慢慢往上飄
+        dust.forEach(d => { const h = (d.h + T * .02 * d.sp) % 1, px = Math.round(d.cx + Math.cos(d.a + T * .3 * d.sp) * d.r * .6), py = Math.round(d.cy + 26 - h * 40); x.fillStyle = 'rgba(255,244,214,' + (.55 * Math.sin(h * Math.PI)).toFixed(2) + ')'; x.fillRect(px, py, 1, 1); });
+        // 螢幕：字一行一行打出來、打滿就清掉重來
+        ofx.mon.forEach(([mx, my, mw, mh], k) => { const ph = (T * .7 + k * .37) % 1, n = Math.floor(ph * 10);
+            x.fillStyle = monBg[k]; x.fillRect(mx, my, mw, mh); x.fillStyle = 'rgba(38,58,70,.45)';
+            for (let r = 0; r < 3; r++) { const len = Math.min(n * 3 - r * 9, [9, 7, 8][r]); if (len > 0) x.fillRect(mx + 1, my + 1 + r * 2, len, 1); }
+            if (Math.floor(T * 2.5) % 2) { const r = Math.min(2, Math.floor(n / 3)), len = Math.max(0, Math.min(n * 3 - r * 9, [9, 7, 8][r])); x.fillStyle = '#ffffff'; x.fillRect(mx + 1 + len, my + 1 + r * 2, 1, 1); } });   // 游標
         const order = seats.map((p, i) => [p, i]).sort((a, b) => a[0][1] - b[0][1]);   // 後排先畫
         const t = now();
         order.forEach(([[sx, sy], i]) => {
@@ -691,10 +707,20 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             const j = s.job ? S.jobs.find(q => q.id === s.job) : null;
             if (s.key === 'julie' && j && j.napped) { const u = (t - j.start) / (j.end - j.start); if (u > .35 && u < .7) key = 'julie-sleep'; }
             const im = SP[key]; if (!im || !im.complete || !im.naturalWidth) return;
-            x.drawImage(im, Math.round(sx) - ANCHOR[key], Math.round(sy) + 1 - im.naturalHeight);
+            const bob = key === 'julie-sleep' ? 0 : j ? (Math.floor(T * 3 + i * .7) % 2) : ((T * .4 + i * .23) % 1 < .06 ? 1 : 0);   // 做事：打字點頭；閒著：偶爾伸個懶腰
+            x.drawImage(im, Math.round(sx) - ANCHOR[key], Math.round(sy) + 1 - im.naturalHeight - bob);
+            if (key === 'julie-sleep') for (let z = 0; z < 2; z++) { const u = (T * .5 + z * .5) % 1; x.globalAlpha = Math.sin(u * Math.PI); x.fillStyle = '#6a7884'; x.font = (6 + z * 2) + 'px sans-serif'; x.fillText('Z', Math.round(sx) + 8 + u * 6, Math.round(sy) - im.naturalHeight + 4 - u * 14); x.globalAlpha = 1; }
             if (j) { const u = Math.min(1, Math.max(0, (t - j.start) / (j.end - j.start))); x.fillStyle = 'rgba(38,48,58,.55)'; x.fillRect(Math.round(sx) - 9, Math.round(sy) + 3, 18, 2); x.fillStyle = '#8fd3e0'; x.fillRect(Math.round(sx) - 9, Math.round(sy) + 3, Math.round(18 * u), 2); }
         });
+        // 做完的案子：頭上飄「+$」
+        floats = floats.filter(f => T - f.t0 < 1.8);
+        floats.forEach(f => { const u = (T - f.t0) / 1.8; x.globalAlpha = Math.min(1, (1 - u) * 2.2); x.font = '600 9px sans-serif'; x.textAlign = 'center'; x.lineWidth = 3; x.strokeStyle = 'rgba(255,255,255,.9)'; x.strokeText(f.txt, f.x, f.y - u * 18); x.fillStyle = f.bad ? '#b33a2f' : '#2f7d90'; x.fillText(f.txt, f.x, f.y - u * 18); x.textAlign = 'start'; x.globalAlpha = 1; });
     }
+    // 動畫迴圈：只在辦公室畫面、畫布看得到、分頁在前面的時候跑，每秒約 20 張（手機不會燙）
+    let animOn = false, sceneSeen = true;
+    function animFrame() { if (!S || !S.name || view !== 'office' || document.hidden || !sceneSeen) { animOn = false; return; } drawScene(); setTimeout(() => requestAnimationFrame(animFrame), 45); }
+    function startAnim() { if (animOn) return; animOn = true; requestAnimationFrame(animFrame); }
+    if (window.IntersectionObserver) new IntersectionObserver(es => { sceneSeen = es[0].isIntersecting; if (sceneSeen) startAnim(); }).observe($('cv'));
 
     // ---------- 畫面 ----------
     // ---------- 新手教學（泡泡指著下一步要按的地方） ----------
@@ -775,7 +801,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         $('kRun').textContent = running().length + ' / ' + st().conc;
         $('kAcct').textContent = R.fmt(S.acct);
         $('concLine').textContent = '同時 ' + st().conc + ' 件';
-        renderRun(); drawScene();
+        renderRun(); drawScene(); startAnim();
         const next = R.STAGES[S.stage + 1];
         $('goal').hidden = !next;
         if (next) $('goal').innerHTML = `<div class="gt"><span>下一步・搬到${next.name}</span><span class="r" style="cursor:pointer" id="goMove">公司頁 ›</span></div>
@@ -973,7 +999,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     if (!S || !S.name) { openNote(0); }
     else { tick(); render(); away(); }
     setInterval(() => { if (S && S.name) { tick(); S.lastSeen = Date.now(); save(); } }, 1000);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden && S && S.name) { away(); tick(); } else if (S && S.name) { S.lastSeen = Date.now(); save(); } });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && S && S.name) { away(); tick(); startAnim(); } else if (S && S.name) { S.lastSeen = Date.now(); save(); } });
     window.__company = { get S() { return S; }, tick, render, R, inc() { incAt = 1; }, away };   // 試玩時給測試用
 })();
 </script>

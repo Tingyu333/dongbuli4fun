@@ -39,10 +39,11 @@ function paintOn(cv, id, draw) {
       R(sx - 1, sy - 1, sw + 2, 1, C.cy); R(sx - 1, sy + sh, sw + 2, 1, C.cy); R(sx - 1, sy, 1, sh, C.cy); R(sx + sw, sy, 1, sh, C.cy);   // 發光邊
       checker(sx, sy, sw, sh, C.cy2, C.sky3); for (let j = sy + 1; j < sy + sh; j += 2) R(sx, j, sw, 1, C.cy2);   // 半透明＋掃描線
       R(sx, sy, sw, 1, C.wh); [[2, 2, 7], [2, 4, 9], [2, 6, 5]].forEach(([a, b, ww]) => R(sx + a, sy + b, ww, 1, C.cy0)); } };
-  const monitor = (cx, y) => { const L = Math.round(cx - 7);   // 螢幕：外框、畫面裡一個視窗（標題列＋三行字）、反光、電源燈、支架＋底座
+  const monitor = (cx, y) => { const L = Math.round(cx - 7); FX.mon.push([L + 1, y - 10, 12, 6]);   // 螢幕：外框、畫面裡一個視窗（標題列＋三行字）、反光、電源燈、支架＋底座
     R(L, y - 13, 14, 10, C.ink2); R(L + 1, y - 12, 12, 8, C.cy); R(L + 1, y - 12, 12, 2, C.b1); px(L + 11, y - 12, C.wh);
     R(L + 2, y - 9, 7, 1, C.cy0); R(L + 2, y - 7, 9, 1, C.cy0); R(L + 2, y - 5, 5, 1, C.cy0); px(L + 9, y - 10, C.cy2); px(L + 10, y - 11, C.cy2);
     px(L + 12, y - 4, C.gr2); R(L + 6, y - 3, 2, 2, C.ink3); R(L + 4, y - 1, 6, 1, C.ink3); };
+  const FX = (window.OFX = window.OFX || {})[id] = { mon: [], bulb: [] };   // 會動的地方（頁面拿去做動畫）：螢幕的字、燈泡的光
   const SEATS = (window.SEATS = window.SEATS || {})[id] = [];   // 每個坐墊的位置（介面樣張拿去貼角色）
   const cushion = (cx, y) => { SEATS.push([cx, y]); const L = Math.round(cx - 8), w = 16;   // 公司配發的坐墊：方方鼓鼓、四角小穗、正面一排繡線（跟一般員工那張一致）
     [[2, C.g1], [1, C.g4], [0, C.g4], [0, C.g3], [0, C.g3], [1, C.g2], [2, C.g1]].forEach(([ins, c], j) => R(L + ins, y - 7 + j, w - ins * 2, 1, c));
@@ -69,8 +70,8 @@ function paintOn(cv, id, draw) {
   };
   const halo = (cx, cy, r) => { for (let j = Math.floor(cy - r); j <= cy + r; j++) for (let i = Math.floor(cx - r); i <= cx + r; i++) { const d = Math.hypot(i + .5 - cx, j + .5 - cy); if (d <= r && d > 4 && (i + j) % 2 === 0) px(i, j, C.warm); } };   // 燈泡旁邊一小圈圓圓的光暈
   const cone = () => {};   // 往下打的點點光線不畫了（使用者：燈光的光線很多餘）
-  const newLamp = (lx, top, len) => { R(lx, top, 1, len, C.ink2); el(lx, top + len + 3, 7, 4, C.bk2); R(lx - 7, top + len + 3, 15, 4, C.bk2); R(lx - 6, top + len + 3, 13, 1, C.ink3); R(lx - 5, top + len + 6, 11, 1, C.au2); dither(lx - 5, top + len + 7, 11, 2, C.warm); };   // 新的吊燈：黑色燈罩
-  const lamp = (lx, top, len) => { const by = top + len;   // 車庫那顆舊燈泡（每次搬家都帶走）：電線、纏一圈牛皮紙膠帶（翹一角）、金屬燈座、梨形玻璃燈泡＋燈絲、一小圈光暈
+  const newLamp = (lx, top, len) => { FX.bulb.push([lx, top + len + 7, 0]); R(lx, top, 1, len, C.ink2); el(lx, top + len + 3, 7, 4, C.bk2); R(lx - 7, top + len + 3, 15, 4, C.bk2); R(lx - 6, top + len + 3, 13, 1, C.ink3); R(lx - 5, top + len + 6, 11, 1, C.au2); dither(lx - 5, top + len + 7, 11, 2, C.warm); };   // 新的吊燈：黑色燈罩
+  const lamp = (lx, top, len) => { const by = top + len; FX.bulb.push([lx + .5, by + 8, 1]);   // 車庫那顆舊燈泡（每次搬家都帶走）：電線、纏一圈牛皮紙膠帶（翹一角）、金屬燈座、梨形玻璃燈泡＋燈絲、一小圈光暈
     R(lx, top, 1, len, C.ink2);
     R(lx - 1, by - 9, 3, 3, C.kr); px(lx - 1, by - 9, C.kr0); px(lx + 1, by - 7, C.kr2); px(lx + 2, by - 9, C.kr); px(lx + 3, by - 10, C.kr);   // 膠帶＋翹起的一角
     halo(lx, by + 7, 9);
@@ -351,5 +352,6 @@ const SIZE = [375, 375, 375, 600, 1160];
 return {
   SIZE, H: 190,
   paint(cv, n) { const id = 's' + n; cv.width = SIZE[n - 1]; cv.height = 190; paintOn(cv, id, DRAWS[id]); return (window.SEATS || {})[id] || []; },
+  fx(n) { return (window.OFX || {})['s' + n] || { mon: [], bulb: [] }; },   // 畫過之後才有：螢幕 [x, y, w, h]、燈泡 [x, y, 是不是舊燈泡]
 };
 })();
