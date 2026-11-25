@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="assets/theme.css?v=20261116d">
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/company-office.js?v=20261125a"></script>
-    <script src="assets/company-rules.js?v=20261125b"></script>
+    <script src="assets/company-rules.js?v=20261125c"></script>
     <style>
 /* 毛玻璃介面（跟 docs/plans/company/ui.css 的樣張同一套） */
 body { margin: 0; font-family: "Noto Sans TC", sans-serif; color: #26303a; }
@@ -273,6 +273,12 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
 .lvl.can { background: rgba(143,211,224,.12); }
 .shelf .slot { cursor: pointer; }
 .tutline { position: relative; margin: 8px 12px 0; display: flex; justify-content: center; } .tutline[hidden] { display: none; }
+#coach { position: fixed; z-index: 35; left: 16px; right: 16px; max-width: 360px; margin: 0 auto; padding: 11px 14px 9px; border-radius: 14px; background: #26303a; color: #f2f6f8; font-size: 12.5px; line-height: 1.65; letter-spacing: .06em; box-shadow: 0 10px 28px rgba(38,48,58,.35); pointer-events: auto; }
+#coach[hidden] { display: none; } #coach .ctext b { color: #8fd3e0; font-weight: 500; }
+#coach button { display: block; margin: 4px 0 0 auto; font: inherit; font-size: 10.5px; letter-spacing: .15em; color: #9fb1c0; background: none; border: 0; padding: 2px 0; }
+#coach .carrow { position: absolute; width: 12px; height: 12px; background: #26303a; transform: rotate(45deg); }
+.coachT { position: relative; z-index: 1; box-shadow: 0 0 0 3px #8fd3e0, 0 0 18px rgba(143,211,224,.95) !important; border-radius: 14px; animation: cPulse 1.4s ease-in-out infinite; }
+@keyframes cPulse { 50% { box-shadow: 0 0 0 5px rgba(143,211,224,.55), 0 0 24px rgba(143,211,224,.6); } }
 .np { display: inline-block !important; flex: none; max-width: 100%; box-sizing: border-box; vertical-align: middle; }   /* 使用者 iPhone 上銘牌被擠窄、字跑出框外（爆版）：銘牌不用 inline-flex、也不准被壓縮 */
 .np2::before, .np2::after { display: inline-block; vertical-align: middle; margin: 0 6px 2px 0; } .np2::after { margin: 0 0 2px 6px; }
 .lvl .info { min-width: 0; } .sheet .lvl .top, .lvl .top { display: flex !important; grid-template-columns: none !important; flex-wrap: wrap; row-gap: 4px; }   /* 真正的原因：蓋上來那一層的 .sheet .top 是員工頁頭像用的兩欄格子（76px＋其他），所有辦公室那一層也被套到，銘牌只剩 76px 寬 */ .lvl .np { letter-spacing: .16em; padding-left: 10px; padding-right: 8px; }
@@ -337,6 +343,8 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     </div>
 </div>
 
+<!-- 新手教學：指著要按的地方的泡泡 -->
+<div id="coach" hidden><div class="ctext" id="coachText"></div><button id="coachSkip">略過教學</button><i class="carrow" id="coachArrow"></i></div>
 <!-- 確認視窗（不用瀏覽器的 alert／confirm） -->
 <div class="layer center" id="askLayer" hidden style="z-index:30"><div class="back" id="askBack"></div><div class="sheet glass ask" id="askBox"></div></div>
 <!-- 蓋上來的那一層 -->
@@ -382,7 +390,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     const tagChip = c => c.tag === 'super' ? '<span class="chip gold">特好賺</span>' : c.tag === 'rush' ? '<span class="chip shu">急件</span>' : c.tag === 'big' ? '<span class="chip gold">大案</span>' : c.tag === 'talk' ? '<span class="chip">要先談</span>' : '';
     const segHtml = (n, hi) => '<i class="seg' + (hi ? ' hi' : '') + '">' + [0, 1, 2, 3, 4].map(k => k < n ? '<i class="f"></i>' : '<i></i>').join('') + '</i>';
     const statsHtml = s => '<div class="st">' + R.STATS.map(([, lab], i) => `<span>${lab}${segHtml(s.st[i], s.st[i] >= 5)}</span>`).join('') + '</div>';
-    const toast = m => { document.querySelectorAll('.toast').forEach(e => e.remove()); if (window.showToast) showToast(m); };   // 一次只留一張，不然會疊在一起
+    const toast = m => { document.querySelectorAll('.toast').forEach(e => e.remove()); if (S && S.coach && !$('coach').hidden) return; if (window.showToast) showToast(m); };   // 教學泡泡在的時候不跳提示，不然會疊在一起   // 一次只留一張，不然會疊在一起
     // 確認視窗：ask('標題', '說明', { ok: '確定', warn: true }) → Promise<true/false>
     function ask(title, text = '', opt = {}) {
         return new Promise(res => {
@@ -423,7 +431,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             S = fresh(); S.name = name; S.lastSeen = Date.now();
             const trial = R.newStaff('hamster', false); trial.nick = '小麥'; trial.trial = true; trial.st = [3, 3, 2, 2]; trial.color = 0;
             S.staff.push(trial); addDex(trial);
-            S.board = [R.tutorialCase(now())]; S.nextBoardAt = now() + 60000; S.tut = 1;
+            S.board = [R.tutorialCase(now())]; S.nextBoardAt = now() + 60000; S.tut = 1; S.coach = 1;
             S.applicants = R.applicants(0, []); S.applyAt = now() + R.FREE_REFRESH * 60000;
             save(); hide(); go('board'); toast('送你一位試用期的員工：倉鼠・小麥');
         };
@@ -495,7 +503,8 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             S.series[c.client] = Math.min(5, Math.max(S.series[c.client] || 0, c.seriesNo - 1 + step));
             if (S.series[c.client] >= 5 && !S.gifts.includes(c.client)) { S.gifts.push(c.client); gift = c.client; }
         }
-        if (c.tutorial) { S.tut = 0; const t0 = now(); for (let k = 0; k < 3; k++) addCase(t0); S.nextBoardAt = t0 + R.BOARD_EVERY * 60000; }
+        if (c.tutorial) { S.tut = 0; const t0 = now(); for (let k = 0; k < 3; k++) S.board.push(R.newCase(S.stage, { now: t0, easy: true, client: ['dog', 'apple', 'cat'][k] }));   // 教學完的第一批：沒有條件、短、人少，新手一定接得起來
+ S.nextBoardAt = t0 + R.BOARD_EVERY * 60000; }
         return gift;
     }
     $('collectAll').onclick = () => {
@@ -529,9 +538,9 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
               <div class="ln tot num"><span>入帳公司帳戶</span><span class="v ${r.net < 0 ? 'dn' : ''}">${R.fmt(r.net)}</span></div>
               ${upsHtml(j.ups)}${gift ? giftHtml(gift) : ''}
               ${!r.ok ? `<div class="kv"><span>開工前寫的做得好機率是 ${R.odds(j.p)}</span></div>` : ''}
-              ${c.tutorial ? `<div class="kv" style="display:block;line-height:1.7"><span>名片印好了：${esc(S.name)}・創始執行長。<br>委託那頁會開始貼新的案子，人手不夠就去「員工」看應徵的人。</span></div>` : ''}</div>
+              ${c.tutorial ? `<div class="kv" style="display:block;line-height:1.8"><span>名片印好了：${esc(S.name)}・創始執行長。<br>案子的錢先扣掉員工薪水（三成），剩下的進<b>公司帳戶</b>；搬家只能用公司帳戶付。<br>你自己的<b>錢包</b>用來付簽約金、訓練、設備這些。</span></div>` : ''}</div>
               <div class="cta"><button class="main" id="xOk" style="flex:1">收下</button></div>`, { center: true });
-        $('xOk').onclick = () => { hide(); if (c.tutorial) go('staff'); };
+        $('xOk').onclick = () => { hide(); if (c.tutorial) { if (S.coach) S.coach = 6; save(); go('staff'); } };
     }
 
     // ---------- 派人 ----------
@@ -566,6 +575,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             if (c.tutorial) { j.ok = true; j.great = false; j.napped = false; j.tip = false; j.end = now() + 30000; }
             team.forEach(s => s.job = j.id);
             S.jobs.push(j); S.board = S.board.filter(x => x !== c); S.last = { ppl: c.ppl, ids: team.map(s => s.id) };
+            if (S.coach && S.coach <= 3) S.coach = 4; else if (S.coach === 8) S.coach = 9;
             save(); hide(); go('office'); toast('開工了');
         };
     }
@@ -634,11 +644,12 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             if (S.staff.length >= st().seats) return toast('位子坐滿了');
             if (!payWallet(fee)) return;
             S.applicants.splice(+b.dataset.k, 1); s.id = 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1e4); S.staff.push(s); if (s.special) S.hiredSp.push(s.key); addDex(s);
-            save(); render(); openApply(); toast(R.staffName(s) + '來上班了');
+            if (S.coach === 6 || S.coach === 7) S.coach = 8;
+            save(); render(); if (S.coach === 8) hide(); else openApply(); toast(R.staffName(s) + '來上班了');
         });
         $('aRef').onclick = () => { if (!payWallet(st().refresh)) return; S.applicants = R.applicants(S.stage, S.hiredSp); save(); openApply(); };   // 付錢換不動免費換的時間（使用者：換一批不會刷新免費更換時間）
     }
-    $('openApply').onclick = openApply;
+    $('openApply').onclick = () => { if (S.coach === 6) S.coach = 7; openApply(); };
 
     // ---------- 畫辦公室 ----------
     let baseCv = null, baseStage = -1, seats = [];
@@ -662,6 +673,43 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     }
 
     // ---------- 畫面 ----------
+    // ---------- 新手教學（泡泡指著下一步要按的地方） ----------
+    // S.coach：1 點雞塊的委託 → 2 選小麥 → 3 開工 → 4 等它做完 → 5 點做完那一行收款 → 6 去招募 → 7 聘一位 → 8 去委託接下一件 → 9 說搬家怎麼搬 → 0 結束
+    function coachStep() {
+        const k = S && S.name ? S.coach || 0 : 0, layer = !$('layer').hidden, sheet = $('sheet');
+        if (!k || !$('askLayer').hidden) return null;
+        const inDispatch = layer && sheet.querySelector('#dGo'), inApply = layer && sheet.querySelector('#aRef');
+        if (k === 1 && !layer) return view === 'board' ? ['.card.tutc', '雞塊來委託了！<b>點這張</b>看看要做什麼。'] : ['[data-v=board]', '先到<b>委託</b>看看有什麼案子。'];
+        if (k <= 3 && inDispatch) return pickSel.length ? ['#dGo', '小麥選好了，按<b>開工</b>。'] : ['#sheet .staff', '這件只要 1 個人。<b>點小麥</b>，派她去。'];
+        if (k === 4 && !layer && view === 'office') { const j = S.jobs.find(x => x.c.tutorial); if (j && j.fin) { S.coach = 5; return coachStep(); } return ['#runList .row', '小麥開始做了，那條是進度。<b>30 秒</b>後做完。（等的時候員工會坐在上面的位子上）']; }
+        if (k === 5 && !layer) return view === 'office' ? ['#runList .row.done', '做完了！<b>點這一行</b>看結案單，把錢收進公司帳戶。'] : ['[data-v=office]', '小麥做完了，回<b>辦公室</b>收款。'];
+        if (k === 6 && !layer) return view === 'staff' ? ['#openApply', '一個人接不了大案子。按這裡<b>招募新員工</b>，簽約金從你的錢包付。'] : ['[data-v=staff]', '去<b>員工</b>請人。'];
+        if (k === 7 && inApply) return ['#sheet .ft button:not([disabled])', '挑一位<b>聘用</b>。金框的是特別人選，比較厲害也比較貴；能力條越長越好。'];
+        if (k === 7 && !layer) return view === 'staff' ? ['#openApply', '按這裡<b>招募新員工</b>。'] : ['[data-v=staff]', '去<b>員工</b>請人。'];
+        if (k === 8 && !layer) return view === 'board' ? ['#cards .card', '委託板會一直貼新案子。<b>點一張</b>，再按「幫我派」就會自動挑人。'] : ['[data-v=board]', '人手有了，去<b>委託</b>接下一件。'];
+        if (k === 8 && inDispatch) return ['#dAuto', '按<b>幫我派</b>自動挑合適的人，再按開工。條件不合的話做得好的機率會掉。'];
+        if (k === 9 && !layer) return view === 'office' ? ['#goal', '最後：做滿 10 件、公司帳戶有 $45,000，就能<b>搬到小辦公室</b>，位子和同時能做的件數都會變多。教學到這裡，祝生意興隆！'] : ['[data-v=office]', '回<b>辦公室</b>看看。'];
+        return null;
+    }
+    let coachTarget = null;
+    function updateCoach() {
+        const c = coachStep(), box = $('coach');
+        if (coachTarget) { coachTarget.classList.remove('coachT'); coachTarget = null; }
+        if (!c) { box.hidden = true; return; }
+        const el = document.querySelector(c[0]);
+        if (!el) { box.hidden = true; return; }
+        coachTarget = el; el.classList.add('coachT');
+        if (S.coach !== box.dataset.step || c[1] !== box.dataset.text) { $('coachText').innerHTML = c[1]; box.dataset.text = c[1]; box.dataset.step = S.coach; $('coachSkip').textContent = S.coach === 9 ? '知道了' : '略過教學'; }
+        box.hidden = false;
+        const r = el.getBoundingClientRect(), bh = box.offsetHeight, below = r.bottom + bh + 18 < innerHeight - 90 || r.top < bh + 30;
+        if (r.bottom < 0 || r.top > innerHeight) el.scrollIntoView({ block: 'center' });
+        box.style.top = (below ? r.bottom + 12 : r.top - bh - 12) + 'px';
+        const a = $('coachArrow'), bx = box.getBoundingClientRect(); a.style.left = Math.max(14, Math.min(bx.width - 26, r.left + r.width / 2 - bx.left - 6)) + 'px';
+        a.style.top = below ? '-6px' : ''; a.style.bottom = below ? '' : '-6px';
+    }
+    $('coachSkip').onclick = () => { S.coach = 0; save(); updateCoach(); };
+    setInterval(() => { if (S && S.name) updateCoach(); }, 300);
+    window.addEventListener('scroll', () => { if (S && S.coach) updateCoach(); }, { passive: true });
     function render() {
         if (!S || !S.name) return;
         $('money').textContent = R.fmt(S.acct);
@@ -712,7 +760,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         const adOn = S.adUntil > now();
         $('adBtn').textContent = adOn ? '廣告中・' + R.clock((S.adUntil - now()) / 1000) : '打廣告 ' + R.fmt(st().ad);
         $('adBtn').onclick = async () => { if (S.adUntil > now()) return toast('廣告還在播'); if (!await ask('打廣告一小時？', '用錢包付 ' + R.fmt(st().ad) + '。這一小時委託板多一張，特好賺的案子比較常出現。', { ok: '打廣告' })) return; if (!payWallet(st().ad)) return; S.adUntil = now() + 3600000; S.nextBoardAt = Math.min(S.nextBoardAt, now()); save(); tick(); render(); };
-        $('tutHint').hidden = !S.tut;
+        $('tutHint').hidden = true;
         const t = now();
         $('cards').innerHTML = S.board.map((c, k) => {
             const cl = R.CLIENTS[c.client];

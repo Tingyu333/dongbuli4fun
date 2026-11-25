@@ -126,11 +126,11 @@ window.CompanyRules = (() => {
   function newCase(stage, opt = {}, r = Math.random) {
     const S = STAGES[stage], now = opt.now || Date.now();
     const durs = DURS.filter(d => d.m <= S.maxDur);
-    let d = opt.m ? DURS.find(x => x.m === opt.m) : (r() < .45 ? durs[Math.floor(r() * 2)] : pick(durs, r));
+    let d = opt.m ? DURS.find(x => x.m === opt.m) : opt.easy ? DURS[Math.floor(r() * 2)] : (r() < .45 ? durs[Math.floor(r() * 2)] : pick(durs, r));   // easy：教學完第一批，3 或 12 分鐘
     const clients = Object.keys(CLIENTS).filter(k => (CLIENTS[k].minStage || 0) <= stage);
     let client = opt.client || pick(clients, r), title, seriesNo = 0;
     const sv = opt.series || {};
-    if (opt.client === undefined && r() < .3) {   // 三成是委託人的系列（做完前一件才會來下一件）
+    if (opt.client === undefined && !opt.easy && r() < .3) {   // 三成是委託人的系列（做完前一件才會來下一件）
       const can = clients.filter(k => (sv[k] || 0) < 5 && !(opt.onBoard || []).includes(k));
       if (can.length) { client = pick(can, r); seriesNo = (sv[client] || 0) + 1; }
     }
@@ -138,15 +138,16 @@ window.CompanyRules = (() => {
     title = seriesNo ? C.jobs[seriesNo - 1] : (opt.title || pick(C.other, r));
     let tag = '', mult = 1;
     if (seriesNo === 5) { tag = 'big'; mult = 1.5; if (d.m < 60) d = DURS[2]; }
-    else if (opt.super || (!seriesNo && r() < .05 && !opt.noSuper)) { tag = 'super'; mult = 3; }
-    else if (r() < .2) { tag = pick(['rush', 'big', 'talk'], r); mult = 1.5; }
+    else if (opt.super || (!seriesNo && !opt.easy && r() < .05 && !opt.noSuper)) { tag = 'super'; mult = 3; }
+    else if (!opt.easy && r() < .2) { tag = pick(['rush', 'big', 'talk'], r); mult = 1.5; }
     const maxP = Math.min(S.seats, 4);
     let ppl = d.m <= 3 ? 1 : d.m <= 12 ? 1 + Math.floor(r() * 2) : d.m <= 60 ? 2 : d.m <= 240 ? 2 + Math.floor(r() * 2) : 3 + Math.floor(r() * 2);
     if (tag === 'big') ppl++;
+    if (opt.easy) ppl = Math.min(ppl, 2);
     ppl = Math.max(1, Math.min(maxP, ppl));
     const req = [];   // 條件：某項能力 ≥ n
     if (tag === 'talk') req.push([3, 5]);
-    if (d.m > 3 && r() < .65) { const i = Math.floor(r() * 3); if (!req.some(q => q[0] === i)) req.push([i, 3 + Math.floor(r() * Math.min(3, 1 + stage + (tag ? 1 : 0)))]); }
+    if (d.m > 3 && !opt.easy && r() < .65) { const i = Math.floor(r() * 3); if (!req.some(q => q[0] === i)) req.push([i, 3 + Math.floor(r() * Math.min(3, 1 + stage + (tag ? 1 : 0)))]); }
     const net = S.base * d.k * d.m * ppl * mult, gross = Math.round(net / (1 - SALARY));
     return { id: 'c' + now.toString(36) + (seq++), client, title, seriesNo, m: d.m, ppl, req, tag, gross, posted: now,
       expires: tag === 'super' ? now + SUPER_LIFE * 60000 : tag === 'rush' ? now + 120 * 60000 : now + 240 * 60000 };
