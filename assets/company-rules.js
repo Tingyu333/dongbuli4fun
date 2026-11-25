@@ -97,7 +97,7 @@ window.CompanyRules = (() => {
   const fmt = n => (n < 0 ? '−$' : '$') + Math.abs(Math.round(n)).toLocaleString('en-US');
   const dur = m => m < 60 ? m + ' 分鐘' : (m % 60 ? (m / 60).toFixed(1) : m / 60) + ' 小時';
   const clock = s => { s = Math.max(0, Math.ceil(s)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), ss = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(ss).padStart(2, '0'); };
-  const odds = p => p >= 1 ? '一定成功' : p >= .95 ? '幾乎一定' : p >= .1 ? ['', '一成', '兩成', '三成', '四成', '五成', '六成', '七成', '八成', '九成'][Math.floor(p * 10)] : '不到一成';
+  const odds = p => p >= .95 ?   /* 使用者 2026-11-25：「一定成功」不要寫出來，新手保護的案子也只寫「幾乎一定」 */ '幾乎一定' : p >= .1 ? ['', '一成', '兩成', '三成', '四成', '五成', '六成', '七成', '八成', '九成'][Math.floor(p * 10)] : '不到一成';
 
   // ---------- 員工 ----------
   const staffName = s => s.special ? SPECIALS[s.key].name : SPECIES[s.key].sp + '・' + s.nick;

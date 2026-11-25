@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="assets/theme.css?v=20261116d">
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/company-office.js?v=20261125b"></script>
-    <script src="assets/company-rules.js?v=20261125h"></script>
+    <script src="assets/company-rules.js?v=20261125i"></script>
     <style>
 /* 毛玻璃介面（跟 docs/plans/company/ui.css 的樣張同一套） */
 body { margin: 0; font-family: "Noto Sans TC", sans-serif; color: #26303a; }
@@ -326,7 +326,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         <!-- 二　委託 -->
         <section class="view" id="v-board" hidden>
             <div class="sub"><span class="dot"></span><span class="num" id="boardNext"></span><span class="num" id="boardConc"></span><span class="r chip gold num" id="adBtn" style="cursor:pointer"></span></div>
-            <div class="tutline" id="tutHint" hidden><div class="tut">點這張，派小麥去做。3 秒，這次一定成功</div></div>
+            <div class="tutline" id="tutHint" hidden><div class="tut">點這張，派小麥去做。3 秒</div></div>
             <div class="cards" id="cards"></div>
             <div class="kv" style="justify-content:center;margin:14px 0 4px"><span id="openHelp" style="color:#2f7d90;letter-spacing:.15em;cursor:pointer;padding:6px">標籤看不懂？ ›</span></div>
         </section>
@@ -840,7 +840,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             const cl = R.CLIENTS[c.client];
             return `<div class="card glass${c.tag === 'big' ? ' big' : ''}${c.tutorial ? ' tutc' : ''}${c.easy ? ' easyc' : ''}${no ? ' cant' : ''}" data-k="${k}">${jobHtml(c)}<div><h3>〈${esc(c.title)}〉</h3><div class="who">${esc(cl.who)}・${c.tutorial ? '3 秒' : R.dur(c.m)}</div></div>
                 <div class="pay num">${R.fmt(c.gross)}<small>${c.seriesNo ? '系列 ' + c.seriesNo + ' / 5' : c.tag === 'super' || c.tag === 'rush' || c.expires - t < 3600000 ? R.clock((c.expires - t) / 1000) + ' 後撤' : ''}</small></div>
-                <div class="req"><span class="chip mute">${c.ppl} 人</span>${c.req.map(q => `<span class="chip">${reqText(q)}</span>`).join('')}${c.tutorial || c.easy ? '<span class="chip">' + (c.easy ? '新手・' : '') + '一定成功</span>' : ''}${tagChip(c)}${c.seriesNo === 5 ? '<span class="chip gold">做完送紀念品</span>' : ''}</div>${no ? `<div class="cantw">${esc(no)}</div>` : ''}</div>`;
+                <div class="req"><span class="chip mute">${c.ppl} 人</span>${c.req.map(q => `<span class="chip">${reqText(q)}</span>`).join('')}${c.easy ? '<span class="chip">新手</span>' : ''}${tagChip(c)}${c.seriesNo === 5 ? '<span class="chip gold">做完送紀念品</span>' : ''}</div>${no ? `<div class="cantw">${esc(no)}</div>` : ''}</div>`;
         }).join('') || '<div class="empty glass">委託板空了・新案子等一下就來</div>';
         document.querySelectorAll('#cards .card').forEach(e => e.onclick = () => openDispatch(S.board[+e.dataset.k]));
     }
