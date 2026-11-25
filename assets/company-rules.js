@@ -97,7 +97,7 @@ window.CompanyRules = (() => {
   const fmt = n => (n < 0 ? '−$' : '$') + Math.abs(Math.round(n)).toLocaleString('en-US');
   const dur = m => m < 60 ? m + ' 分鐘' : (m % 60 ? (m / 60).toFixed(1) : m / 60) + ' 小時';
   const clock = s => { s = Math.max(0, Math.ceil(s)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), ss = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(ss).padStart(2, '0'); };
-  const odds = p => p >= .95 ? '幾乎一定' : p >= .1 ? ['', '一成', '兩成', '三成', '四成', '五成', '六成', '七成', '八成', '九成'][Math.floor(p * 10)] : '不到一成';
+  const odds = p => p >= 1 ? '一定成功' : p >= .95 ? '幾乎一定' : p >= .1 ? ['', '一成', '兩成', '三成', '四成', '五成', '六成', '七成', '八成', '九成'][Math.floor(p * 10)] : '不到一成';
 
   // ---------- 員工 ----------
   const staffName = s => s.special ? SPECIALS[s.key].name : SPECIES[s.key].sp + '・' + s.nick;
@@ -111,8 +111,8 @@ window.CompanyRules = (() => {
     return { id: 'p' + Date.now().toString(36) + Math.floor(r() * 1e4), key, special: false, nick: pick(s.names, r), say: pick(s.say, r), lv: 1, exp: 0, st, done: 0, failed: 0, color: Math.floor(r() * 4) };
   }
   // 應徵三位：每格 5% 是還沒請過的特殊角色
-  function applicants(stage, hiredSpecials, r = Math.random) {
-    const out = [], left = Object.keys(SPECIALS).filter(k => !hiredSpecials.includes(k));
+  function applicants(stage, hiredSpecials, r = Math.random, noSpecial = false) {   // noSpecial：教學那一批只有一般員工，簽約金一定付得起
+    const out = [], left = noSpecial ? [] : Object.keys(SPECIALS).filter(k => !hiredSpecials.includes(k));
     for (let i = 0; i < 3; i++) {
       if (left.length && r() < .05) { const k = left.splice(Math.floor(r() * left.length), 1)[0]; out.push(newStaff(k, true, r)); }
       else out.push(newStaff(pick(Object.keys(SPECIES), r), false, r));
@@ -149,7 +149,7 @@ window.CompanyRules = (() => {
     if (tag === 'talk') req.push([3, 5]);
     if (d.m > 3 && !opt.easy && r() < .65) { const i = Math.floor(r() * 3); if (!req.some(q => q[0] === i)) req.push([i, 3 + Math.floor(r() * Math.min(3, 1 + stage + (tag ? 1 : 0)))]); }
     const net = S.base * d.k * d.m * ppl * mult, gross = Math.round(net / (1 - SALARY));
-    return { id: 'c' + now.toString(36) + (seq++), client, title, seriesNo, m: d.m, ppl, req, tag, gross, posted: now,
+    return { id: 'c' + now.toString(36) + (seq++), client, title, seriesNo, m: d.m, ppl, req, tag, gross, posted: now, easy: !!opt.easy,
       expires: tag === 'super' ? now + SUPER_LIFE * 60000 : tag === 'rush' ? now + 120 * 60000 : now + 240 * 60000 };
   }
   // 教學案：雞塊、10 秒、一定成功
@@ -159,11 +159,11 @@ window.CompanyRules = (() => {
   function plan(c, team, ctx = {}) {
     const best = i => Math.max(0, ...team.map(s => s.st[i]));
     const short = c.req.map(([i, n]) => Math.max(0, n - best(i)));
-    let p = c.tutorial ? 1 : .92 - .18 * short.reduce((a, b) => a + b, 0);
+    let p = c.tutorial || c.easy ? 1 : .92 - .18 * short.reduce((a, b) => a + b, 0);   // easy：教學完第一批，新手保護、一定成功
     p += team.reduce((a, s) => a + (s.lv - 1) * .01, 0) / Math.max(1, team.length);
     if (team.some(s => s.special && s.key === 'julie')) p += .15;
     if (team.some(s => s.special && s.key === 'dog')) p = 1 - (1 - p) * .9;
-    p = c.tutorial ? 1 : Math.max(.1, Math.min(.98, p));
+    p = c.tutorial || c.easy ? 1 : Math.max(.1, Math.min(.98, p));
     let m = c.m;
     const spd = team.reduce((a, s) => a + s.st[0], 0) / Math.max(1, team.length);
     m *= 1.1 - .04 * spd;
