@@ -273,6 +273,9 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
 .lvl.can { background: rgba(143,211,224,.12); }
 .shelf .slot { cursor: pointer; }
 .tutline { position: relative; margin: 8px 12px 0; display: flex; justify-content: center; } .tutline[hidden] { display: none; }
+.ava img { max-width: calc(100% - 4px); max-height: calc(100% - 4px); }   /* 使用者：角色被切掉了——整隻縮進框裡 */
+.ser { grid-template-columns: 40px 1fr; } .ava.gift2 { background: linear-gradient(#f4ead9, #e8d6b0); box-shadow: inset 0 -2px 0 #c9ad7c, inset 0 1px 0 #fff; } .ava.gift2.off { background: linear-gradient(#eef2f4, #dfe5e9); box-shadow: inset 0 -2px 0 #c2d0da, inset 0 1px 0 #fff; }
+.ava.gift2 canvas { position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; margin: -12px 0 0 -12px; image-rendering: pixelated; }
 .ava.job canvas { position: absolute; left: 50%; top: 50%; width: 32px; height: 32px; margin: -16px 0 0 -16px; image-rendering: pixelated; }
 .rc h2 .ava.job canvas { width: 32px; height: 32px; }
 .k-card { background: linear-gradient(#e9f7f4, #cfeae4) !important; } .k-poster { background: linear-gradient(#fdf3e2, #f3e0bd) !important; } .k-web { background: linear-gradient(#e8f0fb, #cddcf2) !important; }
@@ -750,7 +753,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             const ks = Object.keys(R.CLIENTS);
             B.innerHTML = `<div class="shelf glass"><div class="ttl"><span>紀念品櫃</span><span class="num">${S.gifts.length} / ${ks.length}${S.gifts.length >= ks.length ? '・全城的老客戶' : '・收齊有稱號'}</span></div><div class="grid">${ks.map(k => `<div class="slot${S.gifts.includes(k) ? '' : ' off'}" data-k="${k}"><canvas width="12" height="12" data-ic="${k}"${S.gifts.includes(k) ? '' : ' data-off="1"'}></canvas></div>`).join('')}</div></div>
                 <div class="panel glass" style="padding:2px 0">${ks.map(k => { const C = R.CLIENTS[k], n = S.series[k] || 0, lock = (C.minStage || 0) > S.stage;
-                    return `<div class="ser">${avaHtml(k)}<div><div class="nm">${esc(C.who)}・${esc(C.series)}</div><div class="pips">${[0, 1, 2, 3, 4].map(i => `<i class="${i < n ? 'f' : ''}${i === 4 ? ' big' : ''}"></i>`).join('')}</div><div class="nx">${n >= 5 ? '做完了・之後的案子多拿 5%' : lock ? '搬到' + R.STAGES[C.minStage].name + '才會來' : '下一件：〈' + esc(C.jobs[n]) + '〉'}</div></div><div class="gift"><canvas width="12" height="12" data-ic="${k}"${n >= 5 ? '' : ' data-off="1"'}></canvas></div></div>`; }).join('')}</div>`;
+                    return `<div class="ser"><div class="ava gift2${n >= 5 ? '' : ' off'}"><canvas width="12" height="12" data-ic="${k}"${n >= 5 ? '' : ' data-off="1"'}></canvas></div><div><div class="nm">${esc(C.who)}・${esc(C.series)}</div><div class="pips">${[0, 1, 2, 3, 4].map(i => `<i class="${i < n ? 'f' : ''}${i === 4 ? ' big' : ''}"></i>`).join('')}</div><div class="nx">${n >= 5 ? '做完了・之後的案子多拿 5%' : lock ? '搬到' + R.STAGES[C.minStage].name + '才會來' : '下一件：〈' + esc(C.jobs[n]) + '〉'}</div></div></div>`; }).join('')}</div>`;
             drawIcons();
             document.querySelectorAll('.shelf .slot').forEach(e => e.onclick = () => { const C = R.CLIENTS[e.dataset.k]; toast(S.gifts.includes(e.dataset.k) ? C.gift + '（' + C.who + '送的）' : '做完' + C.who + '的五件系列才拿得到'); });
         } else if (seg === 'equip') {
