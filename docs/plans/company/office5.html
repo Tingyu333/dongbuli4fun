@@ -5,18 +5,18 @@ body { margin: 0; background: #e4e2dd; font-family: "Noto Sans TC", sans-serif; 
 .wrap { display: inline-block; padding: 22px 26px 26px; background: #f2f6f8; }
 h1 { font-size: 17px; font-weight: 500; letter-spacing: .15em; margin: 0 0 4px; } p { font-size: 13px; margin: 0 0 14px; color: #56677a; }
 .grid { display: grid; grid-template-columns: repeat(2, 750px); gap: 18px 22px; }
-.cell h2 { font-size: 14px; font-weight: 500; letter-spacing: .2em; margin: 0 0 6px; } .wide { grid-column: span 2; } .scroll { position: relative; width: 1494px; } .scroll canvas { width: 1494px; height: 342px; } .view { position: absolute; left: 0; top: 0; width: 675px; height: 342px; border: 3px solid #4fa9bf; border-radius: 12px; box-sizing: border-box; pointer-events: none; } .view span { position: absolute; right: 8px; top: 8px; background: rgba(28,34,41,.7); color: #fff; font-size: 12px; padding: 3px 8px; border-radius: 6px; letter-spacing: .1em; }
+.cell h2 { font-size: 14px; font-weight: 500; letter-spacing: .2em; margin: 0 0 6px; } .wide { grid-column: span 2; } .scroll { position: relative; width: 1494px; } .scroll canvas { width: 1494px; height: 296px; } .view { position: absolute; left: 0; top: 0; width: 584px; height: 296px; border: 3px solid #4fa9bf; border-radius: 12px; box-sizing: border-box; pointer-events: none; } .view span { position: absolute; right: 8px; top: 8px; background: rgba(28,34,41,.7); color: #fff; font-size: 12px; padding: 3px 8px; border-radius: 6px; letter-spacing: .1em; }
 .cell h2 small { font-size: 12px; color: #56677a; letter-spacing: .05em; margin-left: 8px; }
 canvas { image-rendering: pixelated; width: 750px; height: 380px; display: block; border-radius: 12px; }
 </style></head><body><div class="wrap">
 <h1>五間辦公室（戊・現代像素）</h1>
-<p>每升一階換一間，座位跟著人數上限（3／5／8／12／20），門口的銘牌也一路升級。車庫的吊燈每次搬家都帶著走。第二版照妹妹的意見：後面三間加木頭、暖燈、地毯，每間補一兩樣生活小東西。</p>
+<p>每升一階換一間，座位跟著人數上限（3／5／8／12／20），門口的銘牌也一路升級。車庫的吊燈每次搬家都帶著走。第四版照室內設計師的意見：每間有門、桌子兩三張一組、窗外跟著樓層變、天花板一階一階升級，舊燈泡永遠掛在元老座位正上方。</p>
 <div class="grid">
   <div class="cell"><h2>一　車庫創業<small>3 人・紙名片</small></h2><canvas id="s1" width="375" height="190"></canvas></div>
   <div class="cell"><h2>二　小辦公室<small>5 人・木牌</small></h2><canvas id="s2" width="375" height="190"></canvas></div>
   <div class="cell"><h2>三　整層樓<small>8 人・拉絲銀牌</small></h2><canvas id="s3" width="375" height="190"></canvas></div>
   <div class="cell"><h2>四　二十七樓整層<small>12 人・黑底金字</small></h2><canvas id="s4" width="375" height="190"></canvas></div>
-  <div class="cell wide"><h2>五　自己的大樓<small>20 人・黑漆金框・太寬了，手機上左右滑</small></h2><div class="scroll"><canvas id="s5" width="830" height="190"></canvas><div class="view"><span>手機一次看到這麼多　左右滑</span></div></div></div>
+  <div class="cell wide"><h2>五　自己的大樓<small>20 人・黑漆金框・太寬了，手機上左右滑</small></h2><div class="scroll"><canvas id="s5" width="960" height="190"></canvas><div class="view"><span>手機一次看到這麼多　左右滑</span></div></div></div>
 </div>
 </div>
 <script>
@@ -63,122 +63,178 @@ function stage(id, draw) {
     cone(lx, top + len + 9, 61); };
   const txt = (str, a, b, size, col, rot = 0) => { x.save(); x.translate(a, b); x.rotate(rot); x.fillStyle = col; x.font = `${size}px "Noto Sans TC", sans-serif`; x.textBaseline = 'top'; x.fillText(str, 0, 0); x.restore(); };
   const rug = (a, b, w, h, c1, c2) => { R(a, b, w, h, c1); R(a + 2, b + 2, w - 4, 1, c2); R(a + 2, b + h - 3, w - 4, 1, c2); };
-  draw({ R, px, el, checker, dither, glyph, city, glassDesk, monitor, cushion, plant, sign, lamp, newLamp, txt, rug, W });
+  draw({ R, px, el, checker, dither, glyph, city, glassDesk, monitor, cushion, plant, sign, lamp, newLamp, txt, rug, W, x, cone });
 }
 
-// ===== 一　車庫創業：半開的鐵捲門、水泥地、一張折疊桌三個坐墊、吊燈泡、紙箱、延長線 =====
-stage('s1', ({ R, px, el, checker, dither, glyph, city, glassDesk, monitor, cushion, plant, sign, lamp, newLamp, txt, rug, W }) => {
+// 第四版（2026-11-25，室內設計師）：每間左邊有門、銘牌掛在門邊牆上；桌子兩三張一組、中間留走道；窗外跟著樓層變；
+// 天花板一階一階不一樣（車庫裸露低樑 → 輕鋼架 → 管線外露漆白 → 木格柵＋線型燈 → 大廳挑高）；舊燈泡永遠掛在元老座位正上方。
+const C2 = { ap: '#d9cdb8', ap2: '#c4b69c', grill: '#5d6670', tarp: '#5f7f9a', tarp2: '#4a6880', tire: '#2c3038', stone: '#30343b', stone2: '#3a3f47', brass: '#c9a35a', brass2: '#9c7a38' };
+const kit = K => { const { R, px, el, checker, dither, glyph, cushion, glassDesk, monitor, x, W } = K;
+  return {
+    door: (a, top, bot, style) => { const w = 22;   // 門：框＋門板＋把手
+      const fr = style === 1 ? C.g1 : style === 2 ? C.wd0 : style === 3 ? C.g1 : style === 4 ? C.bk : C2.brass2, pn = style === 1 ? C.g3 : style === 2 ? C.wd : style === 3 ? C.cy2 : style === 4 ? C.wd2 : C.cy2;
+      R(a - 2, top - 2, w + 4, bot - top + 2, fr); R(a, top, w, bot - top, pn);
+      if (style === 3 || style === 5) { dither(a + 1, top + 1, w - 2, bot - top - 2, C.wh); R(a + w / 2, top, 1, bot - top, fr); } else if (style === 4) { R(a + 2, top + 3, w - 4, 1, C.wd); for (let j = top + 6; j < bot - 3; j += 8) R(a + 3, j, w - 6, 1, C.wd0); } else { R(a + 2, top + 3, w - 4, 1, C.g4); R(a + 2, top + 3, 1, bot - top - 6, C.g4); }
+      R(a + w - 5, top + (bot - top) / 2, 2, 5, style === 5 ? C.au1 : C.ink3); },
+    // 一組桌子：n 張靠在一起，第一個 k 是元老位（回傳每張的中心）
+    cluster: (a, y, n, w, opt = {}) => { const xs = []; for (let k = 0; k < n; k++) { const cx = a + w / 2 + k * w; glassDesk(cx, y, w - 1, opt.holo && (k % 2 === 0)); if (!opt.holo && (k % 2 === 1 || n === 1)) monitor(cx + w / 4, y); if (opt.holo && k % 2) monitor(cx + w / 4, y); cushion(cx - w / 5, y); xs.push(cx - w / 5); } return xs; },
+    // 四角壓暗：一圈一圈階梯式（像素感）
+    vignette: (cx, cy, r1, r2, k = .72) => { const im = x.getImageData(0, 0, W, 190), d = im.data;
+      for (let j = 0; j < 190; j++) for (let i = 0; i < W; i++) { const dd = Math.hypot((i - cx) / 1.6, j - cy), t = (dd - r1) / (r2 - r1), f = t <= 0 ? 1 : t < .33 ? .94 : t < .66 ? .87 : t < 1 ? .8 : k; if (f < 1) { const o = (j * W + i) * 4; d[o] *= f; d[o + 1] *= f; d[o + 2] *= f; } }
+      x.putImageData(im, 0, 0); },
+    lowPlant: (a, b, w) => { R(a, b - 6, w, 6, C.wd2); R(a, b - 6, w, 1, C.kr); for (let i = 0; i < w; i += 4) { el(a + i + 2, b - 8, 3, 3, i % 8 ? C.gr1 : C.gr0); el(a + i + 1, b - 9, 1.4, 1, C.gr2); } },   // 矮盆栽隔間
+  }; };
+
+// ===== 一　車庫創業：裸露的低樑、半開鐵捲門、側門＋紙名片、一顆燈泡照元老位、四角壓暗、右邊停一台蓋帆布的機車 =====
+stage('s1', K => { const { R, px, el, checker, dither, city, cushion, sign, txt, cone, W } = K, Q = kit(K);
   R(0, 0, W, H, C.cn3);
-  for (let j = 8; j < 118; j += 6) { R(40, j, 210, 1, C.g2); R(40, j + 1, 210, 1, C.g4); }   // 鐵捲門的橫條
-  R(36, 4, 218, 4, C.g1); R(36, 4, 4, 114, C.g1); R(250, 4, 4, 114, C.g1); R(40, 8, 210, 2, C.ink3);
-  city(40, 100, 210, 18, 7); R(40, 98, 210, 2, C.ink3); R(40, 100, 210, 1, C.g1);   // 門沒拉到底，底下看得到外面
-  R(0, 118, W, 72, C.cn); for (let i = 0; i < W; i += 23) R(i, 118, 1, 72, C.cn2); R(0, 118, W, 1, C.cn2); R(0, 140, W, 1, C.cn2);   // 水泥地
-  el(300, 168, 20, 4, C.cn2); el(296, 167, 12, 2, '#a9adae');   // 地上的油漬
-  // 右邊牆：工具板、紙名片
-  R(262, 18, 104, 70, C.kr); R(262, 18, 104, 1, C.kr2); for (let j = 24; j < 86; j += 6) for (let i = 266; i < 364; i += 6) px(i, j, C.kr2);
-  R(276, 30, 2, 20, C.ink3); R(271, 30, 12, 3, C.ink3); el(300, 40, 6, 6, C.g1); el(300, 40, 3, 3, C.kr); R(320, 28, 3, 24, C.red); R(318, 28, 7, 4, C.g2); R(340, 34, 14, 4, C.o2);
-  sign(300, 60, 1);
-  // 吊燈泡
-  R(150, 0, 1, 34, C.ink2); el(150, 38, 4, 5, C.au2); el(150, 37, 2, 2, C.wh); R(148, 32, 5, 3, C.g1); R(149, 26, 3, 4, C.kr); px(152, 28, C.kr2); px(153, 29, C.kr); for (let j = 44; j < 148; j++) { const half = 3 + (j - 44) * .45, step = j < 80 ? 2 : j < 115 ? 3 : 4; for (let i = Math.round(150 - half); i <= 150 + half; i++) if ((i + j) % step === 0 && (j % 2 === 0)) px(i, j, C.warm); }   // 燈泡往下的光，越下面越淡
-  R(58, 52, 50, 34, C.wh); R(58, 52, 50, 1, C.g3); R(58, 85, 50, 1, C.g2); R(57, 52, 1, 34, C.g1); R(108, 52, 1, 34, C.g1); R(66, 86, 2, 30, C.g1); R(98, 86, 2, 30, C.g1);   // 白板
-  txt('目標：', 61, 55, 9, C.b1, -.05); txt('搬家！', 66, 67, 11, C.red, -.08); R(62, 81, 30, 1, C.b1);
-  // 紙箱
-  [[14, 150, 30, 22], [20, 130, 22, 20], [52, 160, 20, 12]].forEach(([a, b, w, h]) => { R(a, b, w, h, C.kr); R(a, b, w, 2, C.kr2); R(a + w / 2 - 2, b, 4, h, C.warm); R(a + w - 2, b, 2, h, C.kr2); R(a, b + h - 1, w, 1, C.kr0); });
-  // 折疊桌＋三個坐墊
+  for (let j = 30; j < 118; j += 6) { R(70, j, 190, 1, C.g2); R(70, j + 1, 190, 1, C.g4); }   // 鐵捲門的橫條
+  R(66, 26, 198, 4, C.g1); R(66, 26, 4, 92, C.g1); R(260, 26, 4, 92, C.g1); R(70, 30, 190, 2, C.ink3);
+  city(70, 100, 190, 18, 7); R(70, 98, 190, 2, C.ink3); R(70, 100, 190, 1, C.g1);
+  R(0, 0, W, 12, C.cn2); for (let i = 0; i < W; i += 34) { R(i, 0, 6, 20, C.g1); R(i, 0, 6, 1, C.g2); } R(0, 12, W, 2, C.g1);   // 裸露的低樑
+  Q.door(16, 52, 118, 1); sign(42, 62, 1);   // 側門＋門邊的紙名片
+  R(0, 118, W, 72, C.cn); for (let i = 0; i < W; i += 23) R(i, 118, 1, 72, C.cn2); R(0, 118, W, 1, C.cn2); R(0, 140, W, 1, C.cn2);
+  el(250, 176, 16, 3, C.cn2);
+  R(276, 36, 88, 50, C.kr); R(276, 36, 88, 1, C.kr2); for (let j = 42; j < 84; j += 6) for (let i = 280; i < 362; i += 6) px(i, j, C.kr2);   // 洞洞板工具牆
+  R(288, 46, 2, 18, C.ink3); R(283, 46, 12, 3, C.ink3); el(310, 54, 5, 5, C.g1); el(310, 54, 2.5, 2.5, C.kr); R(328, 44, 3, 22, C.red); R(326, 44, 7, 4, C.g2); R(344, 50, 12, 4, C.o2);
+  R(96, 46, 50, 34, C.wh); R(96, 46, 50, 1, C.g3); R(96, 79, 50, 1, C.g2); R(95, 46, 1, 34, C.g1); R(146, 46, 1, 34, C.g1); R(104, 80, 2, 36, C.g1); R(136, 80, 2, 36, C.g1);   // 白板
+  txt('目標：', 99, 49, 9, C.b1, -.05); txt('搬家！', 104, 61, 11, C.red, -.08); R(100, 75, 30, 1, C.b1);
+  // 機車蓋著帆布（右半邊）
+  el(300, 176, 9, 9, C.tire); el(300, 176, 4, 4, C.g1); el(352, 176, 9, 9, C.tire); el(352, 176, 4, 4, C.g1);
+  el(326, 156, 34, 16, C2.tarp); el(312, 146, 18, 12, C2.tarp); el(330, 162, 30, 8, C2.tarp2); for (let k = 0; k < 4; k++) R(298 + k * 16, 150 + (k % 2) * 4, 1, 14, C2.tarp2); R(292, 168, 70, 2, C2.tarp2); R(296, 140, 10, 2, C.wh);
+  [[14, 150, 30, 22], [20, 130, 22, 20], [52, 160, 20, 12]].forEach(([a, b, w, h]) => { R(a, b, w, h, C.kr); R(a, b, w, 2, C.kr2); R(a + w / 2 - 2, b, w > 25 ? 4 : 3, h, C.warm); R(a + w - 2, b, 2, h, C.kr2); R(a, b + h - 1, w, 1, C.kr0); });
   const ty = 150; R(110, ty, 140, 3, C.g5); R(110, ty + 3, 140, 1, C.g1); R(116, ty + 4, 2, 22, C.g1); R(242, ty + 4, 2, 22, C.g1); R(116, ty + 18, 128, 1, C.g2);
   [140, 180, 220].forEach(cx => cushion(cx, ty));
-  R(158, ty - 9, 16, 9, C.ink2); R(159, ty - 8, 14, 7, C.cy); R(156, ty - 1, 20, 1, C.ink3);   // 一台筆電
-  R(198, ty - 8, 8, 8, C.wh); R(198, ty - 8, 8, 2, C.o2); R(197, ty - 9, 10, 1, C.g2); R(203, ty - 13, 1, 5, C.wd0); R(205, ty - 13, 1, 5, C.wd0); px(200, ty - 11, C.g3); px(201, ty - 13, C.g3);   // 一碗泡麵（插著筷子、冒煙）
-  for (let i = 60; i < 116; i++) px(i, 182 + Math.round(Math.sin(i / 6) * 2), C.ink2); R(56, 178, 8, 6, C.wh); px(58, 180, C.ink3); px(61, 180, C.ink3);   // 延長線
+  R(158, ty - 9, 16, 9, C.ink2); R(159, ty - 8, 14, 7, C.cy); R(156, ty - 1, 20, 1, C.ink3);
+  R(198, ty - 8, 8, 8, C.wh); R(198, ty - 8, 8, 2, C.o2); R(197, ty - 9, 10, 1, C.g2); R(203, ty - 13, 1, 5, C.wd0); R(205, ty - 13, 1, 5, C.wd0); px(200, ty - 11, C.g3); px(201, ty - 13, C.g3);
+  for (let i = 60; i < 116; i++) px(i, 182 + Math.round(Math.sin(i / 6) * 2), C.ink2); R(56, 178, 8, 6, C.wh); px(58, 180, C.ink3); px(61, 180, C.ink3);
+  Q.vignette(150, 100, 70, 130, .74);   // 四角壓暗，燈泡那一圈最亮
+  R(140, 14, 1, 60, C.ink2); R(138, 72, 5, 3, C.g1); R(139, 66, 3, 4, C.kr); px(142, 68, C.kr2); px(143, 69, C.kr); el(140, 78, 4, 5, C.au2); el(140, 77, 2, 2, C.wh); cone(140, 84, 62);   // 舊燈泡：元老位正上方
 });
 
-// ===== 二　小辦公室：一扇百葉窗、五張小桌、飲水機、盆栽、木牌 =====
-stage('s2', ({ R, px, el, checker, dither, glyph, city, glassDesk, monitor, cushion, plant, sign, lamp, newLamp, txt, rug, W }) => {
-  R(0, 0, W, H, C.g4); R(0, 0, W, 6, C.g3); R(0, 112, W, 2, C.g3);
-  R(90, 14, 150, 74, C.g1); city(93, 17, 144, 68, 21); for (let j = 19; j < 84; j += 4) R(93, j, 144, 1, C.g5); R(164, 17, 2, 68, C.g1);   // 一扇窗＋百葉
-  R(86, 88, 158, 3, C.g3); R(86, 88, 158, 1, C.wh);
-  sign(22, 40, 2);
-  R(258, 22, 24, 30, C.wh); R(258, 22, 24, 6, C.red); R(268, 20, 4, 3, C.ink3); for (let j = 31; j < 50; j += 4) for (let i = 261; i < 280; i += 4) px(i, j, C.g2); px(273, 39, C.red); px(274, 39, C.red);   // 牆上的月曆（圈了一天）
-  lamp(165, 0, 8);
-  // 飲水機
-  R(330, 52, 20, 60, C.wh); R(330, 52, 20, 1, C.g3); R(349, 52, 1, 60, C.g2); el(340, 44, 8, 9, C.cy2); el(338, 41, 3, 3, C.wh); R(336, 64, 3, 3, C.b1); R(342, 64, 3, 3, C.red); R(334, 78, 12, 2, C.g2);
-  plant(296, 112, 1.2);
-  R(14, 96, 40, 3, C.wd2); R(16, 99, 2, 14, C.wd0); R(50, 99, 2, 14, C.wd0); R(20, 86, 28, 10, C.kr); for (let i = 21; i < 47; i += 3) R(i, 87, 1, 8, C.kr2); R(19, 85, 30, 2, C.kr0);   // 零食籃
-  [[23, 80, C.red], [29, 78, C.yl], [35, 81, C.b1], [41, 79, C.o2], [26, 82, C.pk]].forEach(([a, b, c]) => R(a, b, 5, 6, c));
-  R(0, 114, W, 76, C.wd); for (let j = 118; j < H; j += 6) R(0, j, W, 1, C.wd2); for (let i = 0; i < W; i += 37) for (let j = 114; j < H; j += 12) R(i + (j % 24 ? 18 : 0), j, 1, 6, C.wd2);   // 木地板
-  [40, 110, 180, 250, 320].forEach((cx, k) => { glassDesk(cx, 150, 56, false); monitor(cx + 12, 150); cushion(cx - 10, 150); });
+// ===== 二　小辦公室：輕鋼架天花板＋一片平板燈、老公寓二樓（窗外對面是鐵窗和招牌）、分離式冷氣、門＋木牌、三張一組＋兩張一組 =====
+stage('s2', K => { const { R, px, el, checker, dither, plant, sign, lamp, txt, rug, W } = K, Q = kit(K);
+  R(0, 0, W, H, C.g4);
+  R(0, 0, W, 14, C.g5); for (let i = 0; i < W; i += 30) R(i, 0, 1, 14, C.g2); R(0, 7, W, 1, C.g2); R(0, 14, W, 2, C.g2); R(200, 3, 28, 4, C.wh); R(200, 7, 28, 1, C.g3);   // 輕鋼架天花板＋平板燈
+  // 窗：對面老公寓（米色磁磚、鐵窗、冷氣、招牌）
+  R(104, 26, 140, 66, C.g1); R(107, 29, 134, 60, C2.ap); for (let j = 29; j < 89; j += 3) R(107, j, 134, 1, C2.ap2);
+  [[114, 34], [176, 34]].forEach(([a, b]) => { R(a, b, 44, 26, C.sky1); for (let i = a; i <= a + 44; i += 4) R(i, b, 1, 28, C2.grill); R(a, b, 45, 1, C2.grill); R(a, b + 13, 45, 1, C2.grill); R(a, b + 27, 45, 1, C2.grill); el(a + 10, b + 20, 3, 4, C.gr1); });   // 鐵窗＋窗台的小盆栽
+  R(120, 64, 14, 8, C.wh); R(120, 64, 14, 1, C.g3); for (let k = 0; k < 3; k++) R(122, 66 + k * 2, 10, 1, C.g2);   // 對面的冷氣
+  R(170, 66, 66, 20, C.red); R(172, 68, 62, 16, C.yl); txt('麵', 178, 69, 12, C.red); txt('飯', 212, 69, 12, C.red);   // 對面一樓的招牌
+  for (let j = 31; j < 88; j += 4) R(107, j, 134, 1, C.g5); R(173, 29, 2, 60, C.g1);   // 這邊的百葉
+  R(100, 92, 148, 3, C.g3); R(100, 92, 148, 1, C.wh);
+  R(258, 18, 46, 12, C.wh); R(258, 27, 46, 3, C.g3); R(260, 29, 42, 1, C.g2); R(298, 21, 3, 2, C.gr2);   // 分離式冷氣
+  Q.door(14, 46, 114, 2); sign(40, 54, 2);   // 門＋木牌
+  R(258, 40, 24, 30, C.wh); R(258, 40, 24, 6, C.red); R(268, 38, 4, 3, C.ink3); for (let j = 49; j < 68; j += 4) for (let i = 261; i < 280; i += 4) px(i, j, C.g2); px(273, 57, C.red); px(274, 57, C.red);   // 月曆
+  R(330, 52, 20, 60, C.wh); R(330, 52, 20, 1, C.g3); R(349, 52, 1, 60, C.g2); el(340, 44, 8, 9, C.cy2); el(338, 41, 3, 3, C.wh); R(336, 64, 3, 3, C.b1); R(342, 64, 3, 3, C.red); R(334, 78, 12, 2, C.g2);   // 飲水機
+  R(0, 114, W, 76, C.wd); for (let j = 118; j < H; j += 6) R(0, j, W, 1, C.wd2); for (let i = 0; i < W; i += 37) for (let j = 114; j < H; j += 12) R(i + (j % 24 ? 18 : 0), j, 1, 6, C.wd2);
+  R(300, 96, 40, 3, C.wd2); R(302, 99, 2, 15, C.wd0); R(336, 99, 2, 15, C.wd0); R(306, 86, 28, 10, C.kr); for (let i = 307; i < 333; i += 3) R(i, 87, 1, 8, C.kr2); R(305, 85, 30, 2, C.kr0);   // 零食籃（放在邊桌）
+  [[309, 80, C.red], [315, 78, C.yl], [321, 81, C.b1], [327, 79, C.o2], [312, 82, C.pk]].forEach(([a, b, c]) => R(a, b, 5, 6, c));
+  plant(360, 120, 1.1);
+  rug(54, 128, 270, 52, C.rg, C.rg2);
+  const A = Q.cluster(62, 150, 3, 50); Q.cluster(222, 150, 2, 50);   // 三張一組＋兩張一組，中間是走道
+  lamp(A[0], 16, 40);   // 舊燈泡：元老位正上方
 });
 
-// ===== 三　整層樓：一整排落地窗、八個位子（兩排）、玻璃會議室、拉絲銀牌 =====
-stage('s3', ({ R, px, el, checker, dither, glyph, city, glassDesk, monitor, cushion, plant, sign, lamp, newLamp, txt, rug, W }) => {
-  R(0, 0, W, H, C.g4); R(0, 0, W, 5, C.g3);
-  city(0, 8, W, 70, 33); for (let i = 0; i < W; i += 46) R(i, 8, 2, 70, C.g5); R(0, 6, W, 2, C.g5); R(0, 78, W, 3, C.g5); R(0, 81, W, 1, C.g3);
-  // 右邊的玻璃會議室
-  R(282, 30, 90, 70, C.cy2); dither(282, 30, 90, 70, C.sky3); R(282, 30, 90, 1, C.g1); R(282, 30, 1, 70, C.g1); R(326, 30, 1, 70, C.g2); for (let i = 286; i < 370; i += 3) px(i, 64, C.wh);
-  R(296, 78, 62, 3, C.wh); R(296, 81, 62, 1, C.g2); R(300, 82, 1, 14, C.g2); R(353, 82, 1, 14, C.g2); el(312, 74, 4, 3, C.g1); el(340, 74, 4, 3, C.g1);
-  sign(244, 40, 3);
-  R(0, 82, 280, 18, C.wd); for (let i = 0; i < 280; i += 4) R(i, 82, 1, 18, C.wd2); R(0, 82, 280, 1, C.kr);   // 窗下一排木頭牆板
-  R(300, 40, 26, 22, C.wh); R(300, 40, 26, 1, C.g2); [[303, 46], [304, 47], [305, 48], [306, 47], [307, 46]].forEach(([a, b]) => px(a, b, C.b1)); el(316, 47, 4, 3, C.yl); px(315, 46, C.ink); px(318, 47, C.o2); R(304, 53, 16, 1, C.red);   // 會議室白板的塗鴉（畫了一隻鴨）
-  R(0, 100, W, 90, C.wd); for (let j = 104; j < H; j += 6) R(0, j, W, 1, C.wd2);   // 木地板
-  rug(14, 108, 250, 74, C.rg, C.rg2);   // 暖色地毯
-  R(252, 78, 26, 4, C.wd2); R(252, 78, 26, 1, C.kr);   // 小邊櫃
-  R(258, 58, 14, 20, C.g1); R(258, 58, 14, 1, C.g3); R(259, 50, 12, 8, C.cy2); R(259, 50, 12, 1, C.wh); for (let i = 260; i < 270; i += 2) px(i, 55, C.wd0), px(i + 1, 56, C.wd0);   // 咖啡機：上面一罐咖啡豆
-  R(261, 62, 8, 2, C.ink2); R(264, 64, 2, 3, C.ink2); R(262, 71, 6, 6, C.wh); R(263, 72, 4, 2, C.wd0); R(268, 72, 2, 3, C.wh); px(264, 68, C.g3); px(265, 66, C.g4);   // 出水口、一杯咖啡、冒煙
-  px(266, 47, C.g3); px(265, 45, C.g3); px(266, 43, C.g3);
-  lamp(70, 0, 30); newLamp(200, 0, 28);
-  [36, 98, 160, 222].forEach(cx => { glassDesk(cx, 120, 50, false); monitor(cx + 10, 120); cushion(cx - 9, 120); });   // 後排四個
-  [52, 120, 188, 256].forEach(cx => { glassDesk(cx, 166, 56, false); monitor(cx + 12, 166); cushion(cx - 10, 166); });  // 前排四個
-  plant(350, 190, 1.3);
+// ===== 三　整層樓：管線外露漆白、窗外是對面的大樓、門＋拉絲銀牌、兩兩一組四組、玻璃會議室、咖啡機在矮櫃上 =====
+stage('s3', K => { const { R, px, el, checker, dither, city, plant, sign, lamp, newLamp, rug, W } = K, Q = kit(K);
+  R(0, 0, W, H, C.g4);
+  R(0, 0, W, 16, C.g5); el(120, 7, 200, 3.5, C.g4); R(0, 4, W, 6, C.g4); R(0, 4, W, 1, C.wh); R(0, 9, W, 1, C.g3); for (let i = 20; i < W; i += 60) { R(i, 0, 3, 16, C.g3); R(i - 2, 10, 7, 2, C.g2); } R(0, 13, W, 1, C.g3); R(0, 16, W, 2, C.g3);   // 管線外露、漆白
+  // 窗外：對面的大樓立面
+  R(56, 22, 222, 66, C.sky3); R(56, 70, 222, 18, C.sky2);
+  R(70, 30, 120, 58, C.c3); for (let j = 34; j < 88; j += 8) for (let i = 74; i < 186; i += 10) { R(i, j, 7, 5, C.c1); px(i, j, C.sky3); }   // 對面大樓的窗格
+  R(196, 44, 70, 44, C.c1); for (let j = 48; j < 88; j += 7) for (let i = 200; i < 262; i += 9) R(i, j, 6, 4, C.c2);
+  for (let i = 56; i < 280; i += 44) R(i, 22, 2, 66, C.g5); R(56, 20, 224, 2, C.g5); R(56, 88, 224, 3, C.g5); R(56, 91, 224, 1, C.g3);
+  Q.door(14, 44, 108, 3); sign(4, 22, 3);   // 玻璃門＋門上方的拉絲銀牌
+  // 玻璃會議室（右邊）
+  R(286, 30, 86, 74, C.cy2); dither(286, 30, 86, 74, C.sky3); R(286, 30, 86, 1, C.g1); R(286, 30, 1, 74, C.g1); R(328, 30, 1, 74, C.g2);
+  R(300, 40, 26, 22, C.wh); R(300, 40, 26, 1, C.g2); [[303, 46], [304, 47], [305, 48], [306, 47], [307, 46]].forEach(([a, b]) => px(a, b, C.b1)); el(316, 47, 4, 3, C.yl); px(315, 46, C.ink); px(318, 47, C.o2); R(304, 53, 16, 1, C.red);
+  R(298, 80, 62, 3, C.wh); R(298, 83, 62, 1, C.g2); R(302, 84, 1, 16, C.g2); R(355, 84, 1, 16, C.g2); el(314, 76, 4, 3, C.g1); el(342, 76, 4, 3, C.g1);
+  R(0, 104, W, 86, C.wd); for (let j = 108; j < H; j += 6) R(0, j, W, 1, C.wd2);
+  // 咖啡機：放在矮櫃上（門跟窗中間的牆邊）
+  R(40, 92, 22, 12, C.wd2); R(40, 92, 22, 1, C.kr); R(40, 103, 22, 1, C.wd0); R(50, 94, 1, 8, C.wd0);
+  R(44, 74, 14, 18, C.g1); R(44, 74, 14, 1, C.g3); R(45, 66, 12, 8, C.cy2); R(45, 66, 12, 1, C.wh); for (let i = 46; i < 56; i += 2) { px(i, 71, C.wd0); px(i + 1, 72, C.wd0); }
+  R(47, 78, 8, 2, C.ink2); R(50, 80, 2, 3, C.ink2); R(48, 86, 6, 6, C.wh); R(49, 87, 4, 2, C.wd0); px(51, 63, C.g3); px(50, 61, C.g3);
+  rug(64, 112, 280, 72, C.rg, C.rg2);
+  const A = Q.cluster(76, 128, 2, 54); Q.cluster(206, 128, 2, 54);   // 後排兩組
+  Q.cluster(92, 170, 2, 54); Q.cluster(222, 170, 2, 54);   // 前排兩組
+  lamp(A[0], 18, 34); newLamp(260, 18, 30); newLamp(150, 18, 52);
+  plant(360, 190, 1.3);
 });
 
-// ===== 四　二十七樓整層：落地窗看出去在雲上、十二個位子、全息螢幕、沙發區、黑底金字 =====
-stage('s4', ({ R, px, el, checker, dither, glyph, city, glassDesk, monitor, cushion, plant, sign, lamp, newLamp, txt, rug, W }) => {
-  R(0, 0, W, H, '#dfe7ec'); R(0, 0, W, 4, C.g3);
-  R(0, 6, W, 82, C.sky3); R(0, 40, W, 48, C.sky2); city(0, 62, W, 26, 51, 0);   // 27 樓：城市在很下面
-  [[40, 30, 18, 4], [64, 26, 12, 3], [210, 20, 22, 5], [236, 24, 12, 3], [320, 34, 16, 4]].forEach(([a, b, rx, ry]) => { el(a, b, rx, ry, C.wh); el(a + 4, b + 1, rx * .7, ry * .6, C.cl); });   // 雲
-  for (let i = 0; i < W; i += 62) R(i, 6, 2, 82, C.g5); R(0, 4, W, 2, C.g5); R(0, 88, W, 3, C.g5); R(0, 91, W, 1, C.g2);
-  sign(10, 54, 4);
-  R(0, 92, W, 98, C.wd); for (let j = 96; j < H; j += 6) R(0, j, W, 1, C.wd2); for (let i = 0; i < W; i += 40) for (let j = 92; j < H; j += 12) R(i + (j % 24 ? 20 : 0), j, 1, 6, C.wd2);   // 木地板
-  rug(284, 96, 90, 30, C.rg3, '#b77a57');   // 沙發區的地毯
-  rug(8, 128, 260, 52, C.rg, C.rg2);
-  newLamp(120, 0, 24); lamp(250, 0, 26);
-  // 右邊的沙發區
-  R(300, 100, 70, 10, C.ink2); R(300, 100, 70, 2, C.ink3); R(296, 106, 8, 14, C.ink2); R(366, 106, 8, 14, C.ink2); R(304, 110, 62, 8, C.ink3); el(318, 104, 6, 4, C.pk); el(318, 103, 3, 2, C.pk2); el(338, 104, 6, 4, C.yl); el(358, 104, 6, 4, C.cy); el(358, 103, 3, 2, C.cy2);   // 沙發上的抱枕
-  [40, 92, 144, 196, 248].forEach(cx => { glassDesk(cx, 118, 44, true); cushion(cx - 8, 118); });   // 後排
-  [22, 70, 118, 166, 214, 262, 310].forEach(cx => { glassDesk(cx, 164, 42, true); cushion(cx - 8, 164); });   // 前排（右邊留給扭蛋機）
-  // 扭蛋機（跟員工 01～08 呼應）
-  R(346, 140, 22, 30, C.red); R(346, 140, 22, 2, C.pk); R(354, 156, 6, 6, C.ink2); el(357, 159, 2, 2, C.g3); R(350, 165, 14, 3, C.ink2);
-  el(357, 132, 11, 10, C.cy2); el(357, 131, 10, 9, '#eaf8fb'); [[351, 134, C.yl], [356, 136, C.pk], [361, 134, C.b1], [354, 130, C.gr2], [360, 129, C.o2], [357, 132, C.red]].forEach(([a, b, c]) => el(a, b, 2, 2, c)); px(352, 126, C.wh); px(353, 125, C.wh);
-  // 彩蛋：門邊小小一塊「絆」的木牌，綁一條朱色紅線
-  R(52, 58, 14, 16, C.wd); R(52, 58, 14, 1, C.kr); R(65, 58, 1, 16, C.wd0); txt('絆', 53, 60, 12, C.wd0); for (let k = 0; k < 18; k++) px(66 + k, 60 + Math.round(Math.sin(k / 3) * 2) + Math.floor(k / 3), '#b33a2f');
+// ===== 四　二十七樓整層：木格柵天花板＋線型燈、雲就在眼前、門（絆木牌在門柱上）＋黑底金字、兩兩一組六組、矮盆栽隔開、沙發和扭蛋機在地上 =====
+stage('s4', K => { const { R, px, el, checker, dither, city, plant, sign, lamp, txt, rug, W } = K, Q = kit(K);
+  R(0, 0, W, H, '#dfe7ec');
+  R(0, 0, W, 16, C.wd); for (let i = 0; i < W; i += 5) R(i, 0, 2, 16, C.wd2); R(0, 16, W, 2, C.wd0); R(40, 13, 300, 2, C.au2); R(40, 15, 300, 1, C.warm);   // 木格柵天花板＋一條線型燈
+  dither(40, 18, 300, 4, C.warm);
+  R(52, 22, W - 52, 70, C.sky3); R(52, 54, W - 52, 38, C.sky2); city(52, 80, W - 52, 12, 51, 0);   // 往下看：城市在很下面
+  [[110, 52, 26, 6], [150, 48, 16, 4], [250, 60, 30, 7], [290, 56, 14, 4], [340, 44, 18, 5]].forEach(([a, b, rx, ry]) => { el(a, b, rx, ry, C.wh); el(a + 5, b + 2, rx * .7, ry * .6, C.cl); });   // 雲就在眼前
+  for (let i = 52; i < W; i += 64) R(i, 22, 2, 70, C.g5); R(52, 20, W - 52, 2, C.g5); R(52, 92, W - 52, 3, C.g5); R(52, 95, W - 52, 1, C.g2);
+  R(0, 18, 52, 78, '#e8edf0');
+  Q.door(14, 34, 112, 4); sign(6, 22, 4);
+  R(38, 50, 10, 13, C.wd); R(38, 50, 10, 1, C.kr); R(47, 50, 1, 13, C.wd0); txt('絆', 38, 51, 10, C.wd0); for (let k = 0; k < 10; k++) px(44 + Math.round(Math.sin(k / 2) * 2), 63 + k, '#b33a2f');   // 門柱上的「絆」木牌＋紅線垂下來
+  R(0, 112, W, 78, C.wd); for (let j = 116; j < H; j += 6) R(0, j, W, 1, C.wd2); for (let i = 0; i < W; i += 40) for (let j = 112; j < H; j += 12) R(i + (j % 24 ? 20 : 0), j, 1, 6, C.wd2);
+  rug(52, 116, 236, 68, C.rg, C.rg2);
+  const A = Q.cluster(58, 132, 2, 38, { holo: true }); Q.cluster(140, 132, 2, 38, { holo: true }); Q.cluster(222, 132, 2, 38, { holo: true });   // 後排三組
+  Q.lowPlant(134, 140, 6); Q.lowPlant(216, 140, 6);
+  Q.cluster(58, 176, 2, 38, { holo: true }); Q.cluster(140, 176, 2, 38, { holo: true }); Q.cluster(222, 176, 2, 38, { holo: true });   // 前排三組
+  Q.lowPlant(134, 184, 6); Q.lowPlant(216, 184, 6);
+  // 休息區：沙發放在地上、旁邊扭蛋機
+  rug(296, 140, 78, 40, C.rg3, '#b77a57');
+  R(302, 146, 58, 14, C.ink2); R(302, 146, 58, 2, C.ink3); R(298, 152, 8, 16, C.ink2); R(356, 152, 8, 16, C.ink2); R(304, 160, 54, 8, C.ink3); R(306, 168, 2, 4, C.ink2); R(354, 168, 2, 4, C.ink2);
+  el(316, 154, 6, 4, C.pk); el(316, 153, 3, 2, C.pk2); el(332, 154, 6, 4, C.yl); el(348, 154, 6, 4, C.cy); el(348, 153, 3, 2, C.cy2);
+  R(352, 108, 18, 26, C.red); R(352, 108, 18, 2, C.pk); R(358, 120, 6, 6, C.ink2); el(361, 123, 2, 2, C.g3); R(355, 130, 12, 3, C.ink2);
+  el(361, 101, 9, 8, C.cy2); el(361, 100, 8, 7, '#eaf8fb'); [[356, 103, C.yl], [361, 105, C.pk], [365, 102, C.b1], [358, 99, C.gr2], [364, 98, C.o2]].forEach(([a, b, c]) => el(a, b, 2, 2, c));
+  lamp(A[0], 18, 50);
 });
 
-// ===== 五　自己的大樓：太寬了做成左右滑（750 寬，手機一次看 375）。左邊大廳：黑色「丼」字牆、黑漆金框銘牌、牆上裱框的車庫紙名片、吊燈；右邊兩排二十個位子 =====
-stage('s5', ({ R, px, el, checker, dither, glyph, city, glassDesk, monitor, cushion, plant, sign, lamp, newLamp, txt, rug, W }) => {
-  R(0, 0, W, H, C.g4); R(0, 0, W, 4, C.g3);
-  city(140, 8, W - 140, 66, 77); for (let i = 140; i < W; i += 46) R(i, 8, 2, 66, C.g5); R(140, 6, W - 140, 2, C.g5); R(140, 74, W - 140, 3, C.g5);
-  R(140, 77, W - 140, 23, C.wd); for (let i = 140; i < W; i += 4) R(i, 77, 1, 23, C.wd2); R(140, 77, W - 140, 1, C.kr);   // 窗下木牆板
-  R(0, 4, 140, 186, C.bk); R(0, 4, 140, 2, C.bk2); glyph(DON, 30, 14, C.au1, 9); for (let j = 16; j < 100; j += 2) px(126, j, C.au0);   // 黑色「丼」字牆
-  sign(48, 110, 5);
-  R(14, 138, 28, 22, C.au1); R(16, 140, 24, 18, C.bk2); R(18, 143, 20, 12, C.wh); glyph(DON, 20, 145, C.ink2); R(31, 147, 5, 1, C.g2); R(31, 150, 4, 1, C.g2); px(28, 142, C.red);   // 裱框的車庫紙名片
-  txt('創業那天的名片', 46, 146, 8, C.au1);
-  R(0, 168, 140, 22, '#2a2d33'); R(0, 168, 140, 1, C.bk2);
-  R(140, 100, W - 140, 90, C.wd); for (let j = 104; j < H; j += 6) R(140, j, W - 140, 1, C.wd2);
-  rug(152, 108, 560, 76, C.rg, C.rg2);
-  plant(162, 104, 1.6);
-  lamp(260, 0, 28); [420, 580, 740].forEach(lx => newLamp(lx, 0, 26));
-  for (let k = 0; k < 10; k++) { const cx = 214 + k * 52; glassDesk(cx, 124, 44, k % 2 === 0); if (k % 2) monitor(cx + 10, 124); cushion(cx - 8, 124); }   // 後排十個
-  for (let k = 0; k < 10; k++) { const cx = 230 + k * 52; glassDesk(cx, 168, 44, k % 2 === 1); if (k % 2 === 0) monitor(cx + 10, 168); cushion(cx - 8, 168); }   // 前排十個
-  // 只有自己的大樓才有：茱莉鴨的午睡艙（膠囊、圓窗裡一顆枕頭、Z 往上飄、門口小月亮）
-  { const a = 728, b = 116, w = 92, h = 52;
-    rug(a - 6, 166, w + 12, 18, C.rg3, '#b77a57');
+// ===== 五　自己的大樓（960 寬，左右滑）：入口大門 → 挑高兩層的大廳（黑石「丼」字牆、接待櫃台、櫃台後面掛車庫名片、大樹）→ 辦公一區 → 茶水吧＋書牆 → 辦公二區 → 午睡艙 =====
+stage('s5', K => { const { R, px, el, checker, dither, glyph, city, plant, sign, lamp, newLamp, txt, rug, W } = K, Q = kit(K);
+  R(0, 0, W, H, C.g4);
+  // 窗外：自己的屋頂花園（樹冠）＋遠方城市
+  city(250, 22, W - 250, 70, 77); for (let i = 0; i < 14; i++) { el(262 + i * 50, 84, 22, 12, i % 2 ? C.gr1 : C.gr0); el(258 + i * 50, 80, 10, 5, C.gr2); }
+  for (let i = 250; i < W; i += 46) R(i, 22, 2, 70, C.g5); R(250, 20, W - 250, 2, C.g5); R(250, 92, W - 250, 3, C.g5);
+  R(250, 0, W - 250, 18, C.g5); for (let i = 250; i < W; i += 12) R(i, 0, 1, 18, C.g3); R(250, 15, W - 250, 2, C2.brass); R(250, 18, W - 250, 2, C.g3);   // 辦公區天花板＋黃銅線型燈
+  // 大廳：挑高兩層（沒有天花板那一條）、黑石牆、入口大門
+  R(0, 0, 250, H, C2.stone); for (let i = 0; i < 250; i += 30) R(i, 0, 1, 150, C2.stone2); for (let j = 0; j < 150; j += 24) R(0, j, 250, 1, C2.stone2);
+  R(0, 0, 250, 3, C2.brass2);
+  Q.door(10, 70, 150, 5); R(6, 66, 30, 2, C2.brass); txt('入口', 12, 56, 9, C2.brass);   // 入口大門（黃銅框玻璃門）
+  glyph(DON, 92, 10, C.au1, 8);   // 黑石上的金色「丼」
+  sign(105, 72, 5);
+  R(70, 120, 120, 30, C2.brass2); R(70, 120, 120, 3, C2.brass); R(72, 123, 116, 27, C.wd2); for (let i = 76; i < 186; i += 6) R(i, 124, 2, 26, C.wd); R(70, 120, 120, 1, C.au2);   // 接待櫃台（木頭＋黃銅檯面）
+  R(80, 108, 22, 12, C2.brass); R(82, 110, 18, 8, C.wh); glyph(['x.x', 'xxx', 'x.x'], 84, 112, C.ink2); R(90, 112, 6, 1, C.g2); R(90, 114, 5, 1, C.g2); px(88, 110, C.red);   // 櫃台上裱框的車庫紙名片
+  txt('創業那天的名片', 106, 110, 8, C.au1);
+  R(0, 150, 250, 40, '#2a2d33'); R(0, 150, 250, 1, C2.stone2); for (let i = 0; i < 250; i += 25) R(i, 150, 1, 40, '#34383f');   // 黑石地
+  R(208, 132, 26, 18, C2.brass2); R(208, 132, 26, 2, C2.brass); for (let k = 0; k < 7; k++) el(221 + Math.cos(k) * 14, 100 - k * 9 + Math.sin(k) * 4, 12, 9, k % 2 ? C.gr1 : C.gr0); R(220, 96, 3, 36, C.wd0);   // 大樹
+  [[40, 0, 70], [170, 0, 70]].forEach(([lx, t, l]) => newLamp(lx, t, l));
+  // 辦公區地板
+  R(250, 96, W - 250, 94, C.wd); for (let j = 100; j < H; j += 6) R(250, j, W - 250, 1, C.wd2);
+  // 一區（10 個）
+  rug(256, 106, 230, 80, C.rg, C.rg2);
+  const A = Q.cluster(262, 132, 3, 42); Q.cluster(398, 132, 2, 42); Q.lowPlant(390, 140, 6);
+  Q.cluster(274, 176, 3, 42); Q.cluster(410, 176, 2, 42); Q.lowPlant(402, 184, 6);
+  // 茶水吧＋書牆（把二十張桌子切成兩區）
+  R(492, 26, 112, 70, C.wd2); for (let j = 34; j < 96; j += 14) { R(494, j, 108, 2, C.wd0); for (let i = 496; i < 600; i += 4) R(i, j - 10, 3, 10, [C.red, C.b1, C.yl, C.gr1, C.wh, C.o2][(i + j) % 6]); }   // 書牆
+  R(498, 120, 100, 28, C.wd2); R(498, 118, 100, 3, C2.brass); for (let i = 502; i < 596; i += 6) R(i, 122, 2, 26, C.wd);   // 茶水吧檯
+  R(512, 102, 14, 16, C.g1); R(513, 96, 12, 6, C.cy2); R(516, 106, 6, 2, C.ink2); R(516, 112, 5, 5, C.wh); px(518, 93, C.g3);   // 咖啡機
+  el(560, 112, 8, 6, C.wh); el(560, 111, 6, 4, C.g4); el(580, 113, 5, 4, C.o2); el(582, 111, 2, 1.4, C.gr1);   // 一盤點心、一顆橘子
+  [512, 548, 584].forEach(a => { el(a, 152, 6, 2, C.ink3); R(a - 1, 154, 2, 14, C.g1); R(a - 5, 168, 10, 1, C.g1); });   // 吧檯椅
+  txt('茶水', 530, 158, 8, C.wd0);
+  // 二區（10 個）
+  rug(610, 106, 230, 80, C.rg, C.rg2);
+  Q.cluster(616, 132, 3, 42); Q.cluster(752, 132, 2, 42); Q.lowPlant(744, 140, 6);
+  Q.cluster(628, 176, 3, 42); Q.cluster(764, 176, 2, 42); Q.lowPlant(756, 184, 6);
+  lamp(A[0], 20, 54); [370, 548, 700].forEach(lx => newLamp(lx, 20, 40));
+  // 茱莉鴨的午睡艙
+  { const a = 856, b = 118, w = 92, h = 52;
+    rug(a - 6, 168, w + 12, 18, C.rg3, '#b77a57');
     el(a + 16, b + h / 2, 16, h / 2, C.g2); el(a + w - 16, b + h / 2, 16, h / 2, C.g2); R(a + 16, b, w - 32, h, C.g2);
     el(a + 16, b + h / 2, 15, h / 2 - 1, C.wh); el(a + w - 16, b + h / 2, 15, h / 2 - 1, C.wh); R(a + 16, b + 1, w - 32, h - 2, C.wh);
     R(a + 6, b + h - 10, w - 12, 6, C.g4); R(a + 10, b + 6, w - 40, 2, C.g5);
-    el(a + w - 30, b + 24, 14, 12, C.cy0); el(a + w - 30, b + 24, 13, 11, C.cy2); el(a + w - 30, b + 28, 9, 4, '#f8e6cf'); el(a + w - 32, b + 27, 4, 2, '#fff6ea'); R(a + w - 40, b + 15, 6, 1, C.wh);   // 圓窗裡的枕頭
-    el(a + 22, b + 18, 5, 5, C.au1); el(a + 24, b + 16, 4, 4, C.wh);   // 門口的小月亮
+    el(a + w - 30, b + 24, 14, 12, C.cy0); el(a + w - 30, b + 24, 13, 11, C.cy2); el(a + w - 30, b + 28, 9, 4, '#f8e6cf'); el(a + w - 32, b + 27, 4, 2, '#fff6ea'); R(a + w - 40, b + 15, 6, 1, C.wh);
+    el(a + 22, b + 18, 5, 5, C.au1); el(a + 24, b + 16, 4, 4, C.wh);
     txt('午睡', a + 16, b + 28, 9, C.ink3);
-    [[a + w - 14, b - 4, 1], [a + w - 6, b - 14, 1.34]].forEach(([zx, zy, sc]) => { const z = Math.round(3 * sc); R(zx, zy, z, 1, C.cy0); for (let k = 1; k < z - 1; k++) px(zx + z - 1 - k, zy + k, C.cy0); R(zx, zy + z - 1, z, 1, C.cy0); });
+    [[a + w - 20, b - 6, 1], [a + w - 12, b - 16, 1.34]].forEach(([zx, zy, sc]) => { const z = Math.round(3 * sc); R(zx, zy, z, 1, C.cy0); for (let k = 1; k < z - 1; k++) px(zx + z - 1 - k, zy + k, C.cy0); R(zx, zy + z - 1, z, 1, C.cy0); });
     R(a + 10, b + h, 4, 6, C.g1); R(a + w - 14, b + h, 4, 6, C.g1); }
 });
 </script></body></html>
