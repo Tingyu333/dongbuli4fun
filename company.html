@@ -273,6 +273,10 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
 .lvl.can { background: rgba(143,211,224,.12); }
 .shelf .slot { cursor: pointer; }
 .tutline { position: relative; margin: 8px 12px 0; display: flex; justify-content: center; } .tutline[hidden] { display: none; }
+.np { display: inline-block !important; flex: none; max-width: 100%; box-sizing: border-box; vertical-align: middle; }   /* 使用者 iPhone 上銘牌被擠窄、字跑出框外（爆版）：銘牌不用 inline-flex、也不准被壓縮 */
+.np2::before, .np2::after { display: inline-block; vertical-align: middle; margin: 0 6px 2px 0; } .np2::after { margin: 0 0 2px 6px; }
+.lvl .info { min-width: 0; } .sheet .lvl .top, .lvl .top { display: flex !important; grid-template-columns: none !important; flex-wrap: wrap; row-gap: 4px; }   /* 真正的原因：蓋上來那一層的 .sheet .top 是員工頁頭像用的兩欄格子（76px＋其他），所有辦公室那一層也被套到，銘牌只剩 76px 寬 */ .lvl .np { letter-spacing: .16em; padding-left: 10px; padding-right: 8px; }
+.lvl .np5 { padding-left: 22px; padding-right: 22px; }
 .ava img { max-width: calc(100% - 4px); max-height: calc(100% - 4px); }   /* 使用者：角色被切掉了——整隻縮進框裡 */
 .ser { grid-template-columns: 40px 1fr; } .ava.gift2 { background: linear-gradient(#f4ead9, #e8d6b0); box-shadow: inset 0 -2px 0 #c9ad7c, inset 0 1px 0 #fff; } .ava.gift2.off { background: linear-gradient(#eef2f4, #dfe5e9); box-shadow: inset 0 -2px 0 #c2d0da, inset 0 1px 0 #fff; }
 .ava.gift2 canvas { position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; margin: -12px 0 0 -12px; image-rendering: pixelated; }
