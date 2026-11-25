@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="assets/theme.css?v=20261116d">
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/company-office.js?v=20261125a"></script>
-    <script src="assets/company-rules.js?v=20261125d"></script>
+    <script src="assets/company-rules.js?v=20261125e"></script>
     <style>
 /* 毛玻璃介面（跟 docs/plans/company/ui.css 的樣張同一套） */
 body { margin: 0; font-family: "Noto Sans TC", sans-serif; color: #26303a; }
@@ -705,7 +705,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         if (k === 7 && !layer) return view === 'staff' ? ['#openApply', '按這裡<b>招募新員工</b>。'] : ['[data-v=staff]', '去<b>員工</b>請人。'];
         if (k === 8 && !layer) return view === 'board' ? ['#cards .card', '委託板會一直貼新案子。<b>點一張</b>，再按「幫我派」就會自動挑人。'] : ['[data-v=board]', '人手有了，去<b>委託</b>接下一件。'];
         if (k === 8 && inDispatch) return ['#dAuto', '按<b>幫我派</b>自動挑合適的人，再按開工。條件不合的話成功機率會掉。'];
-        if (k === 9 && !layer) return view === 'office' ? ['#goal', '最後：做滿 10 件、公司帳戶有 $45,000，就能<b>搬到小辦公室</b>，位子和同時能做的件數都會變多。教學到這裡，祝生意興隆！'] : ['[data-v=office]', '回<b>辦公室</b>看看。'];
+        if (k === 9 && !layer) return view === 'office' ? ['#goal', '最後：做滿 ' + R.STAGES[1].jobs + ' 件、公司帳戶有 ' + R.fmt(R.STAGES[1].cost) + '，就能<b>搬到小辦公室</b>，位子和同時能做的件數都會變多。教學到這裡，祝生意興隆！'] : ['[data-v=office]', '回<b>辦公室</b>看看。'];
         return null;
     }
     let coachTarget = null;

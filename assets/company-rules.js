@@ -5,7 +5,7 @@ window.CompanyRules = (() => {
   // ---------- 公司階段 ----------
   const STAGES = [
     { key: 'garage', name: '車庫創業', seats: 3, conc: 3, base: 14.3, cost: 0, jobs: 0, inject: 33000, fee: 9000, sfee: 90000, refresh: 1500, train: 6000, equip: 30000, ad: 300, maxDur: 240 },
-    { key: 'small', name: '小辦公室', seats: 5, conc: 4, base: 21.8, cost: 45000, jobs: 10, inject: 110000, fee: 27500, sfee: 270000, refresh: 4500, train: 20000, equip: 100000, ad: 800, maxDur: 480 },
+    { key: 'small', name: '小辦公室', seats: 5, conc: 4, base: 21.8, cost: 20000,   /* 使用者 2026-11-25：新人試玩不增資要好幾天，調低（原本 45000） */ jobs: 10, inject: 110000, fee: 27500, sfee: 270000, refresh: 4500, train: 20000, equip: 100000, ad: 800, maxDur: 480 },
     { key: 'floor', name: '整層樓', seats: 8, conc: 6, base: 33.8, cost: 350000, jobs: 40, inject: 280000, fee: 70000, sfee: 700000, refresh: 15000, train: 50000, equip: 250000, ad: 2000, maxDur: 480 },
     { key: '27f', name: '二十七樓整層', seats: 12, conc: 8, base: 43.5, cost: 1300000, jobs: 125, inject: 560000, fee: 140000, sfee: 1400000, refresh: 45000, train: 100000, equip: 500000, ad: 3600, maxDur: 720 },
     { key: 'hq', name: '自己的大樓', seats: 20, conc: 12, base: 42.7, cost: 3300000, jobs: 300, inject: 900000, fee: 225000, sfee: 2250000, refresh: 150000, train: 160000, equip: 800000, ad: 6000, maxDur: 720 },
@@ -222,7 +222,7 @@ window.CompanyRules = (() => {
     return ups;
   }
   const trainPrice = (stage, s) => STAGES[stage].train * s.lv;
-  const overtimePrice = job => job.c.gross * 2;
+  const overtimePrice = job => job.c.gross;   // 使用者 2026-11-25：降到跟案子差不多（原本兩倍）
   const incidentCost = (stage, k) => Math.round(STAGES[stage].base * 60 * 3 * k * 10) / 10 > 0 ? Math.max(100, Math.round(STAGES[stage].base * 60 * 3 * k / 10) * 10) : 100;
 
   return { STAGES, DURS, STATS, SPECIALS, SPECIES, COLORS, CLIENTS, INCIDENTS, EQUIP, EQUIP_BOOST, SALARY, BOARD_EVERY, BOARD_MAX, SUPER_LIFE, FREE_REFRESH, MAX_LV,
