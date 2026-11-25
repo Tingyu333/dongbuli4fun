@@ -190,10 +190,12 @@
 .rk .co2 { font-size: 13px; } .rk .co2 small { display: block; font-size: 10px; color: #6a7884; margin-top: 4px; letter-spacing: .05em; }
 .rk .v { text-align: right; font-size: 14px; font-weight: 300; } .rk .v small { display: block; font-size: 9.5px; color: #6a7884; letter-spacing: .1em; }
 .rk.me { background: rgba(143,211,224,.14); }
-.rk .np { font-size: 10px; padding: 2px 7px 2px 8px; letter-spacing: .2em; margin-right: 6px; }
+.rk .np { font-size: 12px; padding: 3px 9px 3px 10px; letter-spacing: .16em; } .rk .co2 small { margin-top: 5px; }
 .eq { display: grid; grid-template-columns: 56px 1fr auto; gap: 12px; align-items: center; padding: 10px 14px; } .eq + .eq { border-top: 1px solid rgba(120,140,155,.18); }
 .eq .ic { width: 56px; height: 56px; border-radius: 12px; background: linear-gradient(#eef3f6, #dce5ea); display: flex; align-items: center; justify-content: center; } .eq .ic canvas { width: 48px; height: 48px; image-rendering: pixelated; }
 .eq .nm { font-size: 13px; } .eq .d { font-size: 10.5px; color: #6a7884; margin-top: 3px; }
 .eq button { font: inherit; font-size: 11.5px; letter-spacing: .1em; padding: 8px 12px; border-radius: 10px; border: 1px solid #26303a; background: #26303a; color: #f2f6f8; white-space: nowrap; } .eq button.got { background: rgba(143,211,224,.15); color: #2f7d90; border-color: rgba(79,169,191,.5); }
 
 .dex .dots4 { position: absolute; right: 4px; top: 4px; display: flex; gap: 2px; } .dex .dots4 i { position: static; width: 6px; height: 6px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(60,70,80,.35); }
+
+.lvl .stg { font-size: 10.5px; color: #51606d; letter-spacing: .15em; white-space: nowrap; } .lvl .np { font-size: 11.5px; letter-spacing: .2em; }
