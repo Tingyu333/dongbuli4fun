@@ -368,6 +368,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
 
     // ---------- 共用 ----------
     const st = () => R.STAGES[S.stage];
+    const look = () => (S.look === undefined || S.look > S.stage) ? S.stage : S.look;   // 辦公室畫面用哪一間（搬過的都可以換回去看）
     const staffById = id => S.staff.find(s => s.id === id);
     const idle = () => S.staff.filter(s => !s.job);
     const running = () => S.jobs.filter(j => !j.fin);
@@ -640,7 +641,8 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     function drawScene() {
         if (!S || !S.name) return;
         const cv = $('cv'), x = cv.getContext('2d');
-        if (baseStage !== S.stage) { baseCv = document.createElement('canvas'); seats = CompanyOffice.paint(baseCv, S.stage + 1).slice(); baseStage = S.stage; cv.width = baseCv.width; cv.height = baseCv.height; cv.style.width = baseCv.width + 'px'; cv.style.height = baseCv.height + 'px'; $('sceneHint').hidden = baseCv.width <= 380; requestAnimationFrame(() => { $('scene').scrollLeft = S.stage === 4 ? 250 : 0; }); }   // 大樓一打開先看辦公區，大廳往左滑
+        const L = look();
+        if (baseStage !== L) { baseCv = document.createElement('canvas'); seats = CompanyOffice.paint(baseCv, L + 1).slice(); baseStage = L; cv.width = baseCv.width; cv.height = baseCv.height; cv.style.width = baseCv.width + 'px'; cv.style.height = baseCv.height + 'px'; $('sceneHint').hidden = baseCv.width <= 380; requestAnimationFrame(() => { $('scene').scrollLeft = L === 4 ? 250 : 0; }); }   // 大樓一打開先看辦公區，大廳往左滑
         x.imageSmoothingEnabled = false; x.drawImage(baseCv, 0, 0);
         const order = seats.map((p, i) => [p, i]).sort((a, b) => a[0][1] - b[0][1]);   // 後排先畫
         const t = now();
@@ -671,7 +673,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     function renderOffice() {
         $('title').textContent = '公司・開'; $('moneyLab').textContent = '公司帳戶';
         $('plate').className = plateCls(); $('plate').textContent = S.name;
-        $('stageLine').textContent = st().name + '・員工 ' + S.staff.length + ' 人';
+        $('stageLine').textContent = (look() === S.stage ? st().name : R.STAGES[look()].name + '（懷舊中）') + '・員工 ' + S.staff.length + ' 人';
         if (S.today.d !== today()) S.today = { d: today(), net: 0 };
         $('kToday').textContent = R.fmt(S.today.net);
         $('kRun').textContent = running().length + ' / ' + st().conc;
@@ -726,6 +728,25 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             return `<div class="mate" data-k="${k}">${avaHtml(spriteKey(s))}<div><div class="nm">${esc(R.staffName(s))}<small>Lv.${s.lv}${s.trial ? '・試用期' : ''}${s.special ? ' <span class="star"></span>' : ''}</small></div><div class="stt num">${j ? '在做〈' + esc(j.c.title) + '〉・' + R.clock((j.end - now()) / 1000) : '閒著'}</div></div><span class="go">›</span></div>`; }).join('') || '<div class="empty">還沒有員工</div>';
         document.querySelectorAll('#roster .mate').forEach(e => e.onclick = () => openStaff(S.staff[+e.dataset.k]));
     }
+    function lvlRow(i, opt = {}) {
+        const g = R.STAGES[i], got = i <= S.stage, using = got && look() === i;
+        return `<div class="lvl${i === S.stage && !opt.all ? ' now' : ''}${got ? '' : ' lock'}${using && opt.all ? ' now' : ''}"><div class="th" style="background:#dfe3e6"><canvas data-th="${i}" width="80" height="42" style="width:80px;height:42px;image-rendering:pixelated"></canvas></div>
+            <div class="info"><div class="top"><span class="np np${i + 1}"${got ? '' : ' style="filter:grayscale(1);opacity:.5"'}>${esc(S.name)}</span>${opt.all ? (using ? '<span class="chip" style="margin-left:auto">正在用</span>' : got ? `<button class="mini" data-look="${i}" style="margin-left:auto;font:inherit;font-size:10.5px;padding:4px 9px;border-radius:9px;border:1px solid #26303a;background:#26303a;color:#f2f6f8">換成這間</button>` : '') : '<span class="chip" style="margin-left:auto">現在</span>'}</div>
+            <div class="d"><b style="font-weight:500;color:#26303a">${g.name}</b>・${g.seats} 人・同時 ${g.conc} 件${g.maxDur >= 480 ? '・跨夜 ' + g.maxDur / 60 + ' 小時' : ''}</div>${got ? '' : `<div class="d pr2 num">${R.fmt(g.cost)}・做完 ${g.jobs} 件・搬過去才解鎖</div>`}</div></div>`;
+    }
+    function paintThumbs() {
+        document.querySelectorAll('canvas[data-th]').forEach(cv => { if (cv.dataset.drawn) return; cv.dataset.drawn = 1; const i = +cv.dataset.th, b = document.createElement('canvas'); CompanyOffice.paint(b, i + 1); const [sx, sy] = [[96, 104], [150, 48], [60, 36], [4, 30], [60, 74]][i];
+            const x = cv.getContext('2d'); if (i > S.stage) x.filter = 'grayscale(1) brightness(1.15) blur(1.5px)'; x.drawImage(b, sx, sy, 80, 42, 0, 0, 80, 42); });   // 還沒解鎖的：灰、糊糊的，看不清楚
+    }
+    // 所有辦公室：解鎖了才亮起來，搬過的可以換回去當辦公室的畫面（位子、同時幾件還是照現在這間）
+    function openOffices() {
+        show(`<div class="hd2"><h2>所有辦公室</h2><button class="x" id="oClose">關</button></div>
+            <div class="lvls glass" style="margin:0">${R.STAGES.map((g, i) => lvlRow(i, { all: true })).join('')}</div>
+            <div class="kv" style="display:block;line-height:1.7"><span>換成以前的辦公室只是換畫面，位子和同時幾件還是照${st().name}。坐不下的人在別的樓層做事。</span></div>`);
+        paintThumbs();
+        $('oClose').onclick = hide;
+        document.querySelectorAll('#sheet [data-look]').forEach(b => b.onclick = () => { S.look = +b.dataset.look; save(); hide(); go('office'); toast('換成' + R.STAGES[S.look].name); });
+    }
     function renderCompany() {
         $('title').textContent = '公司'; $('moneyLab').textContent = seg === 'equip' ? '錢包' : '公司帳戶'; $('money').textContent = R.fmt(seg === 'equip' ? S.wallet : S.acct);
         const B = $('segBody');
@@ -734,7 +755,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             if (S.inject.d !== today()) S.inject = { d: today(), amt: 0 };
             const injLeft = Math.max(0, st().inject - S.inject.amt);
             B.innerHTML = `<div class="co glass"><div><b>${esc(S.name)}</b><small>創始執行長・成立第 ${Math.floor((now() - S.created) / 864e5) + 1} 天</small></div><div style="text-align:right"><b class="num" style="font-weight:300">${S.jobsDone} 件</b><small>做完的案子</small></div></div>
-                <div class="lvls glass">${R.STAGES.map((g, i) => i < S.stage || i > S.stage + 1 ? '' : `<div class="lvl${i === S.stage ? ' now' : i === S.stage + 1 && canMove ? ' can' : i > S.stage ? ' lock' : ''}"><div class="th" style="background:#dfe3e6"><canvas data-th="${i}" width="80" height="42" style="width:80px;height:42px;image-rendering:pixelated"></canvas></div><div class="info"><div class="top"><span class="np np${i + 1}">${esc(S.name)}</span>${i === S.stage ? '<span class="chip" style="margin-left:auto">現在</span>' : ''}</div><div class="d"><b style="font-weight:500;color:#26303a">${g.name}</b>・${g.seats} 人・同時 ${g.conc} 件${g.maxDur >= 480 ? '・跨夜 ' + g.maxDur / 60 + ' 小時' : ''}</div>${i > 0 ? `<div class="d pr2 num">${R.fmt(g.cost)}・做完 ${g.jobs} 件</div>` : ''}</div></div>`).join('')}${S.stage + 2 < R.STAGES.length ? `<div class="lvl lock" style="display:block;text-align:center;font-size:10.5px;color:#6a7884;letter-spacing:.15em;padding:10px">之後還有 ${R.STAGES.length - S.stage - 2} 間・搬過去才看得到</div>` : ''}</div>
+                <div class="lvls glass">${lvlRow(S.stage)}<div class="lvl" id="allOffices" style="display:block;text-align:center;font-size:11px;color:#2f7d90;letter-spacing:.15em;padding:11px;cursor:pointer">看所有辦公室 ›</div></div>
                 ${next ? `<div class="cta"><button class="main num" id="mv" style="flex:1" ${canMove ? '' : 'disabled'}>搬到${next.name}・${R.fmt(next.cost)}${S.jobsDone < next.jobs ? '（還差 ' + (next.jobs - S.jobsDone) + ' 件）' : S.acct < next.cost ? '（帳戶還差 ' + R.fmt(next.cost - S.acct) + '）' : ''}</button></div>` : ''}
                 <div class="goal glass"><div class="gt"><span>公司帳戶 <b class="num" style="font-weight:400;color:#26303a">${R.fmt(S.acct)}</b></span><span class="r num">錢包 ${R.fmt(S.wallet)}</span></div>
                   <div class="money2"><button class="num" id="inj" ${injLeft ? '' : 'disabled'}>執行長增資（今天還能 ${R.fmt(injLeft)}）</button></div>
@@ -743,8 +764,8 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
                 <div class="trial glass">試玩錢包 <b class="num">${R.fmt(S.wallet)}</b>（只在這支手機、不動真的錢包）
                   <div class="tool"><button id="tAdd">錢包 +100 萬</button><button id="tSkip">快轉 10 分鐘</button><button id="tSkip2">快轉 1 小時</button><button id="tReset">整個重來</button></div></div>
                 <p class="foot">這裡的錢都是遊戲幣，不能儲值，也不能換現金或獎品。</p>`;
-            document.querySelectorAll('canvas[data-th]').forEach(cv => { const i = +cv.dataset.th, b = document.createElement('canvas'); CompanyOffice.paint(b, i + 1); const [sx, sy] = [[96, 104], [150, 48], [60, 36], [4, 30], [60, 74]][i]; cv.getContext('2d').drawImage(b, sx, sy, 80, 42, 0, 0, 80, 42); });
-            if ($('mv')) $('mv').onclick = async () => { if (!await ask('搬到' + next.name + '？', '用公司帳戶付 ' + R.fmt(next.cost) + '。舊燈泡會一起帶走。', { ok: '搬家' })) return; S.acct -= next.cost; S.stage++; S.applicants = R.applicants(S.stage, S.hiredSp); save(); go('office'); toast('搬到' + next.name + '了！'); };
+            paintThumbs(); $('allOffices').onclick = openOffices;
+            if ($('mv')) $('mv').onclick = async () => { if (!await ask('搬到' + next.name + '？', '用公司帳戶付 ' + R.fmt(next.cost) + '。舊燈泡會一起帶走。', { ok: '搬家' })) return; S.acct -= next.cost; S.stage++; S.look = S.stage; S.applicants = R.applicants(S.stage, S.hiredSp); save(); go('office'); toast('搬到' + next.name + '了！'); };
             $('inj').onclick = async () => { const n = Math.min(injLeft, S.wallet); if (!n) return toast('錢包沒錢'); if (!await ask('執行長增資？', '從錢包轉 ' + R.fmt(n) + ' 進公司帳戶。錢包不能直接轉進公司，只有增資，每天有上限。', { ok: '增資' })) return; S.wallet -= n; S.acct += n; S.inject.amt += n; save(); renderCompany(); toast('增資 ' + R.fmt(n)); };
             $('out').onclick = async () => { const n = Math.max(0, S.acct); if (!await ask('轉進錢包？', '把公司帳戶的 ' + R.fmt(n) + ' 轉進錢包。轉出去就不能直接轉回來了。', { ok: '轉進錢包' })) return; S.acct -= n; S.wallet += n; save(); renderCompany(); };
             $('tAdd').onclick = () => { S.wallet += 1000000; save(); renderCompany(); };
