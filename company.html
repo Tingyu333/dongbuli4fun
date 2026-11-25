@@ -23,11 +23,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/theme.css?v=20261116d">
     <script src="assets/theme.js?v=20261117c"></script>
-    <script src="assets/company-office.js?v=20261125b"></script>
-    <script src="assets/company-rules.js?v=20261125i"></script>
+    <script src="assets/company-office.js?v=20261125c"></script>
+    <script src="assets/company-rules.js?v=20261125j"></script>
     <style>
+:root { --ink: #26303a; --sub: #6a7884; --teal: #2f7d90; --sub2: #51606d; --paper: #f2f6f8; --bg2: #dfe3e6; }
 /* 毛玻璃介面（跟 docs/plans/company/ui.css 的樣張同一套） */
-body { margin: 0; font-family: "Noto Sans TC", sans-serif; color: #26303a; }
+body { margin: 0; font-family: "Noto Sans TC", sans-serif; color: var(--ink); }
   img.px { image-rendering: pixelated; display: block; }
   .num { font-variant-numeric: tabular-nums; }
   .glass { background: rgba(250,252,253,.6); backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3); border: 1px solid rgba(255,255,255,.78); box-shadow: 0 8px 24px rgba(40,60,80,.12), inset 0 1px 0 rgba(255,255,255,.9); border-radius: 16px; }
@@ -35,35 +36,35 @@ body { margin: 0; font-family: "Noto Sans TC", sans-serif; color: #26303a; }
 
   /* 上面的標題列 */
   .hd { position: relative; z-index: 3; margin: 14px 12px 0; padding: 10px 14px; display: grid; grid-template-columns: 58px 1fr auto; align-items: center; }
-  .hd .bk { font-size: 11px; letter-spacing: .15em; color: #6a7884; }
+  .hd .bk { font-size: 11px; letter-spacing: .15em; color: var(--sub); }
   .hd h1 { margin: 0; font-size: 15px; font-weight: 400; letter-spacing: .32em; text-align: center; }
-  .hd .m { text-align: right; font-size: 15px; font-weight: 300; } .hd .m small { display: block; font-size: 9px; letter-spacing: .2em; color: #6a7884; }
-  .sub { position: relative; z-index: 3; margin: 8px 14px 0; display: flex; align-items: center; gap: 8px; font-size: 11px; letter-spacing: .12em; color: #51606d; }
+  .hd .m { text-align: right; font-size: 15px; font-weight: 300; } .hd .m small { display: block; font-size: 9px; letter-spacing: .2em; color: var(--sub); }
+  .sub { position: relative; z-index: 3; margin: 8px 14px 0; display: flex; align-items: center; gap: 8px; font-size: 11px; letter-spacing: .12em; color: var(--sub2); }
   .sub .r { margin-left: auto; }
 
   /* 辦公室畫面 */
   .hero { position: absolute; left: 0; top: 0; width: 375px; height: 300px; }
   .hero img { position: absolute; left: 0; top: 96px; }
   .hero::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 96px; background: linear-gradient(#e6eaed, #cfd5d9); }
-  .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(223,227,230,.0) 0%, rgba(223,227,230,0) 82%, #dfe3e6 100%); }
+  .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(223,227,230,.0) 0%, rgba(223,227,230,0) 82%, var(--bg2) 100%); }
   .space { height: 196px; flex: none; }
 
-  .kp { position: relative; margin: 10px 12px 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; } .kp div { padding: 8px 10px; border-radius: 14px; } .kp small { display: block; font-size: 9.5px; letter-spacing: .2em; color: #6a7884; } .kp b { font-size: 16px; font-weight: 300; }
+  .kp { position: relative; margin: 10px 12px 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; } .kp div { padding: 8px 10px; border-radius: 14px; } .kp small { display: block; font-size: 9.5px; letter-spacing: .2em; color: var(--sub); } .kp b { font-size: 16px; font-weight: 300; }
   .panel { position: relative; margin: 10px 12px 0; padding: 4px 0; }
-  .ph { display: flex; align-items: center; padding: 8px 14px 4px; font-size: 11px; letter-spacing: .25em; color: #6a7884; }
+  .ph { display: flex; align-items: center; padding: 8px 14px 4px; font-size: 11px; letter-spacing: .25em; color: var(--sub); }
   .row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; font-size: 12.5px; } .row + .row { border-top: 1px solid rgba(120,140,155,.18); }
-  .row .tt { flex: 1; min-width: 0; } .row .tt small { display: block; font-size: 10.5px; color: #6a7884; margin-top: 2px; letter-spacing: .04em; }
+  .row .tt { flex: 1; min-width: 0; } .row .tt small { display: block; font-size: 10.5px; color: var(--sub); margin-top: 2px; letter-spacing: .04em; }
   .bar { height: 3px; background: rgba(120,140,155,.2); border-radius: 2px; margin-top: 6px; overflow: hidden; } .bar i { display: block; height: 100%; background: linear-gradient(90deg, #6aa9d8, #8fd3e0); box-shadow: 0 0 6px #8fd3e0; }
-  .chip { flex: none; font-size: 10.5px; letter-spacing: .08em; padding: 3px 9px; border-radius: 999px; background: rgba(79,169,191,.12); color: #2f7d90; border: 1px solid rgba(79,169,191,.45); white-space: nowrap; }
+  .chip { flex: none; font-size: 10.5px; letter-spacing: .08em; padding: 3px 9px; border-radius: 999px; background: rgba(79,169,191,.12); color: var(--teal); border: 1px solid rgba(79,169,191,.45); white-space: nowrap; }
   .chip.shu { background: rgba(179,58,47,.08); color: #b33a2f; border-color: rgba(179,58,47,.4); }
   .chip.gold { background: rgba(201,163,90,.14); color: #8a6a26; border-color: rgba(201,163,90,.6); }
-  .chip.mute { background: rgba(120,140,155,.1); color: #6a7884; border-color: rgba(120,140,155,.35); }
-  .cta { position: relative; margin: 10px 12px 0; display: flex; gap: 8px; } .cta button { flex: 1; min-height: 46px; border-radius: 14px; font: inherit; font-size: 12.5px; letter-spacing: .18em; border: 1px solid rgba(255,255,255,.85); background: rgba(250,252,253,.65); color: #26303a; backdrop-filter: blur(10px); }
-  .cta button.main { background: #26303a; color: #f2f6f8; border-color: #26303a; box-shadow: 0 6px 16px rgba(38,48,58,.3); flex: 1.6; }
-  .tabs { position: absolute; z-index: 3; left: 12px; right: 12px; bottom: 14px; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); padding: 11px 0 9px; font-size: 11px; letter-spacing: .2em; text-align: center; color: #6a7884; flex: none; }
-  .tabs span { position: relative; } .tabs span.on { color: #26303a; text-shadow: 0 0 10px rgba(143,211,224,.9); } .tabs span.on::after { content: ''; position: absolute; left: 50%; bottom: -6px; width: 14px; height: 2px; margin-left: -7px; border-radius: 2px; background: #8fd3e0; box-shadow: 0 0 6px #8fd3e0; }
+  .chip.mute { background: rgba(120,140,155,.1); color: var(--sub); border-color: rgba(120,140,155,.35); }
+  .cta { position: relative; margin: 10px 12px 0; display: flex; gap: 8px; } .cta button { flex: 1; min-height: 46px; border-radius: 14px; font: inherit; font-size: 12.5px; letter-spacing: .18em; border: 1px solid rgba(255,255,255,.85); background: rgba(250,252,253,.65); color: var(--ink); backdrop-filter: blur(10px); }
+  .cta button.main { background: var(--ink); color: var(--paper); border-color: var(--ink); box-shadow: 0 6px 16px rgba(38,48,58,.3); flex: 1.6; }
+  .tabs { position: absolute; z-index: 3; left: 12px; right: 12px; bottom: 14px; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); padding: 11px 0 9px; font-size: 11px; letter-spacing: .2em; text-align: center; color: var(--sub); flex: none; }
+  .tabs span { position: relative; } .tabs span.on { color: var(--ink); text-shadow: 0 0 10px rgba(143,211,224,.9); } .tabs span.on::after { content: ''; position: absolute; left: 50%; bottom: -6px; width: 14px; height: 2px; margin-left: -7px; border-radius: 2px; background: #8fd3e0; box-shadow: 0 0 6px #8fd3e0; }
   .tabs em { position: absolute; top: -9px; left: 50%; margin-left: 12px; font-style: normal; font-size: 8.5px; letter-spacing: .05em; padding: 1px 5px; border-radius: 999px; background: #b33a2f; color: #fff; }
-  .tabs em.c { background: #2f7d90; }
+  .tabs em.c { background: var(--teal); }
 
   /* 委託板 */
   .cards { position: relative; margin: 10px 12px 0; display: flex; flex-direction: column; gap: 8px; }
@@ -71,27 +72,27 @@ body { margin: 0; font-family: "Noto Sans TC", sans-serif; color: #26303a; }
   .ava { width: 46px; height: 46px; border-radius: 12px; background: linear-gradient(#eef3f6, #dce5ea); overflow: hidden; position: relative; box-shadow: inset 0 0 0 1px rgba(255,255,255,.9); }
   .ava img { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%); }
   .card h3 { margin: 0; font-size: 13px; font-weight: 500; letter-spacing: .04em; }
-  .card .who { font-size: 10.5px; color: #6a7884; margin-top: 3px; letter-spacing: .05em; }
-  .card .pay { text-align: right; font-size: 16px; font-weight: 300; } .card .pay small { display: block; font-size: 9.5px; color: #6a7884; letter-spacing: .1em; }
+  .card .who { font-size: 10.5px; color: var(--sub); margin-top: 3px; letter-spacing: .05em; }
+  .card .pay { text-align: right; font-size: 16px; font-weight: 300; } .card .pay small { display: block; font-size: 9.5px; color: var(--sub); letter-spacing: .1em; }
   .card .req { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
   .card.big { border-color: rgba(201,163,90,.7); box-shadow: 0 8px 24px rgba(40,60,80,.12), 0 0 0 1px rgba(201,163,90,.35), inset 0 1px 0 rgba(255,255,255,.9); }
   .blurbg { position: absolute; inset: 0; overflow: hidden; } .blurbg img { position: absolute; left: -30px; top: 40px; width: 435px; filter: blur(10px) saturate(.9); opacity: .55; image-rendering: auto; }
 
   /* 派人 */
   .case { position: relative; margin: 10px 12px 0; padding: 11px 14px; }
-  .case h3 { margin: 0; font-size: 13.5px; font-weight: 500; } .case .who { font-size: 10.5px; color: #6a7884; margin-top: 3px; }
+  .case h3 { margin: 0; font-size: 13.5px; font-weight: 500; } .case .who { font-size: 10.5px; color: var(--sub); margin-top: 3px; }
   .need { display: flex; align-items: center; gap: 8px; margin-top: 9px; padding-top: 9px; border-top: 1px solid rgba(120,140,155,.18); font-size: 11.5px; }
   .ok { width: 16px; height: 16px; border-radius: 50%; background: #3fb98b; color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 8px rgba(63,185,139,.6); }
   .staff { display: grid; grid-template-columns: 46px 1fr 24px; gap: 10px; align-items: center; padding: 9px 12px; }
   .staff + .staff { border-top: 1px solid rgba(120,140,155,.18); }
-  .staff .nm { font-size: 13px; } .staff .nm small { font-size: 10px; color: #6a7884; margin-left: 4px; letter-spacing: .05em; }
-  .st { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; margin-top: 4px; font-size: 9.5px; color: #6a7884; letter-spacing: .08em; }
+  .staff .nm { font-size: 13px; } .staff .nm small { font-size: 10px; color: var(--sub); margin-left: 4px; letter-spacing: .05em; }
+  .st { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; margin-top: 4px; font-size: 9.5px; color: var(--sub); letter-spacing: .08em; }
   .st span { display: flex; align-items: center; gap: 5px; } .seg { display: inline-flex; gap: 2px; } .seg i { width: 6px; height: 4px; border-radius: 1px; background: rgba(120,140,155,.25); } .seg i.f { background: #6ab9cf; box-shadow: 0 0 4px rgba(143,211,224,.9); } .seg.hi i.f { background: #3fb98b; box-shadow: 0 0 4px rgba(63,185,139,.8); }
-  .staff .say { font-size: 10px; color: #51606d; margin-top: 4px; }
+  .staff .say { font-size: 10px; color: var(--sub2); margin-top: 4px; }
   .chk { width: 22px; height: 22px; border-radius: 7px; border: 1px solid rgba(120,140,155,.45); background: rgba(255,255,255,.6); display: flex; align-items: center; justify-content: center; font-size: 12px; }
-  .chk.on { background: #26303a; border-color: #26303a; color: #8fd3e0; box-shadow: 0 0 0 3px rgba(143,211,224,.25); }
+  .chk.on { background: var(--ink); border-color: var(--ink); color: #8fd3e0; box-shadow: 0 0 0 3px rgba(143,211,224,.25); }
   .staff.busy { opacity: .45; }
-  .est { position: relative; margin: 10px 12px 0; padding: 10px 14px; display: flex; justify-content: space-between; font-size: 12px; } .est b { font-weight: 500; color: #2f7d90; }
+  .est { position: relative; margin: 10px 12px 0; padding: 10px 14px; display: flex; justify-content: space-between; font-size: 12px; } .est b { font-weight: 500; color: var(--teal); }
 
   /* 突發狀況 */
   .dim { position: absolute; inset: 0; background: rgba(38,48,58,.38); backdrop-filter: blur(3px); z-index: 4; }
@@ -99,32 +100,32 @@ body { margin: 0; font-family: "Noto Sans TC", sans-serif; color: #26303a; }
   .timer { height: 3px; border-radius: 3px; background: rgba(120,140,155,.2); overflow: hidden; } .timer i { display: block; width: 62%; height: 100%; background: linear-gradient(90deg, #b33a2f, #e0786c); box-shadow: 0 0 6px rgba(224,120,108,.8); }
   .modal .lb { margin-top: 12px; font-size: 10.5px; letter-spacing: .3em; color: #b33a2f; display: flex; align-items: center; gap: 6px; } .modal .lb::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #b33a2f; box-shadow: 0 0 6px rgba(179,58,47,.8); }
   .modal h2 { margin: 6px 0 6px; font-size: 18px; font-weight: 500; letter-spacing: .1em; }
-  .modal p { margin: 0 0 12px; font-size: 12px; line-height: 1.7; color: #51606d; }
-  .opt { display: block; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.7); border: 1px solid rgba(120,140,155,.25); margin-top: 8px; font-size: 12.5px; } .opt small { display: block; font-size: 10.5px; color: #6a7884; margin-top: 3px; }
-  .opt.def { border-color: rgba(79,169,191,.6); box-shadow: 0 0 0 3px rgba(143,211,224,.2); } .opt .tag { float: right; font-size: 9.5px; color: #2f7d90; letter-spacing: .1em; }
+  .modal p { margin: 0 0 12px; font-size: 12px; line-height: 1.7; color: var(--sub2); }
+  .opt { display: block; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.7); border: 1px solid rgba(120,140,155,.25); margin-top: 8px; font-size: 12.5px; } .opt small { display: block; font-size: 10.5px; color: var(--sub); margin-top: 3px; }
+  .opt.def { border-color: rgba(79,169,191,.6); box-shadow: 0 0 0 3px rgba(143,211,224,.2); } .opt .tag { float: right; font-size: 9.5px; color: var(--teal); letter-spacing: .1em; }
   .opt.bet .tag { color: #b33a2f; }
 
   /* 公司 */
   .co { position: relative; margin: 8px 12px 0; padding: 9px 14px; display: flex; justify-content: space-between; align-items: center; }
-  .co b { font-weight: 500; font-size: 14px; letter-spacing: .08em; } .co small { display: block; font-size: 10px; color: #6a7884; letter-spacing: .15em; margin-top: 3px; }
+  .co b { font-weight: 500; font-size: 14px; letter-spacing: .08em; } .co small { display: block; font-size: 10px; color: var(--sub); letter-spacing: .15em; margin-top: 3px; }
   .lvls { position: relative; margin: 10px 12px 0; padding: 4px 0; }
   .lvl { display: grid; grid-template-columns: 96px 1fr; gap: 10px; padding: 6px 12px; align-items: center; }
   .lvl + .lvl { border-top: 1px solid rgba(120,140,155,.18); }
   .lvl .th { width: 96px; height: 49px; flex: none; border-radius: 9px; overflow: hidden; position: relative; box-shadow: inset 0 0 0 1px rgba(255,255,255,.7); }
   .lvl .th img { width: 80px; height: 42px; image-rendering: pixelated; }
-  .lvl .info { min-width: 0; } .lvl .top { display: flex; align-items: center; gap: 6px; } .lvl .pr { margin-left: auto; font-size: 11px; color: #51606d; white-space: nowrap; }
-  .lvl .pr2 { color: #26303a; margin-top: 2px; }
-  .lvl .d { font-size: 10px; color: #6a7884; margin-top: 3px; letter-spacing: .04em; }
+  .lvl .info { min-width: 0; } .lvl .top { display: flex; align-items: center; gap: 6px; } .lvl .pr { margin-left: auto; font-size: 11px; color: var(--sub2); white-space: nowrap; }
+  .lvl .pr2 { color: var(--ink); margin-top: 2px; }
+  .lvl .d { font-size: 10px; color: var(--sub); margin-top: 3px; letter-spacing: .04em; }
   .lvl.lock .th img { filter: grayscale(.6) brightness(1.08); opacity: .7; }
   .lvl.now { background: rgba(143,211,224,.12); }
   .lvl.ipo .th { background: repeating-linear-gradient(135deg, #f6e7b4 0 6px, #f1dc98 6px 12px); display: flex; align-items: center; justify-content: center; font-size: 10px; color: #8a6a26; letter-spacing: .2em; }
   .goal { position: relative; margin: 10px 12px 0; padding: 10px 14px 12px; }
-  .goal .gt { display: flex; font-size: 11px; letter-spacing: .2em; color: #51606d; } .goal .gt .r { margin-left: auto; letter-spacing: .1em; color: #2f7d90; }
-  .goal .gl { display: flex; justify-content: space-between; font-size: 10.5px; color: #6a7884; margin-top: 8px; } .goal .gl b { font-weight: 400; color: #26303a; }
+  .goal .gt { display: flex; font-size: 11px; letter-spacing: .2em; color: var(--sub2); } .goal .gt .r { margin-left: auto; letter-spacing: .1em; color: var(--teal); }
+  .goal .gl { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--sub); margin-top: 8px; } .goal .gl b { font-weight: 400; color: var(--ink); }
   .goal .bar { margin-top: 4px; } .goal .g2 { display: grid; grid-template-columns: 1fr 1.4fr; gap: 14px; }
   .card.off { opacity: .55; }
-  .ad { position: relative; margin: 8px 12px 0; padding: 10px 14px; display: flex; align-items: center; gap: 10px; font-size: 12px; } .ad small { display: block; font-size: 10px; color: #6a7884; margin-top: 2px; } .ad button { margin-left: auto; font: inherit; font-size: 11.5px; letter-spacing: .12em; padding: 8px 14px; border-radius: 10px; border: 1px solid #26303a; background: #26303a; color: #f2f6f8; }
-  .foot { position: relative; margin: 8px 18px 0; font-size: 10px; color: #6a7884; text-align: center; letter-spacing: .06em; }
+  .ad { position: relative; margin: 8px 12px 0; padding: 10px 14px; display: flex; align-items: center; gap: 10px; font-size: 12px; } .ad small { display: block; font-size: 10px; color: var(--sub); margin-top: 2px; } .ad button { margin-left: auto; font: inherit; font-size: 11.5px; letter-spacing: .12em; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); }
+  .foot { position: relative; margin: 8px 18px 0; font-size: 10px; color: var(--sub); text-align: center; letter-spacing: .06em; }
 
   .np { display: inline-flex; align-items: center; gap: 6px; font-family: 'Noto Serif TC', serif; font-size: 13px; letter-spacing: .28em; padding: 4px 10px 4px 12px; line-height: 1.3; white-space: nowrap; position: relative; }
   .np1 { background: #f6f1e6; color: #6b6052; border: 1px solid #cfc6b6; }
@@ -143,66 +144,66 @@ body { margin: 0; font-family: "Noto Sans TC", sans-serif; color: #26303a; }
 .star { display: inline-block; width: 11px; height: 11px; background: linear-gradient(#f6dc8a, #c9a35a); clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); vertical-align: -1px; filter: drop-shadow(0 0 2px rgba(201,163,90,.8)); }
 .app { position: relative; margin: 10px 12px 0; padding: 12px 12px 12px; display: grid; grid-template-columns: 64px 1fr; gap: 6px 12px; }
 .app .ava { width: 64px; height: 64px; border-radius: 14px; }
-.app .nm { font-size: 14px; display: flex; align-items: center; gap: 6px; } .app .nm small { font-size: 10px; color: #6a7884; letter-spacing: .1em; }
-.app .say { font-size: 10.5px; color: #51606d; margin-top: 4px; }
-.app .ft { grid-column: 1 / 3; display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid rgba(120,140,155,.18); font-size: 11px; color: #51606d; }
-.app .ft b { font-weight: 400; color: #26303a; } .app .ft button { margin-left: auto; font: inherit; font-size: 12px; letter-spacing: .15em; padding: 8px 18px; border-radius: 10px; border: 1px solid #26303a; background: #26303a; color: #f2f6f8; }
+.app .nm { font-size: 14px; display: flex; align-items: center; gap: 6px; } .app .nm small { font-size: 10px; color: var(--sub); letter-spacing: .1em; }
+.app .say { font-size: 10.5px; color: var(--sub2); margin-top: 4px; }
+.app .ft { grid-column: 1 / 3; display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid rgba(120,140,155,.18); font-size: 11px; color: var(--sub2); }
+.app .ft b { font-weight: 400; color: var(--ink); } .app .ft button { margin-left: auto; font: inherit; font-size: 12px; letter-spacing: .15em; padding: 8px 18px; border-radius: 10px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); }
 .app.gold { border-color: rgba(201,163,90,.8); box-shadow: 0 8px 24px rgba(40,60,80,.12), 0 0 0 1px rgba(201,163,90,.4), 0 0 18px rgba(246,220,138,.35), inset 0 1px 0 rgba(255,255,255,.9); }
 .app.gold .ava { background: linear-gradient(#fbf1d3, #f0dfae); }
 .mate { display: grid; grid-template-columns: 46px 1fr auto; gap: 10px; align-items: center; padding: 9px 12px; } .mate + .mate { border-top: 1px solid rgba(120,140,155,.18); }
-.mate .nm { font-size: 13px; } .mate .nm small { font-size: 10px; color: #6a7884; margin-left: 4px; } .mate .stt { font-size: 10.5px; color: #6a7884; margin-top: 3px; } .mate .go { color: #9fb1c0; font-size: 16px; }
+.mate .nm { font-size: 13px; } .mate .nm small { font-size: 10px; color: var(--sub); margin-left: 4px; } .mate .stt { font-size: 10.5px; color: var(--sub); margin-top: 3px; } .mate .go { color: #9fb1c0; font-size: 16px; }
 .sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; padding: 14px 16px 90px; border-radius: 26px 26px 0 0; background: rgba(250,252,253,.86); }
 .sheet .grab { width: 36px; height: 4px; border-radius: 4px; background: rgba(120,140,155,.4); margin: 0 auto 12px; }
 .sheet .top { display: grid; grid-template-columns: 76px 1fr; gap: 12px; align-items: center; }
 .sheet .top .ava { width: 76px; height: 76px; border-radius: 16px; }
-.bubble { position: relative; padding: 8px 11px; border-radius: 12px; background: #fff; font-size: 11.5px; line-height: 1.55; color: #26303a; box-shadow: 0 2px 8px rgba(40,60,80,.1); }
+.bubble { position: relative; padding: 8px 11px; border-radius: 12px; background: #fff; font-size: 11.5px; line-height: 1.55; color: var(--ink); box-shadow: 0 2px 8px rgba(40,60,80,.1); }
 .bubble::before { content: ''; position: absolute; left: -5px; top: 14px; width: 10px; height: 10px; background: #fff; transform: rotate(45deg); }
-.kv { display: flex; justify-content: space-between; font-size: 11px; color: #6a7884; margin-top: 10px; } .kv b { font-weight: 400; color: #26303a; }
+.kv { display: flex; justify-content: space-between; font-size: 11px; color: var(--sub); margin-top: 10px; } .kv b { font-weight: 400; color: var(--ink); }
 .skill { margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: rgba(246,220,138,.18); border: 1px solid rgba(201,163,90,.45); font-size: 11px; color: #6b5420; } .skill b { font-weight: 500; }
-.btns { display: flex; gap: 8px; margin-top: 12px; } .btns button { flex: 1; min-height: 42px; border-radius: 12px; font: inherit; font-size: 12px; letter-spacing: .12em; border: 1px solid rgba(120,140,155,.35); background: rgba(255,255,255,.7); color: #26303a; } .btns button.main { background: #26303a; color: #f2f6f8; border-color: #26303a; } .btns button.warn { color: #b33a2f; border-color: rgba(179,58,47,.35); flex: .8; }
+.btns { display: flex; gap: 8px; margin-top: 12px; } .btns button { flex: 1; min-height: 42px; border-radius: 12px; font: inherit; font-size: 12px; letter-spacing: .12em; border: 1px solid rgba(120,140,155,.35); background: rgba(255,255,255,.7); color: var(--ink); } .btns button.main { background: var(--ink); color: var(--paper); border-color: var(--ink); } .btns button.warn { color: #b33a2f; border-color: rgba(179,58,47,.35); flex: .8; }
 .rc { position: relative; margin: 12px 14px 0; padding: 14px 16px 12px; }
-.rc .lb { font-size: 10.5px; letter-spacing: .3em; color: #2f7d90; display: flex; align-items: center; gap: 6px; } .rc .lb.bad { color: #b33a2f; }
-.rc h2 { margin: 6px 0 2px; font-size: 15px; font-weight: 500; letter-spacing: .04em; display: flex; align-items: center; gap: 8px; } .rc .who { font-size: 10.5px; color: #6a7884; }
+.rc .lb { font-size: 10.5px; letter-spacing: .3em; color: var(--teal); display: flex; align-items: center; gap: 6px; } .rc .lb.bad { color: #b33a2f; }
+.rc h2 { margin: 6px 0 2px; font-size: 15px; font-weight: 500; letter-spacing: .04em; display: flex; align-items: center; gap: 8px; } .rc .who { font-size: 10.5px; color: var(--sub); }
 .rc .ava { width: 40px; height: 40px; border-radius: 10px; flex: none; }
-.ln { display: flex; justify-content: space-between; font-size: 12px; padding: 7px 0; border-top: 1px dashed rgba(120,140,155,.3); } .ln.sub { font-size: 11px; color: #6a7884; padding: 3px 0 3px 12px; border-top: 0; } .ln .up { color: #2f7d90; } .ln .dn { color: #b33a2f; }
+.ln { display: flex; justify-content: space-between; font-size: 12px; padding: 7px 0; border-top: 1px dashed rgba(120,140,155,.3); } .ln.sub { font-size: 11px; color: var(--sub); padding: 3px 0 3px 12px; border-top: 0; } .ln .up { color: var(--teal); } .ln .dn { color: #b33a2f; }
 .ln.tot { border-top: 1px solid rgba(38,48,58,.5); margin-top: 4px; padding-top: 9px; font-size: 13.5px; font-weight: 500; } .ln.tot .v { font-size: 18px; font-weight: 300; }
-.story { font-size: 11.5px; line-height: 1.7; color: #51606d; margin: 8px 0 4px; }
-.quote { font-size: 11.5px; line-height: 1.6; color: #26303a; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,.65); border-left: 2px solid #8fd3e0; margin-top: 8px; display: flex; gap: 8px; align-items: center; } .quote .ava { width: 32px; height: 32px; border-radius: 8px; }
+.story { font-size: 11.5px; line-height: 1.7; color: var(--sub2); margin: 8px 0 4px; }
+.quote { font-size: 11.5px; line-height: 1.6; color: var(--ink); padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,.65); border-left: 2px solid #8fd3e0; margin-top: 8px; display: flex; gap: 8px; align-items: center; } .quote .ava { width: 32px; height: 32px; border-radius: 8px; }
 .lvup { margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: rgba(143,211,224,.16); border: 1px solid rgba(79,169,191,.4); font-size: 11px; color: #2f6f80; }
 .note { position: absolute; z-index: 4; left: 20px; right: 20px; top: 330px; padding: 20px 20px 16px; }
-.note .from { font-size: 10.5px; letter-spacing: .3em; color: #6a7884; } .note p { margin: 12px 0 0; font-family: 'Noto Serif TC', serif; font-size: 16px; line-height: 1.9; letter-spacing: .08em; color: #26303a; }
-.note .nx { margin-top: 18px; display: flex; align-items: center; } .note .dots { display: flex; gap: 6px; } .note .dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(120,140,155,.35); } .note .dots i.on { background: #2f7d90; box-shadow: 0 0 6px #8fd3e0; }
-.note button { margin-left: auto; font: inherit; font-size: 12px; letter-spacing: .2em; padding: 9px 22px; border-radius: 12px; border: 0; background: #26303a; color: #f2f6f8; }
-.skip { position: absolute; z-index: 4; right: 18px; top: 22px; font-size: 11px; letter-spacing: .2em; color: #51606d; padding: 6px 12px; }
+.note .from { font-size: 10.5px; letter-spacing: .3em; color: var(--sub); } .note p { margin: 12px 0 0; font-family: 'Noto Serif TC', serif; font-size: 16px; line-height: 1.9; letter-spacing: .08em; color: var(--ink); }
+.note .nx { margin-top: 18px; display: flex; align-items: center; } .note .dots { display: flex; gap: 6px; } .note .dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(120,140,155,.35); } .note .dots i.on { background: var(--teal); box-shadow: 0 0 6px #8fd3e0; }
+.note button { margin-left: auto; font: inherit; font-size: 12px; letter-spacing: .2em; padding: 9px 22px; border-radius: 12px; border: 0; background: var(--ink); color: var(--paper); }
+.skip { position: absolute; z-index: 4; right: 18px; top: 22px; font-size: 11px; letter-spacing: .2em; color: var(--sub2); padding: 6px 12px; }
 .namef { position: relative; margin: 14px 12px 0; padding: 16px; }
-.namef .q { font-size: 13px; } .namef .q small { display: block; font-size: 10.5px; color: #6a7884; margin-top: 3px; }
-.namef .in { margin-top: 14px; display: flex; align-items: center; padding: 11px 12px; border-radius: 12px; background: rgba(255,255,255,.85); border: 1px solid rgba(79,169,191,.6); box-shadow: 0 0 0 3px rgba(143,211,224,.25); font-size: 15px; letter-spacing: .1em; } .namef .in .cur { width: 1px; height: 18px; background: #2f7d90; margin-left: 2px; } .namef .in small { margin-left: auto; font-size: 10.5px; color: #6a7884; }
+.namef .q { font-size: 13px; } .namef .q small { display: block; font-size: 10.5px; color: var(--sub); margin-top: 3px; }
+.namef .in { margin-top: 14px; display: flex; align-items: center; padding: 11px 12px; border-radius: 12px; background: rgba(255,255,255,.85); border: 1px solid rgba(79,169,191,.6); box-shadow: 0 0 0 3px rgba(143,211,224,.25); font-size: 15px; letter-spacing: .1em; } .namef .in .cur { width: 1px; height: 18px; background: var(--teal); margin-left: 2px; } .namef .in small { margin-left: auto; font-size: 10.5px; color: var(--sub); }
 .namef .sug { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 .card-biz { position: relative; margin: 14px auto 0; width: 260px; height: 140px; border-radius: 6px; background: #fff; box-shadow: 0 10px 30px rgba(40,60,80,.2); padding: 18px 20px; box-sizing: border-box; }
-.card-biz .lg { width: 26px; height: 26px; } .card-biz .n { position: absolute; left: 20px; bottom: 34px; font-family: 'Noto Serif TC', serif; font-size: 16px; letter-spacing: .2em; } .card-biz .t { position: absolute; left: 20px; bottom: 16px; font-size: 10px; letter-spacing: .3em; color: #6a7884; } .card-biz .dt { position: absolute; right: 18px; top: 18px; width: 6px; height: 6px; border-radius: 50%; background: #b33a2f; }
-.tut { position: absolute; z-index: 5; left: 50%; transform: translateX(-50%); padding: 7px 12px; border-radius: 10px; background: #26303a; color: #f2f6f8; font-size: 11px; letter-spacing: .1em; white-space: nowrap; box-shadow: 0 6px 16px rgba(38,48,58,.3); }
-.tut::after { content: ''; position: absolute; left: 50%; bottom: -5px; margin-left: -5px; width: 10px; height: 10px; background: #26303a; transform: rotate(45deg); }
+.card-biz .lg { width: 26px; height: 26px; } .card-biz .n { position: absolute; left: 20px; bottom: 34px; font-family: 'Noto Serif TC', serif; font-size: 16px; letter-spacing: .2em; } .card-biz .t { position: absolute; left: 20px; bottom: 16px; font-size: 10px; letter-spacing: .3em; color: var(--sub); } .card-biz .dt { position: absolute; right: 18px; top: 18px; width: 6px; height: 6px; border-radius: 50%; background: #b33a2f; }
+.tut { position: absolute; z-index: 5; left: 50%; transform: translateX(-50%); padding: 7px 12px; border-radius: 10px; background: var(--ink); color: var(--paper); font-size: 11px; letter-spacing: .1em; white-space: nowrap; box-shadow: 0 6px 16px rgba(38,48,58,.3); }
+.tut::after { content: ''; position: absolute; left: 50%; bottom: -5px; margin-left: -5px; width: 10px; height: 10px; background: var(--ink); transform: rotate(45deg); }
 .pulse { box-shadow: 0 0 0 3px rgba(143,211,224,.6), 0 0 18px rgba(143,211,224,.9), 0 8px 24px rgba(40,60,80,.12) !important; border-color: #8fd3e0 !important; }
 .away { position: relative; margin: 10px 12px 0; padding: 12px 14px; }
-.away .tm { font-size: 10.5px; color: #6a7884; letter-spacing: .08em; margin-top: 2px; }
-.away .big { display: flex; align-items: baseline; justify-content: space-between; margin-top: 10px; } .away .big b { font-size: 26px; font-weight: 300; } .away .big span { font-size: 11px; color: #6a7884; }
-.it { display: flex; align-items: center; gap: 10px; padding: 9px 14px; font-size: 12px; } .it + .it { border-top: 1px solid rgba(120,140,155,.18); } .it .k { width: 64px; font-size: 10.5px; color: #6a7884; letter-spacing: .15em; flex: none; } .it .v { flex: 1; }
+.away .tm { font-size: 10.5px; color: var(--sub); letter-spacing: .08em; margin-top: 2px; }
+.away .big { display: flex; align-items: baseline; justify-content: space-between; margin-top: 10px; } .away .big b { font-size: 26px; font-weight: 300; } .away .big span { font-size: 11px; color: var(--sub); }
+.it { display: flex; align-items: center; gap: 10px; padding: 9px 14px; font-size: 12px; } .it + .it { border-top: 1px solid rgba(120,140,155,.18); } .it .k { width: 64px; font-size: 10.5px; color: var(--sub); letter-spacing: .15em; flex: none; } .it .v { flex: 1; }
 
 /* ===== 第三批（ui3.html：中期目標）===== */
-.seg3 { position: relative; margin: 10px 12px 0; display: grid; grid-template-columns: repeat(4, 1fr); padding: 4px; border-radius: 14px; font-size: 11.5px; letter-spacing: .15em; text-align: center; color: #6a7884; }
-.seg3 span { padding: 7px 0; border-radius: 10px; } .seg3 span.on { background: #26303a; color: #f2f6f8; box-shadow: 0 4px 10px rgba(38,48,58,.25); }
+.seg3 { position: relative; margin: 10px 12px 0; display: grid; grid-template-columns: repeat(4, 1fr); padding: 4px; border-radius: 14px; font-size: 11.5px; letter-spacing: .15em; text-align: center; color: var(--sub); }
+.seg3 span { padding: 7px 0; border-radius: 10px; } .seg3 span.on { background: var(--ink); color: var(--paper); box-shadow: 0 4px 10px rgba(38,48,58,.25); }
 .shelf { position: relative; margin: 10px 12px 0; padding: 12px 12px 10px; }
-.shelf .ttl { display: flex; font-size: 11px; letter-spacing: .2em; color: #51606d; } .shelf .ttl span:last-child { margin-left: auto; letter-spacing: .05em; color: #2f7d90; }
+.shelf .ttl { display: flex; font-size: 11px; letter-spacing: .2em; color: var(--sub2); } .shelf .ttl span:last-child { margin-left: auto; letter-spacing: .05em; color: var(--teal); }
 .shelf .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px 6px; margin-top: 10px; }
 .shelf .slot { height: 52px; border-radius: 10px; background: linear-gradient(#f4ead9, #e8d6b0); box-shadow: inset 0 -3px 0 #c9ad7c, inset 0 1px 0 #fff; display: flex; align-items: center; justify-content: center; }
 .shelf .slot.off { background: linear-gradient(#eef2f4, #dfe5e9); box-shadow: inset 0 -3px 0 #c2d0da, inset 0 1px 0 #fff; }
 .shelf .slot canvas { image-rendering: pixelated; width: 36px; height: 36px; }
 .ser { display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; align-items: center; padding: 8px 12px; } .ser + .ser { border-top: 1px solid rgba(120,140,155,.18); }
-.ser .ava { width: 40px; height: 40px; border-radius: 10px; } .ser .nm { font-size: 12px; } .ser .nx { font-size: 10px; color: #6a7884; margin-top: 2px; }
+.ser .ava { width: 40px; height: 40px; border-radius: 10px; } .ser .nm { font-size: 12px; } .ser .nx { font-size: 10px; color: var(--sub); margin-top: 2px; }
 .pips { display: flex; gap: 3px; margin-top: 4px; } .pips i { width: 14px; height: 4px; border-radius: 2px; background: rgba(120,140,155,.25); } .pips i.f { background: #6ab9cf; box-shadow: 0 0 4px rgba(143,211,224,.9); } .pips i.big { width: 20px; }
 .ser .gift { width: 30px; height: 30px; border-radius: 8px; background: rgba(255,255,255,.7); display: flex; align-items: center; justify-content: center; } .ser .gift canvas { width: 24px; height: 24px; image-rendering: pixelated; }
 .dex { position: relative; margin: 10px 12px 0; padding: 10px 10px 12px; }
-.dex .ttl { display: flex; padding: 2px 4px 8px; font-size: 11px; letter-spacing: .2em; color: #51606d; } .dex .ttl b { margin-left: auto; font-weight: 400; color: #2f7d90; letter-spacing: .05em; }
+.dex .ttl { display: flex; padding: 2px 4px 8px; font-size: 11px; letter-spacing: .2em; color: var(--sub2); } .dex .ttl b { margin-left: auto; font-weight: 400; color: var(--teal); letter-spacing: .05em; }
 .dex .g { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
 .dex .c { height: 50px; border-radius: 9px; background: linear-gradient(#eef3f6, #dce5ea); position: relative; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,.9); }
 .dex .c img { position: absolute; left: 50%; bottom: 1px; transform: translateX(-50%); image-rendering: pixelated; max-width: calc(100% - 4px); max-height: calc(100% - 4px); object-fit: contain; }   /* 使用者：特別人選的剪影被裁掉——整隻縮進格子 */
@@ -210,27 +211,27 @@ body { margin: 0; font-family: "Noto Sans TC", sans-serif; color: #26303a; }
 .dex .c.off img { filter: brightness(0); opacity: .16; }
 .dex .c.sp { background: linear-gradient(#fbf1d3, #f0dfae); } .dex .c.sp.off { background: linear-gradient(#eef3f6, #dce5ea); }
 .dex .c i { position: absolute; right: 3px; top: 3px; width: 6px; height: 6px; border-radius: 50%; } 
-.dex .sub2 { font-size: 10px; letter-spacing: .15em; color: #6a7884; margin: 10px 4px 6px; }
-.miles { display: flex; gap: 6px; margin: 10px 2px 0; } .miles span { flex: 1; text-align: center; font-size: 10px; padding: 6px 0; border-radius: 9px; background: rgba(255,255,255,.6); border: 1px solid rgba(120,140,155,.25); color: #6a7884; } .miles span.done { border-color: rgba(79,169,191,.6); color: #2f7d90; background: rgba(143,211,224,.15); }
+.dex .sub2 { font-size: 10px; letter-spacing: .15em; color: var(--sub); margin: 10px 4px 6px; }
+.miles { display: flex; gap: 6px; margin: 10px 2px 0; } .miles span { flex: 1; text-align: center; font-size: 10px; padding: 6px 0; border-radius: 9px; background: rgba(255,255,255,.6); border: 1px solid rgba(120,140,155,.25); color: var(--sub); } .miles span.done { border-color: rgba(79,169,191,.6); color: var(--teal); background: rgba(143,211,224,.15); }
 .rk { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; padding: 10px 14px; } .rk + .rk { border-top: 1px solid rgba(120,140,155,.18); }
-.rk .no { font-size: 16px; font-weight: 300; text-align: center; color: #6a7884; } .rk .no.top { color: #8a6a26; font-weight: 400; }
-.rk .co2 { font-size: 13px; } .rk .co2 small { display: block; font-size: 10px; color: #6a7884; margin-top: 4px; letter-spacing: .05em; }
-.rk .v { text-align: right; font-size: 14px; font-weight: 300; } .rk .v small { display: block; font-size: 9.5px; color: #6a7884; letter-spacing: .1em; }
+.rk .no { font-size: 16px; font-weight: 300; text-align: center; color: var(--sub); } .rk .no.top { color: #8a6a26; font-weight: 400; }
+.rk .co2 { font-size: 13px; } .rk .co2 small { display: block; font-size: 10px; color: var(--sub); margin-top: 4px; letter-spacing: .05em; }
+.rk .v { text-align: right; font-size: 14px; font-weight: 300; } .rk .v small { display: block; font-size: 9.5px; color: var(--sub); letter-spacing: .1em; }
 .rk.me { background: rgba(143,211,224,.14); }
 .rk .np { font-size: 12px; padding: 3px 9px 3px 10px; letter-spacing: .16em; } .rk .co2 small { margin-top: 5px; }
 .eq { display: grid; grid-template-columns: 56px 1fr auto; gap: 12px; align-items: center; padding: 10px 14px; } .eq + .eq { border-top: 1px solid rgba(120,140,155,.18); }
 .eq .ic { width: 56px; height: 56px; border-radius: 12px; background: linear-gradient(#eef3f6, #dce5ea); display: flex; align-items: center; justify-content: center; } .eq .ic canvas { width: 48px; height: 48px; image-rendering: pixelated; }
-.eq .nm { font-size: 13px; } .eq .d { font-size: 10.5px; color: #6a7884; margin-top: 3px; }
-.eq button { font: inherit; font-size: 11.5px; letter-spacing: .1em; padding: 8px 12px; border-radius: 10px; border: 1px solid #26303a; background: #26303a; color: #f2f6f8; white-space: nowrap; } .eq button.got { background: rgba(143,211,224,.15); color: #2f7d90; border-color: rgba(79,169,191,.5); }
+.eq .nm { font-size: 13px; } .eq .d { font-size: 10.5px; color: var(--sub); margin-top: 3px; }
+.eq button { font: inherit; font-size: 11.5px; letter-spacing: .1em; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); white-space: nowrap; } .eq button.got { background: rgba(143,211,224,.15); color: var(--teal); border-color: rgba(79,169,191,.5); }
 
 .dex .dots4 { position: absolute; right: 4px; top: 4px; display: flex; gap: 2px; } .dex .dots4 i { position: static; width: 6px; height: 6px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(60,70,80,.35); }
 
-.lvl .stg { font-size: 10.5px; color: #51606d; letter-spacing: .15em; white-space: nowrap; } .lvl .np { font-size: 11.5px; letter-spacing: .2em; }
+.lvl .stg { font-size: 10.5px; color: var(--sub2); letter-spacing: .15em; white-space: nowrap; } .lvl .np { font-size: 11.5px; letter-spacing: .2em; }
 
 /* ===== 這一頁自己的（App 版面） ===== */
-html, body { background: #dfe3e6 !important; }
+html, body { background: var(--bg2) !important; }
 body { min-height: 100vh; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
-.shell { position: relative; max-width: 420px; margin: 0 auto; min-height: 100vh; padding-bottom: 96px; background: #dfe3e6; }
+.shell { position: relative; max-width: 420px; margin: 0 auto; min-height: 100vh; padding-bottom: 96px; background: var(--bg2); }
 button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
 .hd { position: sticky; top: 8px; z-index: 6; grid-template-columns: 58px 1fr 58px !important; } .hd a.bk { text-decoration: none; }
 .scene { position: relative; margin: 10px 0 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
@@ -240,12 +241,12 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
 .tabs { position: fixed; left: 50%; transform: translateX(-50%); width: min(396px, calc(100% - 24px)); bottom: calc(12px + env(safe-area-inset-bottom)); right: auto; z-index: 7; }
 .tabs span { cursor: pointer; padding: 4px 0; } .tabs em { white-space: nowrap; }
 .view[hidden] { display: none; }
-.empty { padding: 18px 14px; text-align: center; font-size: 12px; color: #6a7884; letter-spacing: .1em; }
-.row .acts { display: flex; gap: 6px; align-items: center; } .row .mini { font: inherit; font-size: 10.5px; padding: 4px 8px; border-radius: 8px; border: 1px solid rgba(120,140,155,.4); background: rgba(255,255,255,.7); color: #51606d; }
+.empty { padding: 18px 14px; text-align: center; font-size: 12px; color: var(--sub); letter-spacing: .1em; }
+.row .acts { display: flex; gap: 6px; align-items: center; } .row .mini { font: inherit; font-size: 10.5px; padding: 4px 8px; border-radius: 8px; border: 1px solid rgba(120,140,155,.4); background: rgba(255,255,255,.7); color: var(--sub2); }
 .row.done { cursor: pointer; }
 .card { cursor: pointer; } .card.cant { opacity: .62; } .card .cantw { grid-column: 1 / -1; font-size: 10.5px; color: #b33a2f; letter-spacing: .05em; margin-top: 2px; }
-.linkbtn { font: inherit; font-size: 11px; color: #6a7884; background: none; border: 0; padding: 6px 2px; letter-spacing: .1em; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; } .linkbtn:disabled { opacity: .4; }
-.card .exp { font-size: 9.5px; color: #6a7884; }
+.linkbtn { font: inherit; font-size: 11px; color: var(--sub); background: none; border: 0; padding: 6px 2px; letter-spacing: .1em; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; } .linkbtn:disabled { opacity: .4; }
+.card .exp { font-size: 9.5px; color: var(--sub); }
 .card.tutc { border-color: #8fd3e0; box-shadow: 0 0 0 3px rgba(143,211,224,.6), 0 0 18px rgba(143,211,224,.9); }
 .mate { cursor: pointer; }
 /* 蓋在上面的一層（派人、員工、應徵、結案單、突發狀況…） */
@@ -253,22 +254,22 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
 .layer[hidden] { display: none; }
 .layer .back { position: absolute; inset: 0; background: rgba(38,48,58,.3); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
 .layer .sheet { position: relative; max-width: 420px; width: 100%; margin: 0 auto; max-height: 88vh; overflow-y: auto; padding: 14px 14px calc(18px + env(safe-area-inset-bottom)); box-sizing: border-box; border-radius: 26px 26px 0 0; background: rgba(246,248,250,.94); }
-.layer .sheet .hd2 { display: flex; align-items: center; margin-bottom: 8px; } .layer .sheet .hd2 h2 { margin: 0; font-size: 15px; font-weight: 500; letter-spacing: .2em; } .layer .sheet .hd2 .x { margin-left: auto; font: inherit; font-size: 12px; letter-spacing: .15em; color: #6a7884; background: none; border: 0; padding: 6px 4px; }
+.layer .sheet .hd2 { display: flex; align-items: center; margin-bottom: 8px; } .layer .sheet .hd2 h2 { margin: 0; font-size: 15px; font-weight: 500; letter-spacing: .2em; } .layer .sheet .hd2 .x { margin-left: auto; font: inherit; font-size: 12px; letter-spacing: .15em; color: var(--sub); background: none; border: 0; padding: 6px 4px; }
 .layer.center { justify-content: center; } .layer.center .sheet { border-radius: 22px; width: calc(100% - 32px); max-width: 390px; padding: 16px; }
 .sheet .case, .sheet .panel, .sheet .cta, .sheet .rc, .sheet .est, .sheet .app, .sheet .goal { margin-left: 0; margin-right: 0; }
 .staff { cursor: pointer; } .staff.busy { cursor: default; }
 .req2 { display: flex; align-items: center; gap: 8px; font-size: 11.5px; padding: 4px 0; } .req2 .r2 { margin-left: auto; } .bad2 { width: 16px; height: 16px; border-radius: 50%; background: #e0786c; color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; }
 .note { position: relative; left: auto; right: auto; top: auto; margin: 0 auto; }
-.namef .in input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; font-size: 15px; letter-spacing: .1em; color: #26303a; outline: none; }
+.namef .in input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; font-size: 15px; letter-spacing: .1em; color: var(--ink); outline: none; }
 .sug .chip { cursor: pointer; }
-.money2 { display: flex; gap: 8px; margin-top: 10px; } .money2 button, .tool button { flex: 1; font: inherit; font-size: 11.5px; letter-spacing: .1em; padding: 9px 6px; border-radius: 11px; border: 1px solid rgba(120,140,155,.35); background: rgba(255,255,255,.7); color: #26303a; }
+.money2 { display: flex; gap: 8px; margin-top: 10px; } .money2 button, .tool button { flex: 1; font: inherit; font-size: 11.5px; letter-spacing: .1em; padding: 9px 6px; border-radius: 11px; border: 1px solid rgba(120,140,155,.35); background: rgba(255,255,255,.7); color: var(--ink); }
 .tool { display: flex; gap: 6px; margin-top: 8px; }
-.trial { position: relative; margin: 10px 12px 0; padding: 10px 14px; font-size: 11px; color: #51606d; }
-.trial b { font-weight: 400; color: #26303a; }
-.gate { max-width: 360px; margin: 18vh auto 0; text-align: center; padding: 28px 20px; } .gate h1 { font-size: 18px; font-weight: 400; letter-spacing: .4em; margin: 0 0 10px; } .gate p { font-size: 12px; color: #6a7884; line-height: 1.8; letter-spacing: .1em; } .gate a { display: inline-block; margin-top: 14px; font-size: 12px; letter-spacing: .2em; color: #26303a; }
+.trial { position: relative; margin: 10px 12px 0; padding: 10px 14px; font-size: 11px; color: var(--sub2); }
+.trial b { font-weight: 400; color: var(--ink); }
+.gate { max-width: 360px; margin: 18vh auto 0; text-align: center; padding: 28px 20px; } .gate h1 { font-size: 18px; font-weight: 400; letter-spacing: .4em; margin: 0 0 10px; } .gate p { font-size: 12px; color: var(--sub); line-height: 1.8; letter-spacing: .1em; } .gate a { display: inline-block; margin-top: 14px; font-size: 12px; letter-spacing: .2em; color: var(--ink); }
 .toast { z-index: 40 !important; top: auto !important; bottom: calc(84px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; width: max-content; max-width: calc(100vw - 48px); box-sizing: border-box; padding: 9px 16px 9px 14px !important; border-radius: 999px; border: 1px solid rgba(255,255,255,.8) !important;
   background: rgba(250,252,253,.82) !important; backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3);
-  box-shadow: 0 8px 24px rgba(40,60,80,.16), inset 0 1px 0 rgba(255,255,255,.9) !important; color: #26303a !important; font-family: 'Noto Sans TC', sans-serif !important; font-size: 12px !important; letter-spacing: .1em !important;
+  box-shadow: 0 8px 24px rgba(40,60,80,.16), inset 0 1px 0 rgba(255,255,255,.9) !important; color: var(--ink) !important; font-family: 'Noto Sans TC', sans-serif !important; font-size: 12px !important; letter-spacing: .1em !important;
   white-space: normal !important; transform: translateX(-50%) !important; animation: tIn .25s ease-out; }   /* 這頁的提示改成毛玻璃小膠囊、從分頁列上方浮出來（網站其他頁還是紙條），左邊一顆青色亮點 */
 .toast::before { content: ''; flex: none; width: 6px; height: 6px; border-radius: 50%; background: #8fd3e0; box-shadow: 0 0 0 3px rgba(143,211,224,.25), 0 0 8px #8fd3e0; }
 @keyframes tIn { from { opacity: 0; transform: translate(-50%, 6px); } to { opacity: 1; transform: translate(-50%, 0); } }
@@ -276,11 +277,11 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
 .lvl.can { background: rgba(143,211,224,.12); }
 .shelf .slot { cursor: pointer; }
 .tutline { position: relative; margin: 8px 12px 0; display: flex; justify-content: center; } .tutline[hidden] { display: none; }
-#coach { position: fixed; z-index: 35; left: 16px; right: 16px; max-width: 360px; margin: 0 auto; padding: 11px 14px 9px; border-radius: 14px; background: #26303a; color: #f2f6f8; font-size: 12.5px; line-height: 1.65; letter-spacing: .06em; box-shadow: 0 10px 28px rgba(38,48,58,.35); pointer-events: auto; }
+#coach { position: fixed; z-index: 35; left: 16px; right: 16px; max-width: 360px; margin: 0 auto; padding: 11px 14px 9px; border-radius: 14px; background: var(--ink); color: var(--paper); font-size: 12.5px; line-height: 1.65; letter-spacing: .06em; box-shadow: 0 10px 28px rgba(38,48,58,.35); pointer-events: auto; }
 #coach[hidden] { display: none; } #coach .ctext b { color: #8fd3e0; font-weight: 500; }
 #coach button { display: block; margin: 4px 0 0 auto; font: inherit; font-size: 10.5px; letter-spacing: .15em; color: #9fb1c0; background: none; border: 0; padding: 2px 0; }
 #coach .cbtns { display: flex; align-items: center; } #coach .cbtns button { margin: 4px 0 0; } #coach #coachSkip { margin-left: auto; } #coach #coachX[hidden] { display: none; } #coach.tour #coachSkip { color: #8fd3e0; }
-#coach .carrow { position: absolute; width: 12px; height: 12px; background: #26303a; transform: rotate(45deg); }
+#coach .carrow { position: absolute; width: 12px; height: 12px; background: var(--ink); transform: rotate(45deg); }
 .coachT { position: relative; z-index: 1; box-shadow: 0 0 0 3px #8fd3e0, 0 0 18px rgba(143,211,224,.95) !important; border-radius: 14px; animation: cPulse 1.4s ease-in-out infinite; }
 @keyframes cPulse { 50% { box-shadow: 0 0 0 5px rgba(143,211,224,.55), 0 0 24px rgba(143,211,224,.6); } }
 .np { display: inline-block !important; flex: none; max-width: 100%; box-sizing: border-box; vertical-align: middle; }   /* 使用者 iPhone 上銘牌被擠窄、字跑出框外（爆版）：銘牌不用 inline-flex、也不准被壓縮 */
@@ -295,10 +296,38 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
 .k-card { background: linear-gradient(#e9f7f4, #cfeae4) !important; } .k-poster { background: linear-gradient(#fdf3e2, #f3e0bd) !important; } .k-web { background: linear-gradient(#e8f0fb, #cddcf2) !important; }
 .k-doc { background: linear-gradient(#eef2f5, #dde4ea) !important; } .k-sign { background: linear-gradient(#fbf1d8, #efdcae) !important; } .k-event { background: linear-gradient(#fcecef, #f3d3da) !important; }
 .k-photo { background: linear-gradient(#efecf8, #dcd6ee) !important; } .k-book { background: linear-gradient(#ecf6ec, #d3e8d4) !important; } .k-map { background: linear-gradient(#e6f5f7, #c9e6ea) !important; }
-.ask { text-align: center; padding: 20px 18px 16px !important; } .ask h3 { margin: 0 0 8px; font-size: 15px; font-weight: 500; letter-spacing: .12em; } .ask p { margin: 0; font-size: 12px; line-height: 1.8; color: #51606d; letter-spacing: .05em; }
+.ask { text-align: center; padding: 20px 18px 16px !important; } .ask h3 { margin: 0 0 8px; font-size: 15px; font-weight: 500; letter-spacing: .12em; } .ask p { margin: 0; font-size: 12px; line-height: 1.8; color: var(--sub2); letter-spacing: .05em; }
 .ask .cta { margin: 16px 0 0; } .ask .cta button.warn { background: #b33a2f; border-color: #b33a2f; color: #fff; box-shadow: 0 6px 16px rgba(179,58,47,.3); }
 .tutline .tut { position: relative; left: auto; transform: none; }
-    </style>
+    
+/* ===== 夜間模式（晚上 10 點到早上 6 點、或手機設成深色；theme.js 在 <html> 加 night）：深色毛玻璃，辦公室關燈只剩燈泡和螢幕亮（使用者 2026-11-25） ===== */
+html.night { --ink: #e6edf2; --sub: #93a3b0; --teal: #8fd3e0; --sub2: #aab7c2; --paper: #1b232c; --bg2: #131a21; color-scheme: dark; }
+html.night body { color: var(--ink); }
+html.night .glass { background: rgba(34,44,56,.62); border-color: rgba(255,255,255,.08); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+html.night .hero::before { background: linear-gradient(#1b2430, #131a21); }
+html.night .sheet, html.night .layer .sheet, html.night .modal { background: rgba(28,37,47,.92); }
+html.night .toast { background: rgba(34,44,56,.9) !important; color: var(--ink) !important; border-color: rgba(255,255,255,.1) !important; }
+html.night .cta button { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.12); }
+html.night .cta button.main, html.night .btns button.main, html.night .app .ft button, html.night .eq button:not(.got), html.night .note button { background: #e6edf2; color: #1b232c; border-color: #e6edf2; box-shadow: 0 6px 16px rgba(0,0,0,.35); }
+html.night .cta button:disabled { opacity: .45; }
+html.night .btns button, html.night .money2 button, html.night .tool button, html.night .row .mini, html.night .opt, html.night .miles span, html.night .chk, html.night .ser .gift, html.night .quote, html.night .namef .in, html.night .stepb { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.14); }
+.stepb { background: rgba(255,255,255,.7); border: 1px solid rgba(38,48,58,.25); }
+html.night .ava, html.night .eq .ic, html.night .dex .c, html.night .dex .c.sp.off { background: linear-gradient(#2c3846, #232d39); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+html.night .dex .c.sp, html.night .app.gold .ava { background: linear-gradient(#4d4329, #3b331f); }
+html.night .dex .c.off img { filter: brightness(0) invert(1); opacity: .12; }
+html.night .bubble, html.night .bubble::before { background: #2c3846; }
+html.night .shelf .slot { background: linear-gradient(#4a3c28, #3a2f20); box-shadow: inset 0 -3px 0 #2a2116, inset 0 1px 0 rgba(255,255,255,.08); }
+html.night .shelf .slot.off { background: linear-gradient(#26303a, #1e2630); box-shadow: inset 0 -3px 0 #151b21, inset 0 1px 0 rgba(255,255,255,.05); }
+html.night .chip.gold { color: #e2c27a; } html.night .chip.shu { color: #ef8a7e; } html.night .modal .lb { color: #ef8a7e; }
+html.night .skill { color: #e8d39a; background: rgba(201,163,90,.12); }
+html.night .lvup { color: #bfe6ef; }
+html.night .tabs span.on { text-shadow: 0 0 10px rgba(143,211,224,.6); }
+html.night .seg3 span.on { box-shadow: 0 4px 10px rgba(0,0,0,.35); }
+html.night .chk.on { background: #e6edf2; color: #1b6d80; }
+html.night #coach { box-shadow: 0 10px 28px rgba(0,0,0,.5); } html.night #coach .ctext b { color: #1b6d80; } html.night #coach .cbtns button { color: #51606d; } html.night #coach.tour #coachSkip { color: #1b6d80; }
+html.night .coachT { box-shadow: 0 0 0 3px #8fd3e0, 0 0 18px rgba(143,211,224,.7) !important; }
+html.night .scene .hint { background: rgba(0,0,0,.5); }
+</style>
 </head>
 
 <body>
@@ -328,7 +357,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             <div class="sub"><span class="dot"></span><span class="num" id="boardNext"></span><span class="num" id="boardConc"></span><span class="r chip gold num" id="adBtn" style="cursor:pointer"></span></div>
             <div class="tutline" id="tutHint" hidden><div class="tut">點這張，派小麥去做。3 秒</div></div>
             <div class="cards" id="cards"></div>
-            <div class="kv" style="justify-content:center;margin:14px 0 4px"><span id="openHelp" style="color:#2f7d90;letter-spacing:.15em;cursor:pointer;padding:6px">標籤看不懂？ ›</span></div>
+            <div class="kv" style="justify-content:center;margin:14px 0 4px"><span id="openHelp" style="color:var(--teal);letter-spacing:.15em;cursor:pointer;padding:6px">標籤看不懂？ ›</span></div>
         </section>
 
         <!-- 三　員工 -->
@@ -368,7 +397,8 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     const KEY = 'dongbuli-company-preview', TRIAL_MONEY = 300000;
     let S = null;
     try { S = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { S = null; }
-    if (S && S.staff) S.staff.forEach(s => { if (s.trial && s.done > 0) s.trial = false; });   // 試用期做完第一件就轉正
+    if (S && S.staff) S.staff.forEach(s => { if (s.trial && s.done > 0) s.trial = false; });
+    if (S && S.staff && !S.dexInfo) { S.dexInfo = {}; S.staff.forEach(s => { const d = S.dexInfo[s.key] = S.dexInfo[s.key] || { first: S.created, done: 0, lv: 1 }; d.done += s.done; d.lv = Math.max(d.lv, s.lv); }); }   // 舊存檔：從現在的員工補   // 試用期做完第一件就轉正
     let resetting = false;
     const save = () => { if (resetting || !S) return; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } };
     const now = () => Date.now() + (S ? S.shift || 0 : 0);   // 試玩可以「快轉」
@@ -378,9 +408,10 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     // ---------- 角色圖 ----------
     const SP = {};
     const ANCHOR = { apple: 27, raccoon: 24, captain: 22, cat: 40, dog: 24, mole: 21, pigeon: 20, sparrow: 17, squirrel: 18, hamster: 17, rabbit: 16, hedgehog: 20, frog: 17, turtle: 25, xiaowu: 20, nugget: 24, julie: 29, 'julie-sleep': 36 };
+    ['pigeon', 'sparrow', 'squirrel', 'hamster', 'rabbit', 'hedgehog', 'frog', 'turtle'].forEach(k => [1, 2, 3].forEach(c => ANCHOR[k + '-c' + c] = ANCHOR[k]));   // 一般員工的淺色、花色、深色（docs/plans/company/colors.py 算的）
     let spritesLeft = Object.keys(ANCHOR).length;
     Object.keys(ANCHOR).forEach(k => { const im = new Image(); im.onload = () => { if (--spritesLeft === 0) drawScene(); }; im.src = 'assets/company/' + k + '.png?v=20261125b'; SP[k] = im; });
-    const spriteKey = s => s.key;
+    const spriteKey = s => s.special || !s.color ? s.key : s.key + '-c' + s.color;
     const jobHtml = c => `<div class="ava job k-${R.kindOf(c.title)}"><canvas width="16" height="16" data-job="${R.kindOf(c.title)}"></canvas></div>`;   // 委託的小圖：案子是哪一類（卡片、海報、網站…），不放角色
     const avaHtml = (key, cls = 'ava') => `<div class="${cls}"><img class="px" src="assets/company/${key}.png?v=20261125b" alt=""></div>`;
 
@@ -429,7 +460,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         if (i >= NOTES.length) return openName();
         const [from, text, btn] = NOTES[i];
         show(`<div class="note glass" style="margin:0"><div class="from">${from}</div><p>${text}</p><div class="nx"><div class="dots">${NOTES.map((_, k) => `<i${k === i ? ' class="on"' : ''}></i>`).join('')}</div><button id="nNext">${btn}</button></div></div>
-              <div style="text-align:center;margin-top:10px"><button class="x" id="nSkip" style="font:inherit;font-size:11px;letter-spacing:.2em;color:#6a7884;background:none;border:0">略過</button></div>`, { center: true, lock: true });
+              <div style="text-align:center;margin-top:10px"><button class="x" id="nSkip" style="font:inherit;font-size:11px;letter-spacing:.2em;color:var(--sub);background:none;border:0">略過</button></div>`, { center: true, lock: true });
         $('nNext').onclick = () => openNote(i + 1); $('nSkip').onclick = () => openName();
     }
     function openName() {
@@ -501,7 +532,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         const ctx = { souvenir: S.gifts.includes(j.c.client), equip: (S.equip[S.stage] || []).length };
         j.res = R.settle(j, team, ctx);
         j.ups = [];
-        team.forEach(s => { if (s.trial) { s.trial = false; j.trialOver = R.staffName(s); } s.job = null; s.done++; if (!j.ok) s.failed++; const ups = R.gainExp(s, j.ok ? (j.great ? 2 : 1) : 1); ups.forEach(([lv, i]) => j.ups.push([s.id, lv, i])); });
+        team.forEach(s => { if (s.trial) { s.trial = false; j.trialOver = R.staffName(s); } s.job = null; s.done++; if (!j.ok) s.failed++; const ups = R.gainExp(s, j.ok ? (j.great ? 2 : 1) : 1); ups.forEach(([lv, i]) => j.ups.push([s.id, lv, i])); const dn = dexNote(s); dn.done++; dn.lv = Math.max(dn.lv, s.lv); });
         j.finAt = j.end;
         if (view === 'office') { const T = performance.now() / 1000; j.team.forEach((id, k) => { const i = S.staff.findIndex(s => s.id === id), p = seats[i]; if (p && k === 0) floats.push({ x: Math.round(p[0]), y: Math.round(p[1]) - 40, txt: (j.res.net < 0 ? '−' : '+') + R.fmt(Math.abs(j.res.net)).replace('−', ''), bad: !j.ok, t0: T }); }); }
     }
@@ -637,21 +668,23 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         const need = R.expNeed(s.lv), tp = R.trainPrice(S.stage, s);
         show(`<div class="hd2"><h2>${esc(R.staffName(s))}</h2><button class="x" id="sClose">關</button></div>
             <div class="top" style="display:grid;grid-template-columns:76px 1fr;gap:12px;align-items:center">${avaHtml(spriteKey(s), 'ava" style="width:76px;height:76px;border-radius:16px')}<div class="bubble">${esc(say)}</div></div>
-            <div style="margin-top:12px;font-size:10.5px;color:#6a7884">Lv.${s.lv}・${s.special ? '特別人選 <span class="star"></span>' : s.trial ? '試用期' : '一般員工・' + R.COLORS[s.color]}</div>
+            <div style="margin-top:12px;font-size:10.5px;color:var(--sub)">Lv.${s.lv}・${s.special ? '特別人選 <span class="star"></span>' : s.trial ? '試用期' : '一般員工・' + R.COLORS[s.color]}</div>
             ${statsHtml(s)}
             ${sp ? `<div class="skill"><b>本事・${sp.skill}</b>：${sp.skillText}</div>` : ''}
             <div class="kv num"><span>薪水抽 ${R.shares(s).toFixed(1).replace('.0', '')} 份（案子的三成照份數分）・做過 ${s.done} 件（做砸 ${s.failed} 件）</span></div>
             <div class="kv num"><span>經驗</span><b>${s.lv >= R.MAX_LV ? '滿級' : Math.floor(s.exp / need * 100) + '%・再做約 ' + Math.ceil(need - s.exp) + ' 件升 Lv.' + (s.lv + 1)}</b></div><div class="bar"><i style="width:${s.lv >= R.MAX_LV ? 100 : s.exp / need * 100}%"></i></div>
             ${j ? `<div class="kv num"><span>在做〈${esc(j.c.title)}〉・${R.clock((j.end - now()) / 1000)}</span></div>` : ''}
-            <div class="btns"><button class="num" id="sTrain" ${s.lv >= R.MAX_LV ? 'disabled' : ''}>訓練 ${R.fmt(tp)}<br><small style="font-size:9.5px;color:#6a7884">錢包付</small></button><button class="warn" id="sFire" ${s.job ? 'disabled' : ''}>請他走</button></div>
+            <div class="btns"><button class="num" id="sTrain" ${s.lv >= R.MAX_LV ? 'disabled' : ''}>訓練 ${R.fmt(tp)}<br><small style="font-size:9.5px;color:var(--sub)">錢包付</small></button><button class="warn" id="sFire" ${s.job ? 'disabled' : ''}>請他走</button></div>
             <div class="kv" style="justify-content:flex-end;margin-top:6px"><span>${s.job ? '做事中不能請走' : '請走的話簽約金不退'}</span></div>`);
         $('sClose').onclick = hide;
-        $('sTrain').onclick = () => { if (!payWallet(tp)) return; s.exp = 0; s.lv++; const can = [0, 1, 2, 3].filter(i => s.st[i] < 5); if (can.length) s.st[R.pick(can)]++; save(); toast(R.staffName(s) + '升到 Lv.' + s.lv); openStaff(s); render(); };
+        $('sTrain').onclick = () => { if (!payWallet(tp)) return; s.exp = 0; s.lv++; dexNote(s).lv = Math.max(dexNote(s).lv, s.lv); const can = [0, 1, 2, 3].filter(i => s.st[i] < 5); if (can.length) s.st[R.pick(can)]++; save(); toast(R.staffName(s) + '升到 Lv.' + s.lv); openStaff(s); render(); };
         $('sFire').onclick = async () => { if (!await ask('請' + esc(R.staffName(s)) + '走？', '簽約金不退。', { ok: '請他走', warn: true })) return; S.staff = S.staff.filter(x => x !== s); if (s.special) S.hiredSp = S.hiredSp.filter(k => k !== s.key); save(); hide(); render(); toast(R.staffName(s) + '收拾東西走了'); };
     }
     const DEX_MILES = [[10, '小動物收容所'], [20, '萬事屋人力銀行'], [41, '全員到齊']];
     const dexCount = () => Object.keys(S.dex.sp).length + Object.keys(R.SPECIES).reduce((a, k) => a + (S.dex.gen[k] || []).length, 0);
-    function addDex(s) { addDex0(s); const n = dexCount(); S.dexMiles = S.dexMiles || []; DEX_MILES.forEach(([m, t]) => { if (n >= m && !S.dexMiles.includes(m)) { S.dexMiles.push(m); S.freeRef = (S.freeRef || 0) + 1; setTimeout(() => toast('圖鑑 ' + m + ' 格・' + t + '！送一次免費換應徵'), 600); } }); }
+    // 圖鑑的資料（點格子看）：每一種／每一位第一次來的日子、做過幾件、最高等級
+    function dexNote(s) { const D = S.dexInfo = S.dexInfo || {}; return D[s.key] = D[s.key] || { first: now(), done: 0, lv: s.lv }; }
+    function addDex(s) { dexNote(s); addDex0(s); const n = dexCount(); S.dexMiles = S.dexMiles || []; DEX_MILES.forEach(([m, t]) => { if (n >= m && !S.dexMiles.includes(m)) { S.dexMiles.push(m); S.freeRef = (S.freeRef || 0) + 1; setTimeout(() => toast('圖鑑 ' + m + ' 格・' + t + '！送一次免費換應徵'), 600); } }); }
     function addDex0(s) { if (s.special) S.dex.sp[s.key] = S.dex.sp[s.key] || Date.now(); else { const a = S.dex.gen[s.key] = S.dex.gen[s.key] || []; if (!a.includes(s.color)) a.push(s.color); } }
     function openApply() {
         const full = S.staff.length >= st().seats, left = Math.max(0, S.applyAt - now());
@@ -679,12 +712,14 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     // ---------- 畫辦公室 ----------
     // 使用者 2026-11-25：辦公室完全靜態——加動態：燈泡的光會呼吸（舊燈泡偶爾閃一下）、光裡有灰塵飄、螢幕上的字一行一行打、
     // 做事的員工跟著打字點頭、閒著的偶爾伸個懶腰、茱莉鴨睡著冒 Z、案子做完在頭上飄「+$」
-    let baseCv = null, baseStage = -1, seats = [], ofx = { mon: [], bulb: [] }, dust = [], monBg = [], floats = [];
+    const firstCh = () => S && S.name ? Array.from(S.name.trim())[0] : '';   // 門牌上的字：公司名字的第一個字
+    if (document.fonts) document.fonts.ready.then(() => { if (window.CompanyOffice && CompanyOffice.clearGlyphs) CompanyOffice.clearGlyphs(); baseStage = -1; });   // 字型載好再重畫一次門牌
+    let baseName = '', baseCv = null, baseStage = -1, seats = [], ofx = { mon: [], bulb: [] }, dust = [], monBg = [], floats = [];
     function drawScene() {
         if (!S || !S.name) return;
         const cv = $('cv'), x = cv.getContext('2d');
         const L = look();
-        if (baseStage !== L) { baseCv = document.createElement('canvas'); seats = CompanyOffice.paint(baseCv, L + 1).slice(); ofx = CompanyOffice.fx(L + 1); baseStage = L;
+        if (baseStage !== L || baseName !== S.name) { baseName = S.name; baseCv = document.createElement('canvas'); seats = CompanyOffice.paint(baseCv, L + 1, firstCh()).slice(); ofx = CompanyOffice.fx(L + 1); baseStage = L;
             const bx = baseCv.getContext('2d'); monBg = ofx.mon.map(([mx, my]) => { const d = bx.getImageData(mx + 6, my + 3, 1, 1).data; return 'rgb(' + d[0] + ',' + d[1] + ',' + d[2] + ')'; });
             dust = []; ofx.bulb.forEach(([lx, ly]) => { for (let k = 0; k < 7; k++) dust.push({ cx: lx, cy: ly, a: Math.random() * 6.28, r: 4 + Math.random() * 16, h: Math.random(), sp: .5 + Math.random() }); }); cv.width = baseCv.width; cv.height = baseCv.height; cv.style.width = baseCv.width + 'px'; cv.style.height = baseCv.height + 'px'; $('sceneHint').hidden = baseCv.width <= 380; requestAnimationFrame(() => { $('scene').scrollLeft = L === 4 ? 250 : 0; }); }   // 大樓一打開先看辦公區，大廳往左滑
         x.imageSmoothingEnabled = false; x.drawImage(baseCv, 0, 0);
@@ -699,6 +734,8 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             x.fillStyle = monBg[k]; x.fillRect(mx, my, mw, mh); x.fillStyle = 'rgba(38,58,70,.45)';
             for (let r = 0; r < 3; r++) { const len = Math.min(n * 3 - r * 9, [9, 7, 8][r]); if (len > 0) x.fillRect(mx + 1, my + 1 + r * 2, len, 1); }
             if (Math.floor(T * 2.5) % 2) { const r = Math.min(2, Math.floor(n / 3)), len = Math.max(0, Math.min(n * 3 - r * 9, [9, 7, 8][r])); x.fillStyle = '#ffffff'; x.fillRect(mx + 1 + len, my + 1 + r * 2, 1, 1); } });   // 游標
+        (S.equip[L] || []).forEach(k => { const pos = (EQ_POS[L] || {})[k]; if (!pos) return; const key = k === 'fan' && Math.floor(T * 8) % 2 ? 'fan2' : k; paintEq(x, key, Math.round(pos[0]) - 8, Math.round(pos[1]) - 1 - eqBottom(key)); });   // 買了的設備（電風扇會轉）
+        drawShelf(x, L);
         const order = seats.map((p, i) => [p, i]).sort((a, b) => a[0][1] - b[0][1]);   // 後排先畫
         const t = now();
         order.forEach(([[sx, sy], i]) => {
@@ -712,10 +749,42 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             if (key === 'julie-sleep') for (let z = 0; z < 2; z++) { const u = (T * .5 + z * .5) % 1; x.globalAlpha = Math.sin(u * Math.PI); x.fillStyle = '#6a7884'; x.font = (6 + z * 2) + 'px sans-serif'; x.fillText('Z', Math.round(sx) + 8 + u * 6, Math.round(sy) - im.naturalHeight + 4 - u * 14); x.globalAlpha = 1; }
             if (j) { const u = Math.min(1, Math.max(0, (t - j.start) / (j.end - j.start))); x.fillStyle = 'rgba(38,48,58,.55)'; x.fillRect(Math.round(sx) - 9, Math.round(sy) + 3, 18, 2); x.fillStyle = '#8fd3e0'; x.fillRect(Math.round(sx) - 9, Math.round(sy) + 3, Math.round(18 * u), 2); }
         });
+        // 夜間模式：整間調暗偏藍，燈泡和螢幕還亮著（使用者 2026-11-25）
+        if (document.documentElement.classList.contains('night')) {
+            x.save(); x.globalCompositeOperation = 'multiply'; x.fillStyle = 'rgb(84,98,142)'; x.fillRect(0, 0, cv.width, cv.height);
+            x.globalCompositeOperation = 'lighter';
+            ofx.bulb.forEach(([lx, ly, old], k) => { let a = .34 + .08 * Math.sin(T * 1.7 + k * 2); if (old && (T + k * 3.1) % 9 < .18) a = .06;
+                const g = x.createRadialGradient(lx, ly, 1, lx, ly, 46); g.addColorStop(0, 'rgba(255,200,120,' + a + ')'); g.addColorStop(.35, 'rgba(255,190,110,' + a * .45 + ')'); g.addColorStop(1, 'rgba(255,190,110,0)'); x.fillStyle = g; x.fillRect(lx - 46, ly - 46, 92, 92);
+                x.fillStyle = 'rgba(255,236,190,' + (a + .25) + ')'; x.fillRect(Math.round(lx) - 2, Math.round(ly) - 2, 4, 4); });
+            ofx.mon.forEach(([mx, my, mw, mh]) => { x.fillStyle = 'rgba(120,200,230,.55)'; x.fillRect(mx, my - 2, mw, mh + 2); const g = x.createRadialGradient(mx + mw / 2, my + mh / 2, 1, mx + mw / 2, my + mh / 2, 18); g.addColorStop(0, 'rgba(120,200,230,.22)'); g.addColorStop(1, 'rgba(120,200,230,0)'); x.fillStyle = g; x.fillRect(mx - 14, my - 14, mw + 28, mh + 28); });
+            x.restore();
+        }
+        // 點員工：頭上冒一句話
+        if (talk && T - talk.t0 < 2.8 && seats[talk.i] && S.staff[talk.i]) { const [sx, sy] = seats[talk.i], im = SP[spriteKey(S.staff[talk.i])], top = Math.round(sy) - (im && im.naturalHeight || 40) - 4;
+            x.font = '9px sans-serif'; const w = Math.ceil(x.measureText(talk.txt).width) + 10, bx = Math.max(2, Math.min(cv.width - w - 2, Math.round(sx) - w / 2)), by = Math.max(2, top - 16);
+            x.globalAlpha = Math.min(1, (2.8 - (T - talk.t0)) * 3); x.fillStyle = '#ffffff'; x.strokeStyle = '#3a4656'; x.lineWidth = 1; x.beginPath(); x.roundRect ? x.roundRect(bx + .5, by + .5, w, 14, 4) : x.rect(bx + .5, by + .5, w, 14); x.fill(); x.stroke();
+            x.fillStyle = '#ffffff'; x.fillRect(Math.round(sx) - 2, by + 14, 5, 2); x.fillStyle = '#3a4656'; x.fillRect(Math.round(sx) - 3, by + 15, 1, 1); x.fillRect(Math.round(sx) + 3, by + 15, 1, 1); x.fillRect(Math.round(sx), by + 17, 1, 1);
+            x.fillStyle = '#26303a'; x.textBaseline = 'middle'; x.fillText(talk.txt, bx + 5, by + 8); x.textBaseline = 'alphabetic'; x.globalAlpha = 1; }
         // 做完的案子：頭上飄「+$」
         floats = floats.filter(f => T - f.t0 < 1.8);
         floats.forEach(f => { const u = (T - f.t0) / 1.8; x.globalAlpha = Math.min(1, (1 - u) * 2.2); x.font = '600 9px sans-serif'; x.textAlign = 'center'; x.lineWidth = 3; x.strokeStyle = 'rgba(255,255,255,.9)'; x.strokeText(f.txt, f.x, f.y - u * 18); x.fillStyle = f.bad ? '#b33a2f' : '#2f7d90'; x.fillText(f.txt, f.x, f.y - u * 18); x.textAlign = 'start'; x.globalAlpha = 1; });
     }
+    // 紀念品櫃：牆上一條小木架，拿到的紀念品擺上去（沒有就空架子），點了委託人說一句話（使用者 2026-11-25）
+    const SHELF = [[150, 80], [110, 112], [110, 104], [150, 108], [520, 104]];   // 每間：木架左邊 x、木板的 y
+    let shelfHit = [], talk = null;
+    function drawShelf(x, L) {
+        const [sx0, py] = SHELF[L], gs = S.gifts.slice(0, 9), n = Math.max(3, gs.length), w = n * 13 + 3;
+        x.fillStyle = '#7a5634'; x.fillRect(sx0, py, w, 2); x.fillStyle = '#a77a4c'; x.fillRect(sx0, py, w, 1); x.fillStyle = 'rgba(58,70,86,.25)'; x.fillRect(sx0 + 1, py + 2, w - 2, 1);
+        x.fillStyle = '#7a5634'; x.fillRect(sx0 + 3, py + 2, 1, 3); x.fillRect(sx0 + w - 4, py + 2, 1, 3);   // 木架的兩個小支架
+        shelfHit = gs.map((k, i) => { const ox = sx0 + 2 + i * 13, oy = py - 12; (ICONS[k] || []).forEach((r, j) => [...r].forEach((ch, q) => { if (ch === '.') return; x.fillStyle = PAL[ch]; x.fillRect(ox + q, oy + j, 1, 1); })); return [k, ox - 1, oy - 1, 14, 14]; });
+    }
+    $('cv').addEventListener('click', e => {
+        const r = $('cv').getBoundingClientRect(), mx = (e.clientX - r.left) * $('cv').width / r.width, my = (e.clientY - r.top) * $('cv').height / r.height;
+        const g = shelfHit.find(([, hx, hy, hw, hh]) => mx >= hx && mx < hx + hw && my >= hy && my < hy + hh);
+        if (g) { const C = R.CLIENTS[g[0]]; return toast(C.who + '：「' + C.thanks + '」'); }
+        const i = seats.findIndex(([sx, sy], k) => S.staff[k] && Math.abs(mx - sx) < 15 && my > sy - 42 && my < sy + 4);   // 點員工：說一句話
+        if (i >= 0) { const s = S.staff[i], sp = s.special ? R.SPECIALS[s.key] : null; talk = { i, t0: performance.now() / 1000, txt: sp ? R.pick(sp.say).replace(/^「|」$/g, '') : R.pick(R.SPECIES[s.key].talk) }; startAnim(); }   // 一般員工說自己種類的話（SPECIES.talk）
+    });
     // 動畫迴圈：只在辦公室畫面、畫布看得到、分頁在前面的時候跑，每秒約 20 張（手機不會燙）
     let animOn = false, sceneSeen = true;
     function animFrame() { if (!S || !S.name || view !== 'office' || document.hidden || !sceneSeen) { animOn = false; return; } drawScene(); setTimeout(() => requestAnimationFrame(animFrame), 45); }
@@ -818,7 +887,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             const names = j.team.map(staffById).filter(Boolean).map(s => R.staffName(s)).join('、');
             if (j.fin) return `<div class="row done" data-j="${j.id}"><span class="tt">〈${esc(j.c.title)}〉<small>${esc(names)}</small></span><span class="chip${j.ok ? '' : ' shu'} num">${j.ok ? '完成' : '做砸了'}・${R.fmt(j.res.net)}</span></div>`;
             const u = Math.min(1, (t - j.start) / (j.end - j.start)), sleeping = j.napped && u > .35 && u < .7 && j.team.some(id => { const s = staffById(id); return s && s.key === 'julie'; });
-            return `<div class="row"><span class="tt">〈${esc(j.c.title)}〉<small>${esc(names)}${sleeping ? '・茱莉鴨睡著了，慢一點' : ''}</small><div class="bar"><i style="width:${u * 100}%"></i></div></span><span class="acts"><span class="num" style="font-size:12px;color:#6a7884">${R.clock((j.end - t) / 1000)}</span>${j.c.tutorial ? '' : `<button class="mini num" data-ot="${j.id}">加班 ${R.fmt(R.overtimePrice(j))}</button>`}</span></div>`;
+            return `<div class="row"><span class="tt">〈${esc(j.c.title)}〉<small>${esc(names)}${sleeping ? '・茱莉鴨睡著了，慢一點' : ''}</small><div class="bar"><i style="width:${u * 100}%"></i></div></span><span class="acts"><span class="num" style="font-size:12px;color:var(--sub)">${R.clock((j.end - t) / 1000)}</span>${j.c.tutorial ? '' : `<button class="mini num" data-ot="${j.id}">加班 ${R.fmt(R.overtimePrice(j))}</button>`}</span></div>`;
         }).join('') || '<div class="empty">沒有在做的案子・去委託接一件</div>';
         document.querySelectorAll('#runList .row.done').forEach(e => e.onclick = () => openReceipt(S.jobs.find(j => j.id === e.dataset.j)));
         document.querySelectorAll('#runList [data-ot]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const j = S.jobs.find(x => x.id === b.dataset.ot); if (!j || j.fin) return; if (!await ask('付加班費？', '用錢包付 ' + R.fmt(R.overtimePrice(j)) + '，〈' + esc(j.c.title) + '〉馬上做完。', { ok: '付加班費' })) return; if (!payWallet(R.overtimePrice(j))) return; j.end = now(); tick(); });
@@ -856,12 +925,12 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     }
     function lvlRow(i, opt = {}) {
         const g = R.STAGES[i], got = i <= S.stage, using = got && look() === i;
-        return `<div class="lvl${i === S.stage && !opt.all ? ' now' : ''}${got ? '' : ' lock'}${using && opt.all ? ' now' : ''}"><div class="th" style="background:#dfe3e6"><canvas data-th="${i}" width="288" height="146" style="width:96px;height:49px;display:block"></canvas></div>
-            <div class="info"><div class="top"><span class="np np${i + 1}"${got ? '' : ' style="filter:grayscale(1);opacity:.5"'}>${esc(S.name)}</span>${opt.all ? (using ? '<span class="chip" style="margin-left:auto">正在用</span>' : got ? `<button class="mini" data-look="${i}" style="margin-left:auto;font:inherit;font-size:10.5px;padding:4px 9px;border-radius:9px;border:1px solid #26303a;background:#26303a;color:#f2f6f8">換成這間</button>` : '') : '<span class="chip" style="margin-left:auto">現在</span>'}</div>
-            <div class="d"><b style="font-weight:500;color:#26303a">${g.name}</b>・${g.seats} 人・同時 ${g.conc} 件・案子最長 ${g.maxDur / 60} 小時</div>${got ? '' : `<div class="d pr2 num">${R.fmt(g.cost)}・做完 ${g.jobs} 件・搬過去才解鎖</div>`}</div></div>`;
+        return `<div class="lvl${i === S.stage && !opt.all ? ' now' : ''}${got ? '' : ' lock'}${using && opt.all ? ' now' : ''}"><div class="th" style="background:var(--bg2)"><canvas data-th="${i}" width="288" height="146" style="width:96px;height:49px;display:block"></canvas></div>
+            <div class="info"><div class="top"><span class="np np${i + 1}"${got ? '' : ' style="filter:grayscale(1);opacity:.5"'}>${esc(S.name)}</span>${opt.all ? (using ? '<span class="chip" style="margin-left:auto">正在用</span>' : got ? `<button class="mini" data-look="${i}" style="margin-left:auto;font:inherit;font-size:10.5px;padding:4px 9px;border-radius:9px;border:1px solid var(--ink);background:var(--ink);color:var(--paper)">換成這間</button>` : '') : '<span class="chip" style="margin-left:auto">現在</span>'}</div>
+            <div class="d"><b style="font-weight:500;color:var(--ink)">${g.name}</b>・${g.seats} 人・同時 ${g.conc} 件・案子最長 ${g.maxDur / 60} 小時</div>${got ? '' : `<div class="d pr2 num">${R.fmt(g.cost)}・做完 ${g.jobs} 件・搬過去才解鎖</div>`}</div></div>`;
     }
     function paintThumbs() {
-        document.querySelectorAll('canvas[data-th]').forEach(cv => { if (cv.dataset.drawn) return; cv.dataset.drawn = 1; const i = +cv.dataset.th, b = document.createElement('canvas'); CompanyOffice.paint(b, i + 1); // 使用者：辦公室截圖很怪（以前是切一小塊）——改成整間縮小；比較寬的二十七樓、大樓取左邊一個畫面寬（門口、招牌、辦公區）
+        document.querySelectorAll('canvas[data-th]').forEach(cv => { if (cv.dataset.drawn) return; cv.dataset.drawn = 1; const i = +cv.dataset.th, b = document.createElement('canvas'); CompanyOffice.paint(b, i + 1, firstCh()); // 使用者：辦公室截圖很怪（以前是切一小塊）——改成整間縮小；比較寬的二十七樓、大樓取左邊一個畫面寬（門口、招牌、辦公區）
             const x = cv.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
             if (i > S.stage) x.filter = 'grayscale(1) blur(2px)';   // 還沒解鎖的：灰、糊糊的，看不清楚
             x.drawImage(b, 0, 0, 375, 190, 0, 0, cv.width, cv.height); });
@@ -883,11 +952,11 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         if (g.base > old.base) L.push(['案子的錢', '每件大約多 ' + Math.round((g.base / old.base - 1) * 100) + '%']);
         if (who.length) L.push(['新的委託人', who.join('、')]);
         show(`<div class="rc glass" style="margin:0"><div class="lb"><span class="dot"></span>搬家了</div><h2 style="display:block">${esc(S.name)}<div class="who">搬進${g.name}</div></h2>
-              <div style="margin:10px -4px 4px;border-radius:12px;overflow:hidden;background:#dfe3e6"><canvas id="mvCv" style="display:block;width:100%;height:auto;image-rendering:pixelated"></canvas></div>
+              <div style="margin:10px -4px 4px;border-radius:12px;overflow:hidden;background:var(--bg2)"><canvas id="mvCv" style="display:block;width:100%;height:auto;image-rendering:pixelated"></canvas></div>
               ${L.map(([a, b]) => `<div class="ln num"><span>${a}</span><span class="up">${esc(b)}</span></div>`).join('')}
               <div class="kv" style="display:block;line-height:1.7"><span>${R.EQUIP[S.stage] ? '設備換成' + g.name + '的一組（' + R.EQUIP[S.stage].map(e => e[1]).join('、') + '），在公司頁買。' : ''}${nn ? '下一個家：' + nn.name + '（做滿 ' + nn.jobs + ' 件、帳戶 ' + R.fmt(nn.cost) + '）。' : '這是最後一個家了。'}</span></div></div>
               <div class="cta"><button class="main" id="mvOk" style="flex:1">進新辦公室</button></div>`, { center: true });
-        const cv = $('mvCv'); CompanyOffice.paint(cv, S.stage + 1);
+        const cv = $('mvCv'); CompanyOffice.paint(cv, S.stage + 1, firstCh());
         $('mvOk').onclick = hide;
     }
     // 執行長增資：自己選金額，＋／－一次 1,000（使用者 2026-11-25）；長按會一直加
@@ -901,11 +970,11 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             <div class="panel glass" style="margin:0;padding:16px 14px;text-align:center">
               <div class="kv" style="justify-content:center;margin:0"><span>從錢包轉進公司帳戶</span></div>
               <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:14px 0 6px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none">
-                <button class="num" id="iMinus" style="width:66px;height:44px;border-radius:12px;border:1px solid rgba(38,48,58,.25);background:rgba(255,255,255,.7);font:inherit;font-size:13px;color:#26303a;touch-action:manipulation">−1,000</button>
-                <b class="num" id="iAmt" style="font-weight:300;font-size:26px;min-width:120px;color:#26303a"></b>
-                <button class="num" id="iPlus" style="width:66px;height:44px;border-radius:12px;border:1px solid rgba(38,48,58,.25);background:rgba(255,255,255,.7);font:inherit;font-size:13px;color:#26303a;touch-action:manipulation">+1,000</button></div>
+                <button class="num stepb" id="iMinus" style="width:66px;height:44px;border-radius:12px;font:inherit;font-size:13px;color:var(--ink);touch-action:manipulation">−1,000</button>
+                <b class="num" id="iAmt" style="font-weight:300;font-size:26px;min-width:120px;color:var(--ink)"></b>
+                <button class="num stepb" id="iPlus" style="width:66px;height:44px;border-radius:12px;font:inherit;font-size:13px;color:var(--ink);touch-action:manipulation">+1,000</button></div>
               <div class="kv num" style="justify-content:center;margin-top:4px"><span style="line-height:1.7">今天還能增資 ${R.fmt(injLeft)}・錢包 ${R.fmt(S.wallet)}${short ? '<br>公司帳戶離搬家還差 ' + R.fmt(short) : ''}</span></div>
-              <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">${short && Math.ceil(short / 1000) * 1000 <= max ? '<button class="mini num" id="iShort" style="font:inherit;font-size:11px;padding:6px 12px;border-radius:10px;border:1px solid rgba(47,125,144,.5);background:none;color:#2f7d90">補到能搬家</button>' : ''}<button class="mini num" id="iMax" style="font:inherit;font-size:11px;padding:6px 12px;border-radius:10px;border:1px solid rgba(47,125,144,.5);background:none;color:#2f7d90">全部 ${R.fmt(max)}</button></div></div>
+              <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">${short && Math.ceil(short / 1000) * 1000 <= max ? '<button class="mini num" id="iShort" style="font:inherit;font-size:11px;padding:6px 12px;border-radius:10px;border:1px solid rgba(47,125,144,.5);background:none;color:var(--teal)">補到能搬家</button>' : ''}<button class="mini num" id="iMax" style="font:inherit;font-size:11px;padding:6px 12px;border-radius:10px;border:1px solid rgba(47,125,144,.5);background:none;color:var(--teal)">全部 ${R.fmt(max)}</button></div></div>
             <div class="kv" style="display:block;line-height:1.7;margin-top:10px"><span>錢包的錢只能這樣進公司，${st().name}每天最多增資 ${R.fmt(st().inject)}。</span></div>
             <div class="cta"><button class="main num" id="iGo" style="flex:1"></button></div>`, { center: true });
         const draw = () => { $('iAmt').textContent = R.fmt(amt); $('iGo').textContent = '增資 ' + R.fmt(amt); $('iMinus').disabled = amt <= lo; $('iPlus').disabled = amt >= max; };
@@ -928,15 +997,15 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             if (S.inject.d !== today()) S.inject = { d: today(), amt: 0 };
             const injLeft = Math.max(0, st().inject - S.inject.amt);
             B.innerHTML = `<div class="co glass"><div><b>${esc(S.name)}</b><small>創始執行長・成立第 ${Math.floor((now() - S.created) / 864e5) + 1} 天</small></div><div style="text-align:right"><b class="num" style="font-weight:300">${S.jobsDone} 件</b><small>做完的案子</small></div></div>
-                <div class="lvls glass">${lvlRow(S.stage)}<div class="lvl" id="allOffices" style="display:block;text-align:center;font-size:11px;color:#2f7d90;letter-spacing:.15em;padding:11px;cursor:pointer">看所有辦公室 ›</div></div>
+                <div class="lvls glass">${lvlRow(S.stage)}<div class="lvl" id="allOffices" style="display:block;text-align:center;font-size:11px;color:var(--teal);letter-spacing:.15em;padding:11px;cursor:pointer">看所有辦公室 ›</div></div>
                 ${next ? `<div class="cta"><button class="main num" id="mv" style="flex:1" ${canMove ? '' : 'disabled'}>搬到${next.name}・${R.fmt(next.cost)}${S.jobsDone < next.jobs ? '（還差 ' + (next.jobs - S.jobsDone) + ' 件）' : S.acct < next.cost ? '（帳戶還差 ' + R.fmt(next.cost - S.acct) + '）' : ''}</button></div>` : ''}
-                <div class="goal glass"><div class="gt"><span>公司帳戶 <b class="num" style="font-weight:400;color:#26303a">${R.fmt(S.acct)}</b></span><span class="r num">錢包 ${R.fmt(S.wallet)}</span></div>
+                <div class="goal glass"><div class="gt"><span>公司帳戶 <b class="num" style="font-weight:400;color:var(--ink)">${R.fmt(S.acct)}</b></span><span class="r num">錢包 ${R.fmt(S.wallet)}</span></div>
                   <div class="money2"><button class="num" id="inj" ${injLeft ? '' : 'disabled'}>執行長增資（今天還能 ${R.fmt(injLeft)}）</button></div>
                   <div class="kv" style="display:block;line-height:1.7"><span>搬家只能用公司帳戶付；錢包付簽約金、刷新、訓練、設備、廣告、加班費。增資每天最多 ${R.fmt(st().inject)}。</span></div>
                   <div style="text-align:right"><button class="linkbtn num" id="out" ${S.acct > 0 ? '' : 'disabled'}>把公司帳戶的錢轉進錢包</button></div></div>
                 <div class="trial glass">試玩錢包 <b class="num">${R.fmt(S.wallet)}</b>（只在這支手機、不動真的錢包）
                   <div class="tool"><button id="tAdd">錢包 +100 萬</button><button id="tSkip">快轉 10 分鐘</button><button id="tSkip2">快轉 1 小時</button><button id="tReset">整個重來</button></div></div>
-                <div class="kv" style="justify-content:center;margin:14px 0 0"><span class="help2" style="color:#2f7d90;letter-spacing:.15em;cursor:pointer;padding:6px">看不懂的字 ›</span></div>
+                <div class="kv" style="justify-content:center;margin:14px 0 0"><span class="help2" style="color:var(--teal);letter-spacing:.15em;cursor:pointer;padding:6px">看不懂的字 ›</span></div>
                 <p class="foot">這裡的錢都是遊戲幣，不能儲值，也不能換現金或獎品。</p>`;
             paintThumbs(); $('allOffices').onclick = openOffices; document.querySelectorAll('.help2').forEach(e => e.onclick = openHelp);
             if ($('mv')) $('mv').onclick = async () => { if (!await ask('搬到' + next.name + '？', '用公司帳戶付 ' + R.fmt(next.cost) + '。舊燈泡會一起帶走。', { ok: '搬家' })) return; const old = st(); S.acct -= next.cost; S.stage++; S.look = S.stage; S.applicants = R.applicants(S.stage, S.hiredSp); save(); go('office'); movedCard(old); };
@@ -956,7 +1025,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         } else if (seg === 'equip') {
             const own = S.equip[S.stage] || [], list = R.EQUIP[S.stage];
             B.innerHTML = `<div class="sub" style="margin-top:12px"><span>${st().name}的設備・買了 ${own.length} / 3・現在 +${Math.round(own.length * R.EQUIP_BOOST * 100)}%</span><span class="r num">錢包 ${R.fmt(S.wallet)}</span></div>
-                <div class="panel glass" style="padding:2px 0">${list.map(([k, n, d]) => `<div class="eq"><div class="ic"><canvas width="12" height="12" data-ic="${k}"></canvas></div><div><div class="nm">${n}</div><div class="d">${d}・賺的 +8%</div></div>${own.includes(k) ? '<button class="got">已經有了</button>' : `<button class="num" data-e="${k}">${R.fmt(st().equip)}</button>`}</div>`).join('')}</div>
+                <div class="panel glass" style="padding:2px 0">${list.map(([k, n, d]) => `<div class="eq"><div class="ic"><canvas width="16" height="16" data-eq="${k}"></canvas></div><div><div class="nm">${n}</div><div class="d">${d}・賺的 +8%</div></div>${own.includes(k) ? '<button class="got">已經有了</button>' : `<button class="num" data-e="${k}">${R.fmt(st().equip)}</button>`}</div>`).join('')}</div>
                 <div class="goal glass"><div class="gt"><span>買滿三樣</span><span class="r num">賺的約 +25%</span></div><div class="bar" style="margin-top:8px"><i style="width:${own.length / 3 * 100}%"></i></div></div>
                 ${R.EQUIP[S.stage + 1] ? `<div class="sub" style="margin-top:10px"><span>這組只在${st().name}有用。搬到${R.STAGES[S.stage + 1].name}後換新的一組（${R.EQUIP[S.stage + 1].map(e => e[1]).join('、')}），這組就留在這裡</span></div>` : ''}`;
             drawIcons();
@@ -964,13 +1033,31 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         } else {
             const spKeys = Object.keys(R.SPECIALS), genKeys = Object.keys(R.SPECIES);
             const n = Object.keys(S.dex.sp).length + genKeys.reduce((a, k) => a + (S.dex.gen[k] || []).length, 0);
-            const COL = ['#9fb1c0', '#f2f6f8', '#c9ad7c', '#3a4656'];
+            const COL = {"pigeon": ["#adb6c4", "#dadee5", "linear-gradient(135deg,#adb6c4 50%,#f4f6f8 50%)", "#666c77"], "sparrow": ["#9c6b44", "#ccb193", "linear-gradient(135deg,#9c6b44 50%,#f0e4cc 50%)", "#68472e"], "squirrel": ["#b48a66", "#d1b79c", "linear-gradient(135deg,#b48a66 50%,#efe2cf 50%)", "#715540"], "hamster": ["#f2c98c", "#fae4c0", "linear-gradient(135deg,#f2c98c 50%,#ffffff 50%)", "#a98c68"], "rabbit": ["#f4f1ec", "#efe2cf", "linear-gradient(135deg,#f4f1ec 50%,#a77a52 50%)", "#b1a79d"], "hedgehog": ["#6c5040", "#af9a88", "linear-gradient(135deg,#6c5040 50%,#e8d8c0 50%)", "#48382e"], "frog": ["#93b886", "#bdd8af", "linear-gradient(135deg,#93b886 50%,#5d8a4c 50%)", "#648559"], "turtle": ["#647f42", "#a7bb8b", "linear-gradient(135deg,#647f42 50%,#3f5527 50%)", "#45592e"]};   // 每種的四個毛色（colors.py 算的），花色是兩色對半
             B.innerHTML = `<div class="dex glass"><div class="ttl">員工圖鑑<b class="num">${n} / 41</b></div>
-                <div class="sub2">特別人選・9</div><div class="g" style="grid-template-columns:repeat(5,1fr)">${spKeys.map(k => `<div class="c sp${S.dex.sp[k] ? '' : ' off'}"><img src="assets/company/${k}.png?v=20261125b" alt=""></div>`).join('')}</div>
-                <div class="sub2">一般員工・8 種 × 4 色（右上角有顏色的是收集到的，灰點是還沒有）</div><div class="g" style="grid-template-columns:repeat(4,1fr)">${genKeys.map(k => { const got = S.dex.gen[k] || []; return `<div class="c${got.length ? '' : ' off'}" style="height:58px"><img src="assets/company/${k}.png?v=20261125b" alt=""><b class="dots4">${[0, 1, 2, 3].map(c => got.includes(c) ? `<i style="background:${COL[c]};box-shadow:0 0 0 1px rgba(40,50,60,.65)"></i>` : '<i style="background:rgba(120,140,155,.16);transform:scale(.6)"></i>').join('')}</b></div>`; }).join('')}</div>
+                <div class="sub2">特別人選・9</div><div class="g" style="grid-template-columns:repeat(5,1fr)">${spKeys.map(k => `<div class="c sp${S.dex.sp[k] ? '' : ' off'}" data-dk="${k}"><img src="assets/company/${k}.png?v=20261125b" alt=""></div>`).join('')}</div>
+                <div class="sub2">一般員工・8 種 × 4 色（右上角有顏色的是收集到的，灰點是還沒有）</div><div class="g" style="grid-template-columns:repeat(4,1fr)">${genKeys.map(k => { const got = S.dex.gen[k] || []; const show1 = got.length ? (got.includes(0) ? 0 : got[got.length - 1]) : 0; return `<div class="c${got.length ? '' : ' off'}" style="height:58px" data-dg="${k}"><img src="assets/company/${k}${show1 ? '-c' + show1 : ''}.png?v=20261125b" alt=""><b class="dots4">${[0, 1, 2, 3].map(c => got.includes(c) ? `<i style="background:${COL[k][c]};box-shadow:0 0 0 1px rgba(40,50,60,.65)"></i>` : '<i style="background:rgba(120,140,155,.16);transform:scale(.6)"></i>').join('')}</b></div>`; }).join('')}</div>
                 <div class="miles">${DEX_MILES.map(([m, t]) => `<span class="${n >= m ? 'done' : ''}">${m === 41 ? '全部' : m + ' 格'}<br>${t}</span>`).join('')}</div>
                 <div class="kv" style="display:block;line-height:1.7"><span>每到一格送一次免費換應徵＋稱號。員工是聘過就算收集到；特別人選偶爾出現在應徵名單裡（金框）。</span></div></div>`;
+            document.querySelectorAll('#segBody [data-dk], #segBody [data-dg]').forEach(e => e.onclick = () => openDex(e.dataset.dk || e.dataset.dg, !!e.dataset.dk));
         }
+    }
+    // 圖鑑格子點開（使用者 2026-11-25）：第一次來應徵那天、做過幾件、最高等級、一句話
+    function openDex(k, sp) {
+        const got = sp ? S.dex.sp[k] : (S.dex.gen[k] || []).length, info = (S.dexInfo || {})[k];
+        if (!got) return toast(sp ? '還沒請過・應徵名單偶爾會出現（金框）' : '還沒請過' + R.SPECIES[k].sp);
+        const name = sp ? R.SPECIALS[k].name : R.SPECIES[k].sp, d = new Date(info ? info.first : S.created), cols = sp ? [] : S.dex.gen[k];
+        const imgs = sp ? [k] : cols.slice().sort().map(c => c ? k + '-c' + c : k);
+        show(`<div class="hd2"><h2>${esc(name)}</h2><button class="x" id="dxClose">關</button></div>
+            <div class="panel glass" style="margin:0;padding:14px">
+              <div style="display:flex;gap:8px;justify-content:center;align-items:flex-end;min-height:70px">${imgs.map(m => `<img class="px" src="assets/company/${m}.png?v=20261125b" alt="" style="image-rendering:pixelated" onload="this.style.width = this.naturalWidth * ${imgs.length > 2 ? 1.5 : 2} + 'px'">`).join('')}</div>
+              ${sp ? '' : `<div class="kv" style="justify-content:center;margin-top:6px"><span>收集到的顏色：${cols.slice().sort().map(c => R.COLORS[c]).join('、')}</span></div>`}
+              <div class="kv num"><span>第一次來應徵</span><b>${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日</b></div>
+              <div class="kv num"><span>做過的案子</span><b>${info ? info.done : 0} 件</b></div>
+              <div class="kv num"><span>最高等級</span><b>Lv.${info ? info.lv : 1}</b></div>
+              ${sp ? `<div class="kv"><span>本事・${esc(R.SPECIALS[k].skill)}</span><b style="max-width:60%;text-align:right">${esc(R.SPECIALS[k].skillText)}</b></div>` : ''}
+              <div class="bubble" style="margin-top:12px">${esc(sp ? R.pick(R.SPECIALS[k].say) : '「' + R.pick(R.SPECIES[k].talk) + '」')}</div></div>`);
+        $('dxClose').onclick = hide;
     }
     // 紀念品、設備的小圖（12×12 像素）
     const PAL = { k: '#3a4656', w: '#ffffff', g: '#c2d0da', G: '#9fb1c0', y: '#e2b44a', Y: '#ffe9a0', o: '#f0a04b', O: '#c97a2e', r: '#e05a4f', R: '#b33a2f', c: '#8fd3e0', C: '#4fa9bf', b: '#3d6fb6', B: '#2b5290', n: '#a77a4c', N: '#7a5634', e: '#6cb487', E: '#2f6e47', s: '#f8e6cf', S: '#ecc9a6' };
@@ -995,7 +1082,15 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             JOB_ICONS[cv.dataset.job].forEach((r, j) => [...r].forEach((ch, i) => { if (ch === '.') return; x.fillStyle = JPAL[ch]; x.fillRect(i, j, 1, 1); })); });
     }
     new MutationObserver(drawJobIcons).observe(document.body, { childList: true, subtree: true });   // 卡片、結案單一畫出來就補上小圖
+    // 設備：16×16 像素，設備頁的小圖和辦公室裡的擺設共用（使用者 2026-11-25：補小辦公室以後的設備小圖、買了畫進辦公室）
+    const EQ_ART = {"strip": ["................", "................", "................", "................", "................", "................", "................", "................", "................", "................", "..kkkkkkkkkkkk..", ".kwwwwwwwwwwwrk.", ".kwkwwkwwkwwwRk.", "kkwwwwwwwwwwwwk.", "k.kkkkkkkkkkkk..", "k..............."], "fan": [".....GGGGGG.....", "....G.c..c.G....", "...G.cc..cc.G...", "...Gc..kk..cG...", "...G..kGGk..G...", "...Gc..kk..cG...", "...G.cc..cc.G...", "....G.c..c.G....", ".....GGGGGG.....", ".......kk.......", ".......kk.......", ".......kk.......", "......kkkk......", ".....kGGGGk.....", "....kkkkkkkk....", "................"], "fan2": [".....GGGGGG.....", "....G..cc..G....", "...G...cc...G...", "...G...kk...G...", "...Gcc.kGk.ccG..", "...G...kk...G...", "...G...cc...G...", "....G..cc..G....", ".....GGGGGG.....", ".......kk.......", ".......kk.......", ".......kk.......", "......kkkk......", ".....kGGGGk.....", "....kkkkkkkk....", "................"], "printer": ["................", "................", "................", "................", "....wwwwwwww....", "....wgggggww....", "....wwwwwwww....", "..kkkkkkkkkkkk..", "..kGGGGGGGGGGk..", "..kGGGGGGGeGGk..", "..kGGGGGGGGGGk..", "..kkkkkkkkkkkk..", "...wwwwwwwwww...", "...wggggggggw...", "...wwwwwwwwww...", "................"], "chair": [".....kkkkkk.....", "....kBBBBBBk....", "....kBbbbbBk....", "....kBbbbbBk....", "....kBbbbbBk....", "....kBBBBBBk....", ".....kkkkkk.....", ".......kk.......", "...kkkkkkkkkk...", "...kBBBBBBBBk...", "...kkkkkkkkkk...", ".......kk.......", ".......kk.......", "....kkkkkkkk....", "...k...kk...k...", "................"], "coffee": ["................", "....kkkkkkkk....", "....kNNNNNNk....", "....kNrNNNNk....", "....kkkkkkkk....", "....kGk..kGk....", "....kGk..kGk....", "....kGk..kGk....", "....kGwwwwGk....", "....kGwNNwGk....", "....kGwwwwGk....", "....kkkkkkkk....", "................", "................", "................", "................"], "noise": ["................", "................", "................", "................", "................", "................", "................", "................", ".....kkkkkk.....", "....kwwwwwwk....", "...kwgwgwgwwk...", "...kwwgwgwgwk...", "...kwgwgwgwwk...", "....kwwwcwwk....", ".....kkkkkk.....", "................"], "snack": ["..kkkkkkkkkkk...", "..kRRRRRRRRRk...", "..kRwwwwwwwRk...", "..kRwrwywowRk...", "..kRwwwwwwwRk...", "..kRwowrwywRk...", "..kRwwwwwwwRk...", "..kRwywowrwRk...", "..kRwwwwwwwRk...", "..kRRRRRRRRRk...", "..kRkkkkkkkRk...", "..kRRRRRRRRRk...", "..kkkkkkkkkkk...", "..k.........k...", "................", "................"], "stand": ["................", "................", "................", "......kkkk......", "......kcck......", "......kkkk......", "..nnnnnnnnnnnn..", "..NNNNNNNNNNNN..", "...k........k...", "...k........k...", "...k........k...", "...k........k...", "...k........k...", "...k........k...", "..kkk......kkk..", "................"], "screen": ["kkkkkkkkkkkkkkkk", "kBBBBBBBBBBBBBBk", "kBwwwwwwwwwwwwBk", "kBwccwwwwwwwwwBk", "kBwccwwwwwwywwBk", "kBwccwwwwrwywwBk", "kBwccwewwrwywwBk", "kBwwwwewwrwywwBk", "kBwwwwwwwwwwwwBk", "kBBBBBBBBBBBBBBk", "kkkkkkkkkkkkkkkk", ".......kk.......", "................", "................", "................", "................"], "holo": ["......cccc......", ".....cCwwCc.....", "....cCwccwCc....", ".....cCwwCc.....", "......cccc......", ".......c........", "......c.c.......", ".....c...c......", "....c.....c.....", "...c.......c....", "..c.........c...", "..kkkkkkkkkkk...", "..kGGGGcGGGGk...", "..kkkkkkkkkkk...", "................", "................"], "massage": ["....kkkkk.......", "...kRRRRRk......", "...kRrrrRk......", "...kRrrrRk......", "...kRrrrRk......", "...kRrrrRkkkkk..", "...kRrrrRRRRRk..", "...kRRRRRrrrRk..", "..kkkkkkkkkkkkk.", "..kRRRRRRRRRRRk.", "..kkkkkkkkkkkkk.", "...kk......kk...", "................", "................", "................", "................"], "garden": ["....e..E..e.....", "...eEe.eE.eEe...", "..eEeEeEeEeEeE..", "...EeYeEeEreE...", "..eEeEeEeEeEe...", "..nnnnnnnnnnnn..", "..nNNNNNNNNNNn..", "..nNNNNNNNNNNn..", "..nnnnnnnnnnnn..", "................", "................", "................", "................", "................", "................", "................"], "canteen": ["................", "................", "................", "................", "...gGGGGGGGGg...", "..gGwwwwwwwwGg..", ".kkkkkkkkkkkkkk.", ".kwwwwwwwwwwwwk.", ".kwoowyywweewwk.", ".kwOOwYYwwEEwwk.", ".kkkkkkkkkkkkkk.", "..k..........k..", "..k..........k..", "..k..........k..", "..kk........kk..", "................"], "autodoor": ["................", ".kkkkkkkkkkkkkk.", ".kGGGGGGGGGGGGk.", ".kGkkkkkkkkkkGk.", ".kGkeeeeeeeekGk.", ".kGkkkkkkkkkkGk.", ".kGGGGGGGGGGGGk.", ".kkkkkkkkkkkkkk.", "................", "................", "................", "................", "................", "................", "................", "................"], "roofsign": ["kkkkkkkkkkkkkkkk", "kYyYyYyYyYyYyYyk", "kyRRRRyRRRRyRRyk", "kYyRRyyRyyRyRRYk", "kyRRRRyRRRRyRRyk", "kYyYyYyYyYyYyYyk", "kkkkkkkkkkkkkkkk", ".k............k.", ".k............k.", "kkk..........kkk", "................", "................", "................", "................", "................", "................"]};
+    // 每間辦公室三樣設備放哪裡（下緣中間；車庫的電風扇、印表機放桌上）
+    const EQ_POS = [{ strip: [112, 187], fan: [272, 150], printer: [96, 150] }, { chair: [14, 189], coffee: [289, 117], noise: [236, 117] },
+        { snack: [272, 106], stand: [240, 106], screen: [345, 62] }, { holo: [570, 189], massage: [570, 140], garden: [300, 93] }, { canteen: [640, 146], autodoor: [25, 92], roofsign: [170, 121] }];
+    function paintEq(x, key, ox, oy) { const rows = EQ_ART[key]; if (!rows) return; rows.forEach((r, j) => [...r].forEach((ch, i) => { if (ch === '.') return; x.fillStyle = PAL[ch]; x.fillRect(ox + i, oy + j, 1, 1); })); }
+    const eqBottom = key => { const rows = EQ_ART[key]; let b = 15; while (b > 0 && !/[^.]/.test(rows[b])) b--; return b; };
     function drawIcons() {
+        document.querySelectorAll('canvas[data-eq]').forEach(cv => { const x = cv.getContext('2d'); x.clearRect(0, 0, 16, 16); paintEq(x, cv.dataset.eq, 0, 0); });
         document.querySelectorAll('canvas[data-ic]').forEach(cv => {
             const x = cv.getContext('2d'), rows = ICONS[cv.dataset.ic], off = cv.dataset.off;
             x.clearRect(0, 0, 12, 12);
@@ -1014,7 +1109,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         const ready = S.jobs.filter(j => j.fin && !j.collected), sum = ready.reduce((a, j) => a + j.res.net, 0);
         const h = Math.floor(gap / 3600000), m = Math.floor(gap % 3600000 / 60000);
         const ups = finished.flatMap(j => j.ups || []);
-        show(`<div class="away glass" style="margin:0"><div class="lb" style="font-size:10.5px;letter-spacing:.3em;color:#2f7d90;display:flex;gap:6px;align-items:center"><span class="dot"></span>你不在的時候</div>
+        show(`<div class="away glass" style="margin:0"><div class="lb" style="font-size:10.5px;letter-spacing:.3em;color:var(--teal);display:flex;gap:6px;align-items:center"><span class="dot"></span>你不在的時候</div>
               <div class="tm num">${h ? h + ' 小時 ' : ''}${m} 分鐘</div>
               <div class="big num"><b>${R.fmt(sum)}</b><span>做完 ${finished.filter(j => j.ok).length} 件・做砸 ${finished.filter(j => !j.ok).length} 件</span></div></div>
               <div class="panel glass" style="margin:10px 0 0">

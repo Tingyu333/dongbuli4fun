@@ -11,6 +11,7 @@ const C = { ink0: '#1c2229', ink: '#26303a', ink2: '#3a4656', ink3: '#56677a', g
   b0: '#2b5290', b1: '#3d6fb6', au0: '#8a5a14', au1: '#e2b44a', au2: '#ffe9a0', gr0: '#2f6e47', gr1: '#3f8a5a', gr2: '#6cb487',
   kr: '#e8d6b0', kr2: '#c9ad7c', kr0: '#8f7448', wd: '#c99a68', wd2: '#a77a4c', wd0: '#5e4026', rg: '#e9d8bf', rg2: '#d6bf9d', rg3: '#c98f6b', pk: '#f08a80', yl: '#f2c94c', cn: '#b9bcbd', cn2: '#a2a6a8', cn3: '#cfd2d2',
   bk: '#1f2228', bk2: '#2c3038', red: '#d8433a', warm: '#f4dfa8', o2: '#f0a04b', pk2: '#f8c3bc', cl: '#f6fafc' };
+let SIGN = null;   // 門牌上的字（paint 時設定）
 const DON = ['..x...x..', '..x...x..', 'xxxxxxxxx', '..x...x..', '..x.x.x..', '..x...x..', 'xxxxxxxxx', '..x...x..', '.x.....x.'];   // 「丼」
 
 function paintOn(cv, id, draw) {
@@ -60,13 +61,14 @@ function paintOn(cv, id, draw) {
     const top = b - ph - 3; R(a, top - 15 * s, 1, 15 * s, C.gr0); R(a - 3 * s, top - 9 * s, 3 * s, 1, C.gr0); R(a + 1, top - 12 * s, 3 * s, 1, C.gr0);
     leaf(a - 3 * s, top - 9 * s, 9 * s, Math.PI * 1.12, 2.6 * s); leaf(a + 3 * s, top - 12 * s, 9 * s, -Math.PI * .1, 2.6 * s);
     leaf(a, top - 15 * s, 8 * s, -Math.PI * .5, 2.4 * s); leaf(a - 1, top - 6 * s, 8 * s, Math.PI * .85, 2.2 * s); leaf(a + 1, top - 5 * s, 8 * s, Math.PI * .08, 2.2 * s); };
-  const sign = (a, b, kind) => {   // 門口的銘牌：紙名片 → 木牌 → 拉絲銀牌 → 黑底金字 → 黑漆金框
-    if (kind === 1) { R(a, b, 22, 13, C.wh); R(a, b + 12, 22, 1, C.g2); R(a + 21, b, 1, 13, C.g2); glyph(DON, a + 3, b + 2, C.ink2); R(a + 14, b + 4, 5, 1, C.g2); R(a + 14, b + 7, 4, 1, C.g2); R(a + 10, b - 1, 2, 2, C.red); }
-    if (kind === 2) { R(a, b, 26, 15, C.wd); R(a, b, 26, 1, C.kr); R(a, b + 14, 26, 1, C.wd0); R(a + 25, b, 1, 15, C.wd2); for (let i = 3; i < 24; i += 5) R(a + i, b + 4, 3, 1, C.wd2); glyph(DON, a + 8, b + 3, C.wd0); px(a + 2, b + 2, C.g1); px(a + 23, b + 2, C.g1); }
-    if (kind === 3) { R(a, b, 30, 15, C.g3); for (let j = 1; j < 14; j += 2) R(a, b + j, 30, 1, C.g4); R(a + 1, b + 1, 28, 1, C.g1); R(a + 1, b + 13, 28, 1, C.g1); R(a + 1, b + 1, 1, 13, C.g1); R(a + 28, b + 1, 1, 13, C.g1); R(a, b, 30, 1, C.wh); glyph(DON, a + 4, b + 3, C.ink2); R(a + 16, b + 6, 9, 1, C.ink3); R(a + 16, b + 9, 7, 1, C.ink3); }
-    if (kind === 4) { R(a, b, 34, 16, C.bk); R(a, b, 34, 1, C.bk2); glyph(DON, a + 4, b + 4, C.au1); R(a + 17, b + 6, 12, 1, C.au1); R(a + 17, b + 9, 9, 1, C.au0); px(a + 5, b + 4, C.au2); }
-    if (kind === 5) { R(a, b, 44, 20, C.au0); R(a + 1, b + 1, 42, 18, C.au1); R(a + 2, b + 2, 40, 16, C.bk); R(a + 3, b + 3, 38, 1, C.bk2); glyph(DON, a + 6, b + 6, C.au1); R(a + 19, b + 8, 15, 1, C.au1); R(a + 19, b + 11, 11, 1, C.au0);
-      [[-3, 9], [44, 9]].forEach(([dx, dy]) => { px(a + dx + 1, b + dy - 1, C.au1); R(a + dx, b + dy, 3, 1, C.au1); px(a + dx + 1, b + dy + 1, C.au1); }); px(a + 7, b + 6, C.au2); }
+  const sign = (a, b, kind) => {   // 門口的銘牌：紙名片 → 木牌 → 拉絲銀牌 → 黑底金字 → 黑漆金框（字是公司名字的第一個字，12×12；沒有就是 9×9 的「丼」，牌子跟著字大小長大 e 格）
+    const G = SIGN, e = Math.max(G.length, G[0].length) - 9;
+    if (kind === 1) { R(a, b, 22 + e, 13 + e, C.wh); R(a, b + 12 + e, 22 + e, 1, C.g2); R(a + 21 + e, b, 1, 13 + e, C.g2); glyph(G, a + 3, b + 2, C.ink2); R(a + 14 + e, b + 4, 5, 1, C.g2); R(a + 14 + e, b + 7, 4, 1, C.g2); R(a + 10, b - 1, 2, 2, C.red); }
+    if (kind === 2) { R(a, b, 26 + e, 15 + e, C.wd); R(a, b, 26 + e, 1, C.kr); R(a, b + 14 + e, 26 + e, 1, C.wd0); R(a + 25 + e, b, 1, 15 + e, C.wd2); for (let i = 3; i < 24 + e; i += 5) R(a + i, b + 4, 3, 1, C.wd2); glyph(G, a + 8, b + 3, C.wd0); px(a + 2, b + 2, C.g1); px(a + 23 + e, b + 2, C.g1); }
+    if (kind === 3) { R(a, b, 30 + e, 15 + e, C.g3); for (let j = 1; j < 14 + e; j += 2) R(a, b + j, 30 + e, 1, C.g4); R(a + 1, b + 1, 28 + e, 1, C.g1); R(a + 1, b + 13 + e, 28 + e, 1, C.g1); R(a + 1, b + 1, 1, 13 + e, C.g1); R(a + 28 + e, b + 1, 1, 13 + e, C.g1); R(a, b, 30 + e, 1, C.wh); glyph(G, a + 4, b + 3, C.ink2); R(a + 16 + e, b + 6, 9, 1, C.ink3); R(a + 16 + e, b + 9, 7, 1, C.ink3); }
+    if (kind === 4) { R(a, b, 34 + e, 16 + e, C.bk); R(a, b, 34 + e, 1, C.bk2); glyph(G, a + 4, b + 4, C.au1); R(a + 17 + e, b + 6, 12, 1, C.au1); R(a + 17 + e, b + 9, 9, 1, C.au0); if (!e) px(a + 5, b + 4, C.au2); }
+    if (kind === 5) { R(a, b, 44 + e, 20 + e, C.au0); R(a + 1, b + 1, 42 + e, 18 + e, C.au1); R(a + 2, b + 2, 40 + e, 16 + e, C.bk); R(a + 3, b + 3, 38 + e, 1, C.bk2); glyph(G, a + 6, b + 6 - (e ? 1 : 0), C.au1); R(a + 19 + e, b + 8, 15, 1, C.au1); R(a + 19 + e, b + 11, 11, 1, C.au0);
+      [[-3, 9], [44 + e, 9]].forEach(([dx, dy]) => { px(a + dx + 1, b + dy - 1, C.au1); R(a + dx, b + dy, 3, 1, C.au1); px(a + dx + 1, b + dy + 1, C.au1); }); if (!e) px(a + 7, b + 6, C.au2); }
   };
   const halo = (cx, cy, r) => { for (let j = Math.floor(cy - r); j <= cy + r; j++) for (let i = Math.floor(cx - r); i <= cx + r; i++) { const d = Math.hypot(i + .5 - cx, j + .5 - cy); if (d <= r && d > 4 && (i + j) % 2 === 0) px(i, j, C.warm); } };   // 燈泡旁邊一小圈圓圓的光暈
   const cone = () => {};   // 往下打的點點光線不畫了（使用者：燈光的光線很多餘）
@@ -349,9 +351,22 @@ stage('s5', K => { const { R, px, el, checker, dither, glyph, city, plant, sign,
 });
 
 const SIZE = [375, 375, 375, 600, 1160];
+// 一個字變成 12×12 的像素字：用 12px 的思源黑體畫、透明度過一半的算有，空白的下緣切掉
+const glyphCache = {};
+function rasterGlyph(ch) {
+  if (glyphCache[ch]) return glyphCache[ch];
+  const N = 12, c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d');
+  x.font = '500 12px "Noto Sans TC", sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(ch, N / 2, N / 2 + .5);
+  const d = x.getImageData(0, 0, N, N).data, rows = [];
+  for (let j = 0; j < N; j++) { let r = ''; for (let i = 0; i < N; i++) r += d[(j * N + i) * 4 + 3] > 107 ? 'x' : '.'; rows.push(r); }
+  while (rows.length > 9 && !rows[rows.length - 1].includes('x')) rows.pop();
+  if (!rows.some(r => r.includes('x'))) return DON;
+  return glyphCache[ch] = rows;
+}
 return {
-  SIZE, H: 190,
-  paint(cv, n) { const id = 's' + n; cv.width = SIZE[n - 1]; cv.height = 190; paintOn(cv, id, DRAWS[id]); return (window.SEATS || {})[id] || []; },
+  SIZE, H: 190, clearGlyphs() { for (const k in glyphCache) delete glyphCache[k]; },
+  // ch：公司名字的第一個字，畫在門口的銘牌上（使用者 2026-11-25）；沒給或是「丼」就用原本 9×9 的丼
+  paint(cv, n, ch) { const id = 's' + n; cv.width = SIZE[n - 1]; cv.height = 190; SIGN = ch && ch !== '丼' ? rasterGlyph(ch) : DON; paintOn(cv, id, DRAWS[id]); return (window.SEATS || {})[id] || []; },
   fx(n) { return (window.OFX || {})['s' + n] || { mon: [], bulb: [] }; },   // 畫過之後才有：螢幕 [x, y, w, h]、燈泡 [x, y, 是不是舊燈泡]
 };
 })();
