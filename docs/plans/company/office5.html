@@ -80,7 +80,7 @@ const kit = K => { const { R, px, el, checker, dither, glyph, cushion, glassDesk
     cluster: (a, y, n, w, opt = {}) => { const xs = []; for (let k = 0; k < n; k++) { const cx = a + w / 2 + k * w; glassDesk(cx, y, w - 1, opt.holo && (k % 2 === 0)); if (!opt.holo && (k % 2 === 1 || n === 1)) monitor(cx + w / 4, y); if (opt.holo && k % 2) monitor(cx + w / 4, y); cushion(cx - w / 5, y); xs.push(cx - w / 5); } return xs; },
     // 四角壓暗：一圈一圈階梯式（像素感）
     vignette: (cx, cy, r1, r2, k = .72) => { const im = x.getImageData(0, 0, W, 190), d = im.data;
-      for (let j = 0; j < 190; j++) for (let i = 0; i < W; i++) { const dd = Math.hypot((i - cx) / 1.6, j - cy), t = (dd - r1) / (r2 - r1), f = t <= 0 ? 1 : t < .33 ? .94 : t < .66 ? .87 : t < 1 ? .8 : k; if (f < 1) { const o = (j * W + i) * 4; d[o] *= f; d[o + 1] *= f; d[o + 2] *= f; } }
+      for (let j = 0; j < 190; j++) for (let i = 0; i < W; i++) { const t = Math.hypot((i - cx) / (W * .5), (j - cy) / (190 * .5)), f = t < 1.05 ? 1 : t < 1.2 ? .95 : .9;   /* 只有四個角落淡淡暗一點（妹妹：整圈像監視器畫面） */ if (f < 1) { const o = (j * W + i) * 4; d[o] *= f; d[o + 1] *= f; d[o + 2] *= f; } }
       x.putImageData(im, 0, 0); },
     lowPlant: (a, b, w) => { R(a, b - 6, w, 6, C.wd2); R(a, b - 6, w, 1, C.kr); for (let i = 0; i < w; i += 4) { el(a + i + 2, b - 8, 3, 3, i % 8 ? C.gr1 : C.gr0); el(a + i + 1, b - 9, 1.4, 1, C.gr2); } },   // 矮盆栽隔間
   }; };
@@ -101,7 +101,7 @@ stage('s1', K => { const { R, px, el, checker, dither, city, cushion, sign, txt,
   txt('目標：', 99, 49, 9, C.b1, -.05); txt('搬家！', 104, 61, 11, C.red, -.08); R(100, 75, 30, 1, C.b1);
   // 機車蓋著帆布（右半邊）
   el(300, 176, 9, 9, C.tire); el(300, 176, 4, 4, C.g1); el(352, 176, 9, 9, C.tire); el(352, 176, 4, 4, C.g1);
-  el(326, 156, 34, 16, C2.tarp); el(312, 146, 18, 12, C2.tarp); el(330, 162, 30, 8, C2.tarp2); for (let k = 0; k < 4; k++) R(298 + k * 16, 150 + (k % 2) * 4, 1, 14, C2.tarp2); R(292, 168, 70, 2, C2.tarp2); R(296, 140, 10, 2, C.wh);
+  el(326, 156, 34, 16, C2.tarp); el(312, 146, 18, 12, C2.tarp); el(330, 162, 30, 8, C2.tarp2); for (let k = 0; k < 4; k++) R(298 + k * 16, 150 + (k % 2) * 4, 1, 14, C2.tarp2); R(292, 168, 70, 2, C2.tarp2); R(296, 140, 10, 2, C.wh); R(290, 138, 12, 2, C.ink2); R(286, 136, 5, 2, C.ink3); R(298, 128, 1, 10, C.g1); el(298, 126, 3, 2, C.g1); el(298, 126, 2, 1, C.cy2); R(355, 150, 5, 3, C.red); px(356, 150, C.pk);   // 帆布下露出把手、後照鏡、尾燈
   [[14, 150, 30, 22], [20, 130, 22, 20], [52, 160, 20, 12]].forEach(([a, b, w, h]) => { R(a, b, w, h, C.kr); R(a, b, w, 2, C.kr2); R(a + w / 2 - 2, b, w > 25 ? 4 : 3, h, C.warm); R(a + w - 2, b, 2, h, C.kr2); R(a, b + h - 1, w, 1, C.kr0); });
   const ty = 150; R(110, ty, 140, 3, C.g5); R(110, ty + 3, 140, 1, C.g1); R(116, ty + 4, 2, 22, C.g1); R(242, ty + 4, 2, 22, C.g1); R(116, ty + 18, 128, 1, C.g2);
   [140, 180, 220].forEach(cx => cushion(cx, ty));
@@ -167,12 +167,13 @@ stage('s4', K => { const { R, px, el, checker, dither, city, plant, sign, lamp, 
   R(0, 0, W, H, '#dfe7ec');
   R(0, 0, W, 16, C.wd); for (let i = 0; i < W; i += 5) R(i, 0, 2, 16, C.wd2); R(0, 16, W, 2, C.wd0); R(40, 13, 300, 2, C.au2); R(40, 15, 300, 1, C.warm);   // 木格柵天花板＋一條線型燈
   dither(40, 18, 300, 4, C.warm);
-  R(52, 22, W - 52, 70, C.sky3); R(52, 54, W - 52, 38, C.sky2); city(52, 80, W - 52, 12, 51, 0);   // 往下看：城市在很下面
+  R(66, 22, W - 66, 70, C.sky3); R(66, 54, W - 66, 38, C.sky2); city(66, 80, W - 66, 12, 51, 0);   // 往下看：城市在很下面
   [[110, 52, 26, 6], [150, 48, 16, 4], [250, 60, 30, 7], [290, 56, 14, 4], [340, 44, 18, 5]].forEach(([a, b, rx, ry]) => { el(a, b, rx, ry, C.wh); el(a + 5, b + 2, rx * .7, ry * .6, C.cl); });   // 雲就在眼前
-  for (let i = 52; i < W; i += 64) R(i, 22, 2, 70, C.g5); R(52, 20, W - 52, 2, C.g5); R(52, 92, W - 52, 3, C.g5); R(52, 95, W - 52, 1, C.g2);
-  R(0, 18, 52, 78, '#e8edf0');
+  for (let i = 66; i < W; i += 62) R(i, 22, 2, 70, C.g5); R(66, 20, W - 66, 2, C.g5); R(66, 92, W - 66, 3, C.g5); R(66, 95, W - 66, 1, C.g2);
+  R(0, 18, 66, 78, '#f1f4f6');
   Q.door(14, 34, 112, 4); sign(6, 22, 4);
-  R(38, 50, 10, 13, C.wd); R(38, 50, 10, 1, C.kr); R(47, 50, 1, 13, C.wd0); txt('絆', 38, 51, 10, C.wd0); for (let k = 0; k < 10; k++) px(44 + Math.round(Math.sin(k / 2) * 2), 63 + k, '#b33a2f');   // 門柱上的「絆」木牌＋紅線垂下來
+  R(42, 40, 18, 22, C.wd); R(42, 40, 18, 1, C.kr); R(59, 40, 1, 22, C.wd0); R(42, 61, 18, 1, C.wd0); txt('絆', 43, 43, 15, C.wd0); R(50, 37, 2, 3, C.wd0);   // 門邊亮亮的牆上一塊大一點的「絆」木牌
+  for (let k = 0; k < 22; k++) { px(51 + Math.round(Math.sin(k / 2.5) * 2), 62 + k, '#b33a2f'); px(52 + Math.round(Math.sin(k / 2.5) * 2), 62 + k, '#b33a2f'); } R(49, 84, 6, 3, '#b33a2f'); R(50, 87, 4, 4, '#b33a2f');   // 朱色紅線垂下來、尾端一個小結
   R(0, 112, W, 78, C.wd); for (let j = 116; j < H; j += 6) R(0, j, W, 1, C.wd2); for (let i = 0; i < W; i += 40) for (let j = 112; j < H; j += 12) R(i + (j % 24 ? 20 : 0), j, 1, 6, C.wd2);
   rug(52, 116, 236, 68, C.rg, C.rg2);
   const A = Q.cluster(58, 132, 2, 38, { holo: true }); Q.cluster(140, 132, 2, 38, { holo: true }); Q.cluster(222, 132, 2, 38, { holo: true });   // 後排三組
@@ -214,7 +215,7 @@ stage('s5', K => { const { R, px, el, checker, dither, glyph, city, plant, sign,
   const A = Q.cluster(262, 132, 3, 42); Q.cluster(398, 132, 2, 42); Q.lowPlant(390, 140, 6);
   Q.cluster(274, 176, 3, 42); Q.cluster(410, 176, 2, 42); Q.lowPlant(402, 184, 6);
   // 茶水吧＋書牆（把二十張桌子切成兩區）
-  R(492, 26, 112, 70, C.wd2); for (let j = 34; j < 96; j += 14) { R(494, j, 108, 2, C.wd0); for (let i = 496; i < 600; i += 4) R(i, j - 10, 3, 10, [C.red, C.b1, C.yl, C.gr1, C.wh, C.o2][(i + j) % 6]); }   // 書牆
+  R(492, 26, 112, 70, C.wd2); for (let j = 34; j < 96; j += 14) { R(494, j, 108, 2, C.wd0); for (let i = 496; i < 600; i += 4) { const k = (i * 7 + j * 13) % 9, hgt = 7 + (i * 3 + j) % 4; R(i, j - hgt, 3, hgt, ['#c9b79c', '#a7b6a2', '#b9a3a0', '#9fb1c0', '#d8cdb8', '#8f9e8a', '#c4a98a', '#e6dccb', '#a99482'][k]); } }   /* 書的顏色淡一點、雜一點、高低不一 */   // 書牆
   R(498, 120, 100, 28, C.wd2); R(498, 118, 100, 3, C2.brass); for (let i = 502; i < 596; i += 6) R(i, 122, 2, 26, C.wd);   // 茶水吧檯
   R(512, 102, 14, 16, C.g1); R(513, 96, 12, 6, C.cy2); R(516, 106, 6, 2, C.ink2); R(516, 112, 5, 5, C.wh); px(518, 93, C.g3);   // 咖啡機
   el(560, 112, 8, 6, C.wh); el(560, 111, 6, 4, C.g4); el(580, 113, 5, 4, C.o2); el(582, 111, 2, 1.4, C.gr1);   // 一盤點心、一顆橘子
