@@ -567,7 +567,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         if (running().length >= st().conc && !c.tutorial) return toast('同時只能做 ' + st().conc + ' 件，等一件做完');
         const free = idle();
         pickSel = (S.last && S.last.ppl === c.ppl ? S.last.ids.filter(id => free.some(s => s.id === id)) : []).slice(0, c.ppl);
-        if (c.tutorial) pickSel = [];
+        if (c.tutorial || S.coach === 8) pickSel = [];   // 教學教「幫我派」，先不要幫他勾上次的人
         drawDispatch(c);
     }
     function drawDispatch(c) {
@@ -727,7 +727,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         if (k === 7 && inApply) return ['#sheet .ft button:not([disabled])', '往下滑看看三位，挑一位按<b>聘用</b>。能力條越長越好。', 'top'];   // 泡泡放最上面，不要蓋住應徵的人
         if (k === 7 && !layer) return view === 'staff' ? ['#openApply', '按這裡<b>招募新員工</b>。'] : ['[data-v=staff]', '去<b>員工</b>請人。'];
         if (k === 8 && !layer) return view === 'board' ? [document.querySelector('#cards .card.easyc:not(.cant)') ? '#cards .card.easyc:not(.cant)' : '#cards .card', '委託板會一直貼新案子。<b>點這張</b>，再按「幫我派」就會自動挑人。'] : ['[data-v=board]', '人手有了，去<b>委託</b>接下一件。'];
-        if (k === 8 && inDispatch) return ['#dAuto', '按<b>幫我派</b>自動挑合適的人，再按開工。條件不合的話成功機率會掉。'];
+        if (k === 8 && inDispatch) return sheet.querySelector('#dGo:not([disabled])') ? ['#dGo', '挑好了：右邊<b>打勾</b>的就是要派去的人。按最下面的<b>開工</b>。', 'top'] : ['#dAuto', '按<b>幫我派</b>，會自動挑合適的人。'];   // 使用者：泡泡擋住被派的第一位，看不出有沒有派——挑好後泡泡移到最上面
         if (k === 9 && !layer) return view === 'office' ? ['#goal', '最後：做滿 ' + R.STAGES[1].jobs + ' 件、公司帳戶有 ' + R.fmt(R.STAGES[1].cost) + '，就能<b>搬到小辦公室</b>，位子和同時能做的件數都會變多。教學到這裡，祝生意興隆！'] : ['[data-v=office]', '回<b>辦公室</b>看看。'];
         return null;
     }
