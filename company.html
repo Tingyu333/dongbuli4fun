@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="assets/theme.css?v=20261116d">
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/company-office.js?v=20261125a"></script>
-    <script src="assets/company-rules.js?v=20261125e"></script>
+    <script src="assets/company-rules.js?v=20261125f"></script>
     <style>
 /* 毛玻璃介面（跟 docs/plans/company/ui.css 的樣張同一套） */
 body { margin: 0; font-family: "Noto Sans TC", sans-serif; color: #26303a; }
@@ -324,7 +324,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         <!-- 二　委託 -->
         <section class="view" id="v-board" hidden>
             <div class="sub"><span class="dot"></span><span class="num" id="boardNext"></span><span class="num" id="boardConc"></span><span class="r chip gold num" id="adBtn" style="cursor:pointer"></span></div>
-            <div class="tutline" id="tutHint" hidden><div class="tut">點這張，派小麥去做。30 秒，這次一定成功</div></div>
+            <div class="tutline" id="tutHint" hidden><div class="tut">點這張，派小麥去做。10 秒，這次一定成功</div></div>
             <div class="cards" id="cards"></div>
             <div class="kv" style="justify-content:center;margin:14px 0 4px"><span id="openHelp" style="color:#2f7d90;letter-spacing:.15em;cursor:pointer;padding:6px">標籤看不懂？ ›</span></div>
         </section>
@@ -573,13 +573,13 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         const enough = team.length === c.ppl;
         const cl = R.CLIENTS[c.client];
         show(`<div class="hd2"><h2>派誰去</h2><button class="x" id="dClose">關</button></div>
-            <div class="case glass" style="margin:0"><h3>〈${esc(c.title)}〉</h3><div class="who num">${esc(cl.who)}・${c.tutorial ? '30 秒' : R.dur(c.m)}・${R.fmt(c.gross)}・${c.ppl} 人${c.seriesNo ? '・系列 ' + c.seriesNo + ' / 5' : ''}</div>
+            <div class="case glass" style="margin:0"><h3>〈${esc(c.title)}〉</h3><div class="who num">${esc(cl.who)}・${c.tutorial ? '10 秒' : R.dur(c.m)}・${R.fmt(c.gross)}・${c.ppl} 人${c.seriesNo ? '・系列 ' + c.seriesNo + ' / 5' : ''}</div>
               ${tagLines(c).map(t => `<div class="kv" style="margin-top:6px;line-height:1.6"><span>${esc(t)}</span></div>`).join('')}
               ${c.req.length ? '<div class="need" style="display:block">' + c.req.map((q, k) => { const w = pl.who[k]; return `<div class="req2"><span>${reqText(q)}</span><span class="r2" style="color:${w ? '#2f7d90' : '#b33a2f'}">${w ? '合（' + esc(R.staffName(w)) + ' ' + w.st[q[0]] + '）' : team.length ? '缺 ' + pl.short[k] : '還沒選人'}</span>${w ? '<span class="ok">✓</span>' : '<span class="bad2">!</span>'}</div>`; }).join('') + '</div>' : ''}</div>
             <div class="cta"><button class="main" id="dAuto" style="flex:1">幫我派</button><button id="dLast" ${S.last && S.last.ppl === c.ppl ? '' : 'disabled'}>照上次的組合</button></div>
             <div class="panel glass" style="margin-top:10px">${S.staff.map(s => { const on = pickSel.includes(s.id), busy = !!s.job; const j = busy ? S.jobs.find(x => x.id === s.job) : null;
                 return `<div class="staff${busy ? ' busy' : ''}" data-id="${s.id}">${avaHtml(spriteKey(s))}<div><div class="nm">${esc(R.staffName(s))}<small>Lv.${s.lv}${s.trial ? '・試用期' : ''}</small></div>${statsHtml(s)}<div class="say">${busy ? '在做〈' + esc(j ? j.c.title : '') + '〉・' + R.clock(j ? (j.end - now()) / 1000 : 0) + ' 後回來' : esc(s.special ? R.SPECIALS[s.key].skill + '：' + R.SPECIALS[s.key].skillText : s.say)}</div></div><div class="chk${on ? ' on' : ''}">${on ? '✓' : ''}</div></div>`; }).join('') || '<div class="empty">還沒有員工</div>'}</div>
-            <div class="est glass num" style="margin-top:10px"><span>${enough ? '預計 <b>' + (c.tutorial ? '30 秒' : R.dur(Math.max(1, Math.round(pl.m)))) + '</b>' + (pl.napper ? '（茱莉鴨可能睡一下）' : '') : '要選 ' + c.ppl + ' 人（選了 ' + team.length + '）'}</span><span>成功機率 <b>${enough ? R.odds(pl.p) : '—'}</b></span></div>
+            <div class="est glass num" style="margin-top:10px"><span>${enough ? '預計 <b>' + (c.tutorial ? '10 秒' : R.dur(Math.max(1, Math.round(pl.m)))) + '</b>' + (pl.napper ? '（茱莉鴨可能睡一下）' : '') : '要選 ' + c.ppl + ' 人（選了 ' + team.length + '）'}</span><span>成功機率 <b>${enough ? R.odds(pl.p) : '—'}</b></span></div>
             <div class="cta"><button class="main" id="dGo" style="flex:1" ${enough ? '' : 'disabled'}>開工</button></div>`);
         if (c.tutorial) { $('sheet').scrollTop = 0; }
         $('dClose').onclick = hide;
@@ -589,7 +589,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         $('dGo').onclick = async () => {
             if (pl.p < .5 && !await ask('還是要開工嗎？', '成功機率只有' + R.odds(pl.p) + '。做砸了客人只付一成、薪水扣一半。', { ok: '開工' })) return;
             const j = R.start(c, team, now());
-            if (c.tutorial) { j.ok = true; j.great = false; j.napped = false; j.tip = false; j.end = now() + 30000; }
+            if (c.tutorial) { j.ok = true; j.great = false; j.napped = false; j.tip = false; j.end = now() + 10000; }
             team.forEach(s => s.job = j.id);
             S.jobs.push(j); S.board = S.board.filter(x => x !== c); S.last = { ppl: c.ppl, ids: team.map(s => s.id) };
             if (S.coach && S.coach <= 3) S.coach = 4; else if (S.coach === 8) S.coach = 9;
@@ -698,7 +698,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         const inDispatch = layer && sheet.querySelector('#dGo'), inApply = layer && sheet.querySelector('#aRef');
         if (k === 1 && !layer) return view === 'board' ? ['.card.tutc', '雞塊來委託了！<b>點這張</b>看看要做什麼。'] : ['[data-v=board]', '先到<b>委託</b>看看有什麼案子。'];
         if (k <= 3 && inDispatch) return pickSel.length ? ['#dGo', '小麥選好了，按<b>開工</b>。'] : ['#sheet .staff', '這件只要 1 個人。<b>點小麥</b>，派她去。'];
-        if (k === 4 && !layer && view === 'office') { const j = S.jobs.find(x => x.c.tutorial); if (j && j.fin) { S.coach = 5; return coachStep(); } return ['#runList .row', '小麥開始做了，那條是進度。<b>30 秒</b>後做完。（等的時候員工會坐在上面的位子上）']; }
+        if (k === 4 && !layer && view === 'office') { const j = S.jobs.find(x => x.c.tutorial); if (j && j.fin) { S.coach = 5; return coachStep(); } return ['#runList .row', '小麥開始做了，那條是進度。<b>10 秒</b>後做完。（等的時候員工會坐在上面的位子上）']; }
         if (k === 5 && !layer) return view === 'office' ? ['#runList .row.done', '做完了！<b>點這一行</b>看結案單，把錢收進公司帳戶。'] : ['[data-v=office]', '小麥做完了，回<b>辦公室</b>收款。'];
         if (k === 6 && !layer) return view === 'staff' ? ['#openApply', '案子會越來越多，一個人忙不過來。按這裡<b>招募新員工</b>，簽約金從你的<b>錢包</b>付。'] : ['[data-v=staff]', '去<b>員工</b>請人。'];
         if (k === 7 && inApply) return ['#sheet .ft button:not([disabled])', '往下滑看看三位，挑一位按<b>聘用</b>。能力條越長越好；金框的是特別人選，比較厲害也比較貴。', 'top'];   // 泡泡放最上面，不要蓋住應徵的人
@@ -787,7 +787,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
         const list = S.board.map((c, k) => [c, k, why(c)]).sort((a, b) => (a[2] ? 1 : 0) - (b[2] ? 1 : 0));
         $('cards').innerHTML = list.map(([c, k, no]) => {
             const cl = R.CLIENTS[c.client];
-            return `<div class="card glass${c.tag === 'big' ? ' big' : ''}${c.tutorial ? ' tutc' : ''}${no ? ' cant' : ''}" data-k="${k}">${jobHtml(c)}<div><h3>〈${esc(c.title)}〉</h3><div class="who">${esc(cl.who)}・${c.tutorial ? '30 秒' : R.dur(c.m)}</div></div>
+            return `<div class="card glass${c.tag === 'big' ? ' big' : ''}${c.tutorial ? ' tutc' : ''}${no ? ' cant' : ''}" data-k="${k}">${jobHtml(c)}<div><h3>〈${esc(c.title)}〉</h3><div class="who">${esc(cl.who)}・${c.tutorial ? '10 秒' : R.dur(c.m)}</div></div>
                 <div class="pay num">${R.fmt(c.gross)}<small>${c.seriesNo ? '系列 ' + c.seriesNo + ' / 5' : c.tag === 'super' || c.tag === 'rush' || c.expires - t < 3600000 ? R.clock((c.expires - t) / 1000) + ' 後撤' : ''}</small></div>
                 <div class="req"><span class="chip mute">${c.ppl} 人</span>${c.req.map(q => `<span class="chip">${reqText(q)}</span>`).join('')}${c.tutorial ? '<span class="chip">一定成功</span>' : ''}${tagChip(c)}${c.seriesNo === 5 ? '<span class="chip gold">做完送紀念品</span>' : ''}</div>${no ? `<div class="cantw">${esc(no)}</div>` : ''}</div>`;
         }).join('') || '<div class="empty glass">委託板空了・新案子等一下就來</div>';

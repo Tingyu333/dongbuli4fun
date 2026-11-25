@@ -152,8 +152,8 @@ window.CompanyRules = (() => {
     return { id: 'c' + now.toString(36) + (seq++), client, title, seriesNo, m: d.m, ppl, req, tag, gross, posted: now,
       expires: tag === 'super' ? now + SUPER_LIFE * 60000 : tag === 'rush' ? now + 120 * 60000 : now + 240 * 60000 };
   }
-  // 教學案：雞塊、30 秒、一定成功
-  const tutorialCase = now => ({ id: 'tut', client: 'nugget', title: '「不要沾醬」識別標誌', seriesNo: 0, m: .5, ppl: 1, req: [], tag: '', gross: 70, posted: now, expires: now + 864e5, tutorial: true });
+  // 教學案：雞塊、10 秒、一定成功
+  const tutorialCase = now => ({ id: 'tut', client: 'nugget', title: '「不要沾醬」識別標誌', seriesNo: 0, m: 1 / 6, ppl: 1, req: [], tag: '', gross: 70, posted: now, expires: now + 864e5, tutorial: true });
 
   // 一組人做這件：合不合、成功率、多久
   function plan(c, team, ctx = {}) {
@@ -170,7 +170,7 @@ window.CompanyRules = (() => {
     if (team.some(s => s.special && s.key === 'xiaowu') && c.req.some(q => q[0] === 2)) m *= .8;
     if (team.some(s => s.special && s.key === 'captain') && c.m >= 480) m *= .85;
     const napper = team.some(s => s.special && s.key === 'julie');
-    return { ok: short.every(x => x === 0), short, p, m: c.tutorial ? .5 : m, napper, who: c.req.map(([i, n]) => team.find(s => s.st[i] >= n)) };
+    return { ok: short.every(x => x === 0), short, p, m: c.tutorial ? 1 / 6 : m, napper, who: c.req.map(([i, n]) => team.find(s => s.st[i] >= n)) };
   }
   // 幫我派：從閒著的人裡挑，先滿足條件、再挑能力高的
   function autoPick(c, idle) {
