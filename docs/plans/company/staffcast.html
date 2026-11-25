@@ -12,16 +12,16 @@ canvas { image-rendering: pixelated; display: block; border-radius: 10px; }
 .names small { display: block; font-size: 12px; color: #56677a; letter-spacing: .03em; margin: 2px 0 8px; }
 </style></head><body><div class="wrap">
 <h1>八種一般員工（小動物）</h1>
-<p>比九個特殊角色樸素：沒有自己的小窩和招牌道具，統一坐公司配發的灰色坐墊。一樣平塗＋一階陰影、五官小小擠在下面。左邊小圖只看剪影。</p>
+<p>比九個特殊角色樸素：沒有自己的小窩和招牌道具，統一坐公司配發的坐墊（方方鼓鼓、繡員工編號）。一樣平塗＋一階陰影、五官小小擠在下面。左邊小圖只看剪影。</p>
 <div class="row">
   <div class="col"><h2>剪影</h2><canvas id="a" width="375" height="220"></canvas></div>
   <div class="col"><h2>平塗</h2><canvas id="b" width="375" height="220"></canvas>
     <div class="names">
       <div>鴿子<small>胖胖灰灰，脖子一圈綠紫光</small></div>
       <div>麻雀<small>咖啡色帽子、白臉頰、黑下巴</small></div>
-      <div>松鼠<small>大尾巴捲在背後、抱一顆橡實</small></div>
+      <div>松鼠<small>尾巴捲在背後、兩手合在胸前</small></div>
       <div>倉鼠<small>臉頰塞滿、捧一顆瓜子</small></div>
-      <div>兔子<small>長耳朵、粉紅鼻子、圓尾巴</small></div>
+      <div>兔子<small>坐成一團、一隻耳朵垂下來</small></div>
       <div>刺蝟<small>背上一排刺、尖尖的小鼻子</small></div>
       <div>青蛙<small>頭頂兩顆大眼睛、大嘴笑</small></div>
       <div>烏龜<small>六角紋龜殼、頭探出來</small></div>
@@ -88,11 +88,11 @@ function scene(X, sil) {
 
   C.pg = '#adb6c4'; C.pg2 = '#8e99ab'; C.pg0 = '#4e5768'; C.pgn = '#7fbc9f'; C.pgp = '#9d8bc6';
   C.bf = '#e0c49c'; C.bf2 = '#c9a878'; C.bf0 = '#7d6340'; C.sb = '#9c6b44';
-  C.sq = '#cf7f3f'; C.sq2 = '#aa6029'; C.sq0 = '#5e3313'; C.sqc = '#f3dfc2';
+  C.sq = '#b48a66'; C.sq2 = '#94704f'; C.sq0 = '#523a26'; C.sqc = '#efe2cf';
   C.hm = '#f2c98c'; C.hm2 = '#dcaa66'; C.hm0 = '#8f6532';
   C.ra = '#f4f1ec'; C.ra2 = '#dcd6cd'; C.ra0 = '#8e877d';
   C.hg = '#8a6a52'; C.hg2 = '#6c5040'; C.hg0 = '#3c2b20'; C.hgf = '#f2dfc4';
-  C.fr = '#86c57a'; C.fr2 = '#65a958'; C.fr0 = '#2f6a2a'; C.frb = '#e6f3cc';
+  C.fr = '#93b886'; C.fr2 = '#779d69'; C.fr0 = '#2f6a2a'; C.frb = '#e6f3cc';
   C.sh = '#86a35e'; C.sh2 = '#647f42'; C.sh0 = '#33461e'; C.shr = '#d6c08a'; C.sk = '#bed392'; C.sk0 = '#5f7a3a';
   Object.assign(OLC, { [C.pg]: C.pg0, [C.pg2]: C.pg0, [C.bf]: C.bf0, [C.bf2]: C.bf0, [C.sb]: C.bf0, [C.sq]: C.sq0, [C.sq2]: C.sq0, [C.sqc]: C.sq0,
     [C.hm]: C.hm0, [C.hm2]: C.hm0, [C.ra]: C.ra0, [C.ra2]: C.ra0, [C.hg]: C.hg0, [C.hg2]: C.hg0, [C.hgf]: C.hg0, [C.fr]: C.fr0, [C.fr2]: C.fr0, [C.frb]: C.fr0,
@@ -108,12 +108,17 @@ function scene(X, sil) {
   }
   R(0, 109, W, 1, C.g3);
   // 公司配發的灰色方坐墊（每隻都一樣，跟特殊角色的小窩分開）
-  const cushion = (cx, dy) => { N(cx - 16, dy - 1, 32, 1, C.g3); N(cx - 14, dy - 5, 28, 4, C.g2); N(cx - 14, dy - 5, 28, 1, C.g3); N(cx - 14, dy - 2, 28, 1, C.g1); N(cx - 15, dy - 4, 1, 2, C.g1); N(cx + 14, dy - 4, 1, 2, C.g1); if (!sil) for (let i = cx - 11; i < cx + 12; i += 4) px(i, dy - 3, C.g3); };
+  // 公司配發的坐墊：方方鼓鼓，正面繡員工編號（妹妹：扁扁一條像坐在鍵盤上）
+  const DIG = { 0: '111101101101111', 1: '010110010010111', 2: '111001111100111', 3: '111001111001111', 4: '101101111001001', 5: '111100111001111', 6: '111100111101111', 7: '111001010010010', 8: '111101111101111', 9: '111101111001111' };
+  const cushion = (cx, dy, n) => { N(cx - 16, dy - 1, 32, 1, C.g3);
+    for (let j = 0; j < 9; j++) { const ins = j === 0 || j === 8 ? 2 : j === 1 || j === 7 ? 1 : 0; N(cx - 14 + ins, dy - 9 + j, 28 - ins * 2, 1, j === 0 ? C.g1 : j === 8 ? C.g1 : j < 3 ? C.g4 : j > 6 ? C.g2 : C.g3); N(cx - 14 + ins, dy - 9 + j, 1, 1, C.g1); N(cx + 13 - ins, dy - 9 + j, 1, 1, C.g1); }
+    N(cx - 15, dy - 9, 2, 2, C.g2); N(cx + 13, dy - 9, 2, 2, C.g2); N(cx - 15, dy - 2, 2, 2, C.g2); N(cx + 13, dy - 2, 2, 2, C.g2);   // 四個角鼓起來的小穗
+    if (!sil) { const str = String(n).padStart(2, '0'); [...str].forEach((d, k) => { const g = DIG[d]; for (let q = 0; q < 15; q++) if (g[q] === '1') px(cx - 4 + k * 4 + q % 3, dy - 7 + Math.floor(q / 3), C.b0); }); } };   // 繡上去的員工編號
   const blush = (L, x, y) => F(L, x, y, [[0, 0], [1, 0]], C.pk2);
 
   // ---- 鴿子：胖胖的灰鴿，脖子一圈綠紫光，頭往前點 ----
-  { const cx = XS[0], dy = 92; cushion(cx, dy);
-    const by = dy - 5, { L, E, PG, at } = mk(cx, by);
+  { const cx = XS[0], dy = 92; cushion(cx, dy, 1);
+    const by = dy - 8, { L, E, PG, at } = mk(cx, by);
     E(11, -5, 4.5, 2, C.pg2, -.35);                                                                         // 尾巴
     E(2, -7, 10, 7.5, C.pg); E(-4, -16.5, 7.8, 7.2, C.pg);                                                   // 身體、頭
     E(-3, -10.5, 6.5, 2, C.pgn, 0, C.pg); E(-2, -8.6, 6.5, 1.3, C.pgp, 0, C.pg);                           // 脖子的綠紫光
@@ -124,11 +129,11 @@ function scene(X, sil) {
     [[5, -8], [6.5, -6]].forEach(([a, b]) => { const [p, q] = at(a, b); F(L, p, q, [[0, 0], [1, 0], [2, 0]], C.pg0); });   // 翅膀上兩道黑條
     const [nx, ny] = at(-10.8, -16.6); F(L, nx, ny, [[0, 0]], C.wh);                                       // 嘴巴上的白點
     const [ex, ey] = at(-5, -17.5); bean(L, ex - 3, ey); bean(L, ex + 3, ey); blush(L, ex - 5, ey + 4); blush(L, ex + 5, ey + 4);
-    blit(L, dy - 4);
+    blit(L, dy - 7);
   }
   // ---- 麻雀：圓滾滾，咖啡色小帽子、白臉頰、黑下巴 ----
-  { const cx = XS[1], dy = 92; cushion(cx, dy);
-    const by = dy - 5, { L, E, PG, at } = mk(cx, by);
+  { const cx = XS[1], dy = 92; cushion(cx, dy, 2);
+    const by = dy - 8, { L, E, PG, at } = mk(cx, by);
     E(11, -4, 4.5, 1.6, C.sb, -.3);
     E(1, -8, 9.5, 8, C.bf); E(-1, -17, 8.2, 7.2, C.bf);
     E(-1, -21.5, 8, 4, C.sb, 0, C.bf);                                                                     // 咖啡色帽子
@@ -140,26 +145,24 @@ function scene(X, sil) {
     outline(L);
     [[5, -9], [7, -7], [5.5, -5.5]].forEach(([a, b]) => { const [p, q] = at(a, b); F(L, p, q, [[0, 0], [1, 1]], C.ink2); });   // 翅膀的黑紋
     const [ex, ey] = at(-2, -18); bean(L, ex - 4, ey); bean(L, ex + 3, ey); blush(L, ex - 6, ey + 4); blush(L, ex + 5, ey + 4);
-    blit(L, dy - 4);
+    blit(L, dy - 7);
   }
   // ---- 松鼠：大尾巴捲在背後，雙手抱一顆橡實 ----
-  { const cx = XS[2] - 2, dy = 92; cushion(cx, dy);
-    const by = dy - 5, { L, E, PG, at } = mk(cx, by);
-    for (let k = 0; k <= 26; k++) { const t = k / 26, a = 8 + 9 * Math.sin(t * Math.PI * .9), b = -2 - 26 * t + 6 * t * t; E(a, b, 4.2 - t * .8, 4.2 - t * .8, C.sq); }   // 大尾巴
+  { const cx = XS[2] - 2, dy = 92; cushion(cx, dy, 3);
+    const by = dy - 8, { L, E, PG, at } = mk(cx, by);
+    for (let k = 0; k <= 26; k++) { const t = k / 26, a = 8 + 9 * Math.sin(t * Math.PI * .9), b = -2 - 26 * t + 6 * t * t; E(a * .9, b * .9, 3.8 - t * .8, 3.8 - t * .8, C.sq); }   // 尾巴（小一點、不搶戲）
     E(11, -8, 2.6, 6, C.sq2, -.2, C.sq); E(9, -26, 2, 3, C.sqc, .4, C.sq);
     E(0, -7, 8.5, 7, C.sq); E(-1, -17, 8, 7, C.sq);
     PG([[-7, -21], [-6, -28], [-3, -23]], C.sq); PG([[2, -23], [5, -28.5], [6, -21]], C.sq);              // 耳朵＋毛尖
     E(-1, -6, 5, 4.8, C.sqc, 0, C.sq); E(-3, -14.5, 4.5, 2.6, C.sqc, 0, C.sq);
     outline(L);
     const [ex, ey] = at(-1.5, -18); bean(L, ex - 4, ey); bean(L, ex + 3, ey); F(L, ex - 1, ey + 4, [[0, 0], [1, 0]], C.ink0); blush(L, ex - 7, ey + 4); blush(L, ex + 5, ey + 4);
-    blit(L, dy - 4);
-    const Ac = Lay(), [ax, ay] = at(-1, -8.5);                                                              // 抱著的橡實
-    lel(Ac, ax, ay + 1, 2.8, 3.4, C.o1); lel(Ac, ax, ay - 2, 3.4, 1.8, C.sq2); outline(Ac); lp(Ac, ax, ay - 5, C.sq0); lp(Ac, ax - 1, ay + 1, C.o3);
-    lel(Ac, ax - 4, ay + 1, 2.2, 1.8, C.sq); lel(Ac, ax + 4, ay + 1, 2.2, 1.8, C.sq); outline(Ac); blit(Ac, dy);
+    blit(L, dy - 7);
+    const Ac = Lay(), [ax, ay] = at(-1, -8.5); lel(Ac, ax - 2.5, ay, 2.2, 1.8, C.sq); lel(Ac, ax + 2.5, ay, 2.2, 1.8, C.sq); outline(Ac); blit(Ac, dy);   // 兩手乖乖合在胸前（不拿道具）
   }
   // ---- 倉鼠：一顆圓球，臉頰塞滿，捧一顆瓜子 ----
-  { const cx = XS[3], dy = 92; cushion(cx, dy);
-    const by = dy - 5, { L, E, PG, at } = mk(cx, by);
+  { const cx = XS[3], dy = 92; cushion(cx, dy, 4);
+    const by = dy - 8, { L, E, PG, at } = mk(cx, by);
     E(-6, -18, 2.4, 2.4, C.hm); E(6, -18, 2.4, 2.4, C.hm); E(-6, -18, 1.3, 1.3, C.pk2, 0, C.hm); E(6, -18, 1.3, 1.3, C.pk2, 0, C.hm);   // 小圓耳
     E(0, -9.5, 10.5, 9.5, C.hm);                                                                            // 一整顆圓
     E(-8.5, -8, 3.6, 3.2, C.hm); E(8.5, -8, 3.6, 3.2, C.hm);                                                // 塞滿的臉頰
@@ -168,28 +171,28 @@ function scene(X, sil) {
     outline(L);
     const [ex, ey] = at(0, -11.5); bean(L, ex - 5, ey); bean(L, ex + 4, ey); F(L, ex - 1, ey + 3, [[0, 0], [1, 0]], C.pink); F(L, ex - 2, ey + 5, [[0, 0], [1, -1], [2, 0], [3, -1], [4, 0]], C.hm0);
     blush(L, ex - 8, ey + 3); blush(L, ex + 7, ey + 3);
-    blit(L, dy - 4);
+    blit(L, dy - 7);
     const Sd = Lay(), [sx, sy] = at(0, -3);                                                                 // 捧著的瓜子
-    lel(Sd, sx, sy, 1.8, 3, C.ink3, .3); outline(Sd, C.ink2); lp(Sd, sx, sy - 1, C.g3); lp(Sd, sx, sy, C.g3); lp(Sd, sx + 1, sy + 1, C.g3);
+    lel(Sd, sx, sy, 1.8, 3, C.g4, .3); outline(Sd, C.ink3); lp(Sd, sx, sy - 2, C.ink3); lp(Sd, sx, sy, C.ink3); lp(Sd, sx + 1, sy + 2, C.ink3);   /* 淺色有黑條紋的瓜子 */
     lel(Sd, sx - 3, sy + 1, 1.8, 1.4, C.hm); lel(Sd, sx + 3, sy + 1, 1.8, 1.4, C.hm); outline(Sd); blit(Sd, dy);
   }
 
   // ---- 兔子：長耳朵（一隻微微彎）、粉紅鼻子、圓尾巴 ----
-  { const cx = XS[0], dy = 202; cushion(cx, dy);
-    const by = dy - 5, { L, E, PG, at } = mk(cx, by);
-    E(-3.5, -28, 2.2, 6.5, C.ra, -.12); E(3.8, -27, 2.2, 6.5, C.ra, .35);                                 // 長耳朵
-    E(-3.5, -28, 1.1, 4.8, C.pk2, -.12, C.ra); E(3.8, -27, 1.1, 4.8, C.pk2, .35, C.ra);
-    E(8.6, -3.4, 2.4, 2.4, C.ra);                                                                           // 圓尾巴
-    E(0, -6.5, 8.5, 6.5, C.ra); E(0, -16.5, 8.5, 7.2, C.ra);
-    E(3, -2.5, 4.5, 2, C.ra2, 0, C.ra); E(-3, .2, 2.4, 1, C.ra); E(3, .2, 2.4, 1, C.ra);
+  { const cx = XS[0], dy = 202; cushion(cx, dy, 5);
+    const by = dy - 8, { L, E, PG, at } = mk(cx, by);
+    E(-3, -24, 2.2, 6, C.ra, -.15); E(7.5, -17, 2.1, 5.5, C.ra, 1.15);                                      // 一隻耳朵立著、一隻垂下來
+    E(-3, -24, 1.1, 4.4, C.pk2, -.15, C.ra); E(7.5, -17, 1, 4, C.pk2, 1.15, C.ra);
+    E(9.5, -3, 2.6, 2.6, C.ra);                                                                             // 圓尾巴
+    E(0, -6, 10, 7, C.ra); E(0, -14.5, 8.5, 7.2, C.ra);                                                     // 坐下來圓圓一團
+    E(4, -2.5, 6, 2.4, C.ra2, 0, C.ra); E(-5.5, -.3, 3, 1.3, C.ra); E(5.5, -.3, 3, 1.3, C.ra);            // 腳掌
     outline(L);
-    const [ex, ey] = at(0, -17.5); bean(L, ex - 5, ey); bean(L, ex + 4, ey); F(L, ex - 1, ey + 3, [[0, 0], [1, 0], [0, 1], [1, 1]], C.pink); F(L, ex - 2, ey + 5, [[0, 0], [1, -1], [2, 0], [3, -1], [4, 0]], C.ra0);
+    const [ex, ey] = at(0, -15.5); bean(L, ex - 5, ey); bean(L, ex + 4, ey); F(L, ex - 1, ey + 3, [[0, 0], [1, 0], [0, 1], [1, 1]], C.pink); F(L, ex - 2, ey + 5, [[0, 0], [1, -1], [2, 0], [3, -1], [4, 0]], C.ra0);
     blush(L, ex - 8, ey + 3); blush(L, ex + 7, ey + 3);
-    blit(L, dy - 4);
+    blit(L, dy - 7);
   }
   // ---- 刺蝟：背上一排刺，尖尖的鼻子朝左 ----
-  { const cx = XS[1], dy = 202; cushion(cx, dy);
-    const by = dy - 5, { L, E, PG, at } = mk(cx, by);
+  { const cx = XS[1], dy = 202; cushion(cx, dy, 6);
+    const by = dy - 8, { L, E, PG, at } = mk(cx, by);
     { const pts = []; for (let k = 0; k <= 22; k++) { const t = Math.PI * (1.02 + k / 22 * 1.0), r = k % 2 ? 13.6 : 11; pts.push([2.5 + Math.cos(t) * r, -8.5 + Math.sin(t) * r * .92]); } pts.push([14.5, -2]); pts.push([-8, -2]); PG(pts, C.hg2); }   // 背上的刺：一圈鋸齒
     E(2.5, -8.5, 10, 8.2, C.hg);                                                                            // 背
     E(-5, -7.5, 6.5, 6, C.hgf); PG([[-9, -10], [-14.5, -6.5], [-9, -4.5]], C.hgf);                         // 臉、尖鼻子
@@ -199,33 +202,33 @@ function scene(X, sil) {
     const [nx, ny] = at(-14, -6.5); F(L, nx - 1, ny - 1, [[0, 0], [1, 0], [0, 1], [1, 1]], C.ink0);
     const [ex, ey] = at(-5.5, -9); bean(L, ex - 2, ey, 2); bean(L, ex + 3, ey, 2); blush(L, ex - 2, ey + 4); blush(L, ex + 4, ey + 4);
     F(L, ex - 1, ey + 5, [[0, 0], [1, 1], [2, 0]], C.hg0);
-    blit(L, dy - 4);
+    blit(L, dy - 7);
   }
   // ---- 青蛙：頭頂兩顆大眼睛，大嘴笑，白肚子 ----
-  { const cx = XS[2], dy = 202; cushion(cx, dy);
-    const by = dy - 5, { L, E, PG, at } = mk(cx, by);
-    E(-5.5, -15.5, 3.8, 3.8, C.fr); E(5.5, -15.5, 3.8, 3.8, C.fr);                                         // 眼睛的包
+  { const cx = XS[2], dy = 202; cushion(cx, dy, 7);
+    const by = dy - 8, { L, E, PG, at } = mk(cx, by);
+    E(-5, -14.5, 3.2, 3.2, C.fr); E(5, -14.5, 3.2, 3.2, C.fr);                                         // 眼睛的包
     E(0, -7.5, 11.5, 7.5, C.fr); E(0, -4, 7.5, 4, C.frb, 0, C.fr); E(6, -3, 6, 2.6, C.fr2, 0, C.fr);
     E(-7, -.4, 3, 1.2, C.fr); E(7, -.4, 3, 1.2, C.fr);                                                     // 腳
     outline(L);
-    [[-5.5, -15.5], [5.5, -15.5]].forEach(([a, b]) => { const [p, q] = at(a, b); lel(L, p, q, 3.4, 3.4, C.wh); F(L, p - 1, q - 1, [[0, 0], [1, 0], [0, 1], [1, 1], [0, 2], [1, 2]], C.ink0); F(L, p - 1, q - 1, [[0, 0]], C.wh); });
+    [[-5, -14.5], [5, -14.5]].forEach(([a, b]) => { const [p, q] = at(a, b); lel(L, p, q, 2.6, 2.6, C.wh); F(L, p - 1, q - 1, [[0, 0], [1, 0], [0, 1], [1, 1], [0, 2], [1, 2]], C.ink0); F(L, p - 1, q - 1, [[0, 0]], C.wh); });
     const [mx, my] = at(0, -8); F(L, mx - 5, my, [[0, 0], [1, 1], [2, 1], [3, 2], [4, 2], [5, 2], [6, 1], [7, 1], [8, 0]], C.fr0);   // 大嘴笑
     blush(L, mx - 9, my); blush(L, mx + 8, my);
-    blit(L, dy - 4);
+    blit(L, dy - 7);
   }
   // ---- 烏龜：六角紋龜殼，頭探出來笑 ----
-  { const cx = XS[3] + 2, dy = 202; cushion(cx, dy);
-    const by = dy - 5, { L, E, PG, at } = mk(cx, by);
-    E(-11, -6.5, 4.4, 4, C.sk); E(-5, -.5, 2.4, 1.3, C.sk); E(8, -.5, 2.4, 1.3, C.sk); E(13, -2.5, 1.6, 1, C.sk);   // 頭、腳、尾巴
+  { const cx = XS[3] + 2, dy = 202; cushion(cx, dy, 8);
+    const by = dy - 8, { L, E, PG, at } = mk(cx, by);
+    E(-9, -5, 3, 2.6, C.sk); E(-13.5, -7.5, 5.4, 4.8, C.sk); E(-5, -.5, 2.4, 1.3, C.sk); E(8, -.5, 2.4, 1.3, C.sk); E(13, -2.5, 1.6, 1, C.sk);   // 頭、腳、尾巴
     E(2, -7, 11, 7.5, C.sh); E(2, -1.2, 12, 1.8, C.shr);                                                   // 龜殼、殼邊
     E(6, -4, 6, 3, C.sh2, 0, C.sh);
     outline(L);
     const hex = (a, b, r) => { const pts = []; for (let k = 0; k < 6; k++) { const t = k / 6 * Math.PI * 2 + Math.PI / 6; pts.push(at(a + Math.cos(t) * r, b + Math.sin(t) * r * .8)); }
       for (let k = 0; k < 6; k++) { const [x1, y1] = pts[k], [x2, y2] = pts[(k + 1) % 6], n = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1)); for (let j = 0; j <= n; j++) { const p = Math.round(x1 + (x2 - x1) * j / n), q = Math.round(y1 + (y2 - y1) * j / n); if (L[q * W + p] === C.sh || L[q * W + p] === C.sh2) F(L, p, q, [[0, 0]], C.sh0); } } };
     hex(2, -8, 3.6); hex(-5, -5, 3); hex(9, -5, 3);                                                         // 六角紋
-    const [hx, hy] = at(-12, -8); F(L, hx - 1, hy - 1, [[0, 0], [1, 0]], C.wh);
-    const [ex, ey] = at(-11.5, -7.5); bean(L, ex - 3, ey, 2); bean(L, ex + 1, ey, 2); F(L, ex - 2, ey + 3, [[0, 0], [1, 1], [2, 1], [3, 0]], C.sk0); blush(L, ex - 4, ey + 3);
-    blit(L, dy - 4);
+    const [hx, hy] = at(-15, -10); F(L, hx - 1, hy - 1, [[0, 0], [1, 0]], C.wh);
+    const [ex, ey] = at(-14, -8.5); bean(L, ex - 3, ey); bean(L, ex + 2, ey); F(L, ex - 1, ey + 4, [[0, 0], [1, 1], [2, 1], [3, 0]], C.sk0); blush(L, ex - 5, ey + 4); blush(L, ex + 4, ey + 4);
+    blit(L, dy - 7);
   }
 }
 scene(document.getElementById('a').getContext('2d'), true);
