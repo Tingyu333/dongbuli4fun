@@ -8,7 +8,7 @@
 - 開放前要做：接後端存檔（跟小島一起）、排行榜「公司・榜」、會員中心打工那區一格入口、許願的人拿「創始執行長」、拿掉 `noindex`。
 
 ## 檔案
-- `company.html`：畫面、存檔、時間。樣式是毛玻璃那套（從 `docs/plans/company/ui.css` 搬進頁內），這一頁是 App（沒有導覽列、左下晝夜鈕藏起來，跟小島一樣）；**夜間模式還沒做，晚上也是白天的樣子**。
+- `company.html`：畫面、存檔、時間。提示訊息還是叫 `showToast()`，但這頁把 `.toast` 改成毛玻璃小膠囊、從分頁列上方浮出來、一次只留一張（使用者 2026-11-25：紙條要符合 UI 風格）。樣式是毛玻璃那套（從 `docs/plans/company/ui.css` 搬進頁內），這一頁是 App（沒有導覽列、左下晝夜鈕藏起來，跟小島一樣）；**夜間模式還沒做，晚上也是白天的樣子**。
 - `assets/company-rules.js`（`CompanyRules`）：只放「算」的東西，之後照搬到 `Code.gs`。階段（`STAGES`：位子、同時幾件、基本價、搬家價錢和件數、增資上限、簽約金、刷新、訓練、設備、廣告）、案子長短倍數、九位特殊角色（能力、本事、台詞）、八種一般員工、九位委託人和系列、突發狀況、設備。函式：`newCase`、`plan`（合不合、成功率、多久）、`autoPick`（幫我派）、`start`（開工時就決定結果）、`settle`（結案單）、`gainExp`、`applicants`。
 - `assets/company-office.js`（`CompanyOffice.paint(canvas, 1～5)`）：五間辦公室的畫法，`docs/plans/company/office5.html` 也改成用這一份。回傳每個坐墊的位置；員工照順序坐上去（後排先畫）。畫布寬 375／375／375／600／1160，二十七樓和大樓左右滑（大樓一打開先捲到辦公區）。
 - `assets/company/*.png`：角色圖（`cast.html`／`staffcast.html`／`artstyle.html` 用 `?bare` 拍的，底邊＝桌面，錨點寫在頁內 `ANCHOR`）。茱莉鴨平常是醒著的 `julie.png`，開工時三成機會「會睡一下」，那件做到中間那段換成 `julie-sleep.png`。
