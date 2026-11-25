@@ -351,7 +351,8 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
     const KEY = 'dongbuli-company-preview', TRIAL_MONEY = 300000;
     let S = null;
     try { S = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { S = null; }
-    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } };
+    let resetting = false;
+    const save = () => { if (resetting || !S) return; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } };
     const now = () => Date.now() + (S ? S.shift || 0 : 0);   // 試玩可以「快轉」
     const fresh = () => ({ v: 1, name: '', stage: 0, acct: 0, wallet: TRIAL_MONEY, jobsDone: 0, staff: [], board: [], jobs: [], done: [], applicants: [], applyAt: 0, nextBoardAt: 0, adUntil: 0,
         series: {}, gifts: [], equip: {}, dex: { sp: {}, gen: {} }, hiredSp: [], last: null, today: { d: '', net: 0 }, inject: { d: '', amt: 0 }, lastSeen: 0, shift: 0, tut: 0, created: Date.now() });
@@ -748,7 +749,7 @@ button { cursor: pointer; } button:disabled { opacity: .45; cursor: default; }
             $('tAdd').onclick = () => { S.wallet += 1000000; save(); renderCompany(); };
             $('tSkip').onclick = () => { S.shift = (S.shift || 0) + 600000; tick(); toast('快轉了 10 分鐘'); render(); };
             $('tSkip2').onclick = () => { S.shift = (S.shift || 0) + 3600000; tick(); toast('快轉了 1 小時'); render(); };
-            $('tReset').onclick = async () => { if (!await ask('整個公司重來？', '試玩的存檔會清掉，從開場紙條重新開始。', { ok: '重來', warn: true })) return; localStorage.removeItem(KEY); location.reload(); };
+            $('tReset').onclick = async () => { if (!await ask('整個公司重來？', '試玩的存檔會清掉，從開場紙條重新開始。', { ok: '重來', warn: true })) return; resetting = true; S = null; localStorage.removeItem(KEY); location.reload(); };   // 先擋住存檔：不然每秒的存檔、離開頁面的存檔會把舊公司又寫回去（使用者：整個重來要能從新手教學重玩）
         } else if (seg === 'gift') {
             const ks = Object.keys(R.CLIENTS);
             B.innerHTML = `<div class="shelf glass"><div class="ttl"><span>紀念品櫃</span><span class="num">${S.gifts.length} / ${ks.length}${S.gifts.length >= ks.length ? '・全城的老客戶' : '・收齊有稱號'}</span></div><div class="grid">${ks.map(k => `<div class="slot${S.gifts.includes(k) ? '' : ' off'}" data-k="${k}"><canvas width="12" height="12" data-ic="${k}"${S.gifts.includes(k) ? '' : ' data-off="1"'}></canvas></div>`).join('')}</div></div>
