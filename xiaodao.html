@@ -28,9 +28,9 @@
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
-    <script src="assets/xiaodao-rules.js?v=20261126b"></script>
-    <script src="assets/xiaodao-draw.js?v=20261126d"></script>
-    <script src="assets/xiaodao-fx.js?v=20261126d"></script>
+    <script src="assets/xiaodao-rules.js?v=20261126c"></script>
+    <script src="assets/xiaodao-draw.js?v=20261126e"></script>
+    <script src="assets/xiaodao-fx.js?v=20261126e"></script>
     <script src="assets/xiaodao-room.js?v=20261122d"></script>
     <script src="assets/xiaodao-iso.js?v=20261123b"></script>
     <script src="assets/xiaodao-door.js?v=20261124c"></script>
@@ -372,7 +372,7 @@
         function start() {
             $('app').hidden = false;
             // ----- 存檔（試玩：存在這支手機） -----
-            const TRIAL_KEY = 'dongbuli-xiaodao-preview2', TRIAL_MONEY = 50000000;
+            const TRIAL_KEY = 'dongbuli-xiaodao-preview3', TRIAL_MONEY = 50000000;
             let S, money;
             function loadTrial() {
                 let d = null; try { d = JSON.parse(localStorage.getItem(TRIAL_KEY)); } catch (e) { }
@@ -600,7 +600,7 @@
             }
             function openPlot(p) {
                 const i = X.plotInfo(S, p), n = X.island(S).plots.length, nt = X.TIERS[X.tierOf(S) + 1];
-                const left = nt ? nt.n - n : 0, own = new Set(X.island(S).plots), lagoon = X.world().nb[p].every(q => own.has(q));   // 四周都是自己的地＝島中間的內海（2026-11-26：玩家看到湖裡有鎖會以為「我家的湖要錢？」）
+                const left = nt ? nt.n - n : 0, own = new Set(X.island(S).plots), lagoon = X.world().nbLand[p].every(q => own.has(q));   // 四周都是自己的地＝島中間的內海（2026-11-26：玩家看到湖裡有鎖會以為「我家的湖要錢？」）
                 card.innerHTML = `<h2>${i.lot ? X.FAC[i.lot.k].name + '的工地' : '買這塊地'}</h2>
                     <p class="line">${i.size} 格・${i.n > 1 ? `${i.n} 塊地合成一塊，一次買下` : lagoon ? '被你的地圍起來的內海：買下來就填海造地，變成陸地' : '跟你的地連著，會填海接起來'}</p>
                     <p class="price">${fmt(i.price)}</p>
@@ -1263,7 +1263,7 @@
             size();
             new ResizeObserver(() => { if (size()) { if (world) { if (zoomed()) { clampCam(); draw(); } else fit(); } } }).observe(view);
             renderTop();
-            D.load('assets/xiaodao/', '20261126d').then(() => setTimeout(() => rebuild(true), 30));
+            D.load('assets/xiaodao/', '20261126e').then(() => setTimeout(() => rebuild(true), 30));
             roomLoaded = Promise.all([RM.load('assets/xiaodao/', '20261122a', '20261122a'), RI.load('assets/xiaodao/', '20261122a')]);   // 家具的圖先載好（商店、倉庫的小圖要用）
             roomLoaded.then(() => { if ($('sheet').classList.contains('on')) renderSheet(); if (roomOn) renderRoom(); });
         }

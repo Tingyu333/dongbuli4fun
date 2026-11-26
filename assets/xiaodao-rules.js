@@ -6,19 +6,30 @@
 (function (root) {
   'use strict';
   const C = 20, GW = 44, GH = 38, SEED = 37, COAST = 480;
-  const SEA = [[200, 480, 520, 140]];                     // 永遠是海的範圍（像素）：[x, y, w, h]
+  const SEA = [[180, 480, 580, 140]];                     // 永遠是海的範圍（像素）：[x, y, w, h]
+  // 群島（2026-11-26，照定稿圖 island-stages「伍」）：海峽一直是海、不能買，把島分成左上（停機坪）、左下（家）、右上（發射台）、右下（車庫、碼頭）四座；
+  // 中間一座圓圓的小島（一塊地，島到伍畫圓環），外面一圈海；橋讓海峽兩邊的地塊算相連（買得到對岸那塊；兩邊都買了才畫橋）
+  // 第二輪審稿：海峽不要像用尺切的——每條是一串點（[x, y, 半寬]），中間照點內插，再加一點低頻起伏；離設施遠的地方彎得多、寬窄不一
+  const STRAIT = [
+    [[462, 30, 34], [492, 110, 26], [450, 190, 30], [470, 260, 26], [462, 318, 0]],                       // 直的・北段
+    [[462, 318, 0], [476, 380, 26], [458, 440, 30], [474, 490, 32]],                                        // 直的・南段（到南邊的海）
+    [[30, 300, 30], [110, 360, 24], [170, 330, 20], [260, 341, 20], [370, 336, 18], [462, 318, 0]],        // 橫的・左
+    [[462, 318, 0], [560, 296, 18], [680, 294, 18], [760, 290, 22], [800, 240, 26], [860, 230, 30]],        // 橫的・右
+  ];
+  const LAKE = [462, 318, 78], ISLET = [462, 318, 46];   // 中間那圈海、中間小島（圓心、半徑）
+  const BRIDGES = [[424, 430, 532, 430], [431, 287, 401, 257], [431, 349, 389, 391], [493, 287, 523, 257], [493, 349, 523, 379]];   // [這頭 x, y, 對岸 x, y]：第一座家↔車庫（一開始就有），其他四座從中間小島斜斜出去（1:1）
 
   // 設施：mode 是每一級的圖怎麼對齊工地（br 右下、bl 左下、bc 下面置中、shore 海岸線置中）
   // sprites：每一級的圖 [寬, 高, 海岸線在圖裡第幾列]（從設計圖裁出來的，assets/xiaodao/<key><級>.png）
   const FAC = {
     house: {
-      name: '家', mode: 'br', ax: 420, ay: COAST, door: 'r',
+      name: '家', mode: 'br', ax: 380, ay: COAST, door: 'r',
       levels: ['帳篷', '木屋', '紅瓦平房', '兩層洋房', '海景別墅'],
       prices: [0, 8000, 45000, 300000, 1200000],
       sprites: [[133,87], [133,92], [142,96], [182,106], [184,94,93]],
     },
     garage: {
-      name: '車庫', mode: 'bl', ax: 480, ay: 440, door: 'b',
+      name: '車庫', mode: 'bl', ax: 550, ay: 440, door: 'b',
       levels: ['腳踏車棚', '車棚', '單車庫', '雙車庫＋工作坊', '展示車廊'],
       prices: [2000, 20000, 75000, 400000, 1200000],
       sprites: [[84,81], [90,100], [94,110], [148,114], [198,112]],
@@ -26,14 +37,14 @@
       slots: [[[15,26,5,15,1],[25,26,5,15,1],[36,28,9,14,1],[53,26,14,22,1]],[[15,14,18,28,2],[45,22,9,14,1],[62,16,14,22,1]],[[17,56,20,28,3],[46,80,12,18,1],[47,58,9,14,1]],[[13,54,20,34,4],[59,60,18,28,4],[84,86,12,18,1],[85,64,9,14,1]],[[27,12,18,30,5],[51,12,20,28,5],[87,25,22,30,5],[122,10,18,32,5],[141,8,22,38,5],[29,58,9,14,1],[41,58,9,14,1],[54,56,12,18,1]]],
     },
     dock: {
-      name: '碼頭', mode: 'shore', ax: 560, ay: COAST, door: 't',
+      name: '碼頭', mode: 'shore', ax: 650, ay: COAST, door: 't',
       levels: ['小木台', '木棧橋', '漁港碼頭', '遊艇碼頭', '私人港灣'],
       prices: [2000, 20000, 90000, 500000, 1600000],
       sprites: [[57,43,10], [54,83,9], [117,87,9], [172,85,9], [200,96,21]],
       slots: [[[0,21,14,22,1],[46,23,11,16,1]],[[42,34,12,27,2],[0,20,13,17,1],[0,52,14,24,1]],[[18,54,12,31,3],[22,6,14,26,3],[52,54,16,32,3],[72,6,14,27,3],[84,54,16,33,3]],[[30,25,18,39,4],[84,27,18,39,4],[108,27,18,40,4],[4,23,12,27,3],[136,24,12,21,1]],[[74,18,20,60,5],[108,7,28,72,5],[50,28,18,39,4],[30,36,12,31,3]]],
     },
     airfield: {
-      name: '停機坪', mode: 'bc', ax: 330, ay: 340, door: 'b',
+      name: '停機坪', mode: 'bc', ax: 280, ay: 310, door: 'b',
       levels: ['草地起降場', '直升機坪', '小機場', '私人機場', '航空站'],
       prices: [45000, 150000, 600000, 2000000, 6000000],
       sprites: [[180,77], [150,82], [200,98], [200,114], [200,118]],
@@ -41,7 +52,7 @@
       slots: [[[50,0,27,27,1],[90,58,30,17,1],[130,4,30,28,1]],[[27,10,30,32,2],[96,36,42,20,1],[102,12,26,19,1]],[[50,29,32,30,3],[92,29,32,30,3],[134,38,30,30,3],[12,8,30,32,2]],[[28,38,37,39,4],[74,38,37,39,4],[120,43,32,30,3]],[[67,24,66,70,5],[142,36,37,39,4],[18,39,30,30,3],[18,74,34,20,2]]],
     },
     launchpad: {
-      name: '發射台', mode: 'bc', ax: 590, ay: 300, door: 'b', needs: { airfield: 4 },
+      name: '發射台', mode: 'bc', ax: 640, ay: 252, door: 'b', needs: { airfield: 4 },
       levels: ['小發射架', '發射塔', '太空港'],
       prices: [2000000, 6000000, 16000000],
       sprites: [[120,89], [170,113], [194,130]],
@@ -290,7 +301,16 @@
     const h = (x, y) => hash(x + seed * 101, y - seed * 37);
     return (h(i, j) * (1 - s(u)) + h(i + 1, j) * s(u)) * (1 - s(v)) + (h(i, j + 1) * (1 - s(u)) + h(i + 1, j + 1) * s(u)) * s(v);
   }
-  const inSea = (px, py) => SEA.some(([x, y, w, h]) => px >= x && px < x + w && py >= y && py < y + h);
+  const inR = (px, py, [x, y, w, h]) => px >= x && px < x + w && py >= y && py < y + h;
+  const inIslet = (px, py) => Math.hypot(px - ISLET[0], py - ISLET[1]) <= ISLET[2];
+  function inStrait(px, py) {
+    if (Math.hypot(px - LAKE[0], py - LAKE[1]) <= LAKE[2]) return true;
+    const wob = (vnoise(px, py, 40, SEED + 77) - .5) * 16;
+    return STRAIT.some(L => { for (let i = 0; i < L.length - 1; i++) { const [x1, y1, w1] = L[i], [x2, y2, w2] = L[i + 1], dx = x2 - x1, dy = y2 - y1, l2 = dx * dx + dy * dy;
+      const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / l2)), d = Math.hypot(px - x1 - dx * t, py - y1 - dy * t), w = (w1 || w2) + ((w2 || w1) - (w1 || w2)) * t;
+      if (d < w + wob) return true; } return false; });
+  }
+  const inSea = (px, py) => SEA.some(r => inR(px, py, r)) || (inStrait(px, py) && !inIslet(px, py));
 
   // 地塊的種子間距（格）：2026-11-26 使用者說切太細，從 3 格改成 3√2 格，一塊大一倍（平均約 8 格 → 約 15 格）
   const PS = 3 * Math.SQRT2;
@@ -305,7 +325,7 @@
       if (inSea((x + .5) * C, (y + .5) * C)) { raw[k] = -1; continue; }
       let best = 1e9, bi = 0; const jit = (vnoise(x * C, y * C, 50, SEED) - .5) * 2.4;
       seeds.forEach(([a, b], s) => { const d = Math.hypot(x + .5 - a, y + .5 - b) + jit * (hash(s, SEED) - .5); if (d < best) { best = d; bi = s; } });
-      raw[k] = bi;
+      raw[k] = inIslet((x + .5) * C, (y + .5) * C) ? seeds.length : bi;   // 中間小島整座一塊
     }
     // 同一個點被海切成兩半的，分成兩塊（連通的才算同一塊）
     const id = new Int32Array(N).fill(-1); let n = 0;
@@ -337,7 +357,11 @@
       if (y + 1 < GH) { const q = id[k + GW]; if (q >= 0 && q !== p) { nb[p].add(q); nb[q].add(p); } }
     }
     const center = cells.map(cs => { let sx = 0, sy = 0; cs.forEach(k => { sx += k % GW; sy += Math.floor(k / GW); }); return [(sx / cs.length + .5) * C, (sy / cs.length + .5) * C]; });
-    WORLD = { id, P, cells, nb: nb.map(s => [...s].sort((a, b) => a - b)), border, center };
+    // 橋：兩頭所在的地塊算相連（nbLand 只算陸地上連著的，工地合併、內海判斷用）
+    const at = (px, py) => id[Math.floor(py / C) * GW + Math.floor(px / C)], nbLand = nb.map(s => [...s].sort((a, b) => a - b));
+    const bridges = BRIDGES.map(([x1, y1, x2, y2]) => ({ a: at(x1, y1), b: at(x2, y2), x1, y1, x2, y2 })).filter(b => b.a >= 0 && b.b >= 0 && b.a !== b.b);
+    bridges.forEach(b => { nb[b.a].add(b.b); nb[b.b].add(b.a); });
+    WORLD = { id, P, cells, nb: nb.map(s => [...s].sort((a, b) => a - b)), nbLand, border, center, bridges, islet: at(ISLET[0], ISLET[1]) };
     WORLD.start = startPlots();
     WORLD.lots = makeLots();
     return WORLD;
@@ -370,7 +394,7 @@
     const W = WORLD, of = new Array(W.P).fill(null), list = [], start = new Set(W.start);
     FAC_KEYS.forEach(k => { const seen = new Set(); FAC[k].levels.forEach((_, l) => {
       const ps = needPlots(k, l + 1).plots, inc = new Set(ps.filter(p => !seen.has(p) && !start.has(p) && !W.border[p] && !of[p])); ps.forEach(p => seen.add(p));
-      inc.forEach(p => { if (of[p]) return; const g = [p], q = [p]; of[p] = g; while (q.length) { const c = q.pop(); W.nb[c].forEach(d => { if (inc.has(d) && !of[d]) { of[d] = g; g.push(d); q.push(d); } }); }
+      inc.forEach(p => { if (of[p]) return; const g = [p], q = [p]; of[p] = g; while (q.length) { const c = q.pop(); W.nbLand[c].forEach(d => { if (inc.has(d) && !of[d]) { of[d] = g; g.push(d); q.push(d); } }); }
         g.sort((a, b) => a - b); if (g.length > 1) { g.k = k; g.lv = l + 1; list.push(g); } else of[p] = null; });
     }); });
     const center = g => { let sx = 0, sy = 0, n = 0; g.forEach(p => W.cells[p].forEach(c => { sx += c % GW; sy += Math.floor(c / GW); n++; })); return [(sx / n + .5) * C, (sy / n + .5) * C]; };
@@ -381,6 +405,7 @@
   const lotCenter = p => { const W = world(), g = W.lots.of[p]; return g ? g.center : W.center[p]; };
 
   // 一開始送的地：帳篷、腳踏車棚、小木台底下那幾塊＋把它們連起來
+  // 群島：一開始不送中間小島（找連起來的路時跳過），家和車庫用那座木橋連
   function startPlots() {
     const W = WORLD, own = new Set();
     [['house', 1], ['garage', 1], ['dock', 1]].forEach(([k, l]) => needPlots(k, l).plots.forEach(p => own.add(p)));
@@ -389,7 +414,7 @@
     for (let guard = 0; guard < 10; guard++) {
       const { g, n } = groups(); if (n <= 1) break;
       const from = [...own].filter(p => g.get(p) === 0), prev = new Map(from.map(p => [p, -1])), q = from.slice(); let hit = -1;
-      while (q.length && hit < 0) { const c = q.shift(); for (const d of W.nb[c]) { if (prev.has(d)) continue; prev.set(d, c); if (own.has(d) && g.get(d) !== 0) { hit = d; break; } q.push(d); } }
+      while (q.length && hit < 0) { const c = q.shift(); for (const d of W.nb[c]) { if (prev.has(d) || d === W.islet) continue; prev.set(d, c); if (own.has(d) && g.get(d) !== 0) { hit = d; break; } q.push(d); } }
       if (hit < 0) break;
       for (let c = prev.get(hit); c >= 0 && !own.has(c); c = prev.get(c)) own.add(c);
     }
@@ -776,7 +801,7 @@
   }
   const worth = s => worthParts(s).total;
 
-  const R = { lotOf, lotCenter, CLOTH, CLOTH_KEYS, CLOTH_MAX, COLL, COLL_KEYS, GACHA, RARE, HOLD, holders, wrStacks, caseItems, clothCount, collCount, clothSell, rollGacha, FURN, FURN_KEYS, FURN_MAX, FURN_LUX_HOUSE, FLOORS, PAPERS, STYLE0, ROOMS, floorsOf, roomOf, fpOf, layerOf, placedIn, wallRots, canPlace, furnCount, deco, styleOf, hasFloor, hasPaper, furnInfo, furnSell, VEH, VEH_KEYS, CLS_NAME, vehOf, vehicles, slotsOf, fitWhy, vehInfo, freeSlot, sellPrice, C, GW, GH, COAST, SEA, FAC, FAC_KEYS, TIERS, START, hash, vnoise, inSea, world, rect, needPlots, plotPrice, fresh, clean, island, level, tierOf, nextTier, plotInfo, facInfo, apply, worth, worthParts };
+  const R = { STRAIT, LAKE, ISLET, BRIDGES, lotOf, lotCenter, CLOTH, CLOTH_KEYS, CLOTH_MAX, COLL, COLL_KEYS, GACHA, RARE, HOLD, holders, wrStacks, caseItems, clothCount, collCount, clothSell, rollGacha, FURN, FURN_KEYS, FURN_MAX, FURN_LUX_HOUSE, FLOORS, PAPERS, STYLE0, ROOMS, floorsOf, roomOf, fpOf, layerOf, placedIn, wallRots, canPlace, furnCount, deco, styleOf, hasFloor, hasPaper, furnInfo, furnSell, VEH, VEH_KEYS, CLS_NAME, vehOf, vehicles, slotsOf, fitWhy, vehInfo, freeSlot, sellPrice, C, GW, GH, COAST, SEA, FAC, FAC_KEYS, TIERS, START, hash, vnoise, inSea, world, rect, needPlots, plotPrice, fresh, clean, island, level, tierOf, nextTier, plotInfo, facInfo, apply, worth, worthParts };
   root.XiaodaoRules = R;
   if (typeof module !== 'undefined' && module.exports) module.exports = R;
 })(typeof window !== 'undefined' ? window : this);

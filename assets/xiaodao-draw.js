@@ -225,11 +225,15 @@
     if (d === 't') return [r.x + r.w / 2, (r.shore != null ? r.shore : r.y) - 14];
     return [r.x + r.w / 2, r.y + r.h + 2];
   }
+  // 群島（2026-11-26）：兩頭的地塊都買了的橋，小路可以從橋的這頭跳到那頭；回傳每一段 segs（land＝要畫彎彎的路，bridge＝直直的橋）
   function paths(s, landCell) {
     const GW = X.GW, GH = X.GH, built = X.FAC_KEYS.filter(k => X.level(s, k)), block = new Uint8Array(GW * GH);
     built.forEach(k => { const r = X.rect(k, X.level(s, k)); for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) { const cx = (x + .5) * C, cy = (y + .5) * C; if (cx > r.x && cx < r.x + r.w && cy > r.y && cy < r.y + r.h) block[y * GW + x] = 1; } });
     const cellAt = ([px, py]) => [Math.max(0, Math.min(GW - 1, Math.floor(px / C))), Math.max(0, Math.min(GH - 1, Math.floor(py / C)))];
     const ok = (x, y) => x >= 0 && y >= 0 && x < GW && y < GH && landCell[y * GW + x] && !block[y * GW + x];
+    const jump = new Map(), cid = p => { const [x, y] = cellAt(p); return y * GW + x; };
+    bridgesOf(s).forEach(b => { const A = [b.x1, b.y1], Bp = [b.x2, b.y2], ca = cid(A), cb = cid(Bp);
+      [[ca, cb, A, Bp], [cb, ca, Bp, A]].forEach(([f, t, fp, tp]) => { if (!jump.has(f)) jump.set(f, []); jump.get(f).push({ to: t, from: fp, at: tp }); }); });
     const home = built.includes('house') ? doorOf('house', X.level(s, 'house')) : null, out = [];
     if (!home) return out;
     const [hx, hy] = cellAt(home);
@@ -237,17 +241,60 @@
       const door = doorOf(k, X.level(s, k)), [tx, ty] = cellAt(door);
       const okT = (x, y) => (x === tx && y === ty) || ok(x, y);   // 門口那格可能在設施的範圍裡（碼頭），還是要走得到
       if (!ok(hx, hy) || !landCell[ty * GW + tx]) return;
-      // BFS（8 方向），走斜的比較順
-      const prev = new Int32Array(GW * GH).fill(-2), q = [hy * GW + hx]; prev[q[0]] = -1; let found = false;
+      // BFS（8 方向），走斜的比較順；橋的兩頭算相鄰
+      const prev = new Int32Array(GW * GH).fill(-2), via = new Map(), q = [hy * GW + hx]; prev[q[0]] = -1; let found = false;
       while (q.length) { const c = q.shift(); if (c === ty * GW + tx) { found = true; break; } const x = c % GW, y = (c - x) / GW;
-        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const X2 = x + dx, Y2 = y + dy; if (!okT(X2, Y2)) continue; if (dx && dy && (!okT(x + dx, y) || !okT(x, y + dy))) continue; const d = Y2 * GW + X2; if (prev[d] !== -2) continue; prev[d] = c; q.push(d); } }
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const X2 = x + dx, Y2 = y + dy; if (!okT(X2, Y2)) continue; if (dx && dy && (!okT(x + dx, y) || !okT(x, y + dy))) continue; const d = Y2 * GW + X2; if (prev[d] !== -2) continue; prev[d] = c; q.push(d); }
+        (jump.get(c) || []).forEach(j => { const jx = j.to % GW, jy = (j.to - jx) / GW; if (!okT(jx, jy) || prev[j.to] !== -2) return; prev[j.to] = c; via.set(j.to, j); q.push(j.to); }); }
       if (!found) return;
       const cells = []; for (let c = ty * GW + tx; c >= 0; c = prev[c]) cells.unshift(c);
-      const pts = [home].concat(cells.filter((c, i) => i % 2 === 1 || i === cells.length - 1).map(c => [(c % GW + .5) * C, (Math.floor(c / GW) + .5) * C]), [door]);
-      out.push({ k, pts });
+      const segs = []; let cur = [home];
+      cells.forEach((c, i) => { const j = i > 0 && via.get(c) && prev[c] === cells[i - 1] ? via.get(c) : null;
+        if (j) { cur.push(j.from); segs.push({ t: 'land', pts: cur }); segs.push({ t: 'bridge', a: j.from, b: j.at }); cur = [j.at]; }
+        else if (i % 2 === 1 || i === cells.length - 1) cur.push([(c % GW + .5) * C, (Math.floor(c / GW) + .5) * C]); });
+      cur.push(door); segs.push({ t: 'land', pts: cur });
+      out.push({ k, segs, pts: segs.filter(g => g.t === 'land').flatMap(g => g.pts) });
     });
     return out;
   }
+  // 兩頭的地塊都買了的橋
+  function bridgesOf(s) { const Wd = X.world(), own = new Set(X.island(s).plots); return (Wd.bridges || []).filter(b => own.has(b.a) && own.has(b.b)); }
+  const lineDots = (a, b) => { const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]))), o = []; for (let i = 0; i <= n; i++) o.push([a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n]); return o; };
+  // 一整條路的點（彎彎的陸路＋直直的橋），車子沿著這個開
+  const roadDots = p => p.segs.flatMap(g => g.t === 'bridge' ? lineDots(g.a, g.b) : g.pts.length > 1 ? smooth(g.pts) : g.pts);
+  // 橋（2026-11-26 群島）：只畫在海上（兩頭各多 4 顆接到岸上）；土路時期是木橋、石板路時期是石橋。光從左上來：左上那條欄杆亮、右下那條暗，影子落在右下的水上
+  function bridge(B, F, a, b, kind) {
+    const [x1, y1] = a, [x2, y2] = b, len = Math.hypot(x2 - x1, y2 - y1), ux = (x2 - x1) / len, uy = (y2 - y1) / len, nx = -uy, ny = ux;
+    const water = (u, v) => u >= 0 && v >= 0 && u < WW && v < HH && F[v * WW + u] < .5;
+    let t0 = -1, t1 = -1; for (let t = 0; t <= len; t++) if (water(Math.round(x1 + ux * t), Math.round(y1 + uy * t))) { if (t0 < 0) t0 = t; t1 = t; }
+    if (t0 < 0) return null; t0 = Math.max(0, t0 - 4); t1 = Math.min(len, t1 + 4);
+    const hw = kind === 'stone' ? 4.5 : 3.5, lit = (nx + ny) * -1 > 0 ? -1 : 1;   // 哪一邊朝左上
+    const inDeck = (u, v) => { const t = (u - x1) * ux + (v - y1) * uy, d = (u - x1) * nx + (v - y1) * ny; return t >= t0 && t <= t1 && Math.abs(d) <= hw ? [t, d] : null; };
+    const u0 = Math.floor(Math.min(x1, x2) - 8), u1 = Math.ceil(Math.max(x1, x2) + 8), v0 = Math.floor(Math.min(y1, y2) - 8), v1 = Math.ceil(Math.max(y1, y2) + 8);
+    for (let v = v0; v <= v1; v++) for (let u = u0; u <= u1; u++) if (!inDeck(u, v) && inDeck(u - 3, v - 3) && water(u, v)) B.P(u, v, 'rgba(20,40,50,.4)');   // 第二輪：影子往右下 3 顆、濃一點（不然像貼在水上）
+    if (kind === 'stone') for (let t = t0 + 8; t < t1 - 4; t += 16) { const u = Math.round(x1 + ux * t - nx * (hw + 1) * lit), v = Math.round(y1 + uy * t - ny * (hw + 1) * lit); if (!water(u, v)) continue; B.R(u, v, 2, 4, '#7d766b'); B.R(u, v + 4, 2, 1, '#e3efed'); }   // 橋墩：背光那邊每 16 顆露一根，底下一顆浪
+    for (let v = v0; v <= v1; v++) for (let u = u0; u <= u1; u++) { const h = inDeck(u, v); if (!h) continue; const [t, d] = h, side = Math.sign(d) === lit, edge = Math.abs(d) > hw - 1.2, ti = Math.floor(t);
+      let c;
+      if (kind === 'stone') { if (edge) c = side ? '#ece6dc' : '#9a9286'; else if (Math.abs(d) > hw - 2.2) c = side ? '#d8d1c4' : '#b3ab9e'; else c = ti % 6 === 0 ? '#b3ab9e' : (hash(Math.floor(t / 6), Math.floor(d + 9)) > .7 ? '#d6cfc2' : '#c9c2b4');
+        if (edge && ti % 12 === 0) c = side ? '#f6f2ea' : '#857d71'; }
+      else { if (edge) c = ti % 7 === 0 ? '#5e3c22' : side ? '#b98552' : '#7c5230'; else c = ti % 3 === 0 ? '#7c5230' : hash(Math.floor(t / 3), 5) > .6 ? '#a8784a' : '#9a6a40'; }
+      B.P(u, v, c); }
+    if (kind !== 'stone') for (let t = t0 + 6; t < t1 - 3; t += 14) [-1, 1].forEach(sg => { const u = Math.round(x1 + ux * t + nx * (hw + 1) * sg), v = Math.round(y1 + uy * t + ny * (hw + 1) * sg); if (water(u, v)) { B.P(u, v, '#5e3c22'); B.P(u + 1, v + 1, 'rgba(20,40,50,.28)'); } });   // 木樁
+    return [t0, t1].map(t => [x1 + ux * t + nx * (hw + 3), y1 + uy * t + ny * (hw + 3)]);   // 兩頭橋頭旁邊（放路燈）
+  }
+  // 中間小島的圓環（2026-11-26 群島，島到伍）：石板環＋中間一圈花圃和小噴水池
+  function roundabout(B, cx, cy) {   // 第二輪：外半徑 20、花圃一圈朱色和黃色、噴水池 4×4 亮藍＋中間 2×2 白色水花（手機上要看得出是圓環）
+    cx = Math.round(cx); cy = Math.round(cy);
+    for (let v = -24; v <= 24; v++) for (let u = -24; u <= 24; u++) { const d = Math.hypot(u + .5, v + .5), du = Math.hypot(u - 2.5, v - 2.5), lit = u + v < 0; let c = null;
+      if (d <= 20.5) { if (d > 19.5) c = lit ? '#ece6dc' : '#9a9286';
+        else if (d > 11.5) { const a = Math.floor((Math.atan2(v, u) + Math.PI) / (Math.PI * 2) * 40), r = d > 15.5 ? 1 : 0; c = (a + r) % 2 ? '#c9c2b4' : '#d6cfc2'; if (Math.abs(d - 15.5) < .5) c = '#b3ab9e'; }
+        else if (d > 10.5) c = lit ? '#f6f2ea' : '#a29a8c';
+        else if (d > 3.5) { const h = hash(u + 40, v + 40); c = h > .55 ? (h > .8 ? '#d9583f' : '#f1d36b') : h > .45 ? '#ffffff' : (lit ? '#b3c587' : '#95ab6a'); } }
+      else if (du <= 20.5) c = 'rgba(30,40,30,.24)';
+      if (c) B.P(cx + u, cy + v, c); }
+    B.R(cx - 3, cy - 3, 6, 6, '#e6e0d6'); B.R(cx - 2, cy - 2, 4, 4, '#3fb0c9'); B.R(cx - 2, cy - 2, 4, 1, '#5ec8d6'); B.R(cx - 1, cy - 1, 2, 2, '#f4fcfa'); B.R(cx + 3, cy - 2, 1, 6, '#a29a8c'); B.R(cx - 2, cy + 3, 6, 1, '#a29a8c');
+  }
+
   function smooth(pts) {
     const dots = [];
     for (let k = 0; k < pts.length - 1; k++) { const p0 = pts[Math.max(0, k - 1)], p1 = pts[k], p2 = pts[k + 1], p3 = pts[Math.min(pts.length - 1, k + 2)], n = Math.ceil(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]));
@@ -325,8 +372,20 @@
     const tier = X.tierOf(s);
     // 還沒蓋、島的等級已經可以蓋的工地：先整平、不長樹（空地）
     X.FAC_KEYS.forEach(k => { if (X.level(s, k) || !(X.TIERS[tier].cap[k] >= 1)) return; const r = X.rect(k, 1); fill(r.x - 4, r.y - 4, r.x + r.w + 4, (r.shore != null ? r.shore : r.y + r.h) + 4); });
-    const road = paths(s, land).map(p => ({ k: p.k, dots: smooth(p.pts) })), rr = tier >= 2 ? 3.5 : 2.4;
+    const road = paths(s, land).map(p => ({ k: p.k, segs: p.segs, dots: roadDots(p) })), rr = tier >= 2 ? 3.5 : 2.4, brs = bridgesOf(s);
+    brs.forEach(b => lineDots([b.x1, b.y1], [b.x2, b.y2]).forEach(([a, c]) => fill(a - 5, c - 5, a + 6, c + 6)));
     road.forEach(p => p.dots.forEach(([a, b]) => fill(a - rr - 3, b - rr - 3, a + rr + 4, b + rr + 4)));
+    // 橋頭接路（第二輪審稿）：大島那頭的橋頭，用小路接到最近的路或設施門口（BFS 只走自己的陸地、繞開設施）
+    const links = [];
+    { const GW = X.GW, GH = X.GH, blockC = new Uint8Array(GW * GH), tgt = new Uint8Array(GW * GH), cAt = (a, b) => Math.max(0, Math.min(GH - 1, Math.floor(b / C))) * GW + Math.max(0, Math.min(GW - 1, Math.floor(a / C)));
+      built.forEach(k => { const r = sites[k]; for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) { const cx = (x + .5) * C, cy = (y + .5) * C; if (cx > r.x && cx < r.x + r.w && cy > r.y && cy < r.y + r.h) blockC[y * GW + x] = 1; } });
+      road.forEach(p => p.dots.forEach(([a, b]) => { const c = cAt(a, b); if (land[c]) tgt[c] = 1; })); built.forEach(k => { const d = doorOf(k, X.level(s, k)); tgt[cAt(d[0], d[1])] = 2; });
+      brs.forEach(br => [[br.x1, br.y1, br.a], [br.x2, br.y2, br.b]].forEach(([ex, ey, pl]) => { if (pl === Wd.islet) return; const c0 = cAt(ex, ey); if (tgt[c0]) return;
+        const prev = new Int32Array(GW * GH).fill(-2), q = [c0]; prev[c0] = -1; let hit = -1;
+        while (q.length && hit < 0) { const c = q.shift(), x = c % GW, y = (c - x) / GW; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const X2 = x + dx, Y2 = y + dy; if (X2 < 0 || Y2 < 0 || X2 >= GW || Y2 >= GH) continue; const d = Y2 * GW + X2; if (prev[d] !== -2 || !land[d]) continue; if (tgt[d]) { prev[d] = c; hit = d; break; } if (blockC[d]) continue; prev[d] = c; q.push(d); } }
+        if (hit < 0) return; const pts = []; for (let c = hit; c >= 0; c = prev[c]) pts.unshift([(c % GW + .5) * C, (Math.floor(c / GW) + .5) * C]); pts[0] = [ex, ey];
+        if (tgt[hit] === 2) { const k = built.find(k => { const d = doorOf(k, X.level(s, k)); return cAt(d[0], d[1]) === hit; }); if (k) pts[pts.length - 1] = doorOf(k, X.level(s, k)); }
+        links.push(pts); smooth(pts).forEach(([a, b]) => fill(a - rr - 3, b - rr - 3, a + rr + 4, b + rr + 4)); })); }
     const T = terrain(B, land, occ, seed);
     // 地塊記號另外一層（out.marks，透明底；2026-11-26 島本身審稿）：夜裡疊在夜景上面、不會被夜色染成暗紅褐。
     // 自己的地之間不畫分界（買了就是自己的）；能買的地裡面淡淡一層淺灘色（「買下來島會長到這裡」）＋虛線；鎖放在這次會買的那幾格裡
@@ -342,10 +401,19 @@
     const trees = forest(B, T, occ, seed);
     // 工地記號：還沒蓋、可以蓋（或只差地）的設施——跟畫面上原本的白框同一個條件
     X.FAC_KEYS.forEach(k => { if (X.level(s, k)) return; const i = X.facInfo(s, k); if (i.needTier != null && i.why && !i.miss && !i.ok) return; siteMarks(B, T, X.rect(k, 1)); });
-    road.forEach(p => trail(B, p.dots, rr, tier >= 2 ? 'stone' : 'dirt'));
+    // 陸上的路照舊畫（橋那段也畫，只畫在陸地上，路才接得到橋頭）；再畫橋、圓環
+    road.forEach(p => trail(B, p.dots.filter(([a, b]) => T.F[Math.round(b) * WW + Math.round(a)] >= .5), rr, tier >= 2 ? 'stone' : 'dirt'));
+    brs.forEach(b => trail(B, lineDots([b.x1, b.y1], [b.x2, b.y2]).filter(([a, c]) => T.F[Math.round(c) * WW + Math.round(a)] >= .5), rr, tier >= 2 ? 'stone' : 'dirt'));
+    // 中間小島：從每座橋頭走到小島中間（到伍是圓環，路接到圓環上）
+    const ic = X.ISLET ? [X.ISLET[0], X.ISLET[1] + 1] : null;
+    if (ic) brs.forEach(b => { const e = b.a === Wd.islet ? [b.x1, b.y1] : b.b === Wd.islet ? [b.x2, b.y2] : null; if (e) trail(B, lineDots(e, ic).filter(([u, v]) => T.F[Math.round(v) * WW + Math.round(u)] >= .5), rr, tier >= 2 ? 'stone' : 'dirt'); });
+    links.forEach(pts => trail(B, smooth(pts).filter(([u, v]) => T.F[Math.round(v) * WW + Math.round(u)] >= .5), rr, tier >= 2 ? 'stone' : 'dirt'));
+    const bridgeLamps = []; brs.forEach(b => { const e = bridge(B, T.F, [b.x1, b.y1], [b.x2, b.y2], tier >= 2 ? 'stone' : 'wood'); if (e) e.forEach(q => bridgeLamps.push(q)); });
+    if (tier >= 4 && own.has(Wd.islet) && ic) roundabout(B, ic[0], ic[1]);
     // 路燈：每個設施門口一盞、小路每隔一段一盞（白天就看得到燈柱）
     const lamps = []; built.forEach(k => lamps.push(doorOf(k, X.level(s, k))));
-    road.forEach(p => { for (let i = 14; i < p.dots.length - 10; i += 48) { const [a, b] = p.dots[i], [a2, b2] = p.dots[Math.min(p.dots.length - 1, i + 2)], l = Math.hypot(a2 - a, b2 - b) || 1; lamps.push([a - (b2 - b) / l * (rr + 4), b + (a2 - a) / l * (rr + 4)]); } });
+    road.forEach(p => { for (let i = 14; i < p.dots.length - 10; i += 48) { const [a, b] = p.dots[i], [a2, b2] = p.dots[Math.min(p.dots.length - 1, i + 2)], l = Math.hypot(a2 - a, b2 - b) || 1; const la = [a - (b2 - b) / l * (rr + 4), b + (a2 - a) / l * (rr + 4)]; if (T.F[Math.round(la[1]) * WW + Math.round(la[0])] >= .55 && T.F[Math.round(b) * WW + Math.round(a)] >= .55) lamps.push(la); } });   // 橋上、海上不放
+    bridgeLamps.forEach(q => { if (T.F[Math.round(q[1]) * WW + Math.round(q[0])] >= .55) lamps.push(q); });   // 橋頭兩邊各一盞（在陸地上才放）
     lamps.forEach(([a, b]) => lampPost(B, a, b));
     const cv = (opt.canvas || document.createElement('canvas')); cv.width = WW; cv.height = HH;
     const x = cv.getContext('2d'); x.imageSmoothingEnabled = false;
@@ -371,7 +439,7 @@
         if (V.ax != null) x.drawImage(v, Math.round(sl.x + sl.w / 2 - V.ax), Math.round(sl.y + sl.h - V.ay));   // 火箭：地面點對齊位子的底部中間
         else x.drawImage(v, Math.round(sl.x + (sl.w - v.width) / 2 + 1), Math.round(sl.y + (sl.h - v.height) / 2 + 1)); });
     });
-    return { canvas: cv, marks: mk, lamps, trees, buyable, sites, paths: road, W: WW, H: HH, F: T.F };
+    return { canvas: cv, marks: mk, lamps, trees, buyable, sites, paths: road, bridges: brs, W: WW, H: HH, F: T.F };
   }
   // 島上看得到的範圍（自己的地＋能買的地，外面留一點海）
   function bounds(s, pad = 30) {
