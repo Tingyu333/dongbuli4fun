@@ -29,8 +29,8 @@
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
     <script src="assets/xiaodao-rules.js?v=20261126a"></script>
-    <script src="assets/xiaodao-draw.js?v=20261126a"></script>
-    <script src="assets/xiaodao-fx.js?v=20261126a"></script>
+    <script src="assets/xiaodao-draw.js?v=20261126d"></script>
+    <script src="assets/xiaodao-fx.js?v=20261126d"></script>
     <script src="assets/xiaodao-room.js?v=20261122d"></script>
     <script src="assets/xiaodao-iso.js?v=20261123b"></script>
     <script src="assets/xiaodao-door.js?v=20261124c"></script>
@@ -437,8 +437,9 @@
             const zoomed = () => cam.s > cam.base * 1.05;
 
             function rebuild(refit) {
-                out = D.render(S, { canvas: world || (world = document.createElement('canvas')), noVeh: true });
+                out = D.render(S, { canvas: world || (world = document.createElement('canvas')), marks: out && out.marks, noVeh: true });
                 fx = XiaodaoFX.make(S, out, { waves: !calm });
+                seaPat = { day: null, night: null }; marksN = null;
                 $('loading').hidden = true;
                 renderTop();
                 if (refit) fit(); else { clampCam(); draw(); }
@@ -447,23 +448,35 @@
 
             let raf = 0;
             function draw() { if (!raf) raf = requestAnimationFrame(paint); }
+            // 畫面外圍（世界圖外面）用世界左上角那塊遠海做成花紋鋪滿（2026-11-26：原本寫死一個顏色，夜裡上下多一條顏色不一樣的帶子）
+            let seaPat = { day: null, night: null }, marksN = null, marksSrc = null;
+            // 夜裡的地塊記號：跟島用同一個夜色調暗（不然淺灘色那層在夜裡像一圈發光的框）
+            function nightMarks() {
+                if (marksN && marksSrc === out.marks) return marksN;
+                const c = document.createElement('canvas'); c.width = out.marks.width; c.height = out.marks.height; const x2 = c.getContext('2d');
+                x2.drawImage(out.marks, 0, 0); XiaodaoFX.nightify(x2, c.width, c.height, out.marks); marksSrc = out.marks; return (marksN = c);
+            }
+            function seaPattern(src, night) {
+                const key = night ? 'night' : 'day'; if (seaPat[key]) return seaPat[key];
+                const t = document.createElement('canvas'); t.width = 64; t.height = 64; t.getContext('2d').drawImage(src, 0, 0, 64, 64, 0, 0, 64, 64);
+                return (seaPat[key] = ctx.createPattern(t, 'repeat'));
+            }
             function paint() {
                 raf = 0; if (!world) return;
                 const night = isNight(), base = night && fx ? fx.night(world) : world;
-                ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = night ? '#1f2c42' : '#2b93b8'; ctx.fillRect(0, 0, cv.width, cv.height);
                 const k = dpr * cam.s; ctx.imageSmoothingEnabled = false;
                 ctx.setTransform(k, 0, 0, k, -cam.x * k, -cam.y * k);
+                ctx.fillStyle = seaPattern(base, night); ctx.fillRect(cam.x - 2, cam.y - 2, cv.width / k + 4, cv.height / k + 4);
                 ctx.drawImage(base, 0, 0);
+                // 地塊記號（能買的地、虛線、鎖）另外一層，夜裡淡一點疊在夜景上
+                if (out.marks) ctx.drawImage(night ? nightMarks() : out.marks, 0, 0);
                 if (fx) fx.paint(ctx, performance.now(), night, calm);
-                // 工地：還沒蓋、島的等級已經可以蓋的設施，畫白色虛線框
-                ctx.lineWidth = 1.5 / cam.s; ctx.setLineDash([4 / cam.s, 3 / cam.s]);
-                X.FAC_KEYS.forEach(k2 => { if (X.level(S, k2)) return; const i = X.facInfo(S, k2); if (i.needTier != null && i.why && !i.miss && !i.ok) return; const r = X.rect(k2, 1); ctx.strokeStyle = 'rgba(243,241,236,.85)'; ctx.strokeRect(r.x + .5, r.y + .5, r.w - 1, (r.shore != null ? r.shore - r.y : r.h) - 1); });
-                ctx.setLineDash([]);
+                // 工地：還沒蓋、可以蓋的設施，地上已經有木樁和麻繩（xiaodao-draw.js 的 siteMarks），平常不再畫白色虛線框；選到才畫
                 // 選到的地／設施
                 const Wd = X.world();
                 const tint = (plots, col) => { ctx.fillStyle = col; plots.forEach(p => Wd.cells[p].forEach(c => ctx.fillRect((c % X.GW) * X.C, Math.floor(c / X.GW) * X.C, X.C, X.C))); };
                 let pinAt = null;
-                if (sel && sel.t === 'plot') { tint(X.plotInfo(S, sel.p).plots || [sel.p], 'rgba(255,255,255,.32)'); pinAt = X.lotCenter(sel.p); }
+                if (sel && sel.t === 'plot') { tint(X.plotInfo(S, sel.p).plots || [sel.p], 'rgba(255,255,255,.32)'); pinAt = D.lockAt(S, sel.p); }
                 if (sel && sel.t === 'fac') {
                     const lv = X.level(S, sel.k), r = X.rect(sel.k, Math.max(1, lv)), info = X.facInfo(S, sel.k);
                     if (info.miss) tint(info.miss, 'rgba(179,58,47,.28)');
@@ -587,9 +600,9 @@
             }
             function openPlot(p) {
                 const i = X.plotInfo(S, p), n = X.island(S).plots.length, nt = X.TIERS[X.tierOf(S) + 1];
-                const left = nt ? nt.n - n : 0;
+                const left = nt ? nt.n - n : 0, own = new Set(X.island(S).plots), lagoon = X.world().nb[p].every(q => own.has(q));   // 四周都是自己的地＝島中間的內海（2026-11-26：玩家看到湖裡有鎖會以為「我家的湖要錢？」）
                 card.innerHTML = `<h2>${i.lot ? X.FAC[i.lot.k].name + '的工地' : '買這塊地'}</h2>
-                    <p class="line">${i.size} 格・${i.n > 1 ? `${i.n} 塊地合成一塊，一次買下` : '跟你的地連著，會填海接起來'}</p>
+                    <p class="line">${i.size} 格・${i.n > 1 ? `${i.n} 塊地合成一塊，一次買下` : lagoon ? '被你的地圍起來的內海：買下來就填海造地，變成陸地' : '跟你的地連著，會填海接起來'}</p>
                     <p class="price">${fmt(i.price)}</p>
                     <p class="note">價錢之後會變：越後面買的地越貴。${nt ? (left <= i.n ? `買了這塊，島就升到「${nt.name}」：${unlockText(X.tierOf(S) + 1)}。` : `再買 ${left} 塊，島升到「${nt.name}」：${unlockText(X.tierOf(S) + 1)}。`) : ''}</p>
                     <div class="btns"><button type="button" class="btn" data-a="no">先不要</button><button type="button" class="btn main" data-a="buy" ${money < i.price ? 'disabled' : ''}>${money < i.price ? '錢包不夠' : '買下來'}</button></div>`;
@@ -1250,7 +1263,7 @@
             size();
             new ResizeObserver(() => { if (size()) { if (world) { if (zoomed()) { clampCam(); draw(); } else fit(); } } }).observe(view);
             renderTop();
-            D.load('assets/xiaodao/', '20261126a').then(() => setTimeout(() => rebuild(true), 30));
+            D.load('assets/xiaodao/', '20261126d').then(() => setTimeout(() => rebuild(true), 30));
             roomLoaded = Promise.all([RM.load('assets/xiaodao/', '20261122a', '20261122a'), RI.load('assets/xiaodao/', '20261122a')]);   // 家具的圖先載好（商店、倉庫的小圖要用）
             roomLoaded.then(() => { if ($('sheet').classList.contains('on')) renderSheet(); if (roomOn) renderRoom(); });
         }

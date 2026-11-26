@@ -5,7 +5,13 @@
 (function (root) {
   'use strict';
   const X = root.XiaodaoRules, D = root.XiaodaoDraw, hash = X.hash, TAU = Math.PI * 2;
-  const NIGHT_FILL = 'rgba(14,20,52,.58)';
+  // 夜景（2026-11-26 島本身審稿）：原本整片蓋一層 rgba(14,20,52,.58)，所有東西剩四成、顏色變灰（草變灰橄欖、像停電）。
+  // 改成先 multiply 一層藍、再薄薄一層深藍：整體亮度差不多，但海和陸地、屋頂的明暗分得開；車船飛機用同一個函式，才不會跟島暗得不一樣
+  function nightify(x, w, h, clip) {
+    x.globalCompositeOperation = 'multiply'; x.fillStyle = '#5a6a9a'; x.fillRect(0, 0, w, h);
+    x.globalCompositeOperation = 'source-over'; x.fillStyle = 'rgba(14,20,52,.18)'; x.fillRect(0, 0, w, h);
+    if (clip) { x.globalCompositeOperation = 'destination-in'; x.drawImage(clip, 0, 0); x.globalCompositeOperation = 'source-over'; }
+  }
   // 跑道在圖的第幾列（停機坪各階的圖量出來的；貳是直升機坪，沒有跑道）
   const RUNWAY = { 1: 64, 3: 86, 4: 99, 5: 106 };   // 跑道在停機坪圖裡的高度（2026-11-26 壹的圖往上多 2 顆，62 → 64）
 
@@ -20,8 +26,8 @@
     const w = img.width, h = img.height, b = cv(w, h), bx = b.getContext('2d'); bx.drawImage(img, 0, 0);
     const d = bx.getImageData(0, 0, w, h); for (let k = 3; k < d.data.length; k += 4) if (d.data[k] < 150) d.data[k] = 0; bx.putImageData(d, 0, 0);
     const sh = cv(w, h), sx = sh.getContext('2d'); sx.drawImage(b, 0, 0); sx.globalCompositeOperation = 'source-in'; sx.fillStyle = '#1e281e'; sx.fillRect(0, 0, w, h);
-    const nb = cv(w, h), nx = nb.getContext('2d'); nx.drawImage(b, 0, 0); nx.globalCompositeOperation = 'source-atop'; nx.fillStyle = NIGHT_FILL; nx.fillRect(0, 0, w, h);
-    const ni = cv(w, h), ix = ni.getContext('2d'); ix.drawImage(img, 0, 0); ix.globalCompositeOperation = 'source-atop'; ix.fillStyle = NIGHT_FILL; ix.fillRect(0, 0, w, h);
+    const nb = cv(w, h), nx = nb.getContext('2d'); nx.drawImage(b, 0, 0); nightify(nx, w, h, b);
+    const ni = cv(w, h), ix = ni.getContext('2d'); ix.drawImage(img, 0, 0); nightify(ix, w, h, img);
     v = { body: b, shadow: sh, nbody: nb, nimg: ni, w, h }; vcache.set(img, v); return v;
   }
   // 圖的朝向：車、船、直升機頭朝下，飛機頭朝上
@@ -62,8 +68,22 @@
     // 玻璃分成一塊一塊：小塊是窗（亮暖黃）、大塊是泳池、玻璃屋頂（照原本的顏色亮一點）
     const seen = new Int32Array(w * h).fill(-1), comps = [];
     for (let k = 0; k < w * h; k++) { if (!kind[k] || seen[k] >= 0) continue; const q = [k], list = []; seen[k] = comps.length;
-      while (q.length) { const c2 = q.pop(); list.push(c2); const i = c2 % w, j = (c2 - i) / w; [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([u, v]) => { const i2 = i + u, j2 = j + v; if (i2 < 0 || j2 < 0 || i2 >= w || j2 >= h) return; const k2 = j2 * w + i2; if (kind[k2] && seen[k2] < 0) { seen[k2] = comps.length; q.push(k2); } }); }
+      while (q.length) { const c2 = q.pop(); list.push(c2); const i = c2 % w, j = (c2 - i) / w; (kind[c2] === 1 ? [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]] : [[1, 0], [-1, 0], [0, 1], [0, -1]]).forEach(([u, v]) => { const i2 = i + u, j2 = j + v; if (i2 < 0 || j2 < 0 || i2 >= w || j2 >= h) return; const k2 = j2 * w + i2; if (kind[k2] && seen[k2] < 0) { seen[k2] = comps.length; q.push(k2); } }); }
       comps.push(list); }
+    // 2026-11-26：用顏色猜的會猜錯——黃色起重機、黃黑警戒線、金邊（細長條）、花圃的黃花（四周都是草）、太大塊的黃色都不是燈
+    const green = q => { const p = q * 4; return d[p + 3] > 200 && d[p + 1] > d[p] + 6 && d[p + 1] > d[p + 2]; };
+    for (let ci = comps.length - 1; ci >= 0; ci--) { const list = comps[ci], t = kind[list[0]]; let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1, nb = 0, ng = 0;
+      list.forEach(q => { const i = q % w, j = (q - i) / w; x0 = Math.min(x0, i); x1 = Math.max(x1, i); y0 = Math.min(y0, j); y1 = Math.max(y1, j);
+        [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([u, v]) => { const i2 = i + u, j2 = j + v; if (i2 < 0 || j2 < 0 || i2 >= w || j2 >= h) return; const q2 = j2 * w + i2; if (seen[q2] === ci) return; nb++; if (green(q2)) ng++; }); });
+      const bw = x1 - x0 + 1, bh = y1 - y0 + 1, n = list.length, aspect = Math.max(bw, bh) / Math.min(bw, bh), fill = n / (bw * bh);
+      // 黃燈至少 2×2（窗都至少 2×2，花是 1 顆）；黃色找連在一起時看八個方向（第二輪審稿：斜的起重機臂、一顆顆的花原本被拆成小塊躲過）
+      const notLight = t === 1 ? (n < 4 || Math.min(bw, bh) < 2 || n > 16 || fill < .6 || (aspect > 3 && n > 3) || (nb && ng / nb > .5)) : (n <= 70 && aspect > 3 && n > 4);
+      if (notLight) comps.splice(ci, 1); else list.box = [x0, y0, bw, bh];
+    }
+    // 同一列（或同一行）有 3 塊以上一樣大、間隔一樣的黃色＝警戒線、金邊，全部不亮
+    { const ys = comps.filter(l => kind[l[0]] === 1 && l.box), bad = new Set();
+      ys.forEach(a => { const same = ys.filter(b => b.box[2] === a.box[2] && b.box[3] === a.box[3] && (b.box[1] === a.box[1] || b.box[0] === a.box[0])); if (same.length >= 3) same.forEach(b => bad.add(b)); });
+      for (let ci = comps.length - 1; ci >= 0; ci--) if (bad.has(comps[ci])) comps.splice(ci, 1); }
     const m = cv(w, h), mx = m.getContext('2d'), md = mx.createImageData(w, h), o = md.data, glows = [];
     // 一張圖裡小塊玻璃很多（超過 12 塊）＝格子玻璃屋頂（機庫），整片當大塊玻璃，不要一格一格亮黃燈
     const panes = comps.filter(l => kind[l[0]] === 2 && l.length <= 70).length > 12;
@@ -73,19 +93,28 @@
     mx.putImageData(md, 0, 0); L = { mask: m, glows }; lightCache.set(img, L); return L;
   }
   function glow(x, a, b, r, col, al) { const g = x.createRadialGradient(a, b, 0, a, b, r); g.addColorStop(0, col.replace('A', al)); g.addColorStop(1, col.replace('A', 0)); x.fillStyle = g; x.fillRect(a - r, b - r, r * 2, r * 2); }
+  // 光暈兩層：外圈淡淡一圈＋亮的核心（燈在暗底上才跳得出來）
+  function glow2(x, a, b, r, col, al) { glow(x, a, b, r, col, al * .55); glow(x, a, b, r * .35, col, Math.min(1, al * 1.6)); }
   const WARM = 'rgba(255,204,120,A)', COOL = 'rgba(150,215,235,A)';
   function nightWorld(s, out, world) {
     const c = cv(out.W, out.H), x = c.getContext('2d'); x.imageSmoothingEnabled = false;
-    x.drawImage(world, 0, 0); x.fillStyle = NIGHT_FILL; x.fillRect(0, 0, out.W, out.H);
-    const lamps = [];
+    x.drawImage(world, 0, 0); nightify(x, out.W, out.H);
+    // 海上一片碎碎的月光（第二輪審稿：原本一條直條像拉鍊、虛線）：寬一點、零零星星、長短不一、上下淡出，不畫在能買的地和近岸
+    const b = D.bounds(s, 60), mx = b.x + b.w * .8, F = out.F, Wd = X.world(), buyCell = new Set(); (out.buyable || []).forEach(p => Wd.cells[p].forEach(c => buyCell.add(c)));
+    if (F) for (let y = Math.max(2, b.y | 0); y < Math.min(out.H - 2, b.y + b.h); y += 2) { const n = hash(y, 71); if (n < .82) continue;
+      const u = (y - b.y) / b.h, len = 2 + Math.floor(hash(y, 3) * 6), xx = Math.round(mx + (hash(71, y) - .5) * 120 * (.4 + u)), cell = Math.floor(y / X.C) * X.GW + Math.floor(xx / X.C);
+      if (xx < 0 || xx + len >= out.W || F[y * out.W + xx] > .12 || buyCell.has(cell)) continue;
+      const fade = Math.min(1, u * 4, (1 - u) * 4); x.fillStyle = `rgba(214,224,255,${(.05 + (n - .82) * .4) * fade})`; x.fillRect(xx, y, len, 1); }
+    // 樹冠左上一點偏藍的月光亮邊
+    x.fillStyle = 'rgba(170,190,235,.38)';
+    (out.trees || []).forEach(([a, b2, r]) => { for (let t = 0; t < 4; t++) { const g = Math.PI * 1.1 + t * .22; x.fillRect(Math.round(a + Math.cos(g) * (r - 1)), Math.round(b2 + Math.sin(g) * (r - 1)), 1, 1); } });
     Object.keys(out.sites).forEach(k => { const im = D.IMG[k + X.level(s, k)], r = out.sites[k]; if (!im) return; const L = lightsOf(im);
-      x.globalCompositeOperation = 'lighter'; L.glows.forEach(([a, b, rr, t]) => glow(x, r.x + a, r.y + b, rr, t === 'c' ? COOL : WARM, t === 'c' ? .18 : .32));
-      if (k === 'house' && L.glows.filter(g => g[3] === 'w').length < 2) glow(x, r.x + r.w * .45, r.y + r.h * .35, Math.min(r.w, r.h) * .45, WARM, .2);   // 圖裡看不到窗的房子：屋裡透出一點光
-      x.globalCompositeOperation = 'source-over'; x.drawImage(L.mask, r.x, r.y);
-      lamps.push(D.doorOf(k, X.level(s, k))); });
-    (out.paths || []).forEach(p => { for (let i = 14; i < p.dots.length - 10; i += 48) { const [a, b] = p.dots[i], [a2, b2] = p.dots[Math.min(p.dots.length - 1, i + 2)], l = Math.hypot(a2 - a, b2 - b) || 1; lamps.push([a - (b2 - b) / l * 6, b + (a2 - a) / l * 6]); } });
-    x.globalCompositeOperation = 'lighter'; lamps.forEach(([a, b]) => glow(x, a, b, 14, WARM, .27));
-    x.globalCompositeOperation = 'source-over'; lamps.forEach(([a, b]) => { x.fillStyle = '#3a3029'; x.fillRect(Math.round(a), Math.round(b), 1, 2); x.fillStyle = '#fff3cf'; x.fillRect(Math.round(a), Math.round(b) - 1, 1, 1); });
+      x.globalCompositeOperation = 'lighter'; L.glows.forEach(([a, b2, rr, t]) => glow2(x, r.x + a, r.y + b2, rr, t === 'c' ? COOL : WARM, t === 'c' ? .2 : .36));
+      x.globalCompositeOperation = 'source-over'; x.drawImage(L.mask, r.x, r.y); });
+    // 路燈（燈柱白天就畫在圖裡了，xiaodao-draw.js 的 lampPost）：燈頭點亮＋光暈；家門口那盞多一塊暖暖的地面光（原本是屋頂中間一團光）
+    const lamps = out.lamps || [], home = out.sites.house ? D.doorOf('house', X.level(s, 'house')) : null;
+    x.globalCompositeOperation = 'lighter'; lamps.forEach(([a, b2]) => glow2(x, a + 1, b2 - 4, 12, WARM, .34)); if (home) glow(x, home[0] - 4, home[1] + 2, 16, WARM, .22);
+    x.globalCompositeOperation = 'source-over'; lamps.forEach(([a, b2]) => { x.fillStyle = '#fff3cf'; x.fillRect(Math.round(a), Math.round(b2) - 5, 2, 2); });
     return c;
   }
 
@@ -211,6 +240,10 @@
       // 煙
       for (let i = fxs.smoke.length - 1; i >= 0; i--) { const p = fxs.smoke[i]; p.life -= dt; if (p.life <= 0) { fxs.smoke.splice(i, 1); continue; } p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= .97; p.vy *= .97; p.r += dt * 4;
         const al = Math.min(1, p.life / p.max * 1.4) * .55; x.fillStyle = night ? `rgba(120,125,145,${al})` : `rgba(236,232,224,${al})`; x.beginPath(); x.arc(p.x, p.y, p.r, 0, TAU); x.fill(); }
+      // 夜裡：私人港灣的燈塔一道慢慢轉的光（燈室在碼頭伍的圖裡 (150, 62)）
+      if (night && X.level(s, 'dock') === 5 && out.sites.dock) { const r = out.sites.dock, lx = r.x + 150, ly = r.y + 62, th = now / 1000 * .9;
+        x.save(); x.globalCompositeOperation = 'lighter'; const g = x.createRadialGradient(lx, ly, 0, lx, ly, 70); g.addColorStop(0, 'rgba(255,236,170,.32)'); g.addColorStop(1, 'rgba(255,236,170,0)'); x.fillStyle = g;
+        x.beginPath(); x.moveTo(lx, ly); x.arc(lx, ly, 70, th - .16, th + .16); x.closePath(); x.fill(); x.restore(); }
       // 夜裡：飛機翼尖、火箭頂端的紅燈一閃一閃
       if (night) { const on = Math.floor(now / 700) % 2 === 0; if (on) fxs.parked.forEach(v => { if (fxs.hide.has(v.id)) return; if (isRocket(v.key)) { x.fillStyle = '#ff5a4a'; x.fillRect(v.x + X.VEH[v.key].ax, v.y + 1, 1, 1); } else if (v.f === 'airfield' && !isHeli(v.key)) { x.fillStyle = '#ff5a4a'; x.fillRect(v.x + 1, v.y + v.img.height * .3, 1, 1); x.fillStyle = '#5aff8a'; x.fillRect(v.x + v.img.width - 3, v.y + v.img.height * .3, 1, 1); } }); }
     };
@@ -256,5 +289,5 @@
     }
     return fxs;
   }
-  root.XiaodaoFX = { make, vparts, RUNWAY };
+  root.XiaodaoFX = { make, vparts, nightify, RUNWAY };
 })(window);

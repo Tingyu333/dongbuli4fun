@@ -180,6 +180,8 @@ function chimney(x, a, b, w, h, top, side, sh = 3) { R(x, a + sh, b + sh, w, h, 
   R(x, mid - 3, b + h - 2, 6, 2, '#6d8fb0'); R(x, mid - 3, b + h - 2, 6, 1, '#8fb0cf'); R(x, mid + 1, b + h - 3, 2, 1, '#f3f1ec');   // 睡袋只露出一截＋枕頭
   // 掀開的門簾往左翻到帳篷外（背光色＋深色邊）
   poly(x, [[mid - 6, b + h], [mid - 11, b + h - 7], [mid - 3, b + h - 7]], T.flap); for (let i = 0; i <= 8; i++) P(x, mid - 11 + i, b + h - 7, T.line); for (let i = 0; i <= 7; i++) P(x, mid - 11 + Math.round(i * 5 / 7), b + h - 7 + i, T.line);
+  // 門口往右踩出一條深一點的沙路，接到島上小路的起點（圖的右緣、55% 高；2026-11-26 島本身審稿：路要從門口出發）
+  for (let i = 0; i <= 40; i++) { const t = i / 40, u = 92 + t * 68, v = 76 - Math.sin(t * Math.PI * .8) * 4 - t * 6; for (let q = -1; q <= 1; q++) if (hash(Math.round(u), Math.round(v) + q) > .2) P(x, u, v + q, q ? K.sand2 : '#cdb57e'); }
   // 營繩和營釘
   [[a - 8, b - 4, a, b + 2], [a + w + 8, b - 4, a + w, b + 2], [a - 8, b + h + 4, a, b + h - 2], [a + w + 8, b + h + 4, a + w, b + h - 2]].forEach(([x0, y0, x1, y1]) => { for (let i = 0; i <= 10; i++) P(x, x0 + (x1 - x0) * i / 10, y0 + (y1 - y0) * i / 10, '#e8e0cc'); R(x, x0 - 1, y0 - 1, 2, 2, K.post); });
   // 營火：一圈石頭、木柴、火
@@ -202,6 +204,7 @@ function chimney(x, a, b, w, h, top, side, sh = 3) { R(x, a + sh, b + sh, w, h, 
 (() => {
   const { x, W, H } = make('c2'); lawn(x, W, H, 23);
   stones(x, [[92, 92], [94, 99], [91, 106], [94, 113]]);
+  stones(x, [[117, 78], [126, 77], [135, 76], [144, 75]]);   // 門廊右邊接到島上小路的起點
   // 屋頂：木片瓦，雙坡（屋脊水平），左右兩端看得到圓木頭的截面
   const a = 62, b = 26, w = 66, h = 44;
   shadowPoly(x, [[a, b], [a + w, b], [a + w, b + h], [a, b + h]], 4, 4);
@@ -249,6 +252,7 @@ function chimney(x, a, b, w, h, top, side, sh = 3) { R(x, a + sh, b + sh, w, h, 
 (() => {
   const { x, W, H } = make('c3'); lawn(x, W, H, 37);
   stones(x, [[98, 82], [96, 89], [99, 96], [96, 103], [98, 110]]);
+  stones(x, [[110, 74], [119, 73], [128, 72], [137, 71], [146, 70], [155, 70], [164, 69]]);   // 門口往右接到島上小路的起點
   const a = 60, b = 18, w = 80, h = 50;
   shadowPoly(x, [[a, b], [a + w, b], [a + w, b + h], [a, b + h]], 5, 5);
   // 2026-11-26 審稿（「像紅磚牆、樂高」）：瓦片改成一排排魚鱗（每片 6×4，下緣兩角收圓），上坡亮、下坡暗拉開，屋脊一道亮色脊瓦
@@ -291,6 +295,8 @@ function chimney(x, a, b, w, h, top, side, sh = 3) { R(x, a + sh, b + sh, w, h, 
   // 石板車道＋鐵門
   for (let b = 92; b < 120; b++) for (let a = 90; a < 112; a++) P(x, a, b, hash(a, b) > .8 ? K.stone3 : ((a + b) % 7 ? K.conc3 : K.conc2));
   for (let a = 86; a < 116; a++) { P(x, a, 116, K.steelLo); P(x, a + 1, 117, K.shadow); if (a % 3 === 0) { R(x, a, 113, 1, 4, K.steel); P(x, a, 113, K.steelHi); } } R(x, 84, 112, 3, 5, K.stone2); R(x, 115, 112, 3, 5, K.stone2);
+  // 車道往右、繞過側翼往上，接到島上小路的起點（圖的右緣、55% 高）
+  stones(x, [[116, 100], [125, 100], [134, 100], [143, 100], [152, 100], [161, 100], [168, 98], [170, 91], [170, 84], [170, 77], [177, 72], [185, 71]]);
   // 樹籬
   for (let a = 10; a < 190; a++) if (a < 84 || a > 118) { const c = hash(a, 3) > .5 ? K.hedge : K.hedge2; R(x, a, 113, 1, 5, c); P(x, a, 112, hash(a, 9) > .6 ? K.leaf3 : c); P(x, a + 2, 118, K.shadow); }
   // 主屋（石板瓦、四面坡）＋側翼，影子比較長（兩層樓）
@@ -336,6 +342,8 @@ function chimney(x, a, b, w, h, top, side, sh = 3) { R(x, a + sh, b + sh, w, h, 
   for (let a = 0; a < dw; a++) R(x, da + a, db, 1, dh, a % 5 === 4 ? DW[2] : (a % 5 === 0 ? DW[0] : DW[1]));
   R(x, da, db, dw, 1, DW[0]); R(x, da, db + dh - 1, dw, 1, K.post); R(x, da + dw - 1, db, 1, dh, DW[2]);
   { const sa = 72; for (let k = 0; k < 3; k++) { R(x, sa + 2, db + dh + k * 2 + 2, 14, 2, K.shadow); R(x, sa, db + dh + k * 2, 14, 2, k % 2 ? DW[1] : DW[0]); R(x, sa, db + dh + k * 2 + 1, 14, 1, DW[2]); } }
+  // 甲板右邊一小段木棧道，接到島上小路的起點
+  R(x, da + dw + 1, 57, 19, 4, K.shadow); for (let a = 0; a < 19; a++) R(x, da + dw - 1 + a, 55 - Math.round(a * .1), 1, 4, a % 4 === 3 ? DW[2] : DW[0]); R(x, da + dw - 1, 58, 19, 1, DW[2]);
   // 無邊際泳池（玻璃邊朝海）
   const pa = 92, pb = 64, pw = 62, ph = 20;
   R(x, pa - 1, pb - 1, pw + 2, ph + 2, K.white2);
