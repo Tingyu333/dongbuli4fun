@@ -25,6 +25,7 @@
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
+    <script src="assets/coin-face.js?v=20261126b"></script>
     <style>
         .num { font-family: 'Noto Sans TC', sans-serif; font-variant-numeric: tabular-nums; }
 
@@ -50,11 +51,19 @@
         .row { width: 100%; text-align: left; padding: .6rem .2rem; border-bottom: 1px dashed var(--rule); -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         .row:last-child { border-bottom: 0; }
         .row:active { background: rgba(140, 120, 90, .08); }
-        .row .nm { font-size: .84rem; letter-spacing: .02em; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .row .nm { display: flex; align-items: center; gap: .4rem; min-width: 0; font-size: .84rem; letter-spacing: .02em; line-height: 1.2; white-space: nowrap; }
+        .row .nm > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+        .row canvas.coin, .coin-i { width: 24px; height: 24px; flex-shrink: 0; }
+        .coin-i { display: inline-block; width: 18px; height: 18px; vertical-align: -4px; margin-right: .3rem; }
+        .flip { animation: flip .8s ease-in-out; }
+        @keyframes flip { 0% { transform: perspective(200px) rotateY(0); } 100% { transform: perspective(200px) rotateY(360deg); } }
+        .slip .crack { position: relative; flex-shrink: 0; width: 3.2rem; height: 3.2rem; }
+        .slip .crack img { width: 100%; height: 100%; }
+        .slip .crack b { position: absolute; right: -.5rem; bottom: -.4rem; width: 1.8rem; height: 1.8rem; border: 2px solid var(--up); color: var(--up); background: rgba(251, 247, 236, .85); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .9rem; transform: rotate(10deg); }
         .row .cd { display: block; font-family: 'Noto Sans TC', sans-serif; font-size: .58rem; letter-spacing: .12em; color: var(--faint); }
         .row .px { text-align: right; font-size: .9rem; }
         .row .ch { text-align: right; font-size: .72rem; }
-        .row canvas { width: 56px; height: 26px; display: block; }
+        .row canvas.sp { width: 56px; height: 26px; display: block; }
         .mine { display: inline-block; margin-left: .25rem; font-size: .55rem; letter-spacing: 0; padding: 0 .2rem; border: 1px solid var(--up); color: var(--up); vertical-align: 2px; font-family: 'Noto Sans TC', sans-serif; }
         .soon { display: inline-block; margin-left: .3rem; padding: 0 .2rem; font-size: .55rem; border: 1px solid var(--faint); color: var(--faint); border-radius: 2px; transform: rotate(-6deg); font-family: 'Noto Sans TC', sans-serif; }
 
@@ -156,7 +165,7 @@
         #busy .msg { margin-top: 1.1rem; padding: .3rem .9rem; border-radius: 999px; background: rgba(0, 0, 0, .35); font-family: 'Noto Sans TC', sans-serif; font-size: .78rem; letter-spacing: .2em; color: #fbf7ec; min-height: 1.2em; }
         @keyframes tape { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         @keyframes tbStamp { 0% { opacity: 0; transform: scale(1.8) rotate(-18deg); } 14% { opacity: .9; transform: scale(1) rotate(-12deg); } 70% { opacity: .9; transform: scale(1) rotate(-12deg); } 100% { opacity: 0; transform: scale(1) rotate(-12deg); } }
-        @media (prefers-reduced-motion: reduce) { #sheet, #sheet .sh { transition: none; } .dot { animation: none; } #busy.on .tape-in { animation: none; } #busy.on .stamp { animation: none; opacity: .9; } }
+        @media (prefers-reduced-motion: reduce) { .flip { animation: none; } #sheet, #sheet .sh { transition: none; } .dot { animation: none; } #busy.on .tape-in { animation: none; } #busy.on .stamp { animation: none; opacity: .9; } }
     </style>
     <link rel="stylesheet" href="assets/tailwind.css?v=20261121c">
 </head>
@@ -233,6 +242,7 @@
                 <div class="mt-2 flex items-end gap-3">
                     <p id="sPx" class="num text-3xl text-wabi-dark"></p>
                     <p id="sCh" class="num text-sm pb-1"></p>
+                    <canvas id="sCoin" class="ml-auto" style="width:52px;height:52px"></canvas>
                 </div>
             </div>
             <div class="px-5 pt-3">
@@ -382,9 +392,20 @@
             await tick();
         }
         // 每 15 分鐘跳價：重算價格；登入的人順便跟後端拿帳（看有沒有爆倉）
+        let lastIdx = {};
         async function tick() {
             try { await refreshPrices(); } catch (e) { }
             render();
+            // 跳價了：漲的那枚翻一圈，每枚都反光一下
+            KEYS.forEach(k => {
+                const p = P[k]; if (!p || !p.listed) return;
+                if (lastIdx[k] !== undefined && lastIdx[k] !== p.idx) {
+                    const up = chg(k) > 0, cv = document.querySelector(`#rows canvas[data-coin="${k}"]`);
+                    coinShine(cv, k, up);
+                    if (cur === k) coinShine($('sCoin'), k, up);
+                }
+                lastIdx[k] = p.idx;
+            });
             clearTimeout(timer);
             timer = setTimeout(() => (Line.loggedIn && state === 'ready' ? pull() : tick()), Math.max(3000, nextAt(now()) - now() + 3000));
         }
@@ -400,7 +421,7 @@
             const box = $('slips');
             box.innerHTML = notes.map(n => {
                 const i = INFO[n.key] || { name: n.key };
-                if (n.kind === 'boom') return `<section class="paper slip"><p><b>${esc(i.name)}</b> ${dirTxt(n.dir)} ${n.lev} 倍，${mdhm(n.at)} 爆了。<br><span style="color:var(--faint);font-size:.72rem">下單價 ${pf(n.key, n.e)}，${n.dir === 'up' ? '跌' : '漲'}到 ${pf(n.key, n.liq)} 就沒了。押的 ${fmt(n.m)} 全部歸零。</span></p><div class="seal">爆</div></section>`;
+                if (n.kind === 'boom') return `<section class="paper slip"><p><b>${esc(i.name)}</b> ${dirTxt(n.dir)} ${n.lev} 倍，${mdhm(n.at)} 爆了。<br><span style="color:var(--faint);font-size:.72rem">下單價 ${pf(n.key, n.e)}，${n.dir === 'up' ? '跌' : '漲'}到 ${pf(n.key, n.liq)} 就沒了。押的 ${fmt(n.m)} 全部歸零。</span></p><div class="crack"><img src="${CoinFace.url(n.key, 104, { crack: true })}" alt=""><b>爆</b></div></section>`;
                 return '';
             }).join('');
             box.classList.toggle('hidden', !notes.length);
@@ -441,19 +462,36 @@
             $('boardAt').textContent = mdhm(nextAt(now()) - META.q) + ' 更新';
             box.innerHTML = KEYS.map(k => {
                 const i = INFO[k], p = P[k] || {}, c = chg(k);
-                if (!p.listed) return `<div class="row cols"><span class="nm">${esc(i.name)}<span class="cd">${i.tk}<span class="soon">待發行</span></span></span><span></span><span class="px num flat">—</span><span class="ch num flat">11/27</span></div>`;
+                if (!p.listed) return `<div class="row cols"><span class="nm"><canvas class="coin" data-coin="${k}" style="opacity:.45"></canvas><span>${esc(i.name)}<span class="cd">${i.tk}<span class="soon">待發行</span></span></span></span><span></span><span class="px num flat">—</span><span class="ch num flat">11/27</span></div>`;
                 return `<button type="button" class="row cols" data-key="${k}">
-                    <span class="nm">${esc(i.name)}${heldKey(k) ? '<span class="mine">持</span>' : ''}<span class="cd">${i.tk}</span></span>
-                    <canvas></canvas>
+                    <span class="nm"><canvas class="coin" data-coin="${k}"></canvas><span>${esc(i.name)}<span class="cd">${i.tk}${heldKey(k) ? '<span class="mine">持</span>' : ''}</span></span></span>
+                    <canvas class="sp"></canvas>
                     <span class="px num ${tone(c)}">${pf(k, p.price)}</span>
                     <span class="ch num ${tone(c)}">${arrow(c)}${Math.abs(c * 100).toFixed(1)}%</span>
                 </button>`;
             }).join('');
-            box.querySelectorAll('.row[data-key]').forEach(b => spark(b.querySelector('canvas'), b.dataset.key));
+            box.querySelectorAll('.row[data-key]').forEach(b => spark(b.querySelector('canvas.sp'), b.dataset.key));
+            box.querySelectorAll('canvas[data-coin]').forEach(cv => coinDraw(cv, cv.dataset.coin));
         }
+        // ---- 硬幣（assets/coin-face.js）：畫在 canvas 上；跳價的時候漲的那枚翻一圈、反光掃過去 ----
+        function coinDraw(cv, key, opts) {
+            const d = window.devicePixelRatio || 1, w = cv.clientWidth || 24;
+            if (cv.width !== Math.round(w * d)) { cv.width = cv.height = Math.round(w * d); }
+            const x = cv.getContext('2d'); x.setTransform(d, 0, 0, d, 0, 0); x.clearRect(0, 0, w, w);
+            CoinFace.draw(x, key, w / 2, w / 2, w / 2 * 0.9, opts);
+        }
+        const calm = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+        function coinShine(cv, key, flip) {
+            if (!cv || calm()) return;
+            if (flip) { cv.classList.remove('flip'); void cv.offsetWidth; cv.classList.add('flip'); }
+            let t0 = 0;
+            const step = ts => { t0 = t0 || ts; const p = Math.min(1, (ts - t0) / 750); coinDraw(cv, key, { shine: p }); if (p < 1) requestAnimationFrame(step); else coinDraw(cv, key); };
+            requestAnimationFrame(step);
+        }
+        const coinImg = (key, size, opts) => `<img class="coin-i" src="${CoinFace.url(key, size * 2, opts)}" alt="">`;
         function posRow(p) {
             const i = INFO[p.key] || { name: p.key }, v = posValue(p), pl = v - p.m, pct = pl / p.m;
-            return `<div class="pos"><div><b style="font-weight:600">${esc(i.name)}</b> <span class="dirtag ${p.dir === 'up' ? 'up' : 'down'}">${dirTxt(p.dir)} ${p.lev}×</span>
+            return `<div class="pos"><div>${coinImg(p.key, 18)}<b style="font-weight:600">${esc(i.name)}</b> <span class="dirtag ${p.dir === 'up' ? 'up' : 'down'}">${dirTxt(p.dir)} ${p.lev}×</span>
                 <br><span class="num ${tone(pl)}">${sfmt(pl)}（${pct >= 0 ? '+' : '−'}${Math.abs(pct * 100).toFixed(1)}%）</span>
                 <small class="num">押 ${fmt(p.m)}・下單 ${pf(p.key, p.e)}・<span class="up">爆在 ${pf(p.key, p.liq)}</span></small></div>
                 <button type="button" data-close-pos="${esc(p.id)}" ${busy ? 'disabled' : ''}>收回 ${fmt(v)}</button></div>`;
@@ -468,7 +506,7 @@
                 let tot = 0;
                 html += `<p class="sec-h">直接買的</p><table><thead><tr><th>紀念幣</th><th>顆數</th><th>市值</th><th>損益</th></tr></thead><tbody>` + M.hold.map(h => {
                     const v = Math.floor(h.u * ((P[h.key] || {}).price || 0)), pl = v - h.cost; tot += pl;
-                    return `<tr><td>${esc((INFO[h.key] || {}).name || h.key)}<small>成本 ${fmt(h.cost)}</small></td><td class="num">${units(h.u)}</td><td class="num">${fmt(v)}</td><td class="num ${tone(pl)}">${sfmt(pl)}</td></tr>`;
+                    return `<tr><td>${coinImg(h.key, 18)}${esc((INFO[h.key] || {}).name || h.key)}<small>成本 ${fmt(h.cost)}</small></td><td class="num">${units(h.u)}</td><td class="num">${fmt(v)}</td><td class="num ${tone(pl)}">${sfmt(pl)}</td></tr>`;
                 }).join('') + `</tbody></table>`;
             }
             if (M.pos.length) html += `<p class="sec-h">放大倍數（還沒爆的）</p>` + M.pos.map(posRow).join('');
@@ -512,6 +550,7 @@
             const key = cur; if (!key) return;
             const i = INFO[key], p = P[key] || {}, c = chg(key), logged = Line.loggedIn && M && state === 'ready';
             $('sName').textContent = i.full; $('sCode').textContent = i.tk;
+            if ($('sCoin').dataset.key !== key) { $('sCoin').dataset.key = key; coinDraw($('sCoin'), key); }
             $('sDesc').textContent = i.desc;
             $('sPx').textContent = p.listed ? pf(key, p.price) : '—'; $('sPx').style.color = toneColor(c);
             $('sCh').innerHTML = p.listed ? `<span style="color:${toneColor(c)}">${arrow(c)} ${Math.abs(c * 100).toFixed(2)}%・24 小時</span>` : '';
@@ -550,7 +589,8 @@
         function openSheet(key) {
             cur = key; range = 1;
             document.querySelectorAll('[data-range]').forEach(x => x.classList.toggle('on', x.dataset.range === '1'));
-            $('sheet').classList.add('on'); renderSheet(); requestAnimationFrame(chart);
+            $('sCoin').dataset.key = '';
+            $('sheet').classList.add('on'); renderSheet(); requestAnimationFrame(() => { chart(); coinDraw($('sCoin'), key); coinShine($('sCoin'), key, false); });
         }
         function closeSheet() { $('sheet').classList.remove('on'); cur = null; }
         function render() {
