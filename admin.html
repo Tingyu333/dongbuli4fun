@@ -364,7 +364,7 @@
                         </div>
                         <button type="button" class="btn btn-line" style="min-height:36px;padding:0 .7rem;font-size:12px;letter-spacing:.1em" data-give="${esc(p.key)}">發道具</button>
                     </div>
-                    ${p.perks.length ? `<div class="mt-2 flex flex-wrap gap-1">${p.perks.map(n => `<span class="chip">${esc(n)}</span>`).join('')}</div>` : ''}
+                    ${p.perks.length || p.founder ? `<div class="mt-2 flex flex-wrap gap-1">${p.founder ? '<span class="chip">創始執行長</span>' : ''}${p.perks.map(n => `<span class="chip">${esc(n)}</span>`).join('')}</div>` : ''}
                     <div class="kv">
                         <div><span>錢包</span><b>${short(p.money)}</b></div>
                         <div><span>賺過</span><b>${short(p.earned)}</b></div>
@@ -373,11 +373,22 @@
                         <div><span>升級花</span><b>${short(p.shopSpent)}</b></div>
                         <div><span>功德</span><b>${short(p.donated + p.lit)}</b></div>
                     </div>
+                    <div class="mt-2 text-right"><button type="button" class="text-[11px] font-sans tracking-wider text-stone-400 underline underline-offset-4" data-founder="${esc(p.key)}">${p.founder ? '取消創始執行長' : '設為公司・開的創始執行長'}</button></div>
                 </article>`).join('') || '<p class="py-10 text-center text-xs font-sans tracking-widest text-stone-400">找不到</p>';
         }
         $('q').addEventListener('input', renderPlayers);
         $('sort').addEventListener('change', renderPlayers);
-        $('playerList').addEventListener('click', e => {
+        $('playerList').addEventListener('click', async e => {
+            const f = e.target.closest('[data-founder]');
+            if (f) {   // 公司・開的創始執行長：只有一位，設了別人就換人（2026-11-26）
+                const p = data.players.find(x => x.key === f.dataset.founder); if (!p) return;
+                const old = data.players.find(x => x.founder && x !== p);
+                if (!confirm(p.founder ? `取消 ${p.name} 的創始執行長？` : `把 ${p.name} 設成公司・開的創始執行長？${old ? `（會換掉 ${old.name}）` : ''}公司・榜上公司名字下面會多一個「創始執行長」小章。`)) return;
+                f.disabled = true;
+                try { data = await call({ type: 'gaFounderSet', key: p.founder ? '' : p.key }); render(); showToast(p.founder ? '取消了' : `${p.name} 是創始執行長了`); }
+                catch (err) { showToast(err.message); f.disabled = false; }
+                return;
+            }
             const b = e.target.closest('[data-give]'); if (!b) return;
             setTab('perks'); $('gWho').value = b.dataset.give; window.scrollTo({ top: 0, behavior: 'smooth' });
         });

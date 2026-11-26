@@ -73,7 +73,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-26b';
+var BACKEND_VERSION = '2026-11-26c';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1 };
 
@@ -168,6 +168,7 @@ function route(type, input) {
       if (!isGameAdmin(input.token)) return { result: 'unauthorized' };
       if (type === 'gaPlayers') return gaPlayers();
       if (type === 'gaPerkGrant') return gaPerkGrant(input);
+      if (type === 'gaFounderSet') return gaFounderSet(input);   // 公司・開的創始執行長（2026-11-26）
       if (type === 'gaPerkRevoke') return gaPerkRevoke(input);
       if (type === 'gaLibSave') return gaLibSave(input);
       if (type === 'gaLibRetire') return gaLibRetire(input);
@@ -4070,7 +4071,7 @@ function gaPerkView(x, names, lib) {
 }
 
 function gaPlayers() {
-  var players = gaPlayerRows(), perks = readPerks(), lib = readLib(true), names = {};
+  var players = gaPlayerRows(), perks = readPerks(), lib = readLib(true), names = {}, founder = PropertiesService.getScriptProperties().getProperty('COMPANY_FOUNDER') || '';
   players.forEach(function (p) { names[p.lineId] = p.name; });
   var active = {}, count = {};
   perks.forEach(function (x) {
@@ -4080,7 +4081,7 @@ function gaPlayers() {
   var effects = Object.keys(PERK_TYPES).map(function (k) { return { key: k, name: PERK_TYPES[k].name, desc: PERK_TYPES[k].desc, live: !!PERK_TYPES[k].live }; });
   return {
     result: 'success', now: Date.now(),
-    players: players.map(function (p) { var o = {}; Object.keys(p).forEach(function (k) { if (k !== 'lineId') o[k] = p[k]; }); o.perks = active[p.lineId] || []; return o; }),
+    players: players.map(function (p) { var o = {}; Object.keys(p).forEach(function (k) { if (k !== 'lineId') o[k] = p[k]; }); o.perks = active[p.lineId] || []; o.founder = !!founder && p.lineId === founder; return o; }),
     perks: perks.slice().reverse().map(function (x) { return gaPerkView(x, names, lib); }),
     lib: Object.keys(lib).map(function (id) {
       var x = lib[id], t = PERK_TYPES[x.effect] || { name: '（沒有這種效果）', desc: '', live: false }, c = count[id] || { active: 0, total: 0 };
@@ -4446,6 +4447,20 @@ function companyBoard() {
       earned: Math.max(0, Math.round(Number(r[9]) || 0)), days: isFinite(t) ? Math.floor((now - t) / 864e5) + 1 : 1, founder: !!founder && id === founder };
   });
   return out;
+}
+
+// admin 後台「玩家」：把某個玩家設成公司・開的創始執行長（只有一位；key 空的就是取消）。許了這個願的人不一定在許願池裡，所以直接在後台點人
+function gaFounderSet(input) {
+  var key = String(input.key || ''), props = PropertiesService.getScriptProperties();
+  if (!key) props.deleteProperty('COMPANY_FOUNDER');
+  else {
+    var who = null;
+    gaPlayerRows().forEach(function (p) { if (p.key === key) who = p; });
+    if (!who) return { result: 'error', error: '找不到這個玩家' };
+    props.setProperty('COMPANY_FOUNDER', who.lineId);
+  }
+  CacheService.getScriptCache().remove(BOARD_CACHE_KEY);   // 排行榜下次打開就重算
+  return gaPlayers();
 }
 
 // 在編輯器選這個按「執行」：從許願池找「創一家公司、當執行長」那個願，把許願的人記成創始執行長（指令碼屬性 COMPANY_FOUNDER）。
