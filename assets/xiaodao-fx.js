@@ -7,7 +7,7 @@
   const X = root.XiaodaoRules, D = root.XiaodaoDraw, hash = X.hash, TAU = Math.PI * 2;
   const NIGHT_FILL = 'rgba(14,20,52,.58)';
   // 跑道在圖的第幾列（停機坪各階的圖量出來的；貳是直升機坪，沒有跑道）
-  const RUNWAY = { 1: 62, 3: 86, 4: 99, 5: 106 };
+  const RUNWAY = { 1: 64, 3: 86, 4: 99, 5: 106 };   // 跑道在停機坪圖裡的高度（2026-11-26 壹的圖往上多 2 顆，62 → 64）
 
   // ---------- 小工具 ----------
   const cv = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, w); c.height = Math.max(1, h); return c; };

@@ -28,9 +28,9 @@
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
-    <script src="assets/xiaodao-rules.js?v=20261124b"></script>
-    <script src="assets/xiaodao-draw.js?v=20261124b"></script>
-    <script src="assets/xiaodao-fx.js?v=20261124c"></script>
+    <script src="assets/xiaodao-rules.js?v=20261126a"></script>
+    <script src="assets/xiaodao-draw.js?v=20261126a"></script>
+    <script src="assets/xiaodao-fx.js?v=20261126a"></script>
     <script src="assets/xiaodao-room.js?v=20261122d"></script>
     <script src="assets/xiaodao-iso.js?v=20261123b"></script>
     <script src="assets/xiaodao-door.js?v=20261124c"></script>
@@ -469,6 +469,9 @@
                     if (info.miss) tint(info.miss, 'rgba(179,58,47,.28)');
                     ctx.lineWidth = 2 / cam.s; ctx.setLineDash([5 / cam.s, 3 / cam.s]); ctx.strokeStyle = '#fff';
                     ctx.strokeRect(r.x - 2, r.y - 2, r.w + 4, r.h + 4); ctx.setLineDash([]);
+                    // 空的車位／泊位／機位：點設施時才畫白色虛線框（2026-11-26：圖裡不再畫，平常太搶眼又斷斷續續）
+                    if (lv && X.FAC[sel.k].slots) { ctx.lineWidth = 1.2 / cam.s; ctx.setLineDash([3 / cam.s, 2 / cam.s]); ctx.strokeStyle = 'rgba(243,241,236,.9)';
+                        X.slotsOf(S, sel.k).forEach(sl => { if (!sl.v) ctx.strokeRect(sl.x + .5, sl.y + .5, sl.w - 1, sl.h - 1); }); ctx.setLineDash([]); }
                     if (info.miss && info.next) { const r2 = X.rect(sel.k, info.next); ctx.strokeStyle = 'rgba(179,58,47,.9)'; ctx.setLineDash([3 / cam.s, 3 / cam.s]); ctx.strokeRect(r2.x, r2.y, r2.w, r2.h); ctx.setLineDash([]); }
                 }
                 // 換車／看船：每一格框起來（選到的朱色；要停的那台停不進去的格子紅色虛線）
@@ -1247,7 +1250,7 @@
             size();
             new ResizeObserver(() => { if (size()) { if (world) { if (zoomed()) { clampCam(); draw(); } else fit(); } } }).observe(view);
             renderTop();
-            D.load('assets/xiaodao/', '20261124a').then(() => setTimeout(() => rebuild(true), 30));
+            D.load('assets/xiaodao/', '20261126a').then(() => setTimeout(() => rebuild(true), 30));
             roomLoaded = Promise.all([RM.load('assets/xiaodao/', '20261122a', '20261122a'), RI.load('assets/xiaodao/', '20261122a')]);   // 家具的圖先載好（商店、倉庫的小圖要用）
             roomLoaded.then(() => { if ($('sheet').classList.contains('on')) renderSheet(); if (roomOn) renderRoom(); });
         }

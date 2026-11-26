@@ -163,7 +163,13 @@ function planks(x, a, b, w, h, vertical = true, dark = false) {   // 木板：ve
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const k = vertical ? i : j; let c = k % 4 === 3 ? K.wood2 : k % 4 === 0 ? K.wood3 : K.wood; if (dark) c = k % 4 === 3 ? '#5e3c22' : k % 4 === 0 ? '#8a5a34' : '#74492a'; if (hash(a + i, b + j) > .96) c = K.wood2; P(x, a + i, b + j, c); }
 }
 function post(x, a, b) { R(x, a, b, 2, 2, K.post); P(x, a, b, '#7c5230'); ripple(x, a - 1, b + 2, 3); }
-function bollard(x, a, b) { circ(x, a, b, 1, '#3d3d3d'); P(x, a - 1, b - 1, '#6a6a6a'); }
+function bollard(x, a, b) { R(x, a + 1, b + 1, 3, 3, 'rgba(30,40,30,.3)'); R(x, a - 1, b - 1, 3, 3, '#7f868b'); P(x, a - 1, b - 1, '#c4beb3'); P(x, a + 1, b + 1, '#5f666b'); P(x, a, b - 1, '#b4babd'); P(x, a - 1, b, '#9aa0a4'); P(x, a, b, '#9aa0a4'); P(x, a + 1, b - 1, '#7f868b'); P(x, a - 1, b + 1, '#7f868b'); P(x, a, b + 1, '#5f666b'); P(x, a + 1, b, '#5f666b'); }   // 圓頭（香菇頭）繫船柱：3×3、左上亮右下暗   // 圓頭繫船柱（2026-11-26：原本是黑色十字，像釘子）
+// 2026-11-26 審稿：高的東西立起來畫（跟發射台同一套），影子往右下斜
+function lampPost(x, a, b, h = 7) { for (let i = 0; i < h; i++) P(x, a + 1 + Math.round(i * .6), b + 1 - Math.round(i * .3) + h - 1, 'rgba(30,40,30,.22)'); R(x, a, b - h + 1, 1, h, '#9aa0a4'); P(x, a, b, '#7f868b'); R(x, a - 1, b - h - 1, 3, 2, '#f6cd72'); P(x, a - 1, b - h - 1, '#fff4c0'); R(x, a - 1, b - h - 2, 3, 1, '#7f868b'); }
+function lifeRing(x, a, b) { for (let j = -3; j <= 3; j++) for (let i = -3; i <= 3; i++) { const d = i * i + j * j; if (d > 10 || d < 3) continue; const q = (i >= 0) === (j >= 0); P(x, a + i, b + j, q ? '#f3f1ec' : '#b33a2f'); } P(x, a - 2, b - 2, '#ffffff'); for (let k = 0; k < 4; k++) P(x, a + 2 + k, b + 3 + (k > 1 ? 1 : 0), 'rgba(30,40,30,.22)'); }
+// 浮動碼頭的手指：淺色複合板、兩邊灰色護舷、每 10 顆一個白色繫纜器（跟貳階的深木頭棧橋分開，看得出升級）
+function floatDeck(x, a, b, w, h) { R(x, a + 2, b + 3, w, h, 'rgba(20,40,50,.28)'); for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) P(x, a + i, b + j, j % 4 === 3 ? '#c4beb3' : i === 0 ? '#e9e6df' : i === w - 1 ? '#aea79b' : '#d6d1c7');
+  R(x, a - 1, b, 1, h, '#9aa0a4'); R(x, a + w, b, 1, h, '#7f868b'); for (let j = 4; j < h - 2; j += 10) { R(x, a - 2, b + j, 1, 2, '#ffffff'); R(x, a + w + 1, b + j, 1, 2, '#f3f1ec'); } R(x, a, b + h - 1, w, 1, '#aea79b'); }
 function rope(x, x0, y0, x1, y1) { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n + Math.sin(i / n * Math.PI) * 1.5, '#d9cba5'); }
 function wake(x, a, b) { for (let i = 0; i < 3; i++) { P(x, a - 2 - i, b + i * 2, 'rgba(227,239,237,.7)'); P(x, a + 2 + i, b + i * 2, 'rgba(227,239,237,.7)'); } }
 
@@ -253,14 +259,17 @@ function cargo(x, a, b) {   // 長蘿貨運的船：綠色船身、載滿蘿蔔�
   for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { circ(x, a + 3 + i * 3.4, b + 4 + j * 3.4, 1, '#f3efe6'); P(x, a + 3 + i * 3.4, b + 3 + j * 3.4, '#7ba84a'); }
   R(x, a + 4, b + 18, 8, 6, '#efe4cf'); R(x, a + 5, b + 21, 6, 2, K.glass); R(x, a + 4, b + 18, 8, 1, '#c94f3d'); }
 
+const EXPORT = !!window.__EXPORT;   // 匯出成島上的圖（tools/xiaodao/dump_empty.js）：繩子是綁船的，沒有船就不畫
+
 // ===== 壹 小木台 =====
 (() => {
   const { x, W, H } = make('d1'); coast(x, W, H, 52, 11);
   planks(x, 88, 44, 18, 30, false);
   post(x, 88, 74); post(x, 104, 74);
-  raft(x, 112, 66); rope(x, 104, 66, 112, 70);
+  raft(x, 112, 66); EXPORT || rope(x, 104, 66, 112, 70);
   slotBoat(x, 66, 64, 14, 22);
-  R(x, 92, 48, 4, 4, '#8e9396'); R(x, 92, 48, 4, 1, '#b8bcbe');   // 水桶
+  // 水桶：圓的、一條提把、裡面一點水（原本是灰色方塊，像石頭）
+  R(x, 93, 50, 5, 3, 'rgba(30,40,30,.25)'); circ(x, 94, 49, 2, '#9aa0a4'); P(x, 93, 48, '#b8bcbe'); P(x, 95, 50, '#7f868b'); R(x, 93, 48, 3, 2, '#5fa8bd'); P(x, 93, 48, '#9fdce4'); [[92, 47], [93, 46], [94, 46], [95, 46], [96, 47]].forEach(([u, v]) => P(x, u, v, '#7f868b'));
   for (let i = 0; i < 12; i++) P(x, 100 + i, 50 - i * 0.6, '#5e3c22'); for (let i = 0; i < 14; i++) P(x, 112, 43 + i * 1.6, 'rgba(240,240,240,.6)');   // 釣竿＋釣線
   tree(x, 26, 22, 9); palm(x, 160, 30); tree(x, 176, 14, 6);
 })();
@@ -271,10 +280,10 @@ function cargo(x, a, b) {   // 長蘿貨運的船：綠色船身、載滿蘿蔔�
   planks(x, 90, 32, 14, 80, true);
   for (let j = 42; j < 112; j += 14) { post(x, 88, j); post(x, 104, j); }
   // 燈柱、救生圈
-  [[90, 60], [90, 96]].forEach(([u, v]) => { R(x, u, v, 2, 2, '#3d3d3d'); P(x, u, v, '#f6cd72'); });
-  circ(x, 101, 78, 2, '#f3f1ec'); P(x, 101, 78, K.wood); P(x, 99, 78, '#c94f3d'); P(x, 103, 78, '#c94f3d');
-  rowboat(x, 72, 52); rope(x, 81, 58, 88, 56);
-  motorboat(x, 112, 70); rope(x, 104, 74, 112, 74);
+  lampPost(x, 91, 62); lampPost(x, 91, 98);
+  lifeRing(x, 100, 79);
+  rowboat(x, 72, 52); EXPORT || rope(x, 81, 58, 88, 56);
+  motorboat(x, 112, 70); EXPORT || rope(x, 104, 74, 112, 74);
   slotBoat(x, 70, 84, 14, 24);
   tree(x, 24, 14, 9); palm(x, 168, 22); tree(x, 46, 22, 6);
 })();
@@ -287,12 +296,19 @@ function cargo(x, a, b) {   // 長蘿貨運的船：綠色船身、載滿蘿蔔�
   pier(86, 26, 22, 40); pier(40, 64, 114, 12);
   for (let i = 44; i < 152; i += 12) bollard(x, i, 74); bollard(x, 104, 38); bollard(x, 104, 56); bollard(x, 88, 46);
   // 漁網、魚箱
-  for (let j = 0; j < 8; j++) for (let i = 0; i < 10; i++) if ((i + j) % 2) P(x, 92 + i, 30 + j, '#6d8f6a');
+  // 漁網：堆成一團（不規則），邊上幾顆紅白浮球
+  for (let j = -4; j <= 4; j++) for (let i = -6; i <= 6; i++) { if (i * i / 36 + j * j / 16 + (hash(i + 3, j + 9) - .5) * .5 > 1) continue; P(x, 97 + i + 1, 34 + j + 1, 'rgba(30,40,30,.18)'); P(x, 97 + i, 34 + j, (i % 2 === 0 || j % 2 === 0) ? (i + j < 0 ? '#8fbfb4' : '#6f9f94') : '#4f7f76'); }   // 第二輪：網格線清楚、偏藍綠（原本像花椰菜）
+  [[91, 31, '#b33a2f'], [103, 33, '#f3f1ec'], [95, 38, '#b33a2f'], [101, 37, '#f3f1ec']].forEach(([u, v, c]) => { R(x, u, v, 2, 2, c); P(x, u, v, '#ffffff'); });
   [[92, 54], [98, 54], [92, 59]].forEach(([u, v]) => { R(x, u, v, 5, 4, '#3f7fb4'); R(x, u, v, 5, 1, '#5f9fd0'); P(x, u + 2, v + 2, '#cfd6d9'); });
   // 小起重機
-  R(x, 136, 66, 6, 6, '#e2a62e'); R(x, 120, 68, 18, 2, '#e2a62e'); R(x, 121, 69, 1, 8, '#3d3d3d');
-  fishing(x, 112, 32); rope(x, 108, 38, 112, 38);
-  sailboat(x, 58, 80); cargo(x, 124, 80); rope(x, 64, 78, 64, 80);
+  // 小起重機：立起來畫（底座、塔身、往右上斜的吊臂、垂下來的繩子和鉤子），影子往右下斜
+  { const u = 136, v = 66; for (let i = 0; i < 14; i++) { P(x, u + 4 + i, v + 4 + Math.round(i * .4), 'rgba(30,40,30,.22)'); P(x, u + 5 + i, v + 4 + Math.round(i * .4), 'rgba(30,40,30,.22)'); }
+    R(x, u, v, 6, 5, '#e2a62e'); R(x, u, v, 6, 1, '#f4c75a'); R(x, u + 5, v, 1, 5, '#b9862a');
+    R(x, u + 1, v - 10, 3, 10, '#e2a62e'); R(x, u + 1, v - 10, 1, 10, '#f4c75a'); R(x, u + 3, v - 10, 1, 10, '#b9862a'); for (let j = v - 9; j < v; j += 3) P(x, u + 2, j, '#b9862a');
+    for (let i = 0; i < 14; i++) { const q = u + 3 + i, w = v - 11 - Math.round(i * .45); P(x, q, w, '#e2a62e'); P(x, q, w + 1, '#b9862a'); }
+    R(x, u + 16, v - 16, 1, 6, '#9aa0a4'); R(x, u + 15, v - 10, 3, 1, '#7f868b'); P(x, u + 17, v - 9, '#7f868b'); }
+  fishing(x, 112, 32); EXPORT || rope(x, 108, 38, 112, 38);
+  sailboat(x, 58, 80); cargo(x, 124, 80); EXPORT || rope(x, 64, 78, 64, 80);
   slotBoat(x, 92, 80, 16, 32); slotBoat(x, 62, 32, 14, 26);
   tree(x, 22, 12, 8); palm(x, 168, 16);
 })();
@@ -302,13 +318,16 @@ function cargo(x, a, b) {   // 長蘿貨運的船：綠色船身、載滿蘿蔔�
   const { x, W, H } = make('d4'); coast(x, W, H, 26, 51);
   // 浮動碼頭：一條主幹、三根手指
   planks(x, 20, 30, 160, 8, false, false);
-  [[42], [96], [150]].forEach(([u]) => { planks(x, u, 38, 6, 56, true); post(x, u - 2, 92); post(x, u + 6, 92); });
-  // 加油站
-  R(x, 176, 18, 10, 10, '#c94f3d'); R(x, 178, 20, 6, 4, '#f3f1ec'); R(x, 176, 28, 10, 2, 'rgba(20,40,50,.3)');
+  [[42], [96], [150]].forEach(([u]) => { floatDeck(x, u, 38, 6, 56); lampPost(x, u + 3, 94); });
+  // 加油站：立著的紅色加油機（錶、油槍）＋一條油管垂到水面
+  { const u = 178, v = 28; for (let i = 0; i < 8; i++) R(x, u + 4 + i, v - 1 + Math.round(i * .4), 3, 1, 'rgba(30,40,30,.22)');
+    R(x, u - 2, v - 1, 10, 3, '#c4beb3'); R(x, u, v - 10, 5, 10, K.roof || '#b33a2f'); R(x, u, v - 10, 1, 10, '#cf5a46'); R(x, u + 4, v - 10, 1, 10, '#8f2c23'); R(x, u, v - 11, 5, 1, '#8f2c23');
+    R(x, u + 1, v - 8, 3, 2, '#f3f1ec'); P(x, u + 1, v - 8, '#ffffff'); R(x, u + 1, v - 4, 3, 1, '#7f868b');
+    [[u + 5, v - 5], [u + 6, v - 4], [u + 7, v - 2], [u + 7, v], [u + 6, v + 2], [u + 6, v + 4], [u + 7, v + 6]].forEach(([q, w]) => P(x, q, w, '#4a4d50')); ripple(x, u + 6, v + 7, 3); }
   yacht(x, 50, 42); yacht(x, 104, 44);
   motorboat(x, 24, 44); canoe(x, 160, 44);
   slotBoat(x, 128, 44, 18, 40);
-  [[28, 34], [80, 34], [134, 34]].forEach(([u, v]) => { R(x, u, v, 2, 2, '#3d3d3d'); P(x, u, v, '#f6cd72'); });
+  [[28, 34], [80, 34], [134, 34]].forEach(([u, v]) => lampPost(x, u, v + 2));
   tree(x, 16, 10, 7); palm(x, 120, 12); palm(x, 64, 10);
 })();
 
@@ -316,23 +335,45 @@ function cargo(x, a, b) {   // 長蘿貨運的船：綠色船身、載滿蘿蔔�
 (() => {
   const { x, W, H } = make('d5'); coast(x, W, H, 22, 67);
   // 防波堤（左右兩條石頭堤，中間是港口出口）
-  const breakwater = (pts) => pts.forEach(([u, v]) => { circ(x, u + 1, v + 2, 4, 'rgba(20,40,50,.3)'); circ(x, u, v, 4, K.stone2); circ(x, u - 1, v - 1, 3, K.stone); P(x, u - 2, v - 2, K.stone3); });
-  breakwater([[6, 30], [8, 40], [10, 50], [14, 60], [18, 70], [24, 80], [32, 88], [42, 94], [52, 98]]);
-  breakwater([[194, 30], [192, 40], [190, 50], [186, 60], [182, 70], [176, 80], [168, 88], [158, 94], [148, 98]]);
-  // 燈塔（右堤尾端）
-  circ(x, 150, 104, 5, '#f3f1ec'); circ(x, 150, 104, 3, '#c94f3d'); P(x, 150, 104, '#f6cd72'); for (let i = 0; i < 8; i++) P(x, 156 + i, 100 - i * 0.5, 'rgba(246,205,114,.6)');
+  // 2026-11-26 審稿（「像珍珠項鍊、湯圓」）：石頭大小不一、互相疊，中間補接縫，港內那側一條平台，外側一點白浪
+  const breakwater = (pts, side) => {
+    const dots = []; for (let k = 0; k < pts.length - 1; k++) { const [x0, y0] = pts[k], [x1, y1] = pts[k + 1], n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 3); for (let i = 0; i < n; i++) dots.push([x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n]); } dots.push(pts[pts.length - 1]);
+    dots.forEach(([u, v]) => circ(x, Math.round(u) + 1, Math.round(v) + 2, 4, 'rgba(20,40,50,.3)'));
+    dots.forEach(([u, v]) => circ(x, Math.round(u), Math.round(v), 3, K.stone2));
+    dots.forEach(([u, v], i) => { const rr = 2 + Math.floor(hash(i + 31, Math.round(u)) * 3), ox = Math.round((hash(i, 7) - .5) * 3), oy = Math.round((hash(7, i) - .5) * 3), cu = Math.round(u) + ox, cv = Math.round(v) + oy;
+      if (i % 2 && rr < 4) return; circ(x, cu, cv, rr, K.stone2); circ(x, cu - 1, cv - 1, rr - 1, hash(i, 3) > .5 ? K.stone : '#a8a094'); P(x, cu - rr + 1, cv - rr + 1, K.stone3); P(x, cu - rr + 2, cv - rr + 1, K.stone3); });
+    dots.forEach(([u, v], i) => { if (i % 4) return; P(x, Math.round(u) - side * 5, Math.round(v) + 2, 'rgba(244,252,250,.9)'); P(x, Math.round(u) - side * 6, Math.round(v) + 3, 'rgba(244,252,250,.6)'); });
+  };
+  // 沿岸一條石砌岸壁，把兩條防波堤的根部連起來
+  for (let i = 4; i < 197; i++) { const v = 19 + Math.round(Math.sin((i + 67) / 13) * 2 + Math.sin((i + 67) / 5)); R(x, i + 1, v + 5, 1, 2, 'rgba(20,40,50,.25)'); R(x, i, v, 1, 5, (i + (v % 2) * 3) % 7 === 0 ? K.stone2 : K.stone); P(x, i, v, K.stone3); P(x, i, v + 4, K.stone2); if (i % 7 === 3) P(x, i, v + 2, K.stone2); }
+  breakwater([[6, 30], [8, 40], [10, 50], [14, 60], [18, 70], [24, 80], [32, 88], [42, 94], [52, 98]], 1);
+  breakwater([[194, 30], [192, 40], [190, 50], [186, 60], [182, 70], [176, 80], [168, 88], [158, 94], [148, 98]], -1);
+  // 燈塔（右堤尾端）：立起來畫——白塔身、兩道朱環、燈室、深色頂蓋，影子往右下斜
+  { const u = 147, v = 100, tw = 6, th = 24;
+    poly(x, [[u + 4, v - 2], [u + 7, v - 2], [u + 22, v + 8], [u + 19, v + 8]], 'rgba(20,40,50,.28)');   // 第三輪：拉長到 18 顆，尾巴落到海上   // 影子：一條 3 顆寬的斜帶（第二輪：原本疊成細線像掃把柄）
+    R(x, u - 1, v - 2, tw + 2, 4, K.stone2); R(x, u - 1, v - 2, tw + 2, 1, K.stone3);
+    for (let j = 0; j < th; j++) { const y = v - j, inset = j > th * .6 ? 1 : 0; R(x, u + inset, y, tw - inset * 2, 1, '#f3f1ec'); P(x, u + inset, y, '#ffffff'); P(x, u + tw - 1 - inset, y, '#c9c4ba'); }
+    [[v - 6, v - 4], [v - 14, v - 12]].forEach(([y0, y1]) => { for (let y = y0; y <= y1; y++) { const inset = (v - y) > th * .6 ? 1 : 0; R(x, u + inset, y, tw - inset * 2, 1, K.roof || '#b33a2f'); P(x, u + inset, y, '#cf5a46'); P(x, u + tw - 1 - inset, y, '#8f2c23'); } });
+    R(x, u - 1, v - th, tw + 2, 1, '#7f868b'); R(x, u, v - th - 4, tw, 4, '#f6cd72'); P(x, u, v - th - 4, '#fff4c0'); R(x, u + 2, v - th - 4, 1, 4, '#c9a24a'); R(x, u - 1, v - th - 6, tw + 2, 2, '#4a4d50'); R(x, u - 1, v - th - 6, tw + 2, 1, '#7f868b'); P(x, u + 2, v - th - 7, '#4a4d50'); }
   // 船屋（左上）
-  R(x, 26, 14, 34, 22, 'rgba(20,40,50,.3)'); for (let j = 0; j < 22; j++) for (let i = 0; i < 32; i++) { const top = j < 11; P(x, 24 + i, 12 + j, j % 3 === 2 ? (top ? '#6a8f6a' : '#4f6f4f') : (top ? '#7ba57a' : '#5d7f5a')); } R(x, 24, 22, 32, 2, '#3f5a3f');
+  R(x, 26, 14, 34, 22, 'rgba(20,40,50,.3)'); for (let j = 0; j < 22; j++) for (let i = 0; i < 32; i++) { const top = j < 11; P(x, 24 + i, 12 + j, j % 3 === 2 ? (top ? '#6a8f6a' : '#4f6f4f') : (top ? '#7ba57a' : '#5d7f5a')); }
+  R(x, 24, 21, 32, 1, '#9cc49a'); R(x, 24, 22, 32, 1, '#3f5a3f'); R(x, 24, 12, 32, 1, '#9cc49a'); R(x, 55, 12, 1, 22, '#3f5a3f');   // 屋脊一道亮、右邊暗
+  // 對著水的大拱門（裡面暗暗的、看得到水）
+  R(x, 33, 34, 14, 2, '#3f5a3f'); for (let i = 0; i < 12; i++) { const top = 34 - Math.round(Math.sin((i + .5) / 12 * Math.PI) * 3); R(x, 34 + i, top, 1, 36 - top, '#2f4a3a'); } R(x, 34, 35, 12, 1, '#5fa8bd');
   // 主棧橋（石頭＋木頭）
   planks(x, 70, 22, 60, 8, false, true);
-  planks(x, 96, 30, 8, 50, true, true);
-  [[96, 80], [102, 80]].forEach(([u, v]) => post(x, u, v));
+  planks(x, 96, 30, 8, 64, true, true);   // 2026-11-26：往海裡多伸 14，超級遊艇整艘靠得到
+  [[93, 92], [104, 92], [93, 62], [104, 62]].forEach(([u, v]) => post(x, u, v));   // 第二輪：木樁在橋外兩側（原本在橋面上，浪花畫在木板上像一條白點線）
   superyacht(x, 108, 26);
   runabout(x, 74, 34);
   yacht(x, 50, 40);
   sailboat(x, 30, 48);
   // 紅地毯接到超級遊艇
-  for (let i = 0; i < 6; i++) R(x, 104 + i, 50, 1, 3, i % 2 ? '#b33a2f' : '#a8342a');
+  // 紅地毯：從岸邊沿著棧橋鋪到超級遊艇，兩邊金邊
+  R(x, 99, 20, 2, 27, '#b33a2f'); R(x, 98, 20, 1, 27, '#c9a24a'); R(x, 101, 20, 1, 27, '#c9a24a'); R(x, 99, 20, 1, 27, '#cf5a46');
+  // 迎賓平台（方形、金邊）＋淺木舷梯接到超級遊艇（第二輪：原本紅地毯往右拐、懸在海上像拐杖糖）
+  R(x, 96, 46, 8, 8, '#c9a24a'); R(x, 97, 47, 6, 6, '#b33a2f'); R(x, 97, 47, 6, 1, '#cf5a46'); R(x, 96, 46, 8, 1, '#f0d58a');
+  R(x, 105, 51, 2, 3, 'rgba(20,40,50,.28)'); R(x, 104, 49, 2, 3, '#b07f50'); R(x, 104, 49, 2, 1, '#c9a24a'); R(x, 104, 51, 2, 1, '#c9a24a');   // 舷梯收起來貼著平台（第三輪：沒停遊艇時伸到海上像一根小金棒）
   palm(x, 70, 10); palm(x, 140, 10); tree(x, 178, 8, 7);
 })();
 

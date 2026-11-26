@@ -168,7 +168,8 @@
     const B = new Buf(WW, HH), occ = new Uint8Array(WW * HH);
     const fill = (x0, y0, x1, y1) => { for (let v = Math.max(0, y0 | 0); v < Math.min(HH, y1); v++) for (let u = Math.max(0, x0 | 0); u < Math.min(WW, x1); u++) occ[v * WW + u] = 1; };
     const built = X.FAC_KEYS.filter(k => X.level(s, k)), sites = {};
-    built.forEach(k => { const r = X.rect(k, X.level(s, k)); sites[k] = r; fill(r.x - 8, r.y - 8, r.x + r.w + 8, (r.shore != null ? r.shore : r.y + r.h) + 8); });
+    built.forEach(k => { const r = X.rect(k, X.level(s, k)); sites[k] = r; fill(r.x - 8 - (k === 'house' && X.level(s, k) === 3 ? 14 : 0), r.y - 8,   // 平房左邊留給曬衣繩
+       r.x + r.w + 8, (r.shore != null ? r.shore : r.y + r.h) + 8); });
     const tier = X.tierOf(s);
     // 還沒蓋、島的等級已經可以蓋的工地：先整平、不長樹（空地）
     X.FAC_KEYS.forEach(k => { if (X.level(s, k) || !(X.TIERS[tier].cap[k] >= 1)) return; const r = X.rect(k, 1); fill(r.x - 4, r.y - 4, r.x + r.w + 4, (r.shore != null ? r.shore : r.y + r.h) + 4); });
@@ -191,10 +192,17 @@
     x.putImageData(new ImageData(B.d, WW, HH), 0, 0);
     built.slice().sort((a, b) => (sites[a].y + sites[a].h) - (sites[b].y + sites[b].h)).forEach(k => {
       const im = IMG[k + X.level(s, k)], r = sites[k]; if (im) x.drawImage(im, r.x, r.y);
-      // 平房的曬衣繩：晾你有的衣服（最多四件；設計圖原本那四塊的位置和大小），沒有衣服就空著
+      // 平房的曬衣繩：晾你有的衣服（最多四件；設計圖原本那四塊的位置和大小）。
+      // 2026-11-26：沒有衣服就連桿子和繩子都不畫（只剩一條線像斷掉的電線），有衣服才在這裡畫。
+      // 座標是設計圖 house-stages.html 的，圖從設計圖的 (30, 18) 開始裁（tools/xiaodao/sprites.json 的 house3 ox／oy）
       if (k === 'house' && X.level(s, k) === 3 && X.CLOTH) {
         const mine = s.items.filter(i => X.CLOTH[i.key] && i.qty > 0).sort((a, b) => (a.key + a.c).localeCompare(b.key + b.c)).slice(0, 4);
-        [[22, 5, 6], [29, 4, 7], [35, 5, 5], [41, 3, 4]].forEach(([u, ww, hh], j) => { const it = mine[j]; if (!it) return; const v = 26 + Math.round(Math.sin((u - 20) / 26 * Math.PI) * 2), col = X.CLOTH[it.key].colors[it.c].sw, a = r.x + u - 18, b = r.y + v - 18;
+        const OX = 30, OY = 18;
+        if (mine.length) {
+          [18, 46].forEach(u => { x.fillStyle = 'rgba(30,40,30,.24)'; x.fillRect(r.x + u - OX + 1, r.y + 24 - OY + 1, 2, 2); x.fillStyle = '#5e3c22'; x.fillRect(r.x + u - OX, r.y + 24 - OY, 2, 2); });
+          x.fillStyle = '#ddd6c8'; for (let u = 20; u < 46; u++) x.fillRect(r.x + u - OX, r.y + 25 + Math.round(Math.sin((u - 20) / 26 * Math.PI) * 2) - OY, 1, 1);
+        }
+        [[22, 5, 6], [29, 4, 7], [35, 5, 5], [41, 3, 4]].forEach(([u, ww, hh], j) => { const it = mine[j]; if (!it) return; const v = 26 + Math.round(Math.sin((u - 20) / 26 * Math.PI) * 2), col = X.CLOTH[it.key].colors[it.c].sw, a = r.x + u - OX, b = r.y + v - OY;
           x.fillStyle = 'rgba(30,40,30,.24)'; x.fillRect(a + 2, b + 2, ww, hh); x.fillStyle = col; x.fillRect(a, b, ww, hh); x.fillStyle = 'rgba(255,255,255,.33)'; x.fillRect(a, b, ww, 1); });
       }
       // 停著的車、船：放在位子正中間（圖本身含右下的影子）

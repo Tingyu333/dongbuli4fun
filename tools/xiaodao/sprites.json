@@ -1,22 +1,22 @@
 {
  "house1": {
-  "w": 139,
+  "w": 133,
   "h": 87,
-  "ox": 23,
+  "ox": 28,
   "oy": 19,
   "shore": null
  },
  "house2": {
-  "w": 128,
+  "w": 133,
   "h": 92,
   "ox": 20,
   "oy": 24,
   "shore": null
  },
  "house3": {
-  "w": 154,
+  "w": 142,
   "h": 96,
-  "ox": 18,
+  "ox": 30,
   "oy": 18,
   "shore": null
  },
@@ -28,44 +28,44 @@
   "shore": null
  },
  "house5": {
-  "w": 141,
-  "h": 87,
-  "ox": 36,
+  "w": 184,
+  "h": 94,
+  "ox": 13,
   "oy": 4,
   "shore": 93
  },
  "garage1": {
-  "w": 78,
+  "w": 84,
   "h": 81,
-  "ox": 62,
+  "ox": 59,
   "oy": 26,
   "shore": null
  },
  "garage2": {
-  "w": 102,
-  "h": 102,
+  "w": 90,
+  "h": 100,
   "ox": 50,
   "oy": 18,
   "shore": null
  },
  "garage3": {
-  "w": 91,
+  "w": 94,
   "h": 110,
   "ox": 56,
   "oy": 10,
   "shore": null
  },
  "garage4": {
-  "w": 146,
+  "w": 148,
   "h": 114,
   "ox": 32,
   "oy": 6,
   "shore": null
  },
  "garage5": {
-  "w": 174,
+  "w": 198,
   "h": 112,
-  "ox": 16,
+  "ox": 2,
   "oy": 8,
   "shore": null
  },
@@ -91,31 +91,31 @@
   "shore": 9
  },
  "dock4": {
-  "w": 166,
-  "h": 79,
+  "w": 172,
+  "h": 85,
   "ox": 20,
-  "oy": 18,
-  "shore": 8
+  "oy": 17,
+  "shore": 9
  },
  "dock5": {
-  "w": 198,
-  "h": 98,
-  "ox": 2,
+  "w": 200,
+  "h": 96,
+  "ox": 0,
   "oy": 12,
   "shore": 21
  },
  "airfield1": {
   "w": 180,
-  "h": 75,
+  "h": 77,
   "ox": 10,
-  "oy": 18,
+  "oy": 16,
   "shore": null
  },
  "airfield2": {
   "w": 150,
-  "h": 80,
+  "h": 82,
   "ox": 30,
-  "oy": 30,
+  "oy": 28,
   "shore": null
  },
  "airfield3": {
