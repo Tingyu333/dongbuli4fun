@@ -43,8 +43,16 @@
         .boom span { font-family: 'Noto Sans TC', sans-serif; font-size: 11px; line-height: 1; letter-spacing: .05em; }
         .boom:active { transform: scale(.92); }
         .boom.off { opacity: .4; }
-        /* 收工鈕：達標或地上沒東西了才出現，左下角（跟「炸」對稱）；按了等鉤子收回來就結算 */
-        .quit { right: auto; left: 22px; background: #b33a2f; color: #fcfaf8; border-color: #b33a2f; }
+        /* 收工鈕：達標或地上沒東西了才出現；放在天空左邊、時間下面（地面以上，不會蓋到礦石），按了等鉤子收回來就結算 */
+        .quit {
+            position: absolute; left: 2.8%; top: 8%; width: 22%; aspect-ratio: 80 / 30; border-radius: 9999px;
+            display: flex; align-items: center; justify-content: center;
+            background: #b33a2f; color: #fcfaf8; border: 0; box-shadow: 0 3px 10px rgba(0, 0, 0, .2);
+            font-family: 'Noto Sans TC', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: .15em;
+            touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform .08s, opacity .15s;
+        }
+        .quit[hidden] { display: none; }
+        .quit:active { transform: scale(.94); }
         .quit.wait { opacity: .6; }
         /* 監修中：整個畫布蓋起來 */
         .closed { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 2rem 1.5rem; text-align: center; background: rgb(var(--wabi-bg) / 0.86); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
@@ -112,7 +120,7 @@
             <div class="relative">
                 <canvas id="cv" aria-label="礦坑・挖：鉤子左右擺，點一下放出去"></canvas>
                 <button type="button" id="boom" class="boom off" aria-label="丟炸藥"><b>炸</b><span id="boomN">×0</span></button>
-                <button type="button" id="quit" class="boom quit" hidden aria-label="提早收工"><b>收</b><span id="quitN">收工</span></button>
+                <button type="button" id="quit" class="quit" hidden aria-label="提早收工"><span id="quitN">收工</span></button>
                 <div id="mshop" class="mshop" hidden role="dialog" aria-label="礦坑商店">
                     <div class="flex items-baseline justify-between">
                         <p class="text-lg text-wabi-dark tracking-widest">礦坑商店</p>
@@ -156,7 +164,7 @@
                 <li>鉤子在浣熊大王下面左右擺，點畫面任何地方就朝那個方向放出去（電腦按 ↓ 或空白鍵）。</li>
                 <li>鉤到東西就往回拉，<b class="font-normal text-wabi-dark">越重拉越慢</b>：大金塊、大石頭都很花時間，空鉤收得最快。</li>
                 <li>拉到不想要的，按右下角<b class="font-normal text-wabi-shu">「炸」</b>（電腦按 ↑）：東西炸掉不算錢，鉤子快速收回。炸藥在礦坑商店買，福袋也會開到。</li>
-                <li>一共 <b class="font-normal text-wabi-dark">10 關</b>，每關 60 秒。「兩」跨關累積，時間到時累積到目標就過關；鉤上還在拉的不算。累積到目標、或地上只剩火藥桶和雞塊時，左下角會出現「收」，連按兩下、等鉤子拉上來就提早收工（工資一樣）；地上挖光了會自己收工。沒挖夠就重打那一關，兩回到那關開始時。</li>
+                <li>一共 <b class="font-normal text-wabi-dark">10 關</b>，每關 60 秒。「兩」跨關累積，時間到時累積到目標就過關；鉤上還在拉的不算。累積到目標、或地上只剩火藥桶和雞塊時，左上角時間下面會出現「收工」，連按兩下、等鉤子拉上來就提早收工（工資一樣）；地上挖光了會自己收工。沒挖夠就重打那一關，兩回到那關開始時。</li>
                 <li>過關後進<b class="font-normal text-wabi-dark">礦坑商店</b>，用兩買下一關的東西：炸藥、大力丸（拉兩倍快）、御守（福袋開到好東西）、鑽石拋光劑（鑽石變 900）、石頭圖鑑（石頭值三倍）。買了會從兩扣掉。</li>
                 <li><b class="font-normal text-wabi-dark">福袋</b>開出隨機的兩、一根炸藥，或這一關力氣變大。<b class="font-normal text-wabi-shu">火藥桶</b>一鉤到就爆，旁邊的東西全炸光。<b class="font-normal text-wabi-dark">雞塊</b>長得像金塊，只值 2 兩。<b class="font-normal text-wabi-dark">店貓</b>叼著鑽石走來走去，抓到值 602 兩。</li>
                 <li>切去別的 App 會自動暫停；中途離開，下次打開從那一關重來（兩、炸藥回到那關開始時）。</li>
