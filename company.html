@@ -4,8 +4,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <!-- 開發中：還沒開放，不給搜尋引擎收（使用者試過、接好後端才開放，開放時拿掉） -->
-    <meta name="robots" content="noindex">
     <title>公司・開 | 丼步喱</title>
     <meta name="description" content="從一間車庫開始接案。請員工、派人、收款，一路搬到自己的大樓。">
     <meta property="og:type" content="website">
@@ -427,7 +425,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
 (() => {
     const R = CompanyRules, $ = id => document.getElementById(id);
     const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    const OPEN = false;                                  // 使用者試過、接好後端才開放
+    const OPEN = true;                                   // 2026-11-26 正式開放（關掉改 false：沒帶 ?preview／?live 的人看到「鐵捲門還在修」）
     const PREVIEW = /[?&]preview\b/.test(location.search);                         // 試玩：試玩錢包、存在這支手機、不碰後端
     const LIVE = !PREVIEW && (OPEN || /[?&]live\b/.test(location.search));        // 正式：真的錢包、存檔在後端（開放前用 ?live 試）
     if (!LIVE && !PREVIEW) { $('gate').hidden = false; return; }

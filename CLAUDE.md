@@ -63,7 +63,7 @@
 | `kuangkeng.html` | 打工：礦坑・挖（黃金礦工的丼步喱版，浣熊大王當礦工）。2026-11-20 晚上開工（頁內 `MAINTENANCE` 開關，改 `true` 會蓋「監修中」、`?preview` 試玩不發工資不記錄）；十關、礦坑商店、工資進錢包、店面、結局、日報和結業證書、排行榜礦坑部（挖最深） | `docs/pages/kuangkeng.md` |
 | `xuyuan.html` | 許願・池：搜集提案，每天第一個願隨機 $3,000～6,666（網頁不寫金額），願望牆、主人回覆 | `docs/pages/xuyuan.md` |
 | `xiaodao.html` | 我的小島（家園・築）：買地、蓋家／車庫／碼頭／停機坪／發射台，精緻像素風。**還沒開放**（六批都做完了，接好後端、使用者試過才開，`?preview` 用試玩錢包），會員中心那格只放預告圖；規則 `assets/xiaodao-rules.js`、畫島 `assets/xiaodao-draw.js`、會動的東西和夜景 `assets/xiaodao-fx.js`、家門口 `assets/xiaodao-door.js`、屋內斜看 `assets/xiaodao-iso.js`（平面圖還是 `xiaodao-room.js`）、設施圖 `assets/xiaodao/` | `docs/pages/xiaodao.md` |
-| `company.html` | 公司・開：接案經營（請員工、派人、收款、搬家，車庫 → 自己的大樓）。**還沒開放**（`OPEN = false`，`?preview` 用試玩錢包，存在這支手機；`?live` 用真的錢包、存檔在後端 `Saves`，2026-11-26）；規則 `assets/company-rules.js`、辦公室畫法 `assets/company-office.js`、角色圖 `assets/company/`；企劃和樣張在 `docs/plans/company/` | `docs/pages/company.md` |
+| `company.html` | 公司・開：接案經營（請員工、派人、收款、搬家，車庫 → 自己的大樓）。**2026-11-26 正式開放**（`OPEN = true`；要先 LINE 登入，真的錢包、存檔在後端 `Saves`；`?preview` 照舊是試玩錢包、存在這支手機），入口在會員中心打工區第一格，排行榜有公司・榜；規則 `assets/company-rules.js`、辦公室畫法 `assets/company-office.js`、角色圖 `assets/company/`；企劃和樣張在 `docs/plans/company/` | `docs/pages/company.md` |
 | `rank.html` | 排行・榜：打工・榜、花錢・榜、無盡・榜、身價・榜（小島接好後端才出現） | `docs/pages/rank.md` |
 | `baoxian.html` | 保險・存：儲蓄險（後端算） | `docs/pages/baoxian.md` |
 | `gushi.html` | 股市・炒：十檔（含三檔妖股）、晚報、掛單 | `docs/pages/gushi.md` |

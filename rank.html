@@ -513,7 +513,7 @@
         const hasWorth = () => !!(players && players.some(p => 'island' in p));
         // 公司・榜（2026-11-26）：後端給 company: { name, stage, earned 累計淨賺, days 開幾天, founder }，比累計淨賺（不是帳戶現在有多少，搬家花掉不會掉名次）
         // 公司・開還沒開放前（COMPANY_OPEN = false）只有網址帶 ?company 才看得到這本（主人自己試）
-        const COMPANY_OPEN = false, COMPANY_STAGE = ['車庫', '小辦公室', '整層樓', '二十七樓', '大樓'];
+        const COMPANY_OPEN = true, COMPANY_STAGE = ['車庫', '小辦公室', '整層樓', '二十七樓', '大樓'];
         const wan = v => v >= 1e6 ? '$' + Math.round(v / 1e4).toLocaleString() + '萬' : v >= 1e5 ? '$' + (Math.round(v / 1e3) / 10) + '萬' : fmt(v);   // 公司的錢大：十萬以上寫「萬」，375 寬才放得下名字
         const hasCompany = () => !!(players && (COMPANY_OPEN || /[?&]company\b/.test(location.search)) && players.some(p => p.company));
         function companyEntry(p) { const c = p.company; return c && c.earned > 0 ? { v: c.earned, main: wan(c.earned), sub: `${c.founder ? '' : '執行長 '}${p.name}・${COMPANY_STAGE[c.stage] || ''}・第 ${c.days} 天`, co: c } : null; }
