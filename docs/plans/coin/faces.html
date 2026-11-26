@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>紀念幣幣面樣張</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Noto+Sans+TC:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; padding: 16px; background: #fbf7ec; color: #3b342e; font-family: 'Noto Serif TC', serif; }
+  h1 { font-size: 18px; letter-spacing: .3em; margin: 4px 0 12px; }
+  p { font-family: 'Noto Sans TC', sans-serif; font-size: 11px; color: #8c7f6c; letter-spacing: .1em; margin: 14px 0 6px; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<h1>二十七樓紀念幣・樣張</h1>
+<p>大的（底部面板最上面）</p>
+<canvas id="big" width="343" height="430"></canvas>
+<p>小的（行情表名字前面）</p>
+<canvas id="small" width="343" height="44"></canvas>
+<p>跳價反光／爆倉裂開</p>
+<canvas id="fx" width="343" height="110"></canvas>
+<script src="../../../assets/coin-face.js"></script>
+<script>
+document.fonts.ready.then(() => {
+  const K = ['c1', 'c2', 'c3', 'c4', 'c5'], NAMES = ['丼幣', '茱莉鴨幣', '坐洗狗狗幣', '蘿蔔幣', '雞塊幣'];
+  const prep = id => { const cv = document.getElementById(id), d = 2, w = cv.width, h = cv.height; cv.width = w * d; cv.height = h * d; cv.style.width = w + 'px'; cv.style.height = h + 'px'; const x = cv.getContext('2d'); x.scale(d, d); return x; };
+  const b = prep('big');
+  const pos = [[90, 80], [253, 80], [90, 225], [253, 225], [171, 360]];
+  K.forEach((k, i) => { CoinFace.draw(b, k, pos[i][0], pos[i][1], 66); b.font = '12px "Noto Sans TC"'; b.fillStyle = '#3b342e'; b.textAlign = 'center'; });
+  const s = prep('small');
+  K.forEach((k, i) => { CoinFace.draw(s, k, 22 + i * 70, 22, 14); s.font = '11px "Noto Serif TC"'; s.fillStyle = '#3b342e'; s.textAlign = 'left'; s.fillText(NAMES[i].slice(0, 2), 40 + i * 70, 26); });
+  const f = prep('fx');
+  CoinFace.draw(f, 'c2', 60, 55, 46, { shine: 0.45 });
+  CoinFace.draw(f, 'c4', 170, 55, 46, { crack: true });
+  CoinFace.draw(f, 'c5', 280, 55, 46, { crack: true });
+});
+</script>
+</body>
+</html>
