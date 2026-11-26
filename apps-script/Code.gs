@@ -73,7 +73,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-26a';
+var BACKEND_VERSION = '2026-11-26b';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1 };
 
@@ -1396,7 +1396,7 @@ function washLog(input) {
 // 排行榜：排程 cronBoard() 每 5 分鐘先算好存快取（2026-11-18，使用者定的），打開排行榜只讀現成的。
 // 快取一筆最多 100KB，榜大了就切成好幾段存（BOARD_CHUNK 個字一段，中文一字最多 3 bytes 也放得下）。
 // 存 10 分鐘：排程哪天停了，過期後有人打開就當場算（跟以前一樣），不會壞。
-var BOARD_CACHE_KEY = 'board:v14', BOARD_CACHE_SEC = 600, BOARD_CHUNK = 30000;
+var BOARD_CACHE_KEY = 'board:v15', BOARD_CACHE_SEC = 600, BOARD_CHUNK = 30000;
 function boardCachePut(board) {
   var s = JSON.stringify(board), n = Math.ceil(s.length / BOARD_CHUNK), m = {};
   for (var i = 0; i < n; i++) m[BOARD_CACHE_KEY + ':' + i] = s.slice(i * BOARD_CHUNK, (i + 1) * BOARD_CHUNK);
@@ -1616,10 +1616,11 @@ function buildBoard() {
   var st = loadBoardState();
   var washBest = boardScan(st, 'Washes'), cleanBest = boardScan(st, 'Cleans'), wifis = boardScan(st, 'Wifis'), served = boardScan(st, 'Zaocans'), ships = boardScan(st, 'Ships'), desserts = boardScan(st, 'Desserts'), stacks = boardScan(st, 'Stacks'), mines = boardScan(st, 'Mines');
   try { saveBoardState(st); } catch (e) { console.warn('Board 分頁存不進去：' + e); }
-  var rows = playersSheet().getDataRange().getValues(), out = [];
+  var rows = playersSheet().getDataRange().getValues(), out = [], cos = companyBoard();
   for (var i = 1; i < rows.length; i++) {
     var id = String(rows[i][1] || '');
     if (!id) continue;
+    var co = cos[id] || null;   // 公司・榜（2026-11-26）：沒開公司是 null
     var earned = {};
     try { earned = JSON.parse(rows[i][6] || '{}') || {}; } catch (e) { }
     var part = function (src, best) {
@@ -1652,12 +1653,12 @@ function buildBoard() {
     var sp = { total: num(rows[i][5]), shop: num(shop.spent), donate: num(gd.donated), lamp: num(gd.lit) };
     sp.scratch = Math.max(0, sp.total - sp.shop - sp.donate - sp.lamp);
     sp.won = num((earned.scratch || {}).total) + num((earned.caishen || {}).total);  // 刮中的（含財神加碼）
-    if (!x.n && !c.n && !fm.n && !wf.n && !zc.n && !sh.n && !ds.n && !sk.n && !mn.n && x.best == null && c.best == null && !sp.total) continue;
+    if (!x.n && !c.n && !fm.n && !wf.n && !zc.n && !sh.n && !ds.n && !sk.n && !mn.n && x.best == null && c.best == null && !sp.total && !co) continue;
     // 有暱稱、指定頭像就用它，沒有才用 LINE 的
     var nick = String(rows[i][12] || '').replace(/^'/, '').trim().slice(0, 12), avatar = String(rows[i][13] || '');
     if (AVATAR_KEYS.indexOf(avatar) < 0) avatar = '';
     out.push({ id: id, name: nick || String(rows[i][2] || '旅人').slice(0, 20), avatar: avatar,
-      picture: !avatar && /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c, farm: fm, wifi: wf, zaocan: zc, ship: sh, dessert: ds, stack: sk, mine: mn, spend: sp });
+      picture: !avatar && /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c, farm: fm, wifi: wf, zaocan: zc, ship: sh, dessert: ds, stack: sk, mine: mn, spend: sp, company: co });
   }
   return { at: new Date().toISOString(), players: out };
 }
@@ -1672,7 +1673,7 @@ function leaderboard(input) {
   return {
     result: 'success', at: board.at, refreshed: refreshed,
     players: board.players.map(function (p) {
-      return { name: p.name, picture: p.picture, avatar: p.avatar || '', xitou: p.xitou, clean: p.clean, farm: p.farm, wifi: p.wifi, zaocan: p.zaocan, ship: p.ship, dessert: p.dessert, stack: p.stack, mine: p.mine, spend: p.spend, me: !!me && p.id === me };
+      return { name: p.name, picture: p.picture, avatar: p.avatar || '', xitou: p.xitou, clean: p.clean, farm: p.farm, wifi: p.wifi, zaocan: p.zaocan, ship: p.ship, dessert: p.dessert, stack: p.stack, mine: p.mine, spend: p.spend, company: p.company || null, me: !!me && p.id === me };
     })
   };
 }
@@ -4428,4 +4429,32 @@ function companyOvertime(input) {
     writeSave(g.lineId, 'company', rec);
     return companyOut(rec, { wallet: walletView(p), job: id, price: price });
   });
+}
+
+// 公司・榜（2026-11-26）：Saves 裡每家公司的名字、現在第幾階、累計淨賺（J 欄，扣完薪水；增資、轉出不算，搬家花掉的照算）、開幾天了
+// 許願「創一家公司」的人（指令碼屬性 COMPANY_FOUNDER，LINE 代號）多一個 founder，排行榜寫「創始執行長」
+function companyBoard() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet(), sheet = ss.getSheetByName('Saves'), out = {};
+  if (!sheet || sheet.getLastRow() < 2) return out;
+  var founder = PropertiesService.getScriptProperties().getProperty('COMPANY_FOUNDER') || '';
+  var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 10).getValues(), now = Date.now();
+  rows.forEach(function (r) {
+    var id = String(r[1] || '');
+    if (!id || String(r[2]) !== 'company' || !String(r[7] || '').trim()) return;
+    var t = r[0] instanceof Date ? r[0].getTime() : Date.parse(r[0]);
+    out[id] = { name: String(r[7]).replace(/^'/, '').slice(0, 24), stage: Math.max(0, Math.min(COMPANY_STAGES.length - 1, Number(r[8]) || 0)),
+      earned: Math.max(0, Math.round(Number(r[9]) || 0)), days: isFinite(t) ? Math.floor((now - t) / 864e5) + 1 : 1, founder: !!founder && id === founder };
+  });
+  return out;
+}
+
+// 在編輯器選這個按「執行」：從許願池找「創一家公司、當執行長」那個願，把許願的人記成創始執行長（指令碼屬性 COMPANY_FOUNDER）。
+// 找到不只一個就不改，把每個都列出來：再到「專案設定 → 指令碼屬性」把 COMPANY_FOUNDER 填成那一行的 line_id。
+function setCompanyFounder() {
+  var hits = readWishes().filter(function (w) { return /公司/.test(w.text) && /執行長|CEO/i.test(w.text) && w.lineId; });
+  hits.forEach(function (w) { Logger.log(w.at + '　' + w.id + '　line_id=' + w.lineId + '　' + w.text); });
+  if (hits.length !== 1) { Logger.log(hits.length ? '找到 ' + hits.length + ' 個，請自己把 COMPANY_FOUNDER 填成其中一個 line_id' : '沒找到這個願'); return; }
+  PropertiesService.getScriptProperties().setProperty('COMPANY_FOUNDER', hits[0].lineId);
+  CacheService.getScriptCache().remove(BOARD_CACHE_KEY);
+  Logger.log('創始執行長設好了（排行榜最多五分鐘後更新）');
 }

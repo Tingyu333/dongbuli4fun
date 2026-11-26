@@ -83,6 +83,18 @@
         /* 四本（身價・榜出現以後）：375 寬放不下原本的字距，縮一點 */
         .book.four { gap: .55rem; } .book.four button { font-size: .9rem; letter-spacing: .12em; padding: 0 .1rem; }
         @media (min-width: 400px) { .book.four { gap: 1rem; } .book.four button { letter-spacing: .2em; } }
+        /* 五本（身價・榜、公司・榜都出現）：再縮一點 */
+        .book.five { gap: .4rem; } .book.five button { font-size: .82rem; letter-spacing: .04em; padding: 0; }
+        @media (min-width: 400px) { .book.five { gap: .8rem; } .book.five button { letter-spacing: .14em; } }
+        /* 公司・榜：公司名字寫在現在的銘牌上（材質是實物、顏色固定，跟 company.html 的 .np1～.np5 同一套，縮小） */
+        .cplate { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; box-sizing: border-box;
+            font-family: 'Noto Serif TC', serif; font-size: 12px; line-height: 1.35; letter-spacing: .08em; padding: 2px 8px; border-radius: 2px; }
+        .cp1 { background: #f6f1e6; color: #6b6052; border: 1px solid #cfc6b6; }
+        .cp2 { background: linear-gradient(#c19866, #a77d4c); color: #fbf3e2; border: 1px solid #7d5c3c; text-shadow: 0 1px 0 rgba(0,0,0,.25); box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
+        .cp3 { background: linear-gradient(#f3f4f6, #c9ccd1 55%, #e2e4e7); color: #34373d; border: 3px double #8f949b; padding: 1px 9px; text-shadow: 0 1px 0 rgba(255,255,255,.7); }
+        .cp4 { background: #1f2125; color: #d9b75e; border: 1px solid #6b5a2c; box-shadow: inset 0 0 0 2px #1f2125, inset 0 0 0 3px #a88c45; padding: 3px 11px; }
+        .cp5 { background: linear-gradient(170deg, #3a3330 0 18%, #15110f 32%, #241d19 100%); color: #f6d98a; border: 2px solid; border-color: #ffe9a0 #8a6216 #6b4a12 #f6dc8a; box-shadow: inset 0 0 0 1px #c9a35a; padding: 2px 11px; }
+        .founder { display: inline-block; margin-right: .35rem; padding: 0 .3rem; border: 1px solid rgb(var(--wabi-shu) / .7); color: rgb(var(--wabi-shu)); font-family: 'Noto Sans TC', sans-serif; font-size: 10px; letter-spacing: .1em; line-height: 1.5; transform: rotate(-4deg); }
 
         /* 部門：七個一排擠不下，排成兩排（一排四個） */
         .seg.is-small { display: grid; grid-template-columns: repeat(5, 1fr); }   /* 九個部門加「全部」：五個一排，兩排 */
@@ -302,6 +314,7 @@
             <button type="button" data-book="spend" aria-pressed="false">花錢・榜</button>
             <button type="button" data-book="endless" aria-pressed="false">無盡・榜</button>
             <button type="button" data-book="worth" aria-pressed="false" class="hidden">身價・榜</button>
+            <button type="button" data-book="company" aria-pressed="false" class="hidden">公司・榜</button>
         </div>
 
         <section class="bg-white border border-stone-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-sm px-4 pt-5 pb-3">
@@ -422,12 +435,13 @@
         let players = null, at = '', book = 'work', metric = 'money', dept = 'all', cat = 'all', edept = 'wifi', emetric = 'far', loading = false, failed = '';
         try { const s = JSON.parse(sessionStorage.getItem('dongbuli-rank-tab') || '{}'); if (s.book) book = s.book; if (s.metric) metric = s.metric; if (s.dept) dept = s.dept; if (s.cat) cat = s.cat; if (s.edept) edept = s.edept; if (s.emetric) emetric = s.emetric; } catch (e) { }
         if (metric === 'alive') { book = 'endless'; edept = 'wifi'; emetric = 'far'; metric = 'best'; }  // 以前「撐最久」在打工・榜，現在搬到無盡・榜
-        if (!['work', 'spend', 'endless'].includes(book)) book = 'work';
+        if (!['work', 'spend', 'endless', 'company'].includes(book)) book = 'work';
         if (!['wifi', 'ship', 'stack'].includes(edept)) edept = 'wifi';
         if (!['far', 'money'].includes(emetric)) emetric = 'far';
         if (location.hash === '#spend') book = 'spend'; else if (location.hash === '#work') book = 'work';
         else if (location.hash === '#endless') book = 'endless';
-        else if (location.hash === '#worth') book = 'worth';   // 我的小島的連結（小島開放、後端接好才有這本）
+        else if (location.hash === '#worth') book = 'worth';
+        else if (location.hash === '#company') book = 'company';   // 公司・開的連結   // 我的小島的連結（小島開放、後端接好才有這本）
         else if (location.hash === '#endless-ship') { book = 'endless'; edept = 'ship'; }
         else if (location.hash === '#endless-stack') { book = 'endless'; edept = 'stack'; }   // 疊巢無盡模式結果區的連結
         else if (location.hash === '#dessert') { book = 'work'; dept = 'dessert'; metric = 'served'; }   // 甜點店結果區的連結：直接看甜點部出餐最多
@@ -437,6 +451,7 @@
         const BOOKS = {
             work: { title: '打工・榜', tag: '誰在二十七樓最勤勞，<br>牆上寫得清清楚楚。', go: [['xitou.html', '去坐洗部'], ['fangwu.html', '去房務部'], ['caiyuan.html', '去菜園部'], ['cengwang.html', '去蹭網部'], ['zaocan.html', '去早餐部'], ['huoyun.html', '去貨運部'], ['tiandian.html', '去甜點部'], ['diechao.html', '去疊巢部'], ['kuangkeng.html', '去礦坑部']], join: '打工' },
             spend: { title: '花錢・榜', tag: '錢不是賺來的，<br>是花出去才算數。', go: [['scratch.html', '去彩券行'], ['gongde.html', '去功德箱'], ['zaocan.html', '去早餐店']], join: '花錢' },
+            company: { title: '公司・榜', tag: '從一間車庫開始，<br>一件一件接出來的。', go: [['company.html', '去開公司']], join: '開公司' },
             worth: { title: '身價・榜', tag: '島上的一草一木，<br>都是一筆一筆買來的。', go: [['xiaodao.html', '去我的小島']], join: '買地蓋房子' },
             endless: { title: '無盡・榜', tag: '沒有時間限制，<br>撐得越久，名字寫得越大。', go: [['cengwang.html', '去蹭網部'], ['huoyun.html', '去貨運部'], ['diechao.html', '去疊巢部']], join: '玩無盡模式' },
         };
@@ -496,8 +511,15 @@
         const TIER_N = ['壹', '貳', '參', '肆', '伍'];
         function worthEntry(p) { const d = p.island; return d && d.worth ? { v: d.worth, main: fmt(d.worth), sub: [`島 ${TIER_N[d.tier] || ''}`, d.plots ? `${d.plots} 塊地` : '', d.house || ''].filter(Boolean).join('・') } : null; }
         const hasWorth = () => !!(players && players.some(p => 'island' in p));
+        // 公司・榜（2026-11-26）：後端給 company: { name, stage, earned 累計淨賺, days 開幾天, founder }，比累計淨賺（不是帳戶現在有多少，搬家花掉不會掉名次）
+        // 公司・開還沒開放前（COMPANY_OPEN = false）只有網址帶 ?company 才看得到這本（主人自己試）
+        const COMPANY_OPEN = false, COMPANY_STAGE = ['車庫', '小辦公室', '整層樓', '二十七樓', '大樓'];
+        const wan = v => v >= 1e6 ? '$' + Math.round(v / 1e4).toLocaleString() + '萬' : v >= 1e5 ? '$' + (Math.round(v / 1e3) / 10) + '萬' : fmt(v);   // 公司的錢大：十萬以上寫「萬」，375 寬才放得下名字
+        const hasCompany = () => !!(players && (COMPANY_OPEN || /[?&]company\b/.test(location.search)) && players.some(p => p.company));
+        function companyEntry(p) { const c = p.company; return c && c.earned > 0 ? { v: c.earned, main: wan(c.earned), sub: `${c.founder ? '' : '執行長 '}${p.name}・${COMPANY_STAGE[c.stage] || ''}・第 ${c.days} 天`, co: c } : null; }
         function entry(p) {
             if (book === 'worth') return worthEntry(p);
+            if (book === 'company') return companyEntry(p);
             if (book === 'spend') return spendEntry(p);
             if (book === 'endless') return endlessEntry(p);
             const x = p.xitou || {}, c = p.clean || {}, fm = p.farm || {}, wf = p.wifi || {}, zc = p.zaocan || {}, sh = p.ship || {}, ds = p.dessert || {}, sk = p.stack || {}, mn = p.mine || {};
@@ -612,8 +634,12 @@
             document.querySelectorAll('[data-emetric]').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.emetric === emetric)); b.textContent = ENDLESS[edept][b.dataset.emetric]; });
             // 身價・榜：後端有回 island（小島開放、接好後端）才出現
             document.querySelector('[data-book="worth"]').classList.toggle('hidden', !hasWorth());
-            document.querySelector('.book').classList.toggle('four', hasWorth());
+            document.querySelector('[data-book="company"]').classList.toggle('hidden', !hasCompany());
+            const nBooks = 3 + (hasWorth() ? 1 : 0) + (hasCompany() ? 1 : 0);
+            document.querySelector('.book').classList.toggle('four', nBooks === 4);
+            document.querySelector('.book').classList.toggle('five', nBooks === 5);
             if (book === 'worth' && players && !hasWorth()) book = 'work';
+            if (book === 'company' && players && !hasCompany()) book = 'work';
             document.querySelectorAll('[data-book]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.book === book)));
             const B = BOOKS[book];
             $('title').textContent = B.title; $('tagline').innerHTML = B.tag;
@@ -631,7 +657,8 @@
             const dsOld = dept === 'dessert' && players && players.length && players.every(p => !('dessert' in p));
             const skOld = dept === 'stack' && players && players.length && players.every(p => !('stack' in p));
             const mnOld = dept === 'mine' && players && players.length && players.every(p => !('mine' in p));
-            $('boardNote').textContent = book === 'worth' ? '我的小島上的地、設施、車船飛機火箭、家具、地板壁紙、衣服、藏品，照買的價錢加起來（一開始送的不算）。要用 LINE 登入，最多五分鐘上榜。'
+            $('boardNote').textContent = book === 'company' ? '開公司以來累計淨賺多少（扣完員工薪水；執行長增資、轉進錢包不算，搬家花掉的照算）。牌子是現在的辦公室：紙名片、木牌、拉絲銀牌、黑底金字、黑漆金框。要用 LINE 登入，最多五分鐘上榜。'
+                : book === 'worth' ? '我的小島上的地、設施、車船飛機火箭、家具、地板壁紙、衣服、藏品，照買的價錢加起來（一開始送的不算）。要用 LINE 登入，最多五分鐘上榜。'
                 : book === 'spend' ? CATS[cat].note
                 : book === 'endless' ? (endOld ? '後端還是舊版，看不到無盡・榜：要把 Code.gs 貼上去、重新部署（新版本）。' : ENDLESS[edept].notes[emetric] + '要用 LINE 登入，剛玩完最多一分鐘才會上榜。')
                 : shipOld ? '後端還是舊版，看不到貨運部：要把 Code.gs 貼上去、重新部署（新版本）。' : dsOld ? '後端還是舊版，看不到甜點部：要把 Code.gs 貼上去、重新部署（新版本）。' : skOld ? '後端還是舊版，看不到疊巢部：要把 Code.gs 貼上去、重新部署（新版本）。' : mnOld ? '後端還是舊版，看不到礦坑部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'layers' ? '疊・巢一般模式一場疊最高幾層（無盡模式在「無盡・榜」），一樣高比「正」多、再比賺多。要用 LINE 登入，剛收工最多一分鐘才會上榜。' : metric === 'served' && dept === 'dessert' ? '甜點店一輪出餐最多幾盤，同樣多比誰氣走的少、再比報廢少。要用 LINE 登入，剛打烊最多一分鐘才會上榜。' : metric === 'combo' ? '貨運一般模式一趟裡最長的連撈（連續撈到好東西、中間沒撈到垃圾也沒撞到），一樣長比運費多。要用 LINE 登入，剛靠港最多一分鐘才會上榜。' : zcOld ? '後端還是舊版，看不到早餐部：要把 Code.gs 貼上去、重新部署（新版本）。' : metric === 'served' ? '早餐店一天出餐最多幾位客人，同樣多比誰氣走的少。要用 LINE 登入，剛打烊最多一分鐘才會上榜。' : metric === 'best'
@@ -665,13 +692,16 @@
                     <span class="rank${place ? ' is-top' : ''}">${place ? TOP[place - 1] : r.rank}</span>
                     ${pic}
                     <span class="flex-1 min-w-0">
-                        <span class="flex items-baseline text-sm text-wabi-dark tracking-wider"><span class="truncate min-w-0 ${place ? 'gname' : ''}">${esc(r.p.name)}</span>${r.p.me ? '<span class="me-tag shrink-0">我</span>' : ''}</span>
-                        <span class="block text-[11px] font-sans tracking-wide leading-snug text-stone-400">${esc(r.e.sub)}</span>
+                        ${r.e.co ? `<span class="flex items-center min-w-0"><span class="cplate cp${r.e.co.stage + 1}">${esc(r.e.co.name)}</span></span>`
+                        : `<span class="flex items-baseline text-sm text-wabi-dark tracking-wider"><span class="truncate min-w-0 ${place ? 'gname' : ''}">${esc(r.p.name)}</span>${r.p.me ? '<span class="me-tag shrink-0">我</span>' : ''}</span>`}
+                        ${r.e.co ? `<span class="flex items-end gap-2 mt-1"><span class="flex-1 min-w-0 text-[11px] font-sans tracking-wide leading-snug text-stone-400">${r.e.co.founder ? '<span class="founder">創始執行長</span>' : ''}${esc(r.e.sub)}${r.p.me ? '<span class="me-tag">我</span>' : ''}</span><span class="shrink-0 font-sans text-sm ${place ? 'gval' : 'text-wabi-dark'}">${esc(r.e.main)}</span></span>`
+                            : `<span class="block text-[11px] font-sans tracking-wide leading-snug text-stone-400">${esc(r.e.sub)}</span>`}
                     </span>
-                    <span class="shrink-0 font-sans ${place ? 'gval' : 'text-wabi-dark'} ${book === 'work' && metric === 'best' ? 'text-xl font-light' : book === 'endless' ? 'text-base' : 'text-sm'}">${esc(r.e.main)}</span>
+                    ${r.e.co ? '' : `<span class="shrink-0 font-sans ${place ? 'gval' : 'text-wabi-dark'} ${book === 'work' && metric === 'best' ? 'text-xl font-light' : book === 'endless' ? 'text-base' : 'text-sm'}">${esc(r.e.main)}</span>`}
                 </div>`;
             }).join('') : `<p class="py-10 text-center text-xs font-sans tracking-wider text-stone-400 leading-relaxed">${
-                book === 'worth' ? '還沒有人買地蓋房子。<br>第一座島在等你。'
+                book === 'company' ? '還沒有公司賺到錢。<br>車庫的鐵捲門開著。'
+                : book === 'worth' ? '還沒有人買地蓋房子。<br>第一座島在等你。'
                 : book === 'spend' ? (players.length && !players.some(p => p.spend) ? '花錢・榜要等後端重新部署「新版本」才有。' : CATS[cat].empty)
                 : book === 'endless' ? (players.length && players.every(p => !p[edept] || !('endless' in p[edept])) ? '無盡・榜要等後端重新部署「新版本」才有。' : `${DEPT[edept]}還沒有人玩過無盡模式。<br>第一名在等你。`)
                 : dept === 'zaocan' && players.length && players.every(p => !('zaocan' in p)) ? '早餐部要等後端重新部署「新版本」才有。'
@@ -685,7 +715,7 @@
                 const s = document.createElement('span'); s.className = 'avatar'; s.textContent = img.dataset.initial; img.replaceWith(s);
             }, { once: true }));
             if (Line.loggedIn && list.length && !mine) {
-                box.insertAdjacentHTML('beforeend', `<p class="pt-3 text-center text-[11px] font-sans tracking-wider text-stone-400">你還沒上這個榜：${book === 'worth' ? '去小島買一塊地' : book === 'spend' ? '去花一點錢' : book === 'endless' ? '去玩一次無盡模式' : '去打一次工'}，最多五分鐘就會出現，也可以按下面的「刷新」。</p>`);
+                box.insertAdjacentHTML('beforeend', `<p class="pt-3 text-center text-[11px] font-sans tracking-wider text-stone-400">你還沒上這個榜：${book === 'company' ? '去接一件案子' : book === 'worth' ? '去小島買一塊地' : book === 'spend' ? '去花一點錢' : book === 'endless' ? '去玩一次無盡模式' : '去打一次工'}，最多五分鐘就會出現，也可以按下面的「刷新」。</p>`);
             }
             const d = at ? new Date(at) : null;
             $('boardAt').textContent = (d && !isNaN(d) ? `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')} 寫的榜` : '') + (stale && loading ? '・更新中…' : stale && failed ? '・連不到後端，這是上次的' : '');
