@@ -23,6 +23,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/theme.css?v=20261116d">
     <script src="assets/theme.js?v=20261117c"></script>
+    <script src="assets/line.js?v=20261116d"></script>
+    <script src="assets/wallet.js?v=20261120c"></script>
     <script src="assets/company-office.js?v=20261125c"></script>
     <script src="assets/company-rules.js?v=20261125j"></script>
     <style>
@@ -327,6 +329,41 @@ html.night .chk.on { background: #e6edf2; color: #1b6d80; }
 html.night #coach { box-shadow: 0 10px 28px rgba(0,0,0,.5); } html.night #coach .ctext b { color: #1b6d80; } html.night #coach .cbtns button { color: #51606d; } html.night #coach.tour #coachSkip { color: #1b6d80; }
 html.night .coachT { box-shadow: 0 0 0 3px #8fd3e0, 0 0 18px rgba(143,211,224,.7) !important; }
 html.night .scene .hint { background: rgba(0,0,0,.5); }
+/* 等後端的蓋板（2026-11-26，使用者：等待時間加個蓋板動畫，才不會乾等）：#busy，company.html 的 Busy.show(kind) */
+#busy { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgba(38,48,58,.28); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  opacity: 0; transition: opacity .25s; -webkit-user-select: none; user-select: none; touch-action: none; }
+#busy.on { opacity: 1; } #busy[hidden] { display: none; }
+#busy .bx { width: 264px; padding: 18px 18px 16px; text-align: center; border-radius: 20px; }
+#busy .route { display: flex; align-items: center; justify-content: space-between; height: 22px; font-size: 10.5px; letter-spacing: .2em; color: var(--sub); }
+#busy .route b { font-weight: 400; padding: 3px 9px; border-radius: 999px; border: 1px solid rgba(79,169,191,.45); color: var(--teal); background: rgba(79,169,191,.1); }
+#busy .stage { position: relative; height: 150px; margin-top: 2px; }
+#busy .lane { position: absolute; left: 36px; right: 36px; top: 0; height: 60px; pointer-events: none; }
+#busy .coin { position: absolute; left: 0; top: 40px; animation: bz-x 1.5s linear infinite; }
+#busy .coin i { display: block; width: 10px; height: 10px; border-radius: 50%; background: #f4c64f; border: 2px solid #c08a1e; box-shadow: inset -2px -2px 0 #e0a933, 0 0 6px rgba(244,198,79,.7); animation: bz-y 1.5s cubic-bezier(.3,.0,.7,1) infinite; }
+#busy .coin:nth-child(2), #busy .coin:nth-child(2) i { animation-delay: .5s; } #busy .coin:nth-child(3), #busy .coin:nth-child(3) i { animation-delay: 1s; }
+#busy.back .coin { animation-name: bz-xr; }
+#busy .who { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); }
+#busy .who img { display: block; image-rendering: pixelated; transform-origin: 50% 100%; animation: bz-hop 1.1s cubic-bezier(.3,1.4,.5,1) infinite; }
+#busy .shadow { position: absolute; left: 50%; bottom: 8px; width: 90px; height: 10px; margin-left: -45px; border-radius: 50%; background: radial-gradient(rgba(38,48,58,.22), rgba(38,48,58,0) 70%); animation: bz-sh 1.1s cubic-bezier(.3,1.4,.5,1) infinite; }
+#busy .sparks i { position: absolute; width: 4px; height: 4px; background: #8fd3e0; box-shadow: 0 0 6px #8fd3e0; opacity: 0; animation: bz-sp 2.2s ease-out infinite; }
+#busy .sparks i:nth-child(1) { left: 58px; top: 70px; } #busy .sparks i:nth-child(2) { right: 62px; top: 56px; animation-delay: .7s; } #busy .sparks i:nth-child(3) { left: 112px; top: 34px; animation-delay: 1.4s; }
+#busy .tx { margin-top: 6px; min-height: 1.6em; font-size: 12.5px; letter-spacing: .16em; color: var(--ink); transition: opacity .2s; }
+#busy .dots { margin-top: 6px; height: 6px; } #busy .dots i { display: inline-block; width: 4px; height: 4px; margin: 0 3px; border-radius: 50%; background: var(--teal); animation: bz-dot 1.2s ease-in-out infinite; }
+#busy .dots i:nth-child(2) { animation-delay: .15s; } #busy .dots i:nth-child(3) { animation-delay: .3s; }
+#busy.done .dots, #busy.done .lane, #busy.done .sparks { visibility: hidden; }
+#busy.done .who img { animation: bz-yay .5s cubic-bezier(.3,1.6,.5,1) both; }
+#busy.done .tx { color: var(--teal); }
+#busy.done .tx::before { content: ''; display: inline-block; width: 7px; height: 12px; margin: 0 9px 0 0; border: solid var(--teal); border-width: 0 2px 2px 0; transform: translateY(-2px) rotate(45deg); }
+@keyframes bz-x { 0% { transform: translateX(0); opacity: 0; } 10% { opacity: 1; } 88% { opacity: 1; } 100% { transform: translateX(178px); opacity: 0; } }
+@keyframes bz-xr { 0% { transform: translateX(178px); opacity: 0; } 10% { opacity: 1; } 88% { opacity: 1; } 100% { transform: translateX(0); opacity: 0; } }
+@keyframes bz-y { 0%, 100% { transform: translateY(0) rotateY(0); } 50% { transform: translateY(-34px) rotateY(180deg); } }
+@keyframes bz-hop { 0%, 100% { transform: translateY(0) scale(1, 1); } 12% { transform: translateY(0) scale(1.08, .9); } 40% { transform: translateY(-9px) scale(.96, 1.05); } 66% { transform: translateY(0) scale(1.05, .94); } 80% { transform: translateY(0) scale(1, 1); } }
+@keyframes bz-sh { 0%, 100%, 80% { transform: scaleX(1); opacity: 1; } 40% { transform: scaleX(.75); opacity: .6; } }
+@keyframes bz-yay { 0% { transform: translateY(0) scale(1.1, .88); } 45% { transform: translateY(-16px) scale(.94, 1.08); } 100% { transform: translateY(0) scale(1, 1); } }
+@keyframes bz-sp { 0% { opacity: 0; transform: translateY(6px) scale(.6); } 25% { opacity: 1; } 100% { opacity: 0; transform: translateY(-14px) scale(1); } }
+@keyframes bz-dot { 0%, 100% { opacity: .25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) { #busy .coin, #busy .coin i, #busy .who img, #busy .shadow, #busy .sparks i, #busy .dots i { animation: none !important; } #busy .coin { opacity: 1; } }
+.gate button.login { margin-top: 16px; min-height: 44px; padding: 0 26px; border-radius: 14px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); font: inherit; font-size: 12.5px; letter-spacing: .2em; }
 </style>
 </head>
 
@@ -379,6 +416,8 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
 
 <!-- 新手教學：指著要按的地方的泡泡 -->
 <div id="coach" hidden><div class="ctext" id="coachText"></div><div class="cbtns"><button id="coachX" hidden>略過</button><button id="coachSkip">略過教學</button></div><i class="carrow" id="coachArrow"></i></div>
+<!-- 等後端的蓋板（增資、轉進錢包、加班費、讀存檔） -->
+<div id="busy" hidden><div class="bx glass"><div class="route" id="bzRoute"></div><div class="stage"><div class="lane" id="bzLane"><span class="coin"><i></i></span><span class="coin"><i></i></span><span class="coin"><i></i></span></div><div class="sparks"><i></i><i></i><i></i></div><div class="shadow"></div><div class="who"><img id="bzImg" alt=""></div></div><div class="tx" id="bzTx"></div><div class="dots"><i></i><i></i><i></i></div></div></div>
 <!-- 確認視窗（不用瀏覽器的 alert／confirm） -->
 <div class="layer center" id="askLayer" hidden style="z-index:30"><div class="back" id="askBack"></div><div class="sheet glass ask" id="askBox"></div></div>
 <!-- 蓋上來的那一層 -->
@@ -389,21 +428,131 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     const R = CompanyRules, $ = id => document.getElementById(id);
     const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const OPEN = false;                                  // 使用者試過、接好後端才開放
-    const PREVIEW = /[?&]preview\b/.test(location.search);
-    if (!OPEN && !PREVIEW) { $('gate').hidden = false; return; }
-    $('main').hidden = false;
+    const PREVIEW = /[?&]preview\b/.test(location.search);                         // 試玩：試玩錢包、存在這支手機、不碰後端
+    const LIVE = !PREVIEW && (OPEN || /[?&]live\b/.test(location.search));        // 正式：真的錢包、存檔在後端（開放前用 ?live 試）
+    if (!LIVE && !PREVIEW) { $('gate').hidden = false; return; }
 
-    // ---------- 存檔（試玩：存在這支手機，不動真的錢包、不碰後端） ----------
+    // ---------- 存檔 ----------
+    // 試玩：存在這支手機 localStorage（dongbuli-company-preview）。
+    // 正式（做法 C，2026-11-26）：存檔在後端 Saves 分頁。手機照常每秒更新 S，有改過就大約 30 秒送一次（companySave，帶 rev），
+    // 離開頁面時也送；另一支手機存過（conflict）或賺太快（rejected）就換成後端那份。
+    // 增資、轉進錢包、加班費要等後端一次做完（serverAct），等的時候蓋 #busy 動畫。
     const KEY = 'dongbuli-company-preview', TRIAL_MONEY = 300000;
-    let S = null;
-    try { S = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { S = null; }
-    if (S && S.staff) S.staff.forEach(s => { if (s.trial && s.done > 0) s.trial = false; });
-    if (S && S.staff && !S.dexInfo) { S.dexInfo = {}; S.staff.forEach(s => { const d = S.dexInfo[s.key] = S.dexInfo[s.key] || { first: S.created, done: 0, lv: 1 }; d.done += s.done; d.lv = Math.max(d.lv, s.lv); }); }   // 舊存檔：從現在的員工補   // 試用期做完第一件就轉正
+    let S = null, rev = 0, dirty = false, pushing = null, blocking = false, lastPush = 0;
+    if (PREVIEW) { try { S = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { S = null; } fixup(); }
+    function fixup() {   // 舊存檔補欄位
+        if (S && S.staff) S.staff.forEach(s => { if (s.trial && s.done > 0) s.trial = false; });   // 試用期做完第一件就轉正
+        if (S && S.staff && !S.dexInfo) { S.dexInfo = {}; S.staff.forEach(s => { const d = S.dexInfo[s.key] = S.dexInfo[s.key] || { first: S.created, done: 0, lv: 1 }; d.done += s.done; d.lv = Math.max(d.lv, s.lv); }); }   // 舊存檔：從現在的員工補
+        if (S && !S.inject) S.inject = { d: '', amt: 0 };
+    }
     let resetting = false;
-    const save = () => { if (resetting || !S) return; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } };
-    const now = () => Date.now() + (S ? S.shift || 0 : 0);   // 試玩可以「快轉」
-    const fresh = () => ({ v: 1, name: '', stage: 0, acct: 0, wallet: TRIAL_MONEY, jobsDone: 0, staff: [], board: [], jobs: [], done: [], applicants: [], applyAt: 0, nextBoardAt: 0, adUntil: 0,
+    const save = () => { if (resetting || !S) return; if (LIVE) { dirty = true; return; } try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } };
+    const now = () => Date.now() + (PREVIEW && S ? S.shift || 0 : 0);   // 試玩可以「快轉」
+    const fresh = () => ({ v: 1, name: '', stage: 0, acct: 0, wallet: PREVIEW ? TRIAL_MONEY : undefined, jobsDone: 0, staff: [], board: [], jobs: [], done: [], applicants: [], applyAt: 0, nextBoardAt: 0, adUntil: 0,
         series: {}, gifts: [], equip: {}, dex: { sp: {}, gen: {} }, hiredSp: [], last: null, today: { d: '', net: 0 }, inject: { d: '', amt: 0 }, lastSeen: 0, shift: 0, tut: 0, created: Date.now() });
+    const wal = () => PREVIEW ? S.wallet : Wallet.money;   // 錢包：試玩是存檔裡的，正式是真的錢包
+    const clone = o => JSON.parse(JSON.stringify(o));
+
+    // ---------- 等後端的蓋板 ----------
+    const BUSY = {
+        load: { who: 'nugget', route: '', steps: [[0, '雞塊去拉鐵捲門'], [1800, '把公司的帳搬下來'], [5000, '後端剛睡醒，再等一下'], [11000, '還在等，Google 今天有點慢']] },
+        sync: { who: 'nugget', route: '', steps: [[0, '對一下帳'], [2200, '看看另一支手機有沒有動過'], [6000, '後端剛睡醒，再等一下'], [11000, '還在等，Google 今天有點慢']] },
+        inject: { who: 'raccoon', route: ['錢包', '公司帳戶'], steps: [[0, '把錢包的錢搬進公司'], [1800, '浣熊大王在點鈔'], [4500, '每一枚都要咬咬看是不是真的'], [9000, '銀行今天人有點多']] },
+        out: { who: 'raccoon', route: ['公司帳戶', '錢包'], back: true, steps: [[0, '把公司的錢轉進錢包'], [1800, '浣熊大王在跑銀行'], [4500, '抽到號碼牌了，還要等'], [9000, '銀行今天人有點多']] },
+        overtime: { who: 'xiaowu', route: ['錢包', '加班費'], steps: [[0, '叫大家留下來加班'], [1800, '小吳鴨推了推眼鏡'], [4500, '幫大家訂便當'], [9000, '便當還在路上']] },
+    };
+    const Busy = (() => {
+        const el = $('busy'); let timers = [], since = 0;
+        const say = t => { $('bzTx').textContent = t; };
+        return {
+            show(kind) {
+                const k = BUSY[kind] || BUSY.sync;
+                timers.forEach(clearTimeout); timers = [];
+                el.classList.remove('done'); el.classList.toggle('back', !!k.back);
+                $('bzImg').src = 'assets/company/' + k.who + '.png?v=20261125b';
+                $('bzImg').onload = () => { const im = $('bzImg'); im.style.width = im.naturalWidth * 2 + 'px'; im.style.height = im.naturalHeight * 2 + 'px'; };
+                $('bzRoute').innerHTML = k.route ? `<b>${k.route[0]}</b><b>${k.route[1]}</b>` : '';
+                $('bzLane').hidden = !k.route;
+                k.steps.forEach(([at, t]) => timers.push(setTimeout(() => say(t), at)));
+                el.hidden = false; requestAnimationFrame(() => el.classList.add('on'));
+                since = performance.now();
+            },
+            // 收起來：有 doneText 就先停在「好了」那一下；太快回來的也至少給動畫跑一下，不要一閃就不見
+            async hide(doneText) {
+                timers.forEach(clearTimeout); timers = [];
+                const wait = Math.max(0, 650 - (performance.now() - since));
+                if (wait) await new Promise(r => setTimeout(r, wait));
+                if (doneText) { el.classList.add('done'); say(doneText); await new Promise(r => setTimeout(r, 750)); }
+                el.classList.remove('on'); await new Promise(r => setTimeout(r, 260));
+                el.hidden = true; el.classList.remove('done');
+            },
+        };
+    })();
+
+    // ---------- 跟後端同步（正式） ----------
+    const MSG = { conflict: '另一支手機動過公司，換成那邊的進度', rejected: '這段進度跟後端對不起來，用回上一次存的' };
+    function adoptServer(r, msg) {   // 換成後端那份
+        hide();
+        if (!r.save) { S = null; rev = 0; dirty = false; openNote(0); if (msg) toast('後端找不到這家公司，重新開一家'); return; }
+        S = r.save; rev = r.rev; dirty = false; fixup();
+        if (S.wallet !== undefined) delete S.wallet;
+        tick(); render();
+        if (msg) toast(msg);
+    }
+    function loggedOut() {
+        S = null; dirty = false; $('main').hidden = true; hide(); $('coach').hidden = true;
+        gateLogin('登入過期了，再登入一次就好。');
+    }
+    // 背景存檔：不蓋板
+    function push(force) {
+        if (!LIVE || !S || !S.name || blocking || pushing || (!dirty && !force)) return pushing || Promise.resolve();
+        dirty = false; lastPush = Date.now();
+        const base = rev;
+        pushing = (async () => {
+            try {
+                const r = await Line.call({ type: 'companySave', save: clone(S), rev: base });
+                if (r.result === 'success') { if (rev === base) rev = r.rev; }
+                else if (MSG[r.result]) adoptServer(r, MSG[r.result]);
+                else if (r.result === 'unauthorized') loggedOut();
+                else { dirty = true; if (r.error) console.warn('存檔：', r.error); }
+            } catch (e) { dirty = true; }
+            finally { pushing = null; }
+        })();
+        return pushing;
+    }
+    // 要等後端的動作：先把背景存檔送完、錢包送完，再連同存檔一起送；成功就換成後端回來的那份
+    async function serverAct(kind, body, doneText) {
+        if (blocking) return null;
+        blocking = true; Busy.show(kind);
+        let ok = null, msg = '';
+        try {
+            if (pushing) await pushing;
+            await Wallet.settle();
+            const r = await Line.call({ ...body, save: clone(S), rev });
+            if (r.result === 'success') { S = r.save; rev = r.rev; dirty = false; fixup(); if (r.wallet) Wallet.adopt(r.wallet); ok = r; }
+            else if (MSG[r.result]) { blocking = false; adoptServer(r, MSG[r.result]); }
+            else if (r.result === 'unauthorized') { blocking = false; await Busy.hide(); loggedOut(); return null; }
+            else msg = /不認得的請求/.test(r.error || '') ? '後端還是舊版，要重新部署「新版本」' : (r.error || '後端沒回應');
+        } catch (e) { msg = '連不到後端，可能是網路不穩'; }
+        await Busy.hide(ok ? (typeof doneText === 'function' ? doneText(ok) : doneText) : '');
+        blocking = false;
+        if (msg) toast(msg);
+        if (S && S.name) { tick(); render(); }
+        return ok;
+    }
+    // 登入畫面（正式要先登入：存檔和錢都在 LINE 帳號上）
+    function gateLogin(text) {
+        const g = $('gate'); g.hidden = false;
+        g.innerHTML = `<h1>公司・開</h1><p>${text || '公司的帳要記在 LINE 帳號上，<br>先登入才能開公司。'}</p><button class="login" id="gLogin">用 LINE 登入</button><br><a href="member.html">回會員・我</a>`;
+        $('gLogin').onclick = () => Line.login();
+    }
+    function gateError(text) {
+        const g = $('gate'); g.hidden = false;
+        g.innerHTML = `<h1>公司・開</h1><p>${text}</p><button class="login" id="gRetry">再試一次</button><br><a href="member.html">回會員・我</a>`;
+        $('gRetry').onclick = () => location.reload();
+    }
+    if (PREVIEW) $('main').hidden = false;
+    else Line.on(type => { if (type === 'login') location.reload(); });   // 在這頁登入好了：重新讀一次
 
     // ---------- 角色圖 ----------
     const SP = {};
@@ -448,7 +597,10 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
             $('askYes').onclick = () => done(true); $('askNo').onclick = $('askBack').onclick = () => done(false);
         });
     }
-    function payWallet(n) { if (S.wallet < n) { toast('試玩錢包不夠了（公司頁最下面可以加）'); return false; } S.wallet -= n; return true; }
+    function payWallet(n) {
+        if (!PREVIEW) { if (!Wallet.spend(n)) { toast('錢包不夠'); return false; } return true; }   // 正式：真的錢包（跟店面升級一樣，手機扣、再同步）
+        if (S.wallet < n) { toast('試玩錢包不夠了（公司頁最下面可以加）'); return false; } S.wallet -= n; return true;
+    }
 
     // ---------- 開場（三張紙條 → 取名字 → 送一位試用員工＋雞塊的教學案） ----------
     const NOTES = [
@@ -481,7 +633,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
             S.staff.push(trial); addDex(trial);
             S.board = [R.tutorialCase(now())]; S.nextBoardAt = now() + 60000; S.tut = 1; S.coach = 1;
             S.applicants = R.applicants(0, [], Math.random, true); S.applyAt = now() + R.FREE_REFRESH * 60000;
-            save(); hide(); go('board'); toast('送你一位試用期的員工：倉鼠・小麥');
+            save(); push(true); hide(); go('board'); toast('送你一位試用期的員工：倉鼠・小麥');
         };
     }
 
@@ -688,7 +840,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     function openApply() {
         const full = S.staff.length >= st().seats, left = Math.max(0, S.applyAt - now());
         show(`<div class="hd2"><h2>應徵</h2><button class="x" id="aClose">關</button></div>
-            <div class="sub" style="margin:0 2px"><span class="num">員工 ${S.staff.length} / ${st().seats}${full ? '・坐滿了，搬家才有位子' : '・還能請 ' + (st().seats - S.staff.length) + ' 位'}</span><span class="r num">錢包 ${R.fmt(S.wallet)}</span></div>
+            <div class="sub" style="margin:0 2px"><span class="num">員工 ${S.staff.length} / ${st().seats}${full ? '・坐滿了，搬家才有位子' : '・還能請 ' + (st().seats - S.staff.length) + ' 位'}</span><span class="r num">錢包 ${R.fmt(wal())}</span></div>
             ${S.applicants.map((s, k) => { const sp = s.special ? R.SPECIALS[s.key] : null, fee = R.hireFee(S.stage, s);
                 return `<div class="app glass${sp ? ' gold' : ''}" style="margin:10px 0 0">${avaHtml(spriteKey(s))}<div><div class="nm">${esc(R.staffName(s))}${sp ? '<span class="star"></span><small>特別人選</small>' : '<small>一般・' + R.COLORS[s.color] + '</small>'}</div>${statsHtml(s)}<div class="say">${esc(sp ? sp.skill + '：' + sp.skillText : s.say)}</div></div>
                 <div class="ft num"><span>簽約金 <b>${R.fmt(fee)}</b>・薪水抽 ${sp ? 1.5 : 1} 份</span><button data-k="${k}" ${full ? 'disabled' : ''}>聘用</button></div></div>`; }).join('') || '<div class="empty">這一批都請完了</div>'}
@@ -698,7 +850,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
             const s = S.applicants[+b.dataset.k], fee = R.hireFee(S.stage, s);
             if (S.staff.length >= st().seats) return toast('位子坐滿了');
             const tutHire = S.coach === 6 || S.coach === 7;   // 教學那一位：錢包不夠就公司請客，教學不會卡住
-            if (tutHire && S.wallet < fee) toast('第一位的簽約金公司請客');
+            if (tutHire && wal() < fee) toast('第一位的簽約金公司請客');
             else if (!payWallet(fee)) return;
             S.applicants.splice(+b.dataset.k, 1); s.id = 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1e4); S.staff.push(s); if (s.special) S.hiredSp.push(s.key); addDex(s);
             if (S.coach === 6 || S.coach === 7) S.coach = 8;
@@ -896,7 +1048,9 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
             return `<div class="row"><span class="tt">〈${esc(j.c.title)}〉<small>${esc(names)}${sleeping ? '・茱莉鴨睡著了，慢一點' : ''}</small><div class="bar"><i style="width:${u * 100}%"></i></div></span><span class="acts"><span class="num" style="font-size:12px;color:var(--sub)">${R.clock((j.end - t) / 1000)}</span>${j.c.tutorial ? '' : `<button class="mini num" data-ot="${j.id}">加班 ${R.fmt(R.overtimePrice(j))}</button>`}</span></div>`;
         }).join('') || '<div class="empty">沒有在做的案子・去委託接一件</div>';
         document.querySelectorAll('#runList .row.done').forEach(e => e.onclick = () => openReceipt(S.jobs.find(j => j.id === e.dataset.j)));
-        document.querySelectorAll('#runList [data-ot]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const j = S.jobs.find(x => x.id === b.dataset.ot); if (!j || j.fin) return; if (!await ask('付加班費？', '用錢包付 ' + R.fmt(R.overtimePrice(j)) + '，〈' + esc(j.c.title) + '〉馬上做完。', { ok: '付加班費' })) return; if (!payWallet(R.overtimePrice(j))) return; j.end = now(); tick(); });
+        document.querySelectorAll('#runList [data-ot]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const j = S.jobs.find(x => x.id === b.dataset.ot); if (!j || j.fin) return; if (!await ask('付加班費？', '用錢包付 ' + R.fmt(R.overtimePrice(j)) + '，〈' + esc(j.c.title) + '〉馬上做完。', { ok: '付加班費' })) return;
+            if (LIVE) { const id = j.id; if (await serverAct('overtime', { type: 'companyOvertime', job: id }, '大家留下來加班了')) { const k = S.jobs.find(x => x.id === id); if (k && !k.fin) k.end = Math.min(k.end, now()); tick(); } return; }   // 正式：後端扣錢包、記加班費
+            if (!payWallet(R.overtimePrice(j))) return; j.end = now(); tick(); });
     }
     function renderBoard() {
         $('title').textContent = '委託'; $('moneyLab').textContent = '公司帳戶';
@@ -920,8 +1074,8 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         document.querySelectorAll('#cards .card').forEach(e => e.onclick = () => openDispatch(S.board[+e.dataset.k]));
     }
     function renderStaff() {
-        $('title').textContent = '員工'; $('moneyLab').textContent = '錢包'; $('money').textContent = R.fmt(S.wallet);
-        $('staffLine').textContent = S.staff.length + ' / ' + st().seats + ' 人・' + st().name + '最多 ' + st().seats + ' 人・錢包 ' + R.fmt(S.wallet);
+        $('title').textContent = '員工'; $('moneyLab').textContent = '錢包'; $('money').textContent = R.fmt(wal());
+        $('staffLine').textContent = S.staff.length + ' / ' + st().seats + ' 人・' + st().name + '最多 ' + st().seats + ' 人・錢包 ' + R.fmt(wal());
         const seatsLeft = st().seats - S.staff.length;   // 使用者：招募按鈕不明顯——改成整條的深色按鈕
         $('openApply').textContent = seatsLeft > 0 ? '招募新員工・還能請 ' + seatsLeft + ' 位' : '看應徵的人・位子坐滿了';
         $('openApply').classList.toggle('main', seatsLeft > 0);
@@ -967,7 +1121,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     }
     // 執行長增資：自己選金額，＋／－一次 1,000（使用者 2026-11-25）；長按會一直加
     function openInject(injLeft, next) {
-        const max = Math.min(injLeft, S.wallet);
+        const max = Math.min(injLeft, wal());
         if (max <= 0) return toast(injLeft ? '錢包沒錢' : '今天的增資額度用完了');
         const short = next ? Math.max(0, next.cost - S.acct) : 0, lo = Math.min(1000, max);
         let amt = short ? Math.min(max, Math.ceil(short / 1000) * 1000) : lo;   // 預設：搬家還差多少（沒差就 1,000）
@@ -979,7 +1133,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
                 <button class="num stepb" id="iMinus" style="width:66px;height:44px;border-radius:12px;font:inherit;font-size:13px;color:var(--ink);touch-action:manipulation">−1,000</button>
                 <b class="num" id="iAmt" style="font-weight:300;font-size:26px;min-width:120px;color:var(--ink)"></b>
                 <button class="num stepb" id="iPlus" style="width:66px;height:44px;border-radius:12px;font:inherit;font-size:13px;color:var(--ink);touch-action:manipulation">+1,000</button></div>
-              <div class="kv num" style="justify-content:center;margin-top:4px"><span style="line-height:1.7">今天還能增資 ${R.fmt(injLeft)}・錢包 ${R.fmt(S.wallet)}${short ? '<br>公司帳戶離搬家還差 ' + R.fmt(short) : ''}</span></div>
+              <div class="kv num" style="justify-content:center;margin-top:4px"><span style="line-height:1.7">今天還能增資 ${R.fmt(injLeft)}・錢包 ${R.fmt(wal())}${short ? '<br>公司帳戶離搬家還差 ' + R.fmt(short) : ''}</span></div>
               <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">${short && Math.ceil(short / 1000) * 1000 <= max ? '<button class="mini num" id="iShort" style="font:inherit;font-size:11px;padding:6px 12px;border-radius:10px;border:1px solid rgba(47,125,144,.5);background:none;color:var(--teal)">補到能搬家</button>' : ''}<button class="mini num" id="iMax" style="font:inherit;font-size:11px;padding:6px 12px;border-radius:10px;border:1px solid rgba(47,125,144,.5);background:none;color:var(--teal)">全部 ${R.fmt(max)}</button></div></div>
             <div class="kv" style="display:block;line-height:1.7;margin-top:10px"><span>錢包的錢只能這樣進公司，${st().name}每天最多增資 ${R.fmt(st().inject)}。</span></div>
             <div class="cta"><button class="main num" id="iGo" style="flex:1"></button></div>`, { center: true });
@@ -992,11 +1146,15 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         if ($('iShort')) $('iShort').onclick = () => { amt = clamp(Math.ceil(short / 1000) * 1000); draw(); };
         $('iMax').onclick = () => { amt = max; draw(); };
         $('iClose').onclick = hide;
-        $('iGo').onclick = () => { if (amt > Math.min(st().inject - S.inject.amt, S.wallet)) return toast('超過今天的額度了'); S.wallet -= amt; S.acct += amt; S.inject.amt += amt; save(); hide(); renderCompany(); toast('增資 ' + R.fmt(amt)); };
+        $('iGo').onclick = async () => {
+            if (amt > Math.min(st().inject - S.inject.amt, wal())) return toast('超過今天的額度了');
+            if (LIVE) { hide(); if (await serverAct('inject', { type: 'companyInject', amount: amt }, '增資 ' + R.fmt(amt) + ' 入帳了')) renderCompany(); return; }   // 正式：後端一次扣錢包、加公司帳戶
+            S.wallet -= amt; S.acct += amt; S.inject.amt += amt; save(); hide(); renderCompany(); toast('增資 ' + R.fmt(amt));
+        };
         draw();
     }
     function renderCompany() {
-        $('title').textContent = '公司'; $('moneyLab').textContent = seg === 'equip' ? '錢包' : '公司帳戶'; $('money').textContent = R.fmt(seg === 'equip' ? S.wallet : S.acct);
+        $('title').textContent = '公司'; $('moneyLab').textContent = seg === 'equip' ? '錢包' : '公司帳戶'; $('money').textContent = R.fmt(seg === 'equip' ? wal() : S.acct);
         const B = $('segBody');
         if (seg === 'move') {
             const next = R.STAGES[S.stage + 1], canMove = next && S.acct >= next.cost && S.jobsDone >= next.jobs;
@@ -1005,22 +1163,24 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
             B.innerHTML = `<div class="co glass"><div><b>${esc(S.name)}</b><small>創始執行長・成立第 ${Math.floor((now() - S.created) / 864e5) + 1} 天</small></div><div style="text-align:right"><b class="num" style="font-weight:300">${S.jobsDone} 件</b><small>做完的案子</small></div></div>
                 <div class="lvls glass">${lvlRow(S.stage)}<div class="lvl" id="allOffices" style="display:block;text-align:center;font-size:11px;color:var(--teal);letter-spacing:.15em;padding:11px;cursor:pointer">看所有辦公室 ›</div></div>
                 ${next ? `<div class="cta"><button class="main num" id="mv" style="flex:1" ${canMove ? '' : 'disabled'}>搬到${next.name}・${R.fmt(next.cost)}${S.jobsDone < next.jobs ? '（還差 ' + (next.jobs - S.jobsDone) + ' 件）' : S.acct < next.cost ? '（帳戶還差 ' + R.fmt(next.cost - S.acct) + '）' : ''}</button></div>` : ''}
-                <div class="goal glass"><div class="gt"><span>公司帳戶 <b class="num" style="font-weight:400;color:var(--ink)">${R.fmt(S.acct)}</b></span><span class="r num">錢包 ${R.fmt(S.wallet)}</span></div>
+                <div class="goal glass"><div class="gt"><span>公司帳戶 <b class="num" style="font-weight:400;color:var(--ink)">${R.fmt(S.acct)}</b></span><span class="r num">錢包 ${R.fmt(wal())}</span></div>
                   <div class="money2"><button class="num" id="inj" ${injLeft ? '' : 'disabled'}>執行長增資（今天還能 ${R.fmt(injLeft)}）</button></div>
                   <div class="kv" style="display:block;line-height:1.7"><span>搬家只能用公司帳戶付；錢包付簽約金、刷新、訓練、設備、廣告、加班費。增資每天最多 ${R.fmt(st().inject)}。</span></div>
                   <div style="text-align:right"><button class="linkbtn num" id="out" ${S.acct > 0 ? '' : 'disabled'}>把公司帳戶的錢轉進錢包</button></div></div>
-                <div class="trial glass">試玩錢包 <b class="num">${R.fmt(S.wallet)}</b>（只在這支手機、不動真的錢包）
-                  <div class="tool"><button id="tAdd">錢包 +100 萬</button><button id="tSkip">快轉 10 分鐘</button><button id="tSkip2">快轉 1 小時</button><button id="tReset">整個重來</button></div></div>
+                ${PREVIEW ? `<div class="trial glass">試玩錢包 <b class="num">${R.fmt(S.wallet)}</b>（只在這支手機、不動真的錢包）
+                  <div class="tool"><button id="tAdd">錢包 +100 萬</button><button id="tSkip">快轉 10 分鐘</button><button id="tSkip2">快轉 1 小時</button><button id="tReset">整個重來</button></div></div>` : ''}
                 <div class="kv" style="justify-content:center;margin:14px 0 0"><span class="help2" style="color:var(--teal);letter-spacing:.15em;cursor:pointer;padding:6px">看不懂的字 ›</span></div>
                 <p class="foot">這裡的錢都是遊戲幣，不能儲值，也不能換現金或獎品。</p>`;
             paintThumbs(); $('allOffices').onclick = openOffices; document.querySelectorAll('.help2').forEach(e => e.onclick = openHelp);
             if ($('mv')) $('mv').onclick = async () => { if (!await ask('搬到' + next.name + '？', '用公司帳戶付 ' + R.fmt(next.cost) + '。舊燈泡會一起帶走。', { ok: '搬家' })) return; const old = st(); S.acct -= next.cost; S.stage++; S.look = S.stage; S.applicants = R.applicants(S.stage, S.hiredSp); save(); go('office'); movedCard(old); };
             $('inj').onclick = () => openInject(injLeft, next);
-            $('out').onclick = async () => { const n = Math.max(0, S.acct); if (!await ask('轉進錢包？', '把公司帳戶的 ' + R.fmt(n) + ' 全部轉進錢包。' + (next ? '搬家只能用公司帳戶付，' : '') + '轉出去不能直接轉回來，只能靠增資（每天最多 ' + R.fmt(st().inject) + '）。', { ok: '轉進錢包', warn: true })) return; S.acct -= n; S.wallet += n; save(); renderCompany(); };
-            $('tAdd').onclick = () => { S.wallet += 1000000; save(); renderCompany(); };
-            $('tSkip').onclick = () => { S.shift = (S.shift || 0) + 600000; tick(); toast('快轉了 10 分鐘'); render(); };
-            $('tSkip2').onclick = () => { S.shift = (S.shift || 0) + 3600000; tick(); toast('快轉了 1 小時'); render(); };
-            $('tReset').onclick = async () => { if (!await ask('整個公司重來？', '試玩的存檔會清掉，從開場紙條重新開始。', { ok: '重來', warn: true })) return; resetting = true; S = null; localStorage.removeItem(KEY); location.reload(); };   // 先擋住存檔：不然每秒的存檔、離開頁面的存檔會把舊公司又寫回去（使用者：整個重來要能從新手教學重玩）
+            $('out').onclick = async () => { const n = Math.max(0, S.acct); if (!await ask('轉進錢包？', '把公司帳戶的 ' + R.fmt(n) + ' 全部轉進錢包。' + (next ? '搬家只能用公司帳戶付，' : '') + '轉出去不能直接轉回來，只能靠增資（每天最多 ' + R.fmt(st().inject) + '）。', { ok: '轉進錢包', warn: true })) return;
+                if (LIVE) { if (await serverAct('out', { type: 'companyCashOut', amount: n }, '轉進錢包 ' + R.fmt(n))) renderCompany(); return; }   // 正式：後端一次扣公司帳戶、加錢包
+                S.acct -= n; S.wallet += n; save(); renderCompany(); };
+            if (PREVIEW) $('tAdd').onclick = () => { S.wallet += 1000000; save(); renderCompany(); };
+            if (PREVIEW) $('tSkip').onclick = () => { S.shift = (S.shift || 0) + 600000; tick(); toast('快轉了 10 分鐘'); render(); };
+            if (PREVIEW) $('tSkip2').onclick = () => { S.shift = (S.shift || 0) + 3600000; tick(); toast('快轉了 1 小時'); render(); };
+            if (PREVIEW) $('tReset').onclick = async () => { if (!await ask('整個公司重來？', '試玩的存檔會清掉，從開場紙條重新開始。', { ok: '重來', warn: true })) return; resetting = true; S = null; localStorage.removeItem(KEY); location.reload(); };   // 先擋住存檔：不然每秒的存檔、離開頁面的存檔會把舊公司又寫回去（使用者：整個重來要能從新手教學重玩）
         } else if (seg === 'gift') {
             const ks = Object.keys(R.CLIENTS);
             B.innerHTML = `<div class="shelf glass"><div class="ttl"><span>紀念品櫃</span><span class="num">${S.gifts.length} / ${ks.length}${S.gifts.length >= ks.length ? '・全城的老客戶' : '・收齊有稱號'}</span></div><div class="grid">${ks.map(k => `<div class="slot${S.gifts.includes(k) ? '' : ' off'}" data-k="${k}"><canvas width="12" height="12" data-ic="${k}"${S.gifts.includes(k) ? '' : ' data-off="1"'}></canvas></div>`).join('')}</div></div>
@@ -1030,7 +1190,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
             document.querySelectorAll('.shelf .slot').forEach(e => e.onclick = () => { const C = R.CLIENTS[e.dataset.k]; toast(S.gifts.includes(e.dataset.k) ? C.gift + '（' + C.who + '送的）' : '做完' + C.who + '的五件系列才拿得到'); });
         } else if (seg === 'equip') {
             const own = S.equip[S.stage] || [], list = R.EQUIP[S.stage];
-            B.innerHTML = `<div class="sub" style="margin-top:12px"><span>${st().name}的設備・買了 ${own.length} / 3・現在 +${Math.round(own.length * R.EQUIP_BOOST * 100)}%</span><span class="r num">錢包 ${R.fmt(S.wallet)}</span></div>
+            B.innerHTML = `<div class="sub" style="margin-top:12px"><span>${st().name}的設備・買了 ${own.length} / 3・現在 +${Math.round(own.length * R.EQUIP_BOOST * 100)}%</span><span class="r num">錢包 ${R.fmt(wal())}</span></div>
                 <div class="panel glass" style="padding:2px 0">${list.map(([k, n, d]) => `<div class="eq"><div class="ic"><canvas width="16" height="16" data-eq="${k}"></canvas></div><div><div class="nm">${n}</div><div class="d">${d}・賺的 +8%</div></div>${own.includes(k) ? '<button class="got">已經有了</button>' : `<button class="num" data-e="${k}">${R.fmt(st().equip)}</button>`}</div>`).join('')}</div>
                 <div class="goal glass"><div class="gt"><span>買滿三樣</span><span class="r num">賺的約 +25%</span></div><div class="bar" style="margin-top:8px"><i style="width:${own.length / 3 * 100}%"></i></div></div>
                 ${R.EQUIP[S.stage + 1] ? `<div class="sub" style="margin-top:10px"><span>這組只在${st().name}有用。搬到${R.STAGES[S.stage + 1].name}後換新的一組（${R.EQUIP[S.stage + 1].map(e => e[1]).join('、')}），這組就留在這裡</span></div>` : ''}`;
@@ -1127,11 +1287,52 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     }
 
     // ---------- 開始 ----------
-    if (!S || !S.name) { openNote(0); }
-    else { tick(); render(); away(); }
-    setInterval(() => { if (S && S.name) { tick(); S.lastSeen = Date.now(); save(); } }, 1000);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden && S && S.name) { away(); tick(); startAnim(); } else if (S && S.name) { S.lastSeen = Date.now(); save(); } });
-    window.__company = { get S() { return S; }, tick, render, R, inc() { incAt = 1; }, away };   // 試玩時給測試用
+    function start() { if (!S || !S.name) openNote(0); else { tick(); render(); away(); } }
+    // 正式：先登入、從後端讀存檔（等的時候蓋板）
+    async function boot() {
+        Busy.show('load');
+        try { await Line.ready; } catch (e) { }
+        if (!Line.loggedIn) { await Busy.hide(); return gateLogin(); }
+        let r = null;
+        try { r = await Line.call({ type: 'companyLoad' }); } catch (e) { }
+        if (!r) { await Busy.hide(); return gateError('連不到後端，可能是網路不穩。'); }
+        if (r.result === 'unauthorized') { await Busy.hide(); return gateLogin(); }
+        if (r.result !== 'success') { await Busy.hide(); return gateError(/不認得的請求/.test(r.error || '') ? '後端還是舊版，<br>要在 Apps Script 重新部署「新版本」。' : esc(r.error || '後端沒回應')); }
+        S = r.save; rev = r.rev; fixup(); if (S && S.wallet !== undefined) delete S.wallet;
+        $('main').hidden = false;
+        await Busy.hide();
+        start();
+    }
+    // 離開超過三分鐘回來：先看看另一支手機有沒有動過（有就換成那份），再算「你不在的時候」
+    async function resync() {
+        blocking = true; Busy.show('sync');
+        try {
+            if (pushing) await pushing;
+            const r = await Line.call({ type: 'companyLoad' });
+            if (r.result === 'success' && r.save && r.rev !== rev) { S = r.save; rev = r.rev; dirty = false; fixup(); if (S.wallet !== undefined) delete S.wallet; hide(); render(); }
+            else if (r.result === 'unauthorized') { blocking = false; await Busy.hide(); return loggedOut(); }
+        } catch (e) { }
+        await Busy.hide(); blocking = false;
+    }
+    if (PREVIEW) start(); else boot();
+    if (LIVE) {
+        Line.on(type => { if (type === 'logout' && S) loggedOut(); });
+        Wallet.on(type => { if (type === 'server' && S && S.name) render(); });   // 別支手機賺了錢：錢包數字跟著變
+        window.addEventListener('pagehide', () => { if (S && S.name) { S.lastSeen = Date.now(); push(true); } });
+    }
+    setInterval(() => {
+        if (!S || !S.name || blocking) return;
+        tick(); S.lastSeen = Date.now(); save();
+        if (LIVE && !document.hidden && Date.now() - lastPush > 30000) push();   // 大約 30 秒送一次存檔
+    }, 1000);
+    let hiddenAt = 0;
+    document.addEventListener('visibilitychange', async () => {
+        if (!S || !S.name) return;
+        if (document.hidden) { hiddenAt = Date.now(); S.lastSeen = Date.now(); save(); push(true); return; }
+        if (LIVE && hiddenAt && Date.now() - hiddenAt > 3 * 60000 && !blocking) await resync();
+        if (S && S.name) { away(); tick(); startAnim(); }
+    });
+    window.__company = { get S() { return S; }, get rev() { return rev; }, Busy, push, tick, render, R, inc() { incAt = 1; }, away };   // 試玩時給測試用
 })();
 </script>
 </body>

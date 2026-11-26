@@ -73,7 +73,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-24a';
+var BACKEND_VERSION = '2026-11-26a';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1 };
 
@@ -154,6 +154,11 @@ function route(type, input) {
     if (type === 'wishAdd') return wishAdd(input);
     if (type === 'wishVote') return wishVote(input);
     if (type === 'announce') return announceGet();
+    if (type === 'companyLoad') return companyLoad(input);     // 公司・開（2026-11-26）：會改錢、改存檔的自己在裡面排隊
+    if (type === 'companySave') return companySave(input);
+    if (type === 'companyInject') return companyInject(input);
+    if (type === 'companyCashOut') return companyCashOut(input);
+    if (type === 'companyOvertime') return companyOvertime(input);
 
     if (type === 'ping') return { result: 'success', version: BACKEND_VERSION };   // 公開：只回版本
 
@@ -4197,7 +4202,7 @@ function gaEcon() {
   };
 }
 var ECON_NAMES = { xitou: '坐洗・泡', clean: '房務・淨', farm: '菜園・拔', wifi: '蹭・網', zaocan: '早餐・煎', ship: '貨運・航', dessert: '甜點・轉', stack: '疊・巢', mine: '礦坑・挖',
-  scratch: '刮刮樂', bonus: '紅包', caishen: '財神燈', insure: '保險', wish: '許願池' };
+  scratch: '刮刮樂', bonus: '紅包', caishen: '財神燈', insure: '保險', wish: '許願池', company: '公司・開' };
 
 // 真人工資：照紀錄分頁算（跟 econReport 一樣，但只回傳、不寫「對帳」分頁）。{ days?: 30 }
 function gaWage(input) {
@@ -4206,3 +4211,221 @@ function gaWage(input) {
   return { result: 'success', head: ECON_HEAD, rows: r.out, days: days };
 }
 
+
+// --- 公司・開（company.html，2026-11-26）：存檔、執行長增資、轉進錢包、加班費 ---
+// 做法 C（使用者 2026-11-26 選的）：遊戲在手機上跑，存檔整份存在這裡；錢跨出公司的那一步（增資、轉進錢包、加班費）由後端一次做完。
+// Saves 分頁：A created、B line_id、C game（'company'）、D rev（第幾版）、E updated、F data（存檔 JSON）、G meta（帳本 JSON）、H name、I stage、J earned（累計淨賺，排行榜用）。
+// - rev：手機送存檔要帶「我是從第幾版改的」。後端已經有更新的版本（另一支手機存過）就回 conflict，附上後端那份，兩支手機不會互蓋。
+// - 增資、轉進錢包、加班費要帶整份存檔，跟存檔同一次排隊做完：錢包和公司帳戶一起改、版本加一。舊版本來轉錢會被擋，不會重複領。
+// - 賺錢速度：累計淨賺 E ＝ 公司帳戶 ＋ 轉出 − 增資 ＋ 搬家花掉的。E 減掉「加班費 × COMPANY_OT_K」（加班是用錢買時間）就是靠時間賺的，
+//   不能超過 bank：bank 每小時加「當階最快速度 × COMPANY_RATE_K」，最多比上次多存 COMPANY_BANK_HOURS 小時（放著不玩不會一直累積）。
+//   超過就不收這份存檔（回 rejected＋後端那份），帳本 flags 加一，admin 經濟體檢看得到。
+// 規則的數字跟 assets/company-rules.js 的 STAGES 一樣（改那邊記得改這裡）。
+var COMPANY_STAGES = [
+  { seats: 3, base: 14.3, cost: 0, inject: 33000 },
+  { seats: 5, base: 21.8, cost: 20000, inject: 110000 },
+  { seats: 8, base: 33.8, cost: 350000, inject: 280000 },
+  { seats: 12, base: 43.5, cost: 1300000, inject: 560000 },
+  { seats: 20, base: 42.7, cost: 3300000, inject: 900000 }
+];
+var COMPANY_SAVE_MAX = 45000;     // 存檔最多幾個字（Sheet 一格最多五萬字）
+var COMPANY_OPS_PER_HOUR = 600;   // 一個玩家每小時最多幾次（手機大約 30 秒存一次）
+var COMPANY_RATE_K = 3;           // 速度上限＝每人每分鐘基本價 × 3 分鐘案子的倍數 3.5 × 60 × 位子 × 這個（各種加成全開也到不了）
+var COMPANY_BANK_HOURS = 24;      // 沒用到的額度最多留幾小時（最長的案子 12 小時，回來一次收也放得下）
+var COMPANY_OT_K = 2;             // 加班費每 $1 給幾塊額度（加班做完的案子，淨賺最多大約是加班費的 1.7 倍）
+var COMPANY_START_BANK = 5000;    // 新公司一開始的額度（教學案 $70）
+
+function savesSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Saves');
+  if (!sheet) {
+    sheet = ss.insertSheet('Saves');
+    sheet.appendRow(['created', 'line_id', 'game', 'rev', 'updated', 'data', 'meta', 'name', 'stage', 'earned']);
+    sheet.setFrozenRows(1);
+    sheet.getRange(1, 2, 1000, 1).setNumberFormat('@');
+  }
+  return sheet;
+}
+
+function findSave(lineId, game) {
+  var sheet = savesSheet(), n = sheet.getLastRow() - 1;
+  if (n < 1) return null;
+  var keys = sheet.getRange(2, 2, n, 2).getValues();
+  for (var i = 0; i < keys.length; i++) {
+    if (String(keys[i][0]) !== lineId || String(keys[i][1]) !== game) continue;
+    var row = i + 2, v = sheet.getRange(row, 1, 1, 10).getValues()[0], data = null, meta = {};
+    try { data = JSON.parse(v[5] || 'null'); } catch (e) { }
+    try { meta = JSON.parse(v[6] || '{}') || {}; } catch (e) { }
+    return { row: row, rev: Number(v[3]) || 0, data: data, meta: meta };
+  }
+  return null;
+}
+
+function writeSave(lineId, game, rec) {
+  var sheet = savesSheet(), now = new Date(), d = rec.data || {};
+  var vals = [rec.created || now, lineId, game, rec.rev, now, JSON.stringify(rec.data), JSON.stringify(rec.meta), String(d.name || ''), Number(d.stage) || 0, Math.round(rec.meta.E || 0)];
+  if (rec.row) sheet.getRange(rec.row, 1, 1, 10).setValues([vals]);
+  else { sheet.appendRow(vals); rec.row = sheet.getLastRow(); sheet.getRange(rec.row, 2).setNumberFormat('@'); }
+}
+
+// 網頁送來的存檔：只檢查會影響錢的欄位，其他照存（畫面、員工、委託都在手機上算）
+function cleanCompanySave(s) {
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return null;
+  var text = JSON.stringify(s);
+  if (text.length > COMPANY_SAVE_MAX) return { error: '存檔太大了（' + text.length + ' 字）' };
+  if (cleanMoney(s.stage, 0, COMPANY_STAGES.length - 1) === null) return { error: '公司階段不對' };
+  if (cleanMoney(s.acct, -WALLET_MAX, WALLET_MAX) === null) return { error: '公司帳戶的數字不對' };
+  if (typeof s.name !== 'string' || !s.name.trim() || s.name.length > 24) return { error: '公司名字不對' };
+  if (!Array.isArray(s.jobs) || !Array.isArray(s.staff)) return { error: '存檔格式不對' };
+  return { save: JSON.parse(text) };
+}
+
+function companyRate(stage) {   // 每小時最多賺多少（寬鬆的上限）
+  var st = COMPANY_STAGES[stage] || COMPANY_STAGES[0];
+  return st.base * 3.5 * 60 * st.seats * COMPANY_RATE_K;
+}
+function companyMoves(stage) {  // 搬到這一階總共花掉多少
+  var n = 0;
+  for (var i = 1; i <= stage && i < COMPANY_STAGES.length; i++) n += COMPANY_STAGES[i].cost;
+  return n;
+}
+function companyEarned(save, meta) { return save.acct + (meta.out || 0) - (meta.inj || 0) + companyMoves(save.stage); }
+
+function companyGuard(input) {
+  var lineId = sessionUser(input.session);
+  if (!lineId) return { error: { result: 'unauthorized' } };
+  var cache = CacheService.getScriptCache();
+  var key = 'company:' + lineId + ':' + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var n = Number(cache.get(key) || 0);
+  if (n >= COMPANY_OPS_PER_HOUR) return { error: { result: 'error', error: '這小時跑公司太多次了，休息一下' } };
+  cache.put(key, String(n + 1), 3600);
+  return { lineId: lineId };
+}
+
+function companyOut(rec, extra) {
+  var out = { result: 'success', save: rec ? rec.data : null, rev: rec ? rec.rev : 0, now: Date.now() };
+  if (rec && rec.meta) out.inject = { d: rec.meta.injD || '', amt: rec.meta.injAmt || 0 };
+  Object.keys(extra || {}).forEach(function (k) { out[k] = extra[k]; });
+  return out;
+}
+
+// 收一份新的存檔（還沒寫進 Sheet）：版本對不上回 conflict、賺太快回 rejected，都附上後端那份
+function companyAccept(lineId, input) {
+  var c = cleanCompanySave(input.save);
+  if (!c) return { fail: { result: 'error', error: '存檔格式不對' } };
+  if (c.error) return { fail: { result: 'error', error: c.error } };
+  var save = c.save, rec = findSave(lineId, 'company'), rev = cleanMoney(input.rev, 0, 1e9), now = Date.now();
+  if (rev === null) return { fail: { result: 'error', error: '版本號不對' } };
+  if (!rec) {
+    if (rev !== 0) return { fail: companyOut(null, { result: 'conflict' }) };   // 後端沒有這家公司（被主人刪了？）：手機重新開
+    rec = { row: 0, rev: 0, created: new Date(), data: null,
+      meta: { created: now, at: now, bank: COMPANY_START_BANK, Et: 0, E: 0, ot: 0, out: 0, inj: 0, stage: 0, injD: '', injAmt: 0, flags: 0 } };
+  } else if (rev !== rec.rev) {
+    return { fail: companyOut(rec, { result: 'conflict' }) };
+  }
+  var m = rec.meta, r = companyRate(m.stage || 0);
+  var hours = Math.max(0, Math.min(COMPANY_BANK_HOURS, (now - (m.at || now)) / 3600000));
+  m.bank = Math.min((m.bank || 0) + r * hours, (m.Et || 0) + r * COMPANY_BANK_HOURS);
+  m.at = now;
+  var E = companyEarned(save, m), Et = E - (m.ot || 0) * COMPANY_OT_K;
+  if (Et > m.bank + 1000) {
+    m.flags = (m.flags || 0) + 1; m.flagAt = now; m.flagOver = Math.round(Et - m.bank);
+    if (rec.row) writeSave(lineId, 'company', rec);
+    return { fail: rec.row ? companyOut(rec, { result: 'rejected' }) : { result: 'error', error: '新公司的帳不對' } };
+  }
+  m.Et = Et; m.E = E; m.stage = save.stage;
+  rec.data = save; rec.rev = (rec.rev || 0) + 1;
+  return { rec: rec };
+}
+
+// 讀存檔（打開頁面時）。沒有公司回 save: null
+function companyLoad(input) {
+  var g = companyGuard(input);
+  if (g.error) return g.error;
+  return companyOut(findSave(g.lineId, 'company'));
+}
+
+// 存檔：{ save, rev }
+function companySave(input) {
+  var g = companyGuard(input);
+  if (g.error) return g.error;
+  return withLock(function () {
+    var a = companyAccept(g.lineId, input);
+    if (a.fail) return a.fail;
+    writeSave(g.lineId, 'company', a.rec);
+    return companyOut(a.rec);
+  });
+}
+
+// 執行長增資：錢包 → 公司帳戶。{ save, rev, amount }，每天（台灣日期）最多當階的 inject
+function companyInject(input) {
+  var g = companyGuard(input);
+  if (g.error) return g.error;
+  var amount = cleanMoney(input.amount, 1, WALLET_MAX);
+  if (amount === null) return { result: 'error', error: '金額不對' };
+  return withLock(function () {
+    var a = companyAccept(g.lineId, input);
+    if (a.fail) return a.fail;
+    var rec = a.rec, m = rec.meta, s = rec.data, day = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd');
+    if (m.injD !== day) { m.injD = day; m.injAmt = 0; }
+    var left = COMPANY_STAGES[s.stage].inject - m.injAmt;
+    if (amount > left) return { result: 'error', error: left > 0 ? '今天只能再增資 $' + left : '今天的增資額度用完了' };
+    var p = findPlayer(g.lineId);
+    if (!p) return { result: 'unauthorized' };
+    if (p.money < amount) return { result: 'error', error: '錢包不夠' };
+    p.money -= amount;          // 搬錢，不算花掉（跟保險一樣不加 spent）
+    s.acct += amount; m.inj = (m.inj || 0) + amount; m.injAmt += amount;
+    s.inject = { d: day, amt: m.injAmt };
+    m.E = companyEarned(s, m);  // 帳戶和增資一起加，累計淨賺不變
+    writeWallet(p);
+    writeSave(g.lineId, 'company', rec);
+    return companyOut(rec, { wallet: walletView(p), amount: amount });
+  });
+}
+
+// 轉進錢包：公司帳戶 → 錢包。{ save, rev, amount }，算在錢包的 earned.company
+function companyCashOut(input) {
+  var g = companyGuard(input);
+  if (g.error) return g.error;
+  var amount = cleanMoney(input.amount, 1, WALLET_MAX);
+  if (amount === null) return { result: 'error', error: '金額不對' };
+  return withLock(function () {
+    var a = companyAccept(g.lineId, input);
+    if (a.fail) return a.fail;
+    var rec = a.rec, m = rec.meta, s = rec.data;
+    if (amount > s.acct) return { result: 'error', error: '公司帳戶沒有那麼多' };
+    var p = findPlayer(g.lineId);
+    if (!p) return { result: 'unauthorized' };
+    s.acct -= amount; m.out = (m.out || 0) + amount;
+    m.E = companyEarned(s, m);
+    p.money = Math.min(WALLET_MAX, p.money + amount);
+    p.earned = addEarned(p.earned, { company: { times: 1, total: amount, best: amount } });
+    writeWallet(p);
+    writeSave(g.lineId, 'company', rec);
+    return companyOut(rec, { wallet: walletView(p), amount: amount });
+  });
+}
+
+// 加班費：錢包付那件案子的錢，案子馬上做完。{ save, rev, job: 案子 id }
+function companyOvertime(input) {
+  var g = companyGuard(input);
+  if (g.error) return g.error;
+  return withLock(function () {
+    var a = companyAccept(g.lineId, input);
+    if (a.fail) return a.fail;
+    var rec = a.rec, m = rec.meta, s = rec.data, id = String(input.job || ''), j = null;
+    for (var i = 0; i < s.jobs.length; i++) if (s.jobs[i] && s.jobs[i].id === id) j = s.jobs[i];
+    if (!j || j.fin) return { result: 'error', error: '這件已經做完了' };
+    var st = COMPANY_STAGES[s.stage], price = cleanMoney(j.c && j.c.gross, 1, Math.ceil(st.base * 720 * st.seats * 3 / 0.7));
+    if (price === null) return { result: 'error', error: '這件的價錢不對' };
+    var p = findPlayer(g.lineId);
+    if (!p) return { result: 'unauthorized' };
+    if (p.money < price) return { result: 'error', error: '錢包不夠' };
+    p.money -= price; p.spent += price;
+    m.ot = (m.ot || 0) + price;
+    j.end = Date.now();
+    writeWallet(p);
+    writeSave(g.lineId, 'company', rec);
+    return companyOut(rec, { wallet: walletView(p), job: id, price: price });
+  });
+}
