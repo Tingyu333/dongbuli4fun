@@ -157,157 +157,279 @@ function hull(x, a, b, w, h, bow, col) {   // 船頭在下面，bow 是尖的長
   const pts = [[a, b], [a + w, b], [a + w, b + h - bow], [a + w / 2, b + h], [a, b + h - bow]];
   BSH(x, pts); poly(x, pts, col); return pts;
 }
-function canoe(x, a, b) { hull(x, a, b, 5, 18, 5, '#c9572e'); poly(x, [[a, b], [a + 5, b], [a + 2.5, b - 3]], '#c9572e'); R(x, a + 1, b + 2, 3, 10, '#8a3b1e'); R(x, a + 1, b + 5, 3, 1, K.wood3); R(x, a - 3, b + 8, 11, 1, K.wood2); R(x, a - 4, b + 7, 2, 3, K.wood3); }
-function raft(x, a, b) { R(x, a + 2, b + 3, 11, 16, 'rgba(20,40,50,.3)'); for (let i = 0; i < 11; i++) R(x, a + i, b, 1, 16, i % 2 ? '#b9a25f' : '#d3bd77'); R(x, a, b + 3, 11, 1, '#7c5230'); R(x, a, b + 12, 11, 1, '#7c5230'); R(x, a + 4, b + 6, 3, 3, '#c94f3d'); }
-function rowboat(x, a, b) { hull(x, a, b, 9, 17, 5, K.wood); poly(x, [[a + 1, b + 1], [a + 8, b + 1], [a + 8, b + 11], [a + 4.5, b + 15], [a + 1, b + 11]], '#c99b6a'); R(x, a + 1, b + 4, 7, 1, K.wood2); R(x, a + 1, b + 9, 7, 1, K.wood2); R(x, a - 2, b + 6, 13, 1, K.wood3); }
-function motorboat(x, a, b) { hull(x, a, b, 12, 24, 7, K.hull || '#f6f3ec'); poly(x, [[a + 1, b + 1], [a + 11, b + 1], [a + 11, b + 16], [a + 6, b + 22], [a + 1, b + 16]], '#e7e2d6'); R(x, a + 2, b + 11, 8, 3, K.glass); R(x, a + 2, b + 5, 8, 5, '#c94f3d'); R(x, a, b + 15, 12, 1, '#355a74'); R(x, a + 4, b - 3, 4, 3, '#3d3d3d'); P(x, a + 5, b - 4, '#6a6a6a'); }
-function fishing(x, a, b) { hull(x, a, b, 14, 28, 8, '#3f6e8c'); poly(x, [[a + 1, b + 1], [a + 13, b + 1], [a + 13, b + 19], [a + 7, b + 26], [a + 1, b + 19]], '#c9b79a'); R(x, a + 3, b + 12, 8, 8, '#f3f1ec'); R(x, a + 4, b + 17, 6, 2, K.glass); R(x, a + 3, b + 12, 8, 1, '#c94f3d'); for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) P(x, a + 3 + i * 2, b + 3 + j * 2, '#6d8f6a'); R(x, a + 10, b + 3, 2, 6, '#e8873a'); }
-function sailboat(x, a, b) { hull(x, a, b, 12, 32, 10, '#f6f3ec'); poly(x, [[a + 1, b + 1], [a + 11, b + 1], [a + 11, b + 21], [a + 6, b + 30], [a + 1, b + 21]], '#c49a6c'); for (let j = 3; j < 26; j += 3) R(x, a + 2, b + j, 8, 1, '#a87f55'); R(x, a + 3, b + 4, 6, 6, '#f3f1ec'); R(x, a + 4, b + 5, 4, 2, K.glass); R(x, a + 5, b + 6, 2, 18, '#e9dfc6'); R(x, a + 6, b + 6, 1, 18, '#cfc3a5'); circ(x, a + 6, b + 18, 1, '#8e9396'); R(x, a, b + 31, 12, 0, '#000'); }
-function yacht(x, a, b) { hull(x, a, b, 18, 40, 12, '#f6f3ec'); poly(x, [[a + 1, b + 1], [a + 17, b + 1], [a + 17, b + 27], [a + 9, b + 38], [a + 1, b + 27]], '#e7e2d6'); R(x, a + 2, b + 2, 14, 6, '#c49a6c'); for (let i = 2; i < 16; i += 2) R(x, a + i, b + 2, 1, 6, '#a87f55'); R(x, a + 3, b + 10, 12, 14, '#ffffff'); R(x, a + 4, b + 18, 10, 4, K.glass); R(x, a + 5, b + 18, 3, 1, K.glassHi); R(x, a + 5, b + 12, 8, 5, '#dcd6ca'); R(x, a, b + 25, 18, 1, '#355a74'); P(x, a + 9, b + 14, '#c94f3d'); }
-function superyacht(x, a, b) {   // 超級遊艇（展示級）：28 × 66；船尾（上）游泳平台、按摩池，船頭（下）直升機坪
-  const W = 28, L = 66, bow = 20;
-  const outer = [[a + 4, b], [a + W - 4, b], [a + W, b + 5], [a + W, b + L - bow], [a + W / 2, b + L], [a, b + L - bow], [a, b + 5]];
-  poly(x, outer.map(([u, v]) => [u + 4, v + 5]), 'rgba(20,40,50,.32)');
-  poly(x, outer, '#1f2f3f');                                                                   // 深藍吃水線
-  const hullIn = [[a + 4, b + 1], [a + W - 4, b + 1], [a + W - 1, b + 5], [a + W - 1, b + L - bow], [a + W / 2, b + L - 2], [a + 1, b + L - bow], [a + 1, b + 5]];
-  poly(x, hullIn, '#f7f5f0'); poly(x, [[a + 4, b + 1], [a + 7, b + 1], [a + 3, b + L - bow], [a + 1, b + L - bow], [a + 1, b + 5]], '#ffffff');
-  const line = (pts, c1, c2) => { for (let k = 0; k < pts.length - 1; k++) { const [x0, y0] = pts[k], [x1, y1] = pts[k + 1], n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, (i + k) % 3 ? c1 : c2); } };
-  line([[a + 2, b + 4], [a + 2, b + L - bow], [a + W / 2, b + L - 3], [a + W - 3, b + L - bow], [a + W - 3, b + 4]], '#c9a24a', '#f0d58a');   // 金色細線
-  // 船尾：柚木游泳平台＋小艇車庫門
-  R(x, a + 3, b - 3, W - 6, 4, '#c49a6c'); for (let i = 3; i < W - 3; i += 2) R(x, a + i, b - 3, 1, 4, '#a87f55'); R(x, a + 9, b + 1, 10, 2, '#c9c4b9');
-  // 主甲板（後段）：柚木＋按摩池＋躺椅
-  for (let v = b + 4; v < b + 18; v++) for (let u = a + 3; u < a + W - 3; u++) P(x, u, v, (u - a) % 2 ? '#c49a6c' : '#b08a5e');
-  circ(x, a + 14, b + 10, 4, '#f3f1ec'); circ(x, a + 14, b + 10, 3, '#5fb3c4'); P(x, a + 13, b + 9, '#9fdce4'); P(x, a + 15, b + 11, '#9fdce4');
-  [[a + 4, b + 6], [a + 21, b + 6], [a + 4, b + 12], [a + 21, b + 12]].forEach(([u, v]) => { R(x, u, v, 3, 5, '#ffffff'); R(x, u, v + 3, 3, 2, '#3d5a73'); });
-  // 上層甲板（往前一層一層疊）：深色玻璃帶、天線架、雷達球
-  R(x, a + 3, b + 18, W - 6, 26, '#e9e6df'); R(x, a + 3, b + 18, W - 6, 1, '#ffffff');
-  R(x, a + 3, b + 20, 1, 22, '#243543'); R(x, a + W - 4, b + 20, 1, 22, '#243543');               // 兩側長窗
-  R(x, a + 5, b + 20, W - 10, 18, '#f7f5f0'); R(x, a + 5, b + 20, W - 10, 1, '#ffffff');           // 第二層
-  R(x, a + 7, b + 22, W - 14, 6, '#c49a6c'); for (let i = 7; i < W - 7; i += 2) R(x, a + i, b + 22, 1, 6, '#a87f55');   // 日光甲板
-  [[a + 8, b + 23], [a + 12, b + 23], [a + 16, b + 23]].forEach(([u, v]) => R(x, u, v, 3, 4, '#f3f1ec'));
-  R(x, a + 7, b + 30, W - 14, 6, '#ffffff'); R(x, a + 12, b + 31, 4, 4, '#cfd6d9'); circ(x, a + 10, b + 33, 1, '#ffffff'); circ(x, a + 18, b + 33, 1, '#ffffff'); P(x, a + 10, b + 33, '#b8bcbe'); P(x, a + 18, b + 33, '#b8bcbe');   // 天線架＋兩顆雷達球
-  R(x, a + 5, b + 38, W - 10, 3, '#243543'); R(x, a + 6, b + 38, 6, 1, '#5a7a8f');                // 駕駛台的弧形黑玻璃
-  // 前甲板：直升機坪（深色圓、白 H、黃圈）
-  for (let v = b + 44; v < b + L - bow + 2; v++) for (let u = a + 3; u < a + W - 3; u++) P(x, u, v, '#eceae4');
-  poly(x, [[a + 3, b + L - bow + 2], [a + W - 3, b + L - bow + 2], [a + W / 2, b + L - 5]], '#eceae4');
-  const hx = a + W / 2, hy = b + 50;
-  circ(x, hx, hy, 7, '#e2a62e'); circ(x, hx, hy, 6, '#2f3e4c'); R(x, hx - 2, hy - 3, 1, 7, '#f3f1ec'); R(x, hx + 2, hy - 3, 1, 7, '#f3f1ec'); R(x, hx - 2, hy, 5, 1, '#f3f1ec');
-  // 船頭：錨＋旗桿
-  R(x, hx, b + L - 6, 1, 3, '#8e9396'); P(x, hx - 1, b + L - 4, '#8e9396'); P(x, hx + 1, b + L - 4, '#8e9396');
-  R(x, a + 13, b - 7, 1, 5, '#8e9396'); R(x, a + 14, b - 7, 4, 3, '#b33a2f');
-  // 欄杆（玻璃）
-  for (let v = b + 6; v < b + L - bow; v += 2) { P(x, a + 2, v, '#d6eef2'); P(x, a + W - 3, v, '#d6eef2'); }
+// ===== 2026-11-26 載具審稿第三批：船重畫 =====
+// 共用船身 hullDraw：船尾（上）平、最寬在中段偏後、往船頭（下）是往外鼓的弧線慢慢收尖（原本長方形接短三角像盾牌）；
+// 左邊一排亮（護舷線）、右邊一排暗；影子照船身形狀往右下 (2,3)；船身外面左邊、前後一圈很淡的水紋（停著才像浮在水上）。
+// 比例：船沒辦法照車子 1 公尺 ≈ 6 顆（遊艇會 70～120 顆長），是「照種類排大小順序的模型」，但長寬比要像船。不用近黑。
+const WAVE = 'rgba(227,239,237,.4)', SEA_SH = 'rgba(20,40,50,.3)', GLASS = '#a8cdd6', GLASS_HI = '#e2f1f3', DGLASS = '#3d4a55', DGLASS_HI = '#6a7f8e';
+const WOOD = ['#74492a', '#5e3c22', '#4a2f1c'], TEAK = '#c49a6c', TEAK2 = '#a87f55', GRAY = '#4a4d50', METAL = '#8e9396';
+function lineP(x, x0, y0, x1, y1, c) { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) || 1; for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, c); }
+function inPoly(pts, px, py) { let inside = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside; } return inside; }
+function ringPoly(x, pts) {   // 任意形狀的水紋：形狀外面一圈（右下會被影子蓋掉）
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.floor(Math.min(...xs)) - 1, x1 = Math.ceil(Math.max(...xs)) + 1, y0 = Math.floor(Math.min(...ys)) - 1, y1 = Math.ceil(Math.max(...ys)) + 1;
+  const ins = (u, v) => inPoly(pts, u + .5, v + .5);
+  for (let v = y0; v <= y1; v++) for (let u = x0; u <= x1; u++) if (!ins(u, v) && (ins(u + 1, v) || ins(u, v + 1) || ins(u, v - 1))) P(x, u, v, WAVE);
 }
-function runabout(x, a, b) {   // 古董木船（展示級）：1930 年代的桃花心木遊艇，20 × 56；船尾圓（上）、船頭尖（下）
+function hullRows(w, h, o = {}) {
+  const waist = o.waist ?? .45, pw = o.pow ?? 1.8, minB = o.flatBow ? o.flatBow / 2 : .5;
+  return Array.from({ length: h }, (_, j) => { const t = j / (h - 1); let hw = w / 2;
+    const sr = o.stern ?? 2; if (j < sr) hw -= (sr - j) * (o.sternRound ?? .8);
+    if (o.both && t < .3) hw = Math.max(.5, w / 2 * (1 - Math.pow((.3 - t) / .3, pw)));   // 兩頭尖（獨木舟）
+    if (t > waist) hw = Math.max(minB, w / 2 * (1 - Math.pow((t - waist) / (1 - waist), pw)));
+    return hw; });
+}
+function hullDraw(x, cx, b, w, h, [c, hi, lo], o = {}) {
+  const rows = o.rows || hullRows(w, h, o), span = j => { const hw = rows[Math.max(0, Math.min(h - 1, j))]; return [Math.round(cx - hw), Math.max(Math.round(cx - hw), Math.round(cx + hw) - 1)]; };
+  if (o.ring !== false) { rows.forEach((_, j) => { const [l] = span(j); P(x, l - 1, b + j, WAVE); }); const [l0, r0] = span(0); R(x, l0, b - 1, r0 - l0 + 1, 1, WAVE); const [lb, rb] = span(h - 1); R(x, lb - 1, b + h, rb - lb + 2, 1, WAVE); }
+  rows.forEach((_, j) => { const [l, r] = span(j); R(x, l + 2, b + j + 3, r - l + 1, 1, SEA_SH); });
+  rows.forEach((_, j) => { const [l, r] = span(j); R(x, l, b + j, r - l + 1, 1, c); P(x, l, b + j, o.rail || hi); P(x, r, b + j, lo); });
+  { const [l0, r0] = span(0); R(x, l0, b, r0 - l0 + 1, 1, o.rail || hi); }
+  const deck = (j0, j1, col, ins = 1) => { for (let j = j0; j < Math.min(j1, h); j++) { const [l, r] = span(j); for (let u = l + ins; u <= r - ins; u++) P(x, u, b + j, typeof col === 'function' ? col(u - l - ins, j, r - l - ins * 2 + 1) : col); } };
+  return { rows, span, deck };
+}
+
+// ---- 小船 ----
+function raft(x, a, b) {   // 竹筏：一根一根的竹子（兩端長短錯開、竹節）、兩道綁繩、斜放的竹篙、小水桶
+  ringPoly(x, [[a, b], [a + 11, b], [a + 11, b + 16], [a, b + 16]]);
+  R(x, a + 2, b + 3, 11, 16, SEA_SH);
+  for (let i = 0; i < 11; i++) { const off = hash(i, 3) > .5 ? 1 : 0, len = 16 - off - (hash(i, 7) > .6 ? 1 : 0); for (let j = 0; j < len; j++) P(x, a + i, b + off + j, (j + off) % 4 === 3 ? '#a08a4c' : i % 2 ? '#b9a25f' : '#d3bd77'); P(x, a + i, b + off, '#e3d08f'); }
+  R(x, a, b + 3, 11, 1, '#7c5230'); R(x, a, b + 12, 11, 1, '#7c5230');
+  for (let k = 0; k <= 13; k++) P(x, a + 1 + k * .55, b + 15 - k, k % 4 === 0 ? '#8a6a3a' : '#b58a4a');   // 竹篙（斜放、竹節）
+  R(x, a + 6, b + 6, 3, 3, '#9a6a40'); P(x, a + 7, b + 7, '#7c5230'); P(x, a + 6, b + 6, '#b07f50');   // 小水桶
+}
+function canoe(x, a, b) {   // 獨木舟：兩頭尖、細長；單葉槳只到右舷、末端 T 形握把、斜放（槳葉在前）
+  const H = hullDraw(x, a + 2.5, b - 3, 5, 21, ['#c9572e', '#e0784e', '#8a3b1e'], { both: true, waist: .7, stern: 0 });
+  H.deck(6, 15, '#8a3b1e'); R(x, a + 1, b + 7, 3, 1, '#b07f50');
+  lineP(x, a + 4, b + 5, a + 7, b + 11, '#b07f50'); R(x, a + 3, b + 5, 3, 1, '#9a6a40'); R(x, a + 6, b + 11, 2, 3, '#c99b6a'); P(x, a + 6, b + 11, '#dcb685');   // 槳
+}
+function rowboat(x, a, b) {   // 小划艇：方船尾、尖船頭、座板；左右各一支槳（槳架在船邊、外面有槳葉、往船尾斜）
+  const H = hullDraw(x, a + 4.5, b, 9, 17, [K.wood, K.wood3, K.wood2], { waist: .55, stern: 1 });
+  H.deck(1, 15, '#c99b6a'); R(x, a + 1, b + 4, 7, 1, K.wood2); R(x, a + 1, b + 9, 7, 1, K.wood2);
+  [[-1, a - 1], [1, a + 9]].forEach(([s, u]) => { P(x, u, b + 7, METAL); lineP(x, u + s, b + 7, u + s * 4, b + 5, '#b07f50'); R(x, s < 0 ? u - 6 : u + 5, b + 3, 2, 3, '#b07f50'); P(x, s < 0 ? u - 6 : u + 5, b + 3, '#c99b6a'); });
+}
+function swan(x, a, b) {   // 天鵝船：白色身體、翅膀羽毛、翹起的尾巴（船尾）、S 形長脖子和頭（船頭）
+  const body = [[a + 4, b], [a + 8, b], [a + 11, b + 4], [a + 12, b + 11], [a + 9, b + 16], [a + 3, b + 16], [a, b + 11], [a + 1, b + 4]];
+  ringPoly(x, body); poly(x, body.map(([u, v]) => [u + 2, v + 3]), SEA_SH); poly(x, body, '#f6f3ec');
+  poly(x, [[a + 4, b], [a + 5, b], [a + 2, b + 11], [a, b + 11], [a + 1, b + 4]], '#ffffff');
+  R(x, a + 5, b - 3, 2, 3, '#f6f3ec'); P(x, a + 5, b - 3, '#ffffff');   // 往上翹的尾巴
+  for (let j = 4; j < 13; j += 2) { P(x, a + 1, b + j, '#dedad1'); P(x, a + 2, b + j + 1, '#dedad1'); P(x, a + 11, b + j, '#c9c4b9'); P(x, a + 10, b + j + 1, '#c9c4b9'); }   // 翅膀羽毛（鋸齒、往船尾翹）
+  R(x, a + 3, b + 5, 6, 4, '#4f7393'); R(x, a + 3, b + 5, 6, 1, '#7396b5');   // 座位
+  [[a + 5, b + 15], [a + 6, b + 16], [a + 6, b + 17], [a + 5, b + 18], [a + 4, b + 19]].forEach(([u, v]) => R(x, u, v, 3, 1, '#ffffff'));   // S 形脖子（伸出船頭外）
+  R(x, a + 3, b + 20, 3, 3, '#ffffff'); P(x, a + 3, b + 20, '#ffffff'); P(x, a + 5, b + 21, '#dedad1'); P(x, a + 4, b + 21, '#3d4246');   // 頭＋眼睛
+  R(x, a + 3, b + 23, 2, 1, '#e8873a');   // 橘嘴
+  for (let v = 19; v < 24; v++) P(x, a + 6, b + v, SEA_SH);
+}
+function sup(x, a, b) {   // 立槳板：尾巴方（上）、鼻子圓尖（下）、中間防滑墊；單葉槳（深灰桿、寬槳葉、T 形握把）
+  const board = [[a, b], [a + 5, b], [a + 5, b + 17], [a + 4, b + 20], [a + 3, b + 22], [a + 2, b + 22], [a + 1, b + 20], [a, b + 17]];
+  ringPoly(x, board); poly(x, board.map(([u, v]) => [u + 2, v + 3]), SEA_SH); poly(x, board, '#3fa7b8');
+  R(x, a, b, 1, 18, '#7fd0dc'); R(x, a + 4, b + 1, 1, 17, '#2f8798'); R(x, a + 1, b + 7, 3, 6, '#dedad1'); R(x, a + 1, b + 7, 3, 1, '#ece8e0');
+  R(x, a + 7, b + 1, 3, 1, GRAY); R(x, a + 8, b + 1, 1, 15, GRAY); R(x, a + 7, b + 16, 3, 4, '#5a5f63'); P(x, a + 7, b + 16, '#7d848a');
+}
+
+// ---- 有馬達的 ----
+function motorboat(x, a, b) {   // 動力小艇：船尾舷外機、兩張座椅、駕駛台（方向盤）、弧形擋風玻璃、兩側腰線
+  const H = hullDraw(x, a + 6, b, 12, 25, ['#f6f3ec', '#ffffff', '#cfc9bd'], { waist: .4 });
+  H.deck(1, 23, '#e7e2d6');
+  R(x, a + 4, b - 3, 4, 3, GRAY); R(x, a + 4, b - 3, 4, 1, '#5a5f63'); R(x, a + 5, b - 4, 2, 1, METAL);   // 舷外機
+  R(x, a + 3, b + 5, 6, 2, '#c4beb3'); R(x, a + 3, b + 5, 6, 1, '#dedad1');   // 後座長椅（原本兩張椅子＋駕駛台像一張臉）
+  R(x, a + 2, b + 9, 5, 4, '#ffffff'); R(x, a + 6, b + 9, 1, 4, '#c9c4b9');
+  R(x, a + 3, b + 9, 3, 3, GRAY); P(x, a + 4, b + 10, '#ffffff');
+  // 駕駛台在右舷（船頭朝下，右舷在畫面左邊；第三批審稿）＋方向盤環（中間空，不像螢幕）
+  R(x, a + 3, b + 14, 6, 1, GLASS); R(x, a + 4, b + 15, 4, 1, GLASS); P(x, a + 3, b + 14, GLASS_HI);   // 弧形擋風玻璃
+  for (let j = 3; j < 16; j++) { const [l, r] = H.span(j); P(x, l + 1, b + j, '#355a74'); P(x, r - 1, b + j, '#355a74'); }   // 兩側腰線
+}
+function fishing(x, a, b) {   // 小漁船：船尾工作甲板（一坨漁網、橘色浮球、魚箱）、桅杆＋吊桿、前面駕駛艙
+  const H = hullDraw(x, a + 7, b, 14, 29, ['#3f6e8c', '#5d8aa6', '#2f5670'], { waist: .45 });
+  H.deck(1, 27, '#c9b79a');
+  for (let v = 2; v < 10; v++) for (let u = 1; u < 9; u++) { const d = Math.hypot(u - 4.3, (v - 5.5) * 1.2) + hash(u, v) * 1.6; if (d < 4) P(x, a + u, b + v, (u + v) % 3 === 0 || (u - v + 30) % 3 === 0 ? '#8fa58a' : '#5e7a68'); }
+  // 一坨網堆（第三批審稿：原本吊桿斜穿過去像盆栽）：不規則外框、斜交叉的淡綠網線
+  [[a + 9, b + 3], [a + 10, b + 6], [a + 9, b + 9]].forEach(([u, v]) => { R(x, u, v, 2, 2, '#e8873a'); P(x, u, v, '#f2a65e'); });   // 浮球
+  R(x, a + 2, b + 10, 3, 2, '#e8e6e0'); R(x, a + 2, b + 11, 3, 1, '#3f6e8c');   // 魚箱
+  R(x, a + 7, b + 11, 2, 2, '#5a5f63'); lineP(x, a + 8, b + 10, a + 8, b + 3, METAL);
+  // 桅杆＋吊桿（一根直的往船尾，走在網堆和浮球中間）
+  R(x, a + 3, b + 14, 8, 7, '#f3f1ec'); R(x, a + 3, b + 14, 8, 1, '#ffffff'); R(x, a + 3, b + 14, 1, 7, '#ffffff'); R(x, a + 10, b + 14, 1, 7, '#c9c4b9');   // 駕駛艙（屋頂亮暗）
+  R(x, a + 3, b + 14, 8, 1, '#c94f3d'); R(x, a + 4, b + 19, 6, 2, GLASS); P(x, a + 4, b + 19, GLASS_HI);
+}
+function cargo(x, a, b) {   // 長蘿貨運的船：駕駛艙在船尾（上）、蘿蔔堆成一座小山在中間到前面、前甲板留空給錨機
+  const H = hullDraw(x, a + 8, b, 16, 35, ['#5d7f3a', '#7a9a55', '#45612b'], { waist: .5 });
+  H.deck(1, 33, '#c9b79a');
+  R(x, a + 4, b + 2, 8, 6, '#efe4cf'); R(x, a + 4, b + 2, 8, 1, '#c94f3d'); R(x, a + 4, b + 2, 1, 6, '#fbf5e8'); R(x, a + 11, b + 2, 1, 6, '#c9c4b9'); R(x, a + 5, b + 6, 6, 2, GLASS); P(x, a + 5, b + 6, GLASS_HI);   // 駕駛艙（窗朝船頭）
+  // 貨艙（第三批審稿：散落的蘿蔔像散菜）：深木框，裡面三排蘿蔔堆滿，後排被前排的葉子壓住，看起來是一整艙
+  R(x, a + 3, b + 11, 10, 15, WOOD[1]); R(x, a + 4, b + 12, 8, 13, '#8a6a42');
+  [11, 15, 19].forEach((v0, row) => [4, 7, 10].forEach((u0, col) => {
+    const u = a + u0 - (row % 2 && col === 2 ? 1 : 0), v = b + v0 + (col === 1 ? 1 : 0);
+    P(x, u, v, '#9cc25e'); P(x, u + 1, v, '#7ba84a'); R(x, u, v + 1, 2, 1, '#7ba84a'); P(x, u + 1, v + 1, '#5d8a3a');
+    R(x, u, v + 2, 2, 3, '#f3efe6'); P(x, u, v + 2, '#ffffff'); P(x, u + 1, v + 4, '#d8d2c4'); P(x, u, v + 5, '#e8e2d4');
+  }));
+  R(x, a + 7, b + 28, 3, 2, '#5a5f63'); P(x, a + 8, b + 28, METAL);   // 錨機
+}
+
+// ---- 帆船 ----（桅杆是一個 2×2 深灰點，撐臂淡色短短的；原本十字像一把劍）
+function dinghy(x, a, b) {   // 小帆船：桅杆在離船頭約 30%、帆沿著帆桁的細楔形、往一邊偏、比船身多出一點
+  const H = hullDraw(x, a + 4.5, b, 9, 20, ['#f6f3ec', '#ffffff', '#cfc9bd'], { waist: .45 });
+  H.deck(1, 18, '#e2dccf');
+  const mx = a + 4, my = b + 13;
+  // 帆：沿著帆桁（往船尾、往右偏）的楔形，靠桅杆那頭 4 顆寬，比船身多出 2 顆
+  for (let k = 0; k <= 12; k++) { const u = mx + 1 + k * .55, v = my - k, wdt = Math.max(1, Math.round(4.5 - k * .3)); for (let q = 0; q < wdt; q++) P(x, Math.round(u) + q, Math.round(v), q === 0 ? '#f6d28a' : q === wdt - 1 ? '#c98322' : '#e9a23a'); }
+  lineP(x, mx, my, mx + 7, my - 12, '#c4beb3');   // 帆桁
+  R(x, mx - 1, my, 2, 2, '#5a5f63');   // 桅杆
+}
+function sailboat(x, a, b) {   // 單桅帆船：船尾凹下去的座艙＋舵柄、中段白色艙頂、桅杆在艙頂前端、帆捲在帆桁上（到桅杆就停）、前支索拉到船頭、兩側支索
+  const H = hullDraw(x, a + 6, b, 12, 33, ['#f6f3ec', '#ffffff', '#cfc9bd'], { waist: .45 });
+  H.deck(1, 31, (u, j) => j % 3 === 0 ? TEAK2 : TEAK);
+  R(x, a + 3, b + 1, 6, 7, TEAK2); R(x, a + 3, b + 1, 6, 1, '#8a6a42'); R(x, a + 6, b + 2, 1, 4, WOOD[1]);   // 座艙＋舵柄
+  R(x, a + 3, b + 9, 6, 11, '#f3f1ec'); R(x, a + 3, b + 9, 6, 1, '#ffffff'); R(x, a + 8, b + 9, 1, 11, '#c9c4b9'); R(x, a + 4, b + 12, 4, 2, GLASS); P(x, a + 4, b + 12, GLASS_HI);   // 艙頂
+  R(x, a + 5, b + 6, 2, 14, '#e9dfc6'); R(x, a + 6, b + 6, 1, 14, '#cfc3a5');   // 捲好的帆（帆桁上）
+  R(x, a + 5, b + 20, 2, 2, '#5a5f63');   // 桅杆
+  lineP(x, a + 6, b + 22, a + 6, b + 31, '#a9aeb1');   // 前支索
+  P(x, a + 2, b + 21, '#c4beb3'); P(x, a + 9, b + 21, '#c4beb3'); P(x, a + 3, b + 21, '#c4beb3'); P(x, a + 8, b + 21, '#c4beb3');   // 兩側支索
+}
+function catamaran(x, a, b) {   // 雙體帆船：兩個船身（左亮右暗、船頭尖）、前後兩支橫樑、菱形網子、桅杆在前橫樑正中、帆桁往船尾、兩條支索拉到兩個船頭
+  [a + 2.5, a + 16.5].forEach(cx => { const H = hullDraw(x, cx, b, 5, 28, ['#f6f3ec', '#ffffff', '#cfc9bd'], { waist: .55, stern: 1 }); });
+  for (let v = 7; v < 18; v++) for (let u = 5; u < 14; u++) P(x, a + u, b + v, (u + v) % 4 === 0 || (u - v + 40) % 4 === 0 ? '#bdb6a8' : '#ece6d8');   // 菱形網子
+  R(x, a, b + 6, 19, 1, METAL); R(x, a, b + 18, 19, 1, METAL); R(x, a, b + 6, 19, 1, '#a9aeb1');
+  R(x, a + 9, b + 7, 1, 11, '#e9dfc6'); R(x, a + 10, b + 7, 1, 11, '#cfc3a5');   // 帆桁上捲好的帆
+  R(x, a + 9, b + 18, 2, 2, '#5a5f63');   // 桅杆（前橫樑正中）
+  lineP(x, a + 9, b + 19, a + 3, b + 27, '#a9aeb1'); lineP(x, a + 10, b + 19, a + 16, b + 27, '#a9aeb1');   // V 字支索
+}
+function junk(x, a, b) {   // 戎克船：平船頭、船尾最寬加高高的尾樓（金點、舵）、扇形竹骨紅帆、船眼
+  // 船身（第三批審稿）：原本到船頭一下子縮窄像靴子，改成從第 20 列每兩列收 1 顆，船頭留 7 顆寬的平頭
+  const JW = [13, ...Array(19).fill(14), 14, 13, 13, 12, 12, 11, 11, 10, 10, 9, 9, 8, 8, 7];
+  const H = hullDraw(x, a + 7, b, 14, 34, ['#7a4a28', '#9a6a40', '#5e3c22'], { rows: JW.map(w => w / 2) });
+  H.deck(1, 33, '#a0683a');
+  R(x, a, b, 14, 5, WOOD[1]); R(x, a, b, 14, 1, WOOD[0]); for (let i = 1; i < 14; i += 3) P(x, a + i, b + 1, '#e8c35a'); R(x, a + 6, b - 2, 2, 2, WOOD[2]);   // 尾樓＋金點＋舵
+  // 扇形竹骨帆（第三批審稿）：從桅杆往右後方張開的扇子，一根根竹骨放射出去，外緣深一階
+  const fan = (mx, my, rr, a0, a1, n) => {
+    for (let k = 2; k <= rr; k++) for (let t = a0; t <= a1; t += .015) P(x, Math.round(mx + Math.cos(t) * k), Math.round(my + Math.sin(t) * k), k < rr * .5 ? '#cf5a46' : '#b33a2f');
+    for (let q = 0; q <= n; q++) { const t = a0 + (a1 - a0) * q / n; lineP(x, mx, my, Math.round(mx + Math.cos(t) * rr), Math.round(my + Math.sin(t) * rr), '#7a241d'); }   // 一根根竹骨
+    for (let t = a0; t <= a1; t += .015) P(x, Math.round(mx + Math.cos(t) * (rr + 1)), Math.round(my + Math.sin(t) * (rr + 1)), '#8f2c23');   // 外緣
+  };
+  fan(a + 7, b + 11, 9, -Math.PI * .62, Math.PI * .02, 5); fan(a + 6, b + 23, 6, -Math.PI * .55, Math.PI * .02, 4);
+  R(x, a + 6, b + 10, 2, 2, WOOD[2]); R(x, a + 5, b + 22, 2, 2, WOOD[2]);   // 桅杆
+  [[a + 4, b + 29], [a + 9, b + 29]].forEach(([u, v]) => { R(x, u, v, 2, 2, '#f3f1ec'); P(x, u + (u > a + 7 ? 0 : 1), v + 1, '#3d4246'); });   // 船眼
+}
+
+// ---- 遊艇 ----（第三批審稿：收窄成 15 寬，長寬比才像船）
+function yacht(x, a, b) {   // 白色遊艇：船尾游泳平台、柚木後甲板、上層建築、擋風玻璃、船頭日光甲板墊子、錨、兩側腰線
+  R(x, a + 3, b - 2, 9, 2, TEAK2); R(x, a + 3, b - 2, 9, 1, TEAK);   // 游泳平台
+  const H = hullDraw(x, a + 7.5, b, 15, 41, ['#f6f3ec', '#ffffff', '#cfc9bd'], { waist: .42 });
+  H.deck(1, 39, '#e7e2d6');
+  H.deck(1, 7, (u) => u % 2 ? TEAK2 : TEAK);
+  R(x, a + 3, b + 9, 9, 14, '#ffffff'); R(x, a + 3, b + 9, 1, 14, '#ffffff'); R(x, a + 11, b + 9, 1, 14, '#dcd6ca'); R(x, a + 4, b + 11, 7, 5, '#dcd6ca'); R(x, a + 4, b + 18, 7, 4, GLASS); R(x, a + 5, b + 18, 2, 1, GLASS_HI);
+  [[a + 3, b + 26], [a + 8, b + 26]].forEach(([u, v]) => { R(x, u, v, 4, 3, '#f3ece0'); R(x, u + 1, v + 1, 2, 1, '#dedad1'); });   // 日光甲板墊子
+  R(x, a + 7, b + 35, 1, 2, METAL); P(x, a + 6, b + 36, METAL); P(x, a + 8, b + 36, METAL);   // 錨
+  for (let j = 2; j < 30; j++) { const [l, r] = H.span(j); P(x, l + 1, b + j, '#355a74'); P(x, r - 1, b + j, '#355a74'); }
+}
+function yachtNavy(x, a, b) {   // 深藍遊艇（跑車型）：深藍船身 2 顆邊、金線、矮長上層建築、深色玻璃硬頂、船頭更尖長、前段日光甲板
+  R(x, a + 3, b - 2, 9, 2, TEAK2);
+  const H = hullDraw(x, a + 7.5, b, 15, 42, ['#22364a', '#3a5670', '#1f3a5a'], { waist: .36, pow: 1.6 });
+  H.deck(2, 39, '#f3f1ec', 2);
+  H.deck(2, 7, (u) => u % 2 ? TEAK2 : TEAK, 2);
+  for (let j = 3; j < 34; j++) { const [l, r] = H.span(j); P(x, l + 2, b + j, '#c9a24a'); P(x, r - 2, b + j, '#c9a24a'); }   // 金線
+  R(x, a + 4, b + 8, 7, 18, '#ffffff'); R(x, a + 5, b + 9, 5, 15, DGLASS); R(x, a + 7, b + 9, 1, 15, DGLASS_HI); R(x, a + 5, b + 22, 5, 2, GLASS);   // 深色玻璃硬頂＋擋風玻璃
+  [[a + 4, b + 28], [a + 8, b + 28]].forEach(([u, v]) => { R(x, u, v, 3, 3, '#f3ece0'); P(x, u + 1, v + 1, '#dedad1'); });
+}
+function powerCat(x, a, b) {   // 雙體遊艇：兩個船身（船頭尖）、中間網子、寬甲板、座墊、陽傘
+  [a + 3, a + 21].forEach(cx => hullDraw(x, cx, b, 6, 40, ['#f6f3ec', '#ffffff', '#cfc9bd'], { waist: .6, stern: 1 }));
+  for (let v = 30; v < 36; v++) for (let u = 5; u < 19; u++) if ((u + v) % 3 === 0 || (u - v + 40) % 3 === 0) P(x, a + u, b + v, '#c4beb3');
+  // 兩個船頭中間的網子（第三批審稿：灰色棋盤格像烤肉架）：淡色網線，網眼透出海
+  R(x, a + 2, b + 4, 20, 26, '#ffffff'); R(x, a + 2, b + 4, 20, 1, '#ddd8cc'); R(x, a + 21, b + 4, 1, 26, '#dcd6ca');
+  R(x, a + 4, b + 6, 16, 6, TEAK); for (let i = 4; i < 20; i += 2) R(x, a + i, b + 6, 1, 6, TEAK2);
+  [[a + 5, b + 7], [a + 15, b + 7]].forEach(([u, v]) => { R(x, u, v, 4, 3, '#3d5a73'); R(x, u, v, 4, 1, '#5d7d96'); });   // 座墊
+  for (let k = 0; k < 16; k++) { const t = k / 16 * Math.PI * 2; P(x, Math.round(a + 12 + Math.cos(t) * 2.5), Math.round(b + 9 + Math.sin(t) * 2.5), k % 4 < 2 ? '#c94f3d' : '#f3f1ec'); } P(x, a + 12, b + 9, '#f3f1ec');   // 陽傘
+  R(x, a + 5, b + 14, 14, 12, '#f3f1ec'); R(x, a + 6, b + 21, 12, 4, GLASS); R(x, a + 7, b + 21, 3, 1, GLASS_HI); R(x, a + 7, b + 15, 10, 4, '#3d5a73'); R(x, a + 8, b + 15, 1, 4, '#5d7d96'); R(x, a + 12, b + 15, 1, 4, '#5d7d96');
+}
+function sportfisher(x, a, b) {   // 釣魚遊艇：船尾開放座艙＋打鬥椅＋竿座、上層建築、塔架（四根柱子＋遮陽頂的框）、外伸竿從塔架往外往後斜、船頭長
+  const H = hullDraw(x, a + 7.5, b, 15, 39, ['#f6f3ec', '#ffffff', '#cfc9bd'], { waist: .38 });
+  H.deck(1, 37, '#e7e2d6');
+  for (let j = 2; j < 30; j++) { const [l, r] = H.span(j); P(x, l + 1, b + j, '#b33a2f'); P(x, r - 1, b + j, '#b33a2f'); }   // 紅色腰線
+  R(x, a + 6, b + 4, 3, 3, '#ffffff'); R(x, a + 6, b + 4, 3, 1, GRAY); P(x, a + 7, b + 7, '#c4beb3');   // 打鬥椅＋椅背＋腳踏
+  [[a + 2, b + 2], [a + 12, b + 2], [a + 2, b + 8], [a + 12, b + 8]].forEach(([u, v]) => P(x, u, v, GRAY));   // 竿座
+  R(x, a + 3, b + 11, 9, 13, '#ffffff'); R(x, a + 11, b + 11, 1, 13, '#dcd6ca'); R(x, a + 4, b + 20, 7, 3, GLASS); P(x, a + 4, b + 20, GLASS_HI);
+  R(x, a + 4, b + 12, 7, 1, METAL); R(x, a + 4, b + 18, 7, 1, METAL); R(x, a + 4, b + 12, 1, 7, METAL); R(x, a + 10, b + 12, 1, 7, METAL); R(x, a + 5, b + 16, 5, 2, '#f3f1ec');   // 塔架框＋遮陽頂（中間看得到下面）
+  [[a + 3, b + 11], [a + 10, b + 11], [a + 3, b + 18], [a + 10, b + 18]].forEach(([u, v]) => R(x, u, v, 2, 2, METAL));   // 四根柱子
+  lineP(x, a + 3, b + 12, a - 6, b + 3, '#a9aeb1'); lineP(x, a + 11, b + 12, a + 20, b + 3, '#a9aeb1');   // 外伸竿（從塔架往外往後）
+}
+
+// ---- 展示級 ----
+function superyacht(x, a, b) {   // 超級遊艇（展示級）：24 × 66（第三批：從 28 收窄、船頭收成細長的尖）；船尾游泳平台、按摩池，雷達球架，船頭直升機坪
+  const W = 24, L = 66, cx = a + W / 2;
+  R(x, a + 3, b - 3, W - 6, 4, TEAK); for (let i = 3; i < W - 3; i += 2) R(x, a + i, b - 3, 1, 4, TEAK2);   // 游泳平台
+  const H = hullDraw(x, cx, b, W, L, ['#1f2f3f', '#2f4a63', '#2a3a4c'], { waist: .55, pow: 1.5, stern: 3, sternRound: 1 });
+  H.deck(1, L - 1, '#f7f5f0');
+  for (let j = 2; j < L - 6; j++) { const [l, r] = H.span(j); P(x, l + 1, b + j, j % 3 ? '#c9a24a' : '#f0d58a'); P(x, r - 1, b + j, j % 3 ? '#c9a24a' : '#f0d58a'); if (j % 2 === 0 && j > 5) { P(x, l + 2, b + j, '#d6eef2'); P(x, r - 2, b + j, '#d6eef2'); } }   // 金線＋玻璃欄杆
+  R(x, a + 8, b + 1, 8, 2, '#c9c4b9');
+  for (let v = b + 4; v < b + 18; v++) for (let u = a + 3; u < a + W - 3; u++) P(x, u, v, (u - a) % 2 ? TEAK : '#b08a5e');
+  circ(x, cx, b + 10, 4, '#f3f1ec'); circ(x, cx, b + 10, 3, '#5fb3c4'); P(x, cx - 1, b + 9, '#9fdce4'); P(x, cx + 1, b + 11, '#9fdce4');   // 按摩池
+  [[a + 3, b + 6], [a + W - 6, b + 6], [a + 3, b + 12], [a + W - 6, b + 12]].forEach(([u, v]) => { R(x, u, v, 3, 5, '#ffffff'); R(x, u, v + 3, 3, 2, '#3d5a73'); });
+  R(x, a + 3, b + 18, W - 6, 26, '#e9e6df'); R(x, a + 3, b + 18, W - 6, 1, '#ffffff'); R(x, a + 3, b + 20, 1, 22, '#3d4a55'); R(x, a + W - 4, b + 20, 1, 22, '#3d4a55');
+  R(x, a + 5, b + 20, W - 10, 18, '#f7f5f0'); R(x, a + 5, b + 20, W - 10, 1, '#ffffff');
+  R(x, a + 6, b + 22, W - 12, 6, TEAK); for (let i = 6; i < W - 6; i += 2) R(x, a + i, b + 22, 1, 6, TEAK2);
+  [[a + 7, b + 23], [a + 11, b + 23], [a + 15, b + 23]].forEach(([u, v]) => R(x, u, v, 3, 4, '#f3f1ec'));
+  R(x, a + 5, b + 32, W - 10, 1, '#5a5f63');
+  // 雷達桅（深灰橫架）＋兩顆 4×4 雷達球坐在上面：外圈淡灰、右下深一階（第三批審稿：白在白上看不到）
+  [[a + 7, b + 28], [a + W - 11, b + 28]].forEach(([u, v]) => {
+    [[1, 0], [2, 0], [0, 1], [0, 2], [1, 3], [2, 3], [3, 1], [3, 2]].forEach(([p, q]) => P(x, u + p, v + q, p + q >= 3 ? '#a9a49a' : '#c9c4b9'));
+    R(x, u + 1, v + 1, 2, 2, '#ffffff'); P(x, u + 2, v + 2, '#e9e6df');
+  });
+  R(x, a + 5, b + 38, W - 10, 3, '#3d4a55'); R(x, a + 6, b + 38, 6, 1, DGLASS_HI);   // 駕駛台弧形黑玻璃
+  const hy = b + 50; circ(x, cx, hy, 6, '#e2a62e'); circ(x, cx, hy, 5, '#2f3e4c'); R(x, cx - 2, hy - 3, 1, 7, '#f3f1ec'); R(x, cx + 2, hy - 3, 1, 7, '#f3f1ec'); R(x, cx - 2, hy, 5, 1, '#f3f1ec');   // 直升機坪
+  R(x, cx, b + L - 6, 1, 3, METAL); P(x, cx - 1, b + L - 4, METAL); P(x, cx + 1, b + L - 4, METAL);
+  R(x, cx + 1, b - 7, 1, 5, METAL); R(x, cx + 2, b - 7, 4, 3, '#b33a2f');
+}
+function runabout(x, a, b) {   // 古董木船（展示級）：1930 年代桃花心木遊艇，20 × 56；船尾圓（上）、船頭尖（下）
   const W = 20, L = 56, bow = 16;
   const outer = [[a + 3, b], [a + W - 3, b], [a + W, b + 4], [a + W, b + L - bow], [a + W / 2, b + L], [a, b + L - bow], [a, b + 4]];
+  ringPoly(x, outer);
   poly(x, outer.map(([u, v]) => [u + 3, v + 4]), 'rgba(20,40,50,.32)');
-  poly(x, outer, '#4a2210');                                                                   // 最外圈深色
+  poly(x, outer, '#4a2210');
   const inner = [[a + 3, b + 1], [a + W - 3, b + 1], [a + W - 1, b + 4], [a + W - 1, b + L - bow], [a + W / 2, b + L - 2], [a + 1, b + L - bow], [a + 1, b + 4]];
-  poly(x, inner, '#8a4422');                                                                    // 亮光漆桃花心木
-  poly(x, [[a + 3, b + 1], [a + 6, b + 1], [a + 3, b + L - bow], [a + 1, b + L - bow], [a + 1, b + 4]], '#b8663a');   // 左邊反光
-  // 金色護舷線（沿著船邊一圈）
+  poly(x, inner, '#8a4422');
+  poly(x, [[a + 3, b + 1], [a + 6, b + 1], [a + 3, b + L - bow], [a + 1, b + L - bow], [a + 1, b + 4]], '#b8663a');
   const gold = (pts) => { for (let k = 0; k < pts.length - 1; k++) { const [x0, y0] = pts[k], [x1, y1] = pts[k + 1], n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, (i + k) % 3 ? '#c9a24a' : '#f0d58a'); } };
   gold([[a + 2, b + 2], [a + W - 2, b + 2], [a + W - 2, b + L - bow], [a + W / 2, b + L - 3], [a + 2, b + L - bow], [a + 2, b + 2]]);
-  // 柚木甲板（直條）
-  for (let v = b + 4; v < b + L - bow; v++) for (let u = a + 3; u < a + W - 3; u++) P(x, u, v, (u - a) % 3 === 0 ? '#9a7448' : '#c49a6c');
-  poly(x, [[a + 3, b + L - bow], [a + W - 3, b + L - bow], [a + W / 2, b + L - 6]], '#c49a6c');
-  for (let v = b + L - bow; v < b + L - 6; v++) if ((v - b) % 3 === 0) P(x, a + W / 2, v, '#9a7448');
-  // 船尾：圓弧座位（紅皮）、金色名牌、朱色旗
+  // 柚木甲板：淡色填縫線順著船身往船頭收攏（第三批審稿）
+  for (let v = b + 4; v < b + L - 6; v++) { const t = v < b + L - bow ? 1 : Math.max(0, (b + L - 6 - v) / (bow - 6)), hw = (W / 2 - 3) * t; if (hw < .5) continue;
+    for (let u = Math.ceil(a + W / 2 - hw); u < a + W / 2 + hw; u++) { const f = (u + .5 - (a + W / 2)) / hw; P(x, u, v, Math.abs(Math.abs(f) - .34) < .12 / Math.max(.4, t) || Math.abs(Math.abs(f) - .72) < .1 / Math.max(.4, t) ? '#e0c49a' : TEAK); } }
   R(x, a + 4, b + 4, 12, 7, '#7a1f1f'); R(x, a + 5, b + 5, 10, 2, '#a8342a'); R(x, a + 5, b + 8, 2, 2, '#a8342a'); R(x, a + 13, b + 8, 2, 2, '#a8342a');
   R(x, a + 7, b + 1, 6, 1, '#f0d58a');
-  R(x, a + 9, b - 4, 1, 5, '#5e3c22'); R(x, a + 10, b - 4, 5, 3, '#b33a2f'); P(x, a + 14, b - 3, '#8f2c23');
-  // 主艙房：奶油色屋頂、桃花心木邊、兩排黃銅舷窗、天窗、煙囪
+  R(x, a + 9, b - 4, 1, 5, WOOD[1]); R(x, a + 10, b - 4, 5, 3, '#b33a2f'); P(x, a + 14, b - 3, '#8f2c23');
   R(x, a + 4, b + 14, 12, 20, '#5a2a14'); R(x, a + 5, b + 15, 10, 18, '#efe4cf'); R(x, a + 5, b + 15, 10, 1, '#fbf5e8');
   for (let k = 0; k < 4; k++) { circ(x, a + 4, b + 17 + k * 4, 1, '#c9a24a'); P(x, a + 4, b + 17 + k * 4, '#9fc0cc'); circ(x, a + 15, b + 17 + k * 4, 1, '#c9a24a'); P(x, a + 15, b + 17 + k * 4, '#9fc0cc'); }
-  R(x, a + 7, b + 17, 6, 4, '#8fb4c0'); R(x, a + 7, b + 17, 6, 1, '#c9a24a'); R(x, a + 9, b + 17, 1, 4, '#c9a24a');   // 天窗
-  R(x, a + 8, b + 23, 4, 5, '#efe4cf'); R(x, a + 8, b + 23, 4, 2, '#2c2c2c'); R(x, a + 9, b + 28, 3, 1, 'rgba(20,40,50,.3)');   // 煙囪（黑頂）
-  // 駕駛艙：一圈窗、金色舵輪
+  R(x, a + 7, b + 17, 6, 4, '#8fb4c0'); R(x, a + 7, b + 17, 6, 1, '#c9a24a'); R(x, a + 9, b + 17, 1, 4, '#c9a24a');
+  R(x, a + 8, b + 23, 4, 5, '#efe4cf'); R(x, a + 8, b + 23, 4, 2, '#3d4246'); R(x, a + 9, b + 28, 3, 1, 'rgba(20,40,50,.3)');   // 煙囪（深灰頂，不用近黑）
   R(x, a + 5, b + 34, 10, 6, '#5a2a14'); R(x, a + 6, b + 35, 8, 2, '#9fc0cc'); R(x, a + 6, b + 35, 2, 1, '#e2f1f3'); circ(x, a + 10, b + 38, 1, '#c9a24a');
-  // 前甲板：黃銅繫船柱、捲好的繩子、錨機、船頭金色裝飾
   [[a + 5, b + 42], [a + 14, b + 42]].forEach(([u, v]) => { R(x, u, v, 2, 2, '#c9a24a'); P(x, u, v, '#f0d58a'); });
   circ(x, a + 7, b + 46, 2, '#d9cba5'); P(x, a + 7, b + 46, '#b8a77c');
-  R(x, a + 9, b + 45, 3, 3, '#3d3d3d'); P(x, a + 10, b + 46, '#8e9396');
+  R(x, a + 9, b + 45, 3, 3, '#4a4d50'); P(x, a + 10, b + 46, METAL);
   P(x, a + 10, b + L - 2, '#f0d58a'); P(x, a + 10, b + L - 1, '#c9a24a'); P(x, a + 9, b + L - 3, '#c9a24a'); P(x, a + 11, b + L - 3, '#c9a24a');
-  // 欄杆（金點）
   for (let v = b + 12; v < b + L - bow; v += 2) { P(x, a + 2, v, '#f0d58a'); P(x, a + W - 3, v, '#f0d58a'); }
 }
-function cargo(x, a, b) {   // 長蘿貨運的船：綠色船身、載滿蘿蔔（貨運・航致敬）
-  hull(x, a, b, 16, 34, 10, '#5d7f3a'); poly(x, [[a + 1, b + 1], [a + 15, b + 1], [a + 15, b + 23], [a + 8, b + 32], [a + 1, b + 23]], '#c9b79a');
-  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { circ(x, a + 3 + i * 3.4, b + 4 + j * 3.4, 1, '#f3efe6'); P(x, a + 3 + i * 3.4, b + 3 + j * 3.4, '#7ba84a'); }
-  R(x, a + 4, b + 18, 8, 6, '#efe4cf'); R(x, a + 5, b + 21, 6, 2, K.glass); R(x, a + 4, b + 18, 8, 1, '#c94f3d'); }
-
-// ===== 新的船（船頭朝下）=====
-function swan(x, a, b) {   // 天鵝船：白色、腳踏的
-  R(x, a + 2, b + 3, 12, 18, 'rgba(20,40,50,.3)');
-  poly(x, [[a + 1, b + 2], [a + 11, b + 2], [a + 12, b + 12], [a + 6, b + 18], [a, b + 12]], '#f6f3ec');
-  poly(x, [[a + 1, b + 2], [a + 4, b + 2], [a + 3, b + 12], [a, b + 12]], '#ffffff'); R(x, a + 9, b + 3, 2, 9, '#ddd8cc');
-  R(x, a + 3, b + 6, 6, 4, '#4f7393'); R(x, a + 3, b + 6, 6, 1, '#7396b5');
-  R(x, a + 5, b + 13, 2, 5, '#ffffff'); P(x, a + 5, b + 18, '#e8873a'); P(x, a + 6, b + 18, '#e8873a'); P(x, a + 5, b + 15, '#2a2a2a');
-  R(x, a, b, 12, 2, '#ffffff'); }
-function sup(x, a, b) {   // 立槳板
-  R(x, a + 2, b + 3, 5, 22, 'rgba(20,40,50,.3)');
-  R(x, a + 1, b, 3, 22, '#3fa7b8'); R(x, a, b + 2, 5, 18, '#3fa7b8'); R(x, a + 1, b + 2, 1, 18, '#7fd0dc'); R(x, a + 2, b + 8, 1, 6, '#f3f1ec');
-  for (let i = 0; i < 16; i++) P(x, a + 7, b + 2 + i, '#2c2c2c'); R(x, a + 6, b + 17, 3, 3, '#2c2c2c'); }
-function dinghy(x, a, b) {   // 小帆船：一面三角帆
-  hull(x, a, b, 9, 20, 6, '#f6f3ec'); poly(x, [[a + 1, b + 1], [a + 8, b + 1], [a + 8, b + 13], [a + 4.5, b + 18], [a + 1, b + 13]], '#e2dccf');
-  circ(x, a + 4, b + 11, 1, '#8e9396'); poly(x, [[a + 4, b + 11], [a + 4, b + 2], [a + 11, b + 6]], '#e9a23a'); R(x, a + 4, b + 2, 1, 9, '#8e9396'); }
-function catamaran(x, a, b) {   // 雙體帆船：兩個船身、中間網子
-  [[a, b], [a + 14, b]].forEach(([u, v]) => { hull(x, u, v, 5, 28, 6, '#f6f3ec'); R(x, u + 1, v + 2, 1, 20, '#ffffff'); });
-  R(x, a + 5, b + 6, 9, 12, '#e9e2d2'); for (let j = 6; j < 18; j += 2) for (let i = 5; i < 14; i += 2) P(x, a + i, b + j, '#bdb6a8');
-  R(x, a, b + 5, 19, 1, '#8e9396'); R(x, a, b + 18, 19, 1, '#8e9396');
-  circ(x, a + 9, b + 9, 1, '#8e9396'); R(x, a + 9, b + 9, 1, 14, '#f3f1ec'); R(x, a + 10, b + 9, 1, 14, '#d6cdb6'); }
-function junk(x, a, b) {   // 戎克船：木頭船身、紅色有竹骨的帆
-  hull(x, a, b, 14, 34, 9, '#7a4a28'); poly(x, [[a + 1, b + 1], [a + 13, b + 1], [a + 13, b + 24], [a + 7, b + 32], [a + 1, b + 24]], '#a0683a');
-  R(x, a, b, 14, 4, '#5e3c22'); R(x, a + 1, b + 1, 12, 2, '#c94f3d');
-  [[b + 6, 14], [b + 18, 12]].forEach(([v, len]) => { R(x, a - 2, v, 18, len - 8, '#b33a2f'); for (let j = 0; j < len - 8; j += 2) R(x, a - 2, v + j, 18, 1, '#8f2c23'); circ(x, a + 7, v + (len - 8) / 2, 1, '#5e3c22'); });
-  P(x, a + 7, b + 31, '#e8c35a'); }
-function yachtNavy(x, a, b) {   // 深藍遊艇
-  hull(x, a, b, 18, 40, 12, '#22364a'); poly(x, [[a + 1, b + 1], [a + 17, b + 1], [a + 17, b + 27], [a + 9, b + 38], [a + 1, b + 27]], '#f3f1ec');
-  R(x, a + 2, b + 2, 14, 6, '#c49a6c'); for (let i = 2; i < 16; i += 2) R(x, a + i, b + 2, 1, 6, '#a87f55');
-  R(x, a + 3, b + 10, 12, 15, '#ffffff'); R(x, a + 4, b + 19, 10, 4, '#3d4a55'); R(x, a + 5, b + 19, 3, 1, '#6a7f8e'); R(x, a + 5, b + 12, 8, 5, '#dcd6ca'); R(x, a, b + 26, 18, 1, '#c9a24a'); }
-function powerCat(x, a, b) {   // 雙體遊艇：很寬
-  [[a, b], [a + 18, b]].forEach(([u, v]) => hull(x, u, v, 6, 40, 8, '#f6f3ec'));
-  R(x, a + 2, b + 4, 22, 26, '#ffffff'); R(x, a + 2, b + 4, 22, 1, '#ddd8cc'); R(x, a + 4, b + 6, 18, 6, '#c49a6c'); for (let i = 4; i < 22; i += 2) R(x, a + i, b + 6, 1, 6, '#a87f55');
-  R(x, a + 5, b + 14, 16, 12, '#f3f1ec'); R(x, a + 6, b + 21, 14, 4, K.glass); R(x, a + 7, b + 21, 4, 1, K.glassHi); R(x, a + 8, b + 15, 10, 4, '#3d5a73'); R(x, a + 9, b + 15, 1, 4, '#5d7d96'); R(x, a + 13, b + 15, 1, 4, '#5d7d96'); }
-function sportfisher(x, a, b) {   // 釣魚遊艇：塔架、兩根外伸竿
-  hull(x, a, b, 16, 38, 12, '#f6f3ec'); poly(x, [[a + 1, b + 1], [a + 15, b + 1], [a + 15, b + 25], [a + 8, b + 36], [a + 1, b + 25]], '#e7e2d6');
-  R(x, a + 2, b + 2, 12, 8, '#d8d2c4'); [[a + 4, b + 5], [a + 10, b + 5]].forEach(([u, v]) => circ(x, u, v, 1, '#8e9396'));
-  R(x, a + 3, b + 12, 10, 12, '#ffffff'); R(x, a + 4, b + 19, 8, 3, K.glass);
-  R(x, a + 4, b + 13, 8, 5, '#3d4a55'); R(x, a + 4, b + 13, 8, 1, '#6a7f8e');   // 塔架頂
-  for (let i = 0; i < 14; i++) { P(x, a + 2 - i * .8, b + 14 - i * .5, '#8e9396'); P(x, a + 14 + i * .8, b + 14 - i * .5, '#8e9396'); }
-  R(x, a, b + 24, 16, 1, '#c94f3d'); }
-function tallShip(x, a, b) {   // 古典三桅帆船（展示級）：船身 20 × 62，帆張開比船身寬；船尾（上）雕花樓台，船頭（下）斜桅和船首像
+function tallShip(x, a, b) {   // 古典三桅帆船（展示級）：船身 20 × 62，帆張開比船身寬；第三批審稿：深咖啡改木頭那組（不用近黑）、浮在水上的索具拿掉、桅頂改木頭圓＋亮點
   const W = 20, L = 62, bow = 16;
   const outer = [[a + 2, b], [a + W - 2, b], [a + W, b + 6], [a + W, b + L - bow], [a + W / 2, b + L], [a, b + L - bow], [a, b + 6]];
+  ringPoly(x, outer);
   poly(x, outer.map(([u, v]) => [u + 4, v + 5]), 'rgba(20,40,50,.32)');
-  poly(x, outer, '#2a1a10');
-  poly(x, [[a + 2, b + 1], [a + W - 2, b + 1], [a + W - 1, b + 6], [a + W - 1, b + L - bow], [a + W / 2, b + L - 2], [a + 1, b + L - bow], [a + 1, b + 6]], '#3f2616');
-  // 船邊：黃色腰帶＋一排方形砲窗
+  poly(x, outer, WOOD[2]);
+  poly(x, [[a + 2, b + 1], [a + W - 2, b + 1], [a + W - 1, b + 6], [a + W - 1, b + L - bow], [a + W / 2, b + L - 2], [a + 1, b + L - bow], [a + 1, b + 6]], WOOD[1]);
   for (let v = b + 8; v < b + L - bow; v++) { P(x, a + 1, v, '#d9a441'); P(x, a + W - 2, v, '#d9a441'); }
-  for (let v = b + 10; v < b + L - bow - 2; v += 5) { R(x, a, v, 1, 2, '#1a0f08'); R(x, a + W - 1, v, 1, 2, '#1a0f08'); }
-  // 甲板（柚木）
-  for (let v = b + 4; v < b + L - bow + 4; v++) for (let u = a + 3; u < a + W - 3; u++) P(x, u, v, (u - a) % 3 === 0 ? '#9a7448' : '#c49a6c');
-  poly(x, [[a + 3, b + L - bow + 4], [a + W - 3, b + L - bow + 4], [a + W / 2, b + L - 5]], '#c49a6c');
-  // 船尾樓台：深色木頭、金色雕花窗、提燈、舵輪
+  for (let v = b + 10; v < b + L - bow - 2; v += 5) { R(x, a, v, 1, 2, '#3d4246'); R(x, a + W - 1, v, 1, 2, '#3d4246'); }
+  for (let v = b + 4; v < b + L - bow + 4; v++) for (let u = a + 3; u < a + W - 3; u++) P(x, u, v, (u - a) % 3 === 0 ? '#9a7448' : TEAK);
+  poly(x, [[a + 3, b + L - bow + 4], [a + W - 3, b + L - bow + 4], [a + W / 2, b + L - 5]], TEAK);
   R(x, a + 2, b + 1, W - 4, 9, '#5a2a14'); for (let i = 0; i < 5; i++) { R(x, a + 4 + i * 3, b + 2, 2, 2, '#f6cd72'); P(x, a + 4 + i * 3, b + 1, '#c9a24a'); }
   R(x, a + 3, b + 5, W - 6, 1, '#c9a24a'); R(x, a + 3, b + 9, W - 6, 1, '#c9a24a');
   circ(x, a + W / 2, b + 7, 1, '#c9a24a'); P(x, a + W / 2, b + 7, '#5a2a14');
-  R(x, a + W / 2 - 1, b - 3, 2, 3, '#c9a24a'); P(x, a + W / 2 - 1, b - 2, '#f6cd72'); P(x, a + W / 2, b - 2, '#f6cd72');   // 船尾提燈
-  R(x, a + W / 2 + 3, b - 6, 1, 6, '#5e3c22'); R(x, a + W / 2 + 4, b - 6, 5, 3, '#b33a2f');   // 朱色旗
-  // 救生艇
+  R(x, a + W / 2 - 1, b - 3, 2, 3, '#c9a24a'); P(x, a + W / 2 - 1, b - 2, '#f6cd72'); P(x, a + W / 2, b - 2, '#f6cd72');
+  R(x, a + W / 2 + 3, b - 6, 1, 6, WOOD[1]); R(x, a + W / 2 + 4, b - 6, 5, 3, '#b33a2f');
   R(x, a + 4, b + 12, 3, 6, '#efe4cf'); R(x, a + 13, b + 12, 3, 6, '#efe4cf');
-  // 三根桅：張開的方帆（米白、有弧度陰影），帆比船身寬
   [[b + 18, 30], [b + 32, 34], [b + 46, 28]].forEach(([v, sw]) => {
     const sx = a + W / 2 - sw / 2;
-    R(x, sx + 3, v + 4, sw, 7, 'rgba(20,40,50,.25)');                                           // 帆的影子
+    R(x, sx + 3, v + 4, sw, 7, 'rgba(20,40,50,.25)');
     for (let j = 0; j < 7; j++) for (let i = 0; i < sw; i++) { const bulge = Math.sin(i / (sw - 1) * Math.PI); let c = j < 2 ? '#fbf5e6' : j < 5 ? '#efe4cf' : '#d9c9a8'; if (bulge < .25) c = j < 4 ? '#e2d5b6' : '#cbb994'; if (i % 6 === 0) c = '#d2c3a2'; P(x, sx + i, v + j + Math.round(bulge * 1.5), c); }
-    R(x, sx - 1, v - 1, sw + 2, 1, '#3f2616');                                                   // 帆桁
-    circ(x, a + W / 2, v + 3, 2, '#3f2616'); P(x, a + W / 2, v + 3, '#c9a24a');                  // 桅頂瞭望台
-    for (let k = 0; k < 4; k++) { P(x, sx - 2 - k, v + 8 + k, '#8a7a62'); P(x, sx + sw + 1 + k, v + 8 + k, '#8a7a62'); }   // 索具
+    R(x, sx - 1, v - 1, sw + 2, 1, WOOD[1]);   // 帆桁
+    circ(x, a + W / 2, v + 3, 1, WOOD[0]); R(x, a + W / 2 - 1, v + 2, 3, 3, WOOD[0]); P(x, a + W / 2 - 1, v + 2, '#9a6a40'); P(x, a + W / 2 + 1, v + 4, WOOD[2]);   // 桅頂：木頭圓＋亮點
   });
-  // 船頭：斜桅、三角帆、金色船首像
-  R(x, a + W / 2, b + L - 4, 1, 10, '#3f2616'); poly(x, [[a + W / 2 + 1, b + L - 2], [a + W / 2 + 1, b + L + 5], [a + W / 2 + 5, b + L - 1]], '#efe4cf');
+  R(x, a + W / 2, b + L - 4, 1, 10, WOOD[1]); poly(x, [[a + W / 2 + 1, b + L - 2], [a + W / 2 + 1, b + L + 5], [a + W / 2 + 5, b + L - 1]], '#efe4cf');
   P(x, a + W / 2, b + L - 3, '#f0d58a'); P(x, a + W / 2 - 1, b + L - 4, '#c9a24a');
 }
 
