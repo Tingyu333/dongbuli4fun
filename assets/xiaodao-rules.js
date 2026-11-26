@@ -268,19 +268,20 @@
 
   const START = { house: 1 };                             // 一開始送帳篷
 
-  // 島的等級：地塊（含一開始送的，送 12 塊）幾塊升一階；全部設施蓋到最高剛好要 40 塊，cap 是每種設施最高到幾級（0＝還不能蓋）
+  // 島的等級：地塊（含一開始送的）幾塊升一階；2026-11-26 地塊大一倍後：送 9 塊、全部設施蓋到最高剛好要 23 塊（原本送 13、要 42），cap 是每種設施最高到幾級（0＝還不能蓋）
   const TIERS = [
     { name: '壹', n: 0,  cap: { house: 2, garage: 2, dock: 2, airfield: 0, launchpad: 0 } },
-    { name: '貳', n: 16, cap: { house: 3, garage: 3, dock: 3, airfield: 2, launchpad: 0 } },
-    { name: '參', n: 22, cap: { house: 4, garage: 4, dock: 4, airfield: 3, launchpad: 0 } },
-    { name: '肆', n: 30, cap: { house: 5, garage: 5, dock: 5, airfield: 4, launchpad: 0 } },
-    { name: '伍', n: 40, cap: { house: 5, garage: 5, dock: 5, airfield: 5, launchpad: 3 } },
+    { name: '貳', n: 11, cap: { house: 3, garage: 3, dock: 3, airfield: 2, launchpad: 0 } },
+    { name: '參', n: 14, cap: { house: 4, garage: 4, dock: 4, airfield: 3, launchpad: 0 } },
+    { name: '肆', n: 18, cap: { house: 5, garage: 5, dock: 5, airfield: 4, launchpad: 0 } },
+    { name: '伍', n: 23, cap: { house: 5, garage: 5, dock: 5, airfield: 5, launchpad: 3 } },
   ];
   // 第 n 塊買的地（不算送的）：$2,000 × 1.1ⁿ，取到百位（第 1 塊 $2,200、第 10 塊約 $5,200、第 20 塊約 $1.35 萬、第 27 塊（到伍）約 $2.6 萬，買到伍加起來約 27 萬）
   // 2026-11-21 使用者說「土地太貴了」，從 $1,500 × 1.2ⁿ（買到伍約 123 萬、最後一塊 $20 萬）降成這個
   // 到伍（自己買第 27 塊，送的 13 塊＋27 塊＝40 塊）之後只是把島變大，每塊多 1% 就好（使用者 2026-11-21 先選 3%、11-22 改成 1%；原本一樣 10% 會漲到第 45 塊 $14.6 萬）
-  const PLOT_BREAK = 27;
-  const plotPrice = n => Math.round(2000 * Math.pow(1.1, Math.min(n, PLOT_BREAK)) * Math.pow(1.01, Math.max(0, n - PLOT_BREAK)) / 100) * 100;
+  // 2026-11-26 地塊合併（一塊大一倍）：使用者說「總價少 1/3」，每一階買地的總價變成原本的約 2/3：$2,100 × 1.22ⁿ，取到百位（第 1 塊 $2,600、第 9 塊約 $1.26 萬、第 14 塊（到伍）$3.4 萬，買到伍加起來約 17.7 萬，原本約 26.6 萬）；到伍之後每塊多 2%（一塊等於以前兩塊，以前每塊 1%）
+  const PLOT_BREAK = 14;
+  const plotPrice = n => Math.round(2100 * Math.pow(1.22, Math.min(n, PLOT_BREAK)) * Math.pow(1.02, Math.max(0, n - PLOT_BREAK)) / 100) * 100;
 
   // ---------- 世界：地塊怎麼切 ----------
   const hash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
@@ -291,12 +292,14 @@
   }
   const inSea = (px, py) => SEA.some(([x, y, w, h]) => px >= x && px < x + w && py >= y && py < y + h);
 
+  // 地塊的種子間距（格）：2026-11-26 使用者說切太細，從 3 格改成 3√2 格，一塊大一倍（平均約 8 格 → 約 15 格）
+  const PS = 3 * Math.SQRT2;
   let WORLD = null;
   function world() {
     if (WORLD) return WORLD;
     const N = GW * GH, raw = new Int32Array(N), seeds = [];
-    for (let j = -1; j <= GH / 3 + 1; j++) for (let i = -1; i <= GW / 3 + 1; i++)
-      seeds.push([i * 3 + 1.5 + (hash(i * 7 + SEED, j) - .5) * 2.4 + (j % 2) * 1.5, j * 3 + 1.5 + (hash(j * 5, i + SEED) - .5) * 2.4]);
+    for (let j = -1; j <= GH / PS + 1; j++) for (let i = -1; i <= GW / PS + 1; i++)
+      seeds.push([i * PS + PS / 2 + (hash(i * 7 + SEED, j) - .5) * PS * .8 + (j % 2) * PS / 2, j * PS + PS / 2 + (hash(j * 5, i + SEED) - .5) * PS * .8]);
     for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
       const k = y * GW + x;
       if (inSea((x + .5) * C, (y + .5) * C)) { raw[k] = -1; continue; }
@@ -317,7 +320,7 @@
     const sizes = () => { const s = new Array(n).fill(0); for (let k = 0; k < N; k++) if (id[k] >= 0) s[id[k]]++; return s; };
     let size = sizes();
     for (let k = 0; k < N; k++) {
-      const p = id[k]; if (p < 0 || size[p] >= 4) continue;
+      const p = id[k]; if (p < 0 || size[p] >= 8) continue;
       const x = k % GW, y = (k - x) / GW; let best = -1;
       [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => { const X = x + dx, Y = y + dy; if (X < 0 || Y < 0 || X >= GW || Y >= GH) return; const q = id[Y * GW + X]; if (q >= 0 && q !== p && (best < 0 || size[q] > size[best])) best = q; });
       if (best >= 0) { for (let c = 0; c < N; c++) if (id[c] === p) id[c] = best; size = sizes(); }
