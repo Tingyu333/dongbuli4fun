@@ -71,3 +71,5 @@
 - 這支手機也留一份 `dongbuli-company-live`（`{ who, rev, dirty, S }`），送出去、後端說收到了才算數（`unsynced`）。打開頁面時，本機那份是同一版而且還有沒收到的，就用本機的再送上去；後端比較新就用後端的。
 - 離開 30 秒以上回來就先跟後端對一次（以前 3 分鐘）。
 - 測試 `/home/claude/tests/two-phones.js`（兩支手機各自的儲存空間、共用模擬後端：A 請人 B 看得到、B 再請 A 重新打開看得到、扣的錢等於存檔記的、斷線時改的重新整理後還在）。
+
+**頁面版本自己檢查（2026-11-26，使用者：手機快取了舊頁面，請的員工重整就不見）**：GitHub Pages 讓手機快取網頁約 10 分鐘，剛推上去的時候手機還在跑舊程式。`company.html` 有 `PAGE_VER`，`assets/company-ver.txt` 放最新版本號（兩個要一起換）。打開頁面（讀存檔前）、或放在背景 30 秒以上回來時，`freshPage()` 用 `cache: 'no-store'` 讀 txt，不一樣就把網址加 `?v=新版本` 重新載入（網址不同，手機只能拿新的）。重新載入前先把存檔送出去，送不出去的也留在 `dongbuli-company-live`，重新打開會接著用。同一個版本只重載一次（記在 sessionStorage `dongbuli-company-reload`），GitHub 還沒更新完也不會一直轉。測試 `/home/claude/tests/ver-check.js`。

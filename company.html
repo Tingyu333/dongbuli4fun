@@ -430,6 +430,26 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     const LIVE = !PREVIEW && (OPEN || /[?&]live\b/.test(location.search));        // 正式：真的錢包、存檔在後端（開放前用 ?live 試）
     if (!LIVE && !PREVIEW) { $('gate').hidden = false; return; }
 
+    // ---------- 頁面版本：手機拿到舊的公司頁就自己重新載入（2026-11-26 使用者：手機快取了舊頁面，請的員工重整就不見） ----------
+    // 改了這一頁要把 PAGE_VER 和 assets/company-ver.txt 一起換新（同一個字串）。
+    // 重新載入前先把存檔送出去；送不出去的也留在這支手機（dongbuli-company-live），重新打開會接著用，不會丟東西。
+    const PAGE_VER = '2026-11-26g';
+    async function freshPage() {   // 回 true：要重新載入了
+        let v = '';
+        try { v = (await fetch('assets/company-ver.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '')).trim(); } catch (e) { }
+        if (!/^[0-9a-z-]{6,20}$/.test(v) || v === PAGE_VER) return false;
+        let tried = ''; try { tried = sessionStorage.getItem('dongbuli-company-reload') || ''; } catch (e) { }
+        if (tried === v) return false;   // 這個版本已經重新載入過一次還是舊的（GitHub 還沒更新完）：先不要一直重載
+        try { sessionStorage.setItem('dongbuli-company-reload', v); } catch (e) { }
+        if (typeof S !== 'undefined' && S && S.name) {   // 有公司：先存好
+            if (PREVIEW) save();
+            else { keepLocal(); try { if (pushing) await pushing; if (dirty) await push(); } catch (e) { } keepLocal(); }
+        }
+        const u = new URL(location.href); u.searchParams.set('v', v);
+        location.replace(u.toString());
+        return true;
+    }
+
     // ---------- 存檔 ----------
     // 試玩：存在這支手機 localStorage（dongbuli-company-preview）。
     // 正式（做法 C，2026-11-26）：存檔在後端 Saves 分頁。手機照常每秒更新 S，有改過就大約 30 秒送一次（companySave，帶 rev），
@@ -1337,6 +1357,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     // 正式：先登入、從後端讀存檔（等的時候蓋板）
     async function boot() {
         Busy.show('load');
+        if (await freshPage()) return;   // 舊頁面：還沒讀存檔就先換新的
         try { await Line.ready; } catch (e) { }
         if (!Line.loggedIn) { await Busy.hide(); return gateLogin(); }
         let r = null;
@@ -1363,7 +1384,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         } catch (e) { }
         await Busy.hide(); blocking = false;
     }
-    if (PREVIEW) start(); else boot();
+    if (PREVIEW) { start(); freshPage(); } else boot();
     if (LIVE) {
         Line.on(type => { if (type === 'logout' && S) loggedOut(); });
         Wallet.on(type => { if (type === 'server' && S && S.name) render(); });   // 別支手機賺了錢：錢包數字跟著變
@@ -1379,6 +1400,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     document.addEventListener('visibilitychange', async () => {
         if (!S || !S.name) return;
         if (document.hidden) { hiddenAt = Date.now(); S.lastSeen = Date.now(); if (!LIVE) save(); else { keepLocal(); push(true); } return; }
+        if (hiddenAt && Date.now() - hiddenAt > 30000 && !blocking && await freshPage()) return;   // 放在背景一陣子回來：網站更新過就換新頁面（存檔先送、送不出去也留在手機）
         if (LIVE && hiddenAt && Date.now() - hiddenAt > 30000 && !blocking) await resync();   // 離開 30 秒以上回來先跟後端對一下（換手機玩）
         if (S && S.name) { away(); tick(); startAnim(); }
     });
