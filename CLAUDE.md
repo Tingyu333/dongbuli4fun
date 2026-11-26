@@ -68,12 +68,12 @@
 | `company.html` | 公司・開：接案經營（請員工、派人、收款、搬家，車庫 → 自己的大樓）。**2026-11-26 正式開放**（`OPEN = true`；要先 LINE 登入，真的錢包、存檔在後端 `Saves`；`?preview` 照舊是試玩錢包、存在這支手機），入口在會員中心打工區第一格，排行榜有公司・榜；**改了 `company.html` 要把頁內 `PAGE_VER` 和 `assets/company-ver.txt` 換成同一個新字串**（手機拿到舊頁面會自己重新載入）；規則 `assets/company-rules.js`、辦公室畫法 `assets/company-office.js`、角色圖 `assets/company/`；企劃和樣張在 `docs/plans/company/` | `docs/pages/company.md` |
 | `rank.html` | 排行・榜：打工・榜、花錢・榜、無盡・榜、身價・榜（小島接好後端才出現） | `docs/pages/rank.md` |
 | `baoxian.html` | 保險・存：儲蓄險（後端算） | `docs/pages/baoxian.md` |
-| `gushi.html` | 股市・炒：十檔（含三檔妖股）、晚報、掛單 | `docs/pages/gushi.md` |
+| `gushi.html` | 股市・炒：十檔（含三檔妖股）、晚報、掛單、國安基金號外（admin 後台叫進場） | `docs/pages/gushi.md` |
 | `yuncai.html` | 運動・押：押 TPVL 排球，彩池分錢 | `docs/pages/yuncai.md` |
 | `404.html` | 找不到頁面 | `docs/pages/404.md` |
 | `admin_login.html` | 後台登入 | `docs/pages/admin_login.md` |
 | `admin_dashboard.html` | 後台預約列表、發紅包（admin 後台也能發）、後端狀況 | `docs/pages/admin_dashboard.md` |
-| `admin.html` | admin 後台（另一組密碼 `GAME_ADMIN_PASSWORD`）：玩家列表、專屬道具、道具庫（主人取名字）、經濟體檢、許願池（2026-11-21 從預約後台搬來）、會員中心的公告、發紅包（2026-11-21，跟預約後台同一份） | `docs/pages/admin.md` |
+| `admin.html` | admin 後台（另一組密碼 `GAME_ADMIN_PASSWORD`）：玩家列表、專屬道具、道具庫（主人取名字）、經濟體檢、許願池（2026-11-21 從預約後台搬來）、會員中心的公告、發紅包（2026-11-21，跟預約後台同一份）、國安基金（2026-11-26，拉抬股市） | `docs/pages/admin.md` |
 
 ## 其他說明（也在 docs/）
 

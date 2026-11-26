@@ -84,6 +84,24 @@
         .ev-body { margin-top: .25rem; font-size: .78rem; line-height: 1.75; letter-spacing: .05em; }
         .ev-foot { margin-top: .5rem; padding-top: .4rem; border-top: 1px dashed var(--rule); font-size: .6rem; color: var(--faint); letter-spacing: .12em; font-family: 'Noto Sans TC', sans-serif; }
 
+        /* 國安基金號外（2026-11-26）：admin 後台按進場才出現；不寫拉抬幾 %、護到什麼時候 */
+        .extra { padding: 1rem 1rem .85rem; border-color: var(--up); }
+        .extra::before { border-color: rgba(179, 58, 47, .35); }
+        .ex-kicker { font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; letter-spacing: .15em; color: var(--faint); padding-right: 4.8rem; }
+        .ex-kicker b { color: var(--up); font-weight: 700; letter-spacing: .3em; margin-right: .3rem; font-size: .7rem; }
+        .ex-title { margin-top: .35rem; font-size: 1.35rem; font-weight: 700; letter-spacing: .12em; line-height: 1.35; padding-right: 4.2rem; }
+        .ex-body { margin-top: .45rem; font-size: .8rem; line-height: 1.75; letter-spacing: .05em; }
+        .ex-say { margin-top: .3rem; font-size: .8rem; line-height: 1.7; letter-spacing: .05em; }
+        .ex-foot { margin-top: .55rem; padding-top: .4rem; border-top: 1px dashed var(--rule); font-size: .6rem; color: var(--faint); letter-spacing: .12em; font-family: 'Noto Sans TC', sans-serif; }
+        .ex-stamp { position: absolute; top: .9rem; right: .8rem; width: 4rem; height: 4rem; border: 2.5px double var(--up); color: var(--up); border-radius: 50%; display: flex; align-items: center; justify-content: center; text-align: center; font-size: .78rem; font-weight: 700; line-height: 1.15; letter-spacing: .05em; transform: rotate(-12deg); }
+        .extra.is-off { border-color: var(--rule); }
+        .extra.is-off::before { border-color: var(--rule); }
+        .extra.is-off .ex-kicker b { color: var(--faint); }
+        .extra.is-off .ex-stamp { border-color: #8a8580; color: #8a8580; }
+        .hu { display: inline-block; margin-left: .3rem; padding: 0 .2rem; font-size: .55rem; line-height: 1.3; border: 1px solid var(--up); background: var(--up); color: #fbf7ec; border-radius: 2px; transform: rotate(-6deg); }
+        .hu-note { color: #b33a2f; }
+        html.night .hu-note { color: #e08a80; }
+
         /* 開頁的損益紙條 */
         .slip { padding: .8rem 1rem; display: flex; gap: .8rem; align-items: center; transform: rotate(-.6deg); }
         .slip p { font-size: .82rem; line-height: 1.7; letter-spacing: .06em; flex: 1; }
@@ -202,6 +220,9 @@
             <p id="status" class="mt-4 text-[11px] font-sans tracking-[0.2em] text-stone-500">讀取行情中…</p>
         </div>
 
+        <!-- 國安基金號外（admin 後台按進場才有） -->
+        <section id="fund" class="paper extra mb-6 hidden" aria-live="polite"></section>
+
         <!-- 紙條：昨晚押的結果、委託成交或取消 -->
         <div id="slips" class="mb-6 hidden"></div>
 
@@ -232,6 +253,7 @@
             <p>・<b class="font-normal yao-note">妖股</b>（2708～2710）一天最多漲跌 20%，不上晚報，會連續好幾天漲停或跌停。連續漲停的隔天，再漲停和直接跌停的機會差不多，追進去不會比較好賺。</p>
             <p>・一天最多漲跌 10%（妖股 20%）。漲停的時候買不到，跌停的時候賣不掉，可以掛單排隊，打開了才用漲停／跌停價成交，收盤前沒排到就取消。</p>
             <p>・買、賣各收 1% 手續費。今天買的要等明天 9:00 開盤後才能賣。</p>
+            <p>・國安基金偶爾會進場護盤，進場會發號外。什麼時候退場，國安基金不說。</p>
             <p>・半夜也可以買賣，用 24:00 的收盤價成交。</p>
             <p>・要用 LINE 登入才能買賣，沒登入只能看盤。賺賠不算進打工榜和花錢榜。</p>
             <p class="pt-2 text-stone-400">遊戲幣，不是真的股票。二十七樓證券交易所不對晚報的任何內容負責。</p>
@@ -434,6 +456,28 @@
                 <p class="ev-foot">${esc(n.foot)}</p>`;
         }
 
+        // 國安基金號外（2026-11-26）：Q.fund 進場中 { on: true, codes, say, at }、退場 24 小時內 { on: false, …, end }。舊後端沒有這欄
+        const fundOn = code => !!(Q && Q.fund && Q.fund.on && Q.fund.codes.indexOf(code) >= 0);
+        const mdhm = ms => { const d = tpe(ms); return `${d.getUTCMonth() + 1}/${d.getUTCDate()} ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`; };
+        function renderFund() {
+            const box = $('fund'), f = Q && Q.fund;
+            box.classList.toggle('hidden', !f);
+            if (!f) return;
+            box.classList.toggle('is-off', !f.on);
+            const names = f.codes.map(c => `<b>${lbl((stockOf(c) || {}).name || c)}</b>`).join('、');
+            box.innerHTML = f.on ? `<div class="ex-stamp">國安<br>基金<br>進場</div>
+                <p class="ex-kicker"><b>號外</b>二十七樓晚報・${mdhm(f.at)}</p>
+                <h2 class="ex-title">國安基金<br>宣布進場護盤</h2>
+                <p class="ex-body">護盤標的：${names}。</p>
+                <p class="ex-say">官方表示：「${esc(f.say)}」</p>
+                <p class="ex-foot">什麼時候退場，國安基金不說。本報也不知道。</p>`
+                : `<div class="ex-stamp">已<br>退場</div>
+                <p class="ex-kicker"><b>號外</b>二十七樓晚報・${mdhm(f.end)}</p>
+                <h2 class="ex-title">國安基金<br>悄悄退場</h2>
+                <p class="ex-body">${mdhm(f.at)} 進場，${mdhm(f.end)} 離開。護過：${names}。</p>
+                <p class="ex-foot">接下來股價自己撐。</p>`;
+        }
+
         function spark(cv, s) {
             const d = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
             if (!w) return;
@@ -456,7 +500,7 @@
                 const head = s.yao && !(Q.stocks[i - 1] || {}).yao ? `<p class="yao-head"><b>妖股區</b>一天漲跌 20%・不上晚報・連續漲停的隔天，也可能連續跌停</p>` : '';
                 const tag = s.state ? `<span class="limit">${s.state === 'up' ? '漲停' : '跌停'}</span>` : `<span style="font-size:.6rem">${c ? (diff > 0 ? '+' : '−') + pf(Math.abs(diff)) : '平盤'}</span>`;
                 return `${head}<button type="button" class="row cols${s.yao ? ' is-yao' : ''}" data-code="${s.code}">
-                    <span class="nm">${lbl(s.name)}${holdOf(s.code) ? '<span class="mine">持</span>' : ''}<span class="cd">${s.code}${s.yao ? '<span class="yao">妖</span>' : ''}</span></span>
+                    <span class="nm">${lbl(s.name)}${holdOf(s.code) ? '<span class="mine">持</span>' : ''}<span class="cd">${s.code}${s.yao ? '<span class="yao">妖</span>' : ''}${fundOn(s.code) ? '<span class="hu">護</span>' : ''}</span></span>
                     <canvas></canvas>
                     <span class="px num ${tone(c)}">${pf(s.price)}</span>
                     <span class="ch num ${tone(c)}">${arrow(c)}${Math.abs(c * 100).toFixed(1)}%<br>${tag}</span>
@@ -527,7 +571,7 @@
             const s = stockOf(cur); if (!s) return;
             const info = INFO[s.code] || { full: s.name, desc: '' }, c = chg(s), h = holdOf(s.code), logged = Line.loggedIn && M;
             $('sName').innerHTML = lbl(info.full); $('sCode').textContent = s.code;
-            $('sDesc').innerHTML = esc(info.desc) + (s.yao ? '<br><span class="yao-note">妖股：一天漲跌 20%，不上晚報。漲停的隔天可能再漲停，也可能直接跌停。</span>' : '');
+            $('sDesc').innerHTML = esc(info.desc) + (s.yao ? '<br><span class="yao-note">妖股：一天漲跌 20%，不上晚報。漲停的隔天可能再漲停，也可能直接跌停。</span>' : '') + (fundOn(s.code) ? '<br><span class="hu-note">國安基金護盤中。</span>' : '');
             $('sPx').textContent = pf(s.price); $('sPx').style.color = toneColor(c);
             $('sCh').innerHTML = `<span style="color:${toneColor(c)}">${arrow(c)} ${c ? pf(Math.abs(s.price - s.prev)) : '平盤'}（${Math.abs(c * 100).toFixed(1)}%）</span>${s.state ? `<span class="ml-2 text-[10px] tracking-widest border px-1" style="color:${s.state === 'up' ? UP : DOWN}">${s.state === 'up' ? '漲停' : '跌停'}</span>` : ''}`;
             $('sHold').textContent = !logged ? '' : h ? `持有 ${h.n} 股・均價 ${pf(h.avg)}・市值 ${fmt(h.n * s.price)}` : '還沒有這一檔。';
@@ -557,7 +601,7 @@
         function closeSheet() { $('sheet').classList.remove('on'); cur = null; }
 
         function render() {
-            renderStatus(); renderSlips(); renderAcct(); renderNews(); renderBoard(); renderStmt();
+            renderStatus(); renderFund(); renderSlips(); renderAcct(); renderNews(); renderBoard(); renderStmt();
             if (cur) { renderSheet(); chart(); }
         }
 

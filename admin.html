@@ -107,6 +107,7 @@
                 <button type="button" data-tab="wish" aria-pressed="false">許願池</button>
                 <button type="button" data-tab="ann" aria-pressed="false">公告</button>
                 <button type="button" data-tab="bonus" aria-pressed="false">紅包</button>
+                <button type="button" data-tab="fund" aria-pressed="false">國安</button>
             </div>
             <p id="state" class="mt-6 text-xs font-sans tracking-widest text-stone-400 text-center"></p>
 
@@ -262,6 +263,45 @@
                 <div id="bonusList" class="mt-3 space-y-3"></div>
             </div>
 
+            <!-- 國安基金（2026-11-26）：股市・炒拉抬 -->
+            <div id="tab-fund" class="mt-5" hidden>
+                <p class="text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">國安基金進場：勾的那幾檔從下一個整點開始，每天多往上推幾 %（漲跌停、亂晃照舊，已經跳過的價格不會改）。玩家看得到「國安基金進場」、護哪幾檔、官方說法；<b class="font-normal text-wabi-dark">看不到拉抬幾 %、護到什麼時候</b>。</p>
+                <div id="fundNow" class="mt-4"></div>
+                <div id="fundForm" class="card mt-4">
+                    <h3 class="text-sm tracking-[0.3em] text-wabi-dark">進場</h3>
+                    <div class="mt-4 space-y-4">
+                        <div>
+                            <span class="block text-[11px] font-sans tracking-[0.2em] text-stone-500">護哪幾檔</span>
+                            <div id="fStocks" class="mt-2 flex flex-wrap gap-2"></div>
+                        </div>
+                        <div>
+                            <span class="block text-[11px] font-sans tracking-[0.2em] text-stone-500">每天拉抬</span>
+                            <div id="fPct" class="mt-2 flex flex-wrap gap-2">
+                                <button type="button" class="wtab" data-pct="3" aria-pressed="false">3%</button>
+                                <button type="button" class="wtab" data-pct="3.5" aria-pressed="false">3.5%</button>
+                                <button type="button" class="wtab" data-pct="4" aria-pressed="true">4%</button>
+                                <button type="button" class="wtab" data-pct="4.5" aria-pressed="false">4.5%</button>
+                                <button type="button" class="wtab" data-pct="5" aria-pressed="false">5%</button>
+                            </div>
+                            <p class="mt-1 text-[11px] font-sans tracking-wider text-stone-400">一天跳 15 次，每次多推 1/15。買賣手續費加起來 2%，護越久，早進場的人賺越多。</p>
+                        </div>
+                        <label class="block text-[11px] font-sans tracking-[0.2em] text-stone-500">護到什麼時候（只有後台看得到）
+                            <select id="fDays" class="field mt-1">
+                                <option value="1">到今天收盤（24:00）</option>
+                                <option value="2">到明天收盤</option>
+                                <option value="3" selected>3 天</option>
+                                <option value="7">7 天</option>
+                            </select></label>
+                        <label class="block text-[11px] font-sans tracking-[0.2em] text-stone-500">官方說法（玩家看得到，可以不寫，最多 30 字）
+                            <input id="fSay" class="field mt-1" maxlength="30" placeholder="不寫就隨機抽一句"></label>
+                        <label class="flex items-center gap-2 text-[11px] font-sans tracking-wider text-stone-500"><input id="fAnn" type="checkbox" checked> 會員中心跑馬燈也掛號外（會蓋掉現在的公告，退場時自己撤下）</label>
+                        <button id="fundGo" type="button" class="btn btn-dark w-full">國安基金進場</button>
+                    </div>
+                </div>
+                <h3 class="mt-8 text-sm tracking-[0.3em] text-wabi-dark">進場紀錄</h3>
+                <div id="fundList" class="mt-3 space-y-2"></div>
+            </div>
+
             <!-- 許願池（2026-11-21 從預約後台搬過來）：改狀態、回一句話、藏起來 -->
             <div id="tab-wish" class="mt-5" hidden>
                 <p class="text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">旅人在許願・池許的願。狀態和回覆會貼在願望牆上；亂寫的按「藏起來」，願望牆就看不到（獎金不會收回）。</p>
@@ -294,7 +334,7 @@
         };
         const day = t => { if (!t) return ''; const d = new Date(t); return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`; };
         let token = null; try { token = localStorage.getItem(TOKEN_KEY); } catch (e) { }
-        let data = null, econ = null, wishes = null, ann = null, bonuses = null, tab = 'players';
+        let data = null, econ = null, wishes = null, ann = null, bonuses = null, fund = null, tab = 'players';
 
         async function call(body) {
             let res;
@@ -310,7 +350,7 @@
         // ===== 登入 =====
         function showLogin(msg) { $('loginView').hidden = false; $('appView').hidden = true; $('logoutBtn').hidden = true; $('loginMsg').textContent = msg || ''; setTimeout(() => $('pw').focus(), 50); }
         function showApp() { $('loginView').hidden = true; $('appView').hidden = false; $('logoutBtn').hidden = false; }
-        function logout(msg) { token = null; try { localStorage.removeItem(TOKEN_KEY); } catch (e) { } data = econ = wishes = ann = bonuses = null; showLogin(msg); }
+        function logout(msg) { token = null; try { localStorage.removeItem(TOKEN_KEY); } catch (e) { } data = econ = wishes = ann = bonuses = fund = null; showLogin(msg); }
         $('logoutBtn').addEventListener('click', () => logout(''));
         $('loginForm').addEventListener('submit', async e => {
             e.preventDefault();
@@ -330,7 +370,8 @@
         function setTab(t) {
             tab = t;
             document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tab === t)));
-            ['players', 'perks', 'lib', 'econ', 'wish', 'ann', 'bonus'].forEach(k => $('tab-' + k).hidden = k !== t);
+            ['players', 'perks', 'lib', 'econ', 'wish', 'ann', 'bonus', 'fund'].forEach(k => $('tab-' + k).hidden = k !== t);
+            if (t === 'fund' && !fund) loadFund();
             if (t === 'ann' && !ann) loadAnn();
             if (t === 'bonus' && !bonuses) loadBonuses();
             if (t === 'econ' && !econ) loadEcon();
@@ -725,6 +766,59 @@
                 try { bonuses = (await call({ type: 'gaBonusClose', code: b.code })).bonuses || []; renderBonuses(); showToast('收回來了'); }
                 catch (err) { close.disabled = false; showToast(err.message); }
             }
+        });
+
+        // ===== 國安基金（2026-11-26；後端 gaFund／gaFundStart／gaFundEnd）=====
+        const when = t => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+        const slotTxt = l => l.slice(5).replace('-', '/');
+        const fundNames = f => f.codes.map(c => esc((fund.stocks.find(s => s.code === c) || {}).name || c)).join('、');
+        let fundPick = null;
+        function renderFund() {
+            const a = fund.active;
+            if (!fundPick) fundPick = new Set(fund.stocks.filter(s => !s.yao).map(s => s.code));
+            $('fundNow').innerHTML = a ? `<div class="card">
+                    <div class="flex items-center gap-2"><span class="wstamp is-done">護</span><p class="text-sm text-wabi-dark tracking-widest">國安基金在場上</p><span class="ml-auto text-[11px] font-sans text-stone-400">${when(a.at)} 進場</span></div>
+                    <p class="mt-3 text-xs text-stone-600 leading-relaxed">${fundNames(a)}</p>
+                    <p class="mt-1 text-[11px] font-sans tracking-wider text-stone-400 leading-relaxed">每天拉抬 ${(a.pct * 100).toFixed(1).replace(/\.0$/, '')}%・${slotTxt(a.from)} 起推，預定 ${slotTxt(a.to)} 退場（共 ${a.slots} 次跳價）<br>官方說法：「${esc(a.say)}」</p>
+                    <button id="fundEnd" type="button" class="btn btn-line w-full mt-3">提早退場</button>
+                </div>` : '<p class="text-xs font-sans tracking-widest text-stone-400">國安基金現在不在場上。</p>';
+            $('fundForm').hidden = !!a;
+            $('fStocks').innerHTML = fund.stocks.map(s => `<button type="button" class="wtab" data-fcode="${s.code}" aria-pressed="${fundPick.has(s.code)}">${esc(s.name)}${s.yao ? '・妖' : ''}</button>`).join('');
+            $('fundList').innerHTML = fund.history.length ? fund.history.map(f => `<div class="card ${f.on ? '' : 'opacity-60'}">
+                    <p class="text-[11px] font-sans tracking-wider text-stone-500">${when(f.at)} 進場・${f.on ? '<span class="text-wabi-shu">在場上</span>' : (f.ended ? '提早退場 ' : '退場 ') + when(f.end)}・每天 ${(f.pct * 100).toFixed(1).replace(/\.0$/, '')}%・${f.on ? '預定推' : '推了'} ${f.slots} 次</p>
+                    <p class="mt-1 text-xs text-stone-600">${fundNames(f)}</p>
+                </div>`).join('') : '<p class="text-xs font-sans tracking-widest text-stone-400">還沒進場過。</p>';
+        }
+        async function loadFund() {
+            $('fundNow').innerHTML = '<p class="text-xs font-sans tracking-widest text-stone-400">讀取中……</p>';
+            try { fund = await call({ type: 'gaFund' }); renderFund(); }
+            catch (e) { fund = null; $('fundNow').innerHTML = `<p class="text-xs font-sans tracking-widest text-wabi-shu">${esc(/舊版/.test(e.message) ? '後端還是舊版：部署新版本（2026-11-26g 以後）才能叫國安基金' : e.message)}</p>`; $('fundForm').hidden = true; }
+        }
+        $('fStocks').addEventListener('click', e => {
+            const b = e.target.closest('[data-fcode]'); if (!b) return;
+            fundPick.has(b.dataset.fcode) ? fundPick.delete(b.dataset.fcode) : fundPick.add(b.dataset.fcode);
+            b.setAttribute('aria-pressed', String(fundPick.has(b.dataset.fcode)));
+        });
+        $('fPct').addEventListener('click', e => {
+            const b = e.target.closest('[data-pct]'); if (!b) return;
+            $('fPct').querySelectorAll('[data-pct]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+        });
+        $('fundGo').addEventListener('click', async () => {
+            const codes = fund.stocks.map(s => s.code).filter(c => fundPick.has(c));
+            if (!codes.length) return showToast('至少勾一檔');
+            const pct = Number($('fPct').querySelector('[aria-pressed="true"]').dataset.pct), days = Number($('fDays').value);
+            if (!confirm(`國安基金進場：${codes.length} 檔，每天拉抬 ${pct}%，${$('fDays').selectedOptions[0].textContent}。下一個整點開始推，確定？`)) return;
+            $('fundGo').disabled = true;
+            try { fund = await call({ type: 'gaFundStart', codes, pct, days, say: $('fSay').value.trim(), ann: $('fAnn').checked }); $('fSay').value = ''; ann = null; renderFund(); showToast('國安基金進場了'); }
+            catch (e) { showToast(/舊版/.test(e.message) ? '後端還是舊版，要先部署' : e.message); }
+            $('fundGo').disabled = false;
+        });
+        $('fundNow').addEventListener('click', async e => {
+            const b = e.target.closest('#fundEnd'); if (!b) return;
+            if (!confirm('國安基金提早退場？這個整點以後就不推了，已經推上去的不會掉回來。')) return;
+            b.disabled = true;
+            try { fund = await call({ type: 'gaFundEnd' }); ann = null; renderFund(); showToast('國安基金退場了'); }
+            catch (err) { b.disabled = false; showToast(err.message); }
         });
 
         if (token) { showApp(); loadPlayers(); loadWishes(); } else showLogin('');

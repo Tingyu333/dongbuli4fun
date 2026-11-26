@@ -73,9 +73,9 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-26f';
+var BACKEND_VERSION = '2026-11-26g';
 
-var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1 };
+var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1, gaFundStart: 1, gaFundEnd: 1 };
 
 function withLock(fn) {
   var lock = LockService.getScriptLock();
@@ -182,6 +182,9 @@ function route(type, input) {
       if (type === 'gaBonusList') return bonusList();           // 發紅包 2026-11-21：admin 後台也能發（跟預約後台同一份 Bonuses，兩邊都看得到）
       if (type === 'gaBonusCreate') return bonusCreate(input);
       if (type === 'gaBonusClose') return bonusClose(input);
+      if (type === 'gaFund') return gaFund();                   // 國安基金（2026-11-26）：股市拉抬
+      if (type === 'gaFundStart') return gaFundStart(input);
+      if (type === 'gaFundEnd') return gaFundEnd();
       return { result: 'error', error: '不認得的請求' };
     }
 
@@ -2107,14 +2110,14 @@ function stockSync(nowMs) {
     STOCKS.forEach(function (s) { prevClose[s.code] = open ? open.p[s.code] : price[s.code]; });
   }
   if (idx > cur) return [];
-  var drifts = null, driftDay = -1;
+  var drifts = null, driftDay = -1, funds = stockFunds();
   for (var i = idx + 1; i <= cur; i++) {
     var day = stockSlotDay(i);
     if (i % STOCK_SLOTS === 0) {
       STOCKS.forEach(function (s) { prevClose[s.code] = price[s.code]; });  // 9:00 開盤＝昨收，不跳
     } else {
       if (driftDay !== day) { drifts = stockDrifts(seed, day); driftDay = day; }
-      STOCKS.forEach(function (s) { price[s.code] = stockStep(seed, s, i, price[s.code], prevClose[s.code], drifts[s.code]); });
+      STOCKS.forEach(function (s) { price[s.code] = stockStep(seed, s, i, price[s.code], prevClose[s.code], drifts[s.code] + stockFundPush(funds, s.code, i)); });
     }
     rows.push([i, stockSlotLabel(i)].concat(STOCKS.map(function (s) { return price[s.code]; })));
     made.push({ idx: i, p: Object.assign({}, price), prev: Object.assign({}, prevClose) });
@@ -2122,6 +2125,107 @@ function stockSync(nowMs) {
   if (rows.length) sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
   if (made.length) stockSettleOrders(made);
   return made;
+}
+
+// --- 國安基金（2026-11-26，admin 後台按「進場」）---
+// 主人勾幾檔、定一天拉抬幾 %（3～5%）、護幾天。從按下去的「下一格」開始，每格多推 pct／15（一天跳 15 次加起來就是 pct），
+// 漲跌停、亂晃照舊。已經跳過的價格不改（Prices 裡有的就是有了）。
+// 存在指令碼屬性 STOCK_FUNDS（JSON 陣列，留最近 30 次）：{ id, codes, pct, from, to（第幾格到第幾格有推力）, at（按下去的毫秒）, ended（提早退場的毫秒，沒有是 0）, say, ann }。
+// 補價格的時候照「那一格在不在某一次的 from～to 裡」算，所以晚一點才有人打開、一次補很多格也一樣。
+// 公開的行情只說「進場了、護哪幾檔、官方說法」，不說拉抬幾 %、護到什麼時候（使用者 2026-11-26 說不要講護到啥時）。
+var STOCK_FUND_PCT = [0.03, 0.05];
+var STOCK_FUND_DAYS = [1, 2, 3, 7];               // 到今天收盤、到明天收盤、3 天、7 天（照收盤算）
+var STOCK_FUND_KEEP = 30;
+var STOCK_FUND_SAY = ['市場過度恐慌，國安基金不會坐視', '基本面良好，請投資人不要追殺', '國安基金子彈充足，隨時準備進場', '二十七樓經濟穩健，請勿聽信謠言', '這不是護盤，是對二十七樓有信心'];
+var stockFundsCache = null;
+function stockFunds() {
+  if (stockFundsCache) return stockFundsCache;
+  var raw = PropertiesService.getScriptProperties().getProperty('STOCK_FUNDS'), list = [];
+  try { list = raw ? JSON.parse(raw) : []; } catch (e) { list = []; }
+  stockFundsCache = Array.isArray(list) ? list : [];
+  return stockFundsCache;
+}
+function stockFundsSave(list) {
+  list = list.slice(-STOCK_FUND_KEEP);
+  PropertiesService.getScriptProperties().setProperty('STOCK_FUNDS', JSON.stringify(list));
+  stockFundsCache = list;
+}
+// idx 這一格，國安基金往上推多少
+function stockFundPush(funds, code, idx) {
+  var t = 0;
+  funds.forEach(function (f) { if (idx >= f.from && idx <= f.to && f.codes.indexOf(code) >= 0) t += f.pct / (STOCK_SLOTS - 1); });
+  return t;
+}
+function stockSlotMs(idx) { return stockDayMs(stockSlotDay(idx), stockSlotHour(idx)); }   // 這一格什麼時候跳（24:00 那格是隔天 0:00）
+function stockFundEnd(f) { return f.ended || stockSlotMs(f.to); }
+function stockFundOn(f, nowMs) { return !f.ended && nowMs < stockSlotMs(f.to); }
+function stockFundActive(nowMs) { return stockFunds().filter(function (f) { return stockFundOn(f, nowMs); })[0] || null; }
+// 行情快取要跟著換：進場、退場都會改最後一筆
+function stockFundVer() { var l = stockFunds(), f = l[l.length - 1]; return f ? f.id + '.' + (f.ended || 0) : '0'; }
+// 公開的：進場中 { on: true, codes, say, at }；退場 24 小時內 { on: false, codes, at, end }；不給 pct、to
+function stockFundPublic(nowMs) {
+  var list = stockFunds();
+  for (var i = list.length - 1; i >= 0; i--) {
+    var f = list[i];
+    if (f.at > nowMs) continue;
+    if (stockFundOn(f, nowMs)) return { on: true, codes: f.codes, say: f.say, at: f.at };
+    var end = stockFundEnd(f);
+    if (end <= nowMs && nowMs - end < 86400000 && f.to >= f.from) return { on: false, codes: f.codes, say: f.say, at: f.at, end: end };
+    return null;
+  }
+  return null;
+}
+
+// admin 後台：{ type: 'gaFund' } → 現在在場上的、最近 10 次、十檔股票
+function gaFundView(f, nowMs) {
+  return { id: f.id, codes: f.codes, pct: f.pct, say: f.say, at: f.at, ended: f.ended || 0, on: stockFundOn(f, nowMs), end: stockFundEnd(f),
+    from: stockSlotLabel(f.from), to: stockSlotLabel(f.to), slots: Math.max(0, f.to - f.from + 1 - (Math.floor(f.to / STOCK_SLOTS) - Math.floor((f.from - 1) / STOCK_SLOTS))) };
+}
+function gaFund() {
+  var now = stockNow().getTime(), list = stockFunds(), act = stockFundActive(now);
+  return {
+    result: 'success', now: now, slot: stockSlotLabel(stockSlotAt(now)),
+    stocks: STOCKS.map(function (s) { return { code: s.code, name: s.name, yao: !!s.yao }; }),
+    active: act ? gaFundView(act, now) : null,
+    history: list.slice(-10).reverse().map(function (f) { return gaFundView(f, now); }),
+    rules: { pct: STOCK_FUND_PCT, days: STOCK_FUND_DAYS, say: STOCK_FUND_SAY }
+  };
+}
+// { type: 'gaFundStart', codes: ['2701', …], pct: 3～5（%）, days: 1|2|3|7, say?, ann? }（在 LOCKED_TYPES）
+function gaFundStart(input) {
+  var now = stockNow().getTime();
+  var codes = Array.isArray(input.codes) ? input.codes.map(String) : [];
+  codes = STOCKS.map(function (s) { return s.code; }).filter(function (c) { return codes.indexOf(c) >= 0; });
+  if (!codes.length) return { result: 'error', error: '至少勾一檔' };
+  var pct = Math.round(Number(input.pct) * 10) / 1000;
+  if (!(pct >= STOCK_FUND_PCT[0] - 1e-9 && pct <= STOCK_FUND_PCT[1] + 1e-9)) return { result: 'error', error: '拉抬要 3% 到 5%' };
+  var days = Math.floor(Number(input.days));
+  if (STOCK_FUND_DAYS.indexOf(days) < 0) return { result: 'error', error: '期間不對' };
+  var say = cleanAnnounce(input.say).slice(0, 30) || STOCK_FUND_SAY[Math.floor(Math.random() * STOCK_FUND_SAY.length)];
+  if (stockFundActive(now)) return { result: 'error', error: '國安基金已經在場上了，要先退場' };
+  stockSync(now);   // 已經到的格子先照原本的算好，推力從下一格開始
+  var cur = stockSlotAt(now), from = cur + 1, to = (stockSlotDay(from) + days - 1) * STOCK_SLOTS + STOCK_SLOTS - 1;
+  var f = { id: 'F' + now.toString(36), codes: codes, pct: pct, from: from, to: to, at: now, ended: 0, say: say, ann: !!input.ann };
+  stockFundsSave(stockFunds().concat([f]));
+  if (f.ann) {
+    PropertiesService.getScriptProperties().setProperty('ANNOUNCE', JSON.stringify({ text: '號外：國安基金宣布進場護盤！「' + say + '」', at: new Date(now).toISOString(), until: new Date(stockSlotMs(to)).toISOString(), fund: f.id }));
+    CacheService.getScriptCache().remove('announce:v1');
+  }
+  return gaFund();
+}
+// { type: 'gaFundEnd' }：提早退場。這一格以後就不推了（在 LOCKED_TYPES）
+function gaFundEnd() {
+  var now = stockNow().getTime(), act = stockFundActive(now);
+  if (!act) return { result: 'error', error: '國安基金現在不在場上' };
+  stockSync(now);
+  var list = stockFunds().map(function (f) {
+    if (f.id !== act.id) return f;
+    return Object.assign({}, f, { to: Math.min(f.to, stockSlotAt(now)), ended: now });
+  });
+  stockFundsSave(list);
+  var a = readAnnounce();
+  if (a && a.fund === act.id) { PropertiesService.getScriptProperties().deleteProperty('ANNOUNCE'); CacheService.getScriptCache().remove('announce:v1'); }
+  return gaFund();
 }
 
 // --- 晚報 ---
@@ -2201,7 +2305,7 @@ function stockEnsure(nowMs, locked) {
 // 公開的行情（不用登入）。存快取 3 分鐘
 function stockQuoteData(nowMs) {
   var cur = stockSlotAt(nowMs), newsDay = stockNewsDay(nowMs), today = stockSlotDay(cur);
-  var cache = CacheService.getScriptCache(), key = 'stockq:v3:' + cur + ':' + newsDay, hit = cache.get(key);
+  var cache = CacheService.getScriptCache(), key = 'stockq:v4:' + cur + ':' + newsDay + ':' + stockFundVer(), hit = cache.get(key);   // v4：多了國安基金
   if (hit) return JSON.parse(hit);
   var rows = stockRows(STOCK_SLOTS * (STOCK_HISTORY_DAYS + 1) + 1).filter(function (r) { return r.idx <= cur; });
   var dayRows = rows.filter(function (r) { return stockSlotDay(r.idx) === today; });
@@ -2222,7 +2326,8 @@ function stockQuoteData(nowMs) {
     // news／newsNow 是第一則（舊頁面用），newsList／newsNowList 是整份（一則或兩則）
     stocks: stocks, news: stockPublicNews((news[newsDay] || [])[0]), newsNow: stockPublicNews((news[today] || [])[0]),
     newsList: stockPublicList(news[newsDay]), newsNowList: stockPublicList(news[today]),
-    rules: { fee: STOCK_FEE, capOne: null, capAll: null, limit: STOCK_LIMIT, newsHour: STOCK_NEWS_HOUR }
+    rules: { fee: STOCK_FEE, capOne: null, capAll: null, limit: STOCK_LIMIT, newsHour: STOCK_NEWS_HOUR },
+    fund: stockFundPublic(nowMs)   // 國安基金（2026-11-26）：進場中、或退場 24 小時內；沒有是 null
   };
   cache.put(key, JSON.stringify(out), 180);
   return out;
