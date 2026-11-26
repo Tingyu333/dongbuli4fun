@@ -1,0 +1,33 @@
+# 虛擬貨幣區的歷史價格（2026-11-26）：從 Binance 公開的歷史 K 線抓 15 分鐘的價格。
+# 手動跑（Actions → coin-data → Run workflow），或改了 tools/coin/ 推上來就自己跑。
+# analyze：只印出每一檔每一段 3 年的漲跌，給挑時段用；build：照 tools/coin/windows.json 產出 assets/coin/ 再存回 repo。
+name: coin-data
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: analyze 或 build
+        default: analyze
+  push:
+    branches: [main]
+    paths: ['tools/coin/**']
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: 下載 Binance 15 分鐘 K 線
+        run: bash tools/coin/download.sh
+      - name: 分析或產出
+        run: node tools/coin/process.mjs "${{ github.event.inputs.mode || (hashFiles('tools/coin/windows.json') != '' && 'build' || 'analyze') }}"
+      - name: 存回 repo
+        if: ${{ hashFiles('assets/coin/**') != '' }}
+        run: |
+          git config user.name "coin-data"
+          git config user.email "actions@users.noreply.github.com"
+          git add assets/coin
+          git diff --cached --quiet || (git commit -m "coin data" && git push)
