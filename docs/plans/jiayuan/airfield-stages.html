@@ -240,13 +240,100 @@ function jumbo(x, a, b) {   // 私人豪華客機：機身 10 × 66、翼展 64�
 function slotAir(x, a, b, w, h) { for (let i = 0; i < w; i++) if (i % 3 !== 2) { P(x, a + i, b, '#f2eee5'); P(x, a + i, b + h - 1, '#f2eee5'); } for (let j = 0; j < h; j++) if (j % 3 !== 2) { P(x, a, b + j, '#f2eee5'); P(x, a + w - 1, b + j, '#f2eee5'); } }
 function hangar(x, a, b, w, h, col = '#9aa0a4') { R(x, a + 5, b + 5, w, h, K.shadow); for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const t = Math.abs(i - w / 2) / (w / 2); P(x, a + i, b + j, j % 4 === 3 ? '#6f767b' : t < .15 ? '#b6bcc0' : col); } R(x, a, b + h - 1, w, 1, '#5f666b'); }
 
+// ===== 2026-11-26 設施第二批審稿：共通的新畫法 =====
+// 燈：白天畫燈座，位置記進名單（tools/xiaodao/dump_empty.js 收），夜裡照名單亮。種類：e 跑道邊燈、g 綠、r 紅、b 會閃的紅燈、w 暖燈、F 探照燈照到的地方（不畫燈座）
+function lamp(x, a, b, kind) {
+  a = Math.round(a); b = Math.round(b);
+  if (window.__rec) window.__rec.push({ cv: x.canvas.id, fn: 'light', at: [a, b], kind });
+  if (kind === 'e') { R(x, a, b, 2, 1, '#e8c35a'); P(x, a, b + 1, 'rgba(30,40,30,.24)'); }
+  else if (kind === 'g') { R(x, a, b, 2, 2, '#4caf6a'); P(x, a, b, '#8fe0a4'); }
+  else if (kind === 'r') { R(x, a, b, 2, 2, '#cf5a46'); P(x, a, b, '#f0a090'); }
+  else if (kind === 'b') { R(x, a, b, 2, 2, '#b33a2f'); }
+  else if (kind === 'w') { R(x, a, b, 2, 2, '#f6cd72'); }
+}
+// 割過草的跑道（C1）：不畫實心草色，疊半透明條紋在島的草上；每 6 顆換一條（顏色避開 crop.py 會壓成影子的深色）
+function mowStrip(x, a, b, w, h, vertical = false) {
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const k = Math.floor((vertical ? j : i) / 6) % 2; P(x, a + i, b + j, (vertical ? (i === 0 || i === w - 1) : (j === 0 || j === h - 1)) ? 'rgba(255,252,236,.28)' : k ? 'rgba(255,252,236,.18)' : 'rgba(110,132,62,.16)'); }   // 第二輪：濃一點，長邊各 1 顆割草邊
+}
+function thresholdBars(x, a, b, h, n = 4) { for (let k = 0; k < n; k++) R(x, a + k * 2, b + 2, 1, h - 4, '#f3f1ec'); }   // 跑道頭的門檻：一排白槓
+// 跑道號碼（3×5 的白字）
+const DIG = { 0: ['111', '101', '101', '101', '111'], 2: ['111', '001', '111', '100', '111'], 7: ['111', '001', '010', '010', '010'], 9: ['111', '101', '111', '001', '111'] };
+function runNum(x, a, b, str) { [...str].forEach((d, k) => DIG[d].forEach((row, j) => [...row].forEach((c, i) => { if (c === '1') P(x, a + k * 4 + i, b + j, '#f3f1ec'); }))); }
+// 跑道：兩端收尾（淺色邊）、門檻、端燈（左綠右紅）、兩側邊燈、中線
+function runway(x, a, b, w, h, seed, o = {}) {
+  R(x, a - 4, b - 1, w + 8, h + 2, '#c9c4ba'); R(x, a - 4, b - 1, w + 8, 1, '#ddd8ce'); R(x, a - 4, b + h, w + 8, 1, '#aea79b');
+  asphalt(x, a, b, w, h, seed);
+  thresholdBars(x, a + 3, b, h, 5); thresholdBars(x, a + w - 12, b, h, 5);
+  if (o.nums) { runNum(x, a + 15, b + (h >> 1) - 2, o.nums[0]); runNum(x, a + w - 22, b + (h >> 1) - 2, o.nums[1]); }
+  dashes(x, a + (o.nums ? 26 : 16), b + (h >> 1), w - (o.nums ? 52 : 32));
+  for (let j = 2; j < h - 2; j += 4) { lamp(x, a - 3, b + j, 'g'); lamp(x, a + w + 1, b + j, 'r'); }
+  for (let i = 8; i < w - 8; i += o.step || 12) { lamp(x, a + i, b - 3, 'e'); lamp(x, a + i, b + h + 2, 'e'); }
+}
+function windsock2(x, a, b) {   // 風向袋放大：桿子 2×8＋影子，袋子 6×3 紅白
+  R(x, a + 2, b + 2, 2, 8, 'rgba(30,40,30,.24)'); R(x, a, b, 2, 8, '#8e9396'); P(x, a, b, '#c4c8ca');
+  for (let i = 0; i < 6; i++) R(x, a + 2 + i, b + (i > 3 ? 1 : 0), 1, 3 - (i > 4 ? 1 : 0), i % 2 ? '#f3f1ec' : '#cf5a46');
+}
+function redHangar(x, a, b, w, h) {   // 紅屋頂小機庫：上坡亮、下坡暗、屋脊一條亮線、屋簷下一片門
+  R(x, a + 4, b + 4, w, h, 'rgba(30,40,30,.24)');
+  const hh = h - 5; for (let j = 0; j < hh; j++) R(x, a, b + j, w, 1, j < hh / 2 ? (j % 3 === 2 ? '#b33a2f' : '#cf5a46') : (j % 3 === 2 ? '#7a241d' : '#8f2c23'));
+  R(x, a, b + Math.floor(hh / 2), w, 1, '#e07a63'); R(x, a, b, w, 1, '#e07a63');
+  R(x, a, b + hh, w, 5, '#efe4cf'); R(x, a + 3, b + hh + 1, w - 6, 4, '#8e8070'); for (let i = a + 4; i < a + w - 3; i += 3) R(x, i, b + hh + 1, 1, 4, '#7a6e60'); R(x, a, b + h - 1, w, 1, '#c2ae8b');
+}
+function gableHangar(x, a, b, w, h) {   // 小機場的機庫：屋脊亮線、上下兩片明暗不同、浪板直紋、捲門
+  R(x, a + 5, b + 5, w, h, 'rgba(30,40,30,.24)');
+  const hh = h - 7; for (let j = 0; j < hh; j++) for (let i = 0; i < w; i++) P(x, a + i, b + j, j < hh / 2 ? (i % 3 === 0 ? '#a9afb3' : '#bcc2c6') : (i % 3 === 0 ? '#7f868b' : '#8f969b'));
+  R(x, a, b + Math.floor(hh / 2) - 1, w, 2, '#d6dadc'); R(x, a, b, w, 1, '#d6dadc'); R(x, a + w - 1, b, 1, hh, '#6f767b');
+  R(x, a, b + hh, w, 7, '#d6d1c7'); R(x, a + 4, b + hh + 1, w - 8, 6, '#b8bcbe'); for (let j = 1; j < 6; j += 2) R(x, a + 4, b + hh + 1 + j, w - 8, 1, '#9aa0a4'); R(x, a, b + h - 1, w, 1, '#aea79b');
+}
+function archHangar(x, a, b, w, h) {   // 私人機場的機庫：拱形屋頂（橫向漸層）、屋脊亮線、肋條
+  R(x, a + 5, b + 5, w, h, 'rgba(30,40,30,.24)');
+  const hh = h - 7, top = ['#d6dadc', '#c4c9cc', '#b4babe', '#a6acb0', '#979da2', '#8a9096', '#7d848a', '#71787e'];
+  for (let j = 0; j < hh; j++) { const t = Math.abs(j - hh * .3) / (hh * .7), c = top[Math.min(7, Math.floor(t * 8))]; for (let i = 0; i < w; i++) P(x, a + i, b + j, i % 7 === 0 ? '#6f767b' : c); }
+  R(x, a, b + Math.round(hh * .3), w, 1, '#eef1f2');
+  R(x, a, b + hh, w, 7, '#d6d1c7'); R(x, a + 5, b + hh + 1, w - 10, 6, '#b8bcbe'); for (let j = 1; j < 6; j += 2) R(x, a + 5, b + hh + 1 + j, w - 10, 1, '#9aa0a4'); R(x, a, b + h - 1, w, 1, '#aea79b');
+}
+function towerUp(x, cx, baseY) {   // 塔台立起來畫（A5）：塔身 6×18 左亮右暗、綠玻璃塔頂＋反光、頂上紅燈，影子往右下斜一片
+  poly(x, [[cx - 3, baseY], [cx + 3, baseY], [cx + 18, baseY + 9], [cx + 12, baseY + 9]], 'rgba(30,40,30,.24)');
+  for (let v = baseY - 18; v < baseY; v++) { R(x, cx - 3, v, 2, 1, '#ffffff'); R(x, cx - 1, v, 2, 1, '#ecebe6'); R(x, cx + 1, v, 2, 1, '#c9c4b9'); }
+  R(x, cx - 5, baseY - 25, 10, 7, '#3f6e6a'); R(x, cx - 5, baseY - 25, 4, 7, '#5f9a92'); P(x, cx - 4, baseY - 24, '#cfe6e2'); P(x, cx - 3, baseY - 24, '#cfe6e2');
+  R(x, cx - 6, baseY - 26, 12, 1, '#f3f1ec'); R(x, cx - 6, baseY - 18, 12, 1, '#c9c4b9');
+  R(x, cx, baseY - 30, 1, 4, '#8e9396'); lamp(x, cx - 1, baseY - 32, 'b');
+}
+function fuelTruck(x, a, b) {   // 加油車：駕駛室＋油罐兩段＋油管
+  R(x, a + 3, b + 3, 9, 20, 'rgba(30,40,30,.24)');
+  R(x, a, b, 9, 5, '#e2a62e'); R(x, a + 1, b + 1, 7, 2, '#3d4a55'); P(x, a + 1, b + 1, '#9fc0cc');
+  R(x, a, b + 6, 9, 14, '#e8e6e0'); R(x, a, b + 6, 3, 14, '#ffffff'); R(x, a + 7, b + 6, 2, 14, '#c9c4b9'); R(x, a, b + 12, 9, 1, '#b33a2f');
+  R(x, a + 9, b + 14, 4, 1, '#4a4d50');
+}
+function lightConcrete(x, a, b, w, h, seed) {   // 淺色水泥停機坪（A5），每 12 顆一條接縫
+  R(x, a + 2, b + 2, w, h, 'rgba(30,40,30,.24)');
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const n = hash(a + i + seed, b + j); P(x, a + i, b + j, (i % 12 === 0 || j % 12 === 0) ? '#aea79b' : n > .93 ? '#b8b1a5' : '#c4beb3'); }
+  R(x, a, b, w, 1, '#d6d1c7');
+}
+function hPad(x, cx, cy, r) {   // 小 H 墊（直升機位）
+  R(x, cx - r + 2, cy - r + 2, r * 2, r * 2, 'rgba(30,40,30,.24)'); R(x, cx - r, cy - r, r * 2, r * 2, '#c4beb3'); R(x, cx - r, cy - r, r * 2, 1, '#d6d1c7'); R(x, cx - r, cy + r - 1, r * 2, 1, '#aea79b');
+  R(x, cx - 4, cy - 5, 2, 10, '#f3f1ec'); R(x, cx + 2, cy - 5, 2, 10, '#f3f1ec'); R(x, cx - 2, cy - 1, 4, 2, '#f3f1ec');
+}
+// 機位的地面標線（C4、A7）：匯出時（不畫飛機）每個位子畫；飛機機頭朝下，導入線沿機身中線，機頭那裡一條 T 字停止線
+window.slotMark = function (x, a, b, w, h, n, id) {
+  if (n === 'heli') { if (id !== 'a2') hPad(x, Math.round(a + w / 2), Math.round(b + h / 2), 9); return; }
+  const grass = id === 'a1' || id === 'a2', col = grass ? '#f3f1ec' : '#e8c35a', cx = Math.round(a + w / 2) - 1;
+  if (grass) { R(x, cx, b + h - 6, 2, 6, col); R(x, cx - 4, b + h, 10, 2, col); return; }   // 草地上：小小的白色 T
+  R(x, cx, b + 4, 2, h - 2, col); R(x, cx - 6, b + h + 2, 14, 2, col);
+};
+
 // ===== 壹 草地起降場 =====
 (() => {
   const { x, W, H } = make('a1'); lawn(x, W, H, 701);
-  for (let j = 70; j < 92; j++) for (let i = 10; i < 190; i++) if (hash(i, j) > .2) P(x, i, j, (i + j) % 2 ? '#a6bb7c' : '#9cb272');   // 割過草的跑道
-  for (let i = 14; i < 190; i += 14) { R(x, i, 69, 3, 1, '#f3efe6'); R(x, i, 92, 3, 1, '#f3efe6'); }
-  windsock(x, 176, 50);
-  R(x, 16, 20, 22, 16, K.shadow); R(x, 14, 18, 22, 16, K.wood); for (let i = 0; i < 22; i += 3) R(x, 14 + i, 18, 1, 16, K.wood2); R(x, 14, 18, 22, 2, K.roofLo);   // 小木屋
+  mowStrip(x, 14, 70, 172, 22);   // 割過草的跑道（半透明條紋）
+  thresholdBars(x, 17, 70, 22); thresholdBars(x, 176, 70, 22);   // 兩端白色門檻
+  for (let i = 30; i < 176; i += 24) { lamp(x, i, 68, 'e'); lamp(x, i, 93, 'e'); }
+  [74, 80, 86].forEach(v => { lamp(x, 11, v, 'g'); lamp(x, 187, v, 'r'); });
+  windsock2(x, 176, 48);
+  redHangar(x, 12, 16, 26, 20); lamp(x, 24, 37, 'w');   // 紅屋頂小機庫＋門燈
+  R(x, 41, 30, 2, 3, '#4a6634'); R(x, 44, 31, 2, 3, '#557a3e'); P(x, 41, 30, '#6f9a45');   // 油桶
+  [[44, 18], [48, 21]].forEach(([u, v]) => { R(x, u + 1, v + 1, 3, 3, 'rgba(30,40,30,.24)'); R(x, u, v, 3, 3, '#d6c49c'); P(x, u, v, '#ece0c1'); P(x, u + 2, v + 2, '#b8a578'); });   // 乾草捆
+  for (let t = 0; t < 40; t++) { const g = t / 40 * TAU; P(x, 79 + Math.cos(g) * 7, 36 + Math.sin(g) * 5, 'rgba(255,252,236,.55)'); }   // 熱氣球籃子起降的小圓圈
   balloon(x, 60, 16, ['#c0392b', '#f3efe6']);
   ultralight(x, 100, 74);
   slotAir(x, 140, 20, 30, 28);
@@ -256,66 +343,75 @@ function hangar(x, a, b, w, h, col = '#9aa0a4') { R(x, a + 5, b + 5, w, h, K.sha
 // ===== 貳 直升機坪 =====
 (() => {
   const { x, W, H } = make('a2'); lawn(x, W, H, 702);
-  // 水泥方台＋黃圈 H
   const cx = 72, cy = 60;
   R(x, cx - 30 + 3, cy - 30 + 3, 60, 60, K.shadow); for (let j = -30; j < 30; j++) for (let i = -30; i < 30; i++) { const n = hash(cx + i, cy + j); P(x, cx + i, cy + j, n > .93 ? K.conc2 : K.conc); }
+  R(x, cx - 30, cy - 30, 60, 1, '#d6d1c7'); R(x, cx - 30, cy - 30, 1, 60, '#d6d1c7'); R(x, cx + 29, cy - 30, 1, 60, '#9e978a'); R(x, cx - 30, cy + 29, 60, 1, '#9e978a');   // 水泥台的亮暗邊
   for (let j = -26; j <= 26; j++) for (let i = -26; i <= 26; i++) { const d = Math.sqrt(i * i + j * j); if (d > 23 && d < 26 && (Math.atan2(j, i) * 8 / Math.PI | 0) % 2 === 0) P(x, cx + i, cy + j, '#e8c35a'); }
-  lights(x, cx - 29, cy - 30, 60, 8, '#4caf6a'); lights(x, cx - 29, cy + 29, 60, 8, '#4caf6a');
-  R(x, cx - 12, cy - 14, 4, 28, '#f3f1ec'); R(x, cx + 8, cy - 14, 4, 28, '#f3f1ec'); R(x, cx - 12, cy - 2, 24, 4, '#f3f1ec');   // 白色大 H
+  for (let i = -26; i <= 24; i += 10) { lamp(x, cx + i, cy - 33, 'g'); lamp(x, cx + i, cy + 31, 'g'); lamp(x, cx - 33, cy + i, 'g'); lamp(x, cx + 31, cy + i, 'g'); }   // 四周 2×2 綠燈
+  R(x, cx - 12, cy - 14, 4, 28, '#f3f1ec'); R(x, cx + 8, cy - 14, 4, 28, '#f3f1ec'); R(x, cx - 12, cy - 2, 24, 4, '#f3f1ec');
   heli(x, cx - 13, cy - 8, '#2f5d7c');
-  // 旁邊的小停機位（放動力傘、超輕航機那種）
-  R(x, 120, 30, 60, 60, K.shadow); for (let j = 28; j < 88; j++) for (let i = 118; i < 176; i++) if (hash(i, j) > .2) P(x, i, j, '#a6bb7c');
+  // 動力傘、超輕航機的淺色起降區（半透明、不蓋掉島的草）＋四角小旗
+  for (let j = 28; j < 88; j++) for (let i = 118; i < 176; i++) { const e = Math.min(i - 118, 175 - i, j - 28, 87 - j); if (e < 0) continue; P(x, i, j, e < 1 ? 'rgba(255,252,236,.30)' : 'rgba(255,250,232,.13)'); }
+  [[118, 26], [173, 26], [118, 84], [173, 84]].forEach(([u, v], k) => { R(x, u + 1, v + 1, 1, 4, 'rgba(30,40,30,.24)'); R(x, u, v - 2, 1, 6, '#8e9396'); R(x, u + 1, v - 2, 3, 2, k % 2 ? '#f3f1ec' : '#cf5a46'); });
   paraglider(x, 132, 40); slotAir(x, 126, 64, 42, 20);
-  windsock(x, 30, 100); tree(x, 18, 18, 8); tree(x, 186, 104, 8);
+  windsock2(x, 30, 96); tree(x, 18, 18, 8); tree(x, 186, 104, 8);
 })();
 
 // ===== 參 小機場（短跑道＋小機庫）=====
 (() => {
   const { x, W, H } = make('a3'); lawn(x, W, H, 703);
-  asphalt(x, 0, 84, 200, 20, 3); dashes(x, 4, 94, 196); R(x, 0, 86, 200, 1, '#f2eee5'); R(x, 0, 101, 200, 1, '#f2eee5');
-  for (let k = 0; k < 6; k++) R(x, 4, 87 + k * 2.4, 10, 1, '#f2eee5');   // 跑道頭的斑馬線
-  asphalt(x, 40, 30, 120, 54, 4);   // 停機坪
-  hangar(x, 128, 8, 52, 30);
-  R(x, 136, 37, 36, 2, '#d6d1c7');
+  runway(x, 8, 84, 184, 18, 3);
+  asphalt(x, 40, 30, 120, 50, 4);   // 停機坪
+  R(x, 99, 80, 2, 3, '#e8c35a'); R(x, 46, 78, 108, 2, '#e8c35a');   // 黃色滑行線接到跑道
+  gableHangar(x, 128, 8, 52, 30);
   cessna(x, 50, 40, '#f3f1ec', '#2f5d7c'); seaplane(x, 92, 40);
   heli(x, 14, 30, '#c0392b');
   slotAir(x, 134, 46, 30, 30);
-  windsock(x, 190, 60); tree(x, 16, 104, 6);
+  R(x, 42, 30, 2, 2, '#8e9396'); lamp(x, 42, 28, 'w'); lamp(x, 100, 56, 'F');   // 探照燈＋照到的地方
+  windsock2(x, 186, 56); tree(x, 16, 104, 6);
 })();
 
 // ===== 肆 私人機場（長跑道、塔台、機庫）=====
 (() => {
   const { x, W, H } = make('a4'); lawn(x, W, H, 704);
-  asphalt(x, 0, 92, 200, 24, 5); dashes(x, 4, 103, 196); lights(x, 0, 93, 200, 6); lights(x, 0, 114, 200, 6);
-  for (let k = 0; k < 7; k++) R(x, 186, 95 + k * 2.6, 12, 1, '#f2eee5');
-  asphalt(x, 20, 36, 140, 56, 6);
-  hangar(x, 20, 4, 70, 32, '#a3a9ad'); R(x, 26, 35, 58, 2, '#d6d1c7');
-  // 塔台：圓形、綠玻璃頂
-  circ(x, 178, 26, 10, K.shadow); circ(x, 174, 22, 10, '#e9e6df'); circ(x, 174, 22, 7, '#3f6e6a'); circ(x, 174, 22, 4, '#5f9a92'); P(x, 172, 20, '#cfe6e2'); R(x, 174, 10, 1, 4, '#8e9396'); P(x, 174, 9, '#d84a3c');
-  // 加油車
-  R(x, 168, 50, 8, 18, K.shadow); R(x, 166, 48, 8, 18, '#e2a62e'); R(x, 167, 49, 6, 4, '#3d3d3d'); R(x, 166, 54, 8, 12, '#f3f1ec'); R(x, 167, 56, 6, 1, '#c94f3d');
+  runway(x, 8, 92, 184, 22, 5, { nums: ['09', '27'], step: 10 });
+  asphalt(x, 20, 36, 140, 52, 6);
+  R(x, 26, 84, 128, 2, '#e8c35a'); R(x, 89, 86, 2, 6, '#e8c35a');
+  archHangar(x, 20, 4, 70, 32);
+  towerUp(x, 176, 44);
+  fuelTruck(x, 164, 52);
   bizjet(x, 26, 44, '#f3f1ec', '#2f3e4c'); bizjet(x, 72, 44, '#22364a', '#c9a24a');
   cessna(x, 120, 50, '#f3f1ec', '#c0392b');
+  [[22, 36], [158, 36]].forEach(([u, v]) => { R(x, u, v, 2, 2, '#8e9396'); lamp(x, u, v - 2, 'w'); }); lamp(x, 60, 62, 'F'); lamp(x, 124, 62, 'F');
+  lamp(x, 173, 22, 'w');   // 塔台窗
   tree(x, 104, 14, 7); tree(x, 130, 12, 6);
 })();
 
 // ===== 伍 航空站（玻璃航廈、VIP、紅地毯）=====
 (() => {
   const { x, W, H } = make('a5'); lawn(x, W, H, 705);
-  asphalt(x, 0, 98, 200, 22, 7); dashes(x, 4, 108, 196); lights(x, 0, 99, 200, 5); lights(x, 0, 118, 200, 5, '#e8873a');
-  asphalt(x, 0, 30, 200, 68, 8);
-  // 玻璃航廈（上方一長條）＋金色 VIP 字樣位置
+  runway(x, 8, 98, 184, 18, 7, { nums: ['09', '27'], step: 8 });
+  lightConcrete(x, 0, 28, 200, 66, 8);   // 停機坪改淺色水泥，只有跑道是柏油
+  R(x, 4, 90, 192, 2, '#e8c35a'); [36, 100, 160].forEach(u => R(x, u, 92, 2, 4, '#e8c35a'));   // 黃色滑行道接到跑道
+  // 玻璃航廈＋女兒牆亮暗邊
   R(x, 8, 4, 184, 22, K.shadow); for (let j = 0; j < 20; j++) for (let i = 0; i < 180; i++) P(x, 6 + i, 2 + j, (i % 12 === 0 || j % 7 === 0) ? '#4f5a62' : (j < 10 ? '#9fc6d2' : '#86b2c0'));
   for (let i = 0; i < 180; i += 24) for (let t = 0; t < 8; t++) P(x, 10 + i + t, 4 + t, 'rgba(255,255,255,.7)');
+  R(x, 6, 1, 180, 1, '#f3f1ec'); R(x, 5, 1, 1, 22, '#f3f1ec'); R(x, 186, 1, 1, 22, '#8a959c');
   R(x, 6, 22, 180, 2, '#c9a24a');
-  // 紅地毯接到大飛機
-  for (let j = 24; j < 44; j++) R(x, 96, j, 8, 1, j % 2 ? '#b33a2f' : '#a8342a');
+  // 兩條登機橋（接到大型機位）
+  [[80, 24], [118, 24]].forEach(([u, v]) => { R(x, u + 2, v + 2, 4, 14, K.shadow); R(x, u, v, 4, 14, '#f3f1ec'); R(x, u, v, 1, 14, '#ffffff'); R(x, u + 3, v, 1, 14, '#c9c4b9'); R(x, u - 1, v + 13, 6, 2, '#c9c4b9'); });
+  // 紅地毯：從航廈接到登機梯平台，兩側金邊
+  for (let j = 24; j < 40; j++) { R(x, 96, j, 8, 1, j % 2 ? '#b33a2f' : '#a8342a'); P(x, 95, j, '#c9a24a'); P(x, 104, j, '#c9a24a'); }
+  R(x, 93, 40, 14, 4, '#c9a24a'); R(x, 94, 40, 12, 3, '#b33a2f');
   jumbo(x, 68, 30);
   biplane(x, 18, 44);
   bizjet(x, 140, 40, '#2f3236', '#c9a24a');
   slotAir(x, 18, 76, 34, 20);
-  // 地勤車
-  R(x, 60, 80, 8, 5, '#e2a62e'); R(x, 61, 81, 3, 3, '#3d3d3d');
+  // 地勤車：拖車頭＋兩節行李車廂
+  R(x, 50, 82, 22, 6, K.shadow); R(x, 48, 80, 6, 5, '#e2a62e'); R(x, 49, 81, 3, 2, '#3d4a55');
+  [[56, 80], [63, 80]].forEach(([u, v], k) => { R(x, u - 1, v + 2, 1, 1, '#4a4d50'); R(x, u, v, 6, 5, '#c9ccce'); R(x, u + 1, v + 1, 2, 2, k ? '#2f5d7c' : '#b33a2f'); R(x, u + 3, v + 1, 2, 3, '#e2a62e'); });
+  [[2, 28], [196, 28], [2, 90]].forEach(([u, v]) => { R(x, u, v, 2, 2, '#8e9396'); });
+  lamp(x, 40, 60, 'F'); lamp(x, 100, 74, 'F'); lamp(x, 162, 60, 'F'); lamp(x, 99, 25, 'w');
 })();
 
 </script>

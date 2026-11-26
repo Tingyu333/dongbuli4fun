@@ -147,52 +147,82 @@ function rocketUp(x, cx, baseY, w, h, o = {}) {   // 立著的火箭：左亮右
   poly(x, [[left, baseY - 8], [left - Math.max(2, w / 2), baseY], [left, baseY]], band); poly(x, [[left + w, baseY - 8], [left + w + Math.max(2, w / 2), baseY], [left + w, baseY]], '#8f2c23');
   R(x, cx - Math.max(1, w / 3), baseY - 2, Math.max(2, w * 2 / 3), 2, '#3d3d3d');
 }
-function towerUp(x, a, baseY, w, h, col = '#c94f3d', dark = '#7a2a20') {   // 立著的鐵塔：兩根柱子＋交叉斜撐
+function towerUp(x, a, baseY, w, h, col = '#cf5a46', dark = '#8f2c23', mid = '#b33a2f') {   // 立著的鐵塔：兩根柱子＋交叉斜撐（第二批審稿：紅色收進朱色那組，左亮右暗）
   R(x, a, baseY - h, 2, h, col); R(x, a + w - 2, baseY - h, 2, h, dark);
-  for (let v = baseY - h; v < baseY; v += 6) { R(x, a, v, w, 1, col); for (let i = 0; i < 6; i++) { P(x, a + (w - 1) * i / 6, v + i, dark); P(x, a + (w - 1) * (1 - i / 6), v + i, col); } }
-  R(x, a - 1, baseY - h - 2, w + 2, 2, '#3d3d3d'); P(x, a + w / 2, baseY - h - 4, '#d84a3c'); P(x, a + w / 2, baseY - h - 3, '#3d3d3d');
+  for (let v = baseY - h; v < baseY; v += 6) { R(x, a, v, w, 1, mid); for (let i = 0; i < 6; i++) { P(x, a + (w - 1) * i / 6, v + i, dark); P(x, a + (w - 1) * (1 - i / 6), v + i, col); } }
+  R(x, a - 1, baseY - h - 2, w + 2, 2, '#4a4d50'); R(x, a + Math.floor(w / 2) - 1, baseY - h - 4, 1, 2, '#8e9396'); lamp(x, a + Math.floor(w / 2) - 1, baseY - h - 6, 'b');
+}
+// 燈：白天畫燈座，位置記進名單（dump_empty.js 收），夜裡照名單亮。種類：b 會閃的紅燈、w 暖燈、F 探照燈照到的地方（不畫燈座）、g 綠
+function lamp(x, a, b, kind) {
+  a = Math.round(a); b = Math.round(b);
+  if (window.__rec) window.__rec.push({ cv: x.canvas.id, fn: 'light', at: [a, b], kind });
+  if (kind === 'b') R(x, a, b, 2, 2, '#b33a2f'); else if (kind === 'w') R(x, a, b, 2, 2, '#f6cd72'); else if (kind === 'g') { R(x, a, b, 2, 2, '#4caf6a'); P(x, a, b, '#8fe0a4'); }
+}
+function lineP(x, x0, y0, x1, y1, c) { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) || 1; for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, c); }
+function floodPole(x, a, b) { R(x, a + 1, b + 1, 2, 3, 'rgba(30,40,30,.24)'); R(x, a, b, 2, 3, '#8e9396'); lamp(x, a, b - 2, 'w'); }   // 探照燈柱
+// 發射座（第二批審稿 C4）：沒有火箭的時候也看得出火箭放哪——一圈環＋四角黃色夾具
+function pedestal(x, cx, baseY, w) {   // 第二輪：一個環（#8e9396）＋四個斜角 2×2 黃夾具，中間是放火箭的洞
+  const r = Math.max(5, Math.round(w / 2) + 3); cx = Math.round(cx);
+  for (let v = -r - 1; v <= r + 1; v++) for (let u = -r - 1; u <= r + 1; u++) { const d = Math.hypot(u, v * 1.4); if (d <= r + .5 && d > r - 2.5) P(x, cx + u, baseY + Math.round(v * .7), u + v < 0 ? '#a9aeb1' : '#8e9396'); else if (d <= r - 2.5) P(x, cx + u, baseY + Math.round(v * .7), '#6f767b'); }
+  const k = Math.round(r * .72); [[-k - 1, -Math.round(k * .7) - 1], [k - 1, -Math.round(k * .7) - 1], [-k - 1, Math.round(k * .7) - 1], [k - 1, Math.round(k * .7) - 1]].forEach(([u, v]) => R(x, cx + u, baseY + v, 2, 2, '#e8c35a'));
+}
+// 圍籬（第二批審稿 L1）：每 6 顆一支 1×3 柱子、中間一條鐵絲、1 顆影子，四個角 2×2 柱子（原本的灰色虛線跟「還沒買的地」一樣）
+function fence(x, a, b, w, h) {
+  const wire = '#b8bcbe';
+  for (let i = 0; i <= w; i++) { P(x, a + i, b, wire); P(x, a + i, b + h, wire); P(x, a + i + 1, b + 1, 'rgba(30,40,30,.24)'); P(x, a + i + 1, b + h + 1, 'rgba(30,40,30,.24)'); }
+  for (let j = 0; j <= h; j++) { P(x, a, b + j, wire); P(x, a + w, b + j, wire); P(x, a + w + 1, b + j + 1, 'rgba(30,40,30,.24)'); }
+  for (let i = 6; i < w; i += 6) { R(x, a + i, b - 2, 1, 3, '#8e9396'); R(x, a + i, b + h - 2, 1, 3, '#8e9396'); }
+  for (let j = 6; j < h; j += 6) { R(x, a, b + j - 2, 1, 3, '#8e9396'); R(x, a + w, b + j - 2, 1, 3, '#8e9396'); }
+  [[a, b], [a + w, b], [a, b + h], [a + w, b + h]].forEach(([u, v]) => { R(x, u - 1, v - 2, 2, 2, '#71787e'); R(x, u, v - 1, 2, 2, '#8e9396'); });
 }
 function padConcrete(x, a, b, w, h, seed) { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const n = hash(a + i + seed, b + j); P(x, a + i, b + j, n > .93 ? K.conc2 : n < .05 ? K.conc3 : K.conc); } R(x, a, b, w, 1, K.conc2); R(x, a, b + h - 1, w, 1, K.conc2); }
-function hazard(x, a, b, w) { for (let i = 0; i < w; i++) P(x, a + i, b, Math.floor(i / 3) % 2 ? '#2c2c2c' : '#e2a62e'); }
-function tankUp(x, cx, baseY, r, col = '#f3f1ec') { groundShadow(x, cx, baseY, r * 2, r * 1.6); R(x, cx - r, baseY - r, r * 2, r, '#c9c4ba'); circ(x, cx, baseY - r, r, '#c9c4ba'); circ(x, cx - 1, baseY - r - 1, r - 1, col); P(x, cx - Math.round(r / 2), baseY - r - Math.round(r / 2), '#ffffff'); }
-function trench(x, a, b, w, h) { R(x, a, b, w, h, '#2a2a2a'); R(x, a, b, w, 1, '#5a5a5a'); for (let i = 0; i < w; i += 2) P(x, a + i, b + h - 1, '#4a3a30'); }
-function mastUp(x, a, baseY, h) { groundShadow(x, a, baseY, 1, h); R(x, a, baseY - h, 1, h, '#8e9396'); P(x, a, baseY - h - 1, '#d84a3c'); }
+function hazard(x, a, b, w) { for (let i = 0; i < w; i++) P(x, a + i, b, Math.floor(i / 3) % 2 ? '#4a4d50' : '#e2a62e'); }
+function tankUp(x, cx, baseY, r, col = '#f3f1ec') { groundShadow(x, cx, baseY, r * 2, r * 1.6); R(x, cx - r, baseY - r, r * 2, r, '#c9c4ba'); circ(x, cx, baseY - r, r, '#c9c4ba'); circ(x, cx - 1, baseY - r - 1, r - 1, col); R(x, cx - r + 1, baseY - r, r * 2 - 2, 1, '#c4beb3'); R(x, cx - Math.round(r / 2) - 1, baseY - r - Math.round(r / 2) - 1, 2, 2, '#ffffff'); R(x, cx - r + 1, baseY - 1, 2, 2, '#9e978a'); R(x, cx + r - 3, baseY - 1, 2, 2, '#9e978a'); }
+function trench(x, a, b, w, h) {   // 導焰溝（第二批審稿 C2：不要近黑）：#3d4246、上緣 1 顆亮邊、外面一圈燒焦色
+  for (let j = -2; j < h + 2; j++) for (let i = -2; i < w + 2; i++) if (i < 0 || j < 0 || i >= w || j >= h) { if (hash(a + i, b + j) > .35) P(x, a + i, b + j, 'rgba(120,96,70,.30)'); }
+  R(x, a, b, w, h, '#3d4246'); R(x, a, b, w, 1, '#4a4d50'); for (let i = 0; i < w; i += 2) P(x, a + i, b + h - 1, '#5a4a40'); }
+function mastUp(x, a, baseY, h) { groundShadow(x, a, baseY, 2, h); R(x, a, baseY - h, 1, h, '#a9aeb1'); R(x, a + 1, baseY - h, 1, h, '#71787e'); lamp(x, a, baseY - h - 2, 'b'); }
 function smoke(x, a, b, n) { for (let i = 0; i < n; i++) { const u = a + (hash(i, 3) - .5) * 14, v = b - hash(3, i) * 6; circ(x, u, v, 2, i % 2 ? '#e9e5de' : '#f6f3ee'); } }
 
 // ===== 壹 小發射架 =====
 (() => {
   const { x, W, H } = make('p1'); lawn(x, W, H, 901);
-  for (let i = 40; i < 160; i += 2) { P(x, i, 22, '#8e9396'); P(x, i, 110, '#8e9396'); } for (let j = 22; j < 111; j += 2) { P(x, 40, j, '#8e9396'); P(x, 159, j, '#8e9396'); }
+  fence(x, 40, 22, 119, 88);
   padConcrete(x, 72, 56, 52, 40, 1); hazard(x, 72, 56, 52); hazard(x, 72, 95, 52);
   trench(x, 100, 80, 20, 6);
   // 矮鐵架＋小探空火箭
   groundShadow(x, 92, 82, 6, 36); towerUp(x, 88, 82, 7, 36);
-  groundShadow(x, 102, 82, 5, 32); rocketUp(x, 102, 82, 5, 32, { bands: [.5] });
+  pedestal(x, 102, 82, 5); if (!window.__EXPORT) groundShadow(x, 102, 82, 5, 32); rocketUp(x, 102, 82, 5, 32, { bands: [.5] });
   R(x, 95, 64, 5, 1, '#8e9396'); R(x, 95, 72, 5, 1, '#8e9396');
   // 控制小碉堡＋電線、燃料槽
   R(x, 50, 86, 16, 12, K.shadow); R(x, 48, 84, 16, 12, '#b6b0a4'); R(x, 48, 84, 16, 1, '#d6d1c7'); R(x, 52, 87, 8, 2, '#3d4a55');
-  for (let i = 0; i < 24; i++) P(x, 64 + i, 88 - Math.round(i * .2), '#2c2c2c');
+  for (let i = 0; i < 24; i++) P(x, 64 + i, 88 - Math.round(i * .2), '#4a4d50');
   tankUp(x, 136, 70, 5); tankUp(x, 136, 88, 5);
+  lamp(x, 53, 86, 'w'); floodPole(x, 74, 50); floodPole(x, 122, 50); lamp(x, 104, 76, 'F');
   tree(x, 20, 24, 8); tree(x, 180, 100, 8); tree(x, 18, 104, 6);
 })();
 
 // ===== 貳 發射塔 =====
 (() => {
   const { x, W, H } = make('p2'); lawn(x, W, H, 902);
-  for (let j = 96; j < 120; j++) for (let i = 18; i < 34; i++) P(x, i, j, hash(i, j) > .5 ? '#c9c2b4' : '#b8b0a0');
+  for (let j = 96; j < 116; j++) for (let i = 18; i < 34; i++) { const e = j - 108, r = 8; if (e > 0 && (i - 26) * (i - 26) + e * e > r * r) continue; P(x, i, j, hash(i, j) > .5 ? '#c9c2b4' : '#b8b0a0'); }   // 碎石路（收尾成圓頭）
   padConcrete(x, 20, 70, 120, 28, 2); hazard(x, 20, 70, 120); hazard(x, 20, 97, 120);
   trench(x, 84, 86, 40, 8);
   // 避雷針（後面的先畫）
   mastUp(x, 28, 74, 66); mastUp(x, 134, 74, 66);
   // 高鐵塔＋服務臂＋中型火箭（兩顆小推進器）
   groundShadow(x, 62, 88, 12, 76); towerUp(x, 56, 88, 13, 76);
-  groundShadow(x, 80, 88, 14, 64);
+  if (!window.__EXPORT) groundShadow(x, 80, 88, 14, 64);
+  pedestal(x, 80, 88, 20);
   rocketUp(x, 72, 88, 4, 30, { bands: [.4] }); rocketUp(x, 88, 88, 4, 30, { bands: [.4] });
   rocketUp(x, 80, 88, 8, 64, { window: true });
   R(x, 69, 34, 7, 2, '#8e9396'); R(x, 69, 50, 7, 2, '#8e9396');
   // 水塔（球在腳架上）
   groundShadow(x, 118, 88, 8, 40); R(x, 114, 60, 1, 28, '#8e9396'); R(x, 122, 60, 1, 28, '#8e9396'); for (let v = 62; v < 88; v += 6) { for (let i = 0; i < 6; i++) P(x, 114 + i * 1.3, v + i, '#8e9396'); }
-  circ(x, 118, 54, 7, '#c9c4ba'); circ(x, 117, 53, 6, '#f3f1ec'); P(x, 115, 51, '#ffffff');
+  for (let v = 62; v < 88; v += 6) for (let i = 0; i < 6; i++) P(x, 122 - i * 1.3, v + i, '#8e9396');   // 十字斜撐
+  circ(x, 118, 54, 7, '#c9c4ba'); circ(x, 117, 53, 6, '#f3f1ec'); R(x, 115, 50, 2, 2, '#ffffff');
+  R(x, 110, 60, 17, 1, '#8e9396'); for (let i = 110; i < 127; i += 3) P(x, i, 59, '#a9aeb1');   // 欄杆
+  floodPole(x, 82, 78); floodPole(x, 128, 80); lamp(x, 104, 90, 'F');
   // 燃料球槽
   tankUp(x, 158, 76, 7); tankUp(x, 176, 76, 7); tankUp(x, 167, 96, 6, '#e8e4dc');
   tree(x, 184, 30, 8); tree(x, 160, 30, 6); tree(x, 8, 110, 6);
@@ -202,25 +232,35 @@ function smoke(x, a, b, n) { for (let i = 0; i < n; i++) { const u = a + (hash(i
 (() => {
   const { x, W, H } = make('p3'); lawn(x, W, H, 903);
   // 組裝大樓（白色、朱色直條；很高，所以影子長）
-  groundShadow(x, 26, 78, 40, 30); R(x, 6, 34, 40, 44, '#ecebe6'); R(x, 6, 34, 40, 1, '#ffffff'); R(x, 40, 34, 6, 44, '#d6d1c7'); R(x, 10, 34, 4, 44, '#b33a2f'); for (let v = 40; v < 76; v += 6) R(x, 18, v, 20, 1, '#d6d1c7'); R(x, 20, 60, 14, 18, '#8e9396');
+  groundShadow(x, 26, 78, 40, 30); R(x, 6, 34, 40, 44, '#ecebe6'); R(x, 6, 34, 40, 1, '#ffffff'); R(x, 40, 34, 6, 44, '#c9c4b9'); R(x, 10, 34, 4, 44, '#b33a2f'); R(x, 13, 34, 1, 44, '#8f2c23'); for (let v = 40; v < 76; v += 6) R(x, 18, v, 20, 1, '#d6d1c7'); R(x, 20, 60, 14, 18, '#8e9396');
+  R(x, 6, 28, 40, 6, '#f6f5f1'); R(x, 6, 28, 40, 1, '#ffffff'); R(x, 40, 28, 6, 6, '#dedad1'); R(x, 10, 28, 4, 6, '#cf5a46'); for (let i = 9; i < 40; i += 8) R(x, i, 30, 4, 2, '#dedad1');   // 屋頂面（比正面亮一階）
+  lamp(x, 26, 57, 'w');
   // 履帶車道
-  for (let i = 46; i < 92; i++) for (let j = 0; j < 4; j++) { P(x, i, 112 + j, hash(i, j) > .5 ? '#c9c2b4' : '#b8b0a0'); P(x, i, 122 + j, hash(i, j + 9) > .5 ? '#c9c2b4' : '#b8b0a0'); }
+  for (let i = 46; i < 92; i++) for (let j = 0; j < 4; j++) { const sm = i % 6 === 0; P(x, i, 112 + j, sm ? '#a39b8e' : hash(i, j) > .5 ? '#c9c2b4' : '#b8b0a0'); P(x, i, 122 + j, sm ? '#a39b8e' : hash(i, j + 9) > .5 ? '#c9c2b4' : '#b8b0a0'); }
   padConcrete(x, 92, 104, 76, 30, 3); hazard(x, 92, 104, 76); hazard(x, 92, 133, 76);
   trench(x, 128, 120, 38, 8);
   // 巨塔＋大火箭（四顆推進器，看得到左右兩顆）
   groundShadow(x, 110, 122, 16, 108); towerUp(x, 102, 122, 16, 108);
-  groundShadow(x, 136, 122, 22, 100);
+  if (!window.__EXPORT) groundShadow(x, 136, 122, 22, 100);
+  pedestal(x, 136, 122, 36);
   rocketUp(x, 124, 122, 6, 50, { bands: [.5], band: '#8f2c23' }); rocketUp(x, 148, 122, 6, 50, { bands: [.5], band: '#8f2c23' });
   rocketUp(x, 136, 122, 12, 100, { window: true, bands: [.25, .5, .75] });
   [30, 52, 74].forEach(v => R(x, 118, v, 12, 2, '#8e9396'));
   // 回收降落台＋剛降落的推進器（冒煙）
   const lx = 182, ly = 88;
-  circ(x, lx, ly, 14, '#5a5d60'); circ(x, lx, ly, 12, '#6a6d70'); for (let k = -8; k <= 8; k++) { P(x, lx + k, ly + k * .6, '#e8c35a'); P(x, lx + k, ly - k * .6, '#e8c35a'); }
-  groundShadow(x, lx, ly, 6, 30); rocketUp(x, lx, ly, 6, 30, { body: '#d6d1c7', lo: '#a9a397', band: '#3d3d3d', bands: [.3] });
-  R(x, lx - 6, ly - 2, 2, 3, '#3d3d3d'); R(x, lx + 4, ly - 2, 2, 3, '#3d3d3d'); smoke(x, lx, ly + 2, 7);
+  circ(x, lx, ly, 14, '#8e9396'); circ(x, lx, ly, 12, '#a9aeb1'); for (let k = -8; k <= 8; k++) { P(x, lx + k, ly + k * .6, '#e8c35a'); P(x, lx + k, ly - k * .6, '#e8c35a'); }
+  [[-13, 0], [13, 0], [0, -12], [0, 12]].forEach(([u, v]) => lamp(x, lx + u - 1, ly + v - 1, 'g'));
+  // 剛降落的推進器（場景的一部分，不是載具）：立著、底部燒黑、三支降落腳、煙在腳邊
+  smoke(x, lx - 4, ly + 4, 4); smoke(x, lx + 6, ly + 5, 3);
+  groundShadow(x, lx, ly, 6, 30); rocketUp(x, lx, ly, 6, 30, { body: '#d6d1c7', lo: '#a9a397', band: '#4a4d50', bands: [.3] }, 'booster');
+  for (let v = ly - 9; v < ly - 2; v++) for (let u = lx - 3; u < lx + 3; u++) if (hash(u, v) > .35) P(x, u, v, hash(v, u) > .5 ? '#6f6a62' : '#57534d');   // 燒黑
+  lineP(x, lx - 3, ly - 6, lx - 8, ly, '#71787e'); lineP(x, lx + 2, ly - 6, lx + 7, ly, '#5f666b'); R(x, lx - 1, ly - 2, 2, 3, '#71787e');   // 三支腳
+  R(x, lx - 9, ly, 3, 1, '#4a4d50'); R(x, lx + 6, ly, 3, 1, '#4a4d50');
   // 觀禮台（給主人看發射）＋紅地毯
-  R(x, 14, 106, 50, 22, K.shadow); R(x, 12, 104, 50, 22, '#d6d1c7'); for (let r = 0; r < 4; r++) for (let k = 0; k < 10; k++) R(x, 15 + k * 5, 106 + r * 5, 3, 3, r === 0 ? '#b33a2f' : '#8e8070');
-  for (let j = 126; j < 140; j++) R(x, 34, j, 6, 1, j % 2 ? '#b33a2f' : '#a8342a');
+  R(x, 14, 106, 50, 22, K.shadow); const step = ['#ecebe6', '#dedad1', '#d0cbc1', '#c2bcb1'];   // 觀禮台：一階一階往上，後排比前排亮
+  for (let r = 0; r < 4; r++) { R(x, 12, 104 + r * 5, 50, 5, step[r]); R(x, 12, 104 + r * 5, 50, 1, r ? '#9e978a' : '#ffffff'); for (let k = 0; k < 10; k++) R(x, 15 + k * 5, 106 + r * 5, 3, 2, r === 0 ? '#b33a2f' : '#8e8070'); }
+  for (let j = 124; j < 134; j++) { R(x, 34, j, 6, 1, j % 2 ? '#b33a2f' : '#a8342a'); P(x, 33, j, '#c9a24a'); P(x, 40, j, '#c9a24a'); } R(x, 32, 134, 10, 2, '#c9a24a');   // 紅地毯收尾
+  floodPole(x, 120, 102); floodPole(x, 168, 104); lamp(x, 146, 116, 'F');
   // 燃料球槽
   tankUp(x, 66, 96, 7); tankUp(x, 82, 96, 7);
   tree(x, 186, 20, 8); tree(x, 66, 20, 7);

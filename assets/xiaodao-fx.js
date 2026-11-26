@@ -13,7 +13,7 @@
     if (clip) { x.globalCompositeOperation = 'destination-in'; x.drawImage(clip, 0, 0); x.globalCompositeOperation = 'source-over'; }
   }
   // 跑道在圖的第幾列（停機坪各階的圖量出來的；貳是直升機坪，沒有跑道）
-  const RUNWAY = { 1: 64, 3: 86, 4: 99, 5: 106 };   // 跑道在停機坪圖裡的高度（2026-11-26 壹的圖往上多 2 顆，62 → 64）
+  const RUNWAY = { 1: 65, 3: 85, 4: 99, 5: 106 };   // 跑道在停機坪圖裡的高度（2026-11-26 壹的圖往上多 2 顆，62 → 64）
 
   // ---------- 小工具 ----------
   const cv = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, w); c.height = Math.max(1, h); return c; };
@@ -59,8 +59,8 @@
   // ---------- 夜景 ----------
   // 整張島調暗；設施圖裡的窗（淺藍玻璃、本來就是黃色的窗燈）亮起來；小路每隔一段一盞路燈、每個設施門口一盞
   const lightCache = new Map();
-  function lightsOf(img) {
-    let L = lightCache.get(img); if (L) return L;
+  function lightsOf(img, glassOnly) {
+    const ck = glassOnly ? 'g' : 'a'; let C2 = lightCache.get(img); if (!C2) lightCache.set(img, C2 = {}); let L = C2[ck]; if (L) return L;
     const w = img.width, h = img.height, c = cv(w, h), x = c.getContext('2d'); x.drawImage(img, 0, 0);
     const d = x.getImageData(0, 0, w, h).data, kind = new Uint8Array(w * h);   // 1 黃燈、2 玻璃
     for (let k = 0; k < w * h; k++) { const r = d[k * 4], g = d[k * 4 + 1], b = d[k * 4 + 2], a = d[k * 4 + 3]; if (a < 200) continue;
@@ -87,10 +87,11 @@
     const m = cv(w, h), mx = m.getContext('2d'), md = mx.createImageData(w, h), o = md.data, glows = [];
     // 一張圖裡小塊玻璃很多（超過 12 塊）＝格子玻璃屋頂（機庫），整片當大塊玻璃，不要一格一格亮黃燈
     const panes = comps.filter(l => kind[l[0]] === 2 && l.length <= 70).length > 12;
+    if (glassOnly) for (let ci = comps.length - 1; ci >= 0; ci--) { const l = comps[ci]; if (kind[l[0]] !== 2 || !(l.length > 70 || panes)) comps.splice(ci, 1); }   // 2026-11-26：有燈名單（FAC.lights）的設施，黃燈照名單，這裡只留大塊玻璃
     comps.forEach(list => { const big = list.length > 70 || (panes && kind[list[0]] === 2); let sx = 0, sy = 0;
       list.forEach(k => { const p = k * 4, warm = kind[k] === 1 || !big; if (warm) { o[p] = 255; o[p + 1] = 214 + (k % 3) * 8; o[p + 2] = 130; } else { o[p] = Math.min(255, d[p] + 40); o[p + 1] = Math.min(255, d[p + 1] + 40); o[p + 2] = Math.min(255, d[p + 2] + 30); } o[p + 3] = big && kind[k] === 2 ? 200 : 255; sx += k % w; sy += Math.floor(k / w); });
       if (!big || kind[list[0]] === 1) glows.push([sx / list.length, sy / list.length, Math.min(14, 5 + Math.sqrt(list.length) * 1.6), big ? 'c' : 'w']); else { if (!panes || list.length > 6) glows.push([sx / list.length, sy / list.length, Math.min(40, Math.sqrt(list.length) * 1.2), 'c']); } });
-    mx.putImageData(md, 0, 0); L = { mask: m, glows }; lightCache.set(img, L); return L;
+    mx.putImageData(md, 0, 0); L = { mask: m, glows }; C2[ck] = L; return L;
   }
   function glow(x, a, b, r, col, al) { const g = x.createRadialGradient(a, b, 0, a, b, r); g.addColorStop(0, col.replace('A', al)); g.addColorStop(1, col.replace('A', 0)); x.fillStyle = g; x.fillRect(a - r, b - r, r * 2, r * 2); }
   // 光暈兩層：外圈淡淡一圈＋亮的核心（燈在暗底上才跳得出來）
@@ -108,7 +109,12 @@
     // 樹冠左上一點偏藍的月光亮邊
     x.fillStyle = 'rgba(170,190,235,.38)';
     (out.trees || []).forEach(([a, b2, r]) => { for (let t = 0; t < 4; t++) { const g = Math.PI * 1.1 + t * .22; x.fillRect(Math.round(a + Math.cos(g) * (r - 1)), Math.round(b2 + Math.sin(g) * (r - 1)), 1, 1); } });
-    Object.keys(out.sites).forEach(k => { const im = D.IMG[k + X.level(s, k)], r = out.sites[k]; if (!im) return; const L = lightsOf(im);
+    // 燈的名單（2026-11-26 第二批審稿：停機坪、發射台的燈不用猜顏色，照設計圖記的位置亮）：e 跑道邊燈、g 綠、r 紅、b 會閃的紅燈（這裡只畫淡淡一圈，閃在 paint）、w 暖燈、F 探照燈照的地方
+    const LCOL = { e: ['rgba(255,243,207,A)', '#fff3cf', 6, .34, 2, 1], g: ['rgba(90,255,138,A)', '#a8ffbe', 6, .3, 2, 2], r: ['rgba(255,96,80,A)', '#ff9a8a', 6, .3, 2, 2], w: [WARM, '#ffe6a6', 10, .36, 2, 2], b: ['rgba(255,80,64,A)', null, 6, .14, 0, 0] };
+    Object.keys(out.sites).forEach(k => { const lv = X.level(s, k), LL = X.FAC[k].lights && X.FAC[k].lights[lv - 1], r = out.sites[k]; if (!LL) return;
+      x.globalCompositeOperation = 'lighter'; LL.forEach(([a, b2, t]) => { if (t === 'F') glow(x, r.x + a, r.y + b2, 30, WARM, .18); else { const c = LCOL[t]; if (c) glow2(x, r.x + a + 1, r.y + b2 + 1, c[2], c[0], c[3]); } });
+      x.globalCompositeOperation = 'source-over'; LL.forEach(([a, b2, t]) => { const c = LCOL[t]; if (c && c[1]) { x.fillStyle = c[1]; x.fillRect(r.x + a, r.y + b2, c[4], c[5]); } }); });
+    Object.keys(out.sites).forEach(k => { const im = D.IMG[k + X.level(s, k)], r = out.sites[k]; if (!im) return; const L = lightsOf(im, !!(X.FAC[k].lights && X.FAC[k].lights[X.level(s, k) - 1]));
       x.globalCompositeOperation = 'lighter'; L.glows.forEach(([a, b2, rr, t]) => glow2(x, r.x + a, r.y + b2, rr, t === 'c' ? COOL : WARM, t === 'c' ? .2 : .36));
       x.globalCompositeOperation = 'source-over'; x.drawImage(L.mask, r.x, r.y); });
     // 路燈（燈柱白天就畫在圖裡了，xiaodao-draw.js 的 lampPost）：燈頭點亮＋光暈；家門口那盞多一塊暖暖的地面光（原本是屋頂中間一團光）
@@ -244,6 +250,11 @@
       if (night && X.level(s, 'dock') === 5 && out.sites.dock) { const r = out.sites.dock, lx = r.x + 150, ly = r.y + 62, th = now / 1000 * .9;
         x.save(); x.globalCompositeOperation = 'lighter'; const g = x.createRadialGradient(lx, ly, 0, lx, ly, 70); g.addColorStop(0, 'rgba(255,236,170,.32)'); g.addColorStop(1, 'rgba(255,236,170,0)'); x.fillStyle = g;
         x.beginPath(); x.moveTo(lx, ly); x.arc(lx, ly, 70, th - .16, th + .16); x.closePath(); x.fill(); x.restore(); }
+      // 夜裡：塔台、鐵塔、避雷針頂上的紅燈（燈名單裡的 b）一閃一閃（2026-11-26 第二批審稿）
+      if (night) ['airfield', 'launchpad'].forEach(k => { const lv = X.level(s, k), LL = lv && X.FAC[k].lights && X.FAC[k].lights[lv - 1], r = out.sites[k]; if (!LL || !r) return;
+        LL.forEach(([a, b2, t], i) => { if (t !== 'b' || Math.floor(now / 900 + i * .37) % 2) return; const u = r.x + a + 1, v = r.y + b2 + 1;
+          x.save(); x.globalCompositeOperation = 'lighter'; const g = x.createRadialGradient(u, v, 0, u, v, 7); g.addColorStop(0, 'rgba(255,90,70,.55)'); g.addColorStop(1, 'rgba(255,90,70,0)'); x.fillStyle = g; x.fillRect(u - 7, v - 7, 14, 14); x.restore();
+          x.fillStyle = '#ff7a66'; x.fillRect(r.x + a, r.y + b2, 2, 2); }); });
       // 夜裡：飛機翼尖、火箭頂端的紅燈一閃一閃
       if (night) { const on = Math.floor(now / 700) % 2 === 0; if (on) fxs.parked.forEach(v => { if (fxs.hide.has(v.id)) return; if (isRocket(v.key)) { x.fillStyle = '#ff5a4a'; x.fillRect(v.x + X.VEH[v.key].ax, v.y + 1, 1, 1); } else if (v.f === 'airfield' && !isHeli(v.key)) { x.fillStyle = '#ff5a4a'; x.fillRect(v.x + 1, v.y + v.img.height * .3, 1, 1); x.fillStyle = '#5aff8a'; x.fillRect(v.x + v.img.width - 3, v.y + v.img.height * .3, 1, 1); } }); }
     };

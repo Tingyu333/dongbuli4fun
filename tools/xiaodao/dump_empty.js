@@ -4,7 +4,8 @@
 //   一般（<名>_<i>.png）：跟設計圖一樣（草地、海、樹、載具），拿來找海岸線
 //   匯出（<名>_<i>_x.png）：window.__EXPORT = true —— 草地、海岸、海這些底不畫（島自己畫），樹不畫（除非 keep），
 //   載具不畫、空位虛線框也不畫（2026-11-26 使用者定：虛線框只在點設施、換車的時候由網頁畫），但位子照樣記下來；
-//   設計圖有 slotMark() 的話，每個位子改畫地面標線（車庫：四角 L 形）
+//   設計圖有 slotMark() 的話，每個位子改畫地面標線（車庫：四角 L 形；停機坪：黃色導入線＋T 字，第 6、7 個參數是載具名、畫布 id）
+//   設計圖的 lamp(x, a, b, 種類) 會記下燈的位置（{fn:'light'}），crop.py 存進 sprites.json，夜裡照這份名單亮（2026-11-26 第二批審稿）
 const { chromium } = require('playwright'); const fs = require('fs'), path = require('path');
 const OUT = process.argv[2] || '.', DIR = path.join(__dirname, '../../docs/plans/jiayuan/');
 const SHEETS = {
@@ -26,7 +27,7 @@ window.__EXPORT = ${exp}; window.__rec = [];
   // 原本就畫好的空位也記下來（label：s 小車位、m 車位）；匯出時不畫
   let mine = false;
   ${JSON.stringify(cfg.slot ? [cfg.slot] : [])}.forEach(n => { const f = window[n]; if (typeof f !== 'function') return;
-    window[n] = function (x, a, b, w, h, label) { if (!mine) window.__rec.push({ cv: x.canvas.id, fn: 'empty', box: [a, b, w, h], label: label || '' }); if (window.__EXPORT) { if (typeof window.slotMark === 'function') window.slotMark(x, a, b, w, h); return; } return f.apply(this, arguments); }; });
+    window[n] = function (x, a, b, w, h, label) { if (!mine) window.__rec.push({ cv: x.canvas.id, fn: 'empty', box: [a, b, w, h], label: label || '' }); if (window.__EXPORT) { if (typeof window.slotMark === 'function') window.slotMark(x, a, b, w, h, 'empty', x.canvas.id); return; } return f.apply(this, arguments); }; });
   ${JSON.stringify(cfg.veh)}.forEach(n => {
     const f = window[n]; if (typeof f !== 'function') return;
     window[n] = function (x, a, b, ...rest) {
@@ -38,7 +39,7 @@ window.__EXPORT = ${exp}; window.__rec = [];
       for (let j = 0; j < 400; j++) for (let i = 0; i < 400; i++) if (d[(j * 400 + i) * 4 + 3] === 255) { x0 = Math.min(x0, i); y0 = Math.min(y0, j); x1 = Math.max(x1, i); y1 = Math.max(y1, j); }
       const box = x1 < 0 ? null : [a + x0 - 150, b + y0 - 150, x1 - x0 + 1, y1 - y0 + 1];
       window.__rec.push({ cv: x.canvas.id, fn: n, a, b, box });
-      if (window.__EXPORT) { if (box && typeof window.slotMark === 'function' && n !== 'balloon' && n !== 'paraglider') window.slotMark(x, box[0], box[1], box[2], box[3]); return; }
+      if (window.__EXPORT) { if (box && typeof window.slotMark === 'function' && n !== 'balloon' && n !== 'paraglider') window.slotMark(x, box[0], box[1], box[2], box[3], n, x.canvas.id); return; }
       ${cfg.slot ? `if (box && n !== 'balloon' && n !== 'paraglider') { mine = true; ${cfg.slot}(x, box[0], box[1], box[2], box[3]); mine = false; }` : ''}
     };
   });

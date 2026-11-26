@@ -207,3 +207,11 @@
 - 試玩存檔換名字 `dongbuli-xiaodao-preview3`（地塊編號又變了）。重畫一次約 0.3～0.4 秒。
 - 審稿說「可以更好、不擋收藏」、還沒改的：左邊兩座島中間那條海峽最直；中間小島手機上像圓角方塊（四個斜角可以再鼓 4～6 顆）。
 
+### 設施美術審稿・第二批：停機坪、發射台（2026-11-26）
+
+- 跟第一批同一套流程，清單和結果在 `docs/plans/jiayuan/facility2-review.md`，前後對照 `facility-before-after-airfield.png`、`facility-before-after-launchpad.png`。使用者「都照建議」，三輪後兩位審稿員都說可以收藏，使用者點頭。
+- **設計檔**（`airfield-stages.html`、`launchpad-stages.html`）：割草跑道改半透明條紋（`mowStrip()`，疊在島的草上，顏色避開 `crop.py` 會壓成影子的深色）；`runway()` 跑道兩端收尾（淺色邊、門檻、端燈左綠右紅、兩側邊燈、肆伍有 09／27 `runNum()`）；機庫三種（壹紅屋頂 `redHangar()`、參屋脊＋捲門 `gableHangar()`、肆拱形 `archHangar()`）；塔台立起來（`towerUp()`）；加油車兩段；伍停機坪淺色水泥（`lightConcrete()`）、滑行道、登機橋、紅地毯金邊、地勤車拖車＋兩節。發射台：鐵塔收進朱色那組（左 #cf5a46、右 #8f2c23、斜撐 #b33a2f）；導焰溝 #3d4246 不近黑；警戒線黑改 #4a4d50；發射座 `pedestal()`（環＋四角黃夾具）；圍籬 `fence()`（柱子＋鐵絲，不再跟「還沒買的地」的虛線一樣）；太空港推進器畫回來（`rocketUp(…, 'booster')` 算場景、三支腳、燒黑、煙在腳邊）。匯出時火箭不畫，**火箭的地面影子也不畫**（`if (!window.__EXPORT)`），不然沒有火箭卻有影子。
+- **機位地面記號**：`slotMark(x, a, b, w, h, 載具名, 畫布 id)`（`dump_empty.js` 多傳兩個參數）：飛機位黃色導入線＋T 字（草地上白 T）、參的直升機位墊小 H、貳的直升機就停在大 H 上。
+- **夜燈名單 `FAC.lights`**：設計圖的 `lamp(x, a, b, 種類)` 白天畫燈座、記下位置；`crop.py` 換成圖裡座標寫進 `sprites.json`，`update_rules.py` 寫進規則（每一級一串 `[x, y, 種類]`：e 跑道邊燈、g 綠、r 紅、b 會閃的紅燈、w 暖燈、F 探照燈照到的地方）。`xiaodao-fx.js` 有名單的設施照名單亮（`nightWorld`），黃燈不再用顏色猜，只留大塊玻璃（航廈）照舊用顏色找（`lightsOf(img, glassOnly)`）；b 在 `paint` 裡每 0.9 秒閃一次。
+- 圖的大小差幾顆（見 `facility2-review.md`），`RUNWAY`（飛機起飛的跑道高度）壹 64→65、參 86→85。價錢、機率、存檔格式沒動。
+

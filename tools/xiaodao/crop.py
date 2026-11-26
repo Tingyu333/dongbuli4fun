@@ -21,7 +21,7 @@ for n, cnt in SHEET.items():
         a = im.split()[3].point(lambda v: 255 if v > 8 else 0)   # 幾乎看不到的（反鋸齒殘渣）不算
         bb = list(a.getbbox())
         for r in REC.get(f'{n}-stages', []):
-            if not r.get('box') or not r['cv'].endswith(str(i + 1)): continue
+            if not r.get('box') or r.get('fn') == 'light' or not r['cv'].endswith(str(i + 1)): continue
             bx, by, bw, bh = r['box']; bb = [min(bb[0], max(0, bx)), min(bb[1], max(0, by)), max(bb[2], min(W, bx + bw)), max(bb[3], min(H, by + bh))]
         # 影子統一（2026-11-26 第二輪審稿）：同一張圖裡兩個影子疊到會變深（.42、.51），改成只有一層；
         # 海上的影子（碼頭、別墅的海岸線以下）統一成偏藍的 rgba(20,40,50,.28)，陸上 rgba(30,40,30,.24)
@@ -33,8 +33,11 @@ for n, cnt in SHEET.items():
                 if 0 < al < 250 and r < 90 and g < 90 and b_ < 90:
                     px[x, j] = (20, 40, 50, 71) if sea else (30, 40, 30, 61)
         bb = tuple(bb); c = im.crop(bb)
+        # 燈的名單（設計圖 lamp() 記的）：圖裡座標＋種類
+        lights = [[r['at'][0] - bb[0], r['at'][1] - bb[1], r['kind']] for r in REC.get(f'{n}-stages', []) if r.get('fn') == 'light' and r['cv'].endswith(str(i + 1))]
         name = f'{n}{i+1}'
         c.save(os.path.join(OUT, f'{name}.png'), optimize=True)
         out[name] = {'w': c.width, 'h': c.height, 'ox': bb[0], 'oy': bb[1], 'shore': (shore - bb[1]) if shore is not None else None}
+        if lights: out[name]['lights'] = lights
         print(name, bb, c.size, 'shore', out[name]['shore'])
 json.dump(out, open(os.path.join(os.path.dirname(__file__), 'sprites.json'), 'w'), indent=1)
