@@ -4011,7 +4011,7 @@ var COIN_META = { launch: 1795708800000, q: 900000, chunk: 2976 };   // 跟 asse
 var COINS = [
   { key: 'c1', name: '丼幣', tk: 'DON', digits: 1, pre: 2880, n: 108096 },
   { key: 'c2', name: '茱莉鴨幣', tk: 'DUCK', digits: 2, pre: 2880, n: 108096 },
-  { key: 'c3', name: '坐洗狗狗幣', tk: 'WOOF', digits: 4, pre: 2880, n: 108096 },
+  { key: 'c3', name: '浣熊幣', tk: 'RACC', digits: 4, pre: 2880, n: 108096 },
   { key: 'c4', name: '蘿蔔幣', tk: 'RDSH', digits: 3, pre: 2880, n: 108096 },
   { key: 'c5', name: '雞塊幣', tk: 'NUGT', digits: 6, pre: 0, n: 105216 }
 ];

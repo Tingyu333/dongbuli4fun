@@ -7,7 +7,7 @@
     const METAL = {
         c1: { name: '丼幣', tk: 'DON', base: '#dcae45', hi: '#fff3c4', lo: '#8a6416', ink: '#6e4c0c' },     // 金
         c2: { name: '茱莉鴨幣', tk: 'DUCK', base: '#c3c7cd', hi: '#ffffff', lo: '#666d76', ink: '#4a5058' },  // 銀
-        c3: { name: '坐洗狗狗幣', tk: 'WOOF', base: '#c07a47', hi: '#f6cba2', lo: '#6a3716', ink: '#5a2c10' }, // 銅
+        c3: { name: '浣熊幣', tk: 'RACC', base: '#c07a47', hi: '#f6cba2', lo: '#6a3716', ink: '#4a230b' },     // 銅
         c4: { name: '蘿蔔幣', tk: 'RDSH', base: '#7eac98', hi: '#d8f1e5', lo: '#3a6454', ink: '#2c4d40' },   // 綠銅
         c5: { name: '雞塊幣', tk: 'NUGT', base: '#e6a03c', hi: '#ffe2a4', lo: '#94560f', ink: '#7a440a' },   // 炸物金
     };
@@ -29,17 +29,27 @@
         return g;
     }
 
+    // 浮雕的上色：本色和深色都用斜的金屬漸層（座標是圖案的單位座標，-1～1），draw() 每次畫之前換掉
+    let G = null;
+    function relief(x, m) {
+        const g1 = x.createLinearGradient(-0.7, -0.8, 0.6, 0.8);
+        g1.addColorStop(0, mix(m.base, m.hi, 0.75)); g1.addColorStop(0.35, mix(m.base, m.hi, 0.25)); g1.addColorStop(0.62, m.base); g1.addColorStop(0.8, mix(m.base, m.hi, 0.35)); g1.addColorStop(1, mix(m.base, m.lo, 0.45));
+        const g2 = x.createLinearGradient(-0.6, -0.7, 0.6, 0.7);
+        g2.addColorStop(0, mix(m.ink, m.base, 0.45)); g2.addColorStop(0.5, m.ink); g2.addColorStop(1, mix(m.ink, '#000000', 0.25));
+        G = { base: g1, ink: g2 };
+    }
+    const paint = (m, c) => G && c === m.base ? G.base : G && c === m.ink ? G.ink : c;
     // 浮雕：同一個形狀畫三次（右下暗、左上亮、中間本色）
     function emboss(x, m, d, path, fill) {
-        x.save(); x.translate(d, d); x.fillStyle = m.lo; path(); x.fill(); x.restore();
-        x.save(); x.translate(-d * 0.7, -d * 0.7); x.fillStyle = m.hi; path(); x.fill(); x.restore();
-        x.fillStyle = fill; path(); x.fill();
+        x.save(); x.translate(d, d); x.fillStyle = mix(m.lo, '#000000', 0.15); path(); x.fill(); x.restore();
+        x.save(); x.translate(-d * 0.7, -d * 0.7); x.fillStyle = '#ffffff'; x.globalAlpha = 0.85; path(); x.fill(); x.restore();
+        x.fillStyle = paint(m, fill); path(); x.fill();
     }
     function embossStroke(x, m, d, path, w, col) {
         x.lineCap = 'round'; x.lineJoin = 'round'; x.lineWidth = w;
         x.save(); x.translate(d, d); x.strokeStyle = m.lo; path(); x.stroke(); x.restore();
         x.save(); x.translate(-d * 0.7, -d * 0.7); x.strokeStyle = m.hi; path(); x.stroke(); x.restore();
-        x.strokeStyle = col; path(); x.stroke();
+        x.strokeStyle = paint(m, col); path(); x.stroke();
     }
 
     // 沿著圓弧寫字（top：上半圈順時針；否則下半圈）
@@ -59,8 +69,8 @@
         c1(x, m, d) {
             x.save(); x.font = '700 0.95px "Noto Serif TC", serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
             x.fillStyle = m.lo; x.fillText('丼', d, -0.06 + d);
-            x.fillStyle = m.hi; x.fillText('丼', -d * 0.7, -0.06 - d * 0.7);
-            x.fillStyle = m.ink; x.fillText('丼', 0, -0.06);
+            x.fillStyle = '#ffffff'; x.fillText('丼', -d * 0.7, -0.06 - d * 0.7);
+            x.fillStyle = paint(m, m.ink); x.fillText('丼', 0, -0.06);
             x.restore();
         },
         // 茱莉鴨：側臉、扁嘴、眼睛、領結
@@ -77,23 +87,32 @@
             x.fillStyle = m.hi; x.beginPath(); x.arc(0.04, -0.22, 0.018, 0, Math.PI * 2); x.fill();
             embossStroke(x, m, d * 0.6, () => { x.beginPath(); x.moveTo(-0.3, -0.42); x.quadraticCurveTo(-0.22, -0.6, -0.08, -0.5); }, 0.05, m.ink);   // 一撮毛
         },
-        // 坐洗部的狗：正臉、垂耳、鼻子，頭上頂三顆泡泡
+        // 浣熊大王：正臉、圓耳、橫過眼睛的黑眼罩、白眉、白嘴鼻、黑鼻子，頭上一頂三顆寶石的皇冠
         c3(x, m, d) {
-            const face = () => { x.beginPath(); x.ellipse(0, 0.1, 0.4, 0.36, 0, 0, Math.PI * 2); };
-            const earL = () => { x.beginPath(); x.ellipse(-0.42, 0.12, 0.13, 0.27, 0.35, 0, Math.PI * 2); };
-            const earR = () => { x.beginPath(); x.ellipse(0.42, 0.12, 0.13, 0.27, -0.35, 0, Math.PI * 2); };
-            const snout = () => { x.beginPath(); x.ellipse(0, 0.27, 0.18, 0.13, 0, 0, Math.PI * 2); };
-            const bubbles = () => { x.beginPath(); [[-0.16, -0.36, 0.13], [0.1, -0.44, 0.16], [0.3, -0.3, 0.1], [-0.02, -0.6, 0.08]].forEach(([bx, by, br]) => { x.moveTo(bx + br, by); x.arc(bx, by, br, 0, Math.PI * 2); }); };
-            emboss(x, m, d, earL, m.ink); emboss(x, m, d, earR, m.ink);
+            const ears = () => { x.beginPath(); x.ellipse(-0.34, -0.3, 0.15, 0.17, -0.4, 0, Math.PI * 2); x.moveTo(0.49, -0.3); x.ellipse(0.34, -0.3, 0.15, 0.17, 0.4, 0, Math.PI * 2); };
+            const earIn = () => { x.beginPath(); x.ellipse(-0.33, -0.29, 0.07, 0.09, -0.4, 0, Math.PI * 2); x.moveTo(0.4, -0.29); x.ellipse(0.33, -0.29, 0.07, 0.09, 0.4, 0, Math.PI * 2); };
+            // 臉：兩頰有蓬毛的尖角
+            const face = () => { x.beginPath(); x.moveTo(0, -0.32); x.bezierCurveTo(0.3, -0.32, 0.44, -0.18, 0.46, 0.02); x.lineTo(0.56, 0.12); x.lineTo(0.42, 0.16); x.bezierCurveTo(0.34, 0.36, 0.16, 0.44, 0, 0.44); x.bezierCurveTo(-0.16, 0.44, -0.34, 0.36, -0.42, 0.16); x.lineTo(-0.56, 0.12); x.lineTo(-0.46, 0.02); x.bezierCurveTo(-0.44, -0.18, -0.3, -0.32, 0, -0.32); x.closePath(); };
+            // 眼罩：一條橫過去，兩邊垂下來
+            const mask = () => { x.beginPath(); x.moveTo(-0.44, 0.02); x.quadraticCurveTo(-0.3, -0.14, -0.08, -0.06); x.quadraticCurveTo(0, -0.02, 0.08, -0.06); x.quadraticCurveTo(0.3, -0.14, 0.44, 0.02); x.quadraticCurveTo(0.36, 0.16, 0.2, 0.12); x.quadraticCurveTo(0.08, 0.08, 0, 0.12); x.quadraticCurveTo(-0.08, 0.08, -0.2, 0.12); x.quadraticCurveTo(-0.36, 0.16, -0.44, 0.02); x.closePath(); };
+            const muzzle = () => { x.beginPath(); x.ellipse(0, 0.27, 0.17, 0.13, 0, 0, Math.PI * 2); };
+            const crown = () => { x.beginPath(); x.moveTo(-0.17, -0.36); x.lineTo(-0.2, -0.58); x.lineTo(-0.09, -0.47); x.lineTo(0, -0.64); x.lineTo(0.09, -0.47); x.lineTo(0.2, -0.58); x.lineTo(0.17, -0.36); x.closePath(); };
+            emboss(x, m, d, ears, m.base);
+            x.fillStyle = paint(m, m.ink); earIn(); x.fill();
             emboss(x, m, d, face, m.base);
-            emboss(x, m, d, bubbles, m.base);
-            x.strokeStyle = m.lo; x.lineWidth = 0.025; bubbles(); x.stroke();
-            emboss(x, m, d * 0.6, snout, m.base);
-            x.fillStyle = m.ink;
-            x.beginPath(); x.ellipse(0, 0.2, 0.07, 0.05, 0, 0, Math.PI * 2); x.fill();
-            x.beginPath(); x.arc(-0.15, 0.02, 0.045, 0, Math.PI * 2); x.arc(0.15, 0.02, 0.045, 0, Math.PI * 2); x.fill();
-            x.strokeStyle = m.ink; x.lineWidth = 0.03; x.lineCap = 'round';
-            x.beginPath(); x.moveTo(0, 0.25); x.lineTo(0, 0.31); x.quadraticCurveTo(-0.06, 0.36, -0.1, 0.32); x.moveTo(0, 0.31); x.quadraticCurveTo(0.06, 0.36, 0.1, 0.32); x.stroke();
+            emboss(x, m, d * 0.7, mask, m.ink);
+            embossStroke(x, m, d * 0.4, () => { x.beginPath(); x.moveTo(-0.3, -0.13); x.quadraticCurveTo(-0.18, -0.22, -0.06, -0.14); x.moveTo(0.06, -0.14); x.quadraticCurveTo(0.18, -0.22, 0.3, -0.13); }, 0.045, m.base);   // 白眉
+            emboss(x, m, d * 0.6, muzzle, m.base);
+            emboss(x, m, d, crown, m.base);
+            x.fillStyle = paint(m, m.ink);
+            [[-0.19, -0.55], [0, -0.6], [0.19, -0.55]].forEach(([gx, gy]) => { x.beginPath(); x.arc(gx, gy, 0.035, 0, Math.PI * 2); x.fill(); });
+            // 眼睛（在眼罩裡發亮）、鼻子、壞笑
+            x.fillStyle = mix(m.hi, '#ffffff', 0.5);
+            x.beginPath(); x.arc(-0.17, 0.02, 0.045, 0, Math.PI * 2); x.arc(0.17, 0.02, 0.045, 0, Math.PI * 2); x.fill();
+            x.fillStyle = paint(m, m.ink);
+            x.beginPath(); x.ellipse(0, 0.21, 0.06, 0.045, 0, 0, Math.PI * 2); x.fill();
+            x.strokeStyle = paint(m, m.ink); x.lineWidth = 0.03; x.lineCap = 'round';
+            x.beginPath(); x.moveTo(0, 0.25); x.lineTo(0, 0.3); x.quadraticCurveTo(-0.05, 0.34, -0.09, 0.31); x.moveTo(0, 0.3); x.quadraticCurveTo(0.07, 0.35, 0.12, 0.28); x.stroke();
         },
         // 蘿蔔：胖蘿蔔＋三片葉子，身上幾條橫紋
         c4(x, m, d) {
@@ -125,8 +144,18 @@
         x.save();
         // 影子
         x.beginPath(); x.ellipse(cx + r * 0.06, cy + r * 0.1, r, r * 0.98, 0, 0, Math.PI * 2); x.fillStyle = 'rgba(40, 30, 20, .25)'; x.fill();
-        // 外圈＋齒紋
-        x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fillStyle = metal(x, cx, cy, r, m); x.fill();
+        // 外圈：環狀的亮暗條紋（像金屬繞一圈反光）；舊瀏覽器沒有 createConicGradient 就用一般漸層
+        x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2);
+        if (x.createConicGradient) {
+            const g = x.createConicGradient(-Math.PI * 0.75, cx, cy);
+            [[0, m.hi], [0.07, mix(m.base, m.hi, 0.5)], [0.16, m.base], [0.27, mix(m.base, m.lo, 0.5)], [0.38, m.base], [0.47, mix(m.base, m.hi, 0.6)], [0.55, m.base],
+             [0.66, m.lo], [0.76, mix(m.base, m.lo, 0.4)], [0.86, mix(m.base, m.hi, 0.35)], [0.94, mix(m.base, m.hi, 0.7)], [1, m.hi]].forEach(([t, c]) => g.addColorStop(t, c));
+            x.fillStyle = g;
+        } else x.fillStyle = metal(x, cx, cy, r, m);
+        x.fill();
+        // 邊緣：最外一圈深色、裡面一圈細亮線（厚度感）
+        x.lineWidth = Math.max(1, r * 0.025); x.strokeStyle = mix(m.lo, '#000000', 0.25); x.beginPath(); x.arc(cx, cy, r - x.lineWidth / 2, 0, Math.PI * 2); x.stroke();
+        x.lineWidth = Math.max(0.6, r * 0.012); x.strokeStyle = 'rgba(255,255,255,.55)'; x.beginPath(); x.arc(cx, cy, r * 0.965, Math.PI * 0.95, Math.PI * 1.75); x.stroke();
         if (r >= 14) {
             const n = Math.round(r * 2.4); x.strokeStyle = m.lo; x.globalAlpha = 0.55; x.lineWidth = Math.max(0.6, r * 0.012);
             x.beginPath(); for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; x.moveTo(cx + Math.cos(a) * r * 0.955, cy + Math.sin(a) * r * 0.955); x.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); } x.stroke(); x.globalAlpha = 1;
@@ -135,8 +164,21 @@
         const ri = r * (r >= 30 ? 0.78 : 0.86);
         x.beginPath(); x.arc(cx, cy, r * 0.93, 0, Math.PI * 2); x.strokeStyle = m.lo; x.lineWidth = Math.max(0.8, r * 0.02); x.stroke();
         x.beginPath(); x.arc(cx, cy, ri, 0, Math.PI * 2); x.fillStyle = metal(x, cx, cy, ri, m, true); x.fill();
-        x.strokeStyle = m.hi; x.lineWidth = Math.max(0.6, r * 0.012); x.beginPath(); x.arc(cx, cy, ri, Math.PI * 0.15, Math.PI * 1.05); x.stroke();
-        x.strokeStyle = m.lo; x.beginPath(); x.arc(cx, cy, ri, Math.PI * 1.15, Math.PI * 2.05); x.stroke();
+        // 內圈的車床紋：一圈一圈很細的亮暗線
+        if (r >= 20) {
+            x.save(); x.beginPath(); x.arc(cx, cy, ri, 0, Math.PI * 2); x.clip();
+            const n = Math.round(ri / 1.6);
+            for (let i = 1; i < n; i++) { x.beginPath(); x.arc(cx, cy, ri * i / n, 0, Math.PI * 2); x.lineWidth = 0.6; x.strokeStyle = i % 2 ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.05)'; x.stroke(); }
+            // 斜斜的一道柔光（金屬面的反射）
+            const sg = x.createLinearGradient(cx - ri, cy - ri, cx + ri, cy + ri);
+            sg.addColorStop(0, 'rgba(255,255,255,.05)'); sg.addColorStop(0.32, 'rgba(255,255,255,.32)'); sg.addColorStop(0.45, 'rgba(255,255,255,.04)'); sg.addColorStop(0.7, 'rgba(0,0,0,0)'); sg.addColorStop(0.86, 'rgba(255,255,255,.18)'); sg.addColorStop(1, 'rgba(0,0,0,.08)');
+            x.fillStyle = sg; x.fillRect(cx - ri, cy - ri, ri * 2, ri * 2);
+            x.restore();
+        }
+        // 內圈的斜面：左上暗（凹下去的影子）、右下亮
+        x.lineWidth = Math.max(0.8, r * 0.02);
+        x.strokeStyle = mix(m.lo, '#000000', 0.1); x.beginPath(); x.arc(cx, cy, ri, Math.PI * 0.95, Math.PI * 1.85); x.stroke();
+        x.strokeStyle = 'rgba(255,255,255,.75)'; x.beginPath(); x.arc(cx, cy, ri, Math.PI * -0.05, Math.PI * 0.85); x.stroke();
         // 外圈的字（夠大才寫）
         if (r >= 30) {
             arcText(x, '二十七樓紀念幣', cx, cy, r * 0.86, r * 0.085, m.ink, true);
@@ -145,8 +187,14 @@
         // 圖案
         x.save(); x.beginPath(); x.arc(cx, cy, ri, 0, Math.PI * 2); x.clip();
         x.translate(cx, cy + (r >= 30 ? 0 : r * 0.03)); const s = ri * (r >= 30 ? 0.82 : 0.92); x.scale(s, s);
+        relief(x, m);
         ART[key](x, m, Math.max(0.012, 1.2 / s));
+        G = null;
         x.restore();
+        // 整枚左上一塊柔和的高光
+        const hg = x.createRadialGradient(cx - r * 0.42, cy - r * 0.48, 0, cx - r * 0.42, cy - r * 0.48, r * 0.7);
+        hg.addColorStop(0, 'rgba(255,255,255,.38)'); hg.addColorStop(0.5, 'rgba(255,255,255,.1)'); hg.addColorStop(1, 'rgba(255,255,255,0)');
+        x.fillStyle = hg; x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fill();
         // 反光
         if (opts.shine) {
             x.save(); x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.clip();
