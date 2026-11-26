@@ -668,7 +668,7 @@
             if (!players) {
                 box.innerHTML = failed
                     ? `<p class="py-8 text-center text-xs font-sans tracking-wider text-stone-500 leading-relaxed">${esc(failed)}</p><div class="text-center pb-4"><button type="button" data-retry class="min-h-[44px] px-6 border border-stone-300 text-xs font-sans tracking-widest text-wabi-dark">再試一次</button></div>`
-                    : '<p class="py-10 text-center text-xs font-sans tracking-widest text-stone-400">翻名冊中…</p>';
+                    : `<p class="py-10 text-center text-xs font-sans tracking-widest text-stone-400">${waitMsg}</p>`;
                 $('boardAt').textContent = '';
                 return;
             }
@@ -732,22 +732,29 @@
         }
 
         // 回傳：'fresh' 後端當場重算了／'cached' 只拿快取（沒按刷新）／'old' 後端還沒部署新版本／'fail'
+        // 等太久的時候換句話；25 秒沒回來就當作連不到，給「再試一次」（2026-11-26 使用者手機上一直停在「翻名冊中…」）
+        let waitMsg = '翻名冊中…';
         async function load(fresh) {
             if (loading) return 'busy';
-            loading = true; failed = '';
+            loading = true; failed = ''; waitMsg = '翻名冊中…';
             let status = 'fail';
             if (!players || stale) renderBoard();   // 先畫的是上次的榜：寫上「更新中」
+            const ctl = window.AbortController ? new AbortController() : null;
+            const slow = [setTimeout(() => { waitMsg = '後端剛睡醒，再等一下…'; if (!players) renderBoard(); }, 6000),
+                setTimeout(() => { waitMsg = '還在等，Google 今天有點慢…'; if (!players) renderBoard(); }, 14000),
+                setTimeout(() => { if (ctl) ctl.abort(); }, 25000)];
             try {
                 let session = '';
                 try { session = localStorage.getItem('dongbuli-session') || ''; } catch (e) { }
-                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'leaderboard', session: session || undefined, fresh: fresh || undefined }) });
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'leaderboard', session: session || undefined, fresh: fresh || undefined }), signal: ctl ? ctl.signal : undefined });
                 const r = await res.json();
                 if (r.result !== 'success') {
                     failed = /不認得的請求/.test(r.error || '') ? '排行榜還沒開張：後端要重新部署「新版本」。' : `讀不到排行榜（${r.error || r.result}）。`;
                 } else { players = withMe(r.players || []); at = r.at || ''; stale = false; saveLast(r.players || [], at); status = r.refreshed === undefined ? 'old' : r.refreshed ? 'fresh' : 'cached'; }
             } catch (e) {
-                failed = '連不到後端，可能是網路不穩。';
+                failed = e && e.name === 'AbortError' ? '等了 25 秒後端都沒回，可能是網路不穩或 Google 在忙。' : '連不到後端，可能是網路不穩。';
             }
+            slow.forEach(clearTimeout);
             loading = false;
             renderBoard();
             return status;

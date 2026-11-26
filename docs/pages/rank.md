@@ -17,3 +17,5 @@
 - **公司・開還沒開放**：`COMPANY_OPEN = false` 的時候只有網址帶 `?company`（`rank.html?company#company`）才看得到這本，主人自己試；開放時改 `true`。後端回來的人身上有 `company`（沒開公司是 `null`）。
 - 五本都出現（身價・榜也出現）時分頁加 `.five` 再縮字（375 寬量過不會超出）；四本是 `.four`。
 - 測試：`/home/claude/tests/rank-e2e.js`（假的榜，375 寬、夜間、五本、沒帶 `?company` 看不到）。
+
+**等太久（2026-11-26）**：後端剛部署、剛睡醒時第一次讀榜可能要十幾秒，使用者以為卡住。現在沒有上次的榜可以先畫時，「翻名冊中…」6 秒後換「後端剛睡醒，再等一下…」、14 秒後換「還在等，Google 今天有點慢…」，25 秒還沒回就中斷（`AbortController`），寫「等了 25 秒後端都沒回」＋「再試一次」。測試 `/home/claude/tests/rank-hang.js`。
