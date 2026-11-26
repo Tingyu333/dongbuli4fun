@@ -73,7 +73,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-26c';
+var BACKEND_VERSION = '2026-11-26d';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1 };
 
@@ -4344,7 +4344,8 @@ function companyAccept(lineId, input) {
 function companyLoad(input) {
   var g = companyGuard(input);
   if (g.error) return g.error;
-  return companyOut(findSave(g.lineId, 'company'));
+  var founder = PropertiesService.getScriptProperties().getProperty('COMPANY_FOUNDER') || '';
+  return companyOut(findSave(g.lineId, 'company'), { founder: !!founder && founder === g.lineId });   // 創始執行長：公司頁只有他寫「創始執行長」，其他人寫「執行長」
 }
 
 // 存檔：{ save, rev }

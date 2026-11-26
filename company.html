@@ -439,6 +439,8 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     // 增資、轉進錢包、加班費要等後端一次做完（serverAct），等的時候蓋 #busy 動畫。
     const KEY = 'dongbuli-company-preview', TRIAL_MONEY = 300000;
     let S = null, rev = 0, dirty = false, pushing = null, blocking = false, lastPush = 0;
+    let founder = PREVIEW && /[?&]founder\b/.test(location.search);   // 創始執行長（許願的那位，admin 後台指定）：後端 companyLoad 回 founder；試玩加 ?founder 看他的樣子
+    const ceo = () => founder ? '創始執行長' : '執行長';
     if (PREVIEW) { try { S = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { S = null; } fixup(); }
     function fixup() {   // 舊存檔補欄位
         if (S && S.staff) S.staff.forEach(s => { if (s.trial && s.done > 0) s.trial = false; });   // 試用期做完第一件就轉正
@@ -739,7 +741,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
               <div class="ln tot num"><span>入帳公司帳戶</span><span class="v ${r.net < 0 ? 'dn' : ''}">${R.fmt(r.net)}</span></div>
               ${upsHtml(j.ups)}${gift ? giftHtml(gift) : ''}
               ${!r.ok ? `<div class="kv" style="display:block;line-height:1.7"><span>${j.why ? '做砸的原因：' + esc(j.why) + '。' : '開工前寫的成功機率是' + R.odds(j.p) + '，這次運氣不好。'}做砸了客人只付一成、薪水扣一半。</span></div>` : ''}${j.spent ? `<div class="kv"><span>另外：突發狀況當時已經從公司帳戶付了 ${R.fmt(j.spent)}，不在上面這筆裡</span></div>` : ''}${j.trialOver ? `<div class="lvup"><b>${esc(j.trialOver)}試用期過了，轉正！</b></div>` : ''}
-              ${c.tutorial ? `<div class="kv" style="display:block;line-height:1.8"><span>名片印好了：${esc(S.name)}・創始執行長。<br>錢先扣員工薪水（三成），剩下進<b>公司帳戶</b>，存著搬家用。</span></div>` : ''}</div>
+              ${c.tutorial ? `<div class="kv" style="display:block;line-height:1.8"><span>名片印好了：${esc(S.name)}・${ceo()}。<br>錢先扣員工薪水（三成），剩下進<b>公司帳戶</b>，存著搬家用。</span></div>` : ''}</div>
               <div class="cta"><button class="main" id="xOk" style="flex:1">收下</button></div>`, { center: true });
         $('xOk').onclick = () => { hide(); if (c.tutorial) { if (S.coach) S.coach = 5.5; save(); go(S.coach ? 'office' : 'staff'); } };   // 5.5：先講賺到的錢進哪裡（使用者：加到新手說明）
     }
@@ -1160,7 +1162,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
             const next = R.STAGES[S.stage + 1], canMove = next && S.acct >= next.cost && S.jobsDone >= next.jobs;
             if (S.inject.d !== today()) S.inject = { d: today(), amt: 0 };
             const injLeft = Math.max(0, st().inject - S.inject.amt);
-            B.innerHTML = `<div class="co glass"><div><b>${esc(S.name)}</b><small>創始執行長・成立第 ${Math.floor((now() - S.created) / 864e5) + 1} 天</small></div><div style="text-align:right"><b class="num" style="font-weight:300">${S.jobsDone} 件</b><small>做完的案子</small></div></div>
+            B.innerHTML = `<div class="co glass"><div><b>${esc(S.name)}</b><small>${ceo()}・成立第 ${Math.floor((now() - S.created) / 864e5) + 1} 天</small></div><div style="text-align:right"><b class="num" style="font-weight:300">${S.jobsDone} 件</b><small>做完的案子</small></div></div>
                 <div class="lvls glass">${lvlRow(S.stage)}<div class="lvl" id="allOffices" style="display:block;text-align:center;font-size:11px;color:var(--teal);letter-spacing:.15em;padding:11px;cursor:pointer">看所有辦公室 ›</div></div>
                 ${next ? `<div class="cta"><button class="main num" id="mv" style="flex:1" ${canMove ? '' : 'disabled'}>搬到${next.name}・${R.fmt(next.cost)}${S.jobsDone < next.jobs ? '（還差 ' + (next.jobs - S.jobsDone) + ' 件）' : S.acct < next.cost ? '（帳戶還差 ' + R.fmt(next.cost - S.acct) + '）' : ''}</button></div>` : ''}
                 <div class="goal glass"><div class="gt"><span>公司帳戶 <b class="num" style="font-weight:400;color:var(--ink)">${R.fmt(S.acct)}</b></span><span class="r num">錢包 ${R.fmt(wal())}</span></div>
@@ -1298,7 +1300,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         if (!r) { await Busy.hide(); return gateError('連不到後端，可能是網路不穩。'); }
         if (r.result === 'unauthorized') { await Busy.hide(); return gateLogin(); }
         if (r.result !== 'success') { await Busy.hide(); return gateError(/不認得的請求/.test(r.error || '') ? '後端還是舊版，<br>要在 Apps Script 重新部署「新版本」。' : esc(r.error || '後端沒回應')); }
-        S = r.save; rev = r.rev; fixup(); if (S && S.wallet !== undefined) delete S.wallet;
+        S = r.save; rev = r.rev; founder = !!r.founder; fixup(); if (S && S.wallet !== undefined) delete S.wallet;
         $('main').hidden = false;
         await Busy.hide();
         start();
