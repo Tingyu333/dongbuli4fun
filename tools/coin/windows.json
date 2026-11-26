@@ -1,0 +1,11 @@
+{
+  "launch": "2026-11-27T00:00:00+08:00",
+  "chunk": 2976,
+  "coins": [
+    { "key": "c1", "sym": "BTCUSDT",  "start": "2021-03-21", "pre": 30, "years": 3, "base": 1000, "digits": 1 },
+    { "key": "c2", "sym": "ETHUSDT",  "start": "2023-07-09", "pre": 30, "years": 3, "base": 100,  "digits": 2 },
+    { "key": "c3", "sym": "DOGEUSDT", "start": "2022-04-20", "pre": 30, "years": 3, "base": 1,    "digits": 4 },
+    { "key": "c4", "sym": "SOLUSDT",  "start": "2021-09-05", "pre": 30, "years": 3, "base": 50,   "digits": 3 },
+    { "key": "c5", "sym": "PEPEUSDT", "start": "2023-05-05", "pre": 0,  "years": 3, "base": 0.01, "digits": 6 }
+  ]
+}

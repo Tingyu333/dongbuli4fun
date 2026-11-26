@@ -45,3 +45,41 @@ if (mode === 'analyze') {
     }
   }
 }
+
+// build：照 tools/coin/windows.json 產出 assets/coin/<key>/<第幾段>.json 和 assets/coin/meta.json。
+// 檔案裡沒有真實日期、幣名、價格：價格換成「起點＝base」的整數（乘 10^digits），收盤用差分，高低用跟收盤的差。
+// 每一段 chunk 根（2976 根＝31 天）。第 0 根是 launch 前 pre 天；遊戲時間 t 的格子 g＝floor((t−launch)/15 分)，那時看得到的是第 pre×96＋g−1 根收完的價格。
+if (mode === 'build') {
+  const cfg = JSON.parse(fs.readFileSync('tools/coin/windows.json', 'utf8'));
+  const meta = { launch: Date.parse(cfg.launch), q: Q, chunk: cfg.chunk, coins: [] };
+  fs.rmSync('assets/coin', { recursive: true, force: true });
+  for (const c of cfg.coins) {
+    const d = load(c.sym);
+    const t0 = Date.parse(c.start + 'T00:00:00Z') - c.pre * DAY * Q;
+    let i0 = d.findIndex(x => x.t >= t0);
+    if (i0 < 0) throw new Error(c.sym + ' 找不到起點');
+    const n = (c.pre + Math.round(c.years * 365.25)) * DAY;
+    const w = d.slice(i0, i0 + n);
+    if (w.length < n) console.log(`${c.sym} 只有 ${w.length} 根（要 ${n}）`);
+    const p0 = w[c.pre * DAY] ? w[c.pre * DAY].c : w[0].c, k = 10 ** c.digits;
+    const iv = p => Math.max(1, Math.round(p / p0 * c.base * k));
+    fs.mkdirSync('assets/coin/' + c.key, { recursive: true });
+    let files = 0;
+    for (let s = 0; s < w.length; s += cfg.chunk) {
+      const part = w.slice(s, s + cfg.chunk), cs = part.map(x => iv(x.c));
+      const out = {
+        c: cs.map((v, i) => i ? v - cs[i - 1] : v),
+        h: part.map((x, i) => Math.max(0, iv(x.h) - cs[i])),
+        l: part.map((x, i) => Math.max(0, cs[i] - iv(x.l)))
+      };
+      fs.writeFileSync(`assets/coin/${c.key}/${files}.json`, JSON.stringify(out));
+      files++;
+    }
+    const cl = w.map(x => x.c / p0);
+    meta.coins.push({ key: c.key, base: c.base, digits: c.digits, pre: c.pre * DAY, n: w.length, files });
+    console.log(`${c.key} ← ${c.sym}：${w.length} 根、${files} 個檔；起點後 3 年 ${cl[cl.length - 1].toFixed(2)} 倍，最低 ${Math.min(...cl).toFixed(2)}、最高 ${Math.max(...cl).toFixed(2)}`);
+  }
+  fs.writeFileSync('assets/coin/meta.json', JSON.stringify(meta, null, 1));
+  console.log('總大小', Number(require_size('assets/coin') / 1024).toFixed(0), 'KB');
+}
+function require_size(dir) { let s = 0; for (const f of fs.readdirSync(dir, { withFileTypes: true })) s += f.isDirectory() ? require_size(dir + '/' + f.name) : fs.statSync(dir + '/' + f.name).size; return s; }
