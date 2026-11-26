@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>紀念幣・炒 | 丼步喱</title>
+    <!-- 分享到 LINE、FB 時的預覽（標題、介紹、圖片）。圖片要用完整網址 -->
+    <meta name="description" content="二十七樓紀念幣：五種紀念幣，每 15 分鐘一個價，24 小時不打烊。可以放大倍數看漲看跌，反方向走太多就爆。">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="丼步喱・絆">
+    <meta property="og:title" content="紀念幣・炒｜二十七樓紀念幣">
+    <meta property="og:description" content="二十七樓紀念幣：五種紀念幣，每 15 分鐘一個價，24 小時不打烊。可以放大倍數看漲看跌，反方向走太多就爆。">
+    <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
+    <meta property="og:url" content="https://tingyu333.github.io/dongbuli4fun/coin.html">
+    <meta name="twitter:card" content="summary">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="assets/theme.css?v=20261116d">
+    <script src="assets/theme.js?v=20261117c"></script>
+    <script src="assets/line.js?v=20261116d"></script>
+    <script src="assets/wallet.js?v=20261120c"></script>
+    <style>
+        .num { font-family: 'Noto Sans TC', sans-serif; font-variant-numeric: tabular-nums; }
+
+        /* ===== 紙本（實物），顏色固定，不跟晝夜切換 ===== */
+        .paper {
+            --paper: #fbf7ec; --ink: #3b342e; --faint: #8c7f6c; --rule: #d9cdb4; --up: #b33a2f; --down: #3d7a55;
+            position: relative; background: var(--paper); color: var(--ink); border: 1px solid var(--rule);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, .04), 0 10px 24px -14px rgba(0, 0, 0, .25);
+            background-image: repeating-linear-gradient(0deg, transparent 0 27px, rgba(140, 120, 90, .06) 27px 28px);
+        }
+        .paper::before { content: ''; position: absolute; inset: 4px; border: 1px solid var(--rule); pointer-events: none; }
+        .up { color: var(--up, #b33a2f); }
+        .down { color: var(--down, #3d7a55); }
+        .flat { color: var(--faint, #8c7f6c); }
+
+        /* 行情表 */
+        .board { padding: .9rem .9rem .5rem; }
+        .board-head { display: flex; align-items: baseline; gap: .5rem; padding-bottom: .5rem; border-bottom: 1.5px solid var(--ink); }
+        .board-head b { font-weight: 700; letter-spacing: .25em; font-size: .95rem; }
+        .board-head span { margin-left: auto; font-size: .62rem; letter-spacing: .08em; color: var(--faint); }
+        .cols { display: grid; grid-template-columns: 1fr 56px 70px 50px; gap: 0 .35rem; align-items: center; }
+        .cols-h { font-family: 'Noto Sans TC', sans-serif; font-size: .58rem; letter-spacing: .15em; color: var(--faint); padding: .45rem .2rem .25rem; border-bottom: 1px solid var(--rule); }
+        .row { width: 100%; text-align: left; padding: .6rem .2rem; border-bottom: 1px dashed var(--rule); -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        .row:last-child { border-bottom: 0; }
+        .row:active { background: rgba(140, 120, 90, .08); }
+        .row .nm { font-size: .84rem; letter-spacing: .02em; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .row .cd { display: block; font-family: 'Noto Sans TC', sans-serif; font-size: .58rem; letter-spacing: .12em; color: var(--faint); }
+        .row .px { text-align: right; font-size: .9rem; }
+        .row .ch { text-align: right; font-size: .72rem; }
+        .row canvas { width: 56px; height: 26px; display: block; }
+        .mine { display: inline-block; margin-left: .25rem; font-size: .55rem; letter-spacing: 0; padding: 0 .2rem; border: 1px solid var(--up); color: var(--up); vertical-align: 2px; font-family: 'Noto Sans TC', sans-serif; }
+        .soon { display: inline-block; margin-left: .3rem; padding: 0 .2rem; font-size: .55rem; border: 1px solid var(--faint); color: var(--faint); border-radius: 2px; transform: rotate(-6deg); font-family: 'Noto Sans TC', sans-serif; }
+
+        /* 帳 */
+        .acct { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; }
+        .acct div + div { border-left: 1px solid rgb(var(--wabi-sub) / .8); }
+        .acct dt { font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; letter-spacing: .2em; color: rgb(var(--wabi-accent)); }
+        .acct dd { margin-top: .15rem; font-size: .95rem; color: rgb(var(--wabi-dark)); }
+        .stmt { padding: .9rem .9rem .6rem; }
+        .stmt table { width: 100%; border-collapse: collapse; font-size: .72rem; }
+        .stmt th { font-family: 'Noto Sans TC', sans-serif; font-weight: 400; font-size: .56rem; letter-spacing: .12em; color: var(--faint); text-align: right; padding: .45rem .15rem .25rem; border-bottom: 1px solid var(--rule); }
+        .stmt th:first-child, .stmt td:first-child { text-align: left; }
+        .stmt td { text-align: right; padding: .5rem .15rem; border-bottom: 1px dashed var(--rule); white-space: nowrap; }
+        .stmt td small { display: block; font-size: .56rem; color: var(--faint); letter-spacing: .05em; }
+        .pos { display: flex; align-items: center; gap: .6rem; padding: .6rem .15rem; border-bottom: 1px dashed var(--rule); font-size: .74rem; line-height: 1.55; }
+        .pos:last-child { border-bottom: 0; }
+        .pos small { display: block; font-size: .6rem; color: var(--faint); letter-spacing: .04em; }
+        .pos button { margin-left: auto; flex-shrink: 0; min-height: 34px; padding: 0 .8rem; border: 1px solid var(--ink); font-family: 'Noto Sans TC', sans-serif; font-size: .68rem; letter-spacing: .15em; color: var(--ink); touch-action: manipulation; }
+        .pos button:disabled { opacity: .35; }
+        .dirtag { display: inline-block; padding: 0 .3rem; margin-right: .2rem; font-size: .6rem; border: 1px solid currentColor; font-family: 'Noto Sans TC', sans-serif; letter-spacing: .1em; }
+        .sec-h { font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; letter-spacing: .2em; color: var(--faint); padding: .8rem .15rem .2rem; border-bottom: 1px solid var(--rule); }
+        .empty { padding: 1.2rem .2rem .9rem; text-align: center; font-size: .75rem; color: var(--faint); letter-spacing: .1em; line-height: 1.8; }
+
+        /* 爆倉紙條 */
+        .slip { padding: .8rem 1rem; display: flex; gap: .8rem; align-items: center; transform: rotate(-.6deg); }
+        .slip + .slip { margin-top: .9rem; }
+        .slip p { font-size: .8rem; line-height: 1.7; letter-spacing: .05em; flex: 1; }
+        .seal { flex-shrink: 0; width: 2.8rem; height: 2.8rem; border: 2.5px solid var(--up); color: var(--up); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.35rem; font-weight: 700; transform: rotate(10deg); }
+
+        /* 狀態燈 */
+        .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--wabi-shu)); margin-right: .4rem; vertical-align: 1px; animation: blink 2s ease-in-out infinite; }
+        @keyframes blink { 50% { opacity: .25; } }
+
+        /* 底部面板 */
+        #sheet { position: fixed; inset: 0; z-index: 80; display: flex; align-items: flex-end; justify-content: center; background: rgba(30, 25, 20, .35); opacity: 0; pointer-events: none; transition: opacity .2s; }
+        #sheet.on { opacity: 1; pointer-events: auto; }
+        #sheet .sh { width: 100%; max-width: 28rem; max-height: 92vh; overflow-y: auto; overscroll-behavior: contain; background: rgb(var(--wabi-bg)); border-radius: .75rem .75rem 0 0; transform: translateY(100%); transition: transform .22s ease-out; }
+        #sheet.on .sh { transform: none; }
+        .tabs { display: inline-flex; border: 1px solid rgb(var(--wabi-sub)); }
+        .tabs button { padding: .3rem .75rem; font-family: 'Noto Sans TC', sans-serif; font-size: .68rem; letter-spacing: .12em; color: rgb(var(--wabi-accent)); }
+        .tabs button.on { background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); }
+        .mode { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid rgb(var(--wabi-sub)); }
+        .mode button { min-height: 44px; font-family: 'Noto Sans TC', sans-serif; font-size: .8rem; letter-spacing: .3em; color: rgb(var(--wabi-accent)); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+        .mode button.on { color: rgb(var(--wabi-dark)); border-bottom-color: rgb(var(--wabi-shu)); }
+        .money { display: flex; align-items: center; border-bottom: 1px solid rgb(var(--wabi-sub)); }
+        .money span { font-family: 'Noto Sans TC', sans-serif; font-size: 1.1rem; color: rgb(var(--wabi-accent)); padding: 0 .3rem 0 .2rem; }
+        .money input { flex: 1; min-width: 0; height: 46px; background: transparent; font-size: 1.3rem; color: rgb(var(--wabi-dark)); outline: none; }
+        .lbl { font-family: 'Noto Sans TC', sans-serif; font-size: .62rem; letter-spacing: .2em; color: rgb(var(--wabi-accent)); }
+        .chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: .4rem; }
+        .chips.six { grid-template-columns: repeat(6, 1fr); }
+        .chips button { min-height: 36px; border: 1px solid rgb(var(--wabi-sub)); font-family: 'Noto Sans TC', sans-serif; font-size: .7rem; letter-spacing: .05em; color: rgb(var(--wabi-text)); touch-action: manipulation; }
+        .chips button.on { background: rgb(var(--wabi-dark)); border-color: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); }
+        .chips.dir button { min-height: 42px; font-size: .8rem; letter-spacing: .3em; }
+        .chips.dir button.on[data-dir="up"] { background: rgb(var(--wabi-shu)); border-color: rgb(var(--wabi-shu)); color: #fff; }
+        .chips.dir button.on[data-dir="down"] { background: #3d7a55; border-color: #3d7a55; color: #fff; }
+        .note { font-family: 'Noto Sans TC', sans-serif; font-size: .7rem; letter-spacing: .06em; line-height: 1.75; color: rgb(var(--wabi-text)); }
+        .note b { font-weight: 500; color: rgb(var(--wabi-dark)); }
+        .warn { color: rgb(var(--wabi-shu)); }
+        .btn { width: 100%; min-height: 48px; font-family: 'Noto Sans TC', sans-serif; font-size: .85rem; letter-spacing: .3em; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform .1s, opacity .2s; }
+        .btn:active { transform: scale(.98); }
+        .btn:disabled { opacity: .35; }
+        .btn-buy { background: rgb(var(--wabi-shu)); color: #fff; }
+        .btn-sell { background: rgb(var(--wabi-dark)); color: rgb(var(--wabi-bg)); }
+        .btn-down { background: #3d7a55; color: #fff; }
+        .line-btn { min-height: 44px; padding: 0 1.4rem; border-radius: 6px; background: #06c755; color: #fff; font-family: 'Noto Sans TC', sans-serif; font-weight: 500; font-size: .85rem; letter-spacing: .1em; touch-action: manipulation; }
+
+        /* 大章 */
+        #bigStamp { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+        #bigStamp .s { width: 9rem; height: 9rem; border: 5px solid #b33a2f; color: #b33a2f; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(251, 247, 236, .85); font-weight: 700; opacity: 0; transform: scale(2.2) rotate(-12deg); }
+        #bigStamp .s b { font-size: 2.8rem; letter-spacing: .1em; line-height: 1.1; }
+        #bigStamp .s span { font-size: .75rem; letter-spacing: .1em; font-family: 'Noto Sans TC', sans-serif; }
+        #bigStamp .s.grey { border-color: #8a8580; color: #6f6a64; }
+        #bigStamp .s.boom { width: 11rem; height: 11rem; border-radius: 50%; border-width: 7px; }
+        #bigStamp .s.boom b { font-size: 4.6rem; }
+        #bigStamp.go .s { animation: stamp 1.6s ease-out forwards; }
+        #bigStamp.go .s.boom { animation: boom 2.2s ease-out forwards; }
+        @keyframes stamp { 0% { opacity: 0; transform: scale(2.2) rotate(-12deg); } 15% { opacity: 1; transform: scale(1) rotate(-8deg); } 75% { opacity: 1; transform: scale(1) rotate(-8deg); } 100% { opacity: 0; transform: scale(1) rotate(-8deg); } }
+        @keyframes boom { 0% { opacity: 0; transform: scale(3) rotate(-20deg); } 10% { opacity: 1; transform: scale(.92) rotate(-10deg); } 14% { transform: scale(1.06) rotate(-6deg) translateX(-4px); } 18% { transform: scale(1) rotate(-9deg) translateX(4px); } 22% { transform: scale(1) rotate(-8deg); } 80% { opacity: 1; transform: scale(1) rotate(-8deg); } 100% { opacity: 0; transform: scale(1) rotate(-8deg); } }
+
+        /* 等後端：一張兌換單一直被蓋「收件」 */
+        #busy { position: fixed; inset: 0; z-index: 85; display: flex; align-items: center; justify-content: center; background: rgba(30, 25, 20, .72); opacity: 0; pointer-events: none; transition: opacity .18s; }
+        #busy.on { opacity: 1; pointer-events: auto; }
+        #busy .tb { width: min(19rem, 86vw); display: flex; flex-direction: column; align-items: center; }
+        #busy .tape { width: 100%; height: 2rem; overflow: hidden; border-radius: 4px; background: #15130f; border: 2px solid #3a332b; display: flex; align-items: center; }
+        #busy .tape-in { display: flex; white-space: nowrap; font-family: 'Noto Sans TC', sans-serif; font-variant-numeric: tabular-nums; font-size: .78rem; letter-spacing: .08em; color: #f2c14e; text-shadow: 0 0 6px rgba(242, 193, 78, .6); }
+        #busy.on .tape-in { animation: tape 9s linear infinite; }
+        #busy .tape-in span { padding-right: 1.4rem; }
+        #busy .tape-in .u { color: #ff6b5e; }
+        #busy .tape-in .d { color: #5fd38a; }
+        #busy .form { position: relative; margin-top: 1rem; width: 13.5rem; padding: .9rem 1rem; background: #fbf7ec; border: 1px solid #d9cdb4; color: #3b342e; transform: rotate(-2deg); box-shadow: 0 14px 30px -12px rgba(0, 0, 0, .6); }
+        #busy .form::before { content: ''; position: absolute; inset: 4px; border: 1px solid #d9cdb4; pointer-events: none; }
+        #busy .fh { text-align: center; font-weight: 700; letter-spacing: .4em; font-size: .9rem; border-bottom: 1.5px solid #3b342e; padding-bottom: .3rem; }
+        #busy .fs { margin-top: .5rem; display: inline-block; padding: 0 .45rem; border: 1.5px solid currentColor; font-weight: 700; letter-spacing: .25em; font-size: .85rem; }
+        #busy dl { margin-top: .45rem; font-family: 'Noto Sans TC', sans-serif; font-size: .7rem; }
+        #busy dl div { display: flex; justify-content: space-between; padding: .2rem 0; border-bottom: 1px dotted #d9cdb4; }
+        #busy dt { color: #8c7f6c; }
+        #busy .stamp { position: absolute; right: .8rem; top: 2.3rem; width: 3.4rem; height: 3.4rem; border: 3px solid #b33a2f; border-radius: 50%; color: #b33a2f; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .9rem; opacity: 0; }
+        #busy.on .stamp { animation: tbStamp 1.6s ease-in infinite .5s; }
+        #busy .msg { margin-top: 1.1rem; padding: .3rem .9rem; border-radius: 999px; background: rgba(0, 0, 0, .35); font-family: 'Noto Sans TC', sans-serif; font-size: .78rem; letter-spacing: .2em; color: #fbf7ec; min-height: 1.2em; }
+        @keyframes tape { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        @keyframes tbStamp { 0% { opacity: 0; transform: scale(1.8) rotate(-18deg); } 14% { opacity: .9; transform: scale(1) rotate(-12deg); } 70% { opacity: .9; transform: scale(1) rotate(-12deg); } 100% { opacity: 0; transform: scale(1) rotate(-12deg); } }
+        @media (prefers-reduced-motion: reduce) { #sheet, #sheet .sh { transition: none; } .dot { animation: none; } #busy.on .tape-in { animation: none; } #busy.on .stamp { animation: none; opacity: .9; } }
+    </style>
+    <link rel="stylesheet" href="assets/tailwind.css?v=20261121c">
+</head>
+
+<body
+    class="text-wabi-text font-serif leading-loose antialiased selection:bg-wabi-accent selection:text-white min-h-screen flex flex-col overflow-x-hidden">
+
+    <nav
+        class="fixed top-0 w-full px-4 py-5 md:p-8 flex justify-between items-center z-40 bg-wabi-bg/90 backdrop-blur-sm border-b border-stone-100">
+        <a href="index.html"
+            class="text-base md:text-xl font-bold tracking-[0.1em] md:tracking-widest-xl uppercase whitespace-nowrap hover:text-black transition-colors duration-300">DongBuLi</a>
+        <div class="flex gap-3 md:gap-8">
+            <a href="index.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">首頁・歸</a>
+            <a href="reviews.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">留言・絆</a>
+            <a href="about.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">關於・絆</a>
+            <a href="member.html" class="text-xs tracking-normal md:tracking-widest whitespace-nowrap hover:text-wabi-dark transition-colors duration-500 text-stone-400">會員・我</a>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-md mx-auto pt-28 md:pt-36 pb-16 px-6 w-full">
+
+        <div class="text-center mb-7">
+            <span class="text-xs font-sans tracking-widest text-wabi-accent block mb-3">COIN</span>
+            <h1 class="text-3xl font-light text-wabi-dark tracking-widest">紀念幣・炒</h1>
+            <p class="mt-3 text-xs text-stone-500 font-sans tracking-widest leading-relaxed">二十四小時不打烊，<br>連你睡覺的時候都在跌。</p>
+            <p id="status" class="mt-4 text-[11px] font-sans tracking-[0.2em] text-stone-500">讀取行情中…</p>
+        </div>
+
+        <!-- 爆倉、成交的紙條 -->
+        <div id="slips" class="mb-6 hidden"></div>
+
+        <!-- 錢／登入 -->
+        <section id="acct" class="mb-6"></section>
+
+        <!-- 行情表 -->
+        <section class="paper board">
+            <header class="board-head"><b>紀念幣行情</b><span id="boardAt" class="num"></span></header>
+            <div class="cols cols-h"><span>紀念幣</span><span>24 小時</span><span style="text-align:right">價格</span><span style="text-align:right">漲跌</span></div>
+            <div id="rows"><p class="empty">讀取中…</p></div>
+        </section>
+        <p class="mt-2 text-[10px] font-sans tracking-widest text-stone-400 text-center">點一種看走勢、買賣</p>
+
+        <!-- 我的 -->
+        <section id="stmtBox" class="paper stmt mt-8 hidden">
+            <header class="board-head"><b>我的紀念幣</b><span id="stmtName"></span></header>
+            <div id="stmt"></div>
+        </section>
+
+        <!-- 規則 -->
+        <section class="mt-8 text-[11px] font-sans tracking-wider leading-relaxed text-stone-500 space-y-1 px-1">
+            <p>・五種二十七樓紀念幣，每 15 分鐘一個價，24 小時不打烊，沒有漲跌停。</p>
+            <p>・直接買：用錢換紀念幣，買賣各收 0.5% 手續費，買了馬上可以賣。</p>
+            <p>・放大倍數：押看漲或看跌，放大 2～100 倍。賺賠跟著放大，價格往反方向走「1 ÷ 倍數」就爆，押的錢全部沒了（100 倍是反方向 1%）。15 分鐘內只要碰到一下就算，下單時收倉位 0.1% 手續費，收回來不收錢。</p>
+            <p>・雞塊幣 11/27 00:15 發行，前幾天特別刺激。</p>
+            <p>・要用 LINE 登入才能買賣，沒登入只能看。賺賠不算進打工榜和花錢榜。</p>
+            <p class="pt-2 text-stone-400">遊戲幣，不能儲值，也不能換現金或獎品。二十七樓紀念幣是網站裡的收藏品，不是真的虛擬貨幣，跟任何交易所都沒有關係。</p>
+        </section>
+    </main>
+
+    <footer class="text-center py-16 text-stone-300 text-xs font-sans tracking-widest mt-auto border-t border-stone-100">
+        <p>&copy; 2026 DONGBULI · 二十七樓紀念幣</p>
+    </footer>
+
+    <!-- 底部面板：一種紀念幣的走勢、買賣 -->
+    <div id="sheet" role="dialog" aria-modal="true" aria-labelledby="sName">
+        <div class="sh">
+            <div class="px-5 pt-5 pb-3 border-b border-stone-200">
+                <div class="flex items-baseline gap-2">
+                    <p id="sName" class="text-lg text-wabi-dark tracking-widest"></p>
+                    <p id="sCode" class="text-[10px] font-sans tracking-widest text-stone-400"></p>
+                    <button type="button" data-close class="ml-auto text-xs font-sans tracking-widest text-stone-400 px-2 py-1">關閉</button>
+                </div>
+                <p id="sDesc" class="text-[11px] font-sans tracking-wider text-stone-500 leading-relaxed"></p>
+                <div class="mt-2 flex items-end gap-3">
+                    <p id="sPx" class="num text-3xl text-wabi-dark"></p>
+                    <p id="sCh" class="num text-sm pb-1"></p>
+                </div>
+            </div>
+            <div class="px-5 pt-3">
+                <div class="flex items-center">
+                    <div class="tabs"><button type="button" data-range="1" class="on">1 日</button><button type="button" data-range="7">7 日</button><button type="button" data-range="30">30 日</button></div>
+                    <p id="sRange" class="ml-auto pl-3 text-[10px] font-sans tracking-widest text-stone-400 text-right"></p>
+                </div>
+                <canvas id="chart" class="mt-2 w-full" style="height:150px"></canvas>
+            </div>
+            <div id="sTrade" class="pt-2">
+                <div class="mode px-5"><button type="button" data-mode="spot" class="on">直接買</button><button type="button" data-mode="lev">放大倍數</button></div>
+                <!-- 直接買 -->
+                <div id="mSpot" class="px-5 pt-3 pb-6">
+                    <p id="sHold" class="note"></p>
+                    <p class="lbl mt-3">花多少錢買（含手續費）</p>
+                    <div class="money"><span>$</span><input id="amt" class="num" inputmode="numeric" value="1000" aria-label="花多少錢"></div>
+                    <div class="chips mt-3"><button type="button" data-amt="1000">$1,000</button><button type="button" data-amt="10000">$1 萬</button><button type="button" data-amt="half">錢包一半</button><button type="button" data-amt="all">全部</button></div>
+                    <p id="sCost" class="note mt-3"></p>
+                    <div class="grid grid-cols-2 gap-3 mt-4">
+                        <button type="button" id="buy" class="btn btn-buy">買進</button>
+                        <button type="button" id="sellHalf" class="btn btn-sell">賣一半</button>
+                    </div>
+                    <button type="button" id="sellAll" class="btn btn-sell mt-3">全部賣掉</button>
+                </div>
+                <!-- 放大倍數 -->
+                <div id="mLev" class="px-5 pt-3 pb-6 hidden">
+                    <div class="chips dir" style="grid-template-columns:1fr 1fr"><button type="button" data-dir="up" class="on">看漲</button><button type="button" data-dir="down">看跌</button></div>
+                    <p class="lbl mt-4">放大幾倍</p>
+                    <div class="chips six mt-1"><button type="button" data-lev="2">2×</button><button type="button" data-lev="5">5×</button><button type="button" data-lev="10" class="on">10×</button><button type="button" data-lev="25">25×</button><button type="button" data-lev="50">50×</button><button type="button" data-lev="100">100×</button></div>
+                    <p class="lbl mt-4">押多少錢（爆了就全沒）</p>
+                    <div class="money"><span>$</span><input id="mar" class="num" inputmode="numeric" value="1000" aria-label="押多少錢"></div>
+                    <div class="chips mt-3"><button type="button" data-mar="1000">$1,000</button><button type="button" data-mar="10000">$1 萬</button><button type="button" data-mar="half">錢包一半</button><button type="button" data-mar="all">全部</button></div>
+                    <p id="lCost" class="note mt-3"></p>
+                    <button type="button" id="open" class="btn btn-buy mt-4">下單</button>
+                    <div id="lPos" class="mt-4"></div>
+                </div>
+            </div>
+            <div id="sLoginBox" class="px-5 pt-3 pb-6 hidden">
+                <button type="button" data-login class="line-btn w-full">用 LINE 登入才能買賣</button>
+            </div>
+        </div>
+    </div>
+    <div id="busy" aria-live="polite">
+        <div class="tb">
+            <div class="tape" aria-hidden="true"><div class="tape-in" id="bTape"></div></div>
+            <div class="form" aria-hidden="true">
+                <p class="fh">兌換單</p>
+                <p class="fs" id="bSide">買進</p>
+                <dl id="bForm"></dl>
+                <div class="stamp" id="bStamp">收件</div>
+            </div>
+            <p class="msg" id="bMsg"></p>
+        </div>
+    </div>
+    <div id="bigStamp" aria-hidden="true"><div class="s"><b>成交</b><span></span></div></div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbz6TWDms090u7iS_Xk0lmbbz6mlpfbCoK2mffmpRootu2Hv2lYiASpDbb7n8COwnr_K/exec";
+        // 五種紀念幣（價格檔在 assets/coin/，見 tools/coin/；名字、介紹寫在這裡，後端 COINS 要一樣）
+        const INFO = {
+            c1: { name: '丼幣', tk: 'DON', full: '丼步喱紀念幣', desc: '二十七樓的鎮樓之寶，最老、最大、最多人抱著不放。' },
+            c2: { name: '茱莉鴨幣', tk: 'DUCK', full: '茱莉鴨紀念幣', desc: '茱莉鴨說這枚可以拿來付網路費。到現在還沒有人付成功過。' },
+            c3: { name: '坐洗狗狗幣', tk: 'WOOF', full: '坐洗部狗狗紀念幣', desc: '坐洗部的狗頂著泡泡印上去的。牠叫一聲，大家就跟著買。' },
+            c4: { name: '蘿蔔幣', tk: 'RDSH', full: 'San Farm 蘿蔔紀念幣', desc: '頂樓菜園發行，種得很快，爛得也很快。' },
+            c5: { name: '雞塊幣', tk: 'NUGT', full: '大橋頭雞塊紀念幣', desc: '麥克早餐的老闆是雞塊，雞塊又發了一枚雞塊。剛發行，沒有人知道會怎樣。' },
+        };
+        const KEYS = ['c1', 'c2', 'c3', 'c4', 'c5'];
+        const UP = '#b33a2f', DOWN = '#3d7a55', DAY = 96;
+        const $ = id => document.getElementById(id);
+        const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const fmt = n => (n < 0 ? '−' : '') + '$' + Math.abs(Math.round(n)).toLocaleString('en-US');
+        const sfmt = n => (n > 0 ? '+' : n < 0 ? '−' : '') + '$' + Math.abs(Math.round(n)).toLocaleString('en-US');
+        const tone = c => c > 0 ? 'up' : c < 0 ? 'down' : 'flat';
+        const toneColor = c => c > 0 ? UP : c < 0 ? DOWN : '';
+        const arrow = c => c > 0 ? '▲' : c < 0 ? '▼' : '';
+        const tpe = ms => new Date(ms + 8 * 3600000);
+        const hhmm = ms => { const d = tpe(ms); return String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0'); };
+        const mdhm = ms => { const d = tpe(ms); return `${d.getUTCMonth() + 1}/${d.getUTCDate()} ${hhmm(ms)}`; };
+        const units = u => u >= 1000 ? Math.floor(u).toLocaleString('en-US') : u >= 1 ? u.toFixed(4).replace(/\.?0+$/, '') : u.toPrecision(4);
+
+        let META = null, offset = 0, Q = null, M = null, state = 'loading', cur = null, range = 1, mode = 'spot', dir = 'up', lev = 10, busy = false, timer = 0;
+        let notes = [];
+        const now = () => Date.now() + offset;
+        const coinMeta = k => META.coins.find(c => c.key === k);
+        const pf = (k, v) => { const c = coinMeta(k); return v >= 1000 ? v.toLocaleString('en-US', { minimumFractionDigits: c.digits, maximumFractionDigits: c.digits }) : v.toFixed(c.digits); };
+
+        // ---- 價格：直接讀 assets/coin/ 的檔（跟後端讀同一份），所以後端還沒部署也看得到行情 ----
+        const chunks = new Map();
+        function loadChunk(key, k) {
+            const id = key + '/' + k;
+            if (!chunks.has(id)) chunks.set(id, fetch(`assets/coin/${id}.json`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(raw => {
+                let a = 0; const c = raw.c.map(v => a += v);
+                return { c, h: c.map((v, i) => v + raw.h[i]), l: c.map((v, i) => v - raw.l[i]) };
+            }).catch(e => { chunks.delete(id); throw e; }));
+            return chunks.get(id);
+        }
+        const slotAt = ms => Math.floor((ms - META.launch) / META.q);
+        const idxAt = (c, ms) => Math.min(c.n - 1, c.pre + slotAt(ms) - 1);
+        const nextAt = ms => META.launch + (slotAt(ms) + 1) * META.q;
+        const idxMs = (c, i) => META.launch + (i - c.pre + 1) * META.q;
+        // [a, b] 之間的收盤，每 step 根取一個
+        async function closes(key, a, b, step = 1) {
+            const c = coinMeta(key); a = Math.max(0, a); if (b < a) return [];
+            const ks = []; for (let k = Math.floor(a / META.chunk); k <= Math.floor(b / META.chunk); k++) ks.push(k);
+            const ds = await Promise.all(ks.map(k => loadChunk(key, k)));
+            const out = [];
+            for (let i = b; i >= a; i -= step) { const k = Math.floor(i / META.chunk), d = ds[k - ks[0]]; out.unshift(d.c[i - k * META.chunk] / 10 ** c.digits); }
+            return out;
+        }
+        // 每一種：現在價、24 小時前、24 小時走勢
+        const P = {};
+        async function refreshPrices() {
+            const t = now();
+            await Promise.all(KEYS.map(async key => {
+                const c = coinMeta(key), i = idxAt(c, t);
+                if (i < 0) { P[key] = { listed: false, idx: i }; return; }
+                const day = await closes(key, i - DAY, i, 4);
+                const all = await closes(key, Math.max(0, i - DAY), i);
+                P[key] = { listed: true, idx: i, price: all[all.length - 1], prev: all[0], day, ended: i >= c.n - 1 };
+            }));
+        }
+        const chg = k => { const p = P[k]; return p && p.listed && p.prev ? p.price / p.prev - 1 : 0; };
+
+        // ---- 後端：登入的人拿自己的帳，沒登入只拿行情（主要是校時） ----
+        async function pub() { const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'coinQuote' }) }); return r.json(); }
+        function take(q, m) {
+            Q = q; if (m !== undefined) M = m;
+            offset = q.now - Date.now();
+            if (m && m.notes && m.notes.length) { notes = notes.concat(m.notes); if (m.notes.some(n => n.kind === 'boom')) setTimeout(() => bigStamp('爆', '爆倉了', false, true), 400); }
+        }
+        async function pull() {
+            try {
+                let r = null;
+                if (Line.loggedIn) {
+                    r = await Line.call({ type: 'coinMine' });
+                    if (r.result === 'success') { take(r.quote, r.mine); Wallet.adopt(r.wallet); state = 'ready'; }
+                }
+                if (!r || r.result !== 'success') {
+                    if (r && r.result !== 'unauthorized' && /不認得的請求/.test(r.error || '')) state = 'old';
+                    else {
+                        const p = await pub();
+                        if (p.result === 'success') { take(p, Line.loggedIn ? M : null); state = 'ready'; }
+                        else state = /不認得的請求/.test(p.error || '') ? 'old' : 'ready';
+                    }
+                }
+            } catch (e) { if (state === 'loading') state = 'ready'; }
+            await tick();
+        }
+        // 每 15 分鐘跳價：重算價格；登入的人順便跟後端拿帳（看有沒有爆倉）
+        async function tick() {
+            try { await refreshPrices(); } catch (e) { }
+            render();
+            clearTimeout(timer);
+            timer = setTimeout(() => (Line.loggedIn && state === 'ready' ? pull() : tick()), Math.max(3000, nextAt(now()) - now() + 3000));
+        }
+
+        // ---- 畫面 ----
+        function renderStatus() {
+            const el = $('status');
+            if (!META) { el.textContent = '讀取行情中…'; return; }
+            el.innerHTML = `<span class="dot"></span>每 15 分鐘跳價・下一次 ${hhmm(nextAt(now()))}` + (state === 'old' ? '<br><span class="warn">買賣還沒開放（後端要重新部署新版本），先看看就好</span>' : '');
+        }
+        const dirTxt = d => d === 'up' ? '看漲' : '看跌';
+        function renderSlips() {
+            const box = $('slips');
+            box.innerHTML = notes.map(n => {
+                const i = INFO[n.key] || { name: n.key };
+                if (n.kind === 'boom') return `<section class="paper slip"><p><b>${esc(i.name)}</b> ${dirTxt(n.dir)} ${n.lev} 倍，${mdhm(n.at)} 爆了。<br><span style="color:var(--faint);font-size:.72rem">下單價 ${pf(n.key, n.e)}，${n.dir === 'up' ? '跌' : '漲'}到 ${pf(n.key, n.liq)} 就沒了。押的 ${fmt(n.m)} 全部歸零。</span></p><div class="seal">爆</div></section>`;
+                return '';
+            }).join('');
+            box.classList.toggle('hidden', !notes.length);
+        }
+        const posValue = p => { const pr = P[p.key] && P[p.key].price; if (!pr) return p.value; const r = pr / p.e - 1; return Math.max(0, Math.round(p.m + p.m * p.lev * (p.dir === 'up' ? r : -r))); };
+        function renderAcct() {
+            const box = $('acct');
+            if (!Line.loggedIn) {
+                box.innerHTML = `<div class="border border-dashed border-stone-300 rounded-sm p-5">
+                    <h2 class="text-sm tracking-[0.3em] text-wabi-dark">兌換需要實名</h2>
+                    <p class="mt-2 text-xs font-sans tracking-wider text-stone-500 leading-relaxed">沒登入可以看行情。要買賣得用 LINE 登入，紀念幣跟著帳號走，換手機也在。</p>
+                    ${Line.available ? '<button type="button" data-login class="line-btn mt-4 w-full">用 LINE 登入</button>' : '<p class="mt-3 text-[11px] font-sans tracking-wider text-stone-400">LINE 登入載不起來，只能看。</p>'}</div>`;
+                return;
+            }
+            const hold = M ? M.hold : [], pos = M ? M.pos : [];
+            const mv = hold.reduce((t, h) => t + Math.floor(h.u * ((P[h.key] || {}).price || 0)), 0);
+            const pv = pos.reduce((t, p) => t + posValue(p), 0);
+            box.innerHTML = `<div class="bg-white border border-stone-100 rounded-sm py-3"><dl class="acct">
+                <div><dt>現金</dt><dd class="num">${fmt(Wallet.money)}</dd></div>
+                <div><dt>紀念幣</dt><dd class="num">${M ? fmt(mv) : '…'}</dd></div>
+                <div><dt>放大倍數</dt><dd class="num">${M ? fmt(pv) : '…'}</dd></div>
+            </dl></div>
+            ${M ? `<p class="mt-2 px-1 text-[10px] font-sans tracking-widest text-stone-400 text-center">已實現損益 <span style="color:${toneColor(M.pl)}">${sfmt(M.pl)}</span>・付過手續費 ${fmt(M.fee)}${M.boom ? `・爆過 ${M.boom} 次` : ''}</p>` : ''}`;
+        }
+        function spark(cv, key) {
+            const p = P[key], d = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+            if (!w || !p || !p.listed || p.day.length < 2) return;
+            cv.width = w * d; cv.height = h * d; const x = cv.getContext('2d'); x.scale(d, d);
+            const lo = Math.min(...p.day), hi = Math.max(...p.day), Y = v => h - 2 - (v - lo) / (hi - lo || 1) * (h - 4);
+            x.strokeStyle = toneColor(chg(key)) || '#8c7f6c'; x.lineWidth = 1.4; x.beginPath();
+            p.day.forEach((v, i) => { const px = i / (p.day.length - 1) * w; i ? x.lineTo(px, Y(v)) : x.moveTo(px, Y(v)); });
+            x.stroke();
+        }
+        const heldKey = k => M && (M.hold.some(h => h.key === k) || M.pos.some(p => p.key === k));
+        function renderBoard() {
+            const box = $('rows');
+            if (!META || !Object.keys(P).length) { box.innerHTML = '<p class="empty">讀取中…</p>'; return; }
+            $('boardAt').textContent = mdhm(nextAt(now()) - META.q) + ' 更新';
+            box.innerHTML = KEYS.map(k => {
+                const i = INFO[k], p = P[k] || {}, c = chg(k);
+                if (!p.listed) return `<div class="row cols"><span class="nm">${esc(i.name)}<span class="cd">${i.tk}<span class="soon">待發行</span></span></span><span></span><span class="px num flat">—</span><span class="ch num flat">11/27</span></div>`;
+                return `<button type="button" class="row cols" data-key="${k}">
+                    <span class="nm">${esc(i.name)}${heldKey(k) ? '<span class="mine">持</span>' : ''}<span class="cd">${i.tk}</span></span>
+                    <canvas></canvas>
+                    <span class="px num ${tone(c)}">${pf(k, p.price)}</span>
+                    <span class="ch num ${tone(c)}">${arrow(c)}${Math.abs(c * 100).toFixed(1)}%</span>
+                </button>`;
+            }).join('');
+            box.querySelectorAll('.row[data-key]').forEach(b => spark(b.querySelector('canvas'), b.dataset.key));
+        }
+        function posRow(p) {
+            const i = INFO[p.key] || { name: p.key }, v = posValue(p), pl = v - p.m, pct = pl / p.m;
+            return `<div class="pos"><div><b style="font-weight:600">${esc(i.name)}</b> <span class="dirtag ${p.dir === 'up' ? 'up' : 'down'}">${dirTxt(p.dir)} ${p.lev}×</span>
+                <br><span class="num ${tone(pl)}">${sfmt(pl)}（${pct >= 0 ? '+' : '−'}${Math.abs(pct * 100).toFixed(1)}%）</span>
+                <small class="num">押 ${fmt(p.m)}・下單 ${pf(p.key, p.e)}・<span class="up">爆在 ${pf(p.key, p.liq)}</span></small></div>
+                <button type="button" data-close-pos="${esc(p.id)}" ${busy ? 'disabled' : ''}>收回 ${fmt(v)}</button></div>`;
+        }
+        function renderStmt() {
+            const box = $('stmtBox'), show = Line.loggedIn && M && META;
+            box.classList.toggle('hidden', !show);
+            if (!show) return;
+            $('stmtName').textContent = (Line.profile && Line.profile.name) || '旅人';
+            let html = '';
+            if (M.hold.length) {
+                let tot = 0;
+                html += `<p class="sec-h">直接買的</p><table><thead><tr><th>紀念幣</th><th>顆數</th><th>市值</th><th>損益</th></tr></thead><tbody>` + M.hold.map(h => {
+                    const v = Math.floor(h.u * ((P[h.key] || {}).price || 0)), pl = v - h.cost; tot += pl;
+                    return `<tr><td>${esc((INFO[h.key] || {}).name || h.key)}<small>成本 ${fmt(h.cost)}</small></td><td class="num">${units(h.u)}</td><td class="num">${fmt(v)}</td><td class="num ${tone(pl)}">${sfmt(pl)}</td></tr>`;
+                }).join('') + `</tbody></table>`;
+            }
+            if (M.pos.length) html += `<p class="sec-h">放大倍數（還沒爆的）</p>` + M.pos.map(posRow).join('');
+            $('stmt').innerHTML = html || '<p class="empty">還沒有紀念幣。<br>點行情表上的一種開始。</p>';
+        }
+
+        // ---- 底部面板 ----
+        async function chart() {
+            const key = cur; if (!key || !P[key] || !P[key].listed) return;
+            const c = coinMeta(key), i = P[key].idx, n = range * DAY, step = range === 1 ? 1 : range === 7 ? 4 : 16;
+            const a = await closes(key, i - n, i, step);
+            if (key !== cur) return;
+            const cv = $('chart'), d = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+            if (!w || a.length < 2) return;
+            cv.width = w * d; cv.height = h * d; const x = cv.getContext('2d'); x.scale(d, d);
+            const mine = M ? M.pos.filter(p => p.key === key) : [];
+            let lo = Math.min(...a), hi = Math.max(...a);
+            const pad = (hi - lo) * 0.08 || hi * 0.01; lo -= pad; hi += pad;
+            const L = 46, B = h - 16, T = 6, Y = v => B - (v - lo) / (hi - lo) * (B - T), X = j => L + j / (a.length - 1) * (w - L - 4);
+            const ink = themeColor('--wabi-accent'), sub = themeColor('--wabi-sub');
+            x.font = '10px "Noto Sans TC", sans-serif'; x.fillStyle = ink; x.textAlign = 'right';
+            [hi - pad, (hi + lo) / 2, lo + pad].forEach(v => { x.fillText(pf(key, v), L - 5, Y(v) + 3); x.strokeStyle = sub; x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w, Y(v)); x.stroke(); });
+            x.textAlign = 'center';
+            [[0, range === 1 ? '24 小時前' : `${range} 天前`], [a.length - 1, '現在']].forEach(([j, t]) => x.fillText(t, Math.min(Math.max(X(j), L + 24), w - 18), h - 3));
+            // 自己的單：下單價（虛線）、爆倉價（朱色虛線），在畫面範圍裡才畫
+            mine.forEach(p => [[p.e, ink, '下單'], [p.liq, UP, '爆']].forEach(([v, col, t]) => {
+                if (v < lo || v > hi) return;
+                x.setLineDash([3, 3]); x.strokeStyle = col; x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w, Y(v)); x.stroke(); x.setLineDash([]);
+                x.fillStyle = col; x.textAlign = 'right'; x.fillText(t, w - 2, Y(v) - 3);
+            }));
+            const col = toneColor(a[a.length - 1] - a[0]) || ink;
+            const g = x.createLinearGradient(0, T, 0, B); g.addColorStop(0, col + '33'); g.addColorStop(1, col + '00');
+            x.beginPath(); a.forEach((v, j) => j ? x.lineTo(X(j), Y(v)) : x.moveTo(X(j), Y(v)));
+            x.lineTo(X(a.length - 1), B); x.lineTo(X(0), B); x.closePath(); x.fillStyle = col.startsWith('#') ? g : 'transparent'; x.fill();
+            x.beginPath(); a.forEach((v, j) => j ? x.lineTo(X(j), Y(v)) : x.moveTo(X(j), Y(v))); x.strokeStyle = col; x.lineWidth = 1.6; x.stroke();
+            x.beginPath(); x.arc(X(a.length - 1), Y(a[a.length - 1]), 3.5, 0, 7); x.fillStyle = col; x.fill();
+            $('sRange').textContent = `${range} 日最高 ${pf(key, Math.max(...a))}・最低 ${pf(key, Math.min(...a))}`;
+        }
+        const money = id => Math.max(0, Math.floor(Number(String($(id).value).replace(/[^\d.]/g, '')) || 0));
+        function renderSheet() {
+            const key = cur; if (!key) return;
+            const i = INFO[key], p = P[key] || {}, c = chg(key), logged = Line.loggedIn && M && state === 'ready';
+            $('sName').textContent = i.full; $('sCode').textContent = i.tk;
+            $('sDesc').textContent = i.desc;
+            $('sPx').textContent = p.listed ? pf(key, p.price) : '—'; $('sPx').style.color = toneColor(c);
+            $('sCh').innerHTML = p.listed ? `<span style="color:${toneColor(c)}">${arrow(c)} ${Math.abs(c * 100).toFixed(2)}%・24 小時</span>` : '';
+            $('sTrade').classList.toggle('hidden', !logged);
+            $('sLoginBox').classList.toggle('hidden', !!logged || !Line.available || state === 'old');
+            document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+            $('mSpot').classList.toggle('hidden', mode !== 'spot'); $('mLev').classList.toggle('hidden', mode !== 'lev');
+            if (!logged || !p.listed) return;
+            const rules = Q.rules;
+            // 直接買
+            const h = M.hold.find(x => x.key === key), a = money('amt'), fee = Math.ceil(a * rules.fee), u = a > fee ? (a - fee) / p.price : 0;
+            $('sHold').innerHTML = h ? `持有 <b class="num">${units(h.u)}</b> 顆・市值 <b class="num">${fmt(Math.floor(h.u * p.price))}</b>・成本 ${fmt(h.cost)}` : '還沒有這一種。';
+            const lines = [a ? `花 <b class="num">${fmt(a)}</b> 可以換 <b class="num">${units(u)}</b> 顆（手續費 ${fmt(fee)}）` : '輸入要花多少錢。'];
+            if (a > Wallet.money) lines.push('<span class="warn">錢包不夠。</span>');
+            if (a && a < rules.min) lines.push(`<span class="warn">最少 ${fmt(rules.min)}。</span>`);
+            if (h) { const g = Math.floor(h.u * p.price); lines.push(`全部賣掉拿回 ${fmt(g - Math.ceil(g * rules.fee))}（扣 0.5%）`); }
+            $('sCost').innerHTML = lines.join('<br>');
+            $('buy').disabled = busy || !a || a < rules.min || a > Wallet.money;
+            $('sellHalf').disabled = $('sellAll').disabled = busy || !h;
+            $('buy').textContent = busy ? '…' : '買進';
+            // 放大倍數
+            document.querySelectorAll('[data-dir]').forEach(b => b.classList.toggle('on', b.dataset.dir === dir));
+            document.querySelectorAll('[data-lev]').forEach(b => b.classList.toggle('on', Number(b.dataset.lev) === lev));
+            const m = money('mar'), ofee = Math.ceil(m * lev * rules.openFee), liq = p.price * (dir === 'up' ? 1 - 1 / lev : 1 + 1 / lev);
+            const ll = [m ? `押 <b class="num">${fmt(m)}</b> × ${lev} 倍 ＝ 等於拿 <b class="num">${fmt(m * lev)}</b> 在炒・手續費 ${fmt(ofee)}` : '輸入要押多少錢。'];
+            if (m) ll.push(`價格${dir === 'up' ? '每漲' : '每跌'} 1%，賺 ${fmt(m * lev / 100)}；<span class="warn">${dir === 'up' ? '跌' : '漲'}到 <b class="num">${pf(key, liq)}</b>（${(100 / lev).toFixed(lev >= 50 ? 1 : 0)}%）就爆</span>，押的錢全沒。`);
+            if (m + ofee > Wallet.money) ll.push('<span class="warn">錢包不夠（押的錢＋手續費）。</span>');
+            if (m && m < rules.marginMin) ll.push(`<span class="warn">最少押 ${fmt(rules.marginMin)}。</span>`);
+            $('lCost').innerHTML = ll.join('<br>');
+            $('open').className = 'btn mt-4 ' + (dir === 'up' ? 'btn-buy' : 'btn-down');
+            $('open').textContent = busy ? '…' : `下單・${dirTxt(dir)} ${lev} 倍`;
+            $('open').disabled = busy || !m || m < rules.marginMin || m + ofee > Wallet.money || p.ended;
+            const mine = M.pos.filter(x => x.key === key);
+            $('lPos').innerHTML = mine.length ? `<div class="paper stmt"><p class="sec-h" style="padding-top:.2rem">這一種還沒爆的單</p>${mine.map(posRow).join('')}</div>` : '';
+        }
+        function openSheet(key) {
+            cur = key; range = 1;
+            document.querySelectorAll('[data-range]').forEach(x => x.classList.toggle('on', x.dataset.range === '1'));
+            $('sheet').classList.add('on'); renderSheet(); requestAnimationFrame(chart);
+        }
+        function closeSheet() { $('sheet').classList.remove('on'); cur = null; }
+        function render() {
+            renderStatus(); renderSlips(); renderAcct(); renderBoard(); renderStmt();
+            if (cur) { renderSheet(); chart(); }
+        }
+        function bigStamp(text, sub, grey, boom) {
+            const st = $('bigStamp'), s = st.querySelector('.s');
+            s.querySelector('b').textContent = text; s.querySelector('span').textContent = sub; s.classList.toggle('grey', !!grey); s.classList.toggle('boom', !!boom);
+            st.classList.remove('go'); void st.offsetWidth; st.classList.add('go');
+        }
+
+        // ---- 下單 ----
+        const BUSY_LINES = ['兌換單送到櫃台…', '櫃台在數紀念幣…', '茱莉鴨在確認網路…', '雞塊老闆在旁邊探頭…', '坐洗部的狗叫了一聲…', '蘋果鴨在找零錢…'];
+        let busyTimer = 0, busySince = 0;
+        function showBusy(on, w) {
+            const el = $('busy'); clearInterval(busyTimer);
+            if (!on) { el.classList.remove('on'); return; }
+            const tape = KEYS.filter(k => P[k] && P[k].listed).map(k => { const c = chg(k); return `<span class="${c > 0 ? 'u' : c < 0 ? 'd' : ''}">${INFO[k].tk} ${pf(k, P[k].price)} ${arrow(c)}${Math.abs(c * 100).toFixed(1)}%</span>`; }).join('');
+            $('bTape').innerHTML = tape + tape;
+            $('bSide').textContent = w.side; $('bSide').style.color = w.color || UP;
+            $('bForm').innerHTML = w.rows.map(([a, b]) => `<div><dt>${a}</dt><dd class="num">${b}</dd></div>`).join('');
+            let i = 0; $('bMsg').textContent = BUSY_LINES[0];
+            busyTimer = setInterval(() => { i = (i + 1) % BUSY_LINES.length; $('bMsg').textContent = BUSY_LINES[i]; }, 1300);
+            busySince = Date.now(); el.classList.add('on');
+        }
+        async function act(body, w) {
+            if (busy) return null;
+            busy = true; render(); showBusy(true, w);
+            try {
+                await Wallet.settle();
+                const r = await Line.call(body);
+                if (r.quote) take(r.quote, r.mine);
+                if (r.wallet) Wallet.adopt(r.wallet);
+                if (r.result === 'success') return r;
+                if (r.result === 'moved') showToast('價格剛跳了，看一下新的價格再下單');
+                else if (r.result === 'unauthorized') showToast('登入過期了，再登入一次');
+                else showToast(/不認得的請求/.test(r.error || '') ? '後端還是舊版，要重新部署「新版本」' : (r.error || '櫃台沒回應'));
+            } catch (e) { showToast('連不到後端，可能是網路不穩'); }
+            finally {
+                const left = 700 - (Date.now() - busySince); if (left > 0) await new Promise(res => setTimeout(res, left));
+                showBusy(false); busy = false;
+                try { await refreshPrices(); } catch (e) { }
+                render();
+            }
+            return null;
+        }
+        const slot = () => slotAt(now());
+        async function buy() {
+            const key = cur, a = money('amt'), i = INFO[key];
+            const r = await act({ type: 'coinTrade', key, side: 'buy', amount: a, slot: slot() }, { side: '買進', rows: [['紀念幣', esc(i.name)], ['花', fmt(a)], ['現價', pf(key, P[key].price)]] });
+            if (r) { bigStamp('成交', `${units(r.u)} 顆`); showToast(`花 ${fmt(r.amount)} 換了 ${units(r.u)} 顆${i.name}`); }
+        }
+        async function sell(frac) {
+            const key = cur, i = INFO[key];
+            const r = await act({ type: 'coinTrade', key, side: 'sell', frac, slot: slot() }, { side: '賣出', color: '#3b342e', rows: [['紀念幣', esc(i.name)], ['賣', frac >= 1 ? '全部' : '一半'], ['現價', pf(key, P[key].price)]] });
+            if (!r) return;
+            if (r.pl < 0) { bigStamp('認賠', `賠 ${fmt(-r.pl)}`, true); showToast(`賣掉 ${units(r.u)} 顆${i.name}，拿回 ${fmt(r.back)}，賠了 ${fmt(-r.pl)}`); }
+            else { bigStamp('成交', `賺 ${fmt(r.pl)}`); showToast(`賣掉 ${units(r.u)} 顆${i.name}，拿回 ${fmt(r.back)}，賺了 ${fmt(r.pl)}`); }
+        }
+        async function open() {
+            const key = cur, m = money('mar'), i = INFO[key];
+            if (lev >= 50 && !confirm(`${lev} 倍：價格往反方向走 ${(100 / lev).toFixed(1)}% 就爆，押的 ${fmt(m)} 全沒。確定？`)) return;
+            const r = await act({ type: 'coinOpen', key, dir, lev, margin: m, slot: slot() }, { side: `${dirTxt(dir)} ${lev}×`, color: dir === 'up' ? UP : DOWN, rows: [['紀念幣', esc(i.name)], ['押', fmt(m)], ['爆在', pf(key, P[key].price * (dir === 'up' ? 1 - 1 / lev : 1 + 1 / lev))]] });
+            if (r) { bigStamp('下單', `${dirTxt(dir)} ${lev} 倍`); showToast(`${i.name}${dirTxt(dir)} ${lev} 倍，${r.dir === 'up' ? '跌' : '漲'}到 ${pf(key, r.liq)} 就爆`); }
+        }
+        async function closePos(id) {
+            const p = M && M.pos.find(x => x.id === id); if (!p) return;
+            const i = INFO[p.key] || { name: p.key };
+            const r = await act({ type: 'coinClose', id }, { side: '收回', color: '#3b342e', rows: [['紀念幣', esc(i.name)], ['押', fmt(p.m)], ['倍數', `${dirTxt(p.dir)} ${p.lev}×`]] });
+            if (!r) return;
+            if (r.pl < 0) { bigStamp('認賠', `賠 ${fmt(-r.pl)}`, true); showToast(`收回 ${fmt(r.back)}，賠了 ${fmt(-r.pl)}`); }
+            else { bigStamp('收回', `賺 ${fmt(r.pl)}`); showToast(`收回 ${fmt(r.back)}，賺了 ${fmt(r.pl)}`); }
+        }
+
+        // ---- 事件 ----
+        document.addEventListener('click', e => {
+            const t = e.target;
+            if (t.closest('[data-login]')) return Line.login();
+            const row = t.closest('.row[data-key]'); if (row) return openSheet(row.dataset.key);
+            if (t.id === 'sheet' || t.closest('[data-close]')) return closeSheet();
+            const rg = t.closest('[data-range]');
+            if (rg) { range = Number(rg.dataset.range); document.querySelectorAll('[data-range]').forEach(x => x.classList.toggle('on', x === rg)); return chart(); }
+            const md = t.closest('[data-mode]'); if (md) { mode = md.dataset.mode; return renderSheet(); }
+            const dr = t.closest('[data-dir]'); if (dr) { dir = dr.dataset.dir; return renderSheet(); }
+            const lv = t.closest('[data-lev]'); if (lv) { lev = Number(lv.dataset.lev); return renderSheet(); }
+            const am = t.closest('[data-amt]'); if (am) { const v = am.dataset.amt; $('amt').value = v === 'half' ? Math.floor(Wallet.money / 2) : v === 'all' ? Wallet.money : v; return renderSheet(); }
+            const mr = t.closest('[data-mar]');
+            if (mr) { const v = mr.dataset.mar, all = Math.floor(Wallet.money / (1 + lev * Q.rules.openFee)); $('mar').value = v === 'half' ? Math.floor(all / 2) : v === 'all' ? all : v; return renderSheet(); }
+            if (t.closest('#buy')) return buy();
+            if (t.closest('#sellHalf')) return sell(0.5);
+            if (t.closest('#sellAll')) return sell(1);
+            if (t.closest('#open')) return open();
+            const cp = t.closest('[data-close-pos]'); if (cp) return closePos(cp.dataset.closePos);
+        });
+        $('amt').addEventListener('input', renderSheet);
+        $('mar').addEventListener('input', renderSheet);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && cur) closeSheet(); });
+        Wallet.on(type => {
+            if (type === 'login') { setTimeout(pull, 1500); render(); }
+            else if (type === 'logout') { M = null; notes = []; render(); }
+            else { renderAcct(); if (cur) renderSheet(); }
+        });
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && META) pull(); });
+        window.addEventListener('pageshow', e => { if (e.persisted && META) pull(); });
+        window.addEventListener('resize', () => { if (META) { renderBoard(); if (cur) chart(); } });
+
+        render();
+        fetch('assets/coin/meta.json').then(r => r.json()).then(m => { META = m; pull(); }).catch(() => { $('status').textContent = '讀不到紀念幣的價格，等一下重新整理'; });
+    </script>
+</body>
+
+</html>

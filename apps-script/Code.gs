@@ -73,9 +73,9 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-26g';
+var BACKEND_VERSION = '2026-11-26h';
 
-var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1, gaFundStart: 1, gaFundEnd: 1 };
+var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1, gaFundStart: 1, gaFundEnd: 1, coinTrade: 1, coinOpen: 1, coinClose: 1 };
 
 function withLock(fn) {
   var lock = LockService.getScriptLock();
@@ -147,6 +147,11 @@ function route(type, input) {
     if (type === 'stockMine') return stockMine(input);
     if (type === 'stockTrade') return stockTrade(input);
     if (type === 'stockCancel') return stockCancel(input);
+    if (type === 'coinQuote') return coinQuote();            // 紀念幣・炒（2026-11-26）
+    if (type === 'coinMine') return coinMine(input);
+    if (type === 'coinTrade') return coinTrade(input);
+    if (type === 'coinOpen') return coinOpen(input);
+    if (type === 'coinClose') return coinClose(input);
     if (type === 'sportQuote') return sportQuote(input);
     if (type === 'sportMine') return sportMine(input);
     if (type === 'sportBet') return sportBet(input);
@@ -3993,6 +3998,272 @@ function adminWishSet(input) {
   return adminWishes();
 }
 
+
+// ===== 紀念幣・炒（coin.html，2026-11-26）=====
+// 五檔「二十七樓紀念幣」，價格是真實的歷史走勢（Binance 15 分鐘 K 線，每檔挑一段 3 年、縮放過、沒有日期），照真實時間播：每 15 分鐘跳一次、24 小時不收盤。
+// 資料在 repo 的 assets/coin/（GitHub Actions coin-data 產的，見 tools/coin/），後端從 GitHub Pages 抓（COIN_DATA_URL），存快取 6 小時。
+// 檔案格式：每檔每 2976 根一個檔 <key>/<k>.json：{ c: 收盤（第一個是整數價，後面是差）, h: 最高−收盤, l: 收盤−最低 }，價格＝整數 ÷ 10^digits。
+// 時間 t 的格子 g＝floor((t−launch)/15 分)，看得到的是第 pre＋g−1 根（剛收完那根）。
+// 玩法：現貨（用錢買、0.5% 手續費）、合約（看漲／看跌、2～100 倍、開倉收倉位 0.1%，價格反方向走 1/倍數 就爆倉，用 15 分鐘內最高最低算，插針也會爆）。
+// 持有、倉位、損益存 Players 的 O 欄 coin（JSON）。手續費、損益都不算 spent、不算 earned（跟股市一樣）。
+var COIN_DATA_URL = 'https://tingyu333.github.io/dongbuli4fun/assets/coin/';
+var COIN_META = { launch: 1795708800000, q: 900000, chunk: 2976 };   // 跟 assets/coin/meta.json 一樣（2026-11-27 00:00 台灣開市）
+var COINS = [
+  { key: 'c1', name: '丼幣', tk: 'DON', digits: 1, pre: 2880, n: 108096 },
+  { key: 'c2', name: '茱莉鴨幣', tk: 'DUCK', digits: 2, pre: 2880, n: 108096 },
+  { key: 'c3', name: '坐洗狗狗幣', tk: 'WOOF', digits: 4, pre: 2880, n: 108096 },
+  { key: 'c4', name: '蘿蔔幣', tk: 'RDSH', digits: 3, pre: 2880, n: 108096 },
+  { key: 'c5', name: '雞塊幣', tk: 'NUGT', digits: 6, pre: 0, n: 105216 }
+];
+var COIN_FEE = 0.005;          // 現貨買賣各 0.5%（零頭進位）
+var COIN_OPEN_FEE = 0.001;     // 合約開倉：倉位（保證金 × 倍數）的 0.1%
+var COIN_LEVS = [2, 5, 10, 25, 50, 100];
+var COIN_MIN = 10, COIN_MARGIN_MIN = 100;
+var COIN_POS_MAX = 20;
+var COIN_OPS_PER_HOUR = 300;
+var COIN_DAY = 96;
+
+function coinOf(key) { return COINS.filter(function (c) { return c.key === key; })[0] || null; }
+function coinSlot(ms) { return Math.floor((ms - COIN_META.launch) / COIN_META.q); }
+function coinIdx(c, ms) { return Math.min(c.n - 1, c.pre + coinSlot(ms) - 1); }   // -1 是還沒上市
+function coinNext(ms) { return COIN_META.launch + (coinSlot(ms) + 1) * COIN_META.q; }
+function coinIdxMs(c, idx) { return COIN_META.launch + (idx - c.pre + 1) * COIN_META.q; }   // 這一根什麼時候收
+
+// 一個檔：{ c, h, l } 都是整數（已經從差分還原）。同一次執行記在記憶體，跨執行用快取
+var coinChunkMem = {};
+function coinChunk(c, k) {
+  var id = c.key + ':' + k;
+  if (coinChunkMem[id]) return coinChunkMem[id];
+  var cache = CacheService.getScriptCache(), ck = 'coinc:v1:' + id, text = cache.get(ck);
+  if (!text) {
+    var res = UrlFetchApp.fetch(COIN_DATA_URL + c.key + '/' + k + '.json', { muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200) throw new Error('紀念幣的價格檔讀不到（' + res.getResponseCode() + '）');
+    text = res.getContentText();
+    try { cache.put(ck, text, 21600); } catch (e) { }
+  }
+  var raw = JSON.parse(text), cs = [], acc = 0;
+  for (var i = 0; i < raw.c.length; i++) { acc += raw.c[i]; cs.push(acc); }
+  var out = { c: cs, h: cs.map(function (v, i) { return v + raw.h[i]; }), l: cs.map(function (v, i) { return v - raw.l[i]; }) };
+  coinChunkMem[id] = out;
+  return out;
+}
+function coinBar(c, idx) {
+  if (idx < 0) return null;
+  var k = Math.floor(idx / COIN_META.chunk), d = coinChunk(c, k), i = idx - k * COIN_META.chunk;
+  return { c: d.c[i], h: d.h[i], l: d.l[i] };
+}
+function coinPx(c, v) { return v / Math.pow(10, c.digits); }
+
+// 公開的行情：{ now, slot, next, coins: [{ key, name, tk, idx, price, prev（24 小時前）, listed }] }。快取到下一次跳價
+function coinQuoteData(nowMs) {
+  var slot = coinSlot(nowMs), cache = CacheService.getScriptCache(), key = 'coinq:v1:' + slot, hit = cache.get(key);
+  if (hit) return JSON.parse(hit);
+  var out = {
+    now: nowMs, slot: slot, next: coinNext(nowMs), launch: COIN_META.launch, q: COIN_META.q,
+    coins: COINS.map(function (c) {
+      var idx = coinIdx(c, nowMs), b = coinBar(c, idx), p = idx >= COIN_DAY ? coinBar(c, idx - COIN_DAY) : coinBar(c, 0);
+      return { key: c.key, name: c.name, tk: c.tk, digits: c.digits, pre: c.pre, idx: idx, listed: idx >= 0, price: b ? coinPx(c, b.c) : 0, prev: p ? coinPx(c, p.c) : 0, ended: idx >= c.n - 1 };
+    }),
+    rules: { fee: COIN_FEE, openFee: COIN_OPEN_FEE, levs: COIN_LEVS, min: COIN_MIN, marginMin: COIN_MARGIN_MIN, posMax: COIN_POS_MAX }
+  };
+  cache.put(key, JSON.stringify(out), Math.max(5, Math.min(900, Math.ceil((out.next - nowMs) / 1000))));
+  return out;
+}
+function coinQuote() { var out = coinQuoteData(stockNow().getTime()); out.result = 'success'; return out; }
+
+// --- 帳戶（Players 的 O 欄）---
+// { h: { key: { u 顆數, cost 成本（含手續費） } }, p: [倉位], pl 已實現損益, fee 手續費合計, notes, boom 爆過幾次, lost 爆掉多少 }
+// 倉位：{ id, key, dir: 'up'|'down', lev, m 保證金, e 開倉價（整數）, liq 爆倉價（整數，可以有小數）, at 開倉那根, chk 檢查到哪根, t 開倉毫秒, f 開倉手續費 }
+function coinBlank() { return { h: {}, p: [], pl: 0, fee: 0, notes: [], boom: 0, lost: 0 }; }
+function coinParse(raw) {
+  var s = coinBlank();
+  try { var x = JSON.parse(raw || '{}') || {}; Object.keys(s).forEach(function (k) { if (x[k] !== undefined) s[k] = x[k]; }); } catch (e) { }
+  if (!s.h || typeof s.h !== 'object') s.h = {};
+  if (!Array.isArray(s.p)) s.p = [];
+  if (!Array.isArray(s.notes)) s.notes = [];
+  return s;
+}
+function coinLoad(p) {
+  var sheet = playersSheet();
+  if (!sheet.getRange(1, 15).getValue()) sheet.getRange(1, 15).setValue('coin');
+  p.coin = coinParse(sheet.getRange(p.row, 15).getValue());
+  return p;
+}
+function coinSave(p) {
+  writeWallet(p);
+  playersSheet().getRange(p.row, 15).setValue(JSON.stringify(p.coin));
+}
+function coinNote(st, note) { st.notes.push(note); if (st.notes.length > 10) st.notes = st.notes.slice(-10); }
+function coinLog(lineId, key, kind, dir, lev, units, price, amount, fee, pl, money) {
+  stockSheet('CoinTrades', ['timestamp', 'line_id', 'coin', 'kind', 'dir', 'lev', 'units', 'price', 'amount', 'fee', 'pl', 'money'])
+    .appendRow([new Date(), lineId, key, kind, dir || '', lev || '', units || '', price, amount, fee, pl, money]);
+}
+
+// 爆倉檢查：從上次檢查到的那根往後看到現在，最低（看漲）或最高（看跌）碰到爆倉價就爆。回傳有沒有改東西
+function coinSettle(st, nowMs, lineId) {
+  var changed = false;
+  st.p = st.p.filter(function (pos) {
+    var c = coinOf(pos.key); if (!c) return true;
+    var cur = coinIdx(c, nowMs);
+    for (var i = pos.chk + 1; i <= cur; i++) {
+      var b = coinBar(c, i);
+      if (pos.dir === 'up' ? b.l <= pos.liq : b.h >= pos.liq) {
+        st.pl -= pos.m; st.boom = (st.boom || 0) + 1; st.lost = (st.lost || 0) + pos.m;
+        coinNote(st, { kind: 'boom', id: pos.id, key: pos.key, dir: pos.dir, lev: pos.lev, m: pos.m, e: coinPx(c, pos.e), liq: coinPx(c, pos.liq), at: coinIdxMs(c, i), t: pos.t });
+        if (lineId) coinLog(lineId, pos.key, 'boom', pos.dir, pos.lev, '', coinPx(c, pos.liq), pos.m, 0, -pos.m, '');
+        changed = true;
+        return false;
+      }
+    }
+    if (cur > pos.chk) { pos.chk = cur; changed = true; }
+    return true;
+  });
+  return changed;
+}
+// 倉位現在值多少：保證金＋損益（最少 0）
+function coinPosValue(pos, price) {
+  var r = price / pos.e - 1;
+  return Math.max(0, Math.round(pos.m + pos.m * pos.lev * (pos.dir === 'up' ? r : -r)));
+}
+function coinView(st, quote) {
+  var pmap = {};
+  quote.coins.forEach(function (x) { pmap[x.key] = x; });
+  return {
+    hold: Object.keys(st.h).map(function (k) { var h = st.h[k], q = pmap[k]; return { key: k, u: h.u, cost: h.cost, value: Math.floor(h.u * (q ? q.price : 0)) }; }),
+    pos: st.p.map(function (pos) {
+      var c = coinOf(pos.key), q = pmap[pos.key], v = q ? coinPosValue(pos, Math.round(q.price * Math.pow(10, c.digits))) : pos.m;
+      return { id: pos.id, key: pos.key, dir: pos.dir, lev: pos.lev, m: pos.m, e: coinPx(c, pos.e), liq: coinPx(c, pos.liq), value: v, pnl: v - pos.m, t: pos.t, f: pos.f };
+    }),
+    pl: st.pl, fee: st.fee, notes: st.notes, boom: st.boom || 0, lost: st.lost || 0
+  };
+}
+// 讀帳、先檢查爆倉；有爆就先存起來（不然下一步出錯沒存，爆倉紀錄會重複記）
+function coinFresh(lineId, nowMs) {
+  var p = coinLoad(findPlayer(lineId));
+  if (coinSettle(p.coin, nowMs, lineId)) coinSave(p);
+  return p;
+}
+function coinGuard(input) {
+  var lineId = sessionUser(input.session);
+  if (!lineId) return { error: { result: 'unauthorized' } };
+  var cache = CacheService.getScriptCache();
+  var key = 'coinops:' + lineId + ':' + Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMddHH');
+  var n = Number(cache.get(key) || 0);
+  if (n >= COIN_OPS_PER_HOUR) return { error: { result: 'error', error: '這小時進出太多次了，晚點再來' } };
+  cache.put(key, String(n + 1), 3600);
+  var p = findPlayer(lineId);
+  if (!p) return { error: { result: 'unauthorized' } };
+  return { lineId: lineId, p: p };
+}
+function coinReply(p, nowMs, extra) {
+  var quote = coinQuoteData(nowMs);
+  var out = { result: 'success', quote: quote, mine: coinView(p.coin, quote), wallet: walletView(p) };
+  Object.keys(extra || {}).forEach(function (k) { out[k] = extra[k]; });
+  return out;
+}
+
+// { type: 'coinMine', session }：行情＋自己的帳。有倉位就先排隊檢查爆倉；通知回一次就清掉
+function coinMine(input) {
+  var g = coinGuard(input);
+  if (g.error) return g.error;
+  var now = stockNow().getTime(), p = coinLoad(g.p);
+  if (p.coin.p.length || p.coin.notes.length) {
+    var r = withLock(function () {
+      var q = coinLoad(findPlayer(g.lineId)), changed = coinSettle(q.coin, now, g.lineId);
+      var out = coinReply(q, now);
+      if (q.coin.notes.length) { q.coin.notes = []; changed = true; }
+      if (changed) coinSave(q);
+      return out;
+    });
+    return r;
+  }
+  return coinReply(p, now);
+}
+
+// 現貨：{ type: 'coinTrade', key, side: 'buy', amount（含手續費的錢）, slot } 或 { side: 'sell', frac（0～1，賣幾成；1 是全部）, slot }（在 LOCKED_TYPES）
+function coinTrade(input) {
+  var g = coinGuard(input);
+  if (g.error) return g.error;
+  var now = stockNow().getTime(), p = coinFresh(g.lineId, now), st = p.coin;
+  var c = coinOf(String(input.key || '')), side = String(input.side || '');
+  if (!c) return { result: 'error', error: '沒有這種紀念幣' };
+  if (Number(input.slot) !== coinSlot(now)) return coinReply(p, now, { result: 'moved', error: '價格剛跳了，再看一次' });
+  var idx = coinIdx(c, now);
+  if (idx < 0) return { result: 'error', error: '還沒發行' };
+  var pi = coinBar(c, idx).c, price = coinPx(c, pi);
+  if (side === 'buy') {
+    var amount = cleanMoney(input.amount, COIN_MIN, WALLET_MAX);
+    if (amount === null) return { result: 'error', error: '最少買 $' + COIN_MIN };
+    if (p.money < amount) return { result: 'error', error: '錢包不夠' };
+    var fee = Math.ceil(amount * COIN_FEE), u = Math.floor((amount - fee) / price * 1e8) / 1e8;
+    var h = st.h[c.key] || (st.h[c.key] = { u: 0, cost: 0 });
+    h.u = Math.round((h.u + u) * 1e8) / 1e8; h.cost += amount;
+    p.money -= amount; st.fee += fee;
+    coinSave(p);
+    coinLog(g.lineId, c.key, 'buy', '', '', u, price, amount, fee, 0, p.money);
+    return coinReply(p, now, { done: 'buy', key: c.key, u: u, price: price, amount: amount, fee: fee });
+  }
+  if (side === 'sell') {
+    var hs = st.h[c.key], frac = Number(input.frac);
+    if (!hs || !(hs.u > 0)) return { result: 'error', error: '你沒有這一種' };
+    if (!(frac > 0 && frac <= 1)) return { result: 'error', error: '要賣幾成？' };
+    var su = frac >= 1 ? hs.u : Math.floor(hs.u * frac * 1e8) / 1e8, gross = Math.floor(su * price);
+    if (gross < 1) return { result: 'error', error: '太少了，賣不到 $1' };
+    var sfee = Math.ceil(gross * COIN_FEE), back = gross - sfee, part = frac >= 1 ? hs.cost : Math.round(hs.cost * su / hs.u), pl = back - part;
+    hs.u = Math.round((hs.u - su) * 1e8) / 1e8; hs.cost -= part;
+    if (frac >= 1 || hs.u <= 0) delete st.h[c.key];
+    p.money = Math.min(WALLET_MAX, p.money + back); st.fee += sfee; st.pl += pl;
+    coinSave(p);
+    coinLog(g.lineId, c.key, 'sell', '', '', su, price, gross, sfee, pl, p.money);
+    return coinReply(p, now, { done: 'sell', key: c.key, u: su, price: price, amount: gross, fee: sfee, back: back, pl: pl });
+  }
+  return { result: 'error', error: '要買還是要賣？' };
+}
+
+// 合約開倉：{ type: 'coinOpen', key, dir: 'up'|'down', lev, margin, slot }（在 LOCKED_TYPES）
+function coinOpen(input) {
+  var g = coinGuard(input);
+  if (g.error) return g.error;
+  var now = stockNow().getTime(), p = coinFresh(g.lineId, now), st = p.coin;
+  var c = coinOf(String(input.key || '')), dir = String(input.dir || ''), lev = Number(input.lev);
+  if (!c) return { result: 'error', error: '沒有這種紀念幣' };
+  if (dir !== 'up' && dir !== 'down') return { result: 'error', error: '看漲還是看跌？' };
+  if (COIN_LEVS.indexOf(lev) < 0) return { result: 'error', error: '沒有這種倍數' };
+  var m = cleanMoney(input.margin, COIN_MARGIN_MIN, WALLET_MAX);
+  if (m === null) return { result: 'error', error: '保證金最少 $' + COIN_MARGIN_MIN };
+  if (st.p.length >= COIN_POS_MAX) return { result: 'error', error: '同時最多 ' + COIN_POS_MAX + ' 張單' };
+  if (Number(input.slot) !== coinSlot(now)) return coinReply(p, now, { result: 'moved', error: '價格剛跳了，再看一次' });
+  var idx = coinIdx(c, now);
+  if (idx < 0) return { result: 'error', error: '還沒發行' };
+  if (idx >= c.n - 1) return { result: 'error', error: '這種紀念幣停止交易了' };
+  var e = coinBar(c, idx).c, fee = Math.ceil(m * lev * COIN_OPEN_FEE);
+  if (p.money < m + fee) return { result: 'error', error: '錢包不夠（保證金＋開倉費 $' + (m + fee).toLocaleString() + '）' };
+  var liq = Math.round(e * (dir === 'up' ? 1 - 1 / lev : 1 + 1 / lev) * 10000) / 10000;
+  var id = 'P' + Utilities.getUuid().replace(/-/g, '').slice(0, 7).toUpperCase();
+  st.p.push({ id: id, key: c.key, dir: dir, lev: lev, m: m, e: e, liq: liq, at: idx, chk: idx, t: now, f: fee });
+  p.money -= m + fee; st.fee += fee;
+  coinSave(p);
+  coinLog(g.lineId, c.key, 'open', dir, lev, '', coinPx(c, e), m, fee, 0, p.money);
+  return coinReply(p, now, { done: 'open', id: id, key: c.key, dir: dir, lev: lev, m: m, fee: fee, price: coinPx(c, e), liq: coinPx(c, liq) });
+}
+
+// 合約平倉：{ type: 'coinClose', id }（在 LOCKED_TYPES）。用現在的價格，沒有手續費。先檢查爆倉，爆了就沒得平
+function coinClose(input) {
+  var g = coinGuard(input);
+  if (g.error) return g.error;
+  var now = stockNow().getTime(), p = coinFresh(g.lineId, now), st = p.coin;
+  var pos = st.p.filter(function (x) { return x.id === String(input.id || ''); })[0];
+  if (!pos) {
+    var boomed = st.notes.some(function (n) { return n.kind === 'boom' && n.t && String(input.id || '') && n.id === String(input.id); });
+    return coinReply(p, now, { result: 'error', error: boomed ? '來不及了，已經爆倉' : '找不到這張單（可能已經爆倉了）' });
+  }
+  var c = coinOf(pos.key), price = coinBar(c, coinIdx(c, now)).c, back = coinPosValue(pos, price), pl = back - pos.m;
+  st.p = st.p.filter(function (x) { return x !== pos; });
+  p.money = Math.min(WALLET_MAX, p.money + back); st.pl += pl;
+  coinSave(p);
+  coinLog(g.lineId, pos.key, 'close', pos.dir, pos.lev, '', coinPx(c, price), back, 0, pl, p.money);
+  return coinReply(p, now, { done: 'close', id: pos.id, key: pos.key, back: back, pl: pl, price: coinPx(c, price) });
+}
 
 // ===== 公告（2026-11-21）=====
 // 會員中心（member.html）的跑馬燈，只有一條（一開始放首頁，使用者說只放會員・我）。admin 後台設定（gaAnnounceSet），存在指令碼屬性 ANNOUNCE（JSON：text、at、until）。

@@ -69,6 +69,7 @@
 | `rank.html` | 排行・榜：打工・榜、花錢・榜、無盡・榜、身價・榜（小島接好後端才出現） | `docs/pages/rank.md` |
 | `baoxian.html` | 保險・存：儲蓄險（後端算） | `docs/pages/baoxian.md` |
 | `gushi.html` | 股市・炒：十檔（含三檔妖股）、晚報、掛單、國安基金號外（admin 後台叫進場） | `docs/pages/gushi.md` |
+| `coin.html` | 紀念幣・炒：五種二十七樓紀念幣（真實虛擬貨幣的歷史走勢，照真實時間播，每 15 分鐘一個價）、直接買、放大倍數（看漲看跌 2～100 倍、會爆）。價格檔 `assets/coin/` 是 GitHub Actions `coin-data` 產的（`tools/coin/`） | `docs/pages/coin.md` |
 | `yuncai.html` | 運動・押：押 TPVL 排球，彩池分錢 | `docs/pages/yuncai.md` |
 | `404.html` | 找不到頁面 | `docs/pages/404.md` |
 | `admin_login.html` | 後台登入 | `docs/pages/admin_login.md` |
