@@ -73,7 +73,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-26e';
+var BACKEND_VERSION = '2026-11-26f';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1 };
 
@@ -159,6 +159,7 @@ function route(type, input) {
     if (type === 'companyInject') return companyInject(input);
     if (type === 'companyCashOut') return companyCashOut(input);
     if (type === 'companyOvertime') return companyOvertime(input);
+    if (type === 'companyPay') return companyPay(input);
 
     if (type === 'ping') return { result: 'success', version: BACKEND_VERSION };   // 公開：只回版本
 
@@ -4231,7 +4232,7 @@ var COMPANY_STAGES = [
   { seats: 20, base: 42.7, cost: 3300000, inject: 900000 }
 ];
 var COMPANY_SAVE_MAX = 45000;     // 存檔最多幾個字（Sheet 一格最多五萬字）
-var COMPANY_OPS_PER_HOUR = 600;   // 一個玩家每小時最多幾次（手機大約 30 秒存一次）
+var COMPANY_OPS_PER_HOUR = 1200;  // 一個玩家每小時最多幾次（手機有改過就 5 秒內存一次、沒改每分鐘一次）
 var COMPANY_RATE_K = 3;           // 速度上限＝每人每分鐘基本價 × 3 分鐘案子的倍數 3.5 × 60 × 位子 × 這個（各種加成全開也到不了）
 var COMPANY_BANK_HOURS = 24;      // 沒用到的額度最多留幾小時（最長的案子 12 小時，回來一次收也放得下）
 var COMPANY_OT_K = 2;             // 加班費每 $1 給幾塊額度（加班做完的案子，淨賺最多大約是加班費的 1.7 倍）
@@ -4409,6 +4410,28 @@ function companyCashOut(input) {
   });
 }
 
+// 用錢包付的東西（簽約金、換一批應徵、訓練、設備、廣告）：{ save（已經把買到的東西放進去了）, rev, amount, what }
+// 跟存檔同一次做完：錢包扣錢、存檔（有新員工、新設備…）一起寫進去，不會「錢扣了、東西沒了」（2026-11-26 使用者：A 手機請了人，B 手機沒看到又請一次，錢扣兩份、人都不見）
+function companyPay(input) {
+  var g = companyGuard(input);
+  if (g.error) return g.error;
+  var amount = cleanMoney(input.amount, 1, WALLET_MAX);
+  if (amount === null) return { result: 'error', error: '金額不對' };
+  return withLock(function () {
+    var a = companyAccept(g.lineId, input);
+    if (a.fail) return a.fail;
+    var rec = a.rec, s = rec.data;
+    var p = findPlayer(g.lineId);
+    if (!p) return { result: 'unauthorized' };
+    if (p.money < amount) return { result: 'error', error: '錢包不夠' };
+    p.money -= amount; p.spent += amount;
+    s.paid = (s.paid || 0) + amount;
+    writeWallet(p);
+    writeSave(g.lineId, 'company', rec);
+    return companyOut(rec, { wallet: walletView(p), amount: amount });
+  });
+}
+
 // 加班費：錢包付那件案子的錢，案子馬上做完。{ save, rev, job: 案子 id }
 function companyOvertime(input) {
   var g = companyGuard(input);
@@ -4425,7 +4448,7 @@ function companyOvertime(input) {
     if (!p) return { result: 'unauthorized' };
     if (p.money < price) return { result: 'error', error: '錢包不夠' };
     p.money -= price; p.spent += price;
-    m.ot = (m.ot || 0) + price;
+    m.ot = (m.ot || 0) + price; s.paid = (s.paid || 0) + price;
     j.end = Date.now();
     writeWallet(p);
     writeSave(g.lineId, 'company', rec);
