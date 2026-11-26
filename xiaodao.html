@@ -28,7 +28,7 @@
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
-    <script src="assets/xiaodao-rules.js?v=20261126f"></script>
+    <script src="assets/xiaodao-rules.js?v=20261126h"></script>
     <script src="assets/xiaodao-draw.js?v=20261126g"></script>
     <script src="assets/xiaodao-fx.js?v=20261126f"></script>
     <script src="assets/xiaodao-room.js?v=20261122d"></script>
@@ -539,7 +539,7 @@
             $('dn').onclick = () => { const t = document.querySelector('.theme-toggle'); if (t) t.click(); else document.documentElement.classList.toggle('night'); };
             new MutationObserver(() => { dnLabel(); draw(); if (typeof roomOn !== 'undefined' && roomOn) renderRoom(); if (typeof doorOn !== 'undefined' && doorOn) renderDoor(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
             dnLabel();
-            if (PREVIEW) window.__xiaodao = { fx: () => fx, cam, tap: (wx, wy) => tapAt(wx, wy), room: () => ({ rio, rscale }) };   // 試玩時給測試用
+            if (PREVIEW) window.__xiaodao = { fx: () => fx, cam, tap: (wx, wy) => tapAt(wx, wy), room: () => ({ rio, rscale }), zoom: (s2, wx, wy) => { const r = cv.getBoundingClientRect(); cam.s = s2; cam.x = wx - r.width / 2 / s2; cam.y = wy - r.height / 2 / s2; clampCam(); draw(); } };   // 試玩時給測試用
             // 設施卡片的「出去一趟」
             const TRIP = { garage: '開一台出去兜風', dock: '開一艘出海繞一圈', airfield: '飛一架起來', launchpad: '發射' };
             function goTrip(k) { closeCard(); if (!fx || !fx.trip(k)) { showToast(k === 'dock' ? '船開不出去（碼頭外面不是海）' : '現在沒有空著的可以出去'); return; } nextFrame(); }
@@ -1263,7 +1263,7 @@
             size();
             new ResizeObserver(() => { if (size()) { if (world) { if (zoomed()) { clampCam(); draw(); } else fit(); } } }).observe(view);
             renderTop();
-            D.load('assets/xiaodao/', '20261126h').then(() => setTimeout(() => rebuild(true), 30));
+            D.load('assets/xiaodao/', '20261126k').then(() => setTimeout(() => rebuild(true), 30));
             roomLoaded = Promise.all([RM.load('assets/xiaodao/', '20261122a', '20261122a'), RI.load('assets/xiaodao/', '20261122a')]);   // 家具的圖先載好（商店、倉庫的小圖要用）
             roomLoaded.then(() => { if ($('sheet').classList.contains('on')) renderSheet(); if (roomOn) renderRoom(); });
         }

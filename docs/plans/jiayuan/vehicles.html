@@ -154,22 +154,109 @@ function body(x, a, b, w, h, [c, hi, lo], round = 1) {
 }
 const SH = (x, a, b, w, h) => R(x, a + 3, b + 3, w, h, K.shadow);
 
+// ===== 2026-11-26 載具審稿第一批：腳踏車、機車重畫 =====
+// 車頭朝下（朝車道）。影子照車子本身的形狀往右下偏 2 顆（不是一塊方塊）；輪胎不用近黑；腳踏車有曲柄和踏板、機車有後照鏡和分段的車身；光從左上（左亮右暗）
+// 比例：轎車 28 顆 ≈ 4.6 公尺（1 公尺 ≈ 6 顆），兩輪車整體放大約 1.4 倍（不然手機上看不到），車子裡面的比例照真的量（腳踏車輪徑約全長 40%、機車龍頭 6～8 顆）
+const TIRE = '#3d4246', TIRE_HI = '#5a5f63', METAL = '#8e9396', CHROME = '#cfd6d9', DARK = '#4a4d50';
+function shaped(fn) {   // 先畫在另一張畫布，再照它的形狀塗影子（往右下 2 顆），最後把車子疊上去
+  return (x, a, b) => {
+    const W = x.canvas.width, H = x.canvas.height, c = document.createElement('canvas'); c.width = W; c.height = H; const y = c.getContext('2d'); y.imageSmoothingEnabled = false; fn(y, a, b);
+    const sh = document.createElement('canvas'); sh.width = W; sh.height = H; const z = sh.getContext('2d'); z.drawImage(c, 0, 0); z.globalCompositeOperation = 'source-in'; z.fillStyle = 'rgba(30,40,30,.24)'; z.fillRect(0, 0, W, H);
+    x.drawImage(sh, 2, 2); x.drawImage(c, 0, 0);
+  };
+}
+function wheel(x, cx, top, len, w = 1, knob = false) {   // 從上面看的輪胎：一條；寬的左邊亮一階，越野胎一顆一顆交錯
+  for (let j = 0; j < len; j++) for (let i = 0; i < w; i++) { const u = cx - (w >> 1) + i; P(x, u, top + j, knob ? ((i + j) % 2 ? '#4a4f53' : TIRE) : (w > 1 && i === 0 ? TIRE_HI : TIRE)); }
+}
+function pedals(x, cx, v) { R(x, cx - 1, v, 3, 1, METAL); P(x, cx + 1, v, CHROME); P(x, cx - 2, v - 1, DARK); P(x, cx + 2, v + 1, DARK); }   // 曲柄＋踏板（第二輪：比龍頭窄，兩顆踏板前後錯開＝曲柄差 180 度）
+
 // ---- 腳踏車 ----
 const BIKES = [
-  ['淑女車', '前面有籃子', (x, a, b) => { SH(x, a + 1, b, 3, 16); tires(x, [[a + 2, b, 1, 4], [a + 2, b + 12, 1, 4]]); R(x, a + 2, b + 3, 1, 9, '#e9dcb8'); R(x, a + 1, b + 4, 3, 2, '#7a4a32'); R(x, a, b + 11, 5, 1, '#8e9293'); R(x, a, b + 13, 5, 4, '#a07a50'); R(x, a + 1, b + 14, 3, 2, '#c99b6a'); }],
-  ['公路車', '彎把、很細', (x, a, b) => { SH(x, a + 1, b, 3, 16); tires(x, [[a + 2, b, 1, 4], [a + 2, b + 12, 1, 4]]); R(x, a + 2, b + 3, 1, 9, '#c0392b'); R(x, a + 2, b + 4, 1, 2, '#2a2a2a'); R(x, a, b + 11, 5, 1, '#2a2a2a'); P(x, a, b + 12, '#2a2a2a'); P(x, a + 4, b + 12, '#2a2a2a'); }],
-  ['登山車', '粗輪胎、平把', (x, a, b) => { SH(x, a, b, 5, 16); tires(x, [[a + 1, b, 3, 4], [a + 1, b + 12, 3, 4]]); R(x, a + 2, b + 3, 1, 9, '#5d7f5a'); R(x, a + 1, b + 4, 3, 2, '#2a2a2a'); R(x, a - 1, b + 11, 7, 1, '#2a2a2a'); P(x, a - 1, b + 10, '#c94f3d'); P(x, a + 5, b + 10, '#c94f3d'); }],
-  ['小摺', '輪子小小的', (x, a, b) => { SH(x, a + 1, b + 2, 3, 12); tires(x, [[a + 2, b + 2, 1, 3], [a + 2, b + 11, 1, 3]]); R(x, a + 2, b + 4, 1, 7, '#e2a62e'); R(x, a + 1, b + 5, 3, 2, '#2a2a2a'); R(x, a + 1, b + 10, 3, 1, '#8e9293'); }],
-  ['協力車', '兩個人一起騎', (x, a, b) => { SH(x, a + 1, b - 4, 3, 24); tires(x, [[a + 2, b - 4, 1, 4], [a + 2, b + 16, 1, 4]]); R(x, a + 2, b - 1, 1, 17, '#4f7393'); R(x, a + 1, b + 1, 3, 2, '#2a2a2a'); R(x, a + 1, b + 9, 3, 2, '#2a2a2a'); R(x, a, b + 7, 5, 1, '#8e9293'); R(x, a, b + 15, 5, 1, '#8e9293'); }],
+  ['淑女車', '前面有籃子', shaped((x, a, b) => { const cx = a + 2;
+    wheel(x, cx, b, 7); wheel(x, cx, b + 11, 7);
+    R(x, cx - 1, b + 1, 3, 3, METAL); P(x, cx, b + 2, CHROME); R(x, cx - 1, b + 1, 3, 1, CHROME);   // 後貨架
+    R(x, cx, b + 4, 1, 9, '#f0b8b0'); P(x, cx, b + 7, '#f6d2cc');   // 淡粉車架
+    R(x, cx - 1, b + 4, 3, 2, '#7a4a32'); P(x, cx - 1, b + 4, '#9a6448');   // 寬座墊
+    pedals(x, cx, b + 7);   // 第三輪：往車尾挪一排，不要貼著龍頭
+    P(x, cx - 2, b + 10, METAL); P(x, cx + 2, b + 10, METAL); R(x, cx - 1, b + 11, 3, 1, METAL); P(x, cx - 2, b + 10, DARK); P(x, cx + 2, b + 10, DARK);   // 往騎士那邊彎的把手
+    for (let j = 0; j < 3; j++) for (let i = 0; i < 5; i++) P(x, cx - 2 + i, b + 12 + j, j === 0 ? '#e0c48a' : (i + j) % 2 ? '#a8844e' : '#c9a46a');   // 編織籃子（前輪從下面露出來）
+  })],
+  ['公路車', '彎把、很細', shaped((x, a, b) => { const cx = a + 2;
+    wheel(x, cx, b, 7); wheel(x, cx, b + 11, 7);
+    R(x, cx, b + 4, 1, 9, '#b33a2f'); P(x, cx, b + 6, '#cf5a46'); P(x, cx, b + 10, '#8f2c23');
+    R(x, cx - 1, b + 4, 3, 1, DARK); P(x, cx, b + 5, DARK); P(x, cx - 1, b + 4, '#6f767b');   // 窄座墊（前面尖）
+    pedals(x, cx, b + 8);
+    R(x, cx - 1, b + 12, 3, 1, DARK); P(x, cx - 2, b + 13, DARK); P(x, cx + 2, b + 13, DARK);   // 彎把：窄、往前勾
+  })],
+  ['登山車', '粗輪胎、平把', shaped((x, a, b) => { const cx = a + 2;
+    wheel(x, cx, b, 6, 3, true); wheel(x, cx, b + 12, 7, 3, true);
+    R(x, cx, b + 6, 1, 7, '#e8873a'); P(x, cx, b + 6, '#f2a65e'); P(x, cx, b + 11, '#c4682a'); P(x, cx - 1, b + 10, '#e8873a'); P(x, cx + 1, b + 10, '#c4682a'); P(x, cx - 1, b + 6, '#f2a65e'); P(x, cx + 1, b + 6, '#c4682a');   // 橘車架（座墊跟後輪中間露一顆；第二輪：下管、後上叉多露幾顆，橘色才不會被輪胎蓋過）
+    R(x, cx - 1, b + 7, 3, 1, DARK); P(x, cx, b + 8, DARK); P(x, cx - 1, b + 7, '#6f767b');   // 鞍形座墊
+    pedals(x, cx, b + 9);
+    R(x, cx - 3, b + 11, 7, 1, DARK); P(x, cx - 3, b + 11, '#8f2c23'); P(x, cx + 3, b + 11, '#8f2c23');   // 平把＋兩端握把
+    P(x, cx - 2, b + 12, '#e8c35a'); P(x, cx - 2, b + 13, '#e8c35a'); P(x, cx + 2, b + 12, '#c9a24a'); P(x, cx + 2, b + 13, '#c9a24a');   // 金色避震前叉
+  })],
+  ['小摺', '輪子小小的', shaped((x, a, b) => { const cx = a + 2;
+    wheel(x, cx, b + 2, 3); wheel(x, cx, b + 12, 3);
+    R(x, cx, b + 5, 1, 7, '#e8c35a'); P(x, cx, b + 8, CHROME);   // 黃車架＋銀色折疊關節
+    R(x, cx - 1, b + 5, 3, 1, DARK); P(x, cx - 1, b + 5, '#6f767b');
+    pedals(x, cx, b + 8);
+    R(x, cx - 2, b + 11, 5, 1, DARK); P(x, cx, b + 11, METAL);   // 龍頭（5 顆，看得出車頭）
+  })],
+  ['協力車', '兩個人一起騎', shaped((x, a, b) => { const cx = a + 2;
+    wheel(x, cx, b - 4, 7); wheel(x, cx, b + 15, 7);
+    R(x, cx, b, 1, 16, '#4f7393'); P(x, cx, b + 6, '#7396b5'); P(x, cx, b + 13, '#3a5a75');
+    R(x, cx - 1, b, 3, 2, '#7a4a32'); P(x, cx - 1, b, '#9a6448');   // 後座（咖啡色）
+    pedals(x, cx, b + 3);
+    R(x, cx - 1, b + 5, 3, 1, METAL);   // 後座的把手（窄一點）
+    R(x, cx - 1, b + 7, 3, 2, '#b33a2f'); P(x, cx - 1, b + 7, '#cf5a46');   // 前座（朱色，看得出兩個人）
+    pedals(x, cx, b + 10);
+    R(x, cx - 2, b + 13, 5, 1, DARK); P(x, cx - 2, b + 13, METAL); P(x, cx + 2, b + 13, METAL);
+  })],
 ];
 
 // ---- 機車 ----
+// 分段（車頭朝下）：後輪 → 圓車尾＋尾燈 → 座墊 → 平的腳踏板 → 前擋板（往前變窄）→ 龍頭＋兩面後照鏡 → 頭燈 → 前輪；右邊一條暗邊
+function scooter(x, a, b, o) {
+  const cx = a + 3, [c, hi, lo] = o.col;
+  wheel(x, cx, b, 3, 3); wheel(x, cx, b + 15, 3, 3);
+  if (o.exhaust) { R(x, cx + 3, b + 1, 1, 5, CHROME); P(x, cx + 3, b + 1, TIRE_HI); }   // 排氣管（右後方）
+  const rows = o.rows || [3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 3];   // 從車尾 b+1 往車頭每一排的寬度
+  rows.forEach((w, j) => { const v = b + 1 + j, l = cx - (w >> 1); R(x, l, v, w, 1, c); P(x, l, v, hi); P(x, l + w - 1, v, lo); });
+  R(x, cx - 1, b + 1, 3, 1, o.tail || '#b33a2f'); if (o.tailWide) R(x, cx - 2, b + 1, 5, 1, o.tail);   // 尾燈
+  R(x, cx - 1, b + 3, 3, 6, o.seat || DARK); P(x, cx - 1, b + 3, o.seatHi || '#6f767b');   // 座墊
+  R(x, cx - 1, b + 9, 3, o.foot || 3, o.footCol || METAL);   // 平的腳踏板
+  const hb = b + 12, hw = o.bar || 7, hl = cx - (hw >> 1);
+  R(x, hl, hb, hw, 1, METAL); P(x, hl, hb, DARK); P(x, hl + hw - 1, hb, DARK);   // 龍頭＋握把
+  [[hl - 1, -1], [hl + hw - 1, 1]].forEach(([u, s]) => { P(x, u + (s > 0 ? 1 : 0), hb - 1, METAL); R(x, u + (s > 0 ? 1 : -1), hb - 3, 2, 2, CHROME); P(x, u + (s > 0 ? 2 : -1), hb - 2, METAL); });   // 後照鏡：桿子＋2×2 圓鏡
+  if (o.led) R(x, cx - 1, b + 14, 3, 1, o.led); else P(x, cx, b + 14, '#f6e08a');   // 頭燈（在車殼上，不在輪子上）
+}
 const SCOOTERS = [
-  ['速克達', '白牌、每天騎', (x, a, b) => { SH(x, a + 1, b, 6, 15); tires(x, [[a + 2, b, 3, 3], [a + 2, b + 12, 3, 3]]); R(x, a + 1, b + 2, 5, 10, '#ece9e2'); R(x, a + 1, b + 2, 1, 10, '#fff'); R(x, a + 2, b + 4, 3, 4, '#3d3d3d'); R(x, a - 1, b + 10, 9, 1, '#5a5a5a'); P(x, a + 3, b + 14, '#f6e08a'); }],
-  ['偉士牌風', '圓屁股、鍍鉻', (x, a, b) => { SH(x, a, b, 8, 15); tires(x, [[a + 3, b, 2, 3], [a + 3, b + 12, 2, 3]]); R(x, a, b + 2, 8, 6, '#8fc4b3'); R(x, a + 1, b + 1, 6, 1, '#8fc4b3'); R(x, a + 2, b + 8, 4, 5, '#8fc4b3'); R(x, a + 1, b + 2, 1, 5, '#b4dccf'); R(x, a + 2, b + 3, 4, 4, '#7a4a32'); R(x, a, b + 11, 8, 1, '#cfd6d9'); P(x, a, b + 10, '#e8eef0'); P(x, a + 7, b + 10, '#e8eef0'); circ(x, a + 4, b + 13, 1, '#f6e08a'); }],
-  ['外送機車', '後面一個大箱子', (x, a, b) => { SH(x, a + 1, b - 4, 7, 19); tires(x, [[a + 2, b, 3, 3], [a + 2, b + 12, 3, 3]]); R(x, a + 1, b + 2, 5, 10, '#c0392b'); R(x, a + 2, b + 6, 3, 3, '#3d3d3d'); R(x, a - 1, b - 4, 9, 8, '#e8873a'); R(x, a - 1, b - 4, 9, 1, '#f4a964'); R(x, a - 1, b, 9, 1, '#c96d24'); R(x, a + 2, b - 2, 3, 2, '#fff'); R(x, a - 1, b + 10, 9, 1, '#5a5a5a'); }],
-  ['重機', '大油箱、排氣管', (x, a, b) => { SH(x, a, b, 8, 18); tires(x, [[a + 2, b, 3, 4], [a + 2, b + 14, 3, 4]]); R(x, a + 1, b + 3, 5, 12, '#2c2c2c'); R(x, a + 1, b + 9, 5, 4, '#3f3f3f'); R(x, a + 2, b + 10, 2, 1, '#6a6a6a'); R(x, a + 2, b + 4, 3, 4, '#1e1e1e'); R(x, a + 6, b + 2, 1, 8, '#cfd6d9'); R(x, a - 2, b + 14, 11, 1, '#5a5a5a'); P(x, a + 3, b + 17, '#f6e08a'); }],
-  ['電動機車', '安安靜靜', (x, a, b) => { SH(x, a + 1, b, 6, 15); tires(x, [[a + 2, b, 3, 3], [a + 2, b + 12, 3, 3]]); R(x, a + 1, b + 2, 5, 10, '#9aa3a8'); R(x, a + 1, b + 2, 1, 10, '#b8c0c4'); R(x, a + 2, b + 4, 3, 4, '#2c2c2c'); R(x, a + 1, b + 9, 5, 1, '#3fb4c4'); R(x, a - 1, b + 10, 9, 1, '#5a5a5a'); P(x, a + 3, b + 14, '#bfe9ef'); }],
+  ['速克達', '白牌、每天騎', shaped((x, a, b) => scooter(x, a, b, { col: ['#ece9e2', '#ffffff', '#c9c4b9'], exhaust: true }))],
+  ['偉士牌風', '圓屁股、鍍鉻', shaped((x, a, b) => { const cx = a + 3;
+    scooter(x, a, b, { col: ['#8fc4b3', '#b3dccd', '#6fa898'], rows: [5, 7, 7, 7, 7, 5, 3, 3, 3, 3, 7, 5, 5, 3], seat: '#7a4a32', seatHi: '#9a6448', footCol: CHROME, foot: 2, bar: 7 });
+    R(x, cx - 1, b + 14, 2, 1, '#8fc4b3'); R(x, cx - 1, b + 13, 2, 2, '#f6e08a'); P(x, cx - 1, b + 13, '#fff6c8');   // 前擋泥板＋圓頭燈
+    R(x, cx - 2, b, 5, 1, CHROME); P(x, cx - 2, b, '#ffffff');   // 後面的鍍鉻行李架（畫在後輪之後，不然被蓋住）
+  })],
+  ['外送機車', '後面一個大箱子', shaped((x, a, b) => { const cx = a + 3;
+    scooter(x, a, b, { col: ['#b33a2f', '#cf5a46', '#8f2c23'], exhaust: true });
+    R(x, cx - 3, b - 4, 7, 6, '#e8873a'); R(x, cx - 3, b - 4, 7, 1, '#f2a65e'); R(x, cx - 3, b - 4, 1, 6, '#f2a65e'); R(x, cx + 3, b - 4, 1, 6, '#c4682a');   // 外送箱 7×6
+    R(x, cx - 3, b - 2, 7, 1, '#c4682a'); R(x, cx, b - 4, 1, 2, DARK); R(x, cx - 1, b, 3, 1, '#ffffff');   // 蓋縫、綁帶（只在蓋子上）、白 logo 置中
+  })],
+  ['重機', '大油箱、排氣管', shaped((x, a, b) => { const cx = a + 3;
+    wheel(x, cx, b, 4, 5); wheel(x, cx, b + 16, 4, 3);   // 後輪比前輪寬
+    R(x, cx + 3, b + 1, 2, 7, CHROME); R(x, cx + 3, b + 1, 2, 1, TIRE_HI); P(x, cx + 4, b + 2, METAL);   // 排氣管 2 顆寬
+    R(x, cx - 1, b + 3, 3, 1, '#b33a2f');   // 尾燈
+    R(x, cx - 2, b + 4, 5, 3, DARK); R(x, cx - 1, b + 4, 3, 3, '#5a5f63'); P(x, cx - 1, b + 4, '#7d848a');   // 座墊
+    // 水滴形大油箱（第三輪：最寬的地方往前一排，原本像菱形）
+    [3, 5, 7, 7, 6, 4, 3].forEach((w, j) => { const l = cx - (w >> 1), v = b + 7 + j; R(x, l, v, w, 1, '#b33a2f'); P(x, l, v, '#cf5a46'); P(x, l + w - 1, v, '#8f2c23'); });   // 水滴形大油箱（全車最寬）
+    R(x, cx - 2, b + 10, 2, 2, '#cf5a46'); P(x, cx - 2, b + 10, '#f0a090');   // 油箱亮面
+    R(x, cx - 4, b + 14, 9, 1, METAL); P(x, cx - 4, b + 14, DARK); P(x, cx + 4, b + 14, DARK);   // 龍頭
+    R(x, cx - 6, b + 12, 2, 2, CHROME); P(x, cx - 5, b + 13, METAL); R(x, cx + 5, b + 12, 2, 2, CHROME); P(x, cx + 5, b + 13, METAL);   // 後照鏡
+    P(x, cx - 2, b + 15, CHROME); P(x, cx - 2, b + 16, CHROME); P(x, cx + 2, b + 15, METAL); P(x, cx + 2, b + 16, METAL);   // 前叉
+    R(x, cx - 1, b + 15, 3, 1, '#f6e08a');   // 頭燈
+  })],
+  ['電動機車', '安安靜靜', shaped((x, a, b) => scooter(x, a, b, { col: ['#9fc6d2', '#c6e0e7', '#86b2c0'], tail: '#3fb4c4', tailWide: true, led: '#bfe9ef', seat: '#5a5f63' }))],
 ];
 
 // ---- 轎車 ----
