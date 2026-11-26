@@ -43,6 +43,9 @@
         .boom span { font-family: 'Noto Sans TC', sans-serif; font-size: 11px; line-height: 1; letter-spacing: .05em; }
         .boom:active { transform: scale(.92); }
         .boom.off { opacity: .4; }
+        /* 收工鈕：達標或地上沒東西了才出現，左下角（跟「炸」對稱）；按了等鉤子收回來就結算 */
+        .quit { right: auto; left: 22px; background: #b33a2f; color: #fcfaf8; border-color: #b33a2f; }
+        .quit.wait { opacity: .6; }
         /* 監修中：整個畫布蓋起來 */
         .closed { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 2rem 1.5rem; text-align: center; background: rgb(var(--wabi-bg) / 0.86); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
         .closed-stamp { font-size: 1.9rem; letter-spacing: 0.25em; padding: 0.35rem 0.4rem 0.35rem 0.65rem; color: rgb(var(--wabi-shu)); border: 3px double rgb(var(--wabi-shu)); transform: rotate(-6deg); }
@@ -109,6 +112,7 @@
             <div class="relative">
                 <canvas id="cv" aria-label="礦坑・挖：鉤子左右擺，點一下放出去"></canvas>
                 <button type="button" id="boom" class="boom off" aria-label="丟炸藥"><b>炸</b><span id="boomN">×0</span></button>
+                <button type="button" id="quit" class="boom quit" hidden aria-label="提早收工"><b>收</b><span id="quitN">收工</span></button>
                 <div id="mshop" class="mshop" hidden role="dialog" aria-label="礦坑商店">
                     <div class="flex items-baseline justify-between">
                         <p class="text-lg text-wabi-dark tracking-widest">礦坑商店</p>
@@ -152,7 +156,7 @@
                 <li>鉤子在浣熊大王下面左右擺，點畫面任何地方就朝那個方向放出去（電腦按 ↓ 或空白鍵）。</li>
                 <li>鉤到東西就往回拉，<b class="font-normal text-wabi-dark">越重拉越慢</b>：大金塊、大石頭都很花時間，空鉤收得最快。</li>
                 <li>拉到不想要的，按右下角<b class="font-normal text-wabi-shu">「炸」</b>（電腦按 ↑）：東西炸掉不算錢，鉤子快速收回。炸藥在礦坑商店買，福袋也會開到。</li>
-                <li>一共 <b class="font-normal text-wabi-dark">10 關</b>，每關 60 秒。「兩」跨關累積，時間到時累積到目標就過關；鉤上還在拉的不算。沒挖夠就重打那一關，兩回到那關開始時。</li>
+                <li>一共 <b class="font-normal text-wabi-dark">10 關</b>，每關 60 秒。「兩」跨關累積，時間到時累積到目標就過關；鉤上還在拉的不算。累積到目標、或地上只剩火藥桶和雞塊時，左下角會出現「收」，連按兩下、等鉤子拉上來就提早收工（工資一樣）；地上挖光了會自己收工。沒挖夠就重打那一關，兩回到那關開始時。</li>
                 <li>過關後進<b class="font-normal text-wabi-dark">礦坑商店</b>，用兩買下一關的東西：炸藥、大力丸（拉兩倍快）、御守（福袋開到好東西）、鑽石拋光劑（鑽石變 900）、石頭圖鑑（石頭值三倍）。買了會從兩扣掉。</li>
                 <li><b class="font-normal text-wabi-dark">福袋</b>開出隨機的兩、一根炸藥，或這一關力氣變大。<b class="font-normal text-wabi-shu">火藥桶</b>一鉤到就爆，旁邊的東西全炸光。<b class="font-normal text-wabi-dark">雞塊</b>長得像金塊，只值 2 兩。<b class="font-normal text-wabi-dark">店貓</b>叼著鑽石走來走去，抓到值 602 兩。</li>
                 <li>切去別的 App 會自動暫停；中途離開，下次打開從那一關重來（兩、炸藥回到那關開始時）。</li>
@@ -340,7 +344,7 @@
         }
         function resetLevel() {
           G.total = G.snap.total; G.dyn = G.snap.dyn; G.buff = Object.assign({}, G.snap.buff);
-          G.dynUsed = 0; G.power = !!G.buff.power; G.round = ROUND + val('sandglass'); G.t = G.round; G.items = makeMap(G.lv); G.lost = 0; G.pay = 0; G.haul = {}; G.levelStart = G.total;
+          G.dynUsed = 0; G.power = !!G.buff.power; G.round = ROUND + val('sandglass'); G.t = G.round; G.items = makeMap(G.lv); G.lost = 0; G.pay = 0; G.haul = {}; G.levelStart = G.total; G.quit = false; G.early = 0;
           Object.assign(G.hook, { st: 'swing', len: 22, item: null }); G.tug = 0; G.fx = []; G.pops = [];
           G.phase = 'title'; $('mshop').hidden = true;
           document.documentElement.classList.remove('kk-open'); syncBoom(); syncUI();
@@ -358,7 +362,23 @@
             return;
           }
           if (G.phase === 'clear') { if (G.clearT < 3.2) G.clearT = 3.2; else showCert(); return; }
-          if (G.phase === 'play' && G.hook.st === 'swing') G.hook.st = 'out';
+          if (G.phase === 'play' && G.hook.st === 'swing' && !G.quit) G.hook.st = 'out';
+        }
+        // 提早收工：累積到目標、或地上沒有能挖的了（只剩火藥桶、雞塊）才可以；鉤上還在拉的等它拉上來再結算，不會不算
+        const emptyMap = () => !G.items.some(o => o.k !== 'barrel' && o.k !== 'nugget');
+        const canQuit = () => G.phase === 'play' && (G.total >= TARGET[G.lv] || emptyMap());
+        let quitArm = -1e9;   // 點畫面放鉤時誤按到：第一下變「確定？」，3 秒內再按才收工
+        function quit() {
+          if (!canQuit() || G.quit) return;
+          if (performance.now() - quitArm > 3000) { quitArm = performance.now(); syncQuit(); setTimeout(syncQuit, 3050); return; }
+          quitArm = -1e9; G.quit = true; syncQuit();
+        }
+        function syncQuit() {
+          const on = !!G && canQuit();
+          $('quit').hidden = !on;
+          $('quit').classList.toggle('wait', !!(G && G.quit));
+          const armed = performance.now() - quitArm <= 3000;
+          $('quitN').textContent = G && G.quit ? '收回中' : armed ? '確定？' : '收工';
         }
         function boom() {
           const h = G.hook;
@@ -373,6 +393,7 @@
         }
         cv.addEventListener('pointerdown', e => { e.preventDefault(); if (!CLOSED) tap(); });
         $('boom').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); boom(); });
+        $('quit').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); quit(); });
         $('stage').addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('keydown', e => {
           if (CLOSED || G.phase === 'shop' || !$('shop').classList.contains('hidden')) return;
@@ -380,7 +401,7 @@
           else if (e.key === 'ArrowUp') { e.preventDefault(); boom(); }
         });
         // 切出去（LINE 回訊息、鎖螢幕）自動暫停
-        function autoPause() { if (G && G.phase === 'play') { G.phase = 'pause'; syncBoom(); draw(); } }
+        function autoPause() { if (G && G.phase === 'play') { G.phase = 'pause'; syncBoom(); syncQuit(); draw(); } }
         document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
         window.addEventListener('pagehide', autoPause);
         window.addEventListener('blur', autoPause);
@@ -444,6 +465,7 @@
           $('giveUp').classList.toggle('hidden', !(G && (G.phase === 'title' || G.phase === 'shop') && (G.lv > 1 || G.phase === 'shop')));
           if (G && G.phase === 'play') $('payNote').textContent = '';
           $('boom').style.visibility = G && G.phase === 'clear' ? 'hidden' : '';   // 結局的卡片會被「炸」蓋到
+          syncQuit();
           const r = G && G.report, show = !!r && (G.phase === 'end' || G.phase === 'shop' || G.phase === 'clear' || (G.phase === 'title' && !r.win && r.lv === G.lv));
           $('reportBtn').classList.toggle('hidden', !show);
           if (show) $('reportBtn').textContent = (SaveImg.inApp ? '存' : navigator.canShare ? '分享' : '下載') + `第 ${r.lv} 關的礦坑日報` + (SaveImg.inApp ? '圖片' : '');
@@ -569,10 +591,13 @@
             }
           }
           if (G.t <= 0) endLevel();
+          else if (h.st === 'swing' && (G.quit || emptyMap())) endLevel(true);   // 按了收工、或地上挖光了：鉤子收回來就結算
+          else if ($('quit').hidden === canQuit()) syncQuit();
         }
-        function endLevel() {
+        function endLevel(early) {
           if (G.phase !== 'play') return;
-          G.t = 0; const h = G.hook;
+          G.early = early ? Math.max(0, Math.ceil(G.t)) : 0; G.played = G.round - Math.max(0, G.t);
+          G.t = 0; G.quit = false; const h = G.hook;
           G.lost = h.item && h.item.k !== 'bag' ? cash(h.item).v : 0; h.item = null;   // 時間到還在拉的不算（福袋不開，免得白送炸藥）
           h.st = 'swing'; h.len = 22;
           G.phase = 'end'; G.endAt = performance.now(); G.win = G.total >= TARGET[G.lv];
@@ -601,7 +626,7 @@
             at: new Date().toISOString(), lv: r.lv, win: r.win, total: r.pay, gain: r.gain, liang: r.total, target: r.target, lost: r.lost,
             dyn_used: G.dynUsed || 0, dyn_left: G.dyn, items: Object.values(r.haul).reduce((t, v) => t + v, 0),
             buff: Object.keys(G.buff).map(k => BUFF[k]).join(','), haul: r.haul, shop: { ...upg.lv },
-            ms: G.round * 1000, len: G.round, final: r.win && r.lv >= LAST, login: !!(window.Line && Line.loggedIn),
+            ms: Math.round((G.played || G.round) * 1000), len: Math.round(G.played || G.round), early: G.early || 0, final: r.win && r.lv >= LAST, login: !!(window.Line && Line.loggedIn),
           });
           st.recent = st.recent.slice(0, 50);
           try { localStorage.setItem(STATS_KEY, JSON.stringify(st)); } catch (e) { }
@@ -991,7 +1016,8 @@
             txt(`累積 ${fmt(G.total)} 兩・目標 ${fmt(target)} 兩`, W / 2, 252, { size: 12.5, color: '#4a4a4a', align: 'center', ls: 1 });
             txt(G.win ? (G.lv >= LAST ? '十關都挖完了。' : '過關後可以進礦坑商店。') : `差 ${fmt(target - G.total)} 兩。兩回到這關開始時（${fmt(G.snap.total)} 兩）。`, W / 2, 280, { size: 11, color: '#8e8070', align: 'center' });
             if (G.lost) txt(`時間到時鉤上的 ${G.lost} 兩不算`, W / 2, 302, { size: 11, color: '#8e8070', align: 'center' });
-            if (G.pay) txt(`錢包 +$${G.pay.toLocaleString('en-US')}`, W / 2, G.lost ? 322 : 308, { size: 13, w: 500, color: '#b33a2f', align: 'center', ls: 1 });
+            else if (G.early) txt(`提早收工・還剩 ${G.early} 秒`, W / 2, 302, { size: 11, color: '#8e8070', align: 'center' });
+            if (G.pay) txt(`錢包 +$${G.pay.toLocaleString('en-US')}`, W / 2, G.lost || G.early ? 322 : 308, { size: 13, w: 500, color: '#b33a2f', align: 'center', ls: 1 });
             if (G.win) stamp(W / 2 + 78, 212, 40, '過', -0.15);
             txt(G.win ? (G.lv >= LAST ? '點一下看結局' : '點一下進商店') : `點一下重打第 ${G.lv} 關`, W / 2, 346, { size: 14, w: 500, color: '#b33a2f', align: 'center', ls: 3 });
           } else if (G.phase === 'clear') ending(G.clearT || 0);
