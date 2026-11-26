@@ -73,19 +73,27 @@
             x.fillStyle = paint(m, m.ink); x.fillText('丼', 0, -0.06);
             x.restore();
         },
-        // 茱莉鴨：側臉、扁嘴、眼睛、領結
+        // 茱莉鴨（跟網站的頭像一樣）：正面圓頭、寬扁嘴、半睜的死魚眼（上半蓋眼皮），脖子上一個領結，頭頂一撮毛
         c2(x, m, d) {
-            const head = () => { x.beginPath(); x.ellipse(-0.08, -0.12, 0.38, 0.36, 0, 0, Math.PI * 2); };
-            const bill = () => { x.beginPath(); x.moveTo(0.22, -0.12); x.quadraticCurveTo(0.62, -0.16, 0.6, -0.02); x.quadraticCurveTo(0.42, 0.06, 0.2, 0.02); x.closePath(); };
-            const neck = () => { x.beginPath(); x.moveTo(-0.32, 0.12); x.quadraticCurveTo(-0.3, 0.42, -0.1, 0.5); x.lineTo(0.12, 0.5); x.quadraticCurveTo(0.12, 0.3, 0.12, 0.14); x.closePath(); };
-            const bow = () => { x.beginPath(); x.moveTo(-0.02, 0.5); x.lineTo(-0.24, 0.4); x.lineTo(-0.24, 0.62); x.closePath(); x.moveTo(0.02, 0.5); x.lineTo(0.24, 0.4); x.lineTo(0.24, 0.62); x.closePath(); x.moveTo(0.06, 0.5); x.arc(0, 0.5, 0.06, 0, Math.PI * 2); };
-            emboss(x, m, d, neck, m.base);
+            const body = () => { x.beginPath(); x.ellipse(0, 0.66, 0.52, 0.3, 0, Math.PI, Math.PI * 2); x.closePath(); };
+            const head = () => { x.beginPath(); x.arc(0, -0.06, 0.42, 0, Math.PI * 2); };
+            const bill = () => { x.beginPath(); x.ellipse(0.04, 0.12, 0.25, 0.1, 0, 0, Math.PI * 2); };
+            const bow = () => { x.beginPath(); x.moveTo(-0.03, 0.46); x.lineTo(-0.26, 0.36); x.quadraticCurveTo(-0.3, 0.46, -0.26, 0.56); x.closePath(); x.moveTo(0.03, 0.46); x.lineTo(0.26, 0.36); x.quadraticCurveTo(0.3, 0.46, 0.26, 0.56); x.closePath(); x.moveTo(0.065, 0.46); x.arc(0, 0.46, 0.065, 0, Math.PI * 2); };
+            emboss(x, m, d, body, m.base);
             emboss(x, m, d, head, m.base);
+            embossStroke(x, m, d * 0.5, () => { x.beginPath(); x.moveTo(-0.02, -0.46); x.quadraticCurveTo(-0.06, -0.6, 0.06, -0.62); x.moveTo(0.04, -0.47); x.quadraticCurveTo(0.08, -0.58, 0.16, -0.56); }, 0.04, m.base);   // 頭頂一撮毛
+            // 死魚眼：白色的眼、眼珠在下面，上半蓋一片眼皮，眼皮邊一條平平的線
+            [[-0.15, -0.12], [0.2, -0.12]].forEach(([ex, ey]) => {
+                const eye = () => { x.beginPath(); x.ellipse(ex, ey, 0.095, 0.08, 0, 0, Math.PI * 2); };
+                emboss(x, m, d * 0.5, eye, mix(m.hi, '#ffffff', 0.4));
+                x.fillStyle = paint(m, m.ink); x.beginPath(); x.arc(ex + 0.025, ey + 0.025, 0.04, 0, Math.PI * 2); x.fill();
+                x.save(); eye(); x.clip(); x.fillStyle = paint(m, m.base); x.fillRect(ex - 0.1, ey - 0.09, 0.2, 0.085); x.restore();
+                x.strokeStyle = paint(m, m.ink); x.lineWidth = 0.028; x.lineCap = 'round';
+                x.beginPath(); x.moveTo(ex - 0.095, ey - 0.005); x.lineTo(ex + 0.095, ey - 0.005); x.stroke();
+            });
             emboss(x, m, d, bill, m.ink);
+            x.strokeStyle = mix(m.ink, '#000000', 0.3); x.lineWidth = 0.02; x.beginPath(); x.moveTo(-0.17, 0.14); x.quadraticCurveTo(0.04, 0.17, 0.25, 0.14); x.stroke();   // 嘴縫
             emboss(x, m, d, bow, m.ink);
-            x.fillStyle = m.ink; x.beginPath(); x.arc(0.06, -0.2, 0.055, 0, Math.PI * 2); x.fill();
-            x.fillStyle = m.hi; x.beginPath(); x.arc(0.04, -0.22, 0.018, 0, Math.PI * 2); x.fill();
-            embossStroke(x, m, d * 0.6, () => { x.beginPath(); x.moveTo(-0.3, -0.42); x.quadraticCurveTo(-0.22, -0.6, -0.08, -0.5); }, 0.05, m.ink);   // 一撮毛
         },
         // 浣熊大王：正臉、圓耳、橫過眼睛的黑眼罩、白眉、白嘴鼻、黑鼻子，頭上一頂三顆寶石的皇冠
         c3(x, m, d) {
