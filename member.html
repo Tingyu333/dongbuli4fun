@@ -359,8 +359,9 @@
             stack: e => `疊了 ${e.times} 場，賺 ${fmt(e.total)}（最多一場 ${fmt(e.best)}）`,
             mine: e => `挖了 ${e.times} 關，賺 ${fmt(e.total)}（最多一關 ${fmt(e.best)}）`,
             wish: e => `許了 ${e.times} 天的願，${fmt(e.total)}`,
+            company: e => `從公司帳戶轉進錢包 ${e.times} 次，${fmt(e.total)}`,
         };
-        const LABELS = { xitou: '坐洗部', clean: '房務部', scratch: '彩券行', bonus: '主人紅包', caishen: '財神燈', insure: '丼步喱人壽', farm: '菜園部', wifi: '蹭網部', zaocan: '早餐店', ship: '長蘿貨運', dessert: '甜點店', stack: '疊巢部', mine: '礦坑部', wish: '許願池' };
+        const LABELS = { xitou: '坐洗部', clean: '房務部', scratch: '彩券行', bonus: '主人紅包', caishen: '財神燈', insure: '丼步喱人壽', farm: '菜園部', wifi: '蹭網部', zaocan: '早餐店', ship: '長蘿貨運', dessert: '甜點店', stack: '疊巢部', mine: '礦坑部', wish: '許願池', company: '公司・開' };
 
         function renderWho() {
             const box = $('who');
@@ -398,9 +399,14 @@
             const shopSpent = Wallet.shop.spent;
             const gd = Wallet.gongde, tier = Gongde.tierOf(gd.donated);
             const parts = [[shopSpent, '店面升級'], [gd.donated, '捐香油錢'], [gd.lit, '點燈']].filter(x => x[0] > 0);
+            // 公司・開（2026-11-26）：用錢包付的（簽約金、設備、加班費…）不算刮刮樂；增資是把錢搬進公司，不算花掉，另外寫一行。數字是公司頁存在這支手機的
+            let co = null;
+            try { const c = JSON.parse(localStorage.getItem('dongbuli-company-ledger') || 'null'); const who = (localStorage.getItem('dongbuli-session') || '').slice(0, 8); co = Line.loggedIn && c && c.who === who ? c : null; } catch (e) { }
+            if (co && co.paid > 0) parts.push([Math.min(co.paid, Math.max(0, w.spent - parts.reduce((t, x) => t + x[0], 0))), '公司']);
             const scratchSpent = Math.max(0, w.spent - parts.reduce((t, x) => t + x[0], 0));
             if (scratchSpent) parts.push([scratchSpent, '刮刮樂']);
             if (w.spent) rows.push(`<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">花掉</dt><dd class="flex-1">${fmt(w.spent)}${parts.length > 1 ? `（${parts.map(x => `${x[1]} ${fmt(x[0])}`).join('、')}）` : parts.length ? `（都拿去${parts[0][1]}了）` : ''}</dd></div>`);
+            if (co && co.inj > 0) rows.push(`<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">增資</dt><dd class="flex-1">從錢包搬進公司帳戶 ${fmt(co.inj)}（不算花掉，錢在${esc(co.name || '公司')}）</dd></div>`);
             if (gd.donated || Gongde.lit(gd).length) rows.push(`<div class="flex gap-3"><dt class="w-16 shrink-0 text-stone-400">功德</dt><dd class="flex-1">${tier.name}${tier.q ? `，永久加持 ${Math.round(tier.q * 100)}%` : ''}${Gongde.lit(gd).map(l => `，${l.name} ${l.unit === 'money' ? fmt(l.oilLeft) : l.oilLeft + ' ' + l.unit}`).join('')}</dd></div>`);
             // 股市：損益不算進錢包的帳，股市頁最後一次看到的存在這支手機
             let gs = null;

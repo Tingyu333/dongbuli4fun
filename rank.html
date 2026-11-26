@@ -482,7 +482,7 @@
         }
         // 花錢榜：每一類多少錢、小字寫什麼
         const CATS = {
-            all: { note: '花掉的錢加起來：刮刮樂、捐香油錢、點燈、升級洗頭店、菜園和早餐店。', empty: '還沒有人花錢。<br>錢放著不會變多。' },
+            all: { note: '花掉的錢加起來：刮刮樂、捐香油錢、點燈、打工店的升級、公司・開用錢包付的。', empty: '還沒有人花錢。<br>錢放著不會變多。' },
             scratch: { note: '買刮刮樂花掉的（小字是刮中拿回來的，含財神加碼）。', empty: '還沒有人買刮刮樂。' },
             gongde: { note: '捐香油錢加點燈。神明都有記下來。', empty: '還沒有人做功德。' },
             shop: { note: '坐洗部的店面、菜園的農具、早餐店的設備升級花掉的。', empty: '還沒有人升級。' },
@@ -491,7 +491,7 @@
             const s = p.spend;
             if (!s) return null;
             if (cat === 'all') {
-                const parts = [[s.scratch, '刮刮樂'], [s.donate + s.lamp, '功德'], [s.shop, '升級']].filter(x => x[0] > 0).sort((a, b) => b[0] - a[0]);
+                const parts = [[s.scratch, '刮刮樂'], [s.donate + s.lamp, '功德'], [s.shop, '升級'], [s.company || 0, '公司']].filter(x => x[0] > 0).sort((a, b) => b[0] - a[0]);
                 return s.total ? { v: s.total, main: fmt(s.total), sub: parts.map(x => `${x[1]} ${fmt(x[0])}`).join('・') } : null;
             }
             if (cat === 'scratch') {

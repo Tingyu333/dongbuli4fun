@@ -73,7 +73,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-26d';
+var BACKEND_VERSION = '2026-11-26e';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1 };
 
@@ -1651,15 +1651,15 @@ function buildBoard() {
     try { gd = JSON.parse(rows[i][8] || '{}') || {}; } catch (e) { }
     try { shop = JSON.parse(rows[i][9] || '{}') || {}; } catch (e) { }
     var num = function (v) { v = Number(v); return isFinite(v) && v > 0 ? Math.round(v) : 0; };
-    var sp = { total: num(rows[i][5]), shop: num(shop.spent), donate: num(gd.donated), lamp: num(gd.lit) };
-    sp.scratch = Math.max(0, sp.total - sp.shop - sp.donate - sp.lamp);
+    var sp = { total: num(rows[i][5]), shop: num(shop.spent), donate: num(gd.donated), lamp: num(gd.lit), company: co ? co.paid : 0 };
+    sp.scratch = Math.max(0, sp.total - sp.shop - sp.donate - sp.lamp - sp.company);   // 公司用錢包付的（簽約金、設備、加班費…，存檔的 paid）不算刮刮樂（2026-11-26）
     sp.won = num((earned.scratch || {}).total) + num((earned.caishen || {}).total);  // 刮中的（含財神加碼）
     if (!x.n && !c.n && !fm.n && !wf.n && !zc.n && !sh.n && !ds.n && !sk.n && !mn.n && x.best == null && c.best == null && !sp.total && !co) continue;
     // 有暱稱、指定頭像就用它，沒有才用 LINE 的
     var nick = String(rows[i][12] || '').replace(/^'/, '').trim().slice(0, 12), avatar = String(rows[i][13] || '');
     if (AVATAR_KEYS.indexOf(avatar) < 0) avatar = '';
     out.push({ id: id, name: nick || String(rows[i][2] || '旅人').slice(0, 20), avatar: avatar,
-      picture: !avatar && /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c, farm: fm, wifi: wf, zaocan: zc, ship: sh, dessert: ds, stack: sk, mine: mn, spend: sp, company: co });
+      picture: !avatar && /^https:\/\//.test(rows[i][3] || '') ? String(rows[i][3]) : '', xitou: x, clean: c, farm: fm, wifi: wf, zaocan: zc, ship: sh, dessert: ds, stack: sk, mine: mn, spend: sp, company: co ? { name: co.name, stage: co.stage, earned: co.earned, days: co.days, founder: co.founder } : null });
   }
   return { at: new Date().toISOString(), players: out };
 }
@@ -4306,7 +4306,7 @@ function companyGuard(input) {
 
 function companyOut(rec, extra) {
   var out = { result: 'success', save: rec ? rec.data : null, rev: rec ? rec.rev : 0, now: Date.now() };
-  if (rec && rec.meta) out.inject = { d: rec.meta.injD || '', amt: rec.meta.injAmt || 0 };
+  if (rec && rec.meta) { out.inject = { d: rec.meta.injD || '', amt: rec.meta.injAmt || 0 }; out.ledger = { inj: rec.meta.inj || 0, out: rec.meta.out || 0, ot: rec.meta.ot || 0 }; }   // ledger：會員中心錢包的帳用
   Object.keys(extra || {}).forEach(function (k) { out[k] = extra[k]; });
   return out;
 }
@@ -4435,6 +4435,9 @@ function companyOvertime(input) {
 
 // 公司・榜（2026-11-26）：Saves 裡每家公司的名字、現在第幾階、累計淨賺（J 欄，扣完薪水；增資、轉出不算，搬家花掉的照算）、開幾天了
 // 許願「創一家公司」的人（指令碼屬性 COMPANY_FOUNDER，LINE 代號）多一個 founder，排行榜寫「創始執行長」
+function companyPaid(json) {   // 存檔裡記的「用錢包付了多少」（花錢・榜拆開用，只影響怎麼分類）
+  try { var d = JSON.parse(json || '{}'); var n = Number(d && d.paid); return isFinite(n) && n > 0 ? Math.round(n) : 0; } catch (e) { return 0; }
+}
 function companyBoard() {
   var ss = SpreadsheetApp.getActiveSpreadsheet(), sheet = ss.getSheetByName('Saves'), out = {};
   if (!sheet || sheet.getLastRow() < 2) return out;
@@ -4445,7 +4448,7 @@ function companyBoard() {
     if (!id || String(r[2]) !== 'company' || !String(r[7] || '').trim()) return;
     var t = r[0] instanceof Date ? r[0].getTime() : Date.parse(r[0]);
     out[id] = { name: String(r[7]).replace(/^'/, '').slice(0, 24), stage: Math.max(0, Math.min(COMPANY_STAGES.length - 1, Number(r[8]) || 0)),
-      earned: Math.max(0, Math.round(Number(r[9]) || 0)), days: isFinite(t) ? Math.floor((now - t) / 864e5) + 1 : 1, founder: !!founder && id === founder };
+      earned: Math.max(0, Math.round(Number(r[9]) || 0)), days: isFinite(t) ? Math.floor((now - t) / 864e5) + 1 : 1, founder: !!founder && id === founder, paid: companyPaid(r[5]) };
   });
   return out;
 }

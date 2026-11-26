@@ -452,6 +452,14 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         series: {}, gifts: [], equip: {}, dex: { sp: {}, gen: {} }, hiredSp: [], last: null, today: { d: '', net: 0 }, inject: { d: '', amt: 0 }, lastSeen: 0, shift: 0, tut: 0, created: Date.now() });
     const wal = () => PREVIEW ? S.wallet : Wallet.money;   // 錢包：試玩是存檔裡的，正式是真的錢包
     const clone = o => JSON.parse(JSON.stringify(o));
+    // 會員中心「錢包的帳」用：這個帳號在公司的進出（增資、用錢包付的），存在這支手機（跟股市一樣）
+    function ledgerMirror(r) {
+        if (!LIVE || !S) return;
+        let who = ''; try { who = (localStorage.getItem('dongbuli-session') || '').slice(0, 8); } catch (e) { }
+        let old = {}; try { old = JSON.parse(localStorage.getItem('dongbuli-company-ledger') || '{}') || {}; } catch (e) { }
+        const L = r && r.ledger ? r.ledger : (old.who === who ? old : {});
+        try { localStorage.setItem('dongbuli-company-ledger', JSON.stringify({ who, inj: L.inj || 0, paid: S.paid || 0, name: S.name })); } catch (e) { }
+    }
 
     // ---------- 等後端的蓋板 ----------
     const BUSY = {
@@ -511,7 +519,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         pushing = (async () => {
             try {
                 const r = await Line.call({ type: 'companySave', save: clone(S), rev: base });
-                if (r.result === 'success') { if (rev === base) rev = r.rev; }
+                if (r.result === 'success') { if (rev === base) rev = r.rev; ledgerMirror(r); }
                 else if (MSG[r.result]) adoptServer(r, MSG[r.result]);
                 else if (r.result === 'unauthorized') loggedOut();
                 else { dirty = true; if (r.error) console.warn('存檔：', r.error); }
@@ -529,7 +537,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
             if (pushing) await pushing;
             await Wallet.settle();
             const r = await Line.call({ ...body, save: clone(S), rev });
-            if (r.result === 'success') { S = r.save; rev = r.rev; dirty = false; fixup(); if (r.wallet) Wallet.adopt(r.wallet); ok = r; }
+            if (r.result === 'success') { S = r.save; rev = r.rev; dirty = false; fixup(); if (r.price) S.paid = (S.paid || 0) + r.price; if (r.wallet) Wallet.adopt(r.wallet); ledgerMirror(r); ok = r; }
             else if (MSG[r.result]) { blocking = false; adoptServer(r, MSG[r.result]); }
             else if (r.result === 'unauthorized') { blocking = false; await Busy.hide(); loggedOut(); return null; }
             else msg = /不認得的請求/.test(r.error || '') ? '後端還是舊版，要重新部署「新版本」' : (r.error || '後端沒回應');
@@ -598,7 +606,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         });
     }
     function payWallet(n) {
-        if (!PREVIEW) { if (!Wallet.spend(n)) { toast('錢包不夠'); return false; } return true; }   // 正式：真的錢包（跟店面升級一樣，手機扣、再同步）
+        if (!PREVIEW) { if (!Wallet.spend(n)) { toast('錢包不夠'); return false; } S.paid = (S.paid || 0) + n; return true; }   // 正式：真的錢包（跟店面升級一樣，手機扣、再同步）；S.paid 記用錢包付了多少（會員中心的帳、花錢・榜分類用）
         if (S.wallet < n) { toast('試玩錢包不夠了（公司頁最下面可以加）'); return false; } S.wallet -= n; return true;
     }
 
@@ -1298,7 +1306,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         if (!r) { await Busy.hide(); return gateError('連不到後端，可能是網路不穩。'); }
         if (r.result === 'unauthorized') { await Busy.hide(); return gateLogin(); }
         if (r.result !== 'success') { await Busy.hide(); return gateError(/不認得的請求/.test(r.error || '') ? '後端還是舊版，<br>要在 Apps Script 重新部署「新版本」。' : esc(r.error || '後端沒回應')); }
-        S = r.save; rev = r.rev; founder = !!r.founder; fixup(); if (S && S.wallet !== undefined) delete S.wallet;
+        S = r.save; rev = r.rev; founder = !!r.founder; fixup(); if (S && S.wallet !== undefined) delete S.wallet; ledgerMirror(r);
         $('main').hidden = false;
         await Busy.hide();
         start();
