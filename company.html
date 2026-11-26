@@ -24,7 +24,7 @@
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
     <script src="assets/company-office.js?v=20261125c"></script>
-    <script src="assets/company-rules.js?v=20261125j"></script>
+    <script src="assets/company-rules.js?v=20261126m"></script>
     <style>
 :root { --ink: #26303a; --sub: #6a7884; --teal: #2f7d90; --sub2: #51606d; --paper: #f2f6f8; --bg2: #dfe3e6; }
 /* 毛玻璃介面（跟 docs/plans/company/ui.css 的樣張同一套） */
@@ -433,7 +433,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     // ---------- 頁面版本：手機拿到舊的公司頁就自己重新載入（2026-11-26 使用者：手機快取了舊頁面，請的員工重整就不見） ----------
     // 改了這一頁要把 PAGE_VER 和 assets/company-ver.txt 一起換新（同一個字串）。
     // 重新載入前先把存檔送出去；送不出去的也留在這支手機（dongbuli-company-live），重新打開會接著用，不會丟東西。
-    const PAGE_VER = '2026-11-26g';
+    const PAGE_VER = '2026-11-26m';
     async function freshPage() {   // 回 true：要重新載入了
         let v = '';
         try { v = (await fetch('assets/company-ver.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '')).trim(); } catch (e) { }
@@ -464,6 +464,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         if (S && S.staff) S.staff.forEach(s => { if (s.trial && s.done > 0) s.trial = false; });   // 試用期做完第一件就轉正
         if (S && S.staff && !S.dexInfo) { S.dexInfo = {}; S.staff.forEach(s => { const d = S.dexInfo[s.key] = S.dexInfo[s.key] || { first: S.created, done: 0, lv: 1 }; d.done += s.done; d.lv = Math.max(d.lv, s.lv); }); }   // 舊存檔：從現在的員工補
         if (S && !S.inject) S.inject = { d: '', amt: 0 };
+        if (S && S.staff) S.staff.forEach(R.fixMast);   // 熟練（2026-11-26）：舊存檔補上
     }
     let resetting = false;
     const LIVE_KEY = 'dongbuli-company-live';   // 正式：這支手機也留一份（還沒送到後端就重新整理、切走，下次打開接著用）
@@ -754,7 +755,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         const c = j.c;
         if (j.ok && c.seriesNo) {
             const team = j.team.map(staffById).filter(Boolean);
-            const step = team.some(s => s.special && s.key === 'mole') ? 2 : 1;
+            const step = R.top(team, 'mole') ? 3 : team.some(s => s.special && s.key === 'mole') ? 2 : 1;   // 鼴鼠：一件算兩件，Lv10 算三件
             S.series[c.client] = Math.min(5, Math.max(S.series[c.client] || 0, c.seriesNo - 1 + step));
             if (S.series[c.client] >= 5 && !S.gifts.includes(c.client)) { S.gifts.push(c.client); gift = c.client; }
         }
@@ -777,7 +778,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
               <div class="cta"><button class="main" id="xOk" style="flex:1">收下</button></div>`, { center: true });
         $('xClose').onclick = $('xOk').onclick = hide;
     };
-    const upsHtml = ups => ups.length ? `<div class="lvup">${ups.map(([id, lv, i]) => { const s = staffById(id); return s ? `<b>${esc(R.staffName(s))}升到 Lv.${lv}</b>${i >= 0 ? '：' + R.STATS[i][1] + ' +1' : ''}` : ''; }).join('<br>')}</div>` : '';
+    const upsHtml = ups => ups.length ? `<div class="lvup">${ups.map(([id, lv, i]) => { const s = staffById(id); return s ? `<b>${esc(R.staffName(s))}升到 Lv.${lv}</b>${i >= 0 ? '：' + R.STATS[i][1] + ' +1' : '：熟練 +1'}${s.special && lv >= R.MAX_LV ? '・本事進化（' + R.SPECIALS[s.key].lv10.replace('Lv10：', '') + '）' : ''}` : ''; }).join('<br>')}</div>` : '';
     const giftHtml = k => `<div class="skill" style="margin-top:10px"><b>拿到紀念品・${esc(R.CLIENTS[k].gift)}</b><br>${esc(R.CLIENTS[k].who)}的系列五件都做完了。之後他的案子多拿 5%。</div>`;
     function openReceipt(j) {
         const team = j.team.map(staffById).filter(Boolean), r = j.res, c = j.c;
@@ -870,21 +871,22 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     function openStaff(s) {
         const sp = s.special ? R.SPECIALS[s.key] : null, j = s.job ? S.jobs.find(x => x.id === s.job) : null;
         const say = sp ? R.pick(sp.say) : '「' + s.say + '」';
-        const need = R.expNeed(s.lv), tp = R.trainPrice(S.stage, s);
+        const need = R.expNeed(s.lv), tp = R.trainPrice(S.stage, s), full = s.st.every(v => v >= 5), mp = Math.round((s.mast || 0) * R.MAST_PAY * 100);
         show(`<div class="hd2"><h2>${esc(R.staffName(s))}</h2><button class="x" id="sClose">關</button></div>
             <div class="top" style="display:grid;grid-template-columns:76px 1fr;gap:12px;align-items:center">${avaHtml(spriteKey(s), 'ava" style="width:76px;height:76px;border-radius:16px')}<div class="bubble">${esc(say)}</div></div>
             <div style="margin-top:12px;font-size:10.5px;color:var(--sub)">Lv.${s.lv}・${s.special ? '特別人選 <span class="star"></span>' : s.trial ? '試用期' : '一般員工・' + R.COLORS[s.color]}</div>
             ${statsHtml(s)}
-            ${sp ? `<div class="skill"><b>本事・${sp.skill}</b>：${sp.skillText}</div>` : ''}
+            ${sp ? `<div class="skill"><b>本事・${sp.skill}</b>：${sp.skillText}<br><span style="color:${s.lv >= R.MAX_LV ? 'var(--teal)' : 'var(--sub)'}">${sp.lv10}${s.lv >= R.MAX_LV ? '（進化了）' : ''}</span></div>` : ''}
+            ${full ? `<div class="num" style="margin-top:10px;font-size:11.5px;line-height:1.7;color:var(--ink)"><b style="font-weight:500">熟練 ${s.mast || 0} 點</b>${s.mast ? `：一起做的案子多賺 ${mp}%、快 ${mp}%` : ''}<br><span style="color:var(--sub);font-size:10.5px">能力都滿了，之後每升一級加 1 點熟練</span></div>` : ''}
             <div class="kv num"><span>薪水抽 ${R.shares(s).toFixed(1).replace('.0', '')} 份（案子的三成照份數分）・做過 ${s.done} 件（做砸 ${s.failed} 件）</span></div>
             <div class="kv num"><span>經驗</span><b>${s.lv >= R.MAX_LV ? '滿級' : Math.floor(s.exp / need * 100) + '%・再做約 ' + Math.ceil(need - s.exp) + ' 件升 Lv.' + (s.lv + 1)}</b></div><div class="bar"><i style="width:${s.lv >= R.MAX_LV ? 100 : s.exp / need * 100}%"></i></div>
             ${j ? `<div class="kv num"><span>在做〈${esc(j.c.title)}〉・${R.clock((j.end - now()) / 1000)}</span></div>` : ''}
-            <div class="btns"><button class="num" id="sTrain" ${s.lv >= R.MAX_LV ? 'disabled' : ''}>訓練 ${R.fmt(tp)}<br><small style="font-size:9.5px;color:var(--sub)">錢包付</small></button><button class="warn" id="sFire" ${s.job ? 'disabled' : ''}>請他走</button></div>
+            <div class="btns"><button class="num" id="sTrain" ${s.lv >= R.MAX_LV ? 'disabled' : ''}>訓練 ${R.fmt(tp)}<br><small style="font-size:9.5px;color:var(--sub)">${s.lv >= R.MAX_LV ? '滿級了' : (full ? '熟練 +1' : '一項能力 +1') + (sp && s.lv + 1 >= R.MAX_LV ? '・本事進化' : '')}</small></button><button class="warn" id="sFire" ${s.job ? 'disabled' : ''}>請他走</button></div>
             <div class="kv" style="justify-content:flex-end;margin-top:6px"><span>${s.job ? '做事中不能請走' : '請走的話簽約金不退'}</span></div>`);
         $('sClose').onclick = hide;
         $('sTrain').onclick = async () => {
             const id = s.id;
-            if (!await pay(tp, 'train', () => { const x = staffById(id); x.exp = 0; x.lv++; dexNote(x).lv = Math.max(dexNote(x).lv, x.lv); const can = [0, 1, 2, 3].filter(i => x.st[i] < 5); if (can.length) x.st[R.pick(can)]++; }, '訓練好了')) return;
+            if (!await pay(tp, 'train', () => { const x = staffById(id); x.exp = 0; x.lv++; dexNote(x).lv = Math.max(dexNote(x).lv, x.lv); const can = [0, 1, 2, 3].filter(i => x.st[i] < 5); if (can.length) x.st[R.pick(can)]++; else x.mast = (x.mast || 0) + 1; }, '訓練好了')) return;
             const x = staffById(id); if (!x) return; toast(R.staffName(x) + '升到 Lv.' + x.lv); openStaff(x); render();
         };
         $('sFire').onclick = async () => { if (!await ask('請' + esc(R.staffName(s)) + '走？', '簽約金不退。', { ok: '請他走', warn: true })) return; S.staff = S.staff.filter(x => x !== s); if (s.special) S.hiredSp = S.hiredSp.filter(k => k !== s.key); save(); hide(); render(); toast(R.staffName(s) + '收拾東西走了'); };
@@ -1287,7 +1289,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
               <div class="kv num"><span>第一次來應徵</span><b>${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日</b></div>
               <div class="kv num"><span>做過的案子</span><b>${info ? info.done : 0} 件</b></div>
               <div class="kv num"><span>最高等級</span><b>Lv.${info ? info.lv : 1}</b></div>
-              ${sp ? `<div class="kv"><span>本事・${esc(R.SPECIALS[k].skill)}</span><b style="max-width:60%;text-align:right">${esc(R.SPECIALS[k].skillText)}</b></div>` : ''}
+              ${sp ? `<div class="kv"><span>本事・${esc(R.SPECIALS[k].skill)}</span><b style="max-width:60%;text-align:right">${esc(R.SPECIALS[k].skillText)}<br><span style="font-weight:400;color:var(--sub)">${esc(R.SPECIALS[k].lv10)}</span></b></div>` : ''}
               <div class="bubble" style="margin-top:12px">${esc(sp ? R.pick(R.SPECIALS[k].say) : '「' + R.pick(R.SPECIES[k].talk) + '」')}</div></div>`);
         $('dxClose').onclick = hide;
     }

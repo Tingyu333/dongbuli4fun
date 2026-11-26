@@ -23,15 +23,15 @@ window.CompanyRules = (() => {
   // ---------- 角色 ----------
   // 九位特殊角色：能力固定（加起來 14～15、有一項 5），一個專屬本事
   const SPECIALS = {
-    julie: { name: '茱莉鴨', st: [3, 5, 4, 3], skill: '細心', skillText: '有她在，成功機率 +15%；但偶爾睡著，那件慢一點', say: ['「這裡少一個句點。」', '「我沒有睡，我在閉眼檢查。」', '「下午兩點到四點不要吵我。」'] },
-    xiaowu: { name: '小吳鴨', st: [3, 4, 5, 2], skill: '研究控', skillText: '要求研究的案子快 20%', say: ['「這本書第 214 頁有寫。」', '「我把參考資料疊好了，請不要碰。」'] },
-    nugget: { name: '雞塊', st: [5, 3, 2, 4], skill: '不要沾醬', skillText: '早餐店系列的案子多拿兩成', say: ['「今天有人問我是不是早餐店的……我是設計師！只是剛好很香。」', '「研究我只有兩格……下次叫書很多的那位去吧。」'] },
-    apple: { name: '蘋果鴨', st: [4, 3, 2, 5], skill: '甜點外交', skillText: '結案時三成機會客人多給小費', say: ['「客人吃了蛋糕就什麼都好說。」', '「頭上的蘋果不能吃。」'] },
-    raccoon: { name: '浣熊大王', st: [2, 3, 4, 5], skill: '閃閃發光', skillText: '大案多拿 15%', say: ['「再閃一點。」', '「這枚金幣是借你看的。」'] },
-    captain: { name: '青江菜船長', st: [5, 3, 3, 4], skill: '跨夜航行', skillText: '8 小時、12 小時的跨夜案快 15%', say: ['「全員就位，準備出航。」', '「今天風向很適合交稿。」'] },
-    cat: { name: '店貓', st: [3, 4, 3, 5], skill: '招財', skillText: '結案多拿一成，但常常不在位子上', say: ['「……」（把筆推下桌）', '「喵。」（意思是：今天不加班）'] },
-    dog: { name: '坐洗部的狗', st: [4, 5, 2, 3], skill: '泡泡加量', skillText: '同一組的人做砸的機率少一成', say: ['「大家做得很好，泡泡加量！」', '「洗完頭再想，想法會比較乾淨。」'] },
-    mole: { name: '鼴鼠', st: [2, 4, 5, 3], skill: '挖到寶', skillText: '委託人系列做得比較快（一件算兩件）', say: ['「挖到了！是一個錯字。」', '「帽子我還在找。」'] },
+    julie: { name: '茱莉鴨', st: [3, 5, 4, 3], skill: '細心', skillText: '有她在，成功機率 +15%；但偶爾睡著，那件慢一點', lv10: 'Lv10：不會再睡著了', say: ['「這裡少一個句點。」', '「我沒有睡，我在閉眼檢查。」', '「下午兩點到四點不要吵我。」'] },
+    xiaowu: { name: '小吳鴨', st: [3, 4, 5, 2], skill: '研究控', skillText: '要求研究的案子快 20%', lv10: 'Lv10：研究案快 35%', say: ['「這本書第 214 頁有寫。」', '「我把參考資料疊好了，請不要碰。」'] },
+    nugget: { name: '雞塊', st: [5, 3, 2, 4], skill: '不要沾醬', skillText: '早餐店系列的案子多拿兩成', lv10: 'Lv10：早餐店系列多拿四成', say: ['「今天有人問我是不是早餐店的……我是設計師！只是剛好很香。」', '「研究我只有兩格……下次叫書很多的那位去吧。」'] },
+    apple: { name: '蘋果鴨', st: [4, 3, 2, 5], skill: '甜點外交', skillText: '結案時三成機會客人多給小費', lv10: 'Lv10：小費機會變五成', say: ['「客人吃了蛋糕就什麼都好說。」', '「頭上的蘋果不能吃。」'] },
+    raccoon: { name: '浣熊大王', st: [2, 3, 4, 5], skill: '閃閃發光', skillText: '大案多拿 15%', lv10: 'Lv10：大案多拿 30%', say: ['「再閃一點。」', '「這枚金幣是借你看的。」'] },
+    captain: { name: '青江菜船長', st: [5, 3, 3, 4], skill: '跨夜航行', skillText: '8 小時、12 小時的跨夜案快 15%', lv10: 'Lv10：跨夜案快 25%', say: ['「全員就位，準備出航。」', '「今天風向很適合交稿。」'] },
+    cat: { name: '店貓', st: [3, 4, 3, 5], skill: '招財', skillText: '結案多拿一成，但常常不在位子上', lv10: 'Lv10：招財變兩成', say: ['「……」（把筆推下桌）', '「喵。」（意思是：今天不加班）'] },
+    dog: { name: '坐洗部的狗', st: [4, 5, 2, 3], skill: '泡泡加量', skillText: '同一組的人做砸的機率少一成', lv10: 'Lv10：同組做砸的機率少兩成', say: ['「大家做得很好，泡泡加量！」', '「洗完頭再想，想法會比較乾淨。」'] },
+    mole: { name: '鼴鼠', st: [2, 4, 5, 3], skill: '挖到寶', skillText: '委託人系列做得比較快（一件算兩件）', lv10: 'Lv10：系列一件算三件', say: ['「挖到了！是一個錯字。」', '「帽子我還在找。」'] },
   };
   // 八種一般員工：名字、個性一句話
   const SPECIES = {
@@ -104,6 +104,13 @@ window.CompanyRules = (() => {
   const shares = s => (s.special ? 1.5 : 1) + (s.lv - 1) * .1;
   const expNeed = lv => 5 + lv * 5;          // Lv2→3 要 15
   const MAX_LV = 10;
+  // 熟練（2026-11-26，使用者選 A＋B＋C）：四項能力都滿了以後，升級改加「熟練」。同一組每 1 點熟練：案子多賺 3%、做得快 3%（最多快三成）
+  // Lv10 的特別人選本事變強（SPECIALS 的 lv10）
+  const MAST_PAY = .03, MAST_SPEED = .03;
+  const mastOf = team => team.reduce((a, s) => a + (s.mast || 0), 0);
+  const top = (team, k) => team.some(s => s.special && s.key === k && s.lv >= MAX_LV);   // 這組有 Lv10 的某位特別人選
+  // 舊存檔補熟練：特別人選一開始的能力是固定的，算得出有幾級沒加到能力；一般員工到 Lv10 剛好加滿，算 0
+  const fixMast = s => { if (s.mast != null) return; const full = s.st.every(v => v >= 5); s.mast = full && s.special && SPECIALS[s.key] ? Math.max(0, (s.lv - 1) - (20 - SPECIALS[s.key].st.reduce((a, b) => a + b, 0))) : 0; };
   function newStaff(key, special, r = Math.random) {
     if (special) return { id: 'p' + Date.now().toString(36) + Math.floor(r() * 1e4), key, special: true, lv: 1, exp: 0, st: SPECIALS[key].st.slice(), done: 0, failed: 0, color: 0 };
     const s = SPECIES[key], st = [1, 1, 1, 1]; let pts = 5 + Math.floor(r() * 3);   // 一般員工加起來 9～11
@@ -162,14 +169,15 @@ window.CompanyRules = (() => {
     let p = c.tutorial || c.easy ? 1 : .92 - .18 * short.reduce((a, b) => a + b, 0);   // easy：教學完第一批，新手保護、一定成功
     p += team.reduce((a, s) => a + (s.lv - 1) * .01, 0) / Math.max(1, team.length);
     if (team.some(s => s.special && s.key === 'julie')) p += .15;
-    if (team.some(s => s.special && s.key === 'dog')) p = 1 - (1 - p) * .9;
+    if (team.some(s => s.special && s.key === 'dog')) p = 1 - (1 - p) * (top(team, 'dog') ? .8 : .9);
     p = c.tutorial || c.easy ? 1 : Math.max(.1, Math.min(.98, p));
     let m = c.m;
     const spd = team.reduce((a, s) => a + s.st[0], 0) / Math.max(1, team.length);
     m *= 1.1 - .04 * spd;
-    if (team.some(s => s.special && s.key === 'xiaowu') && c.req.some(q => q[0] === 2)) m *= .8;
-    if (team.some(s => s.special && s.key === 'captain') && c.m >= 480) m *= .85;
-    const napper = team.some(s => s.special && s.key === 'julie');
+    if (team.some(s => s.special && s.key === 'xiaowu') && c.req.some(q => q[0] === 2)) m *= top(team, 'xiaowu') ? .65 : .8;
+    if (team.some(s => s.special && s.key === 'captain') && c.m >= 480) m *= top(team, 'captain') ? .75 : .85;
+    const mt = mastOf(team); if (mt) m *= Math.max(.7, 1 - MAST_SPEED * mt);
+    const napper = team.some(s => s.special && s.key === 'julie') && !top(team, 'julie');
     return { ok: short.every(x => x === 0), short, p, m: c.tutorial ? .05 : m, napper, who: c.req.map(([i, n]) => team.find(s => s.st[i] >= n)) };
   }
   // 幫我派：從閒著的人裡挑，先滿足條件、再挑能力高的
@@ -189,7 +197,7 @@ window.CompanyRules = (() => {
     const pl = plan(c, team, ctx);
     let m = pl.m; const napped = pl.napper && r() < .3; if (napped) m *= 1.1;
     const ok = r() < pl.p;
-    return { id: 'j' + now.toString(36) + (seq++), c, team: team.map(s => s.id), start: now, end: now + m * 60000, ok, great: ok && r() < (team.some(s => s.special && s.key === 'julie') ? .6 : .3), napped, p: pl.p, tip: team.some(s => s.special && s.key === 'apple') && r() < .3, bonus: 0 };
+    return { id: 'j' + now.toString(36) + (seq++), c, team: team.map(s => s.id), start: now, end: now + m * 60000, ok, great: ok && r() < (team.some(s => s.special && s.key === 'julie') ? .6 : .3), napped, p: pl.p, tip: team.some(s => s.special && s.key === 'apple') && r() < (top(team, 'apple') ? .5 : .3), bonus: 0 };
   }
   // 結案單
   function settle(job, team, ctx = {}) {
@@ -199,9 +207,10 @@ window.CompanyRules = (() => {
     const has = k => team.some(s => s.special && s.key === k);
     if (job.ok) {
       if (job.great) mods.push([team.some(s => s.special && s.key === 'julie') ? '做得好（茱莉鴨細心）' : '做得好', .1]);
-      if (has('nugget') && CLIENTS[c.client].breakfast) mods.push(['不要沾醬（雞塊）', .2]);
-      if (has('raccoon') && c.tag === 'big') mods.push(['閃閃發光（浣熊大王）', .15]);
-      if (has('cat')) mods.push(['招財（店貓）', .1]);
+      if (has('nugget') && CLIENTS[c.client].breakfast) mods.push(['不要沾醬（雞塊）', top(team, 'nugget') ? .4 : .2]);
+      if (has('raccoon') && c.tag === 'big') mods.push(['閃閃發光（浣熊大王）', top(team, 'raccoon') ? .3 : .15]);
+      if (has('cat')) mods.push(['招財（店貓）', top(team, 'cat') ? .2 : .1]);
+      const mt = mastOf(team); if (mt) mods.push(['熟練 ' + mt + ' 點', mt * MAST_PAY]);
       if (job.tip) mods.push(['客人給小費（蘋果鴨）', .1]);
       if (job.bonus) mods.push([job.betWon ? '突發狀況・賭贏了' : '突發狀況', job.bonus]);
       if (ctx.souvenir) mods.push(['紀念品（老客戶）', .05]);
@@ -218,7 +227,7 @@ window.CompanyRules = (() => {
   // 結案後員工拿經驗、升級（能力隨機一項 +1，最多 5）
   function gainExp(s, n, r = Math.random) {
     s.exp += n; const ups = [];
-    while (s.lv < MAX_LV && s.exp >= expNeed(s.lv)) { s.exp -= expNeed(s.lv); s.lv++; const can = [0, 1, 2, 3].filter(i => s.st[i] < 5); const i = can.length ? pick(can, r) : -1; if (i >= 0) s.st[i]++; ups.push([s.lv, i]); }
+    while (s.lv < MAX_LV && s.exp >= expNeed(s.lv)) { s.exp -= expNeed(s.lv); s.lv++; const can = [0, 1, 2, 3].filter(i => s.st[i] < 5); const i = can.length ? pick(can, r) : -1; if (i >= 0) s.st[i]++; else s.mast = (s.mast || 0) + 1; ups.push([s.lv, i]); }
     return ups;
   }
   const trainPrice = (stage, s) => STAGES[stage].train * s.lv;
@@ -226,5 +235,5 @@ window.CompanyRules = (() => {
   const incidentCost = (stage, k) => Math.round(STAGES[stage].base * 60 * 3 * k * 10) / 10 > 0 ? Math.max(100, Math.round(STAGES[stage].base * 60 * 3 * k / 10) * 10) : 100;
 
   return { STAGES, DURS, STATS, SPECIALS, SPECIES, COLORS, CLIENTS, INCIDENTS, EQUIP, EQUIP_BOOST, SALARY, BOARD_EVERY, BOARD_MAX, SUPER_LIFE, FREE_REFRESH, MAX_LV,
-    KINDS, kindOf, pick, fmt, dur, clock, odds, staffName, shares, expNeed, newStaff, applicants, hireFee, newCase, tutorialCase, plan, autoPick, start, settle, gainExp, trainPrice, overtimePrice, incidentCost };
+    KINDS, kindOf, pick, fmt, dur, clock, odds, staffName, shares, expNeed, MAST_PAY, MAST_SPEED, mastOf, top, fixMast, newStaff, applicants, hireFee, newCase, tutorialCase, plan, autoPick, start, settle, gainExp, trainPrice, overtimePrice, incidentCost };
 })();
