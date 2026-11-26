@@ -54,10 +54,13 @@
   // 2026-11-26 島本身審稿：坡改 3 顆（坡頂受光 → 坡面 → 下一層草上的影子）、四層亮度拉開、層的邊界少而長；
   // 整平的地邊角是圓的（occ 先模糊）；草的雜點少一點、小花一叢一叢；南岸加一層低頻起伏（設施附近不加）；
   // 沙灘寬一點、岩岸是一片石頭（不是一串）、遠海不撒白點，近岸零星 2×1 的小浪
+  let ISL = null;   // 中間小島買了的話 [cx, cy, r]（render 設，terrain 用）
   function terrain(B, land, occ, seed) {
     const W = B.W, H = B.H, GW = X.GW, m = new Float32Array(W * H);
     for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) m[j * W + i] = land[Math.floor(j / C) * GW + Math.floor(i / C)];
     blur(m, W, H, 9); blur(m, W, H, 9);
+    // 中間小島（群島）：格子拼的圓看起來方方的（第三輪審稿），買了的話這一圈改成真的圓：半徑內是陸地，往外 5 顆慢慢變成海
+    if (ISL) { const [cx, cy, r] = ISL; for (let j = Math.max(0, cy - r - 16); j < Math.min(H, cy + r + 16); j++) for (let i = Math.max(0, cx - r - 16); i < Math.min(W, cx + r + 16); i++) { const d = Math.hypot(i - cx, j - cy) + (vnoise(i, j, 14, 61) - .5) * 6; if (d < r + 16) m[j * W + i] = Math.max(0, Math.min(1, (r - 2 - d) / 5 + .5)); } }
     const inner = Float32Array.from(m); blur(inner, W, H, 22);
     const occS = Float32Array.from(occ); blur(occS, W, H, 11);   // 整平的地往外慢慢降下來，梯田的邊才會繞著設施彎，不會沿著設施的邊變成一條直線
     const near = occS;                                          // 「靠近設施、小路」也用同一張（南岸起伏、樹林邊緣）
@@ -386,6 +389,7 @@
         if (hit < 0) return; const pts = []; for (let c = hit; c >= 0; c = prev[c]) pts.unshift([(c % GW + .5) * C, (Math.floor(c / GW) + .5) * C]); pts[0] = [ex, ey];
         if (tgt[hit] === 2) { const k = built.find(k => { const d = doorOf(k, X.level(s, k)); return cAt(d[0], d[1]) === hit; }); if (k) pts[pts.length - 1] = doorOf(k, X.level(s, k)); }
         links.push(pts); smooth(pts).forEach(([a, b]) => fill(a - rr - 3, b - rr - 3, a + rr + 4, b + rr + 4)); })); }
+    ISL = X.ISLET && own.has(Wd.islet) ? [X.ISLET[0], X.ISLET[1], X.ISLET[2] - 3] : null;
     const T = terrain(B, land, occ, seed);
     // 地塊記號另外一層（out.marks，透明底；2026-11-26 島本身審稿）：夜裡疊在夜景上面、不會被夜色染成暗紅褐。
     // 自己的地之間不畫分界（買了就是自己的）；能買的地裡面淡淡一層淺灘色（「買下來島會長到這裡」）＋虛線；鎖放在這次會買的那幾格裡

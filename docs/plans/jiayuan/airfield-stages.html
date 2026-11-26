@@ -299,11 +299,13 @@ function towerUp(x, cx, baseY) {   // 塔台立起來畫（A5）：塔身 6×18 
   R(x, cx - 6, baseY - 26, 12, 1, '#f3f1ec'); R(x, cx - 6, baseY - 18, 12, 1, '#c9c4b9');
   R(x, cx, baseY - 30, 1, 4, '#8e9396'); lamp(x, cx - 1, baseY - 32, 'b');
 }
-function fuelTruck(x, a, b) {   // 加油車：駕駛室＋油罐兩段＋油管
-  R(x, a + 3, b + 3, 9, 20, 'rgba(30,40,30,.24)');
-  R(x, a, b, 9, 5, '#e2a62e'); R(x, a + 1, b + 1, 7, 2, '#3d4a55'); P(x, a + 1, b + 1, '#9fc0cc');
-  R(x, a, b + 6, 9, 14, '#e8e6e0'); R(x, a, b + 6, 3, 14, '#ffffff'); R(x, a + 7, b + 6, 2, 14, '#c9c4b9'); R(x, a, b + 12, 9, 1, '#b33a2f');
-  R(x, a + 9, b + 14, 4, 1, '#4a4d50');
+function fuelTruck(x, a, b) {   // 加油車（第三輪：橫過來畫成車子，原本直的像熱水瓶）：左邊車頭、右邊圓圓的油罐、四個輪子、油管
+  R(x, a + 2, b + 3, 22, 9, 'rgba(30,40,30,.24)');
+  [[a + 2, b - 1], [a + 2, b + 8], [a + 15, b - 1], [a + 15, b + 8], [a + 19, b - 1], [a + 19, b + 8]].forEach(([u, v]) => R(x, u, v, 3, 1, '#4a4d50'));
+  R(x, a, b, 6, 8, '#e2a62e'); R(x, a, b, 6, 2, '#f4c75a'); R(x, a + 1, b + 2, 2, 4, '#3d4a55'); P(x, a + 1, b + 2, '#9fc0cc');
+  R(x, a + 6, b + 3, 1, 2, '#8e9396');
+  R(x, a + 7, b, 15, 8, '#e8e6e0'); R(x, a + 7, b, 15, 2, '#ffffff'); R(x, a + 7, b + 6, 15, 2, '#c9c4b9'); R(x, a + 7, b + 3, 15, 1, '#b33a2f'); R(x, a + 21, b + 1, 1, 6, '#c9c4b9');
+  R(x, a + 22, b + 4, 3, 1, '#4a4d50'); P(x, a + 24, b + 5, '#4a4d50');
 }
 function lightConcrete(x, a, b, w, h, seed) {   // 淺色水泥停機坪（A5），每 12 顆一條接縫
   R(x, a + 2, b + 2, w, h, 'rgba(30,40,30,.24)');
@@ -379,7 +381,7 @@ window.slotMark = function (x, a, b, w, h, n, id) {
   R(x, 26, 84, 128, 2, '#e8c35a'); R(x, 89, 86, 2, 6, '#e8c35a');
   archHangar(x, 20, 4, 70, 32);
   towerUp(x, 176, 44);
-  fuelTruck(x, 164, 52);
+  fuelTruck(x, 158, 54);
   bizjet(x, 26, 44, '#f3f1ec', '#2f3e4c'); bizjet(x, 72, 44, '#22364a', '#c9a24a');
   cessna(x, 120, 50, '#f3f1ec', '#c0392b');
   [[22, 36], [158, 36]].forEach(([u, v]) => { R(x, u, v, 2, 2, '#8e9396'); lamp(x, u, v - 2, 'w'); }); lamp(x, 60, 62, 'F'); lamp(x, 124, 62, 'F');
@@ -401,8 +403,8 @@ window.slotMark = function (x, a, b, w, h, n, id) {
   // 兩條登機橋（接到大型機位）
   [[80, 24], [118, 24]].forEach(([u, v]) => { R(x, u + 2, v + 2, 4, 14, K.shadow); R(x, u, v, 4, 14, '#f3f1ec'); R(x, u, v, 1, 14, '#ffffff'); R(x, u + 3, v, 1, 14, '#c9c4b9'); R(x, u - 1, v + 13, 6, 2, '#c9c4b9'); });
   // 紅地毯：從航廈接到登機梯平台，兩側金邊
-  for (let j = 24; j < 40; j++) { R(x, 96, j, 8, 1, j % 2 ? '#b33a2f' : '#a8342a'); P(x, 95, j, '#c9a24a'); P(x, 104, j, '#c9a24a'); }
-  R(x, 93, 40, 14, 4, '#c9a24a'); R(x, 94, 40, 12, 3, '#b33a2f');
+  for (let j = 24; j < 36; j++) { R(x, 97, j, 6, 1, j % 2 ? '#b33a2f' : '#a8342a'); P(x, 96, j, '#c9a24a'); P(x, 103, j, '#c9a24a'); }
+  R(x, 98, 38, 8, 7, K.shadow); R(x, 96, 36, 8, 7, '#f3f1ec'); R(x, 96, 36, 1, 7, '#ffffff'); R(x, 103, 36, 1, 7, '#c9c4b9'); for (let v = 38; v < 43; v += 2) R(x, 97, v, 6, 1, '#c9c4b9');   // 紅地毯接到白色登機梯（第三輪：原本金色平台＋導入線看起來像小鳥居）
   jumbo(x, 68, 30);
   biplane(x, 18, 44);
   bizjet(x, 140, 40, '#2f3236', '#c9a24a');
