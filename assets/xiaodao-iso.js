@@ -142,6 +142,76 @@
     [[-3, 10, '#b33a2f', '#d9665a'], [-1, 11, '#e8c35a', '#f6e3a0'], [2, 10, '#f3efe6', '#ffffff']].forEach(([u, r, c1, c2]) => { x.fillStyle = c1; x.fillRect(a + u, b2 - 1 - r, 2, 2); x.fillStyle = c2; x.fillRect(a + u, b2 - 1 - r, 1, 1); });
   }
 
+  // 小盆栽的葉子（後 20 件審稿：原本是幾條橫的綠長條）：尖橢圓葉從中心往外長，兩三個綠、一條葉脈
+  function leaf(x, ax, ay, ang, len, wid, c1, c2, rib) {
+    const ca = Math.cos(ang), sa = Math.sin(ang), R = Math.ceil(len + wid);
+    for (let yy = -R; yy <= R; yy++) for (let xx = -R; xx <= R; xx++) { const s0 = xx * ca + yy * sa, t0 = -xx * sa + yy * ca; if (s0 < 0 || s0 > len) continue; const hw = wid * Math.sin(Math.PI * s0 / len); if (Math.abs(t0) > hw) continue;
+      x.fillStyle = Math.abs(t0) < .5 && s0 > 1 && s0 < len - 1 ? rib : t0 < 0 ? c2 : c1; x.fillRect(ax + xx, ay + yy, 1, 1); }
+  }
+  function sprout(x, a, b2) { [[-2.5, 6, 1.7], [-2.05, 7, 1.8], [-1.6, 8, 1.9], [-1.15, 7, 1.8], [-.7, 6, 1.7], [-1.8, 5, 1.4], [-1.35, 5, 1.4]].forEach(([ang, len, wid], i) => leaf(x, a, b2 - 1, ang, len, wid, i % 2 ? '#5e8a46' : '#6e9a53', '#8ab86a', '#4f7a3e')); }
+  // 小橘子樹的樹冠（後 20 件審稿）：三個色階（左上亮、右下暗）、邊緣葉叢凹凸、橘子有亮點
+  function crown(x, a, b2) {
+    const cy = b2 - 7;
+    for (let yy = -8; yy <= 8; yy++) for (let xx = -8; xx <= 8; xx++) { const th = Math.atan2(yy, xx), rr = 6.6 + .9 * Math.sin(th * 6 + .7) + .5 * Math.sin(th * 11), d = Math.hypot(xx, yy); if (d > rr) continue;
+      const l = (-xx - yy) / 9 + (hash(xx + 9, yy + 9) - .5) * .35; const hh2 = hash(xx * 3 + 31, yy * 5 + 17); x.fillStyle = d > rr - 1 && xx + yy > 2 ? '#3b5e2e' : l > .45 ? (hh2 > .72 ? '#7fae5e' : '#9cc576') : l > -.05 ? (hh2 > .85 ? '#5e8a46' : '#6e9a53') : '#4f7a3e'; x.fillRect(a + xx, cy + yy, 1, 1); }
+    [[-3, -3], [3, -1], [-4, 2], [1, 3], [4, -4], [-1, -5], [5, 2]].forEach(([u, v]) => { x.fillStyle = '#f08a2c'; x.fillRect(a + u, cy + v, 2, 2); x.fillStyle = '#ffc07a'; x.fillRect(a + u, cy + v, 1, 1); x.fillStyle = '#c96a1c'; x.fillRect(a + u + 1, cy + v + 1, 1, 1); });
+  }
+  // 龜背芋（後 20 件審稿：原本像花椰菜）：五片大心形葉、葉緣斜的裂口、中脈旁邊幾個小洞，葉柄從盆裡長出來
+  function monstera(x, a, b2) {
+    const L = [[-2.6, 12, 6, 9], [-1.95, 13, 6.4, 16], [-1.2, 13, 6.4, 15], [-.55, 12, 6, 8]];   // 第二輪：葉子細細分岔像棕櫚 → 四片寬的大心形葉、外緣幾道缺口
+    L.forEach(([ang, len, wid, rise]) => { const ca = Math.cos(ang), sa = Math.sin(ang), bx = a + Math.round(ca * rise * .55), by = b2 - Math.round(rise);
+      for (let t = 0; t <= 1; t += .05) { x.fillStyle = '#4f7a3e'; x.fillRect(Math.round(a + (bx - a) * t), Math.round(b2 - 1 + (by - b2 + 1) * t), 1, 1); }
+      const R = Math.ceil(len + wid);
+      for (let yy = -R; yy <= R; yy++) for (let xx = -R; xx <= R; xx++) { const s0 = xx * ca + yy * sa, t0 = -xx * sa + yy * ca, at = Math.abs(t0); if (s0 < 0 || s0 > len) continue;
+        const hw = wid * Math.sqrt(Math.max(0, 1 - Math.pow((s0 - len * .5) / (len * .5), 2))); if (at > hw) continue;
+        if (s0 < len * .2 && at < (len * .2 - s0) * .9) continue;   // 心形的凹口
+        if (at > hw * .5 && at > 2 && [.36, .58, .8].some(f => Math.abs(s0 - (len * f + at * .35)) < .5)) continue;   // 斜的裂口
+        if ([[.46, 2.4], [.66, -2.4]].some(([f, tt]) => Math.hypot(s0 - len * f, t0 - tt) < 1.1)) continue;   // 小洞（第二輪：一顆的洞又多，1 倍下碎碎的 → 兩個、大一點）
+        x.fillStyle = at < .5 ? '#3f6a33' : t0 < 0 ? '#7aa65a' : '#5e8a46'; x.fillRect(bx + xx, by + yy, 1, 1); } });
+  }
+  // 掛畫（後 20 件審稿）：一顆一顆照北牆斜著畫（原本浣熊圖是正的貼上去、糊邊）；on(i, z) 是牆上的點
+  // 牆每 2 顆降 1 顆：畫的內容以兩欄為一組、同一組一起往下移，五官、框才不會被切成一階一階（第二輪美術指導）
+  function paintWall(x, on, a0, a1, z0, z1, fn) {
+    const [ox, oy] = on(0, 0), sx0 = Math.floor(ox + a0 * TW), sx1 = Math.ceil(ox + a1 * TW), nW = sx1 - sx0;
+    for (let sx = sx0; sx < sx1; sx++) { const gx = sx - sx0, ig = (sx0 + Math.floor(gx / 2) * 2 + .5 - ox) / TW, i = (sx + .5 - ox) / TW;
+      for (let sy = Math.floor(oy + ig * TH - z1) - 1; sy <= Math.ceil(oy + ig * TH - z0) + 1; sy++) { const zz = oy + ig * TH - (sy + .5); if (zz < z0 || zz > z1) continue;
+        const c = fn(i - a0, zz - z0, gx, nW); if (c) { x.fillStyle = c; x.fillRect(sx, sy, 1, 1); } } }
+  }
+  // 浣熊大王肖像（藏品圖縮小會糊掉、看不出臉）：手畫一張 9 × 11 的小像素肖像——小皇冠、耳朵、白眉、一條深灰面罩、白吻部、黑鼻子、紅披風
+  // 第二輪：一欄是兩顆寬（跟牆的台階對齊），4 欄 × 11 列；鼻子比眼睛大（浣熊專家說過）
+  // 第三輪（妹妹：兩顆一欄的版本像條碼）：回到一顆一欄、8 × 11，一定要有尖耳朵、面罩裡兩顆亮的眼睛、明顯的黑鼻子；皇冠小一點
+  const RAC = ['........', 'g..yy..g', 'gg.YY.gg', 'gGGGGGGg', 'wwGGGGww', 'dedddded', 'ddGwwGdd', '.gwwwwg.', '..wkkw..', 'r.gkkg.r', 'rrrrrrrr'];   // 最上面空一列，皇冠不要貼著畫框
+  const RACC = { g: '#9a9590', G: '#c4bfb8', d: '#55505a', e: '#ffffff', w: '#f3efe6', k: '#3d4246', y: '#f6d77a', Y: '#e8c35a', r: '#b33a2f', R: '#8f2c24' };
+  const PIC = { pic1: { a0: .06, a1: -.06, z0: 19, z1: 32 }, pic2: { a0: .03, a1: -.03, z0: 19, z1: 33 } };   // a1 從右邊算（加上 w）
+  function picFn(k, wU, hZ) {
+    const fz = 1.3, IH = hZ - 2 * fz;
+    return (du, dz, gx, nW) => {
+      const Lf = gx === 0, Rt = gx === nW - 1, Tp = dz > hZ - fz, Bt = dz < fz;   // 框：左右各一顆、上下約一顆多（第二輪：右框有時取不到樣）
+      if (Lf || Rt || Tp || Bt) { if (k === 'pic2' && (Lf || Rt) && (Tp || Bt)) return '#f6e3a0'; return (Lf || Tp) && !(Rt || Bt) ? '#e8c35a' : (Rt || Bt) && !(Lf || Tp) ? '#a77f25' : '#d4a83c'; }
+      const IW = nW - 2, px = gx - .5, row = Math.floor(hZ - fz - dz), u = px / IW, v = (hZ - fz - dz) / IH;
+      if (k === 'pic1') {
+        if (gx === 1 || row === 0) return '#8a9aa6';   // 框的內緣一顆暗（畫凹進去）
+        const py = v * IH, sx = IW * .76, sy = IH * .26; if (Math.hypot(px - sx, (py - sy) * 1.6) < IH * .2) return px - sx + py - sy < -1 ? '#fbe3a6' : '#f6cd72';
+        const far = .56 - .32 * Math.max(0, 1 - Math.abs(u - .3) / .28) - .2 * Math.max(0, 1 - Math.abs(u - .6) / .2), near = .72 - .06 * Math.sin(u * 7 + 1.2);
+        if (v > .88) return '#6e9a53'; if (v > near) return v < near + .08 ? '#97bb72' : '#7da35e';
+        if (v > far && v < far + .07 && far < .32) return '#f1f4f6';
+        if (v > far) { const pk = Math.abs(u - .3) < .28 ? .3 : .6; return u < pk ? '#a9bccb' : '#8299ac'; }
+        return v < .22 ? '#9cc9df' : v < .42 ? '#b3d7e6' : '#cbe5ee';
+      }
+      // 浣熊大王：一顆一欄、從框裡第一顆開始；畫底提亮到下限以上
+      const c2 = gx - 1 - Math.max(0, Math.floor((nW - 10) / 2)), ch = c2 >= 0 && c2 < 8 && row >= 0 ? (RAC[row] || '')[c2] : null; if (ch && ch !== '.') return RACC[ch];
+      return row === 0 ? '#4a4466' : '#55486a';
+    };
+  }
+  // 圓地毯（屋內和商店小圖共用；後 20 件審稿：小圖原本只是三顆素色橢圓）
+  function discDraw(x, P, p) {
+    const pts = [], cx = (p.u0 + p.u1) / 2, cy = (p.v0 + p.v1) / 2, rr = (p.u1 - p.u0) / 2, [ca, cc] = P(cx, cy, .6);
+    for (let k2 = 0; k2 < 32; k2++) { const th = k2 / 32 * Math.PI * 2; pts.push(P(cx + Math.cos(th) * rr, cy + Math.sin(th) * rr, .6)); }
+    const ring = f => pts.map(([a, c]) => [ca + (a - ca) * f, cc + (c - cc) * f]);
+    [[1, '#e9dcc3'], [.92, p.col], [.8, sh(p.col, .35)], [.74, p.col], [.55, sh(p.col, -.15)], [.38, sh(p.col, .3)], [.26, p.col]].forEach(([f, col]) => poly(x, ring(f), col));
+    return ring(1);
+  }
+
   // 一件家具的「零件」：盒子、貼在某一面的方塊、自己畫的東西、燈
   function build(k, c, night) {
     const f = X.FURN[k], C = colorsOf(k, c), parts = [], lights = [];
@@ -155,6 +225,16 @@
     const legs = (u0, v0, u1, v1, h, col, t = .1) => [[u0, v0], [u1 - t, v0], [u0, v1 - t], [u1 - t, v1 - t]].forEach(([a, b]) => B(a, b, a + t, b + t, 0, h, col));
     // 靠背椅（2026-11-27 審稿：椅背太高又是實心板，把餐桌圍成箱子）：椅背到 18 顆，兩根直柱＋上下兩條橫條，中間空的
     let gid = 0;
+    // 盆（後 20 件審稿：原本是一個方塊）：上寬下窄三段、盆緣亮一點、上面露一點土；tub 是木桶（兩條暗的箍）
+    const pot = (u, v, r, h, col, tub) => {
+      if (tub) {   // 木桶（第二輪：上寬下尖的陀螺形、放在木地板上看不見）：直筒、兩圈灰色鐵箍、比地板深兩階
+        const t = B(u - r, v - r, u + r, v + r, 0, h, col); [1, h - 3].forEach(z0 => [['+v', u], ['+u', v]].forEach(([fc, m]) => { D(t, fc, m - r, m + r, z0, z0 + 1, '#8e8a84'); D(t, fc, m - r, m + r, z0 + 1, z0 + 2, '#c3c8c9'); }));   // 鐵箍（第三輪：一格灰一格咖啡像斑點）：整顆高的連續兩條，上面一條亮
+        T(t, u - r * .8, v - r * .8, u + r * .8, v + r * .8, '#5e3c22'); return; }
+      const lo = B(u - r * .72, v - r * .72, u + r * .72, v + r * .72, 0, Math.round(h * .55), sh(col, -.05)); D(lo, '+v', u - r, u + r, 0, 1, sh(col, -.3));
+      B(u - r * .86, v - r * .86, u + r * .86, v + r * .86, Math.round(h * .55), h - 1, col);
+      const rim = B(u - r, v - r, u + r, v + r, h - 1, h, sh(col, .2)); T(rim, u - r * .78, v - r * .78, u + r * .78, v + r * .78, '#6e4a30'); };
+    // 螢幕（晚上整片發光，畫完家具後再亮一層；後 20 件審稿：原本螢幕中間一顆圓亮點像燈泡）
+    const DG = (box, ...a) => { D(box, ...a); box.dec[box.dec.length - 1].glow = true; };
     const chair = (u, v, face, wd, fb) => { const st0 = parts.length;
       legs(u + .1, v + .1, u + .9, v + .9, 8, sh(wd, -.25), .08);
       B(u + .08, v + .08, u + .92, v + .92, 8, 10, wd, { grain: false });
@@ -262,7 +342,7 @@
           B(1.3, .64, 1.78, .7, 14.6, 15.2, '#c9a54e'); }
         else {   // 電腦桌：兩台螢幕（原本螢幕的畫面貼錯位置，看起來像兩台；審稿妹妹喜歡，就真的畫兩台）、支架和底座、鍵盤一顆顆鍵、滑鼠
           [[.45, 1.4], [1.6, 2.55]].forEach(([a0, a1]) => { const m = (a0 + a1) / 2, mon = B(a0, .15, a1, .3, 17, 25.5, '#3d4246');
-            D(mon, '+v', a0 + .06, a1 - .06, 18, 24.7, nt(night, '#8fb0e0', '#3b4a5e')); if (!night) D(mon, '+v', a0 + .12, a0 + .38, 22, 24.4, '#55677e');
+            DG(mon, '+v', a0 + .06, a1 - .06, 18, 24.7, nt(night, '#8fb0e0', '#3b4a5e')); if (!night) D(mon, '+v', a0 + .12, a0 + .38, 22, 24.4, '#55677e');
             B(m - .2, .17, m + .2, .42, 14, 14.6, '#4a4f53'); B(m - .05, .2, m + .05, .28, 14.6, 17, '#4a4f53'); L(m, .4, 21, 'screen'); });
           const kb = B(1, .5, 2, .8, 14, 14.8, '#e9e3d6'); for (let i = 0; i < 9; i++) for (let j = 0; j < 3; j++) T(kb, 1.05 + i * .105, .54 + j * .085, 1.12 + i * .105, .59 + j * .085, '#c4bcae');
           B(2.2, .56, 2.34, .74, 14, 14.9, '#e9e3d6'); }
@@ -302,67 +382,90 @@
         B(2.4, 1.82, 3.6, 2.18, 14, 14.4, '#efe6d2'); FN(3, 2, 14.4, 13, (x, a, b2) => vase(x, a, b2));
         break;
       }
-      // ---- 沙發（背貼 v = 0，朝 +v）----
+      // ---- 沙發（背貼 v = 0，朝 +v）。2026-11-27 家具審稿（後 20 件）：坐面到 7.5（原本比茶几低）、椅背比扶手高、坐墊鼓一點縫看得出來、
+      //      木頭小腳、底下一條暗邊、扶手上緣圓一點、抱枕換顏色；皮沙發左上一顆亮線（原本的白點像水滴）----
       case 'sofa1': case 'sofa2': case 'sofa3': case 'sofa4': case 'sofa5': {
-        const fab = C.main, hi = k === 'sofa2' ? 24 : 15, seat = 6.5, arm = k === 'sofa2' ? .3 : .4, deep = k === 'sofa1' ? H : 2;
-        legs(.15, .15, W - .15, deep - .15, 2, '#5e3c22', .1);
-        B(.05, .05, W - .05, .55, 2, hi, fab);                                    // 靠背
-        B(.05, .05, arm, deep - .05, 2, 10, fab); B(W - arm, .05, W - .05, deep - .05, 2, 10, fab);   // 扶手
-        const n = { sofa1: 1, sofa2: 1, sofa3: 2, sofa4: 3, sofa5: 3 }[k], sw = (W - arm * 2) / n;
-        for (let i = 0; i < n; i++) B(arm + i * sw + .02, .55, arm + (i + 1) * sw - .02, deep - .1, 2, seat, sh(fab, .05));
-        if (k === 'sofa2') { B(.05, .05, .4, .9, hi - 6, hi, sh(fab, -.08)); B(W - .4, .05, W - .05, .9, hi - 6, hi, sh(fab, -.08)); }
-        if (k === 'sofa4') parts.forEach(p => { if (p.t === 'box' && p.z1 >= seat) p.shine = true; });
-        if (k === 'sofa5') { B(W - 1.6, deep - .1, W - .05, H - .05, 2, seat, sh(fab, .05)); B(W - arm, deep - .1, W - .05, H - .05, 2, 10, fab); B(W - 1.6, H - .3, W - arm, H - .05, 2, 9, fab); }
-        if (k === 'sofa3' || k === 'sofa4' || k === 'sofa5') B(arm + .15, .55, arm + .75, .9, seat, seat + 5, '#e8c35a');
+        // 第二輪（美術指導）：不到一顆高的薄盒子、半顆開始的面在斜線上變成一排小牙 → 高度都用整顆（坐面 8、扶手 11、圓頂 1 顆）；
+        // 抱枕放在靠背墊前面（原本在沒轉向的那張被靠背墊蓋掉）
+        const fab = C.main, leather = k === 'sofa4', wing = k === 'sofa2', one = k === 'sofa1';
+        const arm = one ? .15 : wing ? .2 : .32, back = one ? .3 : .42, deep = one ? H : 2, seat = 8, armz = 11, hi = wing ? 21 : 17;
+        legs(.1, .1, W - .1, deep - .1, 2, '#5e3c22', .1);
+        const base = B(.05, .05, W - .05, deep - .05, 2, 5, sh(fab, -.08)); D(base, '+v', .05, W - .05, 2, 3, sh(fab, -.3)); D(base, '+u', .05, deep - .05, 2, 3, sh(fab, -.3));
+        const bk = B(.05, .05, W - .05, back, 2, hi, fab);
+        if (wing) { for (let r2 = 0; r2 < 2; r2++) for (let c2 = 0; c2 < 3; c2++) D(bk, '+v', .55 + c2 * .3, .65 + c2 * .3, 13 + r2 * 3, 14 + r2 * 3, sh(fab, -.28)); }   // 拉扣
+        [[.05, .05 + arm], [W - .05 - arm, W - .05]].forEach(([u0, u1]) => { B(u0, .05, u1, deep - .05, 2, armz, fab); B(u0 + .02, back, u1 - .02, deep - .07, armz, armz + 1, sh(fab, .1));
+          if (wing) { B(u0, .05, u1, 1.15, armz + 1, armz + 5, fab); B(u0, .05, u1, .8, armz + 5, hi - 1, fab); B(u0 + .02, .05, u1 - .02, .6, hi - 1, hi, sh(fab, .08)); } });   // 高背椅的翼板：從扶手一路連到椅背頂，上窄下寬
+        const n = { sofa1: 1, sofa2: 1, sofa3: 2, sofa4: 3, sofa5: 3 }[k], sw = (W - arm * 2 - .1) / n;
+        for (let i = 0; i < n; i++) { const u0 = .05 + arm + i * sw + .045, u1 = u0 + sw - .09;   // 坐墊之間的縫超過一顆寬（第三輪：一格亮一格暗像拉鍊）
+          B(u0, back, u1, deep - .08, 5, seat - 1, sh(fab, .05)); const pf = B(u0 + .06, back + .05, u1 - .06, deep - .14, seat - 1, seat, sh(fab, .1));
+          if (leather) T(pf, u0 + .08, back + .08, u0 + .2, deep - .2, sh(fab, .32));
+          if (!one && !wing) { const bc = B(u0 + .04, back, u1 - .04, back + .24, seat, hi - 1, sh(fab, .06)); if (leather) D(bc, '+v', u0 + .06, u0 + .18, seat + 1, hi - 2, sh(fab, .3)); } }
+        if (k === 'sofa5') {   // 貴妃位（右邊往前伸）
+          legs(W - 1.65, deep, W - .1, H - .1, 2, '#5e3c22', .1);
+          B(W - 1.7, deep - .1, W - .05, H - .05, 2, 5, sh(fab, -.08)); B(W - 1.68, deep - .08, W - .07 - arm, H - .08, 5, seat - 1, sh(fab, .05)); B(W - 1.62, deep, W - .13 - arm, H - .14, seat - 1, seat, sh(fab, .1));
+          B(W - .05 - arm, deep - .1, W - .05, H - .05, 2, armz, fab); B(W - .03 - arm, deep - .1, W - .07, H - .07, armz, armz + 1, sh(fab, .1)); }
+        // 抱枕（顏色照沙發換，不要五款都同一顆黃的）；有靠背墊的放在靠背墊前面
+        const pil = { sofa3: ['#e8c35a'], sofa4: ['#d9cdb3'], sofa5: ['#c96f4a', '#7d9a8c'], sofa2: [{ 朱: '#e9dcc3', 深藍: '#c9a54e', 皮革咖啡: '#7d9a8c' }[C.a] || '#e9dcc3'] }[k] || [], pv = wing ? back + .02 : back + .28;
+        pil.forEach((pc, i) => { const u0 = i ? W - arm - .85 : arm + .15; B(u0, pv, u0 + .55, pv + .28, seat, seat + (wing ? 4 : 5), pc); });
         break;
       }
-      // ---- 電視櫃 ----
+      // ---- 電視櫃（後 20 件審稿）：薄型寬螢幕、小腳座、降低；大電視的落地喇叭放在兩端地上（一大一小兩個單體）；黑統一用 #3d4246 那組；螢幕晚上整片發光 ----
       case 'tv1': case 'tv2': {
-        const big = k === 'tv2', cab = C.a === '黑' ? '#3d3b38' : C.wood, b = B(.05, .05, W - .05, H - .1, 0, 9, cab);
-        const nd = big ? 4 : 3; for (let i = 1; i < nd; i++) D(b, '+v', i * (W - .1) / nd, i * (W - .1) / nd + .04, 1, 8, sh(cab, -.3));
-        for (let i = 0; i < nd; i++) D(b, '+v', (i + .5) * (W - .1) / nd - .03, (i + .5) * (W - .1) / nd + .03, 5, 6, '#d4a83c');
-        const tw = big ? 3 : 1.9, t0 = (W - tw) / 2, tv = B(t0, .2, t0 + tw, .45, big ? 10 : 10, big ? 30 : 24, '#232326');
-        D(tv, '+v', t0 + .1, t0 + tw - .1, big ? 11.5 : 11.5, big ? 28.5 : 22.5, nt(night, '#8fb0e0', '#3b4a5e'));
-        if (!night) D(tv, '+v', t0 + .2, t0 + .6, big ? 24 : 19, big ? 28 : 22, '#55677e');
-        B(W / 2 - .12, .25, W / 2 + .12, .45, 9, 10, '#232326'); L(W / 2, .5, big ? 20 : 17, 'screen');
-        if (big) [.15, W - .55].forEach(a => { const sp = B(a, .1, a + .4, .5, 9, 24, '#2b2b2e'); D(sp, '+v', .1, .3, 12, 15, '#555'); D(sp, '+v', .1, .3, 17, 21, '#555'); });
-        else B(.25, .25, .6, .6, 9, 13, '#e9e3d6');
+        const big = k === 'tv2', cab = C.wood, c0 = big ? .6 : .05, c1 = big ? W - .6 : W - .05, b = B(c0, .05, c1, H - .1, 0, big ? 8 : 9, cab);
+        const nd = big ? 3 : 3, cw2 = (c1 - c0) / nd; for (let i = 1; i < nd; i++) D(b, '+v', c0 + i * cw2 - .02, c0 + i * cw2 + .02, 1, big ? 7 : 8, sh(cab, -.4));
+        for (let i = 0; i < nd; i++) D(b, '+v', c0 + (i + .5) * cw2 - .05, c0 + (i + .5) * cw2 + .05, 4.5, 5.5, '#d4a83c');
+        D(b, '+v', c0, c1, 0, 1, sh(cab, -.3));   // 底邊暗一階（第二輪：淺木櫃放在淺木地板上分不出邊）
+        const tw = big ? 3 : 2.1, t0 = (W - tw) / 2, bz = big ? 8 : 9, tz0 = bz + 2, tz1 = big ? 27 : 20.5;
+        B(W / 2 - .32, .22, W / 2 + .32, .48, bz, bz + .6, '#4a4f53'); B(W / 2 - .05, .3, W / 2 + .05, .36, bz + .6, tz0, '#4a4f53');
+        const tv = B(t0, .28, t0 + tw, .4, tz0, tz1, '#3d4246'); DG(tv, '+v', t0 + .07, t0 + tw - .07, tz0 + .8, tz1 - .8, nt(night, '#8fb0e0', '#3b4a5e'));
+        DG(tv, '+v', t0 + tw * .55, t0 + tw - .07, tz0 + .8, (tz0 + tz1) / 2, nt(night, '#7f9fd0', '#344153'));   // 右下暗一階
+        if (!night) D(tv, '+v', t0 + .14, t0 + .55, tz1 - 4, tz1 - 1.2, '#55677e');
+        L(W / 2, .6, (tz0 + tz1) / 2, 'screen');
+        if (big) [.08, W - .52].forEach(a => { const sp = B(a, .1, a + .44, .5, 0, 19, '#3d4246'); D(sp, '+v', a + .08, a + .36, 3.5, 9.5, '#6a7075'); D(sp, '+v', a + .14, a + .3, 5, 8, '#4f555a'); D(sp, '+v', a + .15, a + .29, 12.5, 15, '#6a7075'); D(sp, '+v', a + .19, a + .25, 13.3, 14.2, '#8e8a84'); });
+        else { const sp = B(.25, .25, .55, .5, 9, 13.5, '#4a4f53'); D(sp, '+v', .3, .5, 9.8, 11.8, '#6a7075'); D(sp, '+v', .37, .43, 12.3, 13, '#8e8a84'); }
         break;
       }
-      // ---- 地毯（平的）----
+      // ---- 地毯（平的）。後 20 件審稿：中間一排白短線像停車場、跑道 → 內框、菱形紋、短邊流蘇 ----
       case 'rug1': case 'rug3': {
-        const r = B(0, 0, W, H, 0, .6, '#e9dcc3', { flat: true });
-        T(r, .2, .2, W - .2, H - .2, C.main); T(r, .55, .55, W - .55, H - .55, sh(C.main, -.15));
-        if (k === 'rug1') for (let i = 0; i < 8; i++) T(r, .55 + (W - 1.1) * i / 8, H / 2 - .25, .55 + (W - 1.1) * i / 8 + .12, H / 2 + .25, sh(C.main, .35));
-        else for (let j = 1; j < 6; j++) T(r, .55, j * H / 6 - .05, W - .55, j * H / 6 + .05, sh(C.main, .3));
+        const r = B(0, 0, W, H, 0, .6, '#e9dcc3', { flat: true }), lng = k === 'rug1', m = C.main, lt = sh(m, .38);
+        T(r, .18, .18, W - .18, H - .18, m); T(r, .4, .4, W - .4, H - .4, lt); T(r, .48, .48, W - .48, H - .48, m);
+        // 花紋（第二輪：一階一階拼的菱形畫面上像長方形、邊有小牙）：跟地毯邊平行的正方形，畫面上就是 2:1 的菱形
+        const dia = (cu, cv, ru) => { T(r, cu - ru, cv - ru, cu + ru, cv + ru, lt); T(r, cu - ru * .7, cv - ru * .7, cu + ru * .7, cv + ru * .7, sh(m, -.15)); T(r, cu - ru * .35, cv - ru * .35, cu + ru * .35, cv + ru * .35, lt); };
+        if (lng) { dia(W / 2, H / 2, .85); [[.75, .75], [W - .75, .75], [.75, H - .75], [W - .75, H - .75]].forEach(([cu, cv]) => T(r, cu - .12, cv - .12, cu + .12, cv + .12, lt)); }
+        else [H * .22, H / 2, H * .78].forEach(cv => dia(W / 2, cv, .42));
+        // 流蘇：短邊（rug1 是左右兩邊、rug3 是前後兩邊）
+        if (lng) for (let t = .15; t < H - .1; t += .22) { T(r, 0, t, .14, t + .08, '#f6f1e6'); T(r, W - .14, t, W, t + .08, '#f6f1e6'); }
+        else for (let t = .15; t < W - .1; t += .22) { T(r, t, 0, t + .08, .14, '#f6f1e6'); T(r, t, H - .14, t + .08, H, '#f6f1e6'); }
         break;
       }
       case 'rug2': parts.push({ t: 'disc', u0: 0, v0: 0, u1: W, v1: H, z0: 0, z1: .6, col: C.main }); break;
-      // ---- 植物 ----
-      case 'plant1': B(.25, .25, .75, .75, 0, 7, '#c96f4a'); FN(.5, .5, 7, 12, (x, a, b2) => { [[0, -9], [-4, -6], [4, -5], [-2, -12], [3, -10], [0, -4]].forEach(([u, v], i) => { x.fillStyle = i % 2 ? '#4f7a3e' : '#6e9a53'; x.fillRect(a + u - 2, b2 + v, 4, 3); x.fillStyle = '#3b5e2e'; x.fillRect(a + u - 2, b2 + v + 2, 4, 1); }); }); break;
-      case 'plant2': B(.25, .25, .75, .75, 0, 7, '#d9cfbf'); B(.46, .46, .54, .54, 7, 14, '#6e4528');
-        FN(.5, .5, 14, 14, (x, a, b2) => { for (let yy = -7; yy <= 7; yy++) for (let xx = -7; xx <= 7; xx++) if (xx * xx + yy * yy <= 50) { x.fillStyle = yy < -2 ? '#6e9a53' : yy < 3 ? '#4f7a3e' : '#3b5e2e'; x.fillRect(a + xx, b2 - 7 + yy, 1, 1); }
-          [[-3, -9], [3, -6], [-4, -3], [2, -1], [5, -10], [0, -5]].forEach(([u, v]) => { x.fillStyle = '#f08a2c'; x.fillRect(a + u, b2 + v, 2, 2); x.fillStyle = '#ffc07a'; x.fillRect(a + u, b2 + v, 1, 1); }); }); break;
-      case 'plant3': B(.55, .55, 1.45, 1.45, 0, 8, '#efe9dc');
-        FN(1, 1, 8, 26, (x, a, b2) => {
-          [[-7, -8], [6, -10], [-2, -18], [5, -21], [-8, -19], [1, -27], [9, -16]].forEach(([u, v]) => { for (let q = 0; q <= 8; q++) { x.fillStyle = '#3b5e2e'; x.fillRect(Math.round(a + u * q / 8), Math.round(b2 + v * q / 8), 1, 1); } });
-          [[1, -27, 0], [-8, -19, 1], [5, -21, 0], [9, -15, 1], [-2, -17, 0], [-7, -8, 1], [6, -9, 0]].forEach(([u, v, s], n) => { const cx = a + u, cy = b2 + v;
-            for (let yy = -4; yy <= 4; yy++) for (let xx = -6; xx <= 6; xx++) { const e = xx * xx / 36 + yy * yy / 16; if (e > 1) continue; if (Math.abs(xx) > 2 && Math.abs(yy) > 1 && (Math.abs(xx) + n) % 4 === 0 && e > .5) continue;
-              x.fillStyle = xx === 0 ? '#3b5e2e' : yy < -1 ? (s ? '#8ab86a' : '#6e9a53') : yy < 2 ? (s ? '#6e9a53' : '#4f7a3e') : '#3b5e2e'; x.fillRect(cx + xx, cy + yy, 1, 1); } }); }); break;
-      // ---- 廚房（貼牆，正面朝 +v）----
+      // ---- 植物（後 20 件審稿）：盆上寬下窄、有盆緣、露一點土；小盆栽尖葉從中心長出來；橘子樹三個色階、葉叢凹凸；龜背芋大心形葉、裂口和洞 ----
+      case 'plant1': pot(.5, .5, .2, 5, '#c96f4a'); FN(.5, .5, 5, 11, (x, a, b2) => sprout(x, a, b2)); break;
+      case 'plant2': pot(.5, .5, .22, 6, '#7c5230', true); B(.46, .46, .54, .54, 6, 14, '#6e4528'); FN(.5, .5, 14, 15, (x, a, b2) => crown(x, a, b2)); break;
+      case 'plant3': pot(1, 1, .42, 7, '#efe9dc'); FN(1, 1, 7, 26, (x, a, b2) => monstera(x, a, b2)); break;
+      // ---- 廚房（貼牆，正面朝 +v）。後 20 件審稿：檯面約 90 公分、檯面板薄一點（三件等高）；水槽挖一個槽、彎的水龍頭、洗碗精；
+      //      瓦斯爐烤箱門把、玻璃、旋鈕、爐架、小鍋子；流理台砧板和調味罐 ----
       case 'kitchen1': case 'kitchen2': case 'kitchen3': {
-        const b = B(.05, .05, W - .05, H - .1, 0, 15, '#ece7dc'); B(0, 0, W, H - .05, 15, 16.5, '#9a948a');
-        const nd = W; for (let i = 0; i < nd; i++) { D(b, '+v', i + .1, i + .9, 2, 13, '#f6f3ec'); D(b, '+v', i + .45, i + .55, 10, 11, '#8e8070'); }
-        D(b, '+v', .05, W - .05, 0, 1.5, '#5a554e');
-        if (k === 'kitchen1') { B(.3, .25, 1.2, .75, 16.5, 17.3, '#d4a373'); B(2, .3, 2.5, .6, 16.5, 22, '#e9e3d6'); }
-        if (k === 'kitchen2') { const top = parts[1]; T(top, .15, .2, .85, .75, '#c8c4bc'); T(top, .2, .25, .8, .7, '#a9a49b'); B(.45, .05, .55, .2, 16.5, 23, '#c3c8c9'); B(.45, .05, .55, .45, 22, 23, '#c3c8c9'); }
-        if (k === 'kitchen3') { const top = parts[1]; T(top, .1, .15, .9, .85, '#2e2d2c'); [[.3, .3], [.7, .3], [.3, .65], [.7, .65]].forEach(([u, v]) => T(top, u - .1, v - .08, u + .1, v + .08, '#55524f')); D(b, '+v', .15, .85, 4, 11, '#2e2d2c'); }
+        const b = B(.05, .05, W - .05, H - .1, 0, 14, '#ece7dc'), top = B(0, 0, W, H - .05, 14, 15, '#9a948a');
+        D(b, '+v', .05, W - .05, 0, 1.2, '#4a4f53');
+        if (k !== 'kitchen3') for (let i = 0; i < W; i++) { D(b, '+v', i + .1, i + .9, 2, 12.6, '#f6f3ec'); D(b, '+v', i + .1, i + .9, 2, 3, '#ddd6ca'); D(b, '+v', i + .74, i + .8, 8.5, 11.5, '#8e8070'); if (i) D(b, '+v', i - .03, i + .03, 1.2, 14, '#cfc8bb'); }
+        if (k === 'kitchen1') { const cb = B(.3, .22, 1.15, .7, 15, 15.6, '#d4a373'); T(cb, .3, .22, 1.15, .28, '#e6b98a'); B(.5, .38, .95, .44, 15.6, 15.9, '#c3c8c9');
+          [[2.1, '#efe6d2', '#a8473c'], [2.32, '#efe6d2', '#c9a54e'], [2.54, '#7d5a3a', '#e9e3d6']].forEach(([u, c1, c2]) => { B(u, .18, u + .16, .34, 15, 17.6, c1); B(u + .02, .2, u + .14, .32, 17.6, 18.4, c2); }); }
+        if (k === 'kitchen2') { T(top, .16, .18, .84, .72, '#a9a49b'); T(top, .16, .18, .84, .32, '#7d7870'); T(top, .16, .18, .3, .72, '#8e8a84'); T(top, .3, .6, .84, .72, '#d6d2ca'); T(top, .52, .4, .64, .5, '#4a4f53');   // 槽（第二輪：一片灰色雜點）：後緣、左緣內側暗，前緣內側亮，排水孔
+          B(.46, .05, .54, .13, 15, 21.5, '#c3c8c9'); B(.46, .05, .54, .4, 20.7, 21.5, '#c3c8c9'); B(.46, .32, .54, .4, 19, 20.7, '#c3c8c9');
+          B(.74, .12, .86, .24, 15, 18.2, '#7d9a8c'); B(.77, .15, .83, .21, 18.2, 19.2, '#e9e3d6'); }
+        if (k === 'kitchen3') { T(top, .08, .1, .92, .82, '#4a4f53'); [[.3, .3], [.7, .3], [.3, .64], [.7, .64]].forEach(([u, v]) => { T(top, u - .13, v - .1, u + .13, v + .1, '#6a7075'); T(top, u - .07, v - .05, u + .07, v + .05, '#3d4246'); T(top, u - .13, v - .01, u + .13, v + .01, '#30353a'); T(top, u - .01, v - .1, u + .01, v + .1, '#30353a'); });
+          B(.56, .52, .84, .76, 15, 18, '#b9b4ab'); B(.58, .54, .82, .74, 18, 19, '#d6d2ca'); B(.66, .6, .74, .68, 19, 20, '#4a4f53'); B(.84, .6, .96, .68, 17, 18, '#4a4f53');   // 小鍋子：鍋身、亮的鍋蓋、蓋子小把手、鍋柄
+          D(b, '+v', .1, .9, 12, 13.6, '#ddd6ca'); [.2, .4, .6, .8].forEach(u => D(b, '+v', u - .05, u + .05, 12.3, 13.4, '#3d4246'));
+          const od = D(b, '+v', .12, .88, 2.5, 11, '#3d4246'); D(b, '+v', .22, .78, 4, 8.6, '#4f555a'); D(b, '+v', .26, .4, 6.5, 8.2, '#6a7075'); D(b, '+v', .2, .8, 9.4, 10.3, '#c3c8c9'); }
         break;
       }
-      case 'kitchen4': case 'kitchen5': {   // 冰箱
-        const two = k === 'kitchen5', col = C.main === WOOD.白 || C.a === '白' ? '#eceae4' : C.a === '黑' ? '#3a3a3d' : C.wood, hh = two ? 36 : 32, b = B(.05, .05, W - .05, H - .1, 0, hh, col);
-        if (two) { D(b, '+v', W / 2 - .02, W / 2 + .02, 1, hh - 1, sh(col, -.3)); D(b, '+v', W / 2 - .15, W / 2 - .1, 12, 24, '#b9b4ab'); D(b, '+v', W / 2 + .1, W / 2 + .15, 12, 24, '#b9b4ab'); }
-        else { D(b, '+v', .05, W - .05, hh * .62, hh * .62 + .8, sh(col, -.3)); D(b, '+v', W - .2, W - .15, hh * .68, hh * .9, '#b9b4ab'); D(b, '+v', W - .2, W - .15, hh * .3, hh * .55, '#b9b4ab'); }
+      case 'kitchen4': case 'kitchen5': {   // 冰箱（後 20 件審稿）：單門一扇門、約 1.5 公尺；雙門約 1.8 公尺；長把手亮一階＋亮點；黑統一用 #3d4246 那組
+        const two = k === 'kitchen5', col = C.a === '白' ? '#eceae4' : C.a === '黑' ? '#3d4246' : C.wood, hh = two ? 30 : 26, b = B(.05, .05, W - .05, H - .1, 0, hh, col);
+        const hc = C.a === '黑' ? '#6a7075' : C.a === '白' ? '#8e8a84' : '#8e8070', hl = C.a === '黑' ? '#8e9396' : '#d6d2ca';
+        D(b, '+v', .05, W - .05, 0, 1.2, sh(col, -.25));
+        if (two) { D(b, '+v', W / 2 - .045, W / 2 + .045, 1.2, hh - .5, sh(col, -.3)); [[W / 2 - .24, W / 2 - .12], [W / 2 + .12, W / 2 + .24]].forEach(([a0, a1]) => { D(b, '+v', a0, a1, hh * .35, hh * .75, hc); D(b, '+v', a0, a0 + .05, hh * .45, hh * .7, hl); }); }   // 第二輪：門縫、把手不到一顆寬會不見
+        else { D(b, '+v', .08, W - .08, 1.6, hh - .6, sh(col, .04)); D(b, '+v', W - .28, W - .16, hh * .35, hh * .75, hc); D(b, '+v', W - .28, W - .23, hh * .45, hh * .7, hl); }
         break;
       }
     }
@@ -409,11 +512,12 @@
   const LUM_MIN = 52;   // #30353a 的亮度（第三輪：照最亮那個色版算會漏掉 (42,47,51) 這種，改照亮度）
   const clampDark = c => { if (c[0] !== '#') return c; const a = hex(c); return a[0] * .3 + a[1] * .59 + a[2] * .11 < LUM_MIN ? '#30353a' : c; };
   // 影子只在底座下面的（立燈、弧形落地燈；第二輪：小圖底下一大塊菱形像墊了地磚）：自己座標的 [u0, v0, u1, v1]
-  const SHADOW = { lamp2: [.25, .25, .75, .75], lamp3: [.12, .12, .78, .78], table7: [.7, .7, 3.3, 3.3], table8: [.5, .6, 5.5, 3.4] };   // 餐桌（第三輪：四角是空的，整格的影子像墊了一塊地毯）只在桌子下面
+  const SHADOW = { lamp2: [.25, .25, .75, .75], lamp3: [.12, .12, .78, .78], table7: [.7, .7, 3.3, 3.3], table8: [.5, .6, 5.5, 3.4], sofa5: [[0, 0, 5, 2], [3.3, 2, 5, 4]] };
+  const shadowRects = k => { const s0 = SHADOW[k]; return s0 ? (Array.isArray(s0[0]) ? s0 : [s0]) : null; };   // L 型沙發（後 20 件審稿：整個 5×4 的影子連缺角也有）分兩塊   // 餐桌（第三輪：四角是空的，整格的影子像墊了一塊地毯）只在桌子下面
   // 一個盒子（屋內和商店小圖共用）：正面原色、右側暗、頂面亮。2026-11-27 家具審稿：
   // 頂面前緣一顆亮邊（跟家門口屋簷、欄杆一樣）、木頭色的大面畫幾條淡木紋、很淺的顏色右側再暗一點（不然在米白底上看不見）、玻璃四邊亮邊
   const lum = c => { const a = hex(c); return a[0] * .3 + a[1] * .59 + a[2] * .11; };
-  function drawBox(x, iso, p, b, P, vis) {
+  function drawBox(x, iso, p, b, P, vis, onGlow) {
     const q = (pts, col) => poly(x, pts, clampDark(col)), ga = x.globalAlpha;
     const top = [iso(b.x0, b.y0, b.z1), iso(b.x1, b.y0, b.z1), iso(b.x1, b.y1, b.z1), iso(b.x0, b.y1, b.z1)];
     const fy = [iso(b.x0, b.y1, b.z0), iso(b.x1, b.y1, b.z0), iso(b.x1, b.y1, b.z1), iso(b.x0, b.y1, b.z1)], fx = [iso(b.x1, b.y0, b.z0), iso(b.x1, b.y1, b.z0), iso(b.x1, b.y1, b.z1), iso(b.x1, b.y0, b.z1)];
@@ -435,7 +539,7 @@
     (p.dec || []).forEach(d => { const n = vis(d.face); if (!n) return; let pts;
       if (d.face === '+v' || d.face === '-v') { const v = d.face === '+v' ? p.v1 : p.v0; pts = [P(d.a0, v, d.z0), P(d.a1, v, d.z0), P(d.a1, v, d.z1), P(d.a0, v, d.z1)]; }
       else { const u = d.face === '+u' ? p.u1 : p.u0; pts = [P(u, d.a0, d.z0), P(u, d.a1, d.z0), P(u, d.a1, d.z1), P(u, d.a0, d.z1)]; }
-      q(pts, n === '+x' ? sh(d.col, -.12) : d.col); });
+      q(pts, n === '+x' ? sh(d.col, -.12) : d.col); if (d.glow && onGlow) onGlow(pts); });
     return [top, fy, fx];
   }
   // 展示櫃的玻璃（2026-11-27 審稿：一倍下看起來像空的木框）：淡淡一層、上緣和左緣一顆亮邊、兩條粗的斜反光
@@ -591,13 +695,10 @@
     // 2. 掛畫（北牆）
     const placed = X.placedIn(s, r.id).filter(t => t.id !== opt.hide);
     function drawPic(k, at0, alpha) {
-      const f = X.FURN[k], a0 = at0 + .1, a1 = at0 + f.w - .1, z0 = 20, z1 = 34; if (alpha != null) x.globalAlpha = alpha;
+      const f = X.FURN[k], P0 = PIC[k], a0 = at0 + P0.a0, a1 = at0 + f.w + P0.a1, z0 = P0.z0, z1 = P0.z1; if (alpha != null) x.globalAlpha = alpha;
       const pts = [onN(a0, z0), onN(a1, z0), onN(a1, z1), onN(a0, z1)];
-      q(pts, '#d4a83c'); q([onN(a0, z0 - 1), onN(a1, z0 - 1), onN(a1, z0), onN(a0, z0)], '#a77f25');
-      if (k === 'pic1') { q([onN(a0 + .12, z0 + 2), onN(a1 - .12, z0 + 2), onN(a1 - .12, z1 - 2), onN(a0 + .12, z1 - 2)], '#bfe0ea'); q([onN(a0 + .12, z0 + 2), onN(a1 - .12, z0 + 2), onN(a1 - .12, z0 + 6), onN(a0 + .12, z0 + 6)], '#8fb36a');
-        q([onN(a0 + .4, z0 + 6), onN(a0 + .9, z1 - 4), onN(a0 + 1.4, z0 + 6)], '#7d8fa0'); q([onN(a0 + .75, z1 - 5), onN(a0 + .9, z1 - 4), onN(a0 + 1.05, z1 - 5)], '#ffffff'); const [a, b] = onN(a1 - .4, z1 - 4); x.fillStyle = '#f2c14e'; x.fillRect(Math.round(a) - 1, Math.round(b) - 1, 3, 3); }
-      else { q([onN(a0 + .1, z0 + 2), onN(a1 - .1, z0 + 2), onN(a1 - .1, z1 - 2), onN(a0 + .1, z1 - 2)], '#3a2f4a');
-        if (COLL) { const s0 = X.COLL.c_raccoon.d, [a, b] = onN((a0 + a1) / 2, (z0 + z1) / 2); x.save(); x.imageSmoothingEnabled = true; x.drawImage(COLL, s0[0], s0[1], 24, 24, a - 5, b - 5, 10, 10); x.restore(); } }
+      q([onN(a0 + .06, z0 - 1), onN(a1 + .06, z0 - 1), onN(a1 + .06, z1 - 1), onN(a0 + .06, z1 - 1)], 'rgba(40,28,18,.16)');   // 畫框在牆上的影子（右下一點）
+      paintWall(x, onN, a0, a1, z0, z1, picFn(k, a1 - a0, z1 - z0));
       x.globalAlpha = 1; return pts;
     }
     placed.filter(t => X.FURN[t.key].kind === 'pic').forEach(t => hits.push({ id: t.id, pts: [drawPic(t.key, t.at[0])] }));
@@ -619,8 +720,9 @@
       it.bd.parts.forEach(p => { if (p.t !== 'case') return; const b = worldBox(p, it.tf); lights.push({ at: iso((b.x0 + b.x1) / 2, b.y1, (b.z0 + b.z1) / 2), fl: iso((b.x0 + b.x1) / 2, b.y1 + .3, 0), kind: 'case' }); }); });
     // 影子（地毯以外，先全部畫）
     x.save(); x.fillStyle = 'rgba(40,28,18,.18)';
-    items.filter(it => !it.rug && !it.ghost).forEach(it => { const sb = SHADOW[it.t.key], b = sb ? { x0: it.wb.x0 + sb[0], y0: it.wb.y0 + sb[1], x1: it.wb.x0 + sb[2], y1: it.wb.y0 + sb[3] } : it.wb, s2 = .22, sm = sb ? 0 : ['plant1', 'plant2', 'plant3'].includes(it.t.key) ? .3 : .06;
-      poly(x, [iso(b.x0 + sm + s2, b.y0 + sm + s2 * .4), iso(b.x1 - sm + s2, b.y0 + sm + s2 * .4), iso(b.x1 - sm + s2, b.y1 - sm + s2), iso(b.x0 + sm + s2, b.y1 - sm + s2)], 'rgba(40,28,18,.18)'); });
+    items.filter(it => !it.rug && !it.ghost).forEach(it => { const rs = shadowRects(it.t.key), s2 = .22;
+      const boxes = rs ? rs.map(r2 => { const p0 = it.tf(r2[0], r2[1]), p1 = it.tf(r2[2], r2[3]); return [Math.min(p0[0], p1[0]), Math.min(p0[1], p1[1]), Math.max(p0[0], p1[0]), Math.max(p0[1], p1[1]), 0]; }) : [[it.wb.x0, it.wb.y0, it.wb.x1, it.wb.y1, ['plant1', 'plant2', 'plant3'].includes(it.t.key) ? .3 : .06]];
+      boxes.forEach(([x0, y0, x1, y1, sm]) => poly(x, [iso(x0 + sm + s2, y0 + sm + s2 * .4), iso(x1 - sm + s2, y0 + sm + s2 * .4), iso(x1 - sm + s2, y1 - sm + s2), iso(x0 + sm + s2, y1 - sm + s2)], 'rgba(40,28,18,.18)')); });
     x.restore();
     const rugs = items.filter(it => it.rug), objs = depthSort(items.filter(it => !it.rug));
     // 預覽的地上框：綠白、紅
@@ -657,11 +759,9 @@
       const list = bd.parts.map(p => Object.assign({ wb: worldBox(p, tf) }, p));
       orderParts(list).forEach(p => {
         const b = p.wb;
-        if (p.t === 'box') shapes.push(...drawBox(x, iso, p, b, P, face => { const n = NORMAL[face][rot]; return n === '+x' || n === '+y' ? n : null; }));
+        if (p.t === 'box') shapes.push(...drawBox(x, iso, p, b, P, face => { const n = NORMAL[face][rot]; return n === '+x' || n === '+y' ? n : null; }, night ? pts => emit.push(() => { x.save(); x.globalCompositeOperation = 'lighter'; x.globalAlpha = .32; poly(x, pts, '#6f8fc8'); x.restore(); }) : null));
         else if (p.t === 'fn') { const [a, c] = P(p.u, p.v, p.z); p.draw(x, Math.round(a), Math.round(c), night, (u, v, zz) => P(u, v, zz)); shapes.push([[a - 8, c - (p.z1 - p.z0) - 4], [a + 8, c - (p.z1 - p.z0) - 4], [a + 8, c + 3], [a - 8, c + 3]]); }
-        else if (p.t === 'disc') { const pts = [], cx = (p.u0 + p.u1) / 2, cy = (p.v0 + p.v1) / 2, rr = (p.u1 - p.u0) / 2; for (let k2 = 0; k2 < 32; k2++) { const th = k2 / 32 * Math.PI * 2; pts.push(P(cx + Math.cos(th) * rr, cy + Math.sin(th) * rr, .6)); }
-          const ring = f => pts.map(([a, c]) => { const [ca, cc] = P(cx, cy, .6); return [ca + (a - ca) * f, cc + (c - cc) * f]; });
-          q(ring(1), '#e9dcc3'); q(ring(.9), p.col); q(ring(.6), sh(p.col, -.15)); q(ring(.35), sh(p.col, .3)); q(ring(.25), p.col); shapes.push(ring(1)); }
+        else if (p.t === 'disc') shapes.push(discDraw(x, P, p));
         else if (p.t === 'case') {   // 展示櫃：藏品擺在層板上，外面一層玻璃
           const hold = X.HOLD[t.key], list2 = t.id === '_ghost' ? [] : X.caseItems(s, t.id), per = Math.ceil(hold.n / p.rows);
           list2.forEach(itm => { const row = Math.floor(itm.at / per), col = itm.at % per, u = p.u0 + (col + .5) * (p.u1 - p.u0) / per, v = (p.v0 + p.v1) / 2, zz = p.z0 + 1 + row * (p.hh - 4) / p.rows;
@@ -698,7 +798,7 @@
       { const im = x.getImageData(0, 0, lay.width, lay.height), d = im.data; for (let i = 0; i < d.length; i += 4) { if (!d[i + 3]) continue; const L = d[i] * .3 + d[i + 1] * .59 + d[i + 2] * .11; if (L < LUM_MIN) { const add = LUM_MIN - L; d[i] += add; d[i + 1] += add; d[i + 2] += add; } } x.putImageData(im, 0, 0); }
       x = main; x.save(); x.setTransform(1, 0, 0, 1, 0, 0); x.drawImage(lay, 0, 0); x.restore();
       x.save(); clipTo([iso(0, r.h + WT, 0), iso(0, r.h + WT, WH), iso(0, 0, WH), iso(r.w + WT, 0, WH), iso(r.w + WT, 0, 0), iso(r.w + WT, r.h + WT, 0)]); x.globalCompositeOperation = 'lighter';
-      lights.forEach(l => { const t = LT[l.kind] || LT.case, [a, b] = l.at; if (l.kind !== 'case') glow(a, b, l.kind === 'warm' ? 5 : 6, t[3], .55); }); x.restore();
+      lights.forEach(l => { const t = LT[l.kind] || LT.case, [a, b] = l.at; if (l.kind === 'warm') glow(a, b, 5, t[3], .55); }); x.restore();   // 燈泡（螢幕不畫，螢幕是整片亮）
       emit.forEach(e => e());
     }
     x.setTransform(1, 0, 0, 1, 0, 0);
@@ -725,19 +825,17 @@
     const x = cv.getContext('2d'); x.imageSmoothingEnabled = false; x.setTransform(2, 0, 0, 2, 0, 0);
     const iso = (i, j, zz = 0) => [OX + (i - j) * TW, OY + (i + j) * TH - zz];
     if (f.kind === 'pic') {
-      const on = (i, zz) => iso(i, 0, zz), a0 = .1, a1 = f.w - .1, z0 = 8, z1 = 22;
-      poly(x, [on(a0, z0), on(a1, z0), on(a1, z1), on(a0, z1)], '#d4a83c');
-      poly(x, [on(a0 + .12, z0 + 2), on(a1 - .12, z0 + 2), on(a1 - .12, z1 - 2), on(a0 + .12, z1 - 2)], k === 'pic1' ? '#bfe0ea' : '#3a2f4a');
-      if (k === 'pic1') poly(x, [on(a0 + .12, z0 + 2), on(a1 - .12, z0 + 2), on(a1 - .12, z0 + 6), on(a0 + .12, z0 + 6)], '#8fb36a');
+      const on = (i, zz) => iso(i, 0, zz), P0 = PIC[k], a0 = P0.a0, a1 = f.w + P0.a1, z0 = P0.z0 - 12, z1 = P0.z1 - 12;
+      paintWall(x, on, a0, a1, z0, z1, picFn(k, a1 - a0, z1 - z0));
     } else {
       const bd = build(k, c, false), tf = xform(0, 0, 0, f.w, f.h), P = (u, v, zz) => { const [a, b] = tf(u, v); return iso(a, b, zz); };
       // 小圖也畫地上的影子（2026-11-27 審稿：白、米色的家具在商店的米白底上看不見）
-      if (f.kind !== 'rug' && f.kind !== 'rugone') { const sb = SHADOW[k] || [0, 0, f.w, f.h], s2 = .22, sm = SHADOW[k] ? 0 : ['plant1', 'plant2', 'plant3'].includes(k) ? .3 : .06; poly(x, [iso(sb[0] + sm + s2, sb[1] + sm + s2 * .4), iso(sb[2] - sm + s2, sb[1] + sm + s2 * .4), iso(sb[2] - sm + s2, sb[3] - sm + s2), iso(sb[0] + sm + s2, sb[3] - sm + s2)], 'rgba(40,28,18,.18)'); }
+      if (f.kind !== 'rug' && f.kind !== 'rugone') { const s2 = .22; (shadowRects(k) || [[0, 0, f.w, f.h]]).forEach(([x0, y0, x1, y1]) => { const sm = SHADOW[k] ? 0 : ['plant1', 'plant2', 'plant3'].includes(k) ? .3 : .06; poly(x, [iso(x0 + sm + s2, y0 + sm + s2 * .4), iso(x1 - sm + s2, y0 + sm + s2 * .4), iso(x1 - sm + s2, y1 - sm + s2), iso(x0 + sm + s2, y1 - sm + s2)], 'rgba(40,28,18,.18)'); }); }
       const list = orderParts(bd.parts.map(p => Object.assign({ wb: worldBox(p, tf) }, p)));
       list.forEach(p => { const b = p.wb;
         if (p.t === 'box') drawBox(x, iso, p, b, P, face => face === '+v' ? '+y' : face === '+u' ? '+x' : null);
         else if (p.t === 'fn') { const [a, cc] = P(p.u, p.v, p.z); p.draw(x, Math.round(a), Math.round(cc), false, P); }
-        else if (p.t === 'disc') { const pts = []; for (let k2 = 0; k2 < 32; k2++) { const th = k2 / 32 * Math.PI * 2; pts.push(P(f.w / 2 + Math.cos(th) * f.w / 2, f.h / 2 + Math.sin(th) * f.h / 2, .6)); } poly(x, pts, p.col); }
+        else if (p.t === 'disc') discDraw(x, P, p);
         else if (p.t === 'case') caseGlass(x, iso, b); });
     }
     // 切掉四周空白
