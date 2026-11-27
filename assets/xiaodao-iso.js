@@ -560,7 +560,10 @@
     const iso = (i, j, zz = 0) => [OX + (i - j) * TW, OY + (i + j) * TH - zz];
     const cv = opt.canvas || document.createElement('canvas'); if (cv.width !== W * z || cv.height !== H * z) { cv.width = W * z; cv.height = H * z; }
     let x = cv.getContext('2d'); x.setTransform(1, 0, 0, 1, 0, 0); x.imageSmoothingEnabled = false;   // 晚上家具畫在另一層（見下面「3. 家具」），x 會暫時換成那一層
-    const q = (pts, col) => poly(x, pts, col);
+    // 晚上整間會乘一層深藍（#5b6189）再加 (20, 20, 26)；畫房間時太深的顏色先提亮，乘完才不會比 #30353a 暗（2026-11-27：平台側面、窗簾桿）。夜裡的窗玻璃（夜空）除外
+    const NIGHT_SKIP = new Set(['#1f2c4f']);
+    const nightSafe = c => { if (!night || c[0] !== '#' || NIGHT_SKIP.has(c)) return c; const a = hex(c), post = [a[0] * .357 + 20, a[1] * .38 + 20, a[2] * .537 + 26], L = post[0] * .3 + post[1] * .59 + post[2] * .11; if (L >= LUM_MIN) return c; const d = (LUM_MIN - L) / .39 + 1; return toHex(a.map(v => v + d)); };
+    const q = (pts, col) => poly(x, pts, nightSafe(col));
     const hits = [];   // 點選用：每一件畫出來的多邊形
 
     // 房間的門窗（給殼和點選用）
@@ -570,9 +573,9 @@
     // 窗平均分佈在牆上（2026-11-27：原本從第 1 格開始每 6 格一扇，窄的房間只有一扇擠在角落）
     const spread = len => { const n = Math.max(1, Math.floor((len + 2) / 6)), gap = (len - 2 * n) / (n + 1), out = []; for (let k = 0; k < n; k++) out.push(gap + k * (2 + gap)); return out; };
     const winN = tent ? [] : spread(r.w).filter(c => !pics.some(([a, b]) => c < b + .5 && a < c + 2.5));
-    // 門寬 1.2 格（2026-11-23 使用者說 2.4 格太寬、不正常）
-    const mid = Math.floor(r.h / 2), doorW = R.idx > 0 ? [mid - .6, mid + .6] : null, doorE = R.idx < R.n - 1 ? [mid - .6, mid + .6] : null;
-    const doorS = R.fi === 0 && r.id === 'main' ? [r.w / 2 - .6, r.w / 2 + .6] : null;
+    // 門寬 1.2 格（2026-11-23 使用者說 2.4 格太寬；2026-11-27 家具審稿試過 1.6 格，使用者選維持 1.2 格）
+    const DH = .6, mid = Math.floor(r.h / 2), doorW = R.idx > 0 ? [mid - DH, mid + DH] : null, doorE = R.idx < R.n - 1 ? [mid - DH, mid + DH] : null;
+    const doorS = R.fi === 0 && r.id === 'main' ? [r.w / 2 - DH, r.w / 2 + DH] : null;
     const winW = R.idx === 0 && !tent ? spread(r.h) : [];
 
     // 1. 殼：背景、底座、地板、兩道牆（一顆一顆，存起來）
