@@ -231,7 +231,9 @@ window.CompanyRules = (() => {
     return ups;
   }
   const trainPrice = (stage, s) => STAGES[stage].train * s.lv;
-  const overtimePrice = job => job.c.gross;   // 使用者 2026-11-25：降到跟案子差不多（原本兩倍）
+  // 加班費：剩下多少就付多少（使用者 2026-11-27：加班的金額應該要跟著進度不同而改變）。案子的錢 × 還沒做完的比例，最少一成、進位到十塊，不超過案子的錢（2026-11-25 定的上限）。
+  // 後端 companyOvertime 用同一條算（用後端的時間）
+  const overtimePrice = (job, t) => { const g = job.c.gross, span = Math.max(1, job.end - job.start), left = Math.min(1, Math.max(0, (job.end - (t == null ? Date.now() : t)) / span)); return Math.min(g, Math.max(10, Math.ceil(g * Math.max(.1, left) / 10) * 10)); };
   const incidentCost = (stage, k) => Math.round(STAGES[stage].base * 60 * 3 * k * 10) / 10 > 0 ? Math.max(100, Math.round(STAGES[stage].base * 60 * 3 * k / 10) * 10) : 100;
 
   return { STAGES, DURS, STATS, SPECIALS, SPECIES, COLORS, CLIENTS, INCIDENTS, EQUIP, EQUIP_BOOST, SALARY, BOARD_EVERY, BOARD_MAX, SUPER_LIFE, FREE_REFRESH, MAX_LV,

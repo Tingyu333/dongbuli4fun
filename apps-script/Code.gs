@@ -73,7 +73,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-27d';
+var BACKEND_VERSION = '2026-11-27e';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1, gaFundStart: 1, gaFundEnd: 1, coinTrade: 1, coinOpen: 1, coinClose: 1, coinAdd: 1, coinSetTp: 1 };
 
@@ -4911,7 +4911,7 @@ function companyPay(input) {
   });
 }
 
-// 加班費：錢包付那件案子的錢，案子馬上做完。{ save, rev, job: 案子 id }
+// 加班費：錢包付那件案子還沒做完的那部分（最少一成），案子馬上做完。{ save, rev, job: 案子 id }
 function companyOvertime(input) {
   var g = companyGuard(input);
   if (g.error) return g.error;
@@ -4921,8 +4921,12 @@ function companyOvertime(input) {
     var rec = a.rec, m = rec.meta, s = rec.data, id = String(input.job || ''), j = null;
     for (var i = 0; i < s.jobs.length; i++) if (s.jobs[i] && s.jobs[i].id === id) j = s.jobs[i];
     if (!j || j.fin) return { result: 'error', error: '這件已經做完了' };
-    var st = COMPANY_STAGES[s.stage], price = cleanMoney(j.c && j.c.gross, 1, Math.ceil(st.base * 720 * st.seats * 3 / 0.7));
-    if (price === null) return { result: 'error', error: '這件的價錢不對' };
+    var st = COMPANY_STAGES[s.stage], gross = cleanMoney(j.c && j.c.gross, 1, Math.ceil(st.base * 720 * st.seats * 3 / 0.7));
+    if (gross === null) return { result: 'error', error: '這件的價錢不對' };
+    // 剩下多少就付多少（2026-11-27）：案子的錢 × 還沒做完的比例（用後端的時間），最少一成、進位到十塊，不超過案子的錢。跟 assets/company-rules.js 的 overtimePrice 一樣
+    var span = Math.max(1, Number(j.end) - Number(j.start)), left = Math.min(1, Math.max(0, (Number(j.end) - Date.now()) / span));
+    if (!isFinite(left)) left = 1;
+    var price = Math.min(gross, Math.max(10, Math.ceil(gross * Math.max(0.1, left) / 10) * 10));
     var p = findPlayer(g.lineId);
     if (!p) return { result: 'unauthorized' };
     if (p.money < price) return { result: 'error', error: '錢包不夠' };

@@ -40,7 +40,7 @@
     - `{ type: 'companyInject', save, rev, amount }`：先照 `companySave` 收存檔，再從 `Players` 的錢扣 `amount`、加進 `save.acct`，存檔版本加一（**不加 `spent`**，跟保險一樣是搬錢）。每天（台灣日期）最多當階的 `inject`（車庫 $33,000…大樓 $900,000，`COMPANY_STAGES` 要跟 `assets/company-rules.js` 一樣）。回 `{ result, save, rev, wallet, amount }`。
     - `{ type: 'companyCashOut', save, rev, amount }`：公司帳戶 → 錢包，加進 `earned.company`。`amount` 不能超過 `save.acct`。
     - `{ type: 'companyPay', save, rev, amount, what }`（2026-11-26f）：用錢包買東西（簽約金、換一批應徵、訓練、設備、廣告）。網頁先把買到的東西放進存檔再送，後端收存檔、從錢包扣 `amount`（算 `spent`）、`save.paid` 加上去，一起寫進去；版本不對回 `conflict` 不扣錢。以前是網頁自己扣錢包、存檔 30 秒後才送，換手機時存檔還沒送到，錢扣了東西卻不見（使用者 2026-11-26 回報請員工被扣兩次、人都不見）。
-    - `{ type: 'companyOvertime', save, rev, job }`：錢包付那件的 `c.gross`（算 `spent`），那件的 `end` 改成現在，帳本 `ot` 加上去。
+    - `{ type: 'companyOvertime', save, rev, job }`：錢包付那件還沒做完的那部分（`c.gross` × `(end − 現在) / (end − start)`，最少一成、進位到十塊，2026-11-27e；算 `spent`），那件的 `end` 改成現在，帳本 `ot` 加上去。
     - **賺錢速度**：累計淨賺 E ＝ 公司帳戶 ＋ 轉出 − 增資 ＋ 搬家花掉的；E − 加班費 × 2（`COMPANY_OT_K`）不能超過額度 `bank`。`bank` 每小時加「基本價 × 3.5 × 60 × 位子 × 3」（`COMPANY_RATE_K`，各種加成全開也到不了：車庫約 $2.7 萬／小時、大樓約 $53.8 萬），最多比上次多存 24 小時（`COMPANY_BANK_HOURS`，放著不玩不會一直累積）；新公司一開始 $5,000。
     - Sheet `Saves`（自動建）：A `created`、B `line_id`、C `game`（`company`；之後小島也放這裡）、D `rev`、E `updated`、F `data`（存檔 JSON）、G `meta`（帳本 JSON：`created`、`at`、`bank`、`Et`、`E`、`ot`、`out`、`inj`、`stage`、`injD`、`injAmt`、`flags`、`flagAt`、`flagOver`）、H `name`、I `stage`、J `earned`（E，之後公司・榜用）。
     - 公司的回應都多 `ledger: { inj, out, ot }`（累計增資、轉出、加班費，會員中心的帳用）。`leaderboard` 的 `spend` 多 `company`（存檔裡的 `paid`：用錢包付的簽約金、設備、加班費…），`scratch` 會扣掉它（2026-11-26e）。

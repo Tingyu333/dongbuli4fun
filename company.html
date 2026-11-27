@@ -24,7 +24,7 @@
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
     <script src="assets/company-office.js?v=20261125c"></script>
-    <script src="assets/company-rules.js?v=20261126m"></script>
+    <script src="assets/company-rules.js?v=20261127b"></script>
     <style>
 :root { --ink: #26303a; --sub: #6a7884; --teal: #2f7d90; --sub2: #51606d; --paper: #f2f6f8; --bg2: #dfe3e6; }
 /* 毛玻璃介面（跟 docs/plans/company/ui.css 的樣張同一套） */
@@ -433,7 +433,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     // ---------- 頁面版本：手機拿到舊的公司頁就自己重新載入（2026-11-26 使用者：手機快取了舊頁面，請的員工重整就不見） ----------
     // 改了這一頁要把 PAGE_VER 和 assets/company-ver.txt 一起換新（同一個字串）。
     // 重新載入前先把存檔送出去；送不出去的也留在這支手機（dongbuli-company-live），重新打開會接著用，不會丟東西。
-    const PAGE_VER = '2026-11-27a';
+    const PAGE_VER = '2026-11-27b';
     async function freshPage() {   // 回 true：要重新載入了
         let v = '';
         try { v = (await fetch('assets/company-ver.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '')).trim(); } catch (e) { }
@@ -1117,12 +1117,12 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
             const names = j.team.map(staffById).filter(Boolean).map(s => R.staffName(s)).join('、');
             if (j.fin) return `<div class="row done" data-j="${j.id}"><span class="tt">〈${esc(j.c.title)}〉<small>${esc(names)}</small></span><span class="chip${j.ok ? '' : ' shu'} num">${j.ok ? '完成' : '做砸了'}・${R.fmt(j.res.net)}</span></div>`;
             const u = Math.min(1, (t - j.start) / (j.end - j.start)), sleeping = j.napped && u > .35 && u < .7 && j.team.some(id => { const s = staffById(id); return s && s.key === 'julie'; });
-            return `<div class="row"><span class="tt">〈${esc(j.c.title)}〉<small>${esc(names)}${sleeping ? '・茱莉鴨睡著了，慢一點' : ''}</small><div class="bar"><i style="width:${u * 100}%"></i></div></span><span class="acts"><span class="num" style="font-size:12px;color:var(--sub)">${R.clock((j.end - t) / 1000)}</span>${j.c.tutorial ? '' : `<button class="mini num" data-ot="${j.id}">加班 ${R.fmt(R.overtimePrice(j))}</button>`}</span></div>`;
+            return `<div class="row"><span class="tt">〈${esc(j.c.title)}〉<small>${esc(names)}${sleeping ? '・茱莉鴨睡著了，慢一點' : ''}</small><div class="bar"><i style="width:${u * 100}%"></i></div></span><span class="acts"><span class="num" style="font-size:12px;color:var(--sub)">${R.clock((j.end - t) / 1000)}</span>${j.c.tutorial ? '' : `<button class="mini num" data-ot="${j.id}">加班 ${R.fmt(R.overtimePrice(j, now()))}</button>`}</span></div>`;
         }).join('') || '<div class="empty">沒有在做的案子・去委託接一件</div>';
         document.querySelectorAll('#runList .row.done').forEach(e => e.onclick = () => openReceipt(S.jobs.find(j => j.id === e.dataset.j)));
-        document.querySelectorAll('#runList [data-ot]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const j = S.jobs.find(x => x.id === b.dataset.ot); if (!j || j.fin) return; if (!await ask('付加班費？', '用錢包付 ' + R.fmt(R.overtimePrice(j)) + '，〈' + esc(j.c.title) + '〉馬上做完。', { ok: '付加班費' })) return;
-            if (LIVE) { const id = j.id; if (await serverAct('overtime', { type: 'companyOvertime', job: id }, '大家留下來加班了')) { const k = S.jobs.find(x => x.id === id); if (k && !k.fin) k.end = Math.min(k.end, now()); bookPaid('overtime', R.overtimePrice(k || j)); save(); tick(); } return; }   // 正式：後端扣錢包、記加班費
-            const otp = R.overtimePrice(j); if (!payWallet(otp)) return; S.paid = (S.paid || 0) + otp; bookPaid('overtime', otp); j.end = now(); tick(); });
+        document.querySelectorAll('#runList [data-ot]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const j = S.jobs.find(x => x.id === b.dataset.ot); if (!j || j.fin) return; if (!await ask('付加班費？', '用錢包付 ' + R.fmt(R.overtimePrice(j, now())) + '，〈' + esc(j.c.title) + '〉馬上做完。', { ok: '付加班費' })) return;
+            if (LIVE) { const id = j.id, ok = await serverAct('overtime', { type: 'companyOvertime', job: id }, r => '加班費 ' + R.fmt(r.price) + '，大家留下來了'); if (ok) { const k = S.jobs.find(x => x.id === id); if (k && !k.fin) k.end = Math.min(k.end, now()); bookPaid('overtime', ok.price || 0); save(); tick(); } return; }   // 正式：後端扣錢包、記加班費
+            const otp = R.overtimePrice(j, now()); if (!payWallet(otp)) return; S.paid = (S.paid || 0) + otp; bookPaid('overtime', otp); j.end = now(); tick(); });
     }
     function renderBoard() {
         $('title').textContent = '委託'; $('moneyLab').textContent = '公司帳戶';
