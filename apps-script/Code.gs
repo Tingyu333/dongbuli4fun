@@ -73,9 +73,9 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-27c';
+var BACKEND_VERSION = '2026-11-27d';
 
-var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1, gaFundStart: 1, gaFundEnd: 1, coinTrade: 1, coinOpen: 1, coinClose: 1, coinAdd: 1 };
+var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1, gaFundStart: 1, gaFundEnd: 1, coinTrade: 1, coinOpen: 1, coinClose: 1, coinAdd: 1, coinSetTp: 1 };
 
 function withLock(fn) {
   var lock = LockService.getScriptLock();
@@ -152,7 +152,8 @@ function route(type, input) {
     if (type === 'coinTrade') return coinTrade(input);
     if (type === 'coinOpen') return coinOpen(input);
     if (type === 'coinClose') return coinClose(input);
-    if (type === 'coinAdd') return coinAdd(input);            // 補錢救單（2026-11-27）
+    if (type === 'coinAdd') return coinAdd(input);
+    if (type === 'coinSetTp') return coinSetTp(input);        // 目標價（止盈，2026-11-27）            // 補錢救單（2026-11-27）
     if (type === 'sportQuote') return sportQuote(input);
     if (type === 'sportMine') return sportMine(input);
     if (type === 'sportBet') return sportBet(input);
@@ -4124,24 +4125,73 @@ function coinLog(lineId, key, kind, dir, lev, units, price, amount, fee, pl, mon
 }
 
 // 爆倉檢查：從上次檢查到的那根往後看到現在，最低（看漲）或最高（看跌）碰到爆倉價就爆。回傳有沒有改東西
-function coinSettle(st, nowMs, lineId) {
-  var changed = false;
+// 檢查爆倉和目標價（止盈，2026-11-27）：從上次檢查到的那根往後看到現在。回傳有沒有改東西。目標價成交會把錢放回錢包（p.money）。
+// 放大倍數的單：哪一分鐘先碰到就算哪個；同一分鐘裡爆倉價和目標價都碰到，算先爆（保守）。目標價用目標價成交，收回不收錢。
+// 直接買的：最高價碰到目標價就全部賣掉，用目標價、扣 0.5% 手續費。
+function coinSettle(p, nowMs, lineId) {
+  var st = p.coin, changed = false;
   st.p = st.p.filter(function (pos) {
     var c = coinOf(pos.key); if (!c) return true;
-    var cur = coinIdx(c, nowMs), i = cur > pos.chk ? coinFirstHit(c, pos.chk + 1, cur, pos.dir, pos.liq) : -1;
-    {
-      if (i >= 0) {
-        st.pl -= pos.m; st.boom = (st.boom || 0) + 1; st.lost = (st.lost || 0) + pos.m;
-        coinNote(st, { kind: 'boom', id: pos.id, key: pos.key, dir: pos.dir, lev: pos.lev, m: pos.m, e: coinPx(c, pos.e), liq: coinPx(c, pos.liq), at: coinIdxMs(c, i), t: pos.t });
-        if (lineId) coinLog(lineId, pos.key, 'boom', pos.dir, pos.lev, '', coinPx(c, pos.liq), pos.m, 0, -pos.m, '');
-        changed = true;
-        return false;
-      }
+    var cur = coinIdx(c, nowMs);
+    if (cur <= pos.chk) return true;
+    var iL = coinFirstHit(c, pos.chk + 1, cur, pos.dir, pos.liq);
+    // 目標價：看漲看最高 ≥ 目標（coinFirstHit 的 'down' 是看最高）、看跌看最低 ≤ 目標；只找爆倉之前的分鐘
+    var iT = pos.tp ? coinFirstHit(c, pos.chk + 1, iL >= 0 ? iL - 1 : cur, pos.dir === 'up' ? 'down' : 'up', pos.tp) : -1;
+    if (iT >= 0) {
+      var back = coinPosValue(pos, pos.tp), pl = back - pos.m;
+      p.money = Math.min(WALLET_MAX, p.money + back); st.pl += pl;
+      coinNote(st, { kind: 'tp', id: pos.id, key: pos.key, dir: pos.dir, lev: pos.lev, m: pos.m, e: coinPx(c, pos.e), tp: coinPx(c, pos.tp), back: back, pl: pl, at: coinIdxMs(c, iT), t: pos.t });
+      if (lineId) coinLog(lineId, pos.key, 'tp', pos.dir, pos.lev, '', coinPx(c, pos.tp), back, 0, pl, p.money);
+      changed = true;
+      return false;
     }
-    if (cur > pos.chk) { pos.chk = cur; changed = true; }
+    if (iL >= 0) {
+      st.pl -= pos.m; st.boom = (st.boom || 0) + 1; st.lost = (st.lost || 0) + pos.m;
+      coinNote(st, { kind: 'boom', id: pos.id, key: pos.key, dir: pos.dir, lev: pos.lev, m: pos.m, e: coinPx(c, pos.e), liq: coinPx(c, pos.liq), at: coinIdxMs(c, iL), t: pos.t });
+      if (lineId) coinLog(lineId, pos.key, 'boom', pos.dir, pos.lev, '', coinPx(c, pos.liq), pos.m, 0, -pos.m, '');
+      changed = true;
+      return false;
+    }
+    pos.chk = cur; changed = true;
     return true;
   });
+  Object.keys(st.h).forEach(function (k) {
+    var h = st.h[k], c = coinOf(k);
+    if (!h.tp || !c) return;
+    var cur = coinIdx(c, nowMs);
+    if (cur <= h.chk) return;
+    var i = coinFirstHit(c, h.chk + 1, cur, 'down', h.tp);
+    changed = true;
+    if (i < 0) { h.chk = cur; return; }
+    var price = coinPx(c, h.tp), gross = Math.floor(h.u * price), fee = Math.ceil(gross * COIN_FEE), back = gross - fee, pl = back - h.cost;
+    p.money = Math.min(WALLET_MAX, p.money + back); st.fee += fee; st.pl += pl;
+    coinNote(st, { kind: 'tps', key: k, u: h.u, tp: price, back: back, fee: fee, pl: pl, at: coinIdxMs(c, i) });
+    if (lineId) coinLog(lineId, k, 'tpsell', '', '', h.u, price, gross, fee, pl, p.money);
+    delete st.h[k];
+  });
   return changed;
+}
+// 有沒有東西要檢查（單、通知、設了目標價的直接買）
+function coinNeedsSettle(st) { return st.p.length || st.notes.length || Object.keys(st.h).some(function (k) { return st.h[k].tp; }); }
+
+// 設目標價：{ type: 'coinSetTp', id（放大倍數的單）或 key（直接買的那一種）, tp（價格；0 是取消）}（在 LOCKED_TYPES）
+// 看漲、直接買的目標要比現價高；看跌的要比現價低。從現在這一分鐘之後開始看
+function coinSetTp(input) {
+  var g = coinGuard(input);
+  if (g.error) return g.error;
+  var now = stockNow().getTime(), p = coinFresh(g.lineId, now), st = p.coin, tp = Number(input.tp) || 0;
+  var pos = input.id ? st.p.filter(function (x) { return x.id === String(input.id); })[0] : null;
+  var key = pos ? pos.key : String(input.key || ''), h = pos ? null : st.h[key], c = coinOf(key);
+  if (!c || (input.id ? !pos : !h)) return coinReply(p, now, { result: 'error', error: input.id ? '找不到這張單（可能已經收掉或爆了）' : '你沒有這一種' });
+  var target = pos || h, idx = coinIdx(c, now), cur = coinBar(c, idx).c;
+  if (!tp) { delete target.tp; coinSave(p); return coinReply(p, now, { done: 'tp', tp: 0 }); }
+  var v = Math.round(tp * Math.pow(10, c.digits) * 10000) / 10000, down = pos && pos.dir === 'down';
+  if (!(v > 0)) return coinReply(p, now, { result: 'error', error: '目標價不對' });
+  if (down ? v >= cur : v <= cur) return coinReply(p, now, { result: 'error', error: down ? '看跌的目標價要比現在的價格低' : '目標價要比現在的價格高' });
+  target.tp = v;
+  if (!pos) h.chk = idx;   // 直接買的從現在開始看（放大倍數的單本來就有 chk）
+  coinSave(p);
+  return coinReply(p, now, { done: 'tp', tp: coinPx(c, v) });
 }
 // 倉位現在值多少：保證金＋損益（最少 0）
 // n 是倉位大小（押的 × 倍數，下單時定好，補錢不會變）；舊的單沒有 n 就用 m × lev
@@ -4159,10 +4209,10 @@ function coinView(st, quote) {
   var pmap = {};
   quote.coins.forEach(function (x) { pmap[x.key] = x; });
   return {
-    hold: Object.keys(st.h).map(function (k) { var h = st.h[k], q = pmap[k]; return { key: k, u: h.u, cost: h.cost, value: Math.floor(h.u * (q ? q.price : 0)) }; }),
+    hold: Object.keys(st.h).map(function (k) { var h = st.h[k], q = pmap[k], c = coinOf(k); return { key: k, u: h.u, cost: h.cost, value: Math.floor(h.u * (q ? q.price : 0)), tp: h.tp && c ? coinPx(c, h.tp) : 0 }; }),
     pos: st.p.map(function (pos) {
       var c = coinOf(pos.key), q = pmap[pos.key], v = q ? coinPosValue(pos, Math.round(q.price * Math.pow(10, c.digits))) : pos.m;
-      return { id: pos.id, key: pos.key, dir: pos.dir, lev: pos.lev, m: pos.m, n: coinPosN(pos), ad: pos.ad || 0, e: coinPx(c, pos.e), liq: coinPx(c, pos.liq), value: v, pnl: v - pos.m, t: pos.t, f: pos.f };
+      return { id: pos.id, key: pos.key, dir: pos.dir, lev: pos.lev, m: pos.m, n: coinPosN(pos), ad: pos.ad || 0, e: coinPx(c, pos.e), liq: coinPx(c, pos.liq), value: v, pnl: v - pos.m, t: pos.t, f: pos.f, tp: pos.tp ? coinPx(c, pos.tp) : 0 };
     }),
     pl: st.pl, fee: st.fee, notes: st.notes, boom: st.boom || 0, lost: st.lost || 0
   };
@@ -4170,7 +4220,7 @@ function coinView(st, quote) {
 // 讀帳、先檢查爆倉；有爆就先存起來（不然下一步出錯沒存，爆倉紀錄會重複記）
 function coinFresh(lineId, nowMs) {
   var p = coinLoad(findPlayer(lineId));
-  if (coinSettle(p.coin, nowMs, lineId)) coinSave(p);
+  if (coinSettle(p, nowMs, lineId)) coinSave(p);
   return p;
 }
 function coinGuard(input) {
@@ -4197,9 +4247,9 @@ function coinMine(input) {
   var g = coinGuard(input);
   if (g.error) return g.error;
   var now = stockNow().getTime(), p = coinLoad(g.p);
-  if (p.coin.p.length || p.coin.notes.length) {
+  if (coinNeedsSettle(p.coin)) {
     var r = withLock(function () {
-      var q = coinLoad(findPlayer(g.lineId)), changed = coinSettle(q.coin, now, g.lineId);
+      var q = coinLoad(findPlayer(g.lineId)), changed = coinSettle(q, now, g.lineId);
       var out = coinReply(q, now);
       if (q.coin.notes.length) { q.coin.notes = []; changed = true; }
       if (changed) coinSave(q);
