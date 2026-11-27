@@ -145,6 +145,21 @@
         .btn-down { background: #3d7a55; color: #fff; }
         .line-btn { min-height: 44px; padding: 0 1.4rem; border-radius: 6px; background: #06c755; color: #fff; font-family: 'Noto Sans TC', sans-serif; font-weight: 500; font-size: .85rem; letter-spacing: .1em; touch-action: manipulation; }
 
+        /* 確認視窗（2026-11-27 使用者說下單跳的 alert 改成頁面自己的視窗） */
+        #ask { position: fixed; inset: 0; z-index: 88; display: flex; align-items: center; justify-content: center; padding: 1.5rem; background: rgba(30, 25, 20, .55); opacity: 0; pointer-events: none; transition: opacity .15s; }
+        #ask.on { opacity: 1; pointer-events: auto; }
+        #ask .box { width: min(20rem, 100%); padding: 1.3rem 1.2rem 1.1rem; transform: rotate(-.6deg) scale(.96); transition: transform .15s; }
+        #ask.on .box { transform: rotate(-.6deg) scale(1); }
+        #ask .seal { position: absolute; right: .9rem; top: .9rem; width: 2.6rem; height: 2.6rem; font-size: 1.2rem; }
+        #ask h3 { font-size: 1.05rem; font-weight: 700; letter-spacing: .2em; padding-right: 3rem; }
+        #ask .body { margin-top: .7rem; font-size: .8rem; line-height: 1.85; letter-spacing: .04em; }
+        #ask .body b { color: var(--up); }
+        #ask .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin-top: 1.1rem; }
+        #ask .row2 button { min-height: 46px; font-family: 'Noto Sans TC', sans-serif; font-size: .82rem; letter-spacing: .25em; touch-action: manipulation; }
+        #ask .no { border: 1px solid var(--ink); color: var(--ink); }
+        #ask .yes { background: var(--up); color: #fff; }
+        #ask .yes.down { background: var(--down); }
+
         /* 大章 */
         #bigStamp { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; pointer-events: none; }
         #bigStamp .s { width: 9rem; height: 9rem; border: 5px solid #b33a2f; color: #b33a2f; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(251, 247, 236, .85); font-weight: 700; opacity: 0; transform: scale(2.2) rotate(-12deg); }
@@ -313,6 +328,14 @@
                 <div class="stamp" id="bStamp">收件</div>
             </div>
             <p class="msg" id="bMsg"></p>
+        </div>
+    </div>
+    <div id="ask" role="alertdialog" aria-modal="true" aria-labelledby="askT">
+        <div class="paper box">
+            <div class="seal" id="askSeal">確</div>
+            <h3 id="askT"></h3>
+            <div class="body" id="askB"></div>
+            <div class="row2"><button type="button" class="no" id="askNo">再想想</button><button type="button" class="yes" id="askYes">確定</button></div>
         </div>
     </div>
     <div id="bigStamp" aria-hidden="true"><div class="s"><b>成交</b><span></span></div></div>
@@ -780,6 +803,24 @@
             busyTimer = setInterval(() => { i = (i + 1) % BUSY_LINES.length; $('bMsg').textContent = BUSY_LINES[i]; }, 1300);
             busySince = Date.now(); el.classList.add('on');
         }
+        // 確認視窗：ask({ title, body（HTML）, seal, yes, no, tone: 'up'|'down' }) → Promise<true/false>
+        let askDone = null;
+        function ask(o) {
+            if (askDone) askDone(false);
+            $('askT').textContent = o.title || '確定嗎？';
+            $('askB').innerHTML = o.body || '';
+            $('askSeal').textContent = o.seal || '確';
+            $('askYes').textContent = o.yes || '確定'; $('askNo').textContent = o.no || '再想想';
+            $('askYes').classList.toggle('down', o.tone === 'down');
+            $('ask').classList.add('on');
+            setTimeout(() => $('askNo').focus(), 50);
+            return new Promise(res => { askDone = v => { askDone = null; $('ask').classList.remove('on'); res(v); }; });
+        }
+        $('askYes').addEventListener('click', () => askDone && askDone(true));
+        $('askNo').addEventListener('click', () => askDone && askDone(false));
+        $('ask').addEventListener('click', e => { if (e.target.id === 'ask' && askDone) askDone(false); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && askDone) { e.stopImmediatePropagation(); askDone(false); } }, true);
+
         async function act(body, w) {
             if (busy) return null;
             busy = true; render(); showBusy(true, w);
@@ -816,7 +857,10 @@
         }
         async function open() {
             const key = cur, m = money('mar'), i = INFO[key];
-            if (lev >= 50 && !confirm(`${lev} 倍：價格往反方向走 ${(100 / lev).toFixed(1)}% 就爆，押的 ${fmt(m)} 全沒。確定？`)) return;
+            if (lev >= 50 && !(await ask({
+                title: `${dirTxt(dir)} ${lev} 倍`, seal: '爆', yes: '我要下單', tone: dir,
+                body: `${esc(i.name)}只要往反方向走 <b>${(100 / lev).toFixed(1)}%</b> 就爆，押的 <b>${fmt(m)}</b> 全部沒了。<br>一分鐘之內碰到一下就算，插針也算。`
+            }))) return;
             const r = await act({ type: 'coinOpen', key, dir, lev, margin: m, slot: slot() }, { side: `${dirTxt(dir)} ${lev}×`, color: dir === 'up' ? UP : DOWN, rows: [['紀念幣', esc(i.name)], ['押', fmt(m)], ['爆在', pf(key, P[key].price * (dir === 'up' ? 1 - 1 / lev : 1 + 1 / lev))]] });
             if (r) { bigStamp('下單', `${dirTxt(dir)} ${lev} 倍`); showToast(`${i.name}${dirTxt(dir)} ${lev} 倍，${r.dir === 'up' ? '跌' : '漲'}到 ${pf(key, r.liq)} 就爆`); }
         }
