@@ -117,6 +117,14 @@ window.CompanyRules = (() => {
     while (pts > 0) { const i = Math.floor(r() * 4); if (st[i] < 5) { st[i]++; pts--; } }
     return { id: 'p' + Date.now().toString(36) + Math.floor(r() * 1e4), key, special: false, nick: pick(s.names, r), say: pick(s.say, r), lv: 1, exp: 0, st, done: 0, failed: 0, color: Math.floor(r() * 4) };
   }
+  // 大王的名片（專屬道具 kingcard，2026-11-27）：一批「看了大王的名片來的」優質應徵者：第一位一定是還沒請過的特別人選（都請過了就算了），
+  // 另外兩位一般員工能力多 3 點（加起來 12～14，平常 9～11）
+  function vipApplicants(stage, hiredSpecials, r = Math.random) {
+    const out = [], left = Object.keys(SPECIALS).filter(k => !hiredSpecials.includes(k));
+    if (left.length) out.push(newStaff(pick(left, r), true, r));
+    while (out.length < 3) { const s = newStaff(pick(Object.keys(SPECIES), r), false, r); let add = 3; while (add > 0 && s.st.some(v => v < 5)) { const i = Math.floor(r() * 4); if (s.st[i] < 5) { s.st[i]++; add--; } } out.push(s); }
+    out.forEach(s => { s.vip = true; }); return out;
+  }
   // 應徵三位：每格 5% 是還沒請過的特殊角色
   function applicants(stage, hiredSpecials, r = Math.random, noSpecial = false) {   // noSpecial：教學那一批只有一般員工，簽約金一定付得起
     const out = [], left = noSpecial ? [] : Object.keys(SPECIALS).filter(k => !hiredSpecials.includes(k));
@@ -238,5 +246,5 @@ window.CompanyRules = (() => {
   const incidentCost = (stage, k) => Math.round(STAGES[stage].base * 60 * 3 * k * 10) / 10 > 0 ? Math.max(100, Math.round(STAGES[stage].base * 60 * 3 * k / 10) * 10) : 100;
 
   return { STAGES, DURS, STATS, SPECIALS, SPECIES, COLORS, CLIENTS, INCIDENTS, EQUIP, EQUIP_BOOST, SALARY, BOARD_EVERY, BOARD_MAX, SUPER_LIFE, FREE_REFRESH, MAX_LV,
-    KINDS, kindOf, pick, fmt, dur, clock, odds, staffName, shares, expNeed, MAST_PAY, MAST_SPEED, mastOf, top, fixMast, newStaff, applicants, hireFee, newCase, tutorialCase, plan, autoPick, start, settle, gainExp, trainPrice, overtimePrice, incidentCost };
+    KINDS, kindOf, pick, fmt, dur, clock, odds, staffName, shares, expNeed, MAST_PAY, MAST_SPEED, mastOf, top, fixMast, newStaff, applicants, vipApplicants, hireFee, newCase, tutorialCase, plan, autoPick, start, settle, gainExp, trainPrice, overtimePrice, incidentCost };
 })();

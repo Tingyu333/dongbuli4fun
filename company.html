@@ -24,7 +24,7 @@
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
     <script src="assets/company-office.js?v=20261125c"></script>
-    <script src="assets/company-rules.js?v=20261127d"></script>
+    <script src="assets/company-rules.js?v=20261127f"></script>
     <style>
 :root { --ink: #26303a; --sub: #6a7884; --teal: #2f7d90; --sub2: #51606d; --paper: #f2f6f8; --bg2: #dfe3e6; }
 /* 毛玻璃介面（跟 docs/plans/company/ui.css 的樣張同一套） */
@@ -362,6 +362,29 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
 @keyframes bz-dot { 0%, 100% { opacity: .25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-3px); } }
 @media (prefers-reduced-motion: reduce) { #busy .coin, #busy .coin i, #busy .who img, #busy .shadow, #busy .sparks i, #busy .dots i { animation: none !important; } #busy .coin { opacity: 1; } }
 .gate button.login { margin-top: 16px; min-height: 44px; padding: 0 26px; border-radius: 14px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); font: inherit; font-size: 12.5px; letter-spacing: .2em; }
+/* 專屬道具（2026-11-27）：大王的名片（黑漆金框，實物、顏色固定）、大王的山洞 */
+.kcard { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; max-width: 320px; margin: 0 auto; aspect-ratio: 1.75; box-sizing: border-box; padding: 12px 16px 12px 12px; border-radius: 6px;
+  background: linear-gradient(170deg, #3a3330 0 16%, #15110f 30%, #241d19 100%); border: 2px solid; border-color: #ffe9a0 #8a6216 #6b4a12 #f6dc8a;
+  box-shadow: inset 0 0 0 1px #c9a35a, inset 0 0 0 5px #1b1613, inset 0 0 0 6px rgba(201,163,90,.55), 0 10px 24px rgba(20,16,12,.35); color: #f6d98a; font-family: 'Noto Serif TC', serif; text-align: left; overflow: hidden; }
+.kcard::after { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 38%, rgba(255,240,190,.16) 46%, transparent 54%); background-size: 260% 100%; animation: kc-shine 4.5s ease-in-out infinite; pointer-events: none; }
+@keyframes kc-shine { 0%, 55% { background-position: 130% 0; } 100% { background-position: -30% 0; } }
+.kcard .pic { flex: none; width: 74px; height: 74px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(#4a3f2a, #1c1712 70%); box-shadow: 0 0 0 2px #c9a35a, 0 0 0 4px #1b1613, 0 0 0 5px rgba(201,163,90,.6); }
+.kcard .pic img { width: 64px; image-rendering: pixelated; }
+.kcard .tx { flex: 1; min-width: 0; }
+.kcard small { display: block; font-size: 9.5px; letter-spacing: .2em; color: #c9a35a; }
+.kcard .kc-who { display: block; margin: 3px 0 1px; font-size: 21px; letter-spacing: .32em; color: #ffe9a0; text-shadow: 0 1px 0 #6b4a12; }
+.kcard .kc-ttl { font-size: 10.5px; letter-spacing: .18em; color: #f6d98a; }
+.kcard .kc-ln { height: 1px; margin: 7px 0 6px; background: linear-gradient(90deg, #c9a35a, rgba(201,163,90,0)); }
+.kcard .stamp { position: absolute; right: 12px; bottom: 10px; width: 26px; height: 26px; display: grid; place-items: center; border: 2px solid #c8443a; color: #e05a4e; font-size: 15px; font-weight: 700; transform: rotate(-8deg); border-radius: 3px; opacity: .9; }
+.kcard.sm { max-width: 250px; padding: 9px 12px 9px 9px; gap: 9px; } .kcard.sm .pic { width: 56px; height: 56px; } .kcard.sm .pic img { width: 48px; } .kcard.sm .kc-who { font-size: 17px; } .kcard.sm .stamp { width: 21px; height: 21px; font-size: 12px; }
+.kc-pop { animation: kc-pop .6s cubic-bezier(.2,1.3,.4,1) both; } @keyframes kc-pop { 0% { transform: translateY(30px) rotate(-6deg) scale(.85); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.vipbox { margin: 12px 0 0; padding: 12px; text-align: center; border-radius: 16px; } .vipbox .cta { margin: 10px 0 0; }
+.vip-tag { font-size: 9.5px; color: #a8822f; letter-spacing: .08em; }
+.cave { margin: 12px 0 0; border-radius: 16px; overflow: hidden; }
+.cave .ph2 { display: flex; align-items: center; gap: 8px; padding: 10px 14px 8px; font-size: 12px; letter-spacing: .2em; }
+.cave .ph2 .seal { font-size: 9.5px; letter-spacing: .1em; color: #b33a2f; border: 1px solid rgba(179,58,47,.6); padding: 0 4px; transform: rotate(-4deg); }
+.cave canvas { display: block; width: 100%; image-rendering: pixelated; }
+@media (prefers-reduced-motion: reduce) { .kcard::after, .kc-pop { animation: none; } }
 </style>
 </head>
 
@@ -385,6 +408,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
             <div class="panel glass"><div class="ph">進行中<span style="margin-left:auto;letter-spacing:.1em" id="concLine"></span></div><div id="runList"></div></div>
             <div class="cta"><button id="goBoard">委託</button><button class="main num" id="collectAll" disabled>全部收款</button></div>
             <div class="goal glass" id="goal"></div>
+            <div class="cave glass" id="cave" hidden><div class="ph2">大王的山洞<span class="seal">專屬</span><span style="margin-left:auto;font-size:10px;letter-spacing:.12em;color:var(--sub)">搬到哪都帶著</span></div><canvas id="caveCv" width="375" height="120"></canvas></div>
         </section>
 
         <!-- 二　委託 -->
@@ -433,7 +457,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     // ---------- 頁面版本：手機拿到舊的公司頁就自己重新載入（2026-11-26 使用者：手機快取了舊頁面，請的員工重整就不見） ----------
     // 改了這一頁要把 PAGE_VER 和 assets/company-ver.txt 一起換新（同一個字串）。
     // 重新載入前先把存檔送出去；送不出去的也留在這支手機（dongbuli-company-live），重新打開會接著用，不會丟東西。
-    const PAGE_VER = '2026-11-27e';
+    const PAGE_VER = '2026-11-27f';
     async function freshPage() {   // 回 true：要重新載入了
         let v = '';
         try { v = (await fetch('assets/company-ver.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '')).trim(); } catch (e) { }
@@ -921,15 +945,78 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     function dexNote(s) { const D = S.dexInfo = S.dexInfo || {}; return D[s.key] = D[s.key] || { first: now(), done: 0, lv: s.lv }; }
     function addDex(s) { dexNote(s); addDex0(s); const n = dexCount(); S.dexMiles = S.dexMiles || []; DEX_MILES.forEach(([m, t]) => { if (n >= m && !S.dexMiles.includes(m)) { S.dexMiles.push(m); S.freeRef = (S.freeRef || 0) + 1; setTimeout(() => toast('圖鑑 ' + m + ' 格・' + t + '！送一次免費換應徵'), 600); } }); }
     function addDex0(s) { if (s.special) S.dex.sp[s.key] = S.dex.sp[s.key] || Date.now(); else { const a = S.dex.gen[s.key] = S.dex.gen[s.key] || []; if (!a.includes(s.color)) a.push(s.color); } }
+    // ---------- 專屬道具（2026-11-27，給「得志的浣熊大王」，admin 後台發）：大王的名片 kingcard、大王的山洞 kingcave ----------
+    // 試玩加 ?perks 兩個都看得到
+    const hasPerk = k => (PREVIEW && /[?&]perks\b/.test(location.search)) || (typeof Wallet !== 'undefined' && !PREVIEW && Wallet.perk(k));
+    const kcardHtml = (cls = '') => `<div class="kcard ${cls}"><div class="pic"><img src="assets/company/raccoon.png?v=20261125b" alt=""></div><div class="tx"><small>二十七樓・大王的山洞</small><span class="kc-who">浣熊大王</span><span class="kc-ttl">洞主・首席發光長</span><div class="kc-ln"></div><small style="letter-spacing:.12em;line-height:1.6">專收會挖的、會數錢的、<br>會閃閃發光的</small></div><span class="stamp">王</span></div>`;
+    function cardBox() {
+        if (!hasPerk('kingcard')) return '';
+        const used = S.cardDay === today();
+        return `<div class="vipbox glass">${kcardHtml('sm')}<div class="cta"><button class="main" id="kcGive" ${used ? 'disabled' : ''}>${used ? '今天遞過了，明天再遞' : '遞出大王的名片・來一批優質的'}</button></div>
+            <div style="margin-top:6px;font-size:10px;color:var(--sub);letter-spacing:.08em;line-height:1.6">每天一次、不用錢：一定有一位還沒請過的特別人選，其他人能力比較好</div></div>`;
+    }
+    async function giveCard() {
+        if (!hasPerk('kingcard') || S.cardDay === today()) return;
+        if (S.applicants.length && !await ask('遞出大王的名片？', '現在這一批應徵者會換掉，換成看了大王的名片來的優質求職者。今天只能遞一次。', { ok: '遞出去' })) return;
+        show(`<div style="padding:8px 0 4px;text-align:center"><div class="kc-pop">${kcardHtml()}</div><div style="margin-top:14px;font-size:12.5px;letter-spacing:.18em">大王親自面試中…</div></div>`, { center: true, lock: true });
+        await new Promise(r => setTimeout(r, 1600));
+        S.cardDay = today(); S.applicants = R.vipApplicants(S.stage, S.hiredSp); save(); push(true);
+        openApply(); toast('看了大王的名片，來了一批優質的');
+    }
+    // 大王的山洞：自己畫（像素），金幣堆、火把、寶箱、礦車，浣熊大王坐在金幣上
+    let caveImg = null;
+    function drawCave() {
+        const box = $('cave'); if (!box) return;
+        box.hidden = !hasPerk('kingcave'); if (box.hidden) return;
+        const cv = $('caveCv'), x = cv.getContext('2d'), W = cv.width, H = cv.height, T = performance.now() / 1000;
+        const R2 = (a, b, w, h, c) => { x.fillStyle = c; x.fillRect(Math.round(a), Math.round(b), Math.round(w), Math.round(h)); };
+        let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+        // 岩壁：深淺兩層＋一塊一塊的石頭
+        R2(0, 0, W, H, '#2a2420'); for (let j = 0; j < 86; j += 2) R2(0, j, W, 2, j % 4 ? '#2e2823' : '#2a2420');
+        for (let k = 0; k < 46; k++) { const bx = rnd() * W, by = rnd() * 74, bw = 10 + rnd() * 22, bh = 6 + rnd() * 9; R2(bx, by, bw, bh, '#3a322b'); R2(bx, by, bw, 1, '#4a4037'); R2(bx, by + bh - 1, bw, 1, '#211c18'); }
+        // 洞頂的鐘乳石
+        for (let k = 0; k < 14; k++) { const sx = 8 + k * 27 + rnd() * 10, sh = 5 + rnd() * 9; for (let j = 0; j < sh; j++) R2(sx + j / 3, j, Math.max(1, 6 - j * .6), 1, j ? '#3a322b' : '#4a4037'); }
+        // 地面、鐵軌
+        R2(0, 86, W, H - 86, '#5a4632'); R2(0, 86, W, 1, '#7a6046'); for (let i = 0; i < W; i += 3) R2(i, 90 + ((i * 7) % 5), 1, 1, '#6b553d');
+        R2(0, 106, W, 1, '#8a8f96'); R2(0, 110, W, 1, '#8a8f96'); for (let i = 4; i < W; i += 12) R2(i, 105, 6, 7, '#4a3524');
+        R2(0, 106, W, 1, '#9aa0a8'); R2(0, 110, W, 1, '#9aa0a8');
+        // 火把＋光
+        [[34, 46], [W - 36, 46]].forEach(([tx, ty], k) => {
+            const f = .75 + .25 * Math.sin(T * 9 + k * 2) * Math.sin(T * 5.3 + k);
+            const g = x.createRadialGradient(tx, ty - 6, 2, tx, ty - 6, 46); g.addColorStop(0, 'rgba(255,190,90,' + (.32 * f) + ')'); g.addColorStop(1, 'rgba(255,190,90,0)'); x.fillStyle = g; x.fillRect(tx - 46, ty - 52, 92, 92);
+            R2(tx - 1, ty, 3, 16, '#6b4a2a'); R2(tx - 2, ty, 5, 2, '#8a8f96');
+            R2(tx - 2, ty - 6, 5, 6, '#e8742c'); R2(tx - 1, ty - 9 - Math.round(f * 2), 3, 7, '#f6b13c'); R2(tx, ty - 7, 1, 4, '#fff1a8'); });
+        // 礦車（左邊，跟礦坑・挖同一台）
+        R2(52, 88, 34, 14, '#5c6770'); R2(52, 88, 34, 2, '#8a96a0'); R2(55, 91, 28, 9, '#47525b'); R2(50, 86, 38, 3, '#7a8690');
+        for (let i = 0; i < 9; i++) R2(57 + i * 3, 83 - (i % 3), 3, 4, ['#e2b44a', '#ffe9a0', '#c9933a'][i % 3]);
+        [[58, 104], [80, 104]].forEach(([wx, wy]) => { R2(wx - 3, wy - 3, 7, 7, '#2c3038'); R2(wx - 1, wy - 1, 3, 3, '#8a8f96'); });
+        // 寶箱
+        R2(112, 84, 28, 18, '#7a4a24'); R2(112, 84, 28, 6, '#9a6232'); R2(112, 89, 28, 2, '#5a3518'); R2(124, 89, 5, 6, '#e2b44a'); R2(112, 84, 2, 18, '#c9a35a'); R2(138, 84, 2, 18, '#c9a35a');
+        R2(114, 80, 24, 5, '#ffe9a0'); for (let i = 0; i < 6; i++) R2(115 + i * 4, 78 + (i % 2), 3, 3, '#e2b44a');
+        // 金幣堆（右邊）＋閃光
+        const cx0 = 262, cy0 = 100;
+        for (let j = 0; j < 26; j++) { const hw = 64 - j * 2.3; R2(cx0 - hw, cy0 - j, hw * 2, 1, j % 3 === 0 ? '#c9933a' : j % 3 === 1 ? '#e2b44a' : '#f2cc5e'); }
+        seed = 31; for (let k = 0; k < 60; k++) { const a = rnd() * Math.PI, rr = rnd(), px = cx0 + Math.cos(a) * (60 * rr), py = cy0 - Math.sin(a) * (24 * rr); R2(px, py, 2, 1, '#ffe9a0'); }
+        for (let k = 0; k < 4; k++) { const ph = (T * .7 + k * .37) % 1, sx = cx0 - 40 + k * 26, sy = cy0 - 10 - (k % 2) * 8, a = Math.max(0, Math.sin(ph * Math.PI)); if (a > .2) { x.globalAlpha = a; R2(sx, sy - 2, 1, 5, '#fff8d8'); R2(sx - 2, sy, 5, 1, '#fff8d8'); x.globalAlpha = 1; } }
+        [[160, 101], [176, 103], [330, 102], [348, 99]].forEach(([a, b]) => { R2(a, b, 4, 2, '#e2b44a'); R2(a + 1, b, 2, 1, '#ffe9a0'); });
+        // 招牌
+        R2(160, 14, 56, 18, '#6b4a2a'); R2(161, 15, 54, 16, '#8a6238'); R2(176, 6, 1, 8, '#4a3524'); R2(200, 6, 1, 8, '#4a3524');
+        x.font = '500 10px "Noto Serif TC", serif'; x.fillStyle = '#ffe9a0'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('大王的山洞', 188, 23.5);
+        // 浣熊大王坐在金幣上
+        if (caveImg && caveImg.complete && caveImg.naturalWidth) { const k = caveImg.naturalHeight * 2 <= 70 ? 2 : 1, w = caveImg.naturalWidth * k, h = caveImg.naturalHeight * k, bob = Math.round(Math.sin(T * 2) * 1); x.imageSmoothingEnabled = false; x.drawImage(caveImg, Math.round(cx0 - w / 2), Math.round(cy0 - 22 - h + bob), w, h); }
+    }
+    function caveLoop() { if ($('cave') && !$('cave').hidden && !document.hidden && $('v-office') && !$('v-office').hidden) drawCave(); setTimeout(() => requestAnimationFrame(caveLoop), 120); }
     function openApply() {
         const full = S.staff.length >= st().seats, left = Math.max(0, S.applyAt - now());
         show(`<div class="hd2"><h2>應徵</h2><button class="x" id="aClose">關</button></div>
             <div class="sub" style="margin:0 2px"><span class="num">員工 ${S.staff.length} / ${st().seats}${full ? '・坐滿了，搬家才有位子' : '・還能請 ' + (st().seats - S.staff.length) + ' 位'}</span><span class="r num">錢包 ${R.fmt(wal())}</span></div>
             ${S.applicants.map((s, k) => { const sp = s.special ? R.SPECIALS[s.key] : null, fee = R.hireFee(S.stage, s);
-                return `<div class="app glass${sp ? ' gold' : ''}" style="margin:10px 0 0">${avaHtml(spriteKey(s))}<div><div class="nm">${esc(R.staffName(s))}${sp ? '<span class="star"></span><small>特別人選</small>' : '<small>一般・' + R.COLORS[s.color] + '</small>'}</div>${statsHtml(s)}<div class="say">${esc(sp ? sp.skill + '：' + sp.skillText : s.say)}</div></div>
+                return `<div class="app glass${sp ? ' gold' : ''}" style="margin:10px 0 0">${avaHtml(spriteKey(s))}<div><div class="nm">${esc(R.staffName(s))}${sp ? '<span class="star"></span><small>特別人選</small>' : '<small>一般・' + R.COLORS[s.color] + '</small>'}</div>${s.vip ? '<div class="vip-tag">看了大王的名片來的</div>' : ''}${statsHtml(s)}<div class="say">${esc(sp ? sp.skill + '：' + sp.skillText : s.say)}</div></div>
                 <div class="ft num"><span>簽約金 <b>${R.fmt(fee)}</b>・薪水抽 ${sp ? 1.5 : 1} 份</span><button data-k="${k}" ${full ? 'disabled' : ''}>聘用</button></div></div>`; }).join('') || '<div class="empty">這一批都請完了</div>'}
+            ${cardBox()}
             <div class="cta"><button class="num" id="aFree" disabled>${R.clock(left / 1000)} 後免費換</button><button class="main num" id="aRef" style="flex:1">${S.freeRef ? '圖鑑獎勵・免費換 ×' + S.freeRef : '現在換一批 ' + R.fmt(st().refresh)}</button></div>`);
         $('aClose').onclick = hide;
+        if ($('kcGive')) $('kcGive').onclick = giveCard;
         document.querySelectorAll('#sheet .ft button').forEach(b => b.onclick = async () => {
             const k = +b.dataset.k, s = S.applicants[k], fee = R.hireFee(S.stage, s);
             if (S.staff.length >= st().seats) return toast('位子坐滿了');
@@ -1430,10 +1517,12 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         } catch (e) { }
         await Busy.hide(); blocking = false;
     }
+    caveImg = new Image(); caveImg.src = 'assets/company/raccoon.png?v=20261125b'; caveImg.onload = drawCave;
+    caveLoop();
     if (PREVIEW) { start(); freshPage(); } else boot();
     if (LIVE) {
         Line.on(type => { if (type === 'logout' && S) loggedOut(); });
-        Wallet.on(type => { if (type === 'server' && S && S.name) render(); });   // 別支手機賺了錢：錢包數字跟著變
+        Wallet.on(type => { if ((type === 'server' || type === 'perks') && S && S.name) { render(); drawCave(); } });   // 別支手機賺了錢、主人發了專屬道具：跟著變   // 別支手機賺了錢：錢包數字跟著變
         window.addEventListener('pagehide', () => { if (S && S.name) { S.lastSeen = Date.now(); push(true); } });
     }
     setInterval(() => {

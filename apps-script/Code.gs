@@ -73,7 +73,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-27e';
+var BACKEND_VERSION = '2026-11-27f';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1, gaFundStart: 1, gaFundEnd: 1, coinTrade: 1, coinOpen: 1, coinClose: 1, coinAdd: 1, coinSetTp: 1 };
 
@@ -4419,7 +4419,10 @@ var PERK_TYPES = {
   shop60: { name: '全店六折', desc: '八家打工店面升級打六折（刮刮樂、功德、股市、保險照原價）', live: true },   // 2026-11-20b 起生效；live: false 的只記錄、不送給玩家
   // 2026-11-21d：解鎖隱藏商品。平常店面看不到，有這個道具才出現（$1、不打折）；道具到期或收回就藏起來、效果也停
   minemag: { name: '磁力夾', desc: '礦坑・挖的店面出現「磁力夾」（$1）：金塊、鑽石靠近鉤子就吸過來', live: true },
-  shiplamp: { name: '探照燈', desc: '貨運・航的船廠出現「探照燈」（$1）：夜航船頭燈照得又遠又寬', live: true }
+  shiplamp: { name: '探照燈', desc: '貨運・航的船廠出現「探照燈」（$1）：夜航船頭燈照得又遠又寬', live: true },
+  // 2026-11-27：公司・開的兩種專屬道具（給「得志的浣熊大王」）
+  kingcave: { name: '大王的山洞', desc: '公司・開的辦公室多一間「大王的山洞」（金幣堆、火把、礦車，搬家也一直在）', live: true },
+  kingcard: { name: '大王的名片', desc: '公司・開的應徵每天可以遞一次大王的名片：來一批優質求職者（一定有一位特別人選、其他人能力比較好）', live: true }
 };
 var PERK_HEADERS = ['timestamp', 'id', 'line_id', 'perk', 'note', 'expires', 'revoked_at', 'key'];
 var LIB_HEADERS = ['created', 'id', 'name', 'effect', 'line', 'retired_at', 'updated'];
