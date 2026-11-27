@@ -121,121 +121,171 @@ function hipRoof(x, a, b, w, h, c, opts = {}) {
 function chimney(x, a, b, w, h, top, side, sh = 3) { R(x, a + sh, b + sh, w, h, K.shadow); R(x, a, b, w, h, side); R(x, a, b, w, 2, top); R(x, a + 1, b + 1, w - 2, 1, '#4a3f36'); for (let i = 0; i < 3; i++) P(x, a + 1 + i, b - 2 - i * 2, i % 2 ? '#ece8e2' : '#e0dbd2'); }
 
 // ===== 火箭圖鑑：立起來畫（跟發射台設計圖同一個畫法、同一個比例），光從左上來 =====
+// 2026-11-27 精緻重畫（使用者：上一版改完「變醜、變粗糙」）：
+//   每種材質五個色階，照圓柱受光算每一欄用哪一階（左邊亮、偏左一條高光、右邊暗）；鼻錐用弧形（ogive）一列一列收，
+//   陰影跟著箭身那一欄走；噴嘴是喇叭形的金屬；尾翼有亮的前緣、暗的後緣；燒黑由下往上用棋盤格慢慢淡出；不用接近黑。
 function lineP(x, x0, y0, x1, y1, c) { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) || 1; for (let i = 0; i <= n; i++) P(x, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, c); }
-const WHITE = ['#ffffff', '#f3f1ec', '#c9c4ba'], GREY = ['#e3e0d9', '#cfcac0', '#a9a397'], BLACK = ['#5a5d62', '#2f3236', '#1c1e21'],
-  ORANGE = ['#eaa36a', '#d0793f', '#a65829'], SHU = ['#d0574a', '#b33a2f', '#8f2c23'], NAVY = ['#566c94', '#2f4166', '#1f2c47'],
-  GOLD = ['#f4dc95', '#c9a24a', '#977630'], DARK = ['#6a6d70', '#45484b', '#2a2c2e'], BURNT = ['#7a5a3c', '#5a4430', '#3e3024'];
-const shade = (p, t) => t < .25 ? p[0] : t < .7 ? p[1] : p[2];
+const RP = {   // 由暗到亮
+  W: ['#bcb6aa', '#d6d1c6', '#eae7e0', '#f7f5f0', '#ffffff'],
+  G: ['#9d988e', '#b4afa5', '#c9c4ba', '#dbd7ce', '#eae7e1'],
+  S: ['#7d261e', '#97312a', '#b33a2f', '#c84c40', '#db6a5a'],
+  N: ['#1e2a43', '#27375a', '#30436a', '#41577f', '#576d95'],
+  A: ['#8a6b2b', '#a8863d', '#c9a24a', '#dfbf69', '#f4dc95'],
+  O: ['#8c4821', '#a75a2a', '#c46d36', '#d9854b', '#eba46b'],
+  D: ['#30353a', '#3b4045', '#474c51', '#565b60', '#686c70'],
+  M: ['#575c60', '#6c7175', '#888d90', '#a6abae', '#c5c9cb'],
+  C: ['#4f4842', '#5e564e', '#6f675e', '#847b71', '#9a9187'],   // 燒黑（暖色炭灰）
+};
+// 圓柱：第 u 欄（共 w 欄）用第幾階；偏左一條高光，最右一欄再暗一階
+function lv(u, w) {
+  if (w <= 1) return 3; const t = (u + .5) / w;
+  let i = .98 - .8 * t + .18 * Math.exp(-Math.pow((t - .28) / .14, 2)); let k = Math.max(0, Math.min(4, Math.floor(i * 5)));
+  if (w >= 6 && u === w - 1) k = Math.max(0, k - 1); return k;
+}
 const Lx = (cx, w) => Math.round(cx - w / 2);
-// 圓柱：從 bot 往上畫 h 列，回傳頂端的 y
-function tube(x, cx, bot, w, h, p, fn) { const L = Lx(cx, w); for (let v = 0; v < h; v++) for (let u = 0; u < w; u++) { const t = w > 1 ? u / (w - 1) : .5; P(x, L + u, bot - 1 - v, fn ? fn(u, t, v, p) : shade(p, t)); } return bot - h; }
-// 鼻錐：e 越小越鈍
-function cone(x, cx, bot, w, len, p, e = .5) { const L = Lx(cx, w); for (let r = 0; r < len; r++) { let half = (w / 2) * Math.pow((r + 1) / len, e); if (!(w % 2)) half = Math.max(half, .5); for (let u = 0; u < w; u++) { const d = (u + .5) - w / 2; if (Math.abs(d) <= half + .01) P(x, L + u, bot - len + r, shade(p, w > 1 ? u / (w - 1) : .5)); } } return bot - len; }
-// 變寬／變細的一段（級間段、整流罩下緣）
-function taper(x, cx, bot, wb, wt, h, p) { for (let v = 0; v < h; v++) { const ww = Math.round(wb + (wt - wb) * (h > 1 ? v / (h - 1) : 1)), L = Lx(cx, ww); for (let u = 0; u < ww; u++) P(x, L + u, bot - 1 - v, shade(p, ww > 1 ? u / (ww - 1) : .5)); } return bot - h; }
-function nozzle(x, cx, bot, w, h = 2, p = DARK) { return taper(x, cx, bot, Math.max(2, Math.round(w * .8)), Math.max(2, Math.round(w * .55)), h, p); }
-function fins(x, cx, bot, w, h, span, c1, c2) { const L = Lx(cx, w), Rr = L + w; poly(x, [[L, bot - h], [L - span, bot], [L, bot]], c1); poly(x, [[Rr, bot - h], [Rr + span, bot], [Rr, bot]], c2); R(x, Math.round(cx) - (w % 2 ? 0 : 1), bot - h + 2, 1, h - 2, c2); }
-function legs(x, cx, bot, w, h) { const L = Lx(cx, w); R(x, L - 1, bot - h, 1, h, '#2f3236'); R(x, L + w, bot - h, 1, h, '#1c1e21'); P(x, L - 2, bot - 1, '#2f3236'); P(x, L + w + 1, bot - 1, '#1c1e21'); }
-function gridFins(x, cx, y, w, side = 0) { const L = Lx(cx, w); if (side <= 0) { R(x, L - 2, y, 2, 2, '#45484b'); P(x, L - 2, y, '#7a7d80'); } if (side >= 0) { R(x, L + w, y, 2, 2, '#2a2c2e'); P(x, L + w + 1, y, '#5a5d60'); } }
-function soot(x, cx, bot, w, h) { const L = Lx(cx, w); for (let v = 0; v < h; v++) for (let u = 0; u < w; u++) { const k = 1 - v / h + (hash(L + u, bot - v) - .5) * .35; if (k > .08) P(x, L + u, bot - 1 - v, `rgba(62,52,42,${Math.min(.8, k * .75).toFixed(2)})`); } }
-function win(x, cx, y, ring) { if (ring) circ(x, cx, y, 2, ring); circ(x, cx, y, 1, '#2f3e4c'); P(x, cx - 1, y - 1, '#9fc0cc'); }
-function shadowUp(x, cx, b, w, h) { const hh = Math.min(h, 28); poly(x, [[cx - w / 2, b], [cx + w / 2, b], [cx + w / 2 + hh * .55, b + hh * .28], [cx - w / 2 + hh * .55, b + hh * .28]], K.shadow); }
-const roll = seg => (u, t, v, p) => ((Math.floor(v / seg) % 2) ? u < p.w / 2 : u >= p.w / 2) ? shade(BLACK, t) : shade(WHITE, t);
-function rollTube(x, cx, bot, w, h, seg) { const p = Object.assign([], WHITE, { w }); return tube(x, cx, bot, w, h, p, roll(seg)); }
-function booster(x, cx, b, w, h, len, body = WHITE, noseP = body, band) { let y = nozzle(x, cx, b, w); const top = tube(x, cx, y, w, h, body); if (band) tube(x, cx, y - Math.round(h * .45), w, 1, band); cone(x, cx, top, w, len, noseP); return top; }
+// 直的一段：從 bot 往上畫 h 列，回傳頂端 y。fn(u, v, k) 可以換顏色（k 是那一欄的階）
+function tube(x, cx, bot, w, h, rp, fn) { const L = Lx(cx, w); for (let v = 0; v < h; v++) for (let u = 0; u < w; u++) { const k = lv(u, w); P(x, L + u, bot - 1 - v, fn ? fn(u, v, k) : rp[k]); } return bot - h; }
+// 細的環（比本色暗一階、亮的那邊留亮）
+function ring(x, cx, y, w, rp, rows = 1) { tube(x, cx, y + rows, w, rows, rp); }
+// 鼻錐：弧形一列一列收（寬度跟箭身同奇偶），顏色照「在箭身的哪一欄」算，陰影才連得起來；shape 給負數（例如 -.8）是比較尖的收法
+function nose(x, cx, bot, w, len, rp, shape = 1.6) {
+  const L = Lx(cx, w);
+  for (let r = 0; r < len; r++) { const t = (r + 1) / len, half = (w / 2) * (shape < 0 ? Math.pow(t, -shape) : Math.pow(1 - Math.pow(1 - t, shape), .5));
+    let ww = Math.max(w % 2 ? 1 : 2, Math.round(half * 2)); if ((ww - w) % 2) ww++; ww = Math.min(w, ww); const off = (w - ww) / 2;
+    for (let u = 0; u < ww; u++) P(x, L + off + u, bot - len + r, rp[Math.min(4, lv(off + u, w) + (r < 2 ? 0 : 0))]); }
+  return bot - len;
+}
+// 變寬變細的一段（級間段、整流罩下緣）
+function taper(x, cx, bot, wb, wt, h, rp) { for (let v = 0; v < h; v++) { let ww = Math.round(wb + (wt - wb) * (h > 1 ? v / (h - 1) : 1)); if ((ww - wb) % 2) ww += wt > wb ? 1 : -1; const L = Lx(cx, ww); for (let u = 0; u < ww; u++) P(x, L + u, bot - 1 - v, rp[lv(u, ww)]); } return bot - h; }
+// 噴嘴：喇叭形金屬，上面窄（喉部）、下面寬，最下一列是噴口的亮邊
+function nozzle(x, cx, bot, w, h = 3, rp = RP.M) {
+  const wb = Math.max(2, w - 2 - (w % 2 ? 1 : 0) + (w <= 4 ? 0 : 0)), wt = Math.max(2, wb - 2);
+  for (let v = 0; v < h; v++) { let ww = Math.round(wb + (wt - wb) * (h > 1 ? v / (h - 1) : 1)); if ((ww - wb) % 2) ww--; const L = Lx(cx, ww);
+    for (let u = 0; u < ww; u++) P(x, L + u, bot - 1 - v, v === 0 ? rp[Math.min(4, lv(u, ww) + 1)] : rp[Math.max(0, lv(u, ww) - (v === h - 1 ? 1 : 0))]); }
+  return bot - h;
+}
+// 尾翼：左邊受光（亮、前緣更亮）、右邊背光；正面那片是中間一條
+function fins(x, cx, bot, w, h, span, rp, sweep = 2, front = true) {
+  const L = Lx(cx, w), Rr = L + w;
+  poly(x, [[L, bot - h], [L - span, bot - h + sweep + span], [L - span, bot], [L, bot]], rp[3]); lineP(x, L - 1, bot - h + 1, L - span, bot - h + sweep + span, rp[4]); R(x, L - span, bot - 1, span, 1, rp[2]);
+  poly(x, [[Rr, bot - h], [Rr + span, bot - h + sweep + span], [Rr + span, bot], [Rr, bot]], rp[1]); lineP(x, Rr, bot - h + 1, Rr + span - 1, bot - h + sweep + span, rp[2]); R(x, Rr, bot - 1, span, 1, rp[0]);
+  if (front) { const c = Math.round(cx) - (w % 2 ? 0 : 1); R(x, c, bot - h + 3, 1, h - 3, rp[2]); P(x, c, bot - h + 3, rp[4]); if (!(w % 2)) R(x, c + 1, bot - h + 3, 1, h - 3, rp[1]); }
+}
+// 燒黑（2026-11-27 第二輪：棋盤格像紙杯、拉鍊）：兩欄一組，從不同高度開始，最上面一格淡、往下越來越深；跟著圓柱的明暗（左邊亮）
+function soot(x, cx, bot, w, h) { const L = Lx(cx, w); for (let u = 0; u < w; u++) { const top = Math.round(h * (.62 + .38 * hash((u >> 1) + 11, bot))); for (let v = 0; v < top; v++) { const f = v / top, k = lv(u, w);
+  const c = v === top - 1 ? '#c4beb3' : f > .7 ? RP.C[Math.min(4, k + 1)] : f > .4 ? RP.C[Math.max(0, k)] : RP.C[Math.max(0, k - 1)]; P(x, L + u, bot - 1 - v, c); } } }
+// 收起來的降落腳：兩側貼著箭身，下面往外撇一格、腳墊
+function legs(x, cx, bot, w, h) { const L = Lx(cx, w); R(x, L - 1, bot - h, 1, h - 3, RP.D[3]); R(x, L + w, bot - h, 1, h - 3, RP.D[1]); R(x, L - 2, bot - 3, 1, 3, RP.D[3]); R(x, L + w + 1, bot - 3, 1, 3, RP.D[1]); R(x, L - 3, bot - 1, 2, 1, RP.D[4]); R(x, L + w + 1, bot - 1, 2, 1, RP.D[2]); }
+// 柵格翼：一格一格的小方框
+function gridFins(x, cx, y, w, side = 0) { const L = Lx(cx, w); if (side <= 0) { R(x, L - 3, y, 3, 3, RP.M[3]); P(x, L - 2, y + 1, RP.M[1]); } if (side >= 0) { R(x, L + w, y, 3, 3, RP.M[1]); P(x, L + w + 1, y + 1, RP.M[0]); } }
+// 圓窗：玻璃三階＋外框（外框用箭身暗一階或給的顏色）
+function win(x, cx, y, big, frame) { const c = Math.round(cx); if (big) { if (frame) { R(x, c - 2, y - 1, 1, 3, frame); R(x, c + 2, y - 1, 1, 3, frame); R(x, c - 1, y - 2, 3, 1, frame); R(x, c - 1, y + 2, 3, 1, frame); } R(x, c - 1, y - 1, 3, 3, '#2f3e4c'); P(x, c - 1, y - 1, '#9fc0cc'); P(x, c, y - 1, '#5d7a8c'); P(x, c - 1, y, '#5d7a8c'); }
+  else { if (frame) { R(x, c - 1, y - 2, 2, 1, frame); R(x, c - 1, y + 1, 2, 1, frame); R(x, c - 2, y - 1, 1, 2, frame); R(x, c + 1, y - 1, 1, 2, frame); } R(x, c - 1, y - 1, 2, 2, '#2f3e4c'); P(x, c - 1, y - 1, '#9fc0cc'); } }
+// 影子：從底座往右下（跟其他載具同一個方向），長度約高度的三成、往尖端收窄
+function shadowUp(x, cx, b, w, h) { const L = Math.min(h * .32, 26), dx = L * .9, dy = L * .45; poly(x, [[cx - w / 2, b - 1], [cx + w / 2, b - 1], [cx + w * .18 + dx, b - 1 + dy], [cx - w * .18 + dx, b - 1 + dy]], K.shadow); }
+// 推進器：噴嘴＋圓柱＋弧形鼻錐，band 是中間一條環
+function booster(x, cx, b, w, h, len, rp = RP.W, noseP = rp, band, nz = RP.M) { const y = nozzle(x, cx, b, w, 2, nz); const top = tube(x, cx, y, w, h, rp); if (band) ring(x, cx, y - Math.round(h * .45), w, band); nose(x, cx, top, w, len, noseP); return top; }
+// 黑白滾轉標記（左右兩半交錯）
+const rollFn = (w, seg) => (u, v, k) => ((Math.floor(v / seg) % 2) ? u < w / 2 : u >= w / 2) ? RP.D[k] : RP.W[k];
 
 // ===== 小型：探空火箭（細細一根、沒有推進器）=====
 function s1(x, cx, b) {   // 入門探空火箭
-  shadowUp(x, cx, b, 4, 30); let y = nozzle(x, cx, b, 4); const top = tube(x, cx, y, 4, 22, WHITE);
-  tube(x, cx, y - 12, 4, 2, SHU); cone(x, cx, top, 4, 6, SHU); fins(x, cx, y, 4, 7, 3, SHU[1], SHU[2]);
+  shadowUp(x, cx, b, 4, 30); const y = nozzle(x, cx, b, 4, 2); const top = tube(x, cx, y, 4, 22, RP.W);
+  ring(x, cx, y - 13, 4, RP.S, 2); nose(x, cx, top, 4, 7, RP.S, -.8); fins(x, cx, y, 4, 7, 3, RP.S);
 }
-function s2(x, cx, b) {   // 雙節探空火箭
-  shadowUp(x, cx, b, 6, 36); let y = nozzle(x, cx, b, 6); y = tube(x, cx, y, 6, 13, GREY); fins(x, cx, b - 2, 6, 8, 4, SHU[2], '#6e2019');
-  y = taper(x, cx, y, 6, 4, 2, BLACK); const up = y; y = tube(x, cx, y, 4, 15, WHITE); tube(x, cx, up - 9, 4, 1, SHU);
-  fins(x, cx, up, 4, 4, 2, GREY[0], GREY[2]); cone(x, cx, y, 4, 6, WHITE);
+function s2(x, cx, b) {   // 雙節探空火箭：下節灰（推完會掉）、深灰級間段、上節白
+  shadowUp(x, cx, b, 6, 36); let y = nozzle(x, cx, b, 6, 2); const lb = y; y = tube(x, cx, y, 6, 13, RP.G); fins(x, cx, lb, 6, 8, 4, RP.S);
+  y = taper(x, cx, y, 6, 4, 2, RP.D); const up = y; y = tube(x, cx, y, 4, 15, RP.W); ring(x, cx, up - 10, 4, RP.S);
+  fins(x, cx, up, 4, 4, 2, RP.G, 1, false); nose(x, cx, y, 4, 7, RP.W);
 }
-function s3(x, cx, b) {   // 氣象探空火箭
-  shadowUp(x, cx, b, 5, 34); let y = nozzle(x, cx, b, 5); y = tube(x, cx, y, 5, 19, WHITE); tube(x, cx, b - 6, 5, 2, NAVY); tube(x, cx, b - 16, 5, 1, NAVY);
-  fins(x, cx, b - 2, 5, 6, 2, NAVY[1], NAVY[2]);
-  const pod = y; y = tube(x, cx, y, 5, 5, GREY); P(x, cx - 1, pod - 3, '#2f3e4c'); P(x, cx + 1, pod - 3, '#2f3e4c');
-  y = cone(x, cx, y, 5, 4, WHITE, .3); lineP(x, cx, y - 1, cx, y - 6, '#6a6d70'); P(x, cx, y - 7, '#d84a3c');
+function s3(x, cx, b) {   // 氣象探空火箭：儀器艙一個小窗、頭頂天線
+  shadowUp(x, cx, b, 5, 34); let y = nozzle(x, cx, b, 5, 2); y = tube(x, cx, y, 5, 19, RP.W); ring(x, cx, b - 17, 5, RP.N);
+  fins(x, cx, b - 2, 5, 6, 3, RP.N);
+  const pod = y; y = tube(x, cx, y, 5, 5, RP.G); P(x, cx, pod - 3, '#2f3e4c'); P(x, cx - 1, pod - 3, '#9fc0cc');
+  y = nose(x, cx, y, 5, 4, RP.W); R(x, cx, y - 6, 1, 6, RP.M[2]); P(x, cx, y - 7, '#d84a3c');
 }
-function s4(x, cx, b) {   // 黑白方格探空火箭
-  shadowUp(x, cx, b, 6, 36); let y = nozzle(x, cx, b, 6); y = rollTube(x, cx, y, 6, 24, 6);
-  fins(x, cx, b - 2, 6, 9, 4, BLACK[1], BLACK[2]); y = cone(x, cx, y, 6, 8, WHITE); P(x, cx - 1, y, '#2f3236');
+function s4(x, cx, b) {   // 黑白方格探空火箭（V-2）：大尾翼一路伸到噴嘴底下
+  shadowUp(x, cx, b, 6, 36); let y = nozzle(x, cx, b, 6, 2); y = tube(x, cx, y, 6, 24, null, rollFn(6, 6));
+  fins(x, cx, b, 6, 11, 4, RP.D, 1); nose(x, cx, y, 6, 9, RP.W);
 }
-function s5(x, cx, b) {   // 朱漆探空火箭「絆號」
-  shadowUp(x, cx, b, 5, 36); let y = nozzle(x, cx, b, 5, 2, BURNT); const top = tube(x, cx, y, 5, 26, SHU);
-  tube(x, cx, y - 15, 5, 3, WHITE); tube(x, cx, y - 16, 5, 1, GOLD); tube(x, cx, y - 12, 5, 1, GOLD); P(x, cx, y - 14, SHU[1]);
-  fins(x, cx, y, 5, 7, 3, GOLD[0], GOLD[2]); cone(x, cx, top, 5, 7, GOLD);
+function s5(x, cx, b) {   // 朱漆探空火箭「絆號」：全身朱色、白帶金環、金色鼻錐
+  shadowUp(x, cx, b, 5, 36); const y = nozzle(x, cx, b, 5, 2, RP.A); const top = tube(x, cx, y, 5, 26, RP.S);
+  tube(x, cx, y - 13, 5, 3, RP.W); ring(x, cx, y - 17, 5, RP.A); ring(x, cx, y - 13, 5, RP.A);
+  fins(x, cx, y, 5, 7, 3, RP.A); nose(x, cx, top, 5, 8, RP.A, -.7);
 }
 
 // ===== 中型：運載火箭（大多有兩顆小推進器）=====
 function m1(x, cx, b) {   // 標準運載火箭
-  shadowUp(x, cx, b, 16, 66); [-1, 1].forEach(s => booster(x, cx + s * 6, b, 4, 26, 5, WHITE, WHITE, SHU));
-  let y = nozzle(x, cx, b, 8, 3); const top = tube(x, cx, y, 8, 54, WHITE); tube(x, cx, y - 16, 8, 2, SHU); tube(x, cx, y - 40, 8, 2, SHU);
-  cone(x, cx, top, 8, 11, WHITE); win(x, cx, top - 5 + 9);
+  shadowUp(x, cx, b, 16, 66); [-1, 1].forEach(s => booster(x, cx + s * 6, b, 4, 26, 6, RP.W, RP.W, RP.S));
+  const y = nozzle(x, cx, b, 8); const top = tube(x, cx, y, 8, 54, RP.W); ring(x, cx, y - 18, 8, RP.S, 2); ring(x, cx, y - 42, 8, RP.S, 2);
+  nose(x, cx, top, 8, 12, RP.W); win(x, cx, top + 5, false, RP.W[1]);
 }
-function m2(x, cx, b) {   // 大整流罩運載火箭
-  shadowUp(x, cx, b, 16, 66); [-1, 1].forEach(s => booster(x, cx + s * 6, b, 4, 22, 5, WHITE, GREY));
-  let y = nozzle(x, cx, b, 8, 3); y = tube(x, cx, y, 8, 40, WHITE); tube(x, cx, b - 14, 8, 2, SHU);
-  y = taper(x, cx, y, 8, 12, 3, GREY); const fb = y; y = tube(x, cx, y, 12, 12, WHITE); y = cone(x, cx, y, 12, 11, WHITE);
-  for (let v = y + 2; v < fb; v++) P(x, cx, v, 'rgba(120,112,100,.55)'); R(x, cx - 6, fb - 1, 12, 1, 'rgba(120,112,100,.4)');
+function m2(x, cx, b) {   // 大整流罩運載火箭：頭比箭身寬、深藍環
+  shadowUp(x, cx, b, 16, 66); [-1, 1].forEach(s => booster(x, cx + s * 6, b, 4, 22, 6, RP.W, RP.G));
+  let y = nozzle(x, cx, b, 8); y = tube(x, cx, y, 8, 40, RP.W); ring(x, cx, b - 16, 8, RP.N, 2);
+  y = taper(x, cx, y, 8, 12, 3, RP.G); const fb = y; y = tube(x, cx, y, 12, 12, RP.W); y = nose(x, cx, y, 12, 12, RP.W);
+  for (let v = y + 3; v < fb; v++) P(x, cx, v, RP.W[1]); R(x, cx - 6, fb - 1, 12, 1, RP.W[1]);
 }
-function m3(x, cx, b) {   // 可回收運載火箭
-  shadowUp(x, cx, b, 8, 70); let y = nozzle(x, cx, b, 8, 3); const s1b = y; y = tube(x, cx, y, 8, 44, WHITE); soot(x, cx, s1b, 8, 18);
-  legs(x, cx, s1b, 8, 11); gridFins(x, cx, y + 1, 8); R(x, cx - 3, s1b - 30, 1, 10, 'rgba(47,50,54,.55)');
-  y = tube(x, cx, y, 8, 4, BLACK); y = tube(x, cx, y, 8, 10, WHITE); y = cone(x, cx, y, 8, 10, WHITE, .6);
+function m3(x, cx, b) {   // 可回收運載火箭：燒黑、收起來的降落腳、黑色級間段上的柵格翼
+  shadowUp(x, cx, b, 8, 70); let y = nozzle(x, cx, b, 8); const s1b = y; y = tube(x, cx, y, 8, 44, RP.W); soot(x, cx, s1b, 8, 18); legs(x, cx, s1b, 8, 11);
+  y = tube(x, cx, y, 8, 4, RP.D); gridFins(x, cx, y, 8); y = tube(x, cx, y, 8, 10, RP.W); nose(x, cx, y, 8, 11, RP.W);
 }
-function m4(x, cx, b) {   // 橘槽運載火箭
-  shadowUp(x, cx, b, 16, 68); [-1, 1].forEach(s => { const t = booster(x, cx + s * 6, b, 4, 30, 6, WHITE); tube(x, cx + s * 6, b - 5, 4, 1, BLACK); tube(x, cx + s * 6, t + 1, 4, 1, BLACK); });
-  let y = nozzle(x, cx, b, 8, 3); const tb = y; y = tube(x, cx, y, 8, 44, ORANGE); for (let v = tb - 7; v > y; v -= 7) R(x, cx - 4, v, 8, 1, 'rgba(140,70,30,.35)');
-  y = taper(x, cx, y, 8, 6, 2, GREY); y = tube(x, cx, y, 6, 12, WHITE); tube(x, cx, y + 4, 6, 1, SHU); cone(x, cx, y, 6, 9, WHITE);
+function m4(x, cx, b) {   // 橘槽運載火箭：橘色燃料槽（槽環）、白色推進器、白色上節
+  shadowUp(x, cx, b, 16, 68); [-1, 1].forEach(s => { const t = booster(x, cx + s * 6, b, 4, 30, 7, RP.W); ring(x, cx + s * 6, b - 6, 4, RP.D); ring(x, cx + s * 6, t + 1, 4, RP.D); });
+  let y = nozzle(x, cx, b, 8); const tb = y; y = tube(x, cx, y, 8, 44, RP.O, (u, v, k) => (v % 8 === 7) ? RP.O[Math.max(0, k - 1)] : RP.O[k]);
+  y = taper(x, cx, y, 8, 6, 2, RP.G); y = tube(x, cx, y, 6, 12, RP.W); ring(x, cx, y + 4, 6, RP.S); nose(x, cx, y, 6, 10, RP.W);
 }
-function m5(x, cx, b) {   // 夜空藍運載火箭
-  shadowUp(x, cx, b, 16, 66); [-1, 1].forEach(s => { let y = nozzle(x, cx + s * 6, b, 4, 2, GOLD); const t = tube(x, cx + s * 6, y, 4, 26, NAVY); tube(x, cx + s * 6, y - 12, 4, 1, GOLD); cone(x, cx + s * 6, t, 4, 5, GOLD); });
-  let y = nozzle(x, cx, b, 8, 3, GOLD); const top = tube(x, cx, y, 8, 52, NAVY); [8, 26, 44].forEach(d => tube(x, cx, y - d, 8, 1, GOLD));
-  cone(x, cx, top, 8, 11, GOLD); win(x, cx, top + 5, GOLD[1]);
+function m5(x, cx, b) {   // 夜空藍運載火箭：深藍配金環、金鼻錐、金框圓窗
+  shadowUp(x, cx, b, 16, 66); [-1, 1].forEach(s => booster(x, cx + s * 6, b, 4, 26, 6, RP.N, RP.A, RP.A, RP.A));
+  const y = nozzle(x, cx, b, 8, 3, RP.A); const top = tube(x, cx, y, 8, 52, RP.N); [9, 27, 45].forEach(d => ring(x, cx, y - d, 8, RP.A));
+  nose(x, cx, top, 8, 12, RP.A); win(x, cx, top + 6, true, RP.A[2]);
 }
 
 // ===== 大型：重型火箭 =====
-function l1(x, cx, b) {   // 四推進器重型火箭（發射台參階那一枚）
-  shadowUp(x, cx, b, 24, 100); [-1, 1].forEach(s => booster(x, cx + s * 9, b, 6, 46, 8, WHITE, WHITE, ['#a8342a', '#8f2c23', '#6e2019']));
-  let y = nozzle(x, cx, b, 12, 3); const top = tube(x, cx, y, 12, 84, WHITE); [.25, .5, .75].forEach(f => tube(x, cx, y - Math.round(84 * f), 12, 3, SHU));
-  cone(x, cx, top, 12, 16, WHITE); win(x, cx, top + 6);
+function l1(x, cx, b) {   // 四推進器重型火箭（發射台參階那一枚）：前排兩顆＋後排兩顆露出鼻錐，深灰環
+  shadowUp(x, cx, b, 24, 100);
+  const RG = RP.G.map((c, i) => RP.G[Math.max(0, i - 1)]);   // 後排在陰影裡，整組暗一階
+  [-1, 1].forEach(s => booster(x, cx + s * 7, b, 6, 55, 9, RG, RG));
+  [-1, 1].forEach(s => { booster(x, cx + s * 9, b, 6, 46, 9, RP.W, RP.W, RP.D); const L = Lx(cx + s * 9, 6), o = s < 0 ? L : L + 6; poly(x, [[o, b - 8], [o + s * 2, b - 4], [o + s * 2, b - 2], [o, b - 2]], s < 0 ? RP.W[3] : RP.W[1]); });
+  const y = nozzle(x, cx, b, 12); const top = tube(x, cx, y, 12, 84, RP.W); [.25, .5, .75].forEach(f => ring(x, cx, y - Math.round(84 * f), 12, RP.D, 3));
+  nose(x, cx, top, 12, 17, RP.W); win(x, cx, top + 7, true, RP.W[1]);
 }
-function l2(x, cx, b) {   // 三芯重型火箭
+function l2(x, cx, b) {   // 三芯重型火箭：三根一樣的芯，兩邊有圓錐頭、柵格翼、降落腳；中間的有整流罩
   shadowUp(x, cx, b, 24, 104);
-  [-1, 1].forEach(s => { const c = cx + s * 8; let y = nozzle(x, c, b, 8, 2); const bb = y; y = tube(x, c, y, 8, 62, WHITE); soot(x, c, bb, 8, 20); legs(x, c, bb, 8, 10); tube(x, c, y + 3, 8, 3, BLACK); gridFins(x, c, y + 1, 8, s); cone(x, c, y, 8, 10, WHITE, .6); });
-  let y = nozzle(x, cx, b, 8, 2); const bb = y; y = tube(x, cx, y, 8, 62, WHITE); soot(x, cx, bb, 8, 20);
-  y = tube(x, cx, y, 8, 4, BLACK); y = tube(x, cx, y, 8, 14, WHITE); y = taper(x, cx, y, 8, 10, 2, GREY); y = tube(x, cx, y, 10, 10, WHITE); cone(x, cx, y, 10, 10, WHITE, .6);
+  [-1, 1].forEach(s => { const c = cx + s * 8; let y = nozzle(x, c, b, 8, 2); const bb = y; y = tube(x, c, y, 8, 62, RP.W); soot(x, c, bb, 8, 20); legs(x, c, bb, 8, 10); ring(x, c, y + 3, 8, RP.D, 3); gridFins(x, c, y + 3, 8, s); nose(x, c, y, 8, 11, RP.W); });
+  let y = nozzle(x, cx, b, 8, 2); const bb = y; y = tube(x, cx, y, 8, 62, RP.W); soot(x, cx, bb, 8, 20);
+  y = tube(x, cx, y, 8, 4, RP.D); y = tube(x, cx, y, 8, 14, RP.W); y = taper(x, cx, y, 8, 10, 2, RP.G); y = tube(x, cx, y, 10, 10, RP.W); nose(x, cx, y, 10, 11, RP.W);
 }
-function l3(x, cx, b) {   // 多節重型火箭（最高）
+function l3(x, cx, b) {   // 多節重型火箭（最高）：三節、黑白滾轉標記、大尾翼；頂端是轉接段＋服務艙＋指揮艙＋逃逸塔
   shadowUp(x, cx, b, 14, 112);
   [-4, 0, 4].forEach(d => nozzle(x, cx + d, b, 4, 3));
-  let y = b - 3; const s1b = y; y = tube(x, cx, y, 14, 36, WHITE); rollTube(x, cx, s1b, 14, 10, 5); tube(x, cx, y + 2, 14, 2, BLACK);
-  fins(x, cx, s1b, 14, 10, 4, BLACK[1], BLACK[2]);
-  y = taper(x, cx, y, 14, 12, 3, WHITE); y = tube(x, cx, y, 12, 28, WHITE); tube(x, cx, y + 3, 12, 3, BLACK);
-  y = taper(x, cx, y, 12, 10, 3, WHITE); const s3b = y; y = tube(x, cx, y, 10, 18, WHITE); rollTube(x, cx, s3b, 10, 6, 3);
-  y = cone(x, cx, y, 10, 14, WHITE); lineP(x, cx - .5, y - 1, cx - .5, y - 6, '#8e9396'); P(x, cx - .5, y - 7, '#d84a3c');
+  let y = b - 3; const s1b = y; y = tube(x, cx, y, 14, 36, RP.W, (u, v, k) => v < 10 ? rollFn(14, 5)(u, v, k) : RP.W[k]); ring(x, cx, y + 2, 14, RP.D, 2);
+  fins(x, cx, s1b, 14, 10, 4, RP.D, 1, false);
+  y = taper(x, cx, y, 14, 12, 3, RP.W); y = tube(x, cx, y, 12, 28, RP.W); ring(x, cx, y + 3, 12, RP.D, 3);
+  y = taper(x, cx, y, 12, 10, 3, RP.W); const s3b = y; y = tube(x, cx, y, 10, 18, RP.W, (u, v, k) => v < 6 ? rollFn(10, 3)(u, v, k) : RP.W[k]);
+  y = tube(x, cx, y, 10, 2, RP.W); y = tube(x, cx, y, 8, 2, RP.W); y = tube(x, cx, y, 6, 4, RP.G); y = nose(x, cx, y, 6, 4, RP.W, 1);
+  const c0 = Math.round(cx) - 1; R(x, c0, y - 3, 1, 3, RP.M[2]); R(x, c0, y - 6, 2, 3, RP.M[3]); P(x, c0 + 1, y - 6, RP.M[1]); P(x, c0, y - 7, '#d84a3c');
 }
-function l4(x, cx, b) {   // 太空梭
+function l4(x, cx, b) {   // 太空梭：橘色外燃料槽、兩根白色固體推進器、軌道器（背面朝我們）
   shadowUp(x, cx, b, 26, 100);
-  let ty = tube(x, cx, b - 6, 10, 74, ORANGE); for (let v = b - 14; v > ty; v -= 9) R(x, cx - 5, v, 10, 1, 'rgba(140,70,30,.35)'); cone(x, cx, ty, 10, 14, ORANGE, .55);
-  [-1, 1].forEach(s => { const c = cx + s * 8; let y = nozzle(x, c, b, 4, 3); const t = tube(x, c, y, 4, 68, WHITE); tube(x, c, y - 4, 4, 1, BLACK); tube(x, c, t + 3, 4, 1, BLACK); cone(x, c, t, 4, 7, WHITE); });
-  // 太空梭本體（背面朝我們）：三角翼、白機身、黑機鼻
-  poly(x, [[cx - 13, b - 5], [cx + 13, b - 5], [cx + 4, b - 32], [cx - 4, b - 32]], WHITE[1]);
-  poly(x, [[cx - 13, b - 5], [cx - 4, b - 32], [cx - 3, b - 32], [cx - 11, b - 5]], WHITE[0]);
-  lineP(x, cx + 13, b - 5, cx + 4, b - 32, '#3d3d3d'); lineP(x, cx - 13, b - 5, cx - 4, b - 32, '#5a5a5a'); R(x, cx - 13, b - 5, 26, 1, '#8e9396');
-  [-3, 0, 3].forEach(d => R(x, cx + d - 1, b - 4, 2, 3, DARK[1]));
-  let y = tube(x, cx, b - 4, 8, 48, WHITE); R(x, cx - .5, b - 16, 1, 11, '#8e9396');
-  y = cone(x, cx, y, 8, 9, BLACK, .45); R(x, cx - 3, y + 9, 6, 1, '#2f3e4c'); P(x, cx - 2, y + 9, '#9fc0cc');
+  const ty = tube(x, cx, b - 6, 10, 74, RP.O, (u, v, k) => (v % 9 === 8) ? RP.O[Math.max(0, k - 1)] : RP.O[k]); nose(x, cx, ty, 10, 15, RP.O, 1.4);
+  [-1, 1].forEach(s => { const c = cx + s * 8; const t = booster(x, c, b, 4, 68, 8, RP.W, RP.W, null); ring(x, c, b - 6, 4, RP.D); ring(x, c, t + 3, 4, RP.D); });
+  // 三角翼：受光的左翼亮、右翼暗，邊緣用同色系
+  poly(x, [[cx - 13, b - 5], [cx, b - 5], [cx, b - 32], [cx - 4, b - 32]], RP.W[3]); poly(x, [[cx + 13, b - 5], [cx, b - 5], [cx, b - 32], [cx + 4, b - 32]], RP.W[1]);
+  lineP(x, cx - 13, b - 5, cx - 4, b - 32, RP.W[4]); lineP(x, cx + 13, b - 5, cx + 4, b - 32, RP.G[0]); R(x, cx - 13, b - 5, 26, 1, RP.G[1]);
+  [-3, 0, 3].forEach(d => nozzle(x, cx + d, b - 1, 3, 3));
+  let y = tube(x, cx, b - 4, 8, 48, RP.W); R(x, Math.round(cx) - 1, b - 18, 1, 13, RP.G[2]); P(x, Math.round(cx) - 1, b - 18, RP.W[4]);
+  y = nose(x, cx, y, 8, 10, RP.D, 1.3); R(x, cx - 3, y + 9, 6, 1, '#2f3e4c'); P(x, cx - 2, y + 9, '#9fc0cc');
 }
-function l5(x, cx, b) {   // 金箔重型火箭
-  shadowUp(x, cx, b, 24, 100); [-1, 1].forEach(s => { let y = nozzle(x, cx + s * 9, b, 6, 2, GOLD); const t = tube(x, cx + s * 9, y, 6, 44, WHITE); tube(x, cx + s * 9, y - 20, 6, 2, GOLD); cone(x, cx + s * 9, t, 6, 8, GOLD); });
-  let y = nozzle(x, cx, b, 12, 3, GOLD); y = tube(x, cx, y, 12, 60, WHITE); tube(x, cx, b - 18, 12, 2, GOLD); tube(x, cx, b - 40, 12, 2, GOLD);
-  const fb = y; y = tube(x, cx, y, 12, 22, GOLD, (u, t, v) => { const n = hash(u * 7 + 3, v * 5 + 1); return n > .82 ? GOLD[0] : n < .12 ? GOLD[2] : shade(GOLD, t); });
-  tube(x, cx, fb + 1, 12, 1, SHU); y = cone(x, cx, y, 12, 16, WHITE); win(x, cx, fb - 11, GOLD[2]); tube(x, cx, y + 3, 12 * .3, 3, GOLD);
+function l5(x, cx, b) {   // 金箔重型火箭：上段包金箔、金鼻錐、金環
+  shadowUp(x, cx, b, 24, 100); [-1, 1].forEach(s => { const t = booster(x, cx + s * 9, b, 6, 44, 9, RP.W, RP.A, null, RP.A); ring(x, cx + s * 9, b - 22, 6, RP.A, 2); });
+  let y = nozzle(x, cx, b, 12, 3, RP.A); y = tube(x, cx, y, 12, 60, RP.W); ring(x, cx, b - 18, 12, RP.A, 2); ring(x, cx, b - 41, 12, RP.A, 2);
+  // 金箔：金色五階的圓柱（平順），上面幾條斜的皺摺（亮一階、暗一階），不是亂點
+  const fb = y; y = tube(x, cx, y, 12, 22, RP.A); const Lf = Lx(cx, 12);
+  [[1, 4, 4], [2, 12, 5], [6, 17, 4], [3, 19, 3]].forEach(([u, v, n]) => { for (let i = 0; i < n; i++) if (u + i < 11) P(x, Lf + u + i, fb - 1 - v + i, RP.A[Math.min(4, lv(u + i, 12) + 1)]); });
+  [[5, 8, 4], [7, 2, 3]].forEach(([u, v, n]) => { for (let i = 0; i < n; i++) if (u + i < 12) P(x, Lf + u + i, fb - 1 - v + i, RP.A[Math.max(0, lv(u + i, 12) - 1)]); });
+  ring(x, cx, fb, 12, RP.S); const nb = y; nose(x, cx, nb, 12, 17, RP.W);
+  { const L = Lx(cx, 12); for (let r = 0; r < 8; r++) { const t = (r + 1) / 17, half = 6 * Math.pow(1 - Math.pow(1 - t, 1.6), .5); let ww = Math.max(2, Math.round(half * 2)); if (ww % 2) ww++; const off = (12 - ww) / 2; for (let u = 0; u < ww; u++) P(x, L + off + u, nb - 17 + r, RP.A[lv(off + u, 12)]); } }
 }
 
 const SMALL = [['入門探空火箭', '白身朱鼻、三片尾翼；最便宜', s1], ['雙節探空火箭', '下面一節推完會掉、上面再飛', s2], ['氣象探空火箭', '頭上有天線、儀器艙兩個小窗', s3], ['黑白方格探空火箭', '經典的黑白方格塗裝', s4], ['朱漆探空火箭', '「絆號」：全身朱色、金色鼻錐', s5]];

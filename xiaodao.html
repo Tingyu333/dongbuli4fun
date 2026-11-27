@@ -28,7 +28,7 @@
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
-    <script src="assets/xiaodao-rules.js?v=20261126k"></script>
+    <script src="assets/xiaodao-rules.js?v=20261126l"></script>
     <script src="assets/xiaodao-draw.js?v=20261126g"></script>
     <script src="assets/xiaodao-fx.js?v=20261126f"></script>
     <script src="assets/xiaodao-room.js?v=20261122d"></script>
@@ -1263,7 +1263,7 @@
             size();
             new ResizeObserver(() => { if (size()) { if (world) { if (zoomed()) { clampCam(); draw(); } else fit(); } } }).observe(view);
             renderTop();
-            D.load('assets/xiaodao/', '20261126o').then(() => setTimeout(() => rebuild(true), 30));
+            D.load('assets/xiaodao/', '20261126p').then(() => setTimeout(() => rebuild(true), 30));
             roomLoaded = Promise.all([RM.load('assets/xiaodao/', '20261122a', '20261122a'), RI.load('assets/xiaodao/', '20261122a')]);   // 家具的圖先載好（商店、倉庫的小圖要用）
             roomLoaded.then(() => { if ($('sheet').classList.contains('on')) renderSheet(); if (roomOn) renderRoom(); });
         }
