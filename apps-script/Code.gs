@@ -73,9 +73,9 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-26h';
+var BACKEND_VERSION = '2026-11-27a';
 
-var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1, gaFundStart: 1, gaFundEnd: 1, coinTrade: 1, coinOpen: 1, coinClose: 1 };
+var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1, gaFundStart: 1, gaFundEnd: 1, coinTrade: 1, coinOpen: 1, coinClose: 1, coinAdd: 1 };
 
 function withLock(fn) {
   var lock = LockService.getScriptLock();
@@ -152,6 +152,7 @@ function route(type, input) {
     if (type === 'coinTrade') return coinTrade(input);
     if (type === 'coinOpen') return coinOpen(input);
     if (type === 'coinClose') return coinClose(input);
+    if (type === 'coinAdd') return coinAdd(input);            // 補錢救單（2026-11-27）
     if (type === 'sportQuote') return sportQuote(input);
     if (type === 'sportMine') return sportMine(input);
     if (type === 'sportBet') return sportBet(input);
@@ -4121,9 +4122,16 @@ function coinSettle(st, nowMs, lineId) {
   return changed;
 }
 // 倉位現在值多少：保證金＋損益（最少 0）
+// n 是倉位大小（押的 × 倍數，下單時定好，補錢不會變）；舊的單沒有 n 就用 m × lev
+function coinPosN(pos) { return pos.n || pos.m * pos.lev; }
 function coinPosValue(pos, price) {
   var r = price / pos.e - 1;
-  return Math.max(0, Math.round(pos.m + pos.m * pos.lev * (pos.dir === 'up' ? r : -r)));
+  return Math.max(0, Math.round(pos.m + coinPosN(pos) * (pos.dir === 'up' ? r : -r)));
+}
+// 爆倉價：押的錢剛好賠光的價格。看漲 e ×（1 − m/n），看跌 e ×（1 ＋ m/n）
+function coinLiqOf(pos) {
+  var k = pos.m / coinPosN(pos);
+  return Math.round(pos.e * (pos.dir === 'up' ? 1 - k : 1 + k) * 10000) / 10000;
 }
 function coinView(st, quote) {
   var pmap = {};
@@ -4132,7 +4140,7 @@ function coinView(st, quote) {
     hold: Object.keys(st.h).map(function (k) { var h = st.h[k], q = pmap[k]; return { key: k, u: h.u, cost: h.cost, value: Math.floor(h.u * (q ? q.price : 0)) }; }),
     pos: st.p.map(function (pos) {
       var c = coinOf(pos.key), q = pmap[pos.key], v = q ? coinPosValue(pos, Math.round(q.price * Math.pow(10, c.digits))) : pos.m;
-      return { id: pos.id, key: pos.key, dir: pos.dir, lev: pos.lev, m: pos.m, e: coinPx(c, pos.e), liq: coinPx(c, pos.liq), value: v, pnl: v - pos.m, t: pos.t, f: pos.f };
+      return { id: pos.id, key: pos.key, dir: pos.dir, lev: pos.lev, m: pos.m, n: coinPosN(pos), ad: pos.ad || 0, e: coinPx(c, pos.e), liq: coinPx(c, pos.liq), value: v, pnl: v - pos.m, t: pos.t, f: pos.f };
     }),
     pl: st.pl, fee: st.fee, notes: st.notes, boom: st.boom || 0, lost: st.lost || 0
   };
@@ -4240,11 +4248,34 @@ function coinOpen(input) {
   if (p.money < m + fee) return { result: 'error', error: '錢包不夠（保證金＋開倉費 $' + (m + fee).toLocaleString() + '）' };
   var liq = Math.round(e * (dir === 'up' ? 1 - 1 / lev : 1 + 1 / lev) * 10000) / 10000;
   var id = 'P' + Utilities.getUuid().replace(/-/g, '').slice(0, 7).toUpperCase();
-  st.p.push({ id: id, key: c.key, dir: dir, lev: lev, m: m, e: e, liq: liq, at: idx, chk: idx, t: now, f: fee });
+  st.p.push({ id: id, key: c.key, dir: dir, lev: lev, m: m, n: m * lev, ad: 0, e: e, liq: liq, at: idx, chk: idx, t: now, f: fee });
   p.money -= m + fee; st.fee += fee;
   coinSave(p);
   coinLog(g.lineId, c.key, 'open', dir, lev, '', coinPx(c, e), m, fee, 0, p.money);
   return coinReply(p, now, { done: 'open', id: id, key: c.key, dir: dir, lev: lev, m: m, fee: fee, price: coinPx(c, e), liq: coinPx(c, liq) });
+}
+
+// 補錢救單：{ type: 'coinAdd', id, amount }（在 LOCKED_TYPES，2026-11-27 使用者要的「逐倉」功能，畫面上叫「補錢」）。
+// 倉位大小 n 不變，押的錢 m 變多 → 實際倍數變小、爆倉價離遠一點。不收手續費。最多補到 m ＝ n（等於沒有放大，看漲就不會爆了）。
+// 補進去的錢一樣在那張單裡：收回時一起拿回，爆了也一起沒了。先檢查爆倉，爆了就沒得補
+function coinAdd(input) {
+  var g = coinGuard(input);
+  if (g.error) return g.error;
+  var now = stockNow().getTime(), p = coinFresh(g.lineId, now), st = p.coin;
+  var pos = st.p.filter(function (x) { return x.id === String(input.id || ''); })[0];
+  if (!pos) return coinReply(p, now, { result: 'error', error: '找不到這張單（可能已經爆倉了）' });
+  var c = coinOf(pos.key), room = Math.max(0, Math.floor(coinPosN(pos) - pos.m));
+  if (room < COIN_MIN) return coinReply(p, now, { result: 'error', error: '這張單已經補到頂了（沒有放大了）' });
+  var a = cleanMoney(input.amount, COIN_MIN, WALLET_MAX);
+  if (a === null) return coinReply(p, now, { result: 'error', error: '最少補 $' + COIN_MIN });
+  a = Math.min(a, room);
+  if (p.money < a) return coinReply(p, now, { result: 'error', error: '錢包不夠' });
+  var before = pos.liq;
+  pos.n = coinPosN(pos); pos.m += a; pos.ad = (pos.ad || 0) + a; pos.liq = coinLiqOf(pos);
+  p.money -= a;
+  coinSave(p);
+  coinLog(g.lineId, pos.key, 'add', pos.dir, pos.lev, '', coinPx(c, pos.liq), a, 0, 0, p.money);
+  return coinReply(p, now, { done: 'add', id: pos.id, key: pos.key, amount: a, before: coinPx(c, before), liq: coinPx(c, pos.liq), lev: Math.round(pos.n / pos.m * 10) / 10 });
 }
 
 // 合約平倉：{ type: 'coinClose', id }（在 LOCKED_TYPES）。用現在的價格，沒有手續費。先檢查爆倉，爆了就沒得平

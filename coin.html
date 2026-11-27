@@ -83,6 +83,15 @@
         .pos small { display: block; font-size: .6rem; color: var(--faint); letter-spacing: .04em; }
         .pos button { margin-left: auto; flex-shrink: 0; min-height: 34px; padding: 0 .8rem; border: 1px solid var(--ink); font-family: 'Noto Sans TC', sans-serif; font-size: .68rem; letter-spacing: .15em; color: var(--ink); touch-action: manipulation; }
         .pos button:disabled { opacity: .35; }
+        .pos .btns { margin-left: auto; flex-shrink: 0; display: flex; flex-direction: column; gap: .35rem; }
+        .pos .btns button { margin-left: 0; }
+        .pos .btns button.add { min-height: 30px; border-color: var(--up); color: var(--up); }
+        .addbox { margin: 0 0 .4rem; padding: .7rem .7rem .8rem; border: 1px dashed var(--up); background: rgba(179, 58, 47, .04); font-size: .72rem; line-height: 1.7; }
+        .addbox .chips button { min-height: 32px; border-color: var(--rule); color: var(--ink); background: transparent; }
+        .addbox .money { border-bottom-color: var(--rule); }
+        .addbox .money span, .addbox .money input { color: var(--ink); }
+        .addbox .go { width: 100%; margin-top: .6rem; min-height: 40px; background: var(--up); color: #fff; font-family: 'Noto Sans TC', sans-serif; letter-spacing: .3em; font-size: .78rem; }
+        .addbox .go:disabled { opacity: .35; }
         .dirtag { display: inline-block; padding: 0 .3rem; margin-right: .2rem; font-size: .6rem; border: 1px solid currentColor; font-family: 'Noto Sans TC', sans-serif; letter-spacing: .1em; }
         .sec-h { font-family: 'Noto Sans TC', sans-serif; font-size: .6rem; letter-spacing: .2em; color: var(--faint); padding: .8rem .15rem .2rem; border-bottom: 1px solid var(--rule); }
         .empty { padding: 1.2rem .2rem .9rem; text-align: center; font-size: .75rem; color: var(--faint); letter-spacing: .1em; line-height: 1.8; }
@@ -219,6 +228,8 @@
             <p>・五種二十七樓紀念幣，每 15 分鐘一個價，24 小時不打烊，沒有漲跌停。</p>
             <p>・直接買：用錢換紀念幣，買賣各收 0.5% 手續費，買了馬上可以賣。</p>
             <p>・放大倍數：押看漲或看跌，放大 2～100 倍。賺賠跟著放大，價格往反方向走「1 ÷ 倍數」就爆，押的錢全部沒了（100 倍是反方向 1%）。15 分鐘內只要碰到一下就算，下單時收倉位 0.1% 手續費，收回來不收錢。</p>
+            <p>・每張單分開算：爆了只賠那張單押的錢，錢包和其他單都不受影響。</p>
+            <p>・快爆了可以「補錢」：往那張單多放一點錢，爆的價格就離遠一點，倍數跟著變小。補的錢收回時一起拿回，爆了也一起沒了。</p>
             <p>・雞塊幣 11/27 00:15 發行，前幾天特別刺激。</p>
             <p>・要用 LINE 登入才能買賣，沒登入只能看。賺賠不算進打工榜和花錢榜。</p>
             <p class="pt-2 text-stone-400">遊戲幣，不能儲值，也不能換現金或獎品。二十七樓紀念幣是網站裡的收藏品，不是真的虛擬貨幣，跟任何交易所都沒有關係。</p>
@@ -426,7 +437,7 @@
             }).join('');
             box.classList.toggle('hidden', !notes.length);
         }
-        const posValue = p => { const pr = P[p.key] && P[p.key].price; if (!pr) return p.value; const r = pr / p.e - 1; return Math.max(0, Math.round(p.m + p.m * p.lev * (p.dir === 'up' ? r : -r))); };
+        const posValue = p => { const pr = P[p.key] && P[p.key].price; if (!pr) return p.value; const r = pr / p.e - 1; return Math.max(0, Math.round(p.m + (p.n || p.m * p.lev) * (p.dir === 'up' ? r : -r))); };
         function renderAcct() {
             const box = $('acct');
             if (!Line.loggedIn) {
@@ -489,12 +500,45 @@
             requestAnimationFrame(step);
         }
         const coinImg = (key, size, opts) => `<img class="coin-i" src="${CoinFace.url(key, size * 2, opts)}" alt="">`;
+        // 補錢救單（2026-11-27，「逐倉」）：倉位大小 n 不變，押的錢變多 → 爆的價格離遠一點、實際倍數變小
+        const posN = p => p.n || p.m * p.lev;
+        const levNow = p => posN(p) / p.m;
+        const levTxt = p => { const l = levNow(p); return Math.abs(l - p.lev) < 0.05 ? `${p.lev}×` : `${p.lev}→${l >= 10 ? Math.round(l) : l.toFixed(1)}×`; };
+        const liqAfter = (p, a) => { const k = Math.min(1, (p.m + a) / posN(p)); return p.e * (p.dir === 'up' ? 1 - k : 1 + k); };
+        const addRoom = p => Math.max(0, Math.floor(posN(p) - p.m));
+        let addOpen = null, addAmt = 1000;
+        function addInfo(p) {
+            const a = Math.min(addAmt, addRoom(p)), cur = (P[p.key] || {}).price, l2 = liqAfter(p, a);
+            if (!a) return '輸入要補多少。';
+            const gap = cur ? Math.abs(l2 / cur - 1) * 100 : 0;
+            return `補 <b class="num">${fmt(a)}</b> 之後：<span class="up">爆在 <b class="num">${l2 > 0 ? pf(p.key, l2) : '不會爆'}</b></span>（現在 ${pf(p.key, p.liq)}）` +
+                (cur && l2 > 0 ? `，離現價 ${gap.toFixed(1)}%` : '') + `，大約變成 ${(posN(p) / (p.m + a)).toFixed(1)} 倍。` +
+                (a > Wallet.money ? '<br><span class="up">錢包不夠。</span>' : '') + (addAmt > addRoom(p) ? `<br>最多只能再補 ${fmt(addRoom(p))}（補滿就等於沒有放大）。` : '');
+        }
         function posRow(p) {
-            const i = INFO[p.key] || { name: p.key }, v = posValue(p), pl = v - p.m, pct = pl / p.m;
-            return `<div class="pos"><div>${coinImg(p.key, 18)}<b style="font-weight:600">${esc(i.name)}</b> <span class="dirtag ${p.dir === 'up' ? 'up' : 'down'}">${dirTxt(p.dir)} ${p.lev}×</span>
+            const i = INFO[p.key] || { name: p.key }, v = posValue(p), pl = v - p.m, pct = pl / p.m, room = addRoom(p);
+            const cur = (P[p.key] || {}).price, near = cur && Math.abs(p.liq / cur - 1) < 0.02;
+            const box = addOpen === p.id ? `<div class="addbox">
+                <p>往這張單多放一點錢，爆的價格就離遠一點。補進去的錢留在這張單裡：收回時一起拿回，爆了也一起沒了。不收手續費。</p>
+                <div class="money mt-2"><span>$</span><input class="num" inputmode="numeric" value="${addAmt}" data-add-amt="${esc(p.id)}" aria-label="補多少錢"></div>
+                <div class="chips mt-2"><button type="button" data-add-set="1000">$1,000</button><button type="button" data-add-set="10000">$1 萬</button><button type="button" data-add-set="${p.m}">再押一次</button><button type="button" data-add-set="${room}">補滿</button></div>
+                <p class="mt-2" data-add-info="${esc(p.id)}">${addInfo(p)}</p>
+                <button type="button" class="go" data-add-go="${esc(p.id)}" ${busy || !room ? 'disabled' : ''}>補進去</button>
+            </div>` : '';
+            return `<div class="pos"><div>${coinImg(p.key, 18)}<b style="font-weight:600">${esc(i.name)}</b> <span class="dirtag ${p.dir === 'up' ? 'up' : 'down'}">${dirTxt(p.dir)} ${levTxt(p)}</span>
                 <br><span class="num ${tone(pl)}">${sfmt(pl)}（${pct >= 0 ? '+' : '−'}${Math.abs(pct * 100).toFixed(1)}%）</span>
-                <small class="num">押 ${fmt(p.m)}・下單 ${pf(p.key, p.e)}・<span class="up">爆在 ${pf(p.key, p.liq)}</span></small></div>
-                <button type="button" data-close-pos="${esc(p.id)}" ${busy ? 'disabled' : ''}>收回 ${fmt(v)}</button></div>`;
+                <small class="num">押 ${fmt(p.m)}${p.ad ? `（補過 ${fmt(p.ad)}）` : ''}・下單 ${pf(p.key, p.e)}・<span class="up">${near ? '<b>快爆了</b>・' : ''}爆在 ${p.liq > 0 ? pf(p.key, p.liq) : '不會爆'}</span></small></div>
+                <div class="btns"><button type="button" data-close-pos="${esc(p.id)}" ${busy ? 'disabled' : ''}>收回 ${fmt(v)}</button>
+                ${room >= 10 ? `<button type="button" class="add" data-add-open="${esc(p.id)}" ${busy ? 'disabled' : ''}>${addOpen === p.id ? '先不要' : '補錢'}</button>` : ''}</div></div>${box}`;
+        }
+        async function addPos(id) {
+            const p = M && M.pos.find(x => x.id === id); if (!p) return;
+            const i = INFO[p.key] || { name: p.key }, a = Math.min(addAmt, addRoom(p));
+            const r = await act({ type: 'coinAdd', id, amount: a }, { side: '補錢', rows: [['紀念幣', esc(i.name)], ['補', fmt(a)], ['原本爆在', pf(p.key, p.liq)]] });
+            if (!r) return;
+            addOpen = null; render();
+            bigStamp('補進', `爆在 ${r.liq > 0 ? pf(p.key, r.liq) : '不會爆'}`);
+            showToast(`補了 ${fmt(r.amount)}，${r.liq > 0 ? `${p.dir === 'up' ? '跌' : '漲'}到 ${pf(p.key, r.liq)} 才會爆（原本 ${pf(p.key, r.before)}）` : '這張單不會爆了'}`);
         }
         function renderStmt() {
             const box = $('stmtBox'), show = Line.loggedIn && M && META;
@@ -576,6 +620,7 @@
             document.querySelectorAll('[data-lev]').forEach(b => b.classList.toggle('on', Number(b.dataset.lev) === lev));
             const m = money('mar'), ofee = Math.ceil(m * lev * rules.openFee), liq = p.price * (dir === 'up' ? 1 - 1 / lev : 1 + 1 / lev);
             const ll = [m ? `押 <b class="num">${fmt(m)}</b> × ${lev} 倍 ＝ 等於拿 <b class="num">${fmt(m * lev)}</b> 在炒・手續費 ${fmt(ofee)}` : '輸入要押多少錢。'];
+            if (m) ll.push('這張單自己算，爆了只賠這次押的錢；快爆的時候可以補錢。');
             if (m) ll.push(`價格${dir === 'up' ? '每漲' : '每跌'} 1%，賺 ${fmt(m * lev / 100)}；<span class="warn">${dir === 'up' ? '跌' : '漲'}到 <b class="num">${pf(key, liq)}</b>（${(100 / lev).toFixed(lev >= 50 ? 1 : 0)}%）就爆</span>，押的錢全沒。`);
             if (m + ofee > Wallet.money) ll.push('<span class="warn">錢包不夠（押的錢＋手續費）。</span>');
             if (m && m < rules.marginMin) ll.push(`<span class="warn">最少押 ${fmt(rules.marginMin)}。</span>`);
@@ -685,8 +730,19 @@
             if (t.closest('#sellAll')) return sell(1);
             if (t.closest('#open')) return open();
             const cp = t.closest('[data-close-pos]'); if (cp) return closePos(cp.dataset.closePos);
+            const ao = t.closest('[data-add-open]'); if (ao) { addOpen = addOpen === ao.dataset.addOpen ? null : ao.dataset.addOpen; return render(); }
+            const as = t.closest('[data-add-set]'); if (as) { addAmt = Math.max(0, Math.floor(Number(as.dataset.addSet) || 0)); return render(); }
+            const ag = t.closest('[data-add-go]'); if (ag) return addPos(ag.dataset.addGo);
         });
         $('amt').addEventListener('input', renderSheet);
+        // 補錢的金額：打字時只更新說明那行（整個重畫會讓輸入框失去焦點）
+        document.addEventListener('input', e => {
+            const inp = e.target.closest && e.target.closest('[data-add-amt]'); if (!inp) return;
+            addAmt = Math.max(0, Math.floor(Number(String(inp.value).replace(/[^\d]/g, '')) || 0));
+            const p = M && M.pos.find(x => x.id === inp.dataset.addAmt); if (!p) return;
+            document.querySelectorAll(`[data-add-info="${inp.dataset.addAmt}"]`).forEach(el => el.innerHTML = addInfo(p));
+            document.querySelectorAll(`[data-add-amt="${inp.dataset.addAmt}"]`).forEach(el => { if (el !== inp) el.value = inp.value; });
+        });
         $('mar').addEventListener('input', renderSheet);
         document.addEventListener('keydown', e => { if (e.key === 'Escape' && cur) closeSheet(); });
         Wallet.on(type => {
