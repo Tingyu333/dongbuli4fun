@@ -206,14 +206,15 @@
   const PAPERS = [{ n: '米色條紋', p: 0 }, { n: '薄荷綠', p: 1500 }, { n: '金點', p: 3500 }, { n: '深藍', p: 2500 }, { n: '和紙', p: 5000 }, { n: '紅磚', p: 4000 }];
   const STYLE0 = { floor: 1, paper: 0 };
   // 每一階的家有哪幾層、哪幾間（格數；block 是樓梯，不能擺）。同一個 id 的房間升級後還在，裡面的家具擺得下就留著
+  // 樓梯（2026-11-27）：一樓客廳和二樓臥室都在 [9, 6, 2, 4]，上下對齊；一樓往北走上去，最下面一階前面留兩格
   const ROOMS = [null,
     [{ n: '帳篷', rooms: [{ id: 'main', name: '帳篷裡', w: 6, h: 5 }] }],
     [{ n: '木屋', rooms: [{ id: 'main', name: '小木屋', w: 10, h: 7 }] }],
     [{ n: '平房', rooms: [{ id: 'main', name: '客廳', w: 10, h: 8 }, { id: 'bed', name: '臥室', w: 8, h: 8 }] }],
-    [{ n: '一樓', rooms: [{ id: 'main', name: '客廳', w: 13, h: 12, block: [[11, 8, 2, 4]] }, { id: 'kitchen', name: '廚房', w: 9, h: 12 }] },
-     { n: '二樓', rooms: [{ id: 'bed', name: '臥室', w: 12, h: 12, block: [[0, 8, 2, 4]] }, { id: 'study', name: '書房', w: 10, h: 12 }] }],
-    [{ n: '一樓', rooms: [{ id: 'main', name: '客廳', w: 13, h: 12, block: [[11, 8, 2, 4]] }, { id: 'kitchen', name: '廚房', w: 8, h: 12 }, { id: 'dining', name: '餐廳', w: 9, h: 12 }] },
-     { n: '二樓', rooms: [{ id: 'bed', name: '主臥', w: 12, h: 12, block: [[0, 8, 2, 4]] }, { id: 'study', name: '書房', w: 9, h: 12 }, { id: 'guest', name: '客房', w: 9, h: 12 }] }],
+    [{ n: '一樓', rooms: [{ id: 'main', name: '客廳', w: 13, h: 12, block: [[9, 6, 2, 4]] }, { id: 'kitchen', name: '廚房', w: 9, h: 12 }] },
+     { n: '二樓', rooms: [{ id: 'bed', name: '臥室', w: 12, h: 12, block: [[9, 6, 2, 4]] }, { id: 'study', name: '書房', w: 10, h: 12 }] }],
+    [{ n: '一樓', rooms: [{ id: 'main', name: '客廳', w: 13, h: 12, block: [[9, 6, 2, 4]] }, { id: 'kitchen', name: '廚房', w: 8, h: 12 }, { id: 'dining', name: '餐廳', w: 9, h: 12 }] },
+     { n: '二樓', rooms: [{ id: 'bed', name: '主臥', w: 12, h: 12, block: [[9, 6, 2, 4]] }, { id: 'study', name: '書房', w: 9, h: 12 }, { id: 'guest', name: '客房', w: 9, h: 12 }] }],
   ];
   // ---------- 衣服、藏品（第五批） ----------
   // 衣服：clothes.html 的 20 款（tools/xiaodao/dump_items.js → assets/xiaodao/clothes.png，colors[].d 是圖裡的位置）。一模一樣的（同款同色）疊在同一格記數量
@@ -592,8 +593,13 @@
   }
   const furnCount = s => s.items.reduce((n, t) => n + (FURN[t.key] ? (t.in === 'depot' ? t.qty : 1) : 0), 0);
   const deco = s => s.items.find(t => t.key === 'deco') || { floors: [], papers: [] };
-  const styleOf = (s, rid) => { const t = s.items.find(q => q.key === 'style' && q.room === rid); return t ? { floor: t.floor, paper: t.paper } : Object.assign({}, STYLE0); };
-  const hasFloor = (s, i) => FLOORS[i] && (!FLOORS[i].p || deco(s).floors.includes(i));
+  // 沒換過的房間用的預設（2026-11-27 審稿，使用者同意）：廚房格子磁磚、臥室淺色木，其他木地板；壁紙都是第 0 種
+  const styleDefault = (s, rid) => ({ floor: rid === 'kitchen' ? 3 : rid === 'bed' ? 0 : STYLE0.floor, paper: STYLE0.paper });
+  const styleOf = (s, rid) => { const t = s.items.find(q => q.key === 'style' && q.room === rid); return t ? { floor: t.floor, paper: t.paper } : styleDefault(s, rid); };
+  // 第 0 種壁紙在帳篷裡畫成帆布、小木屋畫成圓木牆（跟外面一樣），名字跟著換
+  const floorName = (s, i) => i === 1 && level(s, 'house') === 1 ? '帆布地墊' : FLOORS[i] ? FLOORS[i].n : '';   // 帳篷裡第 1 種地板畫成帆布地墊
+  const paperName = (s, i) => i === 0 && level(s, 'house') === 1 ? '帆布' : i === 0 && level(s, 'house') === 2 ? '圓木牆' : PAPERS[i] ? PAPERS[i].n : '';
+  const hasFloor = (s, i, rid) => FLOORS[i] && (!FLOORS[i].p || deco(s).floors.includes(i) || (rid != null && styleDefault(s, rid).floor === i));   // 這間的預設不用買
   const hasPaper = (s, i) => PAPERS[i] && (!PAPERS[i].p || deco(s).papers.includes(i));
   function furnInfo(s, k) {
     const f = FURN[k]; if (!f) return { ok: false, why: '沒有這件' };
@@ -780,10 +786,10 @@
       const rid = String(act.room || ''); if (!roomOf(s, rid)) return { ok: false, err: '沒有這間房間' };
       const isF = act.floor != null, i = Math.floor(Number(isF ? act.floor : act.paper)), list = isF ? FLOORS : PAPERS;
       if (!list[i]) return { ok: false, err: '沒有這種' };
-      const owned = isF ? hasFloor(s, i) : hasPaper(s, i), cost = owned ? 0 : list[i].p;
+      const owned = isF ? hasFloor(s, i, rid) : hasPaper(s, i), cost = owned ? 0 : list[i].p;
       if (!(money >= cost)) return { ok: false, err: '錢包不夠' };
       if (!owned) { let d = s.items.find(t => t.key === 'deco'); if (!d) { d = { id: 'deco', key: 'deco', floors: [], papers: [] }; s.items.push(d); } (isF ? d.floors : d.papers).push(i); }
-      let st = s.items.find(t => t.key === 'style' && t.room === rid); if (!st) { st = Object.assign({ id: 'style-' + rid, key: 'style', room: rid }, STYLE0); s.items.push(st); }
+      let st = s.items.find(t => t.key === 'style' && t.room === rid); if (!st) { st = Object.assign({ id: 'style-' + rid, key: 'style', room: rid }, styleDefault(s, rid)); s.items.push(st); }
       st[isF ? 'floor' : 'paper'] = i; return { ok: true, cost, state: s };
     }
     if (act.t === 'sell') {
@@ -805,7 +811,7 @@
   }
   const worth = s => worthParts(s).total;
 
-  const R = { STRAIT, LAKE, ISLET, BRIDGES, lotOf, lotCenter, CLOTH, CLOTH_KEYS, CLOTH_MAX, COLL, COLL_KEYS, GACHA, RARE, HOLD, holders, wrStacks, caseItems, clothCount, collCount, clothSell, rollGacha, FURN, FURN_KEYS, FURN_MAX, FURN_LUX_HOUSE, FLOORS, PAPERS, STYLE0, ROOMS, floorsOf, roomOf, fpOf, layerOf, placedIn, wallRots, canPlace, furnCount, deco, styleOf, hasFloor, hasPaper, furnInfo, furnSell, VEH, VEH_KEYS, CLS_NAME, vehOf, vehicles, slotsOf, fitWhy, vehInfo, freeSlot, sellPrice, C, GW, GH, COAST, SEA, FAC, FAC_KEYS, TIERS, START, hash, vnoise, inSea, world, rect, needPlots, plotPrice, fresh, clean, island, level, tierOf, nextTier, plotInfo, facInfo, apply, worth, worthParts };
+  const R = { STRAIT, LAKE, ISLET, BRIDGES, lotOf, lotCenter, CLOTH, CLOTH_KEYS, CLOTH_MAX, COLL, COLL_KEYS, GACHA, RARE, HOLD, holders, wrStacks, caseItems, clothCount, collCount, clothSell, rollGacha, FURN, FURN_KEYS, FURN_MAX, FURN_LUX_HOUSE, FLOORS, PAPERS, STYLE0, ROOMS, floorsOf, roomOf, fpOf, layerOf, placedIn, wallRots, canPlace, furnCount, deco, styleOf, styleDefault, floorName, paperName, hasFloor, hasPaper, furnInfo, furnSell, VEH, VEH_KEYS, CLS_NAME, vehOf, vehicles, slotsOf, fitWhy, vehInfo, freeSlot, sellPrice, C, GW, GH, COAST, SEA, FAC, FAC_KEYS, TIERS, START, hash, vnoise, inSea, world, rect, needPlots, plotPrice, fresh, clean, island, level, tierOf, nextTier, plotInfo, facInfo, apply, worth, worthParts };
   root.XiaodaoRules = R;
   if (typeof module !== 'undefined' && module.exports) module.exports = R;
 })(typeof window !== 'undefined' ? window : this);

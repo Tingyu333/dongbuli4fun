@@ -31,25 +31,58 @@
     { t: 'wood', p: ['#a8764a', '#9b6b42', '#b58457', '#6e4528'] },
     { t: 'tile' }, { t: 'marble' }, { t: 'tatami' }
   ];
-  function floorPx(kind, i, j, px, py) {   // i、j 是格子座標（小數）
+  // 2026-11-27 審稿：接縫都是連續的一顆線（原本是點點虛線，像郵票打孔）；木紋順著木板方向、只留一成；
+  // 磁磚兩色分明＋左上亮邊；大理石每塊自己的彎曲紋、四成不畫；榻榻米布邊一顆、短邊接縫畫出來、草紋順著長邊
+  // 帳篷裡的預設地板（第 1 種）畫成帆布地墊（2026-11-27 第二輪：木地板讓帳篷像一間房間）
+  // 第三輪：橄欖綠一格一格像人工草皮，改灰綠 #8c9a7a、兩格一片、接縫少
+  const GROUND = (i, j) => { const a = Math.floor(i / 2), b = Math.floor(j / 2), fa = i / 2 - a, fb = j / 2 - b; if (fa < .03 || fb < .03) return '#7d8a6c'; return hash(a, b) > .5 ? '#8c9a7a' : '#909e7e'; };
+  function floorPx(kind, i, j, px, py, lv) {   // i、j 是格子座標（小數）；lv 是家的等級
+    if (lv === 1 && kind === 1) return GROUND(i, j);
     const F = FLOOR[kind] || FLOOR[1];
-    if (F.t === 'wood') { const row = Math.floor(j * 2), fr = j * 2 - row, sh2 = (row % 3) * 1.3, seg = Math.floor((i + sh2) / 3.2), fi = (i + sh2) / 3.2 - seg;
-      if (fr < .09 || fi < .025) return F.p[3]; return F.p[hash(px, py) > .93 ? 2 : Math.floor(hash(row, seg) * 3)]; }
-    if (F.t === 'tile') { const a = Math.floor(i), b = Math.floor(j), fa = i - a, fb = j - b; if (fa < .05 || fb < .05) return '#c9c2b4'; return (a + b) % 2 ? '#ebe6dc' : '#ddd6c8'; }
-    if (F.t === 'marble') { const v = Math.sin((i * 3 + j * 5.1) + hash(Math.floor(i / 2), Math.floor(j / 2)) * 3); if ((i % 2) < .04 || (j % 2) < .04) return '#d6d1c7'; return v > .95 ? '#b9b4ab' : hash(px, py) > .97 ? '#e4e0d8' : '#f1eee8'; }
-    // 榻榻米：2 × 1 格一疊，一排一排錯開，邊是深色布
-    const b = Math.floor(j), off = b % 2, a = Math.floor((i + off) / 2), fa = (i + off) / 2 - a, fb = j - b;
-    if (fb < .08 || fb > .92) return '#4a5a3e'; if (fa < .02 || fa > .98) return '#a9a66d'; return (px + py) % 3 === 0 ? '#d0cc8e' : py % 2 ? '#c2c48a' : '#b9bb80';
+    if (F.t === 'wood') { const row = Math.floor(j * 2), fr = j * 2 - row, off = ((row * 7) % 5) * .64, u = (i + off) / 3.2, seg = Math.floor(u), fi = u - seg;
+      if (fr < .17 || fi < .03) return F.p[3];
+      const base = F.p[Math.floor(hash(row, seg) * 3)];
+      if (fr > .42 && fr < .62 && hash(row * 13 + seg, Math.floor(i * 5)) > .84) return sh(base, -.07);   // 木紋：順著木板的短線
+      return base; }
+    if (F.t === 'tile') { const a = Math.floor(i), b = Math.floor(j), fa = i - a, fb = j - b, dk = (a + b) % 2;
+      if (fa < .085 || fb < .085) return '#b3ab9e';
+      if (fa < .17 || fb < .17) return dk ? '#e2dccf' : '#fbf9f5';
+      return dk ? '#d6cfc2' : '#f1ede5'; }
+    if (F.t === 'marble') { const a = Math.floor(i / 2), b = Math.floor(j / 2), fa = i / 2 - a, fb = j / 2 - b;
+      if (fa < .0425 || fb < .0425) return '#dcd7ce';
+      // 紋路（第三輪：交界線在 1 倍下斷成虛線、還有孤立短線）：每塊石板只有一條斜斜、微彎的紋，
+      // 用「這一顆在正邊、旁邊一顆（畫面上一顆的距離）在負邊」判斷，線才會一顆接一顆連起來
+      const s0 = hash(a * 3 + 1, b * 5 + 2); if (s0 < .4) return '#f1eee8';
+      const k = (hash(a + 7, b + 3) - .5) * 1.6, c = .55 + hash(a * 5 + 2, b + 9) * .9;
+      const V = (u, w) => (u / 2 - a) * 2 - ((w / 2 - b) * 2 * k + c) - .16 * Math.sin((w / 2 - b) * 4.6 + s0 * 6);
+      if (V(i, j) > 0 && (V(i - 1 / 24, j + 1 / 24) <= 0 || V(i + 1 / 24, j - 1 / 24) <= 0 || V(i - 1 / 12, j - 1 / 12) <= 0 || V(i + 1 / 12, j + 1 / 12) <= 0)) return s0 > .8 ? '#cfc8bc' : '#dbd5ca';
+      return '#f1eee8'; }
+    // 榻榻米（第三輪：2 × 2 一組橫直交錯，會有四疊的角碰在同一點）：改「風車」鋪法，
+    // 3 × 3 格一組：四疊繞著中間半疊轉一圈；布邊畫在長邊、短邊一條接縫，半疊只有一邊布邊
+    const bi = Math.floor(i / 3), bj = Math.floor(j / 3), u = i - bi * 3, w = j - bj * 3, cu = Math.floor(u), cw = Math.floor(w);
+    const M = cu === 1 && cw === 1 ? [1, 1, 2, 2, 2] : cw === 0 && cu < 2 ? [0, 0, 2, 1, 0] : cu === 2 && cw < 2 ? [2, 0, 3, 2, 1] : cw === 2 && cu > 0 ? [1, 2, 3, 3, 0] : [0, 1, 1, 3, 1];
+    const [x0, y0, x1, y1, o] = M, lu = u - x0, lw = w - y0, lx = x1 - u, ly = y1 - w;   // o：0 橫放（長邊沿 i）、1 直放、2 半疊
+    const across = o === 1 ? Math.min(lu, lx) : Math.min(lw, ly), along = o === 1 ? Math.min(lw, ly) : Math.min(lu, lx);
+    if (o === 2 ? lw < .085 : across < .05) return '#6b7a4c';
+    if (o === 2 ? (lu < .045 || lx < .045 || ly < .045) : along < .045) return '#9c9a62';
+    const fL = o === 1 ? lu : lw;
+    return hash(px, py) > .97 ? '#d0cc8e' : Math.floor(fL * 9) % 2 ? '#c4c68c' : '#bcbe84';
   }
   // 壁紙：s 是沿著牆的距離（顆）、z 是高度（顆）
+  // 2026-11-27 審稿：薄荷綠綠一點＋小菱形；金點規則錯開；深藍的直紋改成稍亮的細線；和紙乾淨底色＋零星纖維；紅磚小一點、縫暖灰、上亮下暗
   const PAPER = [
     (s, z) => Math.floor(s / 3) % 2 ? '#e5d9bf' : '#efe6d2',
-    (s, z) => hash(s, z) > .93 ? '#cfdcd3' : '#dfe8e1',
-    (s, z) => ((s % 8 === 2 && z % 8 === 2) || (s % 8 === 6 && z % 8 === 6)) ? '#c9a24a' : '#f1e9dc',
-    (s, z) => s % 10 === 0 ? '#2a3a5a' : hash(s, z) > .95 ? '#3d5078' : '#33456a',
-    (s, z) => hash(s >> 1, z >> 1) > .5 ? (hash(s, z * 7) > .96 ? '#ddd3bf' : '#f1ece0') : '#e9e2d2',
-    (s, z) => { const row = Math.floor(z / 5), off = row % 2 ? 5 : 0; return (z % 5 === 4 || (s + off) % 10 === 9) ? '#d9cfc2' : hash(Math.floor((s + off) / 10), row) > .5 ? '#b5654a' : '#a65a40'; },
+    (s, z) => { const ds = (((s % 8) + 8) % 8) - 4, dz = (((z + (Math.floor(s / 8) % 2) * 4) % 8) + 8) % 8 - 4, d = Math.abs(ds) + Math.abs(dz); return d === 0 ? '#f0f6f2' : d === 1 ? '#e2eee6' : '#cfe3d6'; },
+    (s, z) => { const off = Math.floor(z / 6) % 2 ? 3 : 0, u = (s + off) % 6; return z % 6 === 3 && u === 0 ? '#c9a24a' : z % 6 === 3 && u === 1 ? '#e6cc86' : '#f1e9dc'; },
+    (s, z) => s % 10 === 0 ? '#3d5078' : '#33456a',
+    (s, z) => { const h = hash((s >> 2) * 7 + 1, (z >> 2) * 3 + 2); if (h > .7) { const a = s & 3, b = z & 3; if (hash(s >> 2, z >> 2) > .5 ? a === b : a === 3 - b) return h > .85 ? '#e0d6c4' : '#f8f4ec'; } return '#f1ebdf'; },
+    (s, z) => { const row = Math.floor(z / 4), off = row % 2 ? 4 : 0, t = ((z % 4) + 4) % 4, u = (s + off) % 8; if (t === 3 || u === 7) return '#cdbfae';
+      const h = hash(Math.floor((s + off) / 8), row), base = h > .66 ? '#b5654a' : h > .33 ? '#a65a40' : '#9c5038'; return t === 2 ? sh(base, .12) : t === 0 ? sh(base, -.1) : base; },
   ];
+  // 帳篷的帆布、小木屋的圓木牆（第 0 種壁紙在這兩種家畫成這樣，跟外面一樣）
+  const CANVAS = (s, z) => s % 18 === 0 ? '#c9b88f' : hash(s, z) > .97 ? '#dccca8' : '#e6d8b5';
+  const LOGS = (s, z) => { const t = ((z % 6) + 6) % 6; return t === 0 ? '#6e4528' : t === 5 ? '#c99a66' : t === 4 ? '#b5875a' : hash(s >> 1, z) > .9 ? '#9a6a40' : '#a8784a'; };
+  function paperPx(kind, s, z, lv) { return kind === 0 && lv === 1 ? CANVAS(s, z) : kind === 0 && lv === 2 ? LOGS(s, z) : (PAPER[kind] || PAPER[0])(s, z); }
 
   // ---------- 圖（藏品；展示櫃、浣熊大王肖像用） ----------
   let COLL = null, loading = null;
@@ -305,38 +338,45 @@
     // 房間的門窗（給殼和點選用）
     const pics = X.placedIn(s, r.id).filter(t => X.FURN[t.key].kind === 'pic').map(t => [t.at[0], t.at[0] + X.FURN[t.key].w]);
     const tent = X.level(s, 'house') === 1;   // 帳篷：牆是帆布、沒有窗
-    const winN = []; if (!tent) for (let c = 1; c + 2 <= r.w - 1; c += 6) if (!pics.some(([a, b]) => c < b + .5 && a < c + 2.5)) winN.push(c);
+    const LV = X.level(s, 'house');
+    // 窗平均分佈在牆上（2026-11-27：原本從第 1 格開始每 6 格一扇，窄的房間只有一扇擠在角落）
+    const spread = len => { const n = Math.max(1, Math.floor((len + 2) / 6)), gap = (len - 2 * n) / (n + 1), out = []; for (let k = 0; k < n; k++) out.push(gap + k * (2 + gap)); return out; };
+    const winN = tent ? [] : spread(r.w).filter(c => !pics.some(([a, b]) => c < b + .5 && a < c + 2.5));
     // 門寬 1.2 格（2026-11-23 使用者說 2.4 格太寬、不正常）
     const mid = Math.floor(r.h / 2), doorW = R.idx > 0 ? [mid - .6, mid + .6] : null, doorE = R.idx < R.n - 1 ? [mid - .6, mid + .6] : null;
     const doorS = R.fi === 0 && r.id === 'main' ? [r.w / 2 - .6, r.w / 2 + .6] : null;
-    const winW = []; if (R.idx === 0 && !tent) for (let c = 1; c + 2 <= r.h - 1; c += 6) winW.push(c);
+    const winW = R.idx === 0 && !tent ? spread(r.h) : [];
 
     // 1. 殼：背景、底座、地板、兩道牆（一顆一顆，存起來）
-    const key = [r.id, r.w, r.h, st.floor, st.paper, R.idx, R.n, R.fi, tent, JSON.stringify(r.block || [])].join('|');
+    const key = [r.id, r.w, r.h, st.floor, st.paper, R.idx, R.n, R.fi, LV, JSON.stringify(r.block || []), JSON.stringify(winN), JSON.stringify(winW)].join('|');
     let shell = shellCache.get(key);
     if (!shell) {
       shell = document.createElement('canvas'); shell.width = W; shell.height = H; const sx = shell.getContext('2d'), img = sx.createImageData(W, H), d = img.data;
       const put = (px, py, col) => { const k = (py * W + px) * 4, [a, b, c2] = hex(col); d[k] = a; d[k + 1] = b; d[k + 2] = c2; d[k + 3] = 255; };
-      const paper = PAPER[st.paper] || PAPER[0];
       for (let py = 0; py < H; py++) for (let px = 0; px < W; px++) {
         const a = (px + .5 - OX) / TW, b = (py + .5 - OY) / TH, i = (a + b) / 2, j = (b - a) / 2;
-        if (i >= 0 && j >= 0 && i < r.w && j < r.h) { put(px, py, floorPx(st.floor, i, j, px, py)); continue; }
+        if (i >= 0 && j >= 0 && i < r.w && j < r.h) { put(px, py, floorPx(st.floor, i, j, px, py, LV)); continue; }
         // 牆面：左牆在 x = 0（沿 y）、右牆在 y = 0（沿 x）
         let along, zz, side;
         if (px + .5 <= OX) { along = (OX - px - .5) / TW; zz = OY + along * TH - (py + .5); side = 'L'; if (along > r.h) continue; }
         else { along = (px + .5 - OX) / TW; zz = OY + along * TH - (py + .5); side = 'R'; if (along > r.w) continue; }
         if (zz < 0 || zz > WH) continue;
         const sA = Math.round(along * TW);
-        let col = tent ? (sA % 18 === 0 ? '#c9b88f' : zz > WH - 8 ? '#d9c9a2' : hash(sA, Math.round(zz)) > .97 ? '#dccca8' : '#e6d8b5') : paper(sA, Math.round(zz));
-        if (side === 'R') col = sh(col, -.06);
-        if (!tent && zz < 4) col = zz < 1 ? '#5e3c22' : zz > 3 ? '#9a6a40' : '#7c5230';
+        let col = paperPx(st.paper, sA, Math.round(zz), LV);
+        if (LV === 2 && st.paper === 0) { const k0 = Math.floor(zz / 6), k1 = Math.floor((zz + 1) / 6), t = zz - k0 * 6; col = k0 !== k1 ? '#6e4528' : t > 4.2 ? '#c99a66' : t > 3.2 ? '#b5875a' : hash(sA >> 1, k0) > .9 ? '#9a6a40' : '#a8784a'; }
+        // 帳篷：牆頂往內收的帆布邊（暗一點、下緣有點波浪）
+        if (tent) { const band = WH - 9 - (Math.floor(sA / 5) % 2); if (zz > band + 1) col = sh(col, -.1); else if (zz > band) col = '#a8966f'; }
+        // 光從西邊來：西牆（左）朝東、在陰影裡，比北牆暗一點
+        if (side === 'L') col = sh(col, -.08);
+        // 踢腳板 2 顆木色（原本 4 顆深棕，像描邊）
+        if (!tent && zz < 2) col = zz < 1 ? '#9a6a40' : '#b5875a';
         if (zz > WH - 2) col = '#d8ccb3';
         put(px, py, col);
       }
       sx.putImageData(img, 0, 0);
       shellCache.set(key, shell); if (shellCache.size > 30) shellCache.delete(shellCache.keys().next().value);
     }
-    x.fillStyle = night ? '#141826' : '#efe9de'; x.fillRect(0, 0, W * z, H * z);
+    x.fillStyle = night ? '#141826' : '#e4ddd0'; x.fillRect(0, 0, W * z, H * z);
     x.setTransform(z, 0, 0, z, 0, 0);
     // 底座（前面兩面）
     q([iso(0, r.h + WT), iso(r.w + WT, r.h + WT), iso(r.w + WT, r.h + WT, -SLAB), iso(0, r.h + WT, -SLAB)], '#6e5338');
@@ -348,6 +388,7 @@
     q([iso(-WT, r.h + WT, WH), iso(-WT, r.h + WT, -SLAB), iso(0, r.h + WT, -SLAB), iso(0, r.h + WT, WH)], '#cbbd9f');
     q([iso(r.w + WT, -WT, WH), iso(r.w + WT, -WT, -SLAB), iso(r.w + WT, 0, -SLAB), iso(r.w + WT, 0, WH)], '#bfb08f');
     // 地板和牆中間那條（牆厚的切面）
+    if (tent) { const [a, b] = iso(0, 0); x.fillStyle = '#8a5a36'; x.fillRect(Math.round(a) - 1, Math.round(b) - WH, 2, WH); x.fillStyle = '#a8784a'; x.fillRect(Math.round(a) - 1, Math.round(b) - WH, 1, WH); }
     q([iso(0, r.h, 0), iso(0, r.h + WT, 0), iso(-WT, r.h + WT, 0), iso(-WT, r.h, 0)], '#cbbd9f');
 
     // 窗（北牆、西牆）：白天窗光照在地上
@@ -365,40 +406,60 @@
       q([at(a0 - .6, z1 + 4), at(a1 + .6, z1 + 4), at(a1 + .6, z1 + 5), at(a0 - .6, z1 + 5)], '#5e3c22');
     }
     winN.forEach(c => windowOn(onN, c, c + 2)); winW.forEach(c => { if (!doorW || c + 2 < doorW[0] || c > doorW[1]) windowOn(onWl, c, c + 2); });
-    if (!night) { x.save(); x.globalAlpha = .2;
-      winN.forEach(c => q([iso(c + .2, .1), iso(c + 1.9, .1), iso(c + 3.2, 3.4), iso(c + 1.5, 3.4)], '#fff6d8'));
-      winW.forEach(c => { if (!doorW || c + 2 < doorW[0] || c > doorW[1]) q([iso(.1, c + .2), iso(.1, c + 1.9), iso(2.6, c + 2.9), iso(2.6, c + 1.2)], '#fff6d8'); });
+    // 窗光（2026-11-27 審稿）：北窗、西窗照同一個太陽，每高 1 格往 (x +1, y +.45) 偏；窗台約 1.18 格高、窗頂約 2.67 格高；
+    // 分成四塊，中間留窗框的影子；超出房間的切掉
+    if (!night) { x.save(); x.globalAlpha = .28; x.beginPath(); [iso(0, 0), iso(r.w, 0), iso(r.w, r.h), iso(0, r.h)].forEach((p, k2) => k2 ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.closePath(); x.clip();
+      const S0 = 1.18, S1 = 2.67, SM = (S0 + S1) / 2, lightN = (a0, a1, h0, h1) => q([iso(a0 + h0, h0 * .45), iso(a1 + h0, h0 * .45), iso(a1 + h1, h1 * .45), iso(a0 + h1, h1 * .45)], '#ffe9b8');
+      const lightW = (a0, a1, h0, h1) => q([iso(h0, a0 + h0 * .45), iso(h0, a1 + h0 * .45), iso(h1, a1 + h1 * .45), iso(h1, a0 + h1 * .45)], '#ffe9b8');
+      const four = (f, c) => { const m = c + 1; [[c + .1, m - .04], [m + .04, c + 1.9]].forEach(([a0, a1]) => { f(a0, a1, S0, SM - .04); f(a0, a1, SM + .04, S1); }); };
+      winN.forEach(c => four(lightN, c));
+      winW.forEach(c => { if (!doorW || c + 2 < doorW[0] || c > doorW[1]) four(lightW, c); });
       x.restore(); }
     // 西牆的門（往左邊那間）
     if (doorW) { const [a0, a1] = doorW; q([onWl(a0 - .1, 0), onWl(a1 + .1, 0), onWl(a1 + .1, 35), onWl(a0 - .1, 35)], '#5e3c22'); q([onWl(a0, 0), onWl(a1, 0), onWl(a1, 34), onWl(a0, 34)], '#8a5a36');
       q([onWl(a0 + .12, 3), onWl(a1 - .12, 3), onWl(a1 - .12, 16), onWl(a0 + .12, 16)], '#7c5230'); q([onWl(a0 + .12, 19), onWl(a1 - .12, 19), onWl(a1 - .12, 31), onWl(a0 + .12, 31)], '#7c5230');
       const [ka, kb] = onWl(a1 - .22, 17); x.fillStyle = '#d4a83c'; x.fillRect(Math.round(ka), Math.round(kb), 1, 2); }
-    // 樓梯（block）：一樓往上（一階一階疊起來）；二樓以上是往下的樓梯口（地上一個洞，樓梯往南走下去，旁邊有欄杆）
-    (r.block || []).forEach(([bx, by, bw, bh]) => { const n = bh * 2;
-      if (R.fi === 0) { for (let k2 = n - 1; k2 >= 0; k2--) { const y0 = by + bh - (k2 + 1) * .5, hz = (k2 + 1) * 3.5;
-        const p = { x0: bx, x1: bx + bw, y0, y1: y0 + .5 };
-        q([iso(p.x0, p.y1, 0), iso(p.x1, p.y1, 0), iso(p.x1, p.y1, hz), iso(p.x0, p.y1, hz)], '#9a6a40'); q([iso(p.x1, p.y0, 0), iso(p.x1, p.y1, 0), iso(p.x1, p.y1, hz), iso(p.x1, p.y0, hz)], '#7c5230');
-        q([iso(p.x0, p.y0, hz), iso(p.x1, p.y0, hz), iso(p.x1, p.y1, hz), iso(p.x0, p.y1, hz)], '#c48d5c'); q([iso(p.x0, p.y1, hz), iso(p.x1, p.y1, hz), iso(p.x1, p.y1, hz - 1), iso(p.x0, p.y1, hz - 1)], '#d9a670'); }
+    // 樓梯（block）：一樓往上、二樓以上是往下的樓梯口（2026-11-27 審稿重畫）
+    // 一樓：12 階（每階深 1/3 格、高 WH/12），從南往北走上去，最上面一階到天花板（頂面用牆的剖面色＝上面被模型切掉）；兩邊欄杆扶手
+    // 二樓：地上一個洞，樓梯從北邊往南走下去；沒貼牆的邊（北邊是入口除外）有欄杆，高約 110 公分、柱子密一點；洞裡往下越亮（一樓有光）
+    const railPost = (px, py, z0, hz, w2 = .04) => q([iso(px - w2, py, z0), iso(px + w2, py, z0), iso(px + w2, py, z0 + hz), iso(px - w2, py, z0 + hz)], '#7c5230');
+    const handrail = (x0, y0, z0, x1, y1, z1) => { q([iso(x0, y0, z0), iso(x1, y1, z1), iso(x1, y1, z1 + 2), iso(x0, y0, z0 + 2)], '#9a6a40'); q([iso(x0, y0, z0 + 2), iso(x1, y1, z1 + 2), iso(x1, y1, z1 + 2.8), iso(x0, y0, z0 + 2.8)], '#c48d5c'); };
+    (r.block || []).forEach(([bx, by, bw, bh]) => { const n = Math.round(bh * 3), d = bh / n, st2 = WH / n;
+      if (R.fi === 0) {
+        // 扶手做到天花板下面為止（上面被模型切掉）
+        const top2 = Math.max(1, Math.floor((WH - 20) / st2)), sideRail = sx => { for (let k2 = 0; k2 < top2; k2++) railPost(sx, by + bh - (k2 + .5) * d, (k2 + 1) * st2, 18); handrail(sx, by + bh - .5 * d, st2 + 18, sx, by + bh - (top2 - .5) * d, top2 * st2 + 18); };
+        if (bx > 0) sideRail(bx + .06);
+        for (let k2 = n - 1; k2 >= 0; k2--) { const y0 = by + bh - (k2 + 1) * d, y1 = y0 + d, hz = (k2 + 1) * st2, p = { x0: bx, x1: bx + bw }, last = k2 === n - 1;
+          q([iso(p.x0, y1, 0), iso(p.x1, y1, 0), iso(p.x1, y1, hz), iso(p.x0, y1, hz)], '#8a5a36');
+          q([iso(p.x1, y0, 0), iso(p.x1, y1, 0), iso(p.x1, y1, hz), iso(p.x1, y0, hz)], '#7c5230');
+          q([iso(p.x1, y0, hz), iso(p.x1, y1, hz), iso(p.x1, y1, hz - .8), iso(p.x1, y0, hz - .8)], '#5e3c22');
+          q([iso(p.x0, y0, hz), iso(p.x1, y0, hz), iso(p.x1, y1, hz), iso(p.x0, y1, hz)], last ? '#e9dfca' : '#c48d5c');
+          if (!last) q([iso(p.x0, y1, hz), iso(p.x1, y1, hz), iso(p.x1, y1, hz - 1), iso(p.x0, y1, hz - 1)], '#ecc48f'); }
+        // 樓梯下的收納小門（側面一大片深棕太單調）
+        { const x1 = bx + bw, ya = by + 1, yb = by + 1.8; q([iso(x1, ya, 0), iso(x1, yb, 0), iso(x1, yb, 20), iso(x1, ya, 20)], '#5e3c22'); q([iso(x1, ya + .06, 0), iso(x1, yb - .06, 0), iso(x1, yb - .06, 19), iso(x1, ya + .06, 19)], '#6e4528'); q([iso(x1, ya + .06, 18), iso(x1, yb - .06, 18), iso(x1, yb - .06, 19), iso(x1, ya + .06, 19)], '#8a5a36'); const [ka, kb] = iso(x1, yb - .2, 10); x.fillStyle = '#d4a83c'; x.fillRect(Math.round(ka), Math.round(kb), 1, 2); }
+        if (bx + bw < r.w) sideRail(bx + bw - .06);
         return; }
-      const hole = [iso(bx, by), iso(bx + bw, by), iso(bx + bw, by + bh), iso(bx, by + bh)], D = n * 3.5 + 8;
+      const hole = [iso(bx, by), iso(bx + bw, by), iso(bx + bw, by + bh), iso(bx, by + bh)], D = n * st2 + 8;
       x.save(); x.beginPath(); hole.forEach((pt, i2) => i2 ? x.lineTo(pt[0], pt[1]) : x.moveTo(pt[0], pt[1])); x.closePath(); x.clip();
-      q(hole, '#2a2119');
-      q([iso(bx, by, 0), iso(bx, by + bh, 0), iso(bx, by + bh, -D), iso(bx, by, -D)], '#4a3a2c');          // 洞裡左邊那面牆
-      q([iso(bx, by, 0), iso(bx + bw, by, 0), iso(bx + bw, by, -D), iso(bx, by, -D)], '#5a4634');          // 洞裡後面那面牆
-      for (let k2 = 0; k2 < n; k2++) { const y0 = by + k2 * .5, y1 = y0 + .5, zt = -(k2 + 1) * 3.5;
-        q([iso(bx, y0, zt), iso(bx + bw, y0, zt), iso(bx + bw, y1, zt), iso(bx, y1, zt)], sh('#c48d5c', -k2 * .06));
-        q([iso(bx, y1, zt), iso(bx + bw, y1, zt), iso(bx + bw, y1, zt - 3.5), iso(bx, y1, zt - 3.5)], sh('#9a6a40', -k2 * .06));
-        q([iso(bx, y0, zt), iso(bx + bw, y0, zt), iso(bx + bw, y0, zt - .8), iso(bx, y0, zt - .8)], sh('#d9a670', -k2 * .06)); }
+      q(hole, '#4a3a2c');
+      for (let k2 = 0; k2 < 6; k2++) { const z0 = -k2 * D / 6, z1 = -(k2 + 1) * D / 6, f = k2 * .05;
+        q([iso(bx, by, z0), iso(bx, by + bh, z0), iso(bx, by + bh, z1), iso(bx, by, z1)], sh('#5a4634', f));
+        q([iso(bx, by, z0), iso(bx + bw, by, z0), iso(bx + bw, by, z1), iso(bx, by, z1)], sh('#6b5540', f)); }
+      q([iso(bx, by, 0), iso(bx + bw, by, 0), iso(bx + bw, by, -1), iso(bx, by, -1)], '#d9a670');
+      for (let k2 = 0; k2 < n; k2++) { const y0 = by + k2 * d, y1 = y0 + d, zt = -(k2 + 1) * st2, f = -k2 * .025;
+        q([iso(bx, y0, zt), iso(bx + bw, y0, zt), iso(bx + bw, y1, zt), iso(bx, y1, zt)], sh('#c48d5c', f));
+        q([iso(bx, y1, zt), iso(bx + bw, y1, zt), iso(bx + bw, y1, zt - st2), iso(bx, y1, zt - st2)], sh('#8a5a36', f));
+        q([iso(bx, y0, zt), iso(bx + bw, y0, zt), iso(bx + bw, y0, zt - .8), iso(bx, y0, zt - .8)], sh('#ecc48f', f)); }
       x.restore();
       // 樓梯口的邊（地板的切面）
       q([iso(bx, by + bh), iso(bx + bw, by + bh), iso(bx + bw, by + bh, -1.5), iso(bx, by + bh, -1.5)], '#6e4528');
       q([iso(bx + bw, by), iso(bx + bw, by + bh), iso(bx + bw, by + bh, -1.5), iso(bx + bw, by, -1.5)], '#5e3c22');
-      // 欄杆：東邊、南邊（貼牆那邊不用），北邊是樓梯的入口
-      const rail = (x0, y0, x1, y1) => { const L2 = Math.hypot(x1 - x0, y1 - y0), m2 = Math.max(1, Math.round(L2 / .5));
-        for (let k2 = 0; k2 <= m2; k2++) { const px = x0 + (x1 - x0) * k2 / m2, py = y0 + (y1 - y0) * k2 / m2; q([iso(px - .04, py, 0), iso(px + .04, py, 0), iso(px + .04, py, 14), iso(px - .04, py, 14)], '#7c5230'); }
-        q([iso(x0, y0, 14), iso(x1, y1, 14), iso(x1, y1, 15.5), iso(x0, y0, 15.5)], '#9a6a40'); };
-      if (bx + bw < r.w) rail(bx + bw, by + .1, bx + bw, by + bh);
+      const rail = (x0, y0, x1, y1) => { const L2 = Math.hypot(x1 - x0, y1 - y0), m2 = Math.max(1, Math.round(L2 / .25));
+        for (let k2 = 0; k2 <= m2; k2++) { const px = x0 + (x1 - x0) * k2 / m2, py = y0 + (y1 - y0) * k2 / m2; railPost(px, py, 0, 18.5, k2 === 0 || k2 === m2 ? .08 : .04); }
+        q([iso(x0, y0, 18.5), iso(x1, y1, 18.5), iso(x1, y1, 20), iso(x0, y0, 20)], '#9a6a40'); q([iso(x0, y0, 20), iso(x1, y1, 20), iso(x1, y1, 20.8), iso(x0, y0, 20.8)], '#c48d5c'); };
+      if (bx > 0) rail(bx, by + .1, bx, by + bh);
       if (by + bh < r.h) rail(bx, by + bh, bx + bw, by + bh);
+      if (bx + bw < r.w) rail(bx + bw, by + .1, bx + bw, by + bh);
     });
 
     // 2. 掛畫（北牆）
@@ -489,7 +550,15 @@
     const segs = (len, gap) => gap ? [[0, gap[0]], [gap[1], len]] : [[0, len]];
     segs(r.w, doorS).forEach(([a, b]) => lowWall(a - (a === 0 ? WT : 0), r.h, b, r.h + WT, 5, '#cbbd9f', '#bfb08f'));
     segs(r.h, doorE).forEach(([a, b]) => lowWall(r.w, a - (a === 0 ? WT : 0), r.w + WT, b + (b === r.h ? WT : 0), 5, '#cbbd9f', '#bfb08f'));
-    if (doorS) { const [a0, a1] = doorS; q([iso(a0, r.h + WT + .05), iso(a1, r.h + WT + .05), iso(a1, r.h + WT + .7), iso(a0, r.h + WT + .7)], '#8e8070'); }
+    // 大門（2026-11-27 審稿：原本腳踏墊掛在底座側面像一塊污漬）：門檻木條、門外一塊小台階，上面一塊棕色椰纖墊
+    if (doorS) { const [a0, a1] = doorS, j0 = r.h + WT, j1 = j0 + .8;
+      q([iso(a0, r.h), iso(a1, r.h), iso(a1, j0), iso(a0, j0)], '#b5875a');
+      q([iso(a0 - .2, j1, 0), iso(a1 + .2, j1, 0), iso(a1 + .2, j1, -SLAB), iso(a0 - .2, j1, -SLAB)], '#6e5338');
+      q([iso(a1 + .2, j0, 0), iso(a1 + .2, j1, 0), iso(a1 + .2, j1, -SLAB), iso(a1 + .2, j0, -SLAB)], '#5a432c');
+      q([iso(a0 - .2, j0, 0), iso(a1 + .2, j0, 0), iso(a1 + .2, j1, 0), iso(a0 - .2, j1, 0)], '#8a6a48');
+      q([iso(a0, j0 + .08, 0), iso(a1, j0 + .08, 0), iso(a1, j1 - .1, 0), iso(a0, j1 - .1, 0)], '#a07a4a');
+      for (let t = j0 + .2; t < j1 - .15; t += .14) q([iso(a0 + .04, t, 0), iso(a1 - .04, t, 0), iso(a1 - .04, t + .04, 0), iso(a0 + .04, t + .04, 0)], '#8a6538');
+      q([iso(a0, j1 - .14, 0), iso(a1, j1 - .14, 0), iso(a1, j1 - .1, 0), iso(a0, j1 - .1, 0)], '#c49a64'); }
 
     // 5. 夜晚：整間調暗，燈亮起來
     if (night) {
@@ -497,7 +566,7 @@
       const glow = (a, b, rad, col, al) => { const gr = x.createRadialGradient(a, b, 0, a, b, rad); gr.addColorStop(0, `rgba(${col},${al})`); gr.addColorStop(1, `rgba(${col},0)`); x.fillStyle = gr; x.fillRect(a - rad, b - rad, rad * 2, rad * 2); };
       x.save(); x.globalCompositeOperation = 'lighter';
       lights.forEach(l => { const [a, b] = l.at; if (l.kind === 'warm') { glow(a, b + 14, 44, '255,196,110', .4); glow(a, b, 9, '255,230,170', .7); } else if (l.kind === 'screen') glow(a, b + 6, 28, '120,160,230', .3); else glow(a, b, 24, '255,210,130', .25); });
-      winN.forEach(c => { const [a, b] = onN(c + 1, 26); glow(a, b, 20, '150,175,230', .16); });
+      winN.forEach(c => { const [a, b] = onN(c + 1, 26); glow(a, b, 20, '150,175,230', .16); }); winW.forEach(c => { const [a, b] = onWl(c + 1, 26); glow(a, b, 20, '150,175,230', .16); });
       x.restore();
       emit.forEach(e => e());
     }
@@ -549,5 +618,5 @@
     const res = { url: out.toDataURL(), w: out.width / 2, h: out.height / 2 }; thumbCache.set(id, res); return res;
   }
 
-  root.XiaodaoIso = { load, render, thumb, roomInfo, TW, TH, WH };
+  root.XiaodaoIso = { load, render, thumb, roomInfo, floorPx, paperPx, TW, TH, WH };
 })(window);

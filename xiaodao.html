@@ -28,12 +28,12 @@
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
-    <script src="assets/xiaodao-rules.js?v=20261126l"></script>
+    <script src="assets/xiaodao-rules.js?v=20261127a"></script>
     <script src="assets/xiaodao-draw.js?v=20261126g"></script>
     <script src="assets/xiaodao-fx.js?v=20261126f"></script>
-    <script src="assets/xiaodao-room.js?v=20261122d"></script>
-    <script src="assets/xiaodao-iso.js?v=20261123b"></script>
-    <script src="assets/xiaodao-door.js?v=20261124c"></script>
+    <script src="assets/xiaodao-room.js?v=20261127a"></script>
+    <script src="assets/xiaodao-iso.js?v=20261127a"></script>
+    <script src="assets/xiaodao-door.js?v=20261127a"></script>
     <script src="assets/saveimg.js?v=20261116d"></script>
     <style>
         /* 整頁是一個 App：上面標題列、中間整座島、下面四顆鈕。島是另一個世界（精緻像素風），外框照網站的紙張色 */
@@ -919,8 +919,8 @@
                 } else if (rmode === 'deco') {
                     const st = X.styleOf(S, rdeco), r = rlay.rooms.find(q => q.id === rdeco);
                     rHint(rview === 'iso' ? `改「${r ? r.name : ''}」：上面點別間可以換` : `改「${r ? r.name : ''}」：點別間房間可以換`);
-                    const sw = (kind, list) => list.map((x, i) => { const own = kind === 'floor' ? X.hasFloor(S, i) : X.hasPaper(S, i), on = (kind === 'floor' ? st.floor : st.paper) === i;
-                        return `<button type="button" class="${on ? 'on' : ''}" data-${kind}="${i}"><img src="${RM.swatch(kind, i)}" alt="">${x.n}<i>${on ? '用著' : own ? '有了' : fmt(x.p)}</i></button>`; }).join('');
+                    const sw = (kind, list) => list.map((x, i) => { const own = kind === 'floor' ? X.hasFloor(S, i, rdeco) : X.hasPaper(S, i), on = (kind === 'floor' ? st.floor : st.paper) === i;   // 這間的預設地板不用買；第 0 種壁紙在帳篷、小木屋叫帆布、圓木牆
+                        return `<button type="button" class="${on ? 'on' : ''}" data-${kind}="${i}"><img src="${RM.swatch(kind, i, 40, 30, X.level(S, 'house'))}" alt="">${kind === 'paper' ? X.paperName(S, i) : X.floorName(S, i)}<i>${on ? '用著' : own ? '有了' : fmt(x.p)}</i></button>`; }).join('');
                     P.innerHTML = `<p class="swl">地板</p><div class="sw">${sw('floor', X.FLOORS)}</div><p class="swl">壁紙</p><div class="sw">${sw('paper', X.PAPERS)}</div>`;
                     P.querySelectorAll('[data-floor]').forEach(b => b.onclick = () => act({ t: 'deco', room: rdeco, floor: +b.dataset.floor }));
                     P.querySelectorAll('[data-paper]').forEach(b => b.onclick = () => act({ t: 'deco', room: rdeco, paper: +b.dataset.paper }));

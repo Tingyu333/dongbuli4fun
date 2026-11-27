@@ -31,14 +31,16 @@
   };
 
   // ---- 地板 ----
-  function floor(B, a, b, w, h, kind) {
+  // 地板、壁紙跟斜看（xiaodao-iso.js）用同一套算法（2026-11-27 審稿重畫）；一格 T 顆
+  function floor(B, a, b, w, h, kind, lv) {
+    const I = root.XiaodaoIso; if (I && I.floorPx) { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) B.P(a + i, b + j, I.floorPx(kind, (a + i + .5) / T, (b + j + .5) / T, a + i, b + j, lv)); return; }
     const p = FLOOR_PAL[kind] || FLOOR_PAL[1];
     if (p === 'tile') { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const c = (Math.floor(i / 8) + Math.floor(j / 8)) % 2, edge = i % 8 === 7 || j % 8 === 7; B.P(a + i, b + j, edge ? '#c9c2b4' : c ? '#ebe6dc' : '#ddd6c8'); } return; }
     if (p === 'marble') { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const v = Math.sin((i + j * 1.7) / 5 + hash(Math.floor(i / 6), Math.floor(j / 6)) * 3); B.P(a + i, b + j, i % 20 === 19 || j % 15 === 14 ? '#d6d1c7' : v > .93 ? '#b9b4ab' : hash(i, j) > .97 ? '#e4e0d8' : '#f1eee8'); } return; }
     if (p === 'tatami') { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const edge = j % 20 === 0 || j % 20 === 19 || i % 40 === 0 || i % 40 === 39; B.P(a + i, b + j, edge ? '#3d4a36' : (i % 2 ? '#c2c48a' : '#b5b77c')); } return; }
     for (let j = 0; j < h; j++) { const row = Math.floor(j / 5), off = hash(row, 7) * 30; for (let i = 0; i < w; i++) { const n = hash(a + i, b + j), seam = (j % 5 === 4) || ((i + off) % 30 < 1); B.P(a + i, b + j, seam ? p[3] : n > .9 ? p[2] : n < .12 ? p[1] : p[0]); } }
   }
-  function northWall(B, a, w, paper) { B.R(a, 0, w, 4, WALLTOP); B.R(a, 3, w, 1, WALLTOP2); const f = PAPER[paper] || PAPER[0]; for (let j = 0; j < F; j++) for (let i = 0; i < w; i++) B.P(a + i, 4 + j, f(a + i, j)); B.R(a, 4 + F - 2, w, 2, '#8a6a4a'); B.R(a, 4 + F, w, 1, 'rgba(40,30,20,.25)'); }
+  function northWall(B, a, w, paper, lv) { B.R(a, 0, w, 4, WALLTOP); B.R(a, 3, w, 1, WALLTOP2); const I = root.XiaodaoIso, f = I && I.paperPx ? (i, j) => I.paperPx(paper, i, F - 1 - j, lv) : (PAPER[paper] || PAPER[0]); for (let j = 0; j < F; j++) for (let i = 0; i < w; i++) B.P(a + i, 4 + j, f(a + i, j)); B.R(a, 4 + F - 2, w, 2, '#8a6a4a'); B.R(a, 4 + F, w, 1, 'rgba(40,30,20,.25)'); }
   const vWall = (B, a, b, h) => { B.R(a, b, 4, h, WALLTOP); B.R(a + 3, b, 1, h, WALLTOP2); };
   const hWall = (B, a, b, w) => { B.R(a, b, w, 4, WALLTOP); B.R(a, b + 3, w, 1, WALLTOP2); };
   function windowN(B, a, w, night) {
@@ -46,7 +48,7 @@
     if (!night) B.poly([[a + 1, 4 + F], [a + w - 1, 4 + F], [a + w + 6, 4 + F + 22], [a + 8, 4 + F + 22]], 'rgba(255,240,200,.18)');   // 窗光落在地上
   }
   function stairs(B, a, b, w, h) { B.R(a, b, w, h, '#9a6a40'); for (let j = 0; j < h; j += 4) { B.R(a, b + j, w, 1, '#c48d5c'); B.R(a, b + j + 3, w, 1, '#6e4528'); } B.R(a, b, 1, h, '#5e3c22'); B.R(a + w - 1, b, 1, h, '#5e3c22'); }
-  function doormat(B, a, b, w) { B.R(a, b, w, 5, '#8e8070'); for (let i = 1; i < w - 1; i += 2) B.P(a + i, b + 2, '#a99c88'); }
+  function doormat(B, a, b, w) { B.R(a, b, w, 5, '#a07a4a'); for (let j = 1; j < 4; j += 2) B.R(a + 1, b + j, w - 2, 1, '#8a6538'); B.R(a, b, w, 1, '#c49a64'); }   // 棕色椰纖墊（跟斜看一樣）
 
   // ---- 家具（切圖、轉、影子） ----
   let ATLAS = null, COATLAS = null, loading = null;
@@ -107,19 +109,20 @@
     B.R(0, 0, L.W, L.H, '#3a3029');
     L.rooms.forEach((r, i) => {
       const st = X.styleOf(s, r.id), w = r.w * T, h = r.h * T;
-      northWall(B, r.x0 - 4, w + 8, st.paper);
-      floor(B, r.x0, TOP, w, h, st.floor);
+      northWall(B, r.x0 - 4, w + 8, st.paper, X.level(s, 'house'));
+      floor(B, r.x0, TOP, w, h, st.floor, X.level(s, 'house'));
       // 窗：每 6 格一扇，有掛畫的地方不開窗
       const pics = X.placedIn(s, r.id).filter(t => X.FURN[t.key].kind === 'pic').map(t => [t.at[0], t.at[0] + X.FURN[t.key].w]);
-      for (let c = 1; c + 2 <= r.w - 1; c += 6) if (!pics.some(([a, b]) => c < b + 0.5 && a < c + 2.5)) windowN(B, r.x0 + c * T + 2, 2 * T - 4, night);
+      { const n = Math.max(1, Math.floor((r.w + 2) / 6)), gap = (r.w - 2 * n) / (n + 1);   // 窗平均分佈（跟斜看一樣）
+        if (X.level(s, 'house') > 1) for (let k = 0; k < n; k++) { const c = gap + k * (2 + gap); if (!pics.some(([a, b]) => c < b + 0.5 && a < c + 2.5)) windowN(B, Math.round(r.x0 + c * T + 2), 2 * T - 4, night); } }
       (r.block || []).forEach(([bx, by, bw, bh]) => stairs(B, r.x0 + bx * T, TOP + by * T, bw * T, bh * T));
     });
     // 牆：左右外牆、房間之間（中間留門）、下面（一樓客廳留大門）
     vWall(B, 0, 0, L.H - (fi === 0 ? 6 : 0)); vWall(B, L.W - 4, 0, L.H - (fi === 0 ? 6 : 0));
     const bottom = L.H - 4 - (fi === 0 ? 6 : 0);
     L.rooms.forEach((r, i) => {
-      if (i) { const a = r.x0 - 4, mid = TOP + Math.floor(r.h / 2) * T - 12; vWall(B, a, 0, mid); vWall(B, a, mid + 24, bottom - mid - 24); floor(B, a, mid, 4, 24, X.styleOf(s, r.id).floor); }
-      if (fi === 0 && r.id === 'main') { const d = r.x0 + Math.floor(r.w / 2) * T - 8; hWall(B, r.x0 - 4, bottom, d - r.x0 + 4); hWall(B, d + 16, bottom, r.x0 + r.w * T - d - 16 + 4); floor(B, d, bottom, 16, 4, X.styleOf(s, r.id).floor); doormat(B, d, bottom + 4, 16); }
+      if (i) { const a = r.x0 - 4, mid = TOP + Math.floor(r.h / 2) * T - 12; vWall(B, a, 0, mid); vWall(B, a, mid + 24, bottom - mid - 24); floor(B, a, mid, 4, 24, X.styleOf(s, r.id).floor, X.level(s, 'house')); }
+      if (fi === 0 && r.id === 'main') { const d = r.x0 + Math.floor(r.w / 2) * T - 8; hWall(B, r.x0 - 4, bottom, d - r.x0 + 4); hWall(B, d + 16, bottom, r.x0 + r.w * T - d - 16 + 4); floor(B, d, bottom, 16, 4, X.styleOf(s, r.id).floor, X.level(s, 'house')); doormat(B, d, bottom + 4, 16); }
       else hWall(B, r.x0 - 4, bottom, r.w * T + 8);
     });
     const z = Math.max(1, Math.round(opt.z || 1)), cv = opt.canvas || document.createElement('canvas'); if (cv.width !== L.W * z || cv.height !== L.H * z) { cv.width = L.W * z; cv.height = L.H * z; }
@@ -144,9 +147,9 @@
     return { canvas: cv, layout: L, z };
   }
   // 地板、壁紙的小樣（商店、換地板壁紙用）：回 dataURL
-  function swatch(kind, i, w = 40, h = 30) {
+  function swatch(kind, i, w = 40, h = 30, lv = 3) {   // lv：帳篷、小木屋的第 0 種壁紙／第 1 種地板長得不一樣
     const B = new Buf(w, h);
-    if (kind === 'floor') floor(B, 0, 0, w, h, i); else { const f = PAPER[i] || PAPER[0]; for (let j = 0; j < h; j++) for (let x = 0; x < w; x++) B.P(x, j, f(x, j)); B.R(0, h - 3, w, 3, '#8a6a4a'); }
+    if (kind === 'floor') floor(B, 0, 0, w, h, i, lv); else { const I = root.XiaodaoIso, f = I && I.paperPx ? (x, j) => I.paperPx(i, x, h - 1 - j, lv) : (PAPER[i] || PAPER[0]); for (let j = 0; j < h; j++) for (let x = 0; x < w; x++) B.P(x, j, f(x, j)); B.R(0, h - 3, w, 3, '#8a6a4a'); }
     const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').putImageData(new ImageData(B.d, w, h), 0, 0); return c.toDataURL();
   }
   // 家具小圖（不轉、白天）：回 dataURL

@@ -18,7 +18,7 @@
   // 每一種房子：院子多大、最高到哪（決定畫布大小）、畫什麼
   const SPEC = {
     1: { name: '帳篷', YW: 9, YD: 8, top: 34 },
-    2: { name: '小木屋', YW: 10, YD: 9, top: 52 },
+    2: { name: '小木屋', YW: 10, YD: 9, top: 56 },
     3: { name: '平房', YW: 12, YD: 10, top: 62 },
     4: { name: '兩層樓', YW: 13, YD: 11, top: 88 },
     5: { name: '海景別墅', YW: 14, YD: 12, top: 72 },
@@ -149,7 +149,7 @@
     2: [[4.7, 5.8, 1.2], [6.2, 7.4, 0], [2.6, 7.2, 0], [7.8, 7.6, 0], [5.4, 8.2, 0]],
     3: [[5.6, 6.5, 1.6], [7.4, 8.4, 0], [1.6, 5.4, 0], [9.6, 8.4, 0], [5.2, 9.2, 0]],
     4: [[5.9, 7.0, 1.2], [8.6, 9.6, 0], [3.2, 9.6, 0], [10.6, 9.2, 0], [6.2, 10.2, 0]],
-    5: [[10.6, 8.7, 3], [9.2, 11.2, 0], [4.2, 10.6, 0], [12.2, 6.2, 0], [6.6, 11.2, 0]],
+    5: [[10.85, 7.6, 3.5], [9.2, 11.2, 0], [4.2, 10.6, 0], [12.2, 6.2, 0], [6.6, 11.2, 0]],
   };
   function render(lv, opt = {}) {
     const sp = SPEC[lv] || SPEC[3], { YW, YD } = sp, night = !!opt.night, z = Math.max(1, Math.round(opt.z || 1)), cat = false, mail = opt.mail !== false;   // 店貓 2026-11-24 起改用 guests 畫（catAt 不用了）
@@ -166,7 +166,7 @@
     const box = (i0, j0, i1, j1, z0, z1, col, cR) => { q([iso(i0, j1, z0), iso(i1, j1, z0), iso(i1, j1, z1), iso(i0, j1, z1)], col); q([iso(i1, j0, z0), iso(i1, j1, z0), iso(i1, j1, z1), iso(i1, j0, z1)], cR || sh(col, -.16)); top(i0, j0, i1, j1, z1, sh(col, .14)); };
     const onY = Y => (i, zz) => iso(i, Y, zz), onX = X => (j, zz) => iso(X, j, zz);
     const rect = (at, a0, a1, z0, z1, col) => q([at(a0, z0), at(a1, z0), at(a1, z1), at(a0, z1)], col);
-    const emit = [], spots = {};
+    const emit = [], spots = {}, roofs = [];   // roofs：晚上的燈不照到的面（屋頂、陽台頂）
     const glow = (a, b, r, col, al) => { const g = x.createRadialGradient(a, b, 0, a, b, r); g.addColorStop(0, `rgba(${col},${al})`); g.addColorStop(1, `rgba(${col},0)`); x.fillStyle = g; x.fillRect(a - r, b - r, r * 2, r * 2); };
     const spot = (k, pts) => { spots[k] = pts; };
 
@@ -195,39 +195,54 @@
       x.putImageData(img, 0, 0); }
 
     // ---------- 共用的小東西 ----------
-    const shadow = (i0, j0, i1, j1, dz = 1.3) => { x.save(); x.globalAlpha = .18; q([iso(i0 + .3, j1), iso(i1 + dz * .7, j1), iso(i1 + dz * .7, j1 + dz), iso(i0 + .3, j1 + dz)], '#2b2418'); q([iso(i1, j0 + .3), iso(i1 + dz, j0 + .3), iso(i1 + dz, j1 + dz), iso(i1, j1)], '#2b2418'); x.restore(); };
+    const shadow = (i0, j0, i1, j1, dz = 1.3) => { q([iso(i0 + .3, j1), iso(i1 + dz * .7, j1), iso(i1 + dz * .7, j1 + dz), iso(i0 + .3, j1 + dz)], 'rgba(30,40,30,.2)'); q([iso(i1, j0 + .3), iso(i1 + dz, j0 + .3), iso(i1 + dz, j1 + dz), iso(i1, j1)], 'rgba(30,40,30,.2)'); };
     function stones(i0, i1, j0, j1, col = '#cfc9bb') { for (let j = j0; j < j1 - .1; j += .75) { const o = (Math.floor(j * 4) % 2) * .15; top(i0 + o, j, i1 + o, j + .6, .3, sh(col, -.1)); top(i0 + .1 + o, j + .05, i1 - .1 + o, j + .5, .3, col); } }
     function stonesX(i0, i1, j0, j1, col = '#cfc9bb') { for (let i = i0; i < i1 - .1; i += .75) { const o = (Math.floor(i * 4) % 2) * .15; top(i, j0 + o, i + .6, j1 + o, .3, sh(col, -.1)); top(i + .05, j0 + .1 + o, i + .5, j1 - .1 + o, .3, col); } }
     function dirt(i0, i1, j0, j1) { top(i0, j0, i1, j1, .2, '#b8956a'); for (let k = 0; k < 30; k++) { const [a, b] = iso(i0 + hash(k, 2) * (i1 - i0), j0 + hash(2, k) * (j1 - j0), .2); P(a, b, hash(k, 7) > .5 ? '#a5835a' : '#c9a77c'); } }
     function tree(i, j, kind = 'round', s = 1) { const [a, b] = iso(i, j);
-      x.save(); x.globalAlpha = .2; x.fillStyle = '#2b2418'; x.beginPath(); x.ellipse(a + 4, b + 1, 10 * s, 4 * s, 0, 0, Math.PI * 2); x.fill(); x.restore();
+      x.save(); x.fillStyle = 'rgba(30,40,30,.2)'; x.beginPath(); x.ellipse(a + 4, b + 1, 10 * s, 4 * s, 0, 0, Math.PI * 2); x.fill(); x.restore();
       if (kind === 'palm') { for (let k = 0; k < 30 * s; k++) { const t = k / (30 * s); P(a + Math.sin(t * 1.6) * 5 * s, b - k, k % 4 === 0 ? '#8a6a48' : '#a8845a', 2, 1); }
         const tx = a + Math.sin(1.6) * 5 * s, ty = b - 30 * s; [[-1, 0], [1, 0], [-.7, .5], [.7, .5], [0, -.6], [-.4, -.4], [.4, -.4]].forEach(([u, v]) => { for (let k = 0; k < 13 * s; k++) { const px = tx + u * k, py = ty + v * k + (k * k) / (12 * s); P(px, py, k > 9 ? '#5e8e44' : '#4a7436', 2, 2); } }); P(tx - 1, ty, '#7a5a38', 3, 3); return; }
       if (kind === 'pine') { x.fillStyle = '#6e4528'; x.fillRect(a - 1, b - 6, 3, 6); for (let k = 0; k < 4; k++) { const w = (10 - k * 2) * s, yy = b - 6 - k * 7 * s; for (let r = 0; r < 9 * s; r++) { const ww = Math.round(w * (r / (9 * s))); P(a - ww, yy - 9 * s + r, r < 3 ? '#4f7a3e' : '#3b5e2e', ww * 2 + 1, 1); } } return; }
       x.fillStyle = '#6e4528'; x.fillRect(a - 1, b - 14 * s, 3, 14 * s); x.fillStyle = '#8a5a36'; x.fillRect(a - 1, b - 14 * s, 1, 14 * s);
       const R = 12 * s; for (let yy = -R; yy <= R; yy++) for (let xx = -R; xx <= R; xx++) { const e = (xx * xx + yy * yy) / (R * R); if (e > 1 || hash(xx + 40, yy + 40) > .97) continue; P(a + xx, b - 26 * s + yy, yy + xx * .3 < -4 * s ? '#7fae58' : yy < 4 * s ? '#5e8e44' : '#4a7436'); } }
-    function bush(i, j, r = 3, col = '#5e8e44') { const [a, b] = iso(i, j); for (let yy = -r; yy <= 1; yy++) for (let xx = -r - 2; xx <= r + 2; xx++) if (xx * xx / ((r + 2) * (r + 2)) + yy * yy / (r * r) <= 1) P(a + xx, b - 2 + yy, yy < -r / 2 ? sh(col, .2) : col); }
-    function flowers(i0, j0, i1, j1, n = 14, zz = 3) { for (let k = 0; k < n; k++) { const i = i0 + hash(k, 5) * (i1 - i0), j = j0 + hash(5, k) * (j1 - j0), [a, b] = iso(i, j, zz); P(a, b + 1, '#4f7a3e', 1, 2); P(a - 1, b - 1, ['#e46a5c', '#f2c14e', '#f5f0e6', '#c49ae0'][k % 4], 3, 2); } }
-    function groundLamp(i, j, hz = 4) { box(i, j, i + .18, j + .18, 0, hz, '#3a3836'); top(i + .02, j + .02, i + .16, j + .16, hz, night ? '#fff0c4' : '#d9cfbf'); if (night) emit.push(() => { const [a, b] = iso(i + .09, j + .09, hz); glow(a, b + 2, 14, '255,210,140', .45); }); }
-    function lampPost(i, j) { box(i, j, i + .15, j + .15, 0, 24, '#3a3836'); box(i - .1, j - .1, i + .25, j + .25, 24, 28, night ? '#fff0c4' : '#e9e1cf'); top(i - .15, j - .15, i + .3, j + .3, 28, '#3a3836'); if (night) emit.push(() => { const [a, b] = iso(i + .07, j + .07, 26); glow(a, b, 34, '255,200,120', .45); glow(a, b, 6, '255,240,200', .8); }); }
+    function bush(i, j, r = 3, col = '#5e8e44', zz = 0) { const [a, b] = iso(i, j, zz); for (let yy = -r; yy <= 1; yy++) for (let xx = -r - 2; xx <= r + 2; xx++) if (xx * xx / ((r + 2) * (r + 2)) + yy * yy / (r * r) <= 1) P(a + xx, b - 2 + yy, yy < -r / 2 ? sh(col, .2) : col); }
+    // 花（2026-11-27 審稿：原本單顆的點像糖粉）：一叢一叢，葉子墊底、三朵 2×2 的花頭，左上亮一顆
+    function flowers(i0, j0, i1, j1, n = 14, zz = 3) { const COL = [['#e46a5c', '#f2958a'], ['#f2c14e', '#f8dc8a'], ['#f5f0e6', '#ffffff'], ['#c49ae0', '#dcc0f0']];
+      for (let k = 0; k < Math.ceil(n / 3); k++) { const i = i0 + .15 + hash(k, 5) * (i1 - i0 - .3), j = j0 + .1 + hash(5, k) * (j1 - j0 - .2), [a, b] = iso(i, j, zz), c = COL[k % 4];
+        P(a - 3, b - 1, '#4f7a3e', 7, 2); P(a - 2, b - 2, '#5e8e44', 5, 1);
+        [[-3, -4], [1, -4], [-1, -6]].forEach(([u, v]) => { P(a + u, b + v, c[0], 2, 2); P(a + u, b + v, c[1]); }); } }
+    function groundLamp(i, j, hz = 4) { box(i + .03, j + .03, i + .15, j + .15, 0, hz, '#6b6660', '#57534e'); box(i - .02, j - .02, i + .2, j + .2, hz, hz + 1.6, night ? '#fff0c4' : '#e9e1cf', night ? '#f3dca0' : '#d6ccb8'); if (night) emit.push(() => { const [a, b] = iso(i + .09, j + .09, hz); glow(a, b + 2, 14, '255,210,140', .45); }); }
+    function lampPost(i, j) { box(i - .04, j - .04, i + .19, j + .19, 0, 2, '#4a4f53', '#3d4246'); box(i, j, i + .15, j + .15, 0, 24, '#4a4f53', '#3d4246'); box(i - .1, j - .1, i + .25, j + .25, 24, 28, night ? '#fff0c4' : '#e9e1cf'); box(i - .15, j - .15, i + .3, j + .3, 28, 29, '#4a4f53', '#3d4246'); if (night) emit.push(() => { const [a, b] = iso(i + .07, j + .07, 26); glow(a, b, 34, '255,200,120', .45); glow(a, b, 6, '255,240,200', .8); }); }
     function picket(i0, j0, i1, j1, col = '#f6f1e6') { const L = Math.hypot(i1 - i0, j1 - j0), n = Math.max(1, Math.round(L / .4));
       for (let k = 0; k <= n; k++) { const i = i0 + (i1 - i0) * k / n, j = j0 + (j1 - j0) * k / n; q([iso(i - .05, j, 0), iso(i + .05, j, 0), iso(i + .05, j, 8), iso(i, j, 9), iso(i - .05, j, 8)], col); }
       q([iso(i0, j0, 5), iso(i1, j1, 5), iso(i1, j1, 6), iso(i0, j0, 6)], sh(col, -.1)); q([iso(i0, j0, 2), iso(i1, j1, 2), iso(i1, j1, 3), iso(i0, j0, 3)], sh(col, -.1)); }
     function railFence(i0, j0, i1, j1) { const L = Math.hypot(i1 - i0, j1 - j0), n = Math.max(1, Math.round(L / 1.5));
       for (let k = 0; k <= n; k++) { const i = i0 + (i1 - i0) * k / n, j = j0 + (j1 - j0) * k / n; box(i - .08, j - .08, i + .08, j + .08, 0, 10, '#8a6a48'); }
       [4, 8].forEach(h => q([iso(i0, j0, h), iso(i1, j1, h), iso(i1, j1, h + 1.2), iso(i0, j0, h + 1.2)], '#a8845a')); }
-    function hedge(i0, j0, i1, j1) { box(i0, j0, i1, j1, 0, 7, '#4f7a3e', '#3f6532'); for (let k = 0; k < (i1 - i0 + j1 - j0) * 8; k++) { const [a, b] = iso(i0 + hash(k, 3) * (i1 - i0), j0 + hash(3, k) * (j1 - j0), 7); P(a, b, '#6e9a53'); } }
+    function hedge(i0, j0, i1, j1) { box(i0, j0, i1, j1, 0, 7, '#4f7a3e', '#3f6532'); q([iso(i0, j1, 0), iso(i1, j1, 0), iso(i1, j1, 1.2), iso(i0, j1, 1.2)], '#3f6532'); q([iso(i1, j0, 0), iso(i1, j1, 0), iso(i1, j1, 1.2), iso(i1, j0, 1.2)], '#33552a');
+      // 頂面一片一片的葉子：亮的在左上
+      for (let k = 0; k < (i1 - i0) * (j1 - j0) * 40 + 10; k++) { const u = hash(k, 3), v = hash(3, k), [a, b] = iso(i0 + u * (i1 - i0), j0 + v * (j1 - j0), 7); P(a, b, u + v < .7 ? '#7fae58' : hash(k, 9) > .5 ? '#6e9a53' : '#5e8a47', 2, 1); }
+      for (let k = 0; k < (i1 - i0 + j1 - j0) * 6; k++) { const t = hash(k, 13), [a, b] = iso(i0 + t * (i1 - i0), j1, 2 + hash(13, k) * 4); P(a, b, '#5e8a47'); } }
     function mailbox(i, j, style) {
-      if (style === 'crate') { box(i + .2, j + .2, i + .32, j + .32, 0, 10, '#7c5230'); box(i, j, i + .6, j + .5, 10, 16, '#b08a5a'); q([iso(i, j + .5, 12), iso(i + .6, j + .5, 12), iso(i + .6, j + .5, 12.5), iso(i, j + .5, 12.5)], '#8a6a48'); }
-      else if (style === 'pillar') { box(i, j, i + .7, j + .7, 0, 15, '#a6574a', '#8a483d'); for (let zz = 2; zz < 15; zz += 2.5) q([iso(i, j + .7, zz), iso(i + .7, j + .7, zz), iso(i + .7, j + .7, zz + .4), iso(i, j + .7, zz + .4)], '#d9cfc2'); box(i + .05, j + .1, i + .65, j + .6, 15, 20, '#2e2d2c'); }
-      else if (style === 'modern') { box(i, j, i + .5, j + .5, 0, 16, '#d6d1c7'); box(i - .05, j + .05, i + .55, j + .45, 16, 21, '#8a5a36'); }
+      if (style === 'crate') { box(i + .2, j + .2, i + .32, j + .32, 0, 10, '#7c5230'); box(i, j, i + .6, j + .5, 10, 16, '#b08a5a'); [12, 14].forEach(zz => q([iso(i, j + .5, zz), iso(i + .6, j + .5, zz), iso(i + .6, j + .5, zz + .5), iso(i, j + .5, zz + .5)], '#8a6a48'));
+        q([iso(i + .15, j + .5, 14.6), iso(i + .45, j + .5, 14.6), iso(i + .45, j + .5, 15.4), iso(i + .15, j + .5, 15.4)], '#4a3a2c');   // 投信口
+        box(i + .6, j + .1, i + .65, j + .15, 12, 20, '#7c5230'); q([iso(i + .63, j + .13, 20), iso(i + .63, j + .13, 17), iso(i + .63, j + .45, 18.5)], '#b33a2f'); }   // 朱色小旗
+      else if (style === 'pillar') { box(i, j, i + .7, j + .7, 0, 15, '#a6574a', '#8a483d'); for (let zz = 2; zz < 15; zz += 2.5) q([iso(i, j + .7, zz), iso(i + .7, j + .7, zz), iso(i + .7, j + .7, zz + .4), iso(i, j + .7, zz + .4)], '#d9cfc2');
+        box(i - .05, j - .05, i + .75, j + .75, 15, 17, '#a39b8e'); q([iso(i - .05, j + .75, 16.6), iso(i + .75, j + .75, 16.6), iso(i + .75, j + .75, 17), iso(i - .05, j + .75, 17)], '#c9c2b6');
+        q([iso(i + .15, j + .7, 12), iso(i + .55, j + .7, 12), iso(i + .55, j + .7, 13), iso(i + .15, j + .7, 13)], '#4a3a2c'); }   // 石頭頂蓋、投信口
+      else if (style === 'wood') { box(i + .3, j + .15, i + .45, j + .3, 0, 13, '#7c5230'); box(i, j, i + .75, j + .5, 13, 19, '#a8784a'); [15, 17].forEach(zz => q([iso(i, j + .5, zz), iso(i + .75, j + .5, zz), iso(i + .75, j + .5, zz + .5), iso(i, j + .5, zz + .5)], '#8a5a36'));
+        box(i - .05, j - .05, i + .8, j + .55, 19, 20.5, '#74492a'); q([iso(i + .2, j + .5, 17.8), iso(i + .55, j + .5, 17.8), iso(i + .55, j + .5, 18.6), iso(i + .2, j + .5, 18.6)], '#4a3a2c');
+        box(i + .75, j + .1, i + .82, j + .17, 16, 24, '#b33a2f'); box(i + .75, j + .1, i + .82, j + .4, 22, 24, '#b33a2f'); }   // 小木屋：木板釘的木信箱
+      else if (style === 'modern') { box(i, j, i + .5, j + .5, 0, 16, '#d6d1c7'); box(i - .05, j + .05, i + .55, j + .45, 16, 19, '#8a5a36'); box(i - .08, j - .03, i + .58, j + .53, 19, 21, '#bdb6aa'); q([iso(i + .1, j + .45, 17), iso(i + .4, j + .45, 17), iso(i + .4, j + .45, 18), iso(i + .1, j + .45, 18)], '#4a3a2c'); }   // 石頭頂蓋、投信口
       else { box(i + .3, j + .15, i + .45, j + .3, 0, 13, '#7c5230'); box(i, j, i + .75, j + .5, 13, 19, '#f3efe6'); top(i, j, i + .75, j + .5, 21, '#fbf9f4'); q([iso(i, j + .5, 19), iso(i + .75, j + .5, 19), iso(i + .75, j + .5, 21), iso(i, j + .5, 21)], '#e2dccf');
         box(i + .75, j + .1, i + .82, j + .17, 16, 24, '#b33a2f'); box(i + .75, j + .1, i + .82, j + .4, 22, 24, '#b33a2f'); }
-      const zt = style === 'crate' ? 16 : style === 'pillar' ? 20 : style === 'modern' ? 21 : 21;
+      const zt = style === 'crate' ? 16 : style === 'pillar' ? 17 : style === 'modern' ? 21 : style === 'wood' ? 20.5 : 21;
       if (mail) { q([iso(i + .15, j + .25, zt), iso(i + .5, j + .25, zt), iso(i + .5, j + .25, zt + 4), iso(i + .15, j + .25, zt + 4)], '#f6e8c8'); const [a, b] = iso(i + .4, j + .25, zt + 3.5); P(a, b, '#b33a2f', 2, 1); }
       const [a, b] = iso(i + .35, j + .25, zt / 2); spot('mail', [a - 8, b - zt / 2 - 8, 16, zt + 10]);
     }
-    function diary(i, j, zz) { box(i, j, i + .45, j + .4, zz, zz + 1.3, '#b33a2f'); top(i, j, i + .45, j + .4, zz + 1.3, '#c9493c'); const [a, b] = iso(i + .22, j + .2, zz + 1.4); P(a - 1, b, '#d4a83c', 3, 1); spot('diary', [a - 8, b - 6, 16, 10]); }
+    // 日記（2026-11-27 審稿：原本一團紅看不出是什麼）：合起來的書，封面朱色、兩面看得到白色書口
+    function diary(i, j, zz) { box(i, j, i + .45, j + .4, zz, zz + 2, '#b33a2f'); q([iso(i + .03, j + .4, zz + .5), iso(i + .43, j + .4, zz + .5), iso(i + .43, j + .4, zz + 1.5), iso(i + .03, j + .4, zz + 1.5)], '#f3efe6'); q([iso(i + .45, j + .03, zz + .5), iso(i + .45, j + .37, zz + .5), iso(i + .45, j + .37, zz + 1.5), iso(i + .45, j + .03, zz + 1.5)], '#dcd6ca'); top(i, j, i + .45, j + .4, zz + 2, '#c9493c'); zz += .7; const [a, b] = iso(i + .22, j + .2, zz + 1.4); P(a - 1, b, '#d4a83c', 3, 1); spot('diary', [a - 8, b - 6, 16, 10]); }
     function smallTable(i, j, zz0 = 0, col = '#5e3c22') { [[i, j], [i + .7, j], [i, j + .5], [i + .7, j + .5]].forEach(([a, b]) => box(a, b, a + .08, b + .08, zz0, zz0 + 7, col)); box(i - .1, j - .1, i + .88, j + .68, zz0 + 7, zz0 + 8, sh(col, .25)); return zz0 + 8; }
     function catAt(i, j, zz) { if (!cat) return; const [a, b] = iso(i, j, zz);
       x.fillStyle = 'rgba(40,28,18,.2)'; x.fillRect(a - 4, b + 1, 9, 2);
@@ -249,14 +264,14 @@
       if (night) { const [p, r] = at((a0 + a1) / 2, (z0 + z1) / 2); emit.push(() => glow(p, r + 6, o.big ? 34 : 22, '255,200,120', .35)); lit.push([at, a0, a1, z0, z1, o.big]); }
     }
     const lit = [];
-    function door(at, a0, a1, h, col = '#8a5a36', glassTop = true) {
-      rect(at, a0 - .15, a1 + .15, 0, h + 1, '#f8f4ea'); rect(at, a0, a1, 0, h, col);
+    function door(at, a0, a1, h, col = '#8a5a36', glassTop = true, frame = '#f8f4ea') {
+      rect(at, a0 - .15, a1 + .15, 0, h + 1, frame); rect(at, a0, a1, 0, h, col);
       rect(at, a0 + .15, a1 - .15, h * .52, h * .88, sh(col, -.1)); rect(at, a0 + .15, a1 - .15, h * .12, h * .44, sh(col, -.1));
       if (glassTop) rect(at, a0 + .3, a1 - .3, h * .62, h * .82, night ? '#ffd98a' : '#bfe0ea');
       const [ka, kb] = at(a1 - .12, h * .46); P(ka, kb, '#d4a83c', 1, 2);
       const [c0, c1] = at((a0 + a1) / 2, h / 2); spot('door', [c0 - 10, c1 - h / 2 - 4, 20, h + 6]);
     }
-    function wallLamp(at, a, zz) { rect(at, a - .15, a + .15, zz - 2, zz + 2, '#3a3836'); rect(at, a - .1, a + .1, zz - 1.5, zz + 1.5, night ? '#fff4d6' : '#f1e3c0'); if (night) { const [p, r] = at(a, zz); emit.push(() => { glow(p, r, 28, '255,196,110', .5); glow(p, r, 6, '255,240,200', .8); }); lit.push(['lamp', p, r]); } }
+    function wallLamp(at, a, zz) { rect(at, a - .15, a + .15, zz - 2, zz + 2, '#4a4f53'); rect(at, a - .1, a + .1, zz - 1.5, zz + 1.5, night ? '#fff4d6' : '#f1e3c0'); if (night) { const [p, r] = at(a, zz); emit.push(() => { glow(p, r, 28, '255,196,110', .5); glow(p, r, 6, '255,240,200', .8); }); lit.push(['lamp', p, r]); } }
     // 牆的紋路：木板（橫線）、圓木、灰泥
     function siding(at, a0, a1, z0, z1, col, kind) {
       rect(at, a0, a1, z0, z1, col);
@@ -273,6 +288,9 @@
       if (o.gableWin) { const [a, b] = iso(X1, RY, wallH + (ridgeH - wallH) * .45); x.fillStyle = '#5e3c22'; x.fillRect(Math.round(a) - 2, Math.round(b) - 2, 4, 4); x.fillStyle = night ? '#ffd98a' : '#a8d4e8'; x.fillRect(Math.round(a) - 1, Math.round(b) - 1, 2, 2); }
       q([iso(X0 - RO, Y0 - RO, eave), iso(X1 + RO, Y0 - RO, eave), iso(X1 + RO, RY, ridgeH), iso(X0 - RO, RY, ridgeH)], sh(col, -.25));
       q([iso(X0 - RO, RY, ridgeH), iso(X1 + RO, RY, ridgeH), iso(X1 + RO, Y1 + RO, eave), iso(X0 - RO, Y1 + RO, eave)], col);
+      roofs.push([iso(X0 - RO, Y0 - RO, eave), iso(X1 + RO, Y0 - RO, eave), iso(X1 + RO, RY, ridgeH + 2), iso(X0 - RO, RY, ridgeH + 2)], [iso(X0 - RO, RY, ridgeH + 2), iso(X1 + RO, RY, ridgeH + 2), iso(X1 + RO, Y1 + RO, eave), iso(X0 - RO, Y1 + RO, eave)]);
+      // 瓦溝（平房的紅瓦）：順著坡往下，左邊一顆亮
+      if (o.tile) for (let i = X0 - RO + .25; i < X1 + RO; i += .25) { q([iso(i, RY, ridgeH), iso(i + .04, RY, ridgeH), iso(i + .04, Y1 + RO, eave), iso(i, Y1 + RO, eave)], sh(col, -.16)); q([iso(i - .04, RY, ridgeH), iso(i, RY, ridgeH), iso(i, Y1 + RO, eave), iso(i - .04, Y1 + RO, eave)], sh(col, .12)); }
       const rows = o.rows || 6; for (let k = 1; k < rows; k++) { const t = k / rows, jj = RY + t * (Y1 + RO - RY), zz = ridgeH + t * (eave - ridgeH); q([iso(X0 - RO, jj, zz), iso(X1 + RO, jj, zz), iso(X1 + RO, jj + .08, zz - .7), iso(X0 - RO, jj + .08, zz - .7)], sh(col, -.18)); }
       for (let i = X0; i < X1 + RO; i += .5) for (let t = 0; t < 1; t += 1 / rows) { if (hash(i * 10 | 0, t * 10 | 0) > .82) { const [a, b] = iso(i, RY + (t + .5 / rows) * (Y1 + RO - RY), ridgeH + (t + .5 / rows) * (eave - ridgeH)); P(a, b, sh(col, .15), 2, 1); } }
       q([iso(X0 - RO, Y1 + RO, eave), iso(X1 + RO, Y1 + RO, eave), iso(X1 + RO, Y1 + RO, eave - 2), iso(X0 - RO, Y1 + RO, eave - 2)], sh(col, -.3));
@@ -286,6 +304,7 @@
     function hang(A, B, h, o = {}) {
       const L = (t, zz) => iso(A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, zz), len = Math.hypot(B[0] - A[0], B[1] - A[1]);
       if (o.posts !== false) [A, B].forEach(([i, j]) => { box(i - .06, j - .06, i + .06, j + .06, o.z0 || 0, h + 1, '#8a6a48'); box(i - .25, j - .04, i + .25, j + .04, h, h + 1, '#8a6a48'); });
+      if (o.beam) q([iso(A[0], A[1] + .04, h + 1), iso(B[0], B[1] + .04, h + 1), iso(B[0], B[1] + .04, h + 2), iso(A[0], A[1] + .04, h + 2)], '#a8845a');   // 曬衣架上面一根橫樑（不然像兩根插在地上的棍子）
       const [p0, r0] = L(0, h), [p1, r1] = L(1, h); x.strokeStyle = '#e9e1cf'; x.lineWidth = .7; x.beginPath(); x.moveTo(p0, r0); x.lineTo(p1, r1); x.stroke();
       const list = CLOTHES.slice(0, o.max || 5), n = list.length; if (!n) return;
       const w = Math.min(.75, len / (n + .5)) / len, gap = (1 - n * w) / (n + 1);
@@ -311,56 +330,77 @@
       dirt(3.6, 7.6, 4.6, 7.7);
       // 曬衣繩（沿 y，在左邊）
       hang([.96, 3.1], [.96, 6.8], 16, { max: 4 });
-      // 帳篷：屋脊沿 x，入口在東邊的三角形
-      const X0 = 2.3, X1 = 6.2, Y0 = 1.2, Y1 = 4.2, YC = (Y0 + Y1) / 2, RH = 22;
+      // 帳篷（2026-11-27 審稿轉 90 度）：屋脊沿 y，入口在前面（朝營火和小路，跟屋內的門同一面），門簾往兩邊綁起來
+      const X0 = 2.5, X1 = 5.5, Y0 = .9, Y1 = 4.5, XC = (X0 + X1) / 2, RH = 22;
+      // 帳篷後面的東西先畫（2026-11-27 第二輪：原本草叢和營釘畫在帳篷屋頂上）
+      { const [a, b] = iso(3, .5); for (let k = 0; k < 5; k++) P(a + k - 2, b - 1 - (k % 2) * 2, '#6f9e48', 1, 2 + (k % 2) * 2); }
+      const rope = (j0, a, b) => { const [p0, r0] = iso(XC, j0, RH), [p1, r1] = iso(a, b, 0); x.strokeStyle = '#e9e1cf'; x.lineWidth = .6; x.beginPath(); x.moveTo(p0, r0); x.lineTo(p1, r1); x.stroke(); box(a - .05, b - .05, a + .05, b + .05, 0, 2, '#5e3c22'); };
+      rope(Y0, XC + 1.4, Y0 - .5);
       shadow(X0, Y0, X1, Y1, 1);
-      q([iso(X0, YC, RH), iso(X1, YC, RH), iso(X1 + .2, Y1 + .2, 0), iso(X0 - .2, Y1 + .2, 0)], '#d9c9a2');
-      for (let t = .2; t < 1; t += .2) q([iso(X0 + (X1 - X0) * t, YC, RH), iso(X0 + (X1 - X0) * t + .04, YC, RH), iso(X0 + (X1 - X0) * t + .04, Y1 + .2, 0), iso(X0 + (X1 - X0) * t, Y1 + .2, 0)], '#c9b88f');
-      q([iso(X1 + .2, Y0 - .2, 0), iso(X1 + .2, Y1 + .2, 0), iso(X1, YC, RH)], '#c4b28a');
-      q([iso(X1 + .21, YC - .9, 0), iso(X1 + .21, YC + .9, 0), iso(X1 + .21, YC, 15)], night ? '#ffcf7a' : '#4a3a2c');
-      q([iso(X1 + .21, YC + .2, 0), iso(X1 + .21, YC + .9, 0), iso(X1 + .21, YC, 15), iso(X1 + .6, YC + 1.3, 2)], '#e6d8b5');   // 掀開的門簾
-      q([iso(X0 - .1, YC, RH + 1), iso(X1 + .3, YC, RH + 1), iso(X1 + .3, YC, RH), iso(X0 - .1, YC, RH)], '#8a6a48');
-      [[X1 + .9, Y1 + .9], [X1 + .9, Y0 - .5]].forEach(([a, b]) => { const [p0, r0] = iso(X1 + .2, YC, RH), [p1, r1] = iso(a, b, 0); x.strokeStyle = '#e9e1cf'; x.lineWidth = .6; x.beginPath(); x.moveTo(p0, r0); x.lineTo(p1, r1); x.stroke(); box(a - .05, b - .05, a + .05, b + .05, 0, 2, '#5e3c22'); });
-      const [d0, d1] = iso(X1 + .2, YC, 7); spot('door', [d0 - 10, d1 - 9, 20, 18]);
-      if (night) emit.push(() => { glow(d0, d1, 26, '255,196,110', .4); });
-      // 營火
+      // 東邊那片斜面（朝 +x，背光）＋縫線
+      q([iso(XC, Y0 - .2, RH), iso(XC, Y1 + .2, RH), iso(X1 + .2, Y1 + .2, 0), iso(X1 + .2, Y0 - .2, 0)], '#c9b88f');
+      for (let t = .2; t < 1; t += .2) { const jj = Y0 + (Y1 - Y0) * t; q([iso(XC, jj, RH), iso(XC, jj + .05, RH), iso(X1 + .2, jj + .05, 0), iso(X1 + .2, jj, 0)], '#b8a67d'); }
+      // 前面的三角形（朝 +y，受光）
+      q([iso(X0 - .2, Y1 + .2, 0), iso(X1 + .2, Y1 + .2, 0), iso(XC, Y1 + .2, RH)], '#e2d3ae');
+      // 門口（裡面暗：帆布的暗色，不用黑）＋往兩邊綁起來的門簾
+      q([iso(XC - .85, Y1 + .21, 0), iso(XC + .85, Y1 + .21, 0), iso(XC, Y1 + .21, 15)], night ? '#ffcf7a' : '#6b5a3e');
+      if (!night) q([iso(XC - .45, Y1 + .21, 0), iso(XC + .45, Y1 + .21, 0), iso(XC, Y1 + .21, 8)], '#4f4230');
+      [[-1, '#efe3c4'], [1, '#d8c9a4']].forEach(([sg, c]) => { q([iso(XC + sg * .85, Y1 + .22, 0), iso(XC + sg * .55, Y1 + .22, 0), iso(XC + sg * .1, Y1 + .22, 13.5), iso(XC + sg * .2, Y1 + .22, 15)], c);
+        const [ta, tb] = iso(XC + sg * .6, Y1 + .22, 6); P(ta - 1, tb, '#8a5a36', 2, 1); });
+      // 屋脊的竿子、前後的營繩和營釘
+      q([iso(XC, Y0 - .1, RH + 1), iso(XC, Y1 + .3, RH + 1), iso(XC, Y1 + .3, RH), iso(XC, Y0 - .1, RH)], '#8a6a48');
+      rope(Y1 + .2, X1 + 1, Y1 + .5);   // 前面的營繩拉到右前方（原本經過營火，看起來像一條煙）
+      const [d0, d1] = iso(XC, Y1 + .2, 7); spot('door', [d0 - 10, d1 - 9, 20, 18]);
+      if (night) emit.push(() => { glow(d0, d1, 30, '255,200,130', .4); glow(d0, d1 - 12, 34, '255,200,130', .12); });
+      // 營火（2026-11-27：原本一根直條像蠟燭）：大小不一的石頭圈、兩根交叉的柴、三顆寬的火（中間黃、兩邊橘、最外紅、上面尖）
       const FI = 5.4, FJ = 6, [fa, fb] = iso(FI, FJ);
-      for (let k = 0; k < 10; k++) { const th = k / 10 * Math.PI * 2, [a, b] = iso(FI + Math.cos(th) * .5, FJ + Math.sin(th) * .5); P(a - 1, b - 1, '#8f8a82', 3, 2); }
-      box(FI - .35, FJ - .08, FI + .35, FJ + .08, 0, 1.5, '#6e4528'); box(FI - .08, FJ - .35, FI + .08, FJ + .35, 0, 1.5, '#5e3c22');
-      const fl = (s) => { P(fa - 2 * s, fb - 4 * s, '#f08a2c', 4 * s, 3 * s); P(fa - 1 * s, fb - 7 * s, '#f2c14e', 3 * s, 4 * s); P(fa, fb - 9 * s, '#fff0c4', 1 * s, 3 * s); };
-      fl(night ? 1.6 : 1); if (night) { emit.push(() => { glow(fa, fb - 6, 42, '255,150,70', .5); glow(fa, fb - 6, 12, '255,230,160', .9); }); lit.push(['fire', fa, fb]); }
-      [[4.2, 5.5], [6.3, 6.9], [4.5, 7.0]].forEach(([i, j]) => box(i, j, i + .5, j + .4, 0, 4, '#8a5a36'));
+      for (let k = 0; k < 9; k++) { const th = k / 9 * Math.PI * 2, [a, b] = iso(FI + Math.cos(th) * .55, FJ + Math.sin(th) * .55), big = hash(k, 3) > .5; P(a - 1, b - 1, '#8f8a82', big ? 3 : 2, 2); P(a - 1, b - 1, '#b5b0a6'); if (big) P(a + 1, b, '#76716a'); }
+      box(FI - .4, FJ - .1, FI + .4, FJ + .1, 0, 1.6, '#6e4528', '#5e3c22'); box(FI - .1, FJ - .4, FI + .1, FJ + .4, 0, 1.6, '#8a5a36', '#6e4528');
+      [[FI - .4, FJ], [FI, FJ - .4]].forEach(([i, j]) => { const [a, b] = iso(i, j, 1); P(a - 1, b - 1, '#c99a66', 2, 2); });
+      const fl = s2 => { const R2 = (u, v, w, h, c) => P(fa + u * s2, fb + v * s2, c, w * s2, h * s2);
+        R2(-3, -5, 6, 4, '#c4462e'); R2(-2, -7, 5, 5, '#e8873a'); R2(-1, -9, 3, 6, '#f6cd72'); R2(0, -11, 1, 2, '#f6cd72'); R2(-2, -9, 1, 2, '#e8873a'); R2(2, -8, 1, 2, '#e8873a'); R2(0, -7, 1, 3, '#fff0c4'); };
+      fl(night ? 1.4 : 1); if (night) { emit.push(() => { glow(fa, fb - 6, 42, '255,150,70', .5); glow(fa, fb - 6, 12, '255,230,160', .9); }); lit.push(['fire', fa, fb]); }
+      // 三個樹頭凳：頂面年輪（外圈亮、中間一顆深），側面直的樹皮紋
+      [[4.2, 5.5], [6.3, 6.9], [4.5, 7.0]].forEach(([i, j]) => { box(i, j, i + .5, j + .4, 0, 4, '#7c5230', '#5e3c22'); top(i + .03, j + .03, i + .47, j + .37, 4, '#c99a66'); top(i + .12, j + .1, i + .38, j + .3, 4, '#b5875a');
+        const [a, b] = iso(i + .25, j + .2, 4); P(a, b, '#8a5a36'); [.12, .3].forEach(t => q([iso(i + t, j + .4, .5), iso(i + t + .04, j + .4, .5), iso(i + t + .04, j + .4, 3.5), iso(i + t, j + .4, 3.5)], '#6e4528')); });
       catAt(4.6, 6.7, 0);
       // 木箱桌（放日記）、提燈
-      box(7.2, 3.8, 8, 4.5, 0, 6, '#b08a5a'); q([iso(7.2, 4.5, 3), iso(8, 4.5, 3), iso(8, 4.5, 3.5), iso(7.2, 4.5, 3.5)], '#8a6a48');
+      box(7.2, 3.8, 8, 4.5, 0, 6, '#b08a5a'); [1.8, 3.6].forEach(zz => { q([iso(7.2, 4.5, zz), iso(8, 4.5, zz), iso(8, 4.5, zz + .5), iso(7.2, 4.5, zz + .5)], '#8a6a48'); q([iso(8, 3.8, zz), iso(8, 4.5, zz), iso(8, 4.5, zz + .5), iso(8, 3.8, zz + .5)], '#7c5230'); });
       diary(7.35, 3.9, 6);
       box(7.75, 4.0, 7.95, 4.2, 6, 9, night ? '#fff0c4' : '#d9a64a'); if (night) emit.push(() => { const [a, b] = iso(7.85, 4.1, 8); glow(a, b, 18, '255,210,130', .5); });
       mailbox(7.6, 6.9, 'crate');
-      [[2.2, 7.3], [8.4, 7.3], [3, 0.5]].forEach(([i, j]) => { const [a, b] = iso(i, j); for (let k = 0; k < 5; k++) P(a + k - 2, b - 1 - (k % 2) * 2, '#6f9e48', 1, 2 + (k % 2) * 2); });
+      [[2.2, 7.3], [8.4, 7.3]].forEach(([i, j]) => { const [a, b] = iso(i, j); for (let k = 0; k < 5; k++) P(a + k - 2, b - 1 - (k % 2) * 2, '#6f9e48', 1, 2 + (k % 2) * 2); });
     }
 
     if (lv === 2) {   // 小木屋：圓木牆、綠色屋頂、石頭煙囪、門廊搖椅、柴堆、木柵欄
       tree(9.1, 1.2, 'pine'); tree(.8, 7.4, 'pine', .8); tree(.7, 5.6, 'pine', .9); bush(9.2, 6.6, 2);
       dirt(4.2, 5.2, 5.6, YD - .1);
-      const X0 = 2, X1 = 7.4, Y0 = 1, Y1 = 4.4, WHh = 24, RH = 42;
+      const X0 = 2, X1 = 7.4, Y0 = 1, Y1 = 4.4, WHh = 28, RH = 46;   // 2026-11-27：門加高到跟其他家一樣（原本 19 顆，大人要彎腰）
       shadow(X0, Y0, X1, Y1);
       siding(onY(Y1), X0, X1, 0, WHh, '#a8784a', 'log'); siding(onX(X1), Y0, Y1, 0, WHh, '#93683f', 'log');
       for (let zz = 1.6; zz < WHh; zz += 3.2) { const [a, b] = iso(X1, Y1, zz); P(a - 1, b - 1, '#c99a66', 3, 3); P(a, b, '#8a5a36'); }   // 圓木的頭
-      win(onY(Y1), 2.6, 3.7, 10, 18, { shutter: '#8f4532', frame: '#e9dcc3' }); win(onX(X1), 2, 3.2, 10, 18, { frame: '#e9dcc3' });
-      door(onY(Y1), 4.25, 5.15, 19, '#6e4528', false); wallLamp(onY(Y1), 5.6, 18);
+      win(onY(Y1), 2.6, 3.7, 12, 22, { shutter: '#8f4532', frame: '#e9dcc3' }); win(onX(X1), 2, 3.2, 12, 22, { frame: '#e9dcc3' });
+      door(onY(Y1), 4.25, 5.15, 24, '#6e4528', false, '#c99a66'); wallLamp(onY(Y1), 5.6, 22);
       gable(X0, X1, Y0, Y1, WHh, RH, '#4f6b4a', '#93683f', 'log', { gableWin: true, ro: .4 });
-      chimney(5.9, 1.6, 6.6, 2.3, 30, 50, '#9a958b');
+      chimney(5.9, 1.6, 6.6, 2.3, 34, 54, '#9a958b');
       // 門廊：木頭地板、台階
       box(X0, Y1, X1, Y1 + 1.2, 0, 2.5, '#9a6a40'); for (let i = X0 + .2; i < X1; i += .45) q([iso(i, Y1, 2.5), iso(i + .03, Y1, 2.5), iso(i + .03, Y1 + 1.2, 2.5), iso(i, Y1 + 1.2, 2.5)], '#8a5a36');
       box(4.25, Y1 + 1.2, 5.15, Y1 + 1.6, 0, 1.2, '#8a6a48');
-      // 搖椅、木桶當桌子
-      box(6.1, 4.65, 6.7, 5.25, 2.5, 6, '#8a5a36'); box(6.1, 4.6, 6.7, 4.75, 6, 14, '#8a5a36'); q([iso(6.05, 5.3, 2.5), iso(6.75, 5.3, 2.5), iso(6.75, 5.3, 3.3), iso(6.05, 5.3, 3.3)], '#5e3c22');
-      box(2.4, 4.7, 3, 5.3, 2.5, 8, '#a8784a'); q([iso(2.4, 5.3, 4), iso(3, 5.3, 4), iso(3, 5.3, 4.6), iso(2.4, 5.3, 4.6)], '#5e5a55'); diary(2.5, 4.8, 8);
-      // 柴堆
-      box(8, 4.6, 9.4, 5.4, 0, 8, '#8a5a36'); for (let zz = 1; zz < 8; zz += 2.2) for (let t = 8.15; t < 9.3; t += .4) { const [a, b] = iso(t, 5.4, zz); P(a - 1, b - 1, '#c99a66', 3, 2); P(a, b - 1, '#a8784a'); }
+      // 搖椅（2026-11-27 第二輪：細線版像地板上的刮痕）：實心座面和椅背（舊紅，跟圓木牆、門廊地板拉開）、亮一點的坐墊、兩顆粗的弧形搖腳、底下一點影子
+      { const I0 = 6.15, I1 = 6.65, J0 = 4.55, J1 = 5.35, Z = 2.5, C = '#8f4532';
+        q([iso(I0 + .1, J1 + .05, Z), iso(I1 + .25, J1 + .05, Z), iso(I1 + .25, J1 + .35, Z), iso(I0 + .1, J1 + .35, Z)], 'rgba(30,40,30,.2)');
+        [I0 + .02, I1 - .06].forEach(i => { for (let t = 0; t <= 16; t++) { const j = J0 + (J1 - J0) * t / 16, zz = Z + Math.pow((t - 8) / 8, 2) * 1.6, [a, b] = iso(i, j, zz); P(a, b - 1, '#5e3c22', 1, 2); } });
+        [[I0 + .03, 4.75], [I1 - .07, 4.75], [I0 + .03, 5.1], [I1 - .07, 5.1]].forEach(([i, j]) => box(i, j, i + .05, j + .05, Z + .6, Z + 4, '#6e2f24'));
+        box(I0, 4.65, I1, 5.25, Z + 4, Z + 5.2, C, '#74342a'); top(I0 + .05, 4.7, I1 - .05, 5.2, Z + 5.2, '#c99a66');
+        box(I0, 4.58, I1, 4.72, Z + 5.2, Z + 14, C, '#74342a'); q([iso(I0, 4.72, Z + 13), iso(I1, 4.72, Z + 13), iso(I1, 4.72, Z + 14), iso(I0, 4.72, Z + 14)], '#a9584a'); }
+      // 木桶當桌子，放日記
+      box(2.4, 4.7, 3, 5.3, 2.5, 8, '#a8784a'); q([iso(2.4, 5.3, 4), iso(3, 5.3, 4), iso(3, 5.3, 4.6), iso(2.4, 5.3, 4.6)], '#6b6660'); q([iso(2.4, 5.3, 6.6), iso(3, 5.3, 6.6), iso(3, 5.3, 7.2), iso(2.4, 5.3, 7.2)], '#6b6660'); diary(2.5, 4.8, 8);
+      // 柴堆（2026-11-27：原本是一個方盒子）：橫放的圓木堆成三層，前面看得到圓木的截面（年輪、外圈樹皮）
+      [[8, 9.4, 0, 2.7], [8.2, 9.2, 2.7, 5.4], [8.4, 9, 5.4, 8.1]].forEach(([a0, a1, z0, z1]) => box(a0, 4.6, a1, 5.4, z0, z1, '#74492a', '#5e3c22'));
+      [[8.15, 1.35], [8.5, 1.35], [8.85, 1.35], [9.2, 1.35], [8.35, 4.05], [8.7, 4.05], [9.05, 4.05], [8.55, 6.75], [8.9, 6.75]].forEach(([i, zz]) => { const [a, b] = iso(i, 5.4, zz); P(a - 1, b - 1, '#74492a', 4, 3); P(a - 1, b - 1, '#c99a66', 3, 2); P(a, b - 1, '#e0b884'); P(a, b, '#8a5a36'); });
       catAt(4.7, 5.8, 1.2);
       hang([7.2, 6.6], [9.4, 7.6], 15, { max: 3 });   // 柴堆前面拉一條
-      mailbox(3.1, 7.9, 'post');
+      mailbox(3.1, 7.9, 'wood');
       railFence(0, YD - .1, 4, YD - .1); railFence(5.4, YD - .1, YW - .1, YD - .1); railFence(YW - .1, 2, YW - .1, YD - .1);
     }
 
@@ -373,7 +413,7 @@
       win(onY(Y1), 2.7, 4.2, 12, 23, { shutter: '#7d9a8c', flowers: true }); win(onY(Y1), 7.8, 9.3, 12, 23, { shutter: '#7d9a8c', flowers: true }); win(onX(X1), 2.4, 3.6, 12, 23, { shutter: '#7d9a8c' });
       door(onY(Y1), 5.45, 6.55, 24); wallLamp(onY(Y1), 4.9, 23);
       rect(onY(Y1), 6.85, 7.35, 18, 22, '#5e3c22');
-      gable(X0, X1, Y0, Y1, WHh, 50, '#b0573f', '#ddd0b4', 'plank', { gableWin: true, rows: 6 });
+      gable(X0, X1, Y0, Y1, WHh, 50, '#b0573f', '#ddd0b4', 'plank', { gableWin: true, rows: 6, tile: true });
       chimney(3.2, 2.2, 3.9, 2.9, 40, 56);
       box(4.3, Y1, 8.7, 6.2, 0, 3, '#b07f50'); for (let i = 4.5; i < 8.7; i += .45) q([iso(i, Y1, 3), iso(i + .03, Y1, 3), iso(i + .03, 6.2, 3), iso(i, 6.2, 3)], '#9a6a40');
       box(5.2, 6.2, 6.8, 6.8, 0, 1.6, '#c9bfae');
@@ -397,25 +437,31 @@
       win(onY(Y1), 2.6, 4.1, 10, 22, { shutter: '#34476e' }); win(onY(Y1), 8.3, 9.8, 10, 22, { shutter: '#34476e' });
       win(onY(Y1), 2.6, 4.1, 36, 48, { shutter: '#34476e', flowers: true }); win(onY(Y1), 8.3, 9.8, 36, 48, { shutter: '#34476e', flowers: true });
       win(onX(X1), 2, 3.4, 10, 22, { shutter: '#34476e' }); win(onX(X1), 2, 3.4, 36, 48, { shutter: '#34476e' });
-      door(onY(Y1), 5.65, 6.75, 24, '#34476e'); wallLamp(onY(Y1), 5.1, 22); wallLamp(onY(Y1), 7.3, 22);
+      door(onY(Y1), 5.65, 6.75, 24, '#8a5a36'); wallLamp(onY(Y1), 5.1, 22); wallLamp(onY(Y1), 7.3, 22);
       // 二樓的落地門（陽台）
       rect(onY(Y1), 5.4, 7, F1 + 2, F1 + 22, '#f8f4ea'); rect(onY(Y1), 5.55, 6.85, F1 + 2, F1 + 21, night ? '#ffd98a' : '#a8d4e8'); rect(onY(Y1), 6.17, 6.23, F1 + 2, F1 + 21, '#f8f4ea');
       if (night) lit.push([onY(Y1), 5.55, 6.85, F1 + 2, F1 + 21, true]);
       gable(X0, X1, Y0, Y1, WHh, 78, '#56606e', '#dcd3c3', 'plank', { gableWin: true, rows: 7 });
-      // 門廊地板＋陽台（陽台下面就是門廊）
+      // 門廊地板＋陽台（陽台下面就是門廊）。2026-11-27 審稿：畫的前後順序照遠近（小桌在柱子後面、花盆在欄杆後面）；
+      // 陽台是一塊看得出來的米白平台＋白欄杆（每根直條、上面一條連續扶手、高約 110 公分），底下一條影子落在一樓牆上
       box(4.2, Y1, 8.2, 6.8, 0, 2.5, '#c9bfae'); box(5.6, 6.8, 6.8, 7.2, 0, 1.2, '#c9bfae');
+      const tz = smallTable(4.5, 5.55, 2.5, '#7c5230'); diary(4.65, 5.65, tz);   // 小桌在門廊左邊，讓出大門
+      q([iso(4.1, Y1, F1 - 1), iso(8.3, Y1, F1 - 1), iso(8.3, Y1, F1 - 5), iso(4.1, Y1, F1 - 5)], 'rgba(30,40,30,.18)');
       [[4.25, 6.55], [7.95, 6.55]].forEach(([a, b]) => box(a, b, a + .2, b + .2, 2.5, F1 - 1, '#f3efe6'));
-      box(4.1, Y1, 8.3, 6.9, F1 - 1, F1 + 1, '#e2dccf');
-      for (let i = 4.2; i <= 8.2; i += .35) q([iso(i, 6.85, F1 + 1), iso(i + .05, 6.85, F1 + 1), iso(i + .05, 6.85, F1 + 9), iso(i, 6.85, F1 + 9)], '#3a3836');
-      for (let j = Y1 + .2; j <= 6.85; j += .35) q([iso(8.25, j, F1 + 1), iso(8.25, j + .05, F1 + 1), iso(8.25, j + .05, F1 + 9), iso(8.25, j, F1 + 9)], '#3a3836');
-      q([iso(4.1, 6.9, F1 + 9), iso(8.3, 6.9, F1 + 9), iso(8.3, 6.9, F1 + 10), iso(4.1, 6.9, F1 + 10)], '#3a3836'); q([iso(8.3, Y1, F1 + 9), iso(8.3, 6.9, F1 + 9), iso(8.3, 6.9, F1 + 10), iso(8.3, Y1, F1 + 10)], '#2b2b2e');
-      box(4.5, 5.6, 5, 6.1, F1 + 1, F1 + 5, '#c96f4a'); bush(4.75, 5.85, 2, '#5e8e44');
-      hang([5.2, 6.95], [8.15, 6.95], F1 + 10, { posts: false, max: 4 });   // 衣服晾在二樓陽台的欄杆上
-      const tz = smallTable(7.15, 5.55, 2.5, '#3a3836'); diary(7.3, 5.65, tz);
+      box(4.1, Y1, 8.3, 6.9, F1 - 1, F1 + 1, '#e2dccf'); q([iso(4.1, 6.9, F1 + .4), iso(8.3, 6.9, F1 + .4), iso(8.3, 6.9, F1 + 1), iso(4.1, 6.9, F1 + 1)], '#f6f1e6');
+      roofs.push([iso(4.1, Y1, F1 + 1), iso(8.3, Y1, F1 + 1), iso(8.3, 6.9, F1 + 1), iso(4.1, 6.9, F1 + 1)]);
+      // 陽台：欄杆前面掛一個花箱（第二輪：陶盆被欄杆擋住只露出一塊橘色）
+      hang([5.2, 6.95], [8.15, 6.95], F1 + 13, { posts: false, max: 4 });   // 衣服晾在二樓陽台的欄杆上
+      const RT = F1 + 13;
+      for (let i = 4.2; i <= 8.2; i += .3) q([iso(i, 6.85, F1 + 1), iso(i + .06, 6.85, F1 + 1), iso(i + .06, 6.85, RT), iso(i, 6.85, RT)], '#f3efe6');
+      for (let j = Y1 + .2; j <= 6.85; j += .3) q([iso(8.25, j, F1 + 1), iso(8.25, j + .06, F1 + 1), iso(8.25, j + .06, RT), iso(8.25, j, RT)], '#e2dccf');
+      q([iso(4.1, 6.9, RT), iso(8.3, 6.9, RT), iso(8.3, 6.9, RT + 1.5), iso(4.1, 6.9, RT + 1.5)], '#f6f1e6'); q([iso(8.3, Y1, RT), iso(8.3, 6.9, RT), iso(8.3, 6.9, RT + 1.5), iso(8.3, Y1, RT + 1.5)], '#e2dccf');
+      q([iso(4.1, 6.9, RT + 1.5), iso(8.3, 6.9, RT + 1.5), iso(8.3, 6.6, RT + 1.5), iso(4.1, 6.6, RT + 1.5)], '#ffffff');
+      box(6.8, 6.95, 8.1, 7.15, RT - 3.5, RT + .5, '#9a6a40', '#7c5230'); q([iso(6.8, 7.15, RT - 1), iso(8.1, 7.15, RT - 1), iso(8.1, 7.15, RT - .4), iso(6.8, 7.15, RT - .4)], '#7c5230'); flowers(6.85, 6.97, 8.05, 7.13, 12, RT + .5);
       catAt(5.9, 7.0, 1.2);
-      hedge(.3, 5.8, 1.6, 9.2); hedge(10.9, 5.8, 12.2, 8.8);
+      hedge(0, 5.8, .6, YD - .5); hedge(10.9, 5.8, 12.2, 8.8);   // 左邊那道貼齊西邊，跟前面的樹籬接成 L 形
       tree(12, 2.4, 'round', 1.1);
-      box(10.6, 9.2, 12.2, 9.7, 3, 4, '#8a5a36'); [[10.7, 9.25], [12, 9.25]].forEach(([a, b]) => box(a, b, a + .12, b + .4, 0, 3, '#3a3836'));   // 長椅
+      [[10.7, 9.25], [12, 9.25]].forEach(([a, b]) => box(a, b, a + .12, b + .4, 0, 3, '#4a4f53', '#3d4246')); box(10.6, 9.2, 12.2, 9.7, 3, 4, '#8a5a36'); [9.3, 9.5].forEach(j => q([iso(10.6, j, 4), iso(12.2, j, 4), iso(12.2, j + .04, 4), iso(10.6, j + .04, 4)], '#74492a'));   // 長椅（木條座面）
       lampPost(4.7, 9.2);
       mailbox(7.6, 10.1, 'pillar');
       hedge(0, YD - .5, 5.3, YD - .1); hedge(7.1, YD - .5, YW - .1, YD - .1); hedge(YW - .5, 3, YW - .1, YD - .5);
@@ -439,27 +485,45 @@
       const X0 = 1.5, X1 = 10.5, Y0 = 1, Y1 = 5.2, F1 = 28, X2 = 7.2, Y2 = 4.6, F2 = 54;
       shadow(X0, Y0, X1, Y1, 1.6);
       siding(onY(Y1), X0, X1, 0, F1, '#f4f2ee', 'stucco'); siding(onX(X1), Y0, Y1, 0, F1, '#e2dfd8', 'stucco');
-      win(onY(Y1), 2, 5.4, 3, 25, { big: true, frame: '#3a3836' }); win(onY(Y1), 7.6, 10, 3, 25, { big: true, frame: '#3a3836' });
+      win(onY(Y1), 2, 5.4, 3, 25, { big: true, frame: '#5a5f63' }); win(onY(Y1), 7.6, 10, 3, 25, { big: true, frame: '#5a5f63' });
       rect(onY(Y1), 5.7, 7.3, 0, F1, '#8a5a36'); for (let zz = 2; zz < F1; zz += 2.5) rect(onY(Y1), 5.7, 7.3, zz, zz + .4, '#7c5230');
       door(onY(Y1), 6.05, 6.95, 24, '#5e3c22', false);
-      win(onX(X1), 1.6, 4.4, 8, 22, { big: true, frame: '#3a3836' });
+      win(onX(X1), 1.6, 4.4, 8, 22, { big: true, frame: '#5a5f63' });
       box(X0 - .15, Y0 - .15, X1 + .15, Y1 + .15, F1, F1 + 2, '#d6d1c7');
       // 二樓
       siding(onY(Y2), X0, X2, F1 + 2, F2, '#f4f2ee', 'stucco'); siding(onX(X2), Y0, Y2, F1 + 2, F2, '#e2dfd8', 'stucco');
-      win(onY(Y2), 2, 6.8, 34, 48, { big: true, frame: '#3a3836' }); win(onX(X2), 1.6, 4, 34, 48, { big: true, frame: '#3a3836' });
+      win(onY(Y2), 2, 6.8, 34, 48, { big: true, frame: '#5a5f63' }); win(onX(X2), 1.6, 4, 34, 48, { big: true, frame: '#5a5f63' });
       rect(onY(Y2), X0, 2.6, F1 + 2, F2, '#8a5a36'); for (let zz = F1 + 4; zz < F2; zz += 2.5) rect(onY(Y2), X0, 2.6, zz, zz + .4, '#7c5230');
       box(X0 - .15, Y0 - .15, X2 + .15, Y2 + .15, F2, F2 + 2, '#d6d1c7');
+      roofs.push([iso(X0 - .15, Y0 - .15, F2 + 4), iso(X2 + .15, Y0 - .15, F2 + 4), iso(X2 + .15, Y2 + .15, F2 + 4), iso(X0 - .15, Y2 + .15, F2 + 4)]);
+      // 屋頂（2026-11-27：原本一大片像水泥箱）：一圈女兒牆、裡面暗一點、太陽能板、一排花槽
+      top(X0, Y0, X2, Y2, F2 + 2, '#cfc9be');
+      [[X0 - .15, Y0 - .15, X2 + .15, Y0 + .05], [X0 - .15, Y2 - .05, X2 + .15, Y2 + .15], [X0 - .15, Y0 - .15, X0 + .05, Y2 + .15], [X2 - .05, Y0 - .15, X2 + .15, Y2 + .15]].forEach(([a, b, c, d]) => box(a, b, c, d, F2 + 2, F2 + 4, '#e9e4da'));
+      for (let k = 0; k < 3; k++) { const i0 = 3 + k * 1.1; top(i0, 1.6, i0 + .9, 3.4, F2 + 3, '#41577f'); top(i0 + .05, 1.65, i0 + .85, 3.35, F2 + 3, '#576d95'); for (let t = 1.9; t < 3.3; t += .3) q([iso(i0, t, F2 + 3), iso(i0 + .9, t, F2 + 3), iso(i0 + .9, t + .04, F2 + 3), iso(i0, t + .04, F2 + 3)], '#41577f'); }
+      box(X0 + .2, 3.8, 2.6, 4.3, F2 + 2, F2 + 4, '#8a6a48', '#74492a'); [2, 2.35].forEach(i => bush(i, 4.05, 2, '#5e8e44', F2 + 4));
       // 屋頂露台（一樓屋頂右邊）：玻璃欄杆、陽傘、躺椅
       for (let j = Y0; j <= Y1; j += .02) {}
       x.save(); x.globalAlpha = .45; q([iso(X2, Y1 + .1, F1 + 2), iso(X1 + .1, Y1 + .1, F1 + 2), iso(X1 + .1, Y1 + .1, F1 + 9), iso(X2, Y1 + .1, F1 + 9)], '#d6eef2'); q([iso(X1 + .1, Y0, F1 + 2), iso(X1 + .1, Y1 + .1, F1 + 2), iso(X1 + .1, Y1 + .1, F1 + 9), iso(X1 + .1, Y0, F1 + 9)], '#c3e2e8'); x.restore();
-      q([iso(X2, Y1 + .1, F1 + 9), iso(X1 + .1, Y1 + .1, F1 + 9), iso(X1 + .1, Y1 + .1, F1 + 9.6), iso(X2, Y1 + .1, F1 + 9.6)], '#9aa3a8'); q([iso(X1 + .1, Y0, F1 + 9), iso(X1 + .1, Y1 + .1, F1 + 9), iso(X1 + .1, Y1 + .1, F1 + 9.6), iso(X1 + .1, Y0, F1 + 9.6)], '#8a9398');
-      box(8.8, 2.6, 8.9, 2.7, F1 + 2, F1 + 20, '#efe9dc');
-      { const [a, b] = iso(8.85, 2.65, F1 + 20); for (let r = 0; r < 6; r++) { const w = 3 + r * 2; P(a - w, b + r - 1, r % 2 ? '#f3efe6' : '#b33a2f', w * 2 + 1, 1); } }
-      box(9.4, 3.3, 10.2, 4.8, F1 + 2, F1 + 4, '#f3efe6'); box(9.4, 3.3, 10.2, 3.6, F1 + 4, F1 + 8, '#f3efe6');
-      hang([7.6, 1.6], [10, 1.6], F1 + 12, { z0: F1 + 2, max: 4 });   // 屋頂露台的曬衣架
-      // 泳池邊的躺椅、小圓桌放日記
-      [[10, 7], [10, 8.4]].forEach(([i, j], n) => { box(i, j, i + 1, j + .6, .6, 3, '#f3efe6'); box(i, j, i + .3, j + .6, 3, 6.5, '#f3efe6'); if (n === 0) { top(i + .35, j + .05, i + .95, j + .55, 3.2, '#5fc6d6'); top(i + .45, j + .05, i + .55, j + .55, 3.3, '#ffffff'); } if (n === 1) catAt(i + .6, j + .3, 3); });   // 一張躺椅鋪著海灘巾
-      { const tz = smallTable(10.3, 7.75, .6, '#d6d1c7'); diary(10.4, 7.8, tz); }
+      q([iso(X2, Y1 + .1, F1 + 9), iso(X1 + .1, Y1 + .1, F1 + 9), iso(X1 + .1, Y1 + .1, F1 + 10), iso(X2, Y1 + .1, F1 + 10)], '#9aa3a8'); q([iso(X1 + .1, Y0, F1 + 9), iso(X1 + .1, Y1 + .1, F1 + 9), iso(X1 + .1, Y1 + .1, F1 + 10), iso(X1 + .1, Y0, F1 + 10)], '#8a9398');
+      // 陽傘（2026-11-27：原本像三角旗）：從上往下看的扁橢圓、紅白八片、下半圈暗一點、下緣一顆暗邊、頂上一顆傘尖
+      box(9.85, 2.75, 9.95, 2.85, F1 + 2, F1 + 20, '#efe9dc');
+      // 第三輪：1 倍下像一團紅色，加白色傘骨（八根）、左上亮一階、右下暗紅一階
+      { const [a, b] = iso(9.9, 2.8, F1 + 20); for (let v = -5; v <= 5; v++) for (let u = -10; u <= 10; u++) { const e = (u * u) / 100 + (v * v) / 25; if (e > 1) continue;
+          const t = (Math.atan2(v * 2, u) + Math.PI) / (Math.PI / 4), sec = Math.floor(t) % 2, r = Math.hypot(u, v * 2), rib = Math.abs(t - Math.round(t)) * r * Math.PI / 4 < .55 && r > 1.5;
+          let c = rib ? '#fbf8f1' : sec ? '#b33a2f' : '#f3efe6';
+          if (u + v * 2 < -5 && !rib) c = sh(c, .1); if (v > 0) c = sh(c, rib ? -.08 : -.1); if (e > .7 && u + v * 2 > 4) c = sec && !rib ? '#8f2c24' : sh(c, -.18); P(a + u, b + v, c); }
+        P(a, b - 1, '#8a5a36', 1, 2); }
+      // 屋頂露台的兩張躺椅（直放、靠背斜起、上面一條藍白毛巾）
+      [9.25, 9.95].forEach((i, n) => { box(i, 3.4, i + .6, 4.9, F1 + 2, F1 + 3.6, '#d6d1c7', '#bdb6aa'); top(i + .04, 3.45, i + .56, 4.85, F1 + 3.6, '#f3efe6');
+        q([iso(i, 3.45, F1 + 3.6), iso(i + .6, 3.45, F1 + 3.6), iso(i + .6, 2.95, F1 + 9), iso(i, 2.95, F1 + 9)], '#ece7dc'); q([iso(i + .6, 2.95, F1 + 9), iso(i + .6, 3.45, F1 + 3.6), iso(i + .6, 3.45, F1 + 2.6), iso(i + .6, 2.95, F1 + 8)], '#cfc9be');
+        if (!n) for (let t = 3.7; t < 4.8; t += .3) top(i + .1, t, i + .5, t + .15, F1 + 3.7, '#5fc6d6'); });
+      hang([7.6, 1.6], [10, 1.6], F1 + 12, { z0: F1 + 2, max: 4, beam: true });   // 屋頂露台的曬衣架
+      // 泳池邊的躺椅（2026-11-27：原本 1 × .6 格只有真的一半）：直放 1.8 格長，兩張並排，靠背在北邊（靠房子那頭），一張鋪海灘巾
+      [9.9, 10.55].forEach((i, n) => { [[i + .05, 6.6], [i + .5, 6.6], [i + .05, 8.2], [i + .5, 8.2]].forEach(([a, b]) => box(a, b, a + .05, b + .05, .6, 2.4, '#bdb6aa'));
+        box(i, 6.55, i + .6, 8.35, 2.4, 3.6, '#f3efe6', '#d6d1c7');
+        q([iso(i, 7.1, 3.6), iso(i + .6, 7.1, 3.6), iso(i + .6, 6.55, 9), iso(i, 6.55, 9)], '#ece7dc'); q([iso(i + .6, 6.55, 9), iso(i + .6, 7.1, 3.6), iso(i + .6, 7.1, 2.6), iso(i + .6, 6.55, 8)], '#cfc9be');
+        if (!n) for (let t = 7.25; t < 8.3; t += .28) top(i + .08, t, i + .52, t + .14, 3.7, '#5fc6d6'); });
+      { const tz = smallTable(10.1, 8.7, .6, '#d6d1c7'); diary(10.2, 8.75, tz); }
       tree(12.6, 3.4, 'palm', 1.2); tree(.9, 11, 'palm'); tree(12.8, 10.6, 'palm', .9); bush(.9, 6.6, 3); bush(1, 8.6, 2);
       stonesX(11.4, YW, 10.9, 11.7, '#e2ded5'); stones(11.5, 12.3, 6.2, 10.9, '#e2ded5');
       groundLamp(11.1, 9.4); groundLamp(12.6, 9.4); groundLamp(2, 10.9); groundLamp(8.6, 10.9);
@@ -471,10 +535,18 @@
     if (night) { x.save(); x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(16,22,58,.6)'; x.fillRect(0, 0, W, H); x.restore(); }
     main.imageSmoothingEnabled = false; main.drawImage(off, 0, 0); x = main;
     if (night) {
-      x.save(); x.globalCompositeOperation = 'lighter'; emit.forEach(e => e()); x.restore();
+      // 燈的光先畫在另一張，只留在島和房子上（原本別墅的光暈蓋到海上）、扣掉屋頂和陽台頂（燈在屋簷下，照不到屋頂上面），再疊上去
+      const gl = document.createElement('canvas'); gl.width = W; gl.height = H; x = gl.getContext('2d');
+      emit.forEach(e => e());
+      x.globalCompositeOperation = 'destination-in'; x.drawImage(off, 0, 0);
+      x.globalCompositeOperation = 'destination-out'; roofs.forEach(pts => poly(x, pts, '#000'));
+      x = main; x.save(); x.globalCompositeOperation = 'lighter'; x.drawImage(gl, 0, 0); x.restore();
       lit.forEach(l => { if (l[0] === 'lamp') { P(l[1] - 1, l[2] - 1, '#fff4d6', 2, 3); return; } if (l[0] === 'fire') { P(l[1] - 3, l[2] - 6, '#f08a2c', 6, 5); P(l[1] - 2, l[2] - 11, '#f2c14e', 4, 6); P(l[1], l[2] - 14, '#fff0c4', 1, 4); return; }
         if (l[0] === 'pool') { x.save(); x.globalAlpha = .35; poly(x, l[1], '#7fe0ec'); x.restore(); return; }
-        const [at, a0, a1, z0, z1] = l; poly(x, [at(a0, z0), at(a1, z0), at(a1, z1), at(a0, z1)], '#ffd98a'); });
+        const [at, a0, a1, z0, z1, big] = l, R2 = (b0, b1, c0, c1, c) => poly(x, [at(b0, c0), at(b1, c0), at(b1, c1), at(b0, c1)], c);
+        R2(a0, a1, z0, z1, '#ffd98a'); R2(a0, a1, z1 - Math.min(3, (z1 - z0) / 4), z1, '#ffe9b0');
+        if (big) { for (let t = a0 + 1.2; t < a1 - .2; t += 1.2) R2(t - .04, t + .04, z0, z1, '#7a6a50'); }
+        else { const m = (a0 + a1) / 2; R2(m - .04, m + .04, z0, z1, '#7a6a50'); R2(a0, a1, (z0 + z1) / 2, (z0 + z1) / 2 + .8, '#7a6a50'); } });
     }
     // 來玩的角色：坐在這棟房子的座位上（照前後順序畫，後面的先畫）
     if (opt.debugSeats) seats.forEach(([i, j, zz], n) => { const [a, b] = iso(i, j, zz); x.fillStyle = '#b33a2f'; x.fillRect(a - 3, b - 3, 6, 6); x.fillStyle = '#fff'; x.font = '6px sans-serif'; x.fillText(n, a - 1.6, b + 2); });
