@@ -24,7 +24,7 @@
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
     <script src="assets/company-office.js?v=20261125c"></script>
-    <script src="assets/company-rules.js?v=20261127f"></script>
+    <script src="assets/company-rules.js?v=20261127g"></script>
     <style>
 :root { --ink: #26303a; --sub: #6a7884; --teal: #2f7d90; --sub2: #51606d; --paper: #f2f6f8; --bg2: #dfe3e6; }
 /* 毛玻璃介面（跟 docs/plans/company/ui.css 的樣張同一套） */
@@ -457,7 +457,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     // ---------- 頁面版本：手機拿到舊的公司頁就自己重新載入（2026-11-26 使用者：手機快取了舊頁面，請的員工重整就不見） ----------
     // 改了這一頁要把 PAGE_VER 和 assets/company-ver.txt 一起換新（同一個字串）。
     // 重新載入前先把存檔送出去；送不出去的也留在這支手機（dongbuli-company-live），重新打開會接著用，不會丟東西。
-    const PAGE_VER = '2026-11-27f';
+    const PAGE_VER = '2026-11-27g';
     async function freshPage() {   // 回 true：要重新載入了
         let v = '';
         try { v = (await fetch('assets/company-ver.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '')).trim(); } catch (e) { }
@@ -953,7 +953,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         if (!hasPerk('kingcard')) return '';
         const used = S.cardDay === today();
         return `<div class="vipbox glass">${kcardHtml('sm')}<div class="cta"><button class="main" id="kcGive" ${used ? 'disabled' : ''}>${used ? '今天遞過了，明天再遞' : '遞出大王的名片・來一批優質的'}</button></div>
-            <div style="margin-top:6px;font-size:10px;color:var(--sub);letter-spacing:.08em;line-height:1.6">每天一次、不用錢：一定有一位還沒請過的特別人選，其他人能力比較好</div></div>`;
+            <div style="margin-top:6px;font-size:10px;color:var(--sub);letter-spacing:.08em;line-height:1.6">每天一次、不用錢：一定有一位還沒請過的特別人選，其他人能力比較好，簽約金都打一折</div></div>`;
     }
     async function giveCard() {
         if (!hasPerk('kingcard') || S.cardDay === today()) return;
@@ -1011,8 +1011,8 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         show(`<div class="hd2"><h2>應徵</h2><button class="x" id="aClose">關</button></div>
             <div class="sub" style="margin:0 2px"><span class="num">員工 ${S.staff.length} / ${st().seats}${full ? '・坐滿了，搬家才有位子' : '・還能請 ' + (st().seats - S.staff.length) + ' 位'}</span><span class="r num">錢包 ${R.fmt(wal())}</span></div>
             ${S.applicants.map((s, k) => { const sp = s.special ? R.SPECIALS[s.key] : null, fee = R.hireFee(S.stage, s);
-                return `<div class="app glass${sp ? ' gold' : ''}" style="margin:10px 0 0">${avaHtml(spriteKey(s))}<div><div class="nm">${esc(R.staffName(s))}${sp ? '<span class="star"></span><small>特別人選</small>' : '<small>一般・' + R.COLORS[s.color] + '</small>'}</div>${s.vip ? '<div class="vip-tag">看了大王的名片來的</div>' : ''}${statsHtml(s)}<div class="say">${esc(sp ? sp.skill + '：' + sp.skillText : s.say)}</div></div>
-                <div class="ft num"><span>簽約金 <b>${R.fmt(fee)}</b>・薪水抽 ${sp ? 1.5 : 1} 份</span><button data-k="${k}" ${full ? 'disabled' : ''}>聘用</button></div></div>`; }).join('') || '<div class="empty">這一批都請完了</div>'}
+                return `<div class="app glass${sp ? ' gold' : ''}" style="margin:10px 0 0">${avaHtml(spriteKey(s))}<div><div class="nm">${esc(R.staffName(s))}${sp ? '<span class="star"></span><small>特別人選</small>' : '<small>一般・' + R.COLORS[s.color] + '</small>'}</div>${s.vip ? '<div class="vip-tag">看了大王的名片來的・簽約金打一折</div>' : ''}${statsHtml(s)}<div class="say">${esc(sp ? sp.skill + '：' + sp.skillText : s.say)}</div></div>
+                <div class="ft num"><span>簽約金 ${s.vip ? `<s style="color:var(--sub);font-weight:300">${R.fmt(R.listFee(S.stage, s))}</s> ` : ''}<b>${R.fmt(fee)}</b>・薪水抽 ${sp ? 1.5 : 1} 份</span><button data-k="${k}" ${full ? 'disabled' : ''}>聘用</button></div></div>`; }).join('') || '<div class="empty">這一批都請完了</div>'}
             ${cardBox()}
             <div class="cta"><button class="num" id="aFree" disabled>${R.clock(left / 1000)} 後免費換</button><button class="main num" id="aRef" style="flex:1">${S.freeRef ? '圖鑑獎勵・免費換 ×' + S.freeRef : '現在換一批 ' + R.fmt(st().refresh)}</button></div>`);
         $('aClose').onclick = hide;

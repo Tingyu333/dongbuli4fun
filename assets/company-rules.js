@@ -135,7 +135,9 @@ window.CompanyRules = (() => {
     return out;
   }
   // 簽約金、換一批應徵：小辦公室的價錢就是最高價，之後搬家不再漲（換一批原本整層樓 $15,000、二十七樓 $45,000、大樓 $150,000）（使用者 2026-11-27：太貴了，原本整層樓 $70,000、二十七樓 $140,000、大樓 $225,000，特別人選十倍）
-  const hireFee = (stage, s) => s.special ? STAGES[stage].sfee : STAGES[stage].fee;
+  // 看了大王的名片來的（vip）打一折（使用者 2026-11-27）
+  const listFee = (stage, s) => s.special ? STAGES[stage].sfee : STAGES[stage].fee;
+  const hireFee = (stage, s) => s.vip ? Math.round(listFee(stage, s) / 100) * 10 : listFee(stage, s);
 
   // ---------- 案子 ----------
   let seq = 0;
@@ -246,5 +248,5 @@ window.CompanyRules = (() => {
   const incidentCost = (stage, k) => Math.round(STAGES[stage].base * 60 * 3 * k * 10) / 10 > 0 ? Math.max(100, Math.round(STAGES[stage].base * 60 * 3 * k / 10) * 10) : 100;
 
   return { STAGES, DURS, STATS, SPECIALS, SPECIES, COLORS, CLIENTS, INCIDENTS, EQUIP, EQUIP_BOOST, SALARY, BOARD_EVERY, BOARD_MAX, SUPER_LIFE, FREE_REFRESH, MAX_LV,
-    KINDS, kindOf, pick, fmt, dur, clock, odds, staffName, shares, expNeed, MAST_PAY, MAST_SPEED, mastOf, top, fixMast, newStaff, applicants, vipApplicants, hireFee, newCase, tutorialCase, plan, autoPick, start, settle, gainExp, trainPrice, overtimePrice, incidentCost };
+    KINDS, kindOf, pick, fmt, dur, clock, odds, staffName, shares, expNeed, MAST_PAY, MAST_SPEED, mastOf, top, fixMast, newStaff, applicants, vipApplicants, hireFee, listFee, newCase, tutorialCase, plan, autoPick, start, settle, gainExp, trainPrice, overtimePrice, incidentCost };
 })();
