@@ -380,10 +380,6 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
 .kc-pop { animation: kc-pop .6s cubic-bezier(.2,1.3,.4,1) both; } @keyframes kc-pop { 0% { transform: translateY(30px) rotate(-6deg) scale(.85); opacity: 0; } 100% { transform: none; opacity: 1; } }
 .vipbox { margin: 12px 0 0; padding: 12px; text-align: center; border-radius: 16px; } .vipbox .cta { margin: 10px 0 0; }
 .vip-tag { font-size: 9.5px; color: #a8822f; letter-spacing: .08em; }
-.cave { margin: 12px 0 0; border-radius: 16px; overflow: hidden; }
-.cave .ph2 { display: flex; align-items: center; gap: 8px; padding: 10px 14px 8px; font-size: 12px; letter-spacing: .2em; }
-.cave .ph2 .seal { font-size: 9.5px; letter-spacing: .1em; color: #b33a2f; border: 1px solid rgba(179,58,47,.6); padding: 0 4px; transform: rotate(-4deg); }
-.cave canvas { display: block; width: 100%; image-rendering: pixelated; }
 @media (prefers-reduced-motion: reduce) { .kcard::after, .kc-pop { animation: none; } }
 </style>
 </head>
@@ -408,7 +404,6 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
             <div class="panel glass"><div class="ph">進行中<span style="margin-left:auto;letter-spacing:.1em" id="concLine"></span></div><div id="runList"></div></div>
             <div class="cta"><button id="goBoard">委託</button><button class="main num" id="collectAll" disabled>全部收款</button></div>
             <div class="goal glass" id="goal"></div>
-            <div class="cave glass" id="cave" hidden><div class="ph2">大王的山洞<span class="seal">專屬</span><span style="margin-left:auto;font-size:10px;letter-spacing:.12em;color:var(--sub)">搬到哪都帶著</span></div><canvas id="caveCv" width="375" height="120"></canvas></div>
         </section>
 
         <!-- 二　委託 -->
@@ -457,7 +452,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     // ---------- 頁面版本：手機拿到舊的公司頁就自己重新載入（2026-11-26 使用者：手機快取了舊頁面，請的員工重整就不見） ----------
     // 改了這一頁要把 PAGE_VER 和 assets/company-ver.txt 一起換新（同一個字串）。
     // 重新載入前先把存檔送出去；送不出去的也留在這支手機（dongbuli-company-live），重新打開會接著用，不會丟東西。
-    const PAGE_VER = '2026-11-27g';
+    const PAGE_VER = '2026-11-27h';
     async function freshPage() {   // 回 true：要重新載入了
         let v = '';
         try { v = (await fetch('assets/company-ver.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '')).trim(); } catch (e) { }
@@ -702,7 +697,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     const RENAME_PRICE = 10000;
     function openRename() {
         show(`<div class="hd2"><h2>更換公司行號</h2></div>
-              <div class="namef" style="margin:0;padding:0"><div class="q"><small>錢包付 ${R.fmt(RENAME_PRICE)}・最多 12 個字・名片、公司・榜一起換</small></div>
+              <div class="namef" style="margin:0;padding:0"><div class="q"><small>錢包付 ${R.fmt(RENAME_PRICE)}・最多 12 個字・名片、公司・榜一起換${hasPerk('kingcave') ? '<br>這是對外的名字；對內的「' + esc(inName()) + '」不會變' : ''}</small></div>
               <div class="in"><input id="nm" maxlength="12" placeholder="新的公司名字" value="${esc(S.name)}"><small class="num" id="nmCount"></small></div></div>
               <div class="cta" style="margin-top:16px"><button id="nmNo">算了</button><button class="main num" id="nmOk" style="flex:1">換招牌・${R.fmt(RENAME_PRICE)}</button></div>`, { center: true });
         const upd = () => { $('nmCount').textContent = [...$('nm').value].length + ' / 12'; };
@@ -948,6 +943,22 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     // ---------- 專屬道具（2026-11-27，給「得志的浣熊大王」，admin 後台發）：大王的名片 kingcard、大王的山洞 kingcave ----------
     // 試玩加 ?perks 兩個都看得到
     const hasPerk = k => (PREVIEW && /[?&]perks\b/.test(location.search)) || (typeof Wallet !== 'undefined' && !PREVIEW && Wallet.perk(k));
+    // 大王的山洞（kingcave，使用者 2026-11-27：公司名會分對內跟對外）：公司頁裡面（門牌、銘牌、公司卡、搬家）寫對內的名字，公司・榜和名片寫對外的（S.name）。
+    // 對內的預設「大王的山洞」，可以免費改（S.inName）
+    const inName = () => S && hasPerk('kingcave') ? (S.inName || '大王的山洞') : (S ? S.name : '');
+    function openInName() {
+        show(`<div class="hd2"><h2>對內的名字</h2></div>
+              <div class="namef" style="margin:0;padding:0"><div class="q"><small>大王的山洞專屬・不用錢・最多 12 個字<br>公司裡面寫這個；排行榜和名片照樣寫對外的「${esc(S.name)}」</small></div>
+              <div class="in"><input id="nm" maxlength="12" placeholder="對內的名字" value="${esc(inName())}"><small class="num" id="nmCount"></small></div></div>
+              <div class="cta" style="margin-top:16px"><button id="nmNo">算了</button><button class="main" id="nmOk" style="flex:1">就叫這個</button></div>`, { center: true });
+        const upd = () => { $('nmCount').textContent = [...$('nm').value].length + ' / 12'; };
+        upd(); $('nm').oninput = upd; $('nmNo').onclick = hide;
+        $('nmOk').onclick = () => {
+            const name = [...$('nm').value.trim()].slice(0, 12).join('');
+            if (!name) return toast('先取個名字');
+            S.inName = name; save(); push(true); hide(); render(); toast('對內叫「' + name + '」');
+        };
+    }
     const kcardHtml = (cls = '') => `<div class="kcard ${cls}"><div class="pic"><img src="assets/company/raccoon.png?v=20261125b" alt=""></div><div class="tx"><small>二十七樓・大王的山洞</small><span class="kc-who">浣熊大王</span><span class="kc-ttl">洞主・首席發光長</span><div class="kc-ln"></div><small style="letter-spacing:.12em;line-height:1.6">專收會挖的、會數錢的、<br>會閃閃發光的</small></div><span class="stamp">王</span></div>`;
     function cardBox() {
         if (!hasPerk('kingcard')) return '';
@@ -963,49 +974,6 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         S.cardDay = today(); S.applicants = R.vipApplicants(S.stage, S.hiredSp); save(); push(true);
         openApply(); toast('看了大王的名片，來了一批優質的');
     }
-    // 大王的山洞：自己畫（像素），金幣堆、火把、寶箱、礦車，浣熊大王坐在金幣上
-    let caveImg = null;
-    function drawCave() {
-        const box = $('cave'); if (!box) return;
-        box.hidden = !hasPerk('kingcave'); if (box.hidden) return;
-        const cv = $('caveCv'), x = cv.getContext('2d'), W = cv.width, H = cv.height, T = performance.now() / 1000;
-        const R2 = (a, b, w, h, c) => { x.fillStyle = c; x.fillRect(Math.round(a), Math.round(b), Math.round(w), Math.round(h)); };
-        let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
-        // 岩壁：深淺兩層＋一塊一塊的石頭
-        R2(0, 0, W, H, '#2a2420'); for (let j = 0; j < 86; j += 2) R2(0, j, W, 2, j % 4 ? '#2e2823' : '#2a2420');
-        for (let k = 0; k < 46; k++) { const bx = rnd() * W, by = rnd() * 74, bw = 10 + rnd() * 22, bh = 6 + rnd() * 9; R2(bx, by, bw, bh, '#3a322b'); R2(bx, by, bw, 1, '#4a4037'); R2(bx, by + bh - 1, bw, 1, '#211c18'); }
-        // 洞頂的鐘乳石
-        for (let k = 0; k < 14; k++) { const sx = 8 + k * 27 + rnd() * 10, sh = 5 + rnd() * 9; for (let j = 0; j < sh; j++) R2(sx + j / 3, j, Math.max(1, 6 - j * .6), 1, j ? '#3a322b' : '#4a4037'); }
-        // 地面、鐵軌
-        R2(0, 86, W, H - 86, '#5a4632'); R2(0, 86, W, 1, '#7a6046'); for (let i = 0; i < W; i += 3) R2(i, 90 + ((i * 7) % 5), 1, 1, '#6b553d');
-        R2(0, 106, W, 1, '#8a8f96'); R2(0, 110, W, 1, '#8a8f96'); for (let i = 4; i < W; i += 12) R2(i, 105, 6, 7, '#4a3524');
-        R2(0, 106, W, 1, '#9aa0a8'); R2(0, 110, W, 1, '#9aa0a8');
-        // 火把＋光
-        [[34, 46], [W - 36, 46]].forEach(([tx, ty], k) => {
-            const f = .75 + .25 * Math.sin(T * 9 + k * 2) * Math.sin(T * 5.3 + k);
-            const g = x.createRadialGradient(tx, ty - 6, 2, tx, ty - 6, 46); g.addColorStop(0, 'rgba(255,190,90,' + (.32 * f) + ')'); g.addColorStop(1, 'rgba(255,190,90,0)'); x.fillStyle = g; x.fillRect(tx - 46, ty - 52, 92, 92);
-            R2(tx - 1, ty, 3, 16, '#6b4a2a'); R2(tx - 2, ty, 5, 2, '#8a8f96');
-            R2(tx - 2, ty - 6, 5, 6, '#e8742c'); R2(tx - 1, ty - 9 - Math.round(f * 2), 3, 7, '#f6b13c'); R2(tx, ty - 7, 1, 4, '#fff1a8'); });
-        // 礦車（左邊，跟礦坑・挖同一台）
-        R2(52, 88, 34, 14, '#5c6770'); R2(52, 88, 34, 2, '#8a96a0'); R2(55, 91, 28, 9, '#47525b'); R2(50, 86, 38, 3, '#7a8690');
-        for (let i = 0; i < 9; i++) R2(57 + i * 3, 83 - (i % 3), 3, 4, ['#e2b44a', '#ffe9a0', '#c9933a'][i % 3]);
-        [[58, 104], [80, 104]].forEach(([wx, wy]) => { R2(wx - 3, wy - 3, 7, 7, '#2c3038'); R2(wx - 1, wy - 1, 3, 3, '#8a8f96'); });
-        // 寶箱
-        R2(112, 84, 28, 18, '#7a4a24'); R2(112, 84, 28, 6, '#9a6232'); R2(112, 89, 28, 2, '#5a3518'); R2(124, 89, 5, 6, '#e2b44a'); R2(112, 84, 2, 18, '#c9a35a'); R2(138, 84, 2, 18, '#c9a35a');
-        R2(114, 80, 24, 5, '#ffe9a0'); for (let i = 0; i < 6; i++) R2(115 + i * 4, 78 + (i % 2), 3, 3, '#e2b44a');
-        // 金幣堆（右邊）＋閃光
-        const cx0 = 262, cy0 = 100;
-        for (let j = 0; j < 26; j++) { const hw = 64 - j * 2.3; R2(cx0 - hw, cy0 - j, hw * 2, 1, j % 3 === 0 ? '#c9933a' : j % 3 === 1 ? '#e2b44a' : '#f2cc5e'); }
-        seed = 31; for (let k = 0; k < 60; k++) { const a = rnd() * Math.PI, rr = rnd(), px = cx0 + Math.cos(a) * (60 * rr), py = cy0 - Math.sin(a) * (24 * rr); R2(px, py, 2, 1, '#ffe9a0'); }
-        for (let k = 0; k < 4; k++) { const ph = (T * .7 + k * .37) % 1, sx = cx0 - 40 + k * 26, sy = cy0 - 10 - (k % 2) * 8, a = Math.max(0, Math.sin(ph * Math.PI)); if (a > .2) { x.globalAlpha = a; R2(sx, sy - 2, 1, 5, '#fff8d8'); R2(sx - 2, sy, 5, 1, '#fff8d8'); x.globalAlpha = 1; } }
-        [[160, 101], [176, 103], [330, 102], [348, 99]].forEach(([a, b]) => { R2(a, b, 4, 2, '#e2b44a'); R2(a + 1, b, 2, 1, '#ffe9a0'); });
-        // 招牌
-        R2(160, 14, 56, 18, '#6b4a2a'); R2(161, 15, 54, 16, '#8a6238'); R2(176, 6, 1, 8, '#4a3524'); R2(200, 6, 1, 8, '#4a3524');
-        x.font = '500 10px "Noto Serif TC", serif'; x.fillStyle = '#ffe9a0'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('大王的山洞', 188, 23.5);
-        // 浣熊大王坐在金幣上
-        if (caveImg && caveImg.complete && caveImg.naturalWidth) { const k = caveImg.naturalHeight * 2 <= 70 ? 2 : 1, w = caveImg.naturalWidth * k, h = caveImg.naturalHeight * k, bob = Math.round(Math.sin(T * 2) * 1); x.imageSmoothingEnabled = false; x.drawImage(caveImg, Math.round(cx0 - w / 2), Math.round(cy0 - 22 - h + bob), w, h); }
-    }
-    function caveLoop() { if ($('cave') && !$('cave').hidden && !document.hidden && $('v-office') && !$('v-office').hidden) drawCave(); setTimeout(() => requestAnimationFrame(caveLoop), 120); }
     function openApply() {
         const full = S.staff.length >= st().seats, left = Math.max(0, S.applyAt - now());
         show(`<div class="hd2"><h2>應徵</h2><button class="x" id="aClose">關</button></div>
@@ -1042,14 +1010,14 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     // ---------- 畫辦公室 ----------
     // 使用者 2026-11-25：辦公室完全靜態——加動態：燈泡的光會呼吸（舊燈泡偶爾閃一下）、光裡有灰塵飄、螢幕上的字一行一行打、
     // 做事的員工跟著打字點頭、閒著的偶爾伸個懶腰、茱莉鴨睡著冒 Z、案子做完在頭上飄「+$」
-    const firstCh = () => S && S.name ? Array.from(S.name.trim())[0] : '';   // 門牌上的字：公司名字的第一個字
+    const firstCh = () => S && S.name ? Array.from(inName().trim())[0] : '';   // 門牌上的字：公司名字的第一個字（有大王的山洞就用對內的）
     if (document.fonts) document.fonts.ready.then(() => { if (window.CompanyOffice && CompanyOffice.clearGlyphs) CompanyOffice.clearGlyphs(); baseStage = -1; });   // 字型載好再重畫一次門牌
     let baseName = '', baseCv = null, baseStage = -1, seats = [], ofx = { mon: [], bulb: [] }, dust = [], monBg = [], floats = [];
     function drawScene() {
         if (!S || !S.name) return;
         const cv = $('cv'), x = cv.getContext('2d');
         const L = look();
-        if (baseStage !== L || baseName !== S.name) { baseName = S.name; baseCv = document.createElement('canvas'); seats = CompanyOffice.paint(baseCv, L + 1, firstCh()).slice(); ofx = CompanyOffice.fx(L + 1); baseStage = L;
+        if (baseStage !== L || baseName !== inName()) { baseName = inName(); baseCv = document.createElement('canvas'); seats = CompanyOffice.paint(baseCv, L + 1, firstCh()).slice(); ofx = CompanyOffice.fx(L + 1); baseStage = L;
             const bx = baseCv.getContext('2d'); monBg = ofx.mon.map(([mx, my]) => { const d = bx.getImageData(mx + 6, my + 3, 1, 1).data; return 'rgb(' + d[0] + ',' + d[1] + ',' + d[2] + ')'; });
             dust = []; ofx.bulb.forEach(([lx, ly]) => { for (let k = 0; k < 7; k++) dust.push({ cx: lx, cy: ly, a: Math.random() * 6.28, r: 4 + Math.random() * 16, h: Math.random(), sp: .5 + Math.random() }); }); cv.width = baseCv.width; cv.height = baseCv.height; cv.style.width = baseCv.width + 'px'; cv.style.height = baseCv.height + 'px'; $('sceneHint').hidden = baseCv.width <= 380; requestAnimationFrame(() => { $('scene').scrollLeft = L === 4 ? 250 : 0; }); }   // 大樓一打開先看辦公區，大廳往左滑
         x.imageSmoothingEnabled = false; x.drawImage(baseCv, 0, 0);
@@ -1200,7 +1168,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     }
     function renderOffice() {
         $('title').textContent = '公司・開'; $('moneyLab').textContent = '公司帳戶';
-        $('plate').className = plateCls(); $('plate').textContent = S.name;
+        $('plate').className = plateCls(); $('plate').textContent = inName();
         $('stageLine').textContent = (look() === S.stage ? st().name : R.STAGES[look()].name + '（懷舊中）') + '・員工 ' + S.staff.length + ' 人';
         if (S.today.d !== today()) S.today = { d: today(), net: 0 };
         $('kToday').textContent = R.fmt(S.today.net);
@@ -1265,7 +1233,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     function lvlRow(i, opt = {}) {
         const g = R.STAGES[i], got = i <= S.stage, using = got && look() === i;
         return `<div class="lvl${i === S.stage && !opt.all ? ' now' : ''}${got ? '' : ' lock'}${using && opt.all ? ' now' : ''}"><div class="th" style="background:var(--bg2)"><canvas data-th="${i}" width="288" height="146" style="width:96px;height:49px;display:block"></canvas></div>
-            <div class="info"><div class="top"><span class="np np${i + 1}"${got ? '' : ' style="filter:grayscale(1);opacity:.5"'}>${esc(S.name)}</span>${opt.all ? (using ? '<span class="chip" style="margin-left:auto">正在用</span>' : got ? `<button class="mini" data-look="${i}" style="margin-left:auto;font:inherit;font-size:10.5px;padding:4px 9px;border-radius:9px;border:1px solid var(--ink);background:var(--ink);color:var(--paper)">換成這間</button>` : '') : '<span class="chip" style="margin-left:auto">現在</span>'}</div>
+            <div class="info"><div class="top"><span class="np np${i + 1}"${got ? '' : ' style="filter:grayscale(1);opacity:.5"'}>${esc(inName())}</span>${opt.all ? (using ? '<span class="chip" style="margin-left:auto">正在用</span>' : got ? `<button class="mini" data-look="${i}" style="margin-left:auto;font:inherit;font-size:10.5px;padding:4px 9px;border-radius:9px;border:1px solid var(--ink);background:var(--ink);color:var(--paper)">換成這間</button>` : '') : '<span class="chip" style="margin-left:auto">現在</span>'}</div>
             <div class="d"><b style="font-weight:500;color:var(--ink)">${g.name}</b>・${g.seats} 人・同時 ${g.conc} 件・案子最長 ${g.maxDur / 60} 小時</div>${got ? '' : `<div class="d pr2 num">${R.fmt(g.cost)}・做完 ${g.jobs} 件・搬過去才解鎖</div>`}</div></div>`;
     }
     function paintThumbs() {
@@ -1290,7 +1258,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         if (g.maxDur > old.maxDur) L.push(['能接的案子', '最長 ' + R.dur(old.maxDur) + ' → ' + R.dur(g.maxDur)]);
         if (g.base > old.base) L.push(['案子的錢', '每件大約多 ' + Math.round((g.base / old.base - 1) * 100) + '%']);
         if (who.length) L.push(['新的委託人', who.join('、')]);
-        show(`<div class="rc glass" style="margin:0"><div class="lb"><span class="dot"></span>搬家了</div><h2 style="display:block">${esc(S.name)}<div class="who">搬進${g.name}</div></h2>
+        show(`<div class="rc glass" style="margin:0"><div class="lb"><span class="dot"></span>搬家了</div><h2 style="display:block">${esc(inName())}<div class="who">搬進${g.name}</div></h2>
               <div style="margin:10px -4px 4px;border-radius:12px;overflow:hidden;background:var(--bg2)"><canvas id="mvCv" style="display:block;width:100%;height:auto;image-rendering:pixelated"></canvas></div>
               ${L.map(([a, b]) => `<div class="ln num"><span>${a}</span><span class="up">${esc(b)}</span></div>`).join('')}
               <div class="kv" style="display:block;line-height:1.7"><span>${R.EQUIP[S.stage] ? '設備換成' + g.name + '的一組（' + R.EQUIP[S.stage].map(e => e[1]).join('、') + '），在公司頁買。' : ''}${nn ? '下一個家：' + nn.name + '（做滿 ' + nn.jobs + ' 件、帳戶 ' + R.fmt(nn.cost) + '）。' : '這是最後一個家了。'}</span></div></div>
@@ -1356,8 +1324,8 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
             const next = R.STAGES[S.stage + 1], canMove = next && S.acct >= next.cost && S.jobsDone >= next.jobs;
             if (S.inject.d !== today()) S.inject = { d: today(), amt: 0 };
             const injLeft = Math.max(0, st().inject - S.inject.amt);
-            B.innerHTML = `<div class="co glass"><div><b>${esc(S.name)}</b><small>${ceo()}・成立第 ${Math.floor((now() - S.created) / 864e5) + 1} 天</small></div><div style="text-align:right"><b class="num" style="font-weight:300">${S.jobsDone} 件</b><small>做完的案子</small></div></div>
-                <div style="text-align:right;margin:-4px 2px 6px"><button class="linkbtn num" id="rename">更換公司行號・${R.fmt(RENAME_PRICE)}</button></div>
+            B.innerHTML = `<div class="co glass"><div><b>${esc(inName())}</b><small>${inName() !== S.name ? '對外：' + esc(S.name) + '<br>' : ''}${ceo()}・成立第 ${Math.floor((now() - S.created) / 864e5) + 1} 天</small></div><div style="text-align:right"><b class="num" style="font-weight:300">${S.jobsDone} 件</b><small>做完的案子</small></div></div>
+                <div style="text-align:right;margin:-4px 2px 6px">${hasPerk('kingcave') ? '<button class="linkbtn" id="inname" style="margin-right:14px">改對內的名字</button>' : ''}<button class="linkbtn num" id="rename">更換公司行號・${R.fmt(RENAME_PRICE)}</button></div>
                 <div class="lvls glass">${lvlRow(S.stage)}<div class="lvl" id="allOffices" style="display:block;text-align:center;font-size:11px;color:var(--teal);letter-spacing:.15em;padding:11px;cursor:pointer">看所有辦公室 ›</div></div>
                 ${next ? `<div class="cta"><button class="main num" id="mv" style="flex:1" ${canMove ? '' : 'disabled'}>搬到${next.name}・${R.fmt(next.cost)}${S.jobsDone < next.jobs ? '（還差 ' + (next.jobs - S.jobsDone) + ' 件）' : S.acct < next.cost ? '（帳戶還差 ' + R.fmt(next.cost - S.acct) + '）' : ''}</button></div>` : ''}
                 <div class="goal glass"><div class="gt"><span>公司帳戶 <b class="num" style="font-weight:400;color:var(--ink)">${R.fmt(S.acct)}</b></span><span class="r num">錢包 ${R.fmt(wal())}</span></div>
@@ -1372,7 +1340,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
             paintThumbs(); $('allOffices').onclick = openOffices; document.querySelectorAll('.help2').forEach(e => e.onclick = openHelp);
             if ($('mv')) $('mv').onclick = async () => { if (!await ask('搬到' + next.name + '？', '用公司帳戶付 ' + R.fmt(next.cost) + '。舊燈泡會一起帶走。', { ok: '搬家' })) return; const old = st(); S.acct -= next.cost; S.stage++; S.look = S.stage; S.applicants = R.applicants(S.stage, S.hiredSp); save(); go('office'); movedCard(old); };
             $('inj').onclick = () => openInject(injLeft, next);
-            $('rename').onclick = openRename;
+            $('rename').onclick = openRename; if ($('inname')) $('inname').onclick = openInName;
             $('out').onclick = async () => { const n = Math.max(0, S.acct); if (!await ask('轉進錢包？', '把公司帳戶的 ' + R.fmt(n) + ' 全部轉進錢包。' + (next ? '搬家只能用公司帳戶付，' : '') + '轉出去不能直接轉回來，只能靠增資（每天最多 ' + R.fmt(st().inject) + '）。', { ok: '轉進錢包', warn: true })) return;
                 if (LIVE) { if (await serverAct('out', { type: 'companyCashOut', amount: n }, '轉進錢包 ' + R.fmt(n))) renderCompany(); return; }   // 正式：後端一次扣公司帳戶、加錢包
                 S.acct -= n; S.wallet += n; S.book.out += n; save(); renderCompany(); };
@@ -1517,12 +1485,10 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         } catch (e) { }
         await Busy.hide(); blocking = false;
     }
-    caveImg = new Image(); caveImg.src = 'assets/company/raccoon.png?v=20261125b'; caveImg.onload = drawCave;
-    caveLoop();
     if (PREVIEW) { start(); freshPage(); } else boot();
     if (LIVE) {
         Line.on(type => { if (type === 'logout' && S) loggedOut(); });
-        Wallet.on(type => { if ((type === 'server' || type === 'perks') && S && S.name) { render(); drawCave(); } });   // 別支手機賺了錢、主人發了專屬道具：跟著變   // 別支手機賺了錢：錢包數字跟著變
+        Wallet.on(type => { if ((type === 'server' || type === 'perks') && S && S.name) { render(); } });   // 別支手機賺了錢、主人發了專屬道具：跟著變   // 別支手機賺了錢：錢包數字跟著變
         window.addEventListener('pagehide', () => { if (S && S.name) { S.lastSeen = Date.now(); push(true); } });
     }
     setInterval(() => {
