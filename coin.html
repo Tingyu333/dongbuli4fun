@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>紀念幣・炒 | 丼步喱</title>
     <!-- 分享到 LINE、FB 時的預覽（標題、介紹、圖片）。圖片要用完整網址 -->
-    <meta name="description" content="二十七樓紀念幣：五種紀念幣，每 15 分鐘一個價，24 小時不打烊。可以放大倍數看漲看跌，反方向走太多就爆。">
+    <meta name="description" content="二十七樓紀念幣：五種紀念幣，每分鐘一個價，24 小時不打烊。可以放大倍數看漲看跌，反方向走太多就爆。">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="丼步喱・絆">
     <meta property="og:title" content="紀念幣・炒｜二十七樓紀念幣">
-    <meta property="og:description" content="二十七樓紀念幣：五種紀念幣，每 15 分鐘一個價，24 小時不打烊。可以放大倍數看漲看跌，反方向走太多就爆。">
+    <meta property="og:description" content="二十七樓紀念幣：五種紀念幣，每分鐘一個價，24 小時不打烊。可以放大倍數看漲看跌，反方向走太多就爆。">
     <meta property="og:image" content="https://tingyu333.github.io/dongbuli4fun/assets/og.png?v=2">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="1200">
@@ -225,9 +225,9 @@
 
         <!-- 規則 -->
         <section class="mt-8 text-[11px] font-sans tracking-wider leading-relaxed text-stone-500 space-y-1 px-1">
-            <p>・五種二十七樓紀念幣，每 15 分鐘一個價，24 小時不打烊，沒有漲跌停。</p>
+            <p>・五種二十七樓紀念幣，每分鐘一個價，24 小時不打烊，沒有漲跌停。</p>
             <p>・直接買：用錢換紀念幣，買賣各收 0.5% 手續費，買了馬上可以賣。</p>
-            <p>・放大倍數：押看漲或看跌，放大 2～100 倍。賺賠跟著放大，價格往反方向走「1 ÷ 倍數」就爆，押的錢全部沒了（100 倍是反方向 1%）。15 分鐘內只要碰到一下就算，下單時收倉位 0.1% 手續費，收回來不收錢。</p>
+            <p>・放大倍數：押看漲或看跌，放大 2～100 倍。賺賠跟著放大，價格往反方向走「1 ÷ 倍數」就爆，押的錢全部沒了（100 倍是反方向 1%）。一分鐘之內只要碰到一下就算（插針也算），下單時收倉位 0.1% 手續費，收回來不收錢。</p>
             <p>・每張單分開算：爆了只賠那張單押的錢，錢包和其他單都不受影響。</p>
             <p>・快爆了可以「補錢」：往那張單多放一點錢，爆的價格就離遠一點，倍數跟著變小。補的錢收回時一起拿回，爆了也一起沒了。</p>
             <p>・雞塊幣 11/27 00:15 發行，前幾天特別刺激。</p>
@@ -321,7 +321,7 @@
             c5: { name: '雞塊幣', tk: 'NUGT', full: '大橋頭雞塊紀念幣', desc: '麥克早餐的老闆是雞塊，雞塊又發了一枚雞塊。剛發行，沒有人知道會怎樣。' },
         };
         const KEYS = ['c1', 'c2', 'c3', 'c4', 'c5'];
-        const UP = '#b33a2f', DOWN = '#3d7a55', DAY = 96;
+        const UP = '#b33a2f', DOWN = '#3d7a55', DAY = 1440;   // 一天幾根（1 分鐘）
         const $ = id => document.getElementById(id);
         const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         const fmt = n => (n < 0 ? '−' : '') + '$' + Math.abs(Math.round(n)).toLocaleString('en-US');
@@ -341,26 +341,29 @@
         const pf = (k, v) => { const c = coinMeta(k); return v >= 1000 ? v.toLocaleString('en-US', { minimumFractionDigits: c.digits, maximumFractionDigits: c.digits }) : v.toFixed(c.digits); };
 
         // ---- 價格：直接讀 assets/coin/ 的檔（跟後端讀同一份），所以後端還沒部署也看得到行情 ----
+        // 2026-11-27 改成每分鐘跳：價格、1 日走勢、爆倉檢查用每分鐘的檔（m<k>.json，每 2880 根）；7 日、30 日走勢用 15 分鐘的檔（<k>.json）
         const chunks = new Map();
-        function loadChunk(key, k) {
-            const id = key + '/' + k;
+        function loadChunk(key, k, fine = true) {
+            const id = key + '/' + (fine ? 'm' : '') + k;
             if (!chunks.has(id)) chunks.set(id, fetch(`assets/coin/${id}.json`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(raw => {
                 let a = 0; const c = raw.c.map(v => a += v);
                 return { c, h: c.map((v, i) => v + raw.h[i]), l: c.map((v, i) => v - raw.l[i]) };
             }).catch(e => { chunks.delete(id); throw e; }));
             return chunks.get(id);
         }
-        const slotAt = ms => Math.floor((ms - META.launch) / META.q);
-        const idxAt = (c, ms) => Math.min(c.n - 1, c.pre + slotAt(ms) - 1);
-        const nextAt = ms => META.launch + (slotAt(ms) + 1) * META.q;
-        const idxMs = (c, i) => META.launch + (i - c.pre + 1) * META.q;
-        // [a, b] 之間的收盤，每 step 根取一個
-        async function closes(key, a, b, step = 1) {
-            const c = coinMeta(key); a = Math.max(0, a); if (b < a) return [];
-            const ks = []; for (let k = Math.floor(a / META.chunk); k <= Math.floor(b / META.chunk); k++) ks.push(k);
-            const ds = await Promise.all(ks.map(k => loadChunk(key, k)));
+        // 格子、根數都是 1 分鐘的
+        const slotAt = ms => Math.floor((ms - META.launch) / META.q1);
+        const idxAt = (c, ms) => Math.min(c.n1 - 1, c.pre1 + slotAt(ms) - 1);
+        const nextAt = ms => META.launch + (slotAt(ms) + 1) * META.q1;
+        const idxMs = (c, i) => META.launch + (i - c.pre1 + 1) * META.q1;
+        const idx15 = i => Math.floor((i + 1) / 15) - 1;   // 1 分鐘第 i 根的時候，最後一根收完的 15 分鐘
+        // [a, b] 之間的收盤，每 step 根取一個（fine：1 分鐘的檔，不然是 15 分鐘的）
+        async function closes(key, a, b, step = 1, fine = true) {
+            const c = coinMeta(key), size = fine ? META.chunk1 : META.chunk; a = Math.max(0, a); if (b < a) return [];
+            const ks = []; for (let k = Math.floor(a / size); k <= Math.floor(b / size); k++) ks.push(k);
+            const ds = await Promise.all(ks.map(k => loadChunk(key, k, fine)));
             const out = [];
-            for (let i = b; i >= a; i -= step) { const k = Math.floor(i / META.chunk), d = ds[k - ks[0]]; out.unshift(d.c[i - k * META.chunk] / 10 ** c.digits); }
+            for (let i = b; i >= a; i -= step) { const k = Math.floor(i / size), d = ds[k - ks[0]]; out.unshift(d.c[i - k * size] / 10 ** c.digits); }
             return out;
         }
         // 每一種：現在價、24 小時前、24 小時走勢
@@ -370,9 +373,9 @@
             await Promise.all(KEYS.map(async key => {
                 const c = coinMeta(key), i = idxAt(c, t);
                 if (i < 0) { P[key] = { listed: false, idx: i }; return; }
-                const day = await closes(key, i - DAY, i, 4);
-                const all = await closes(key, Math.max(0, i - DAY), i);
-                P[key] = { listed: true, idx: i, price: all[all.length - 1], prev: all[0], day, ended: i >= c.n - 1 };
+                const day = await closes(key, i - DAY, i, 15);
+                const two = await closes(key, Math.max(0, i - DAY), i, Math.min(DAY, i) || 1);
+                P[key] = { listed: true, idx: i, price: two[two.length - 1], prev: two[0], day, ended: i >= c.n1 - 1 };
             }));
         }
         const chg = k => { const p = P[k]; return p && p.listed && p.prev ? p.price / p.prev - 1 : 0; };
@@ -389,7 +392,9 @@
             // 後端確認過了：還在單子裡的就是沒爆（兩邊算的不一樣時以後端為準），不在的也不用再標
             if (m) boomLocal.clear();
         }
+        let lastPull15 = null;
         async function pull() {
+            if (META) lastPull15 = Math.floor(slotAt(now()) / 15);
             try {
                 let r = null;
                 if (Line.loggedIn) {
@@ -407,7 +412,7 @@
             } catch (e) { if (state === 'loading') state = 'ready'; }
             await tick();
         }
-        // 每 15 分鐘跳價：重算價格；登入的人順便跟後端拿帳（看有沒有爆倉）
+        // 每分鐘跳價：重算價格（登入的人每 15 分鐘順便跟後端拿帳，見 tick 最後）
         // ---- 前端先發現爆倉（2026-11-27）：每次跳價，用同一份價格檔看新收的那幾根有沒有碰到爆倉價（看漲看最低、看跌看最高）。
         // 碰到就先在畫面上標「爆了」、蓋大章，再叫後端確認；判定還是後端的（後端被問到時自己從上次檢查的地方往後看），所以作弊擋不住爆倉。
         // 後端只多一次「本來就要的」確認，不會增加負擔。
@@ -415,9 +420,9 @@
         let seen = {};
         async function hlRange(key, a, b) {
             const c = coinMeta(key); let lo = Infinity, hi = -Infinity;
-            for (let k = Math.floor(a / META.chunk); k <= Math.floor(b / META.chunk); k++) {
-                const d = await loadChunk(key, k), from = Math.max(a, k * META.chunk), to = Math.min(b, (k + 1) * META.chunk - 1);
-                for (let i = from; i <= to; i++) { const j = i - k * META.chunk; lo = Math.min(lo, d.l[j]); hi = Math.max(hi, d.h[j]); }
+            for (let k = Math.floor(a / META.chunk1); k <= Math.floor(b / META.chunk1); k++) {
+                const d = await loadChunk(key, k), from = Math.max(a, k * META.chunk1), to = Math.min(b, (k + 1) * META.chunk1 - 1);
+                for (let i = from; i <= to; i++) { const j = i - k * META.chunk1; lo = Math.min(lo, d.l[j]); hi = Math.max(hi, d.h[j]); }
             }
             return { lo: lo / 10 ** c.digits, hi: hi / 10 ** c.digits };
         }
@@ -443,7 +448,7 @@
             // 跳價了：漲的那枚翻一圈，每枚都反光一下
             KEYS.forEach(k => {
                 const p = P[k]; if (!p || !p.listed) return;
-                if (lastIdx[k] !== undefined && lastIdx[k] !== p.idx) {
+                if (lastIdx[k] !== undefined && idx15(lastIdx[k]) !== idx15(p.idx)) {   // 每分鐘都跳，硬幣只在整 15 分鐘翻一次、閃一下
                     const up = chg(k) > 0, cv = document.querySelector(`#rows canvas[data-coin="${k}"]`);
                     coinShine(cv, k, up);
                     if (cur === k) coinShine($('sCoin'), k, up);
@@ -453,14 +458,15 @@
             const hit = await localBoomCheck();
             clearTimeout(timer);
             if (hit) { timer = setTimeout(pull, 600); return; }   // 手機算到爆倉：馬上請後端確認（後端自己用同一份價格檔判定）
-            timer = setTimeout(() => (Line.loggedIn && state === 'ready' ? pull() : tick()), Math.max(3000, nextAt(now()) - now() + 3000));
+            // 每分鐘跳價只在手機上算；登入的人每 15 分鐘（或發現爆倉時）才跟後端拿一次帳
+            timer = setTimeout(() => (Line.loggedIn && state === 'ready' && Math.floor(slotAt(now()) / 15) !== lastPull15 ? pull() : tick()), Math.max(1500, nextAt(now()) - now() + 1500));
         }
 
         // ---- 畫面 ----
         function renderStatus() {
             const el = $('status');
             if (!META) { el.textContent = '讀取行情中…'; return; }
-            el.innerHTML = `<span class="dot"></span>每 15 分鐘跳價・下一次 ${hhmm(nextAt(now()))}` + (state === 'old' ? '<br><span class="warn">買賣還沒開放（後端要重新部署新版本），先看看就好</span>' : '');
+            el.innerHTML = `<span class="dot"></span>每分鐘跳價・現在是 ${hhmm(nextAt(now()) - META.q1)} 的價格` + (state === 'old' ? '<br><span class="warn">買賣還沒開放（後端要重新部署新版本），先看看就好</span>' : '');
         }
         const dirTxt = d => d === 'up' ? '看漲' : '看跌';
         function renderSlips() {
@@ -505,7 +511,7 @@
         function renderBoard() {
             const box = $('rows');
             if (!META || !Object.keys(P).length) { box.innerHTML = '<p class="empty">讀取中…</p>'; return; }
-            $('boardAt').textContent = mdhm(nextAt(now()) - META.q) + ' 更新';
+            $('boardAt').textContent = mdhm(nextAt(now()) - META.q1) + ' 更新';
             box.innerHTML = KEYS.map(k => {
                 const i = INFO[k], p = P[k] || {}, c = chg(k);
                 if (!p.listed) return `<div class="row cols"><span class="nm"><canvas class="coin" data-coin="${k}" style="opacity:.45"></canvas><span>${esc(i.name)}<span class="cd">${i.tk}<span class="soon">待發行</span></span></span></span><span></span><span class="px num flat">—</span><span class="ch num flat">11/27</span></div>`;
@@ -598,8 +604,9 @@
         // ---- 底部面板 ----
         async function chart() {
             const key = cur; if (!key || !P[key] || !P[key].listed) return;
-            const c = coinMeta(key), i = P[key].idx, n = range * DAY, step = range === 1 ? 1 : range === 7 ? 4 : 16;
-            const a = await closes(key, i - n, i, step);
+            const c = coinMeta(key), i = P[key].idx, j = idx15(i);
+            // 1 日：每分鐘的檔、每 5 分鐘一點；7 日、30 日：15 分鐘的檔（最後補上現在的價格）
+            const a = range === 1 ? await closes(key, i - DAY, i, 5) : (await closes(key, j - range * 96, j, range === 7 ? 2 : 8, false)).concat(j >= 0 ? [P[key].price] : []);
             if (key !== cur) return;
             const cv = $('chart'), d = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
             if (!w || a.length < 2) return;
@@ -709,7 +716,7 @@
                 if (r.quote) take(r.quote, r.mine);
                 if (r.wallet) Wallet.adopt(r.wallet);
                 if (r.result === 'success') return r;
-                if (r.result === 'moved') showToast('價格剛跳了，看一下新的價格再下單');
+                if (r.result === 'moved') showToast('價格已經跳了好幾次，看一下新的價格再下單');
                 else if (r.result === 'unauthorized') showToast('登入過期了，再登入一次');
                 else showToast(/不認得的請求/.test(r.error || '') ? '後端還是舊版，要重新部署「新版本」' : (r.error || '櫃台沒回應'));
             } catch (e) { showToast('連不到後端，可能是網路不穩'); }
@@ -725,7 +732,7 @@
         async function buy() {
             const key = cur, a = money('amt'), i = INFO[key];
             const r = await act({ type: 'coinTrade', key, side: 'buy', amount: a, slot: slot() }, { side: '買進', rows: [['紀念幣', esc(i.name)], ['花', fmt(a)], ['現價', pf(key, P[key].price)]] });
-            if (r) { bigStamp('成交', `${units(r.u)} 顆`); showToast(`花 ${fmt(r.amount)} 換了 ${units(r.u)} 顆${i.name}`); }
+            if (r) { bigStamp('成交', `${units(r.u)} 顆`); showToast(`花 ${fmt(r.amount)} 換了 ${units(r.u)} 顆${i.name}（成交價 ${pf(key, r.price)}）`); }
         }
         async function sell(frac) {
             const key = cur, i = INFO[key];
