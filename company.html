@@ -433,7 +433,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     // ---------- 頁面版本：手機拿到舊的公司頁就自己重新載入（2026-11-26 使用者：手機快取了舊頁面，請的員工重整就不見） ----------
     // 改了這一頁要把 PAGE_VER 和 assets/company-ver.txt 一起換新（同一個字串）。
     // 重新載入前先把存檔送出去；送不出去的也留在這支手機（dongbuli-company-live），重新打開會接著用，不會丟東西。
-    const PAGE_VER = '2026-11-26m';
+    const PAGE_VER = '2026-11-27a';
     async function freshPage() {   // 回 true：要重新載入了
         let v = '';
         try { v = (await fetch('assets/company-ver.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '')).trim(); } catch (e) { }
@@ -465,6 +465,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         if (S && S.staff && !S.dexInfo) { S.dexInfo = {}; S.staff.forEach(s => { const d = S.dexInfo[s.key] = S.dexInfo[s.key] || { first: S.created, done: 0, lv: 1 }; d.done += s.done; d.lv = Math.max(d.lv, s.lv); }); }   // 舊存檔：從現在的員工補
         if (S && !S.inject) S.inject = { d: '', amt: 0 };
         if (S && S.staff) S.staff.forEach(R.fixMast);   // 熟練（2026-11-26）：舊存檔補上
+        if (S && !S.book) S.book = { since: Date.now(), by: {}, salary: 0, incident: 0, inj: 0, out: 0 };   // 公司的帳（2026-11-27）：用錢包付的分類、薪水、突發狀況，從這天開始記
     }
     let resetting = false;
     const LIVE_KEY = 'dongbuli-company-live';   // 正式：這支手機也留一份（還沒送到後端就重新整理、切走，下次打開接著用）
@@ -479,11 +480,13 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     };
     const now = () => Date.now() + (PREVIEW && S ? S.shift || 0 : 0);   // 試玩可以「快轉」
     const fresh = () => ({ v: 1, name: '', stage: 0, acct: 0, wallet: PREVIEW ? TRIAL_MONEY : undefined, jobsDone: 0, staff: [], board: [], jobs: [], done: [], applicants: [], applyAt: 0, nextBoardAt: 0, adUntil: 0,
-        series: {}, gifts: [], equip: {}, dex: { sp: {}, gen: {} }, hiredSp: [], last: null, today: { d: '', net: 0 }, inject: { d: '', amt: 0 }, lastSeen: 0, shift: 0, tut: 0, created: Date.now() });
+        series: {}, gifts: [], equip: {}, dex: { sp: {}, gen: {} }, hiredSp: [], last: null, today: { d: '', net: 0 }, inject: { d: '', amt: 0 }, lastSeen: 0, shift: 0, tut: 0, created: Date.now(), book: { since: Date.now(), by: {}, salary: 0, incident: 0, inj: 0, out: 0 } });
     const wal = () => PREVIEW ? S.wallet : Wallet.money;   // 錢包：試玩是存檔裡的，正式是真的錢包
     const clone = o => JSON.parse(JSON.stringify(o));
     // 會員中心「錢包的帳」用：這個帳號在公司的進出（增資、用錢包付的），存在這支手機（跟股市一樣）
+    let ledgerNow = null;   // 後端記的累計增資、轉出（公司的帳用）
     function ledgerMirror(r) {
+        if (r && r.ledger) ledgerNow = r.ledger;
         if (!LIVE || !S) return;
         let who = ''; try { who = (localStorage.getItem('dongbuli-session') || '').slice(0, 8); } catch (e) { }
         let old = {}; try { old = JSON.parse(localStorage.getItem('dongbuli-company-ledger') || '{}') || {}; } catch (e) { }
@@ -642,12 +645,13 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     }
     // 用錢包買東西（簽約金、換一批、訓練、設備、廣告）：apply() 把買到的東西放進存檔。
     // 正式：存檔和扣錢同一次送後端（companyPay），失敗就退回去；試玩：試玩錢包扣、存這支手機
+    const bookPaid = (what, n) => { if (!n) return; const b = S.book.by; b[what] = (b[what] || 0) + n; };
     async function pay(n, what, apply, doneText) {
-        if (PREVIEW) { if (n && !payWallet(n)) return false; apply(); save(); return true; }
+        if (PREVIEW) { if (n && !payWallet(n)) return false; apply(); S.paid = (S.paid || 0) + n; bookPaid(what, n); save(); return true; }
         if (n > wal()) { toast('錢包不夠'); return false; }
         if (!n) { apply(); save(); push(true); return true; }
         const before = clone(S), seq = adopted;
-        apply();
+        apply(); bookPaid(what, n);   // 分類在存檔裡記（後端只加總數 paid）
         const ok = await serverAct('pay', { type: 'companyPay', amount: n, what }, doneText || '付好了');
         if (!ok && adopted === seq && S) { S = before; fixup(); render(); }   // 沒付成：東西拿回去（後端換了存檔的話就照後端的）
         return !!ok;
@@ -748,7 +752,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     function collect(j) {
         if (j.collected) return null;
         j.collected = true;
-        S.acct += j.res.net; S.jobsDone++;
+        S.acct += j.res.net; S.jobsDone++; S.book.salary += j.res.salary || 0;
         if (S.today.d !== today()) S.today = { d: today(), net: 0 };
         S.today.net += j.res.net;
         let gift = null;
@@ -858,7 +862,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         if (!incOpen) return;
         const { j, inc } = incOpen, e = inc.o[k][2], team = j.team.map(staffById).filter(Boolean);
         let msg = '';
-        if (e.cost) { const n = R.incidentCost(S.stage, e.cost); if (S.acct < n) { toast('公司帳戶不夠，只好等一下'); j.end += 2 * 60000; } else { S.acct -= n; j.spent = (j.spent || 0) + n; msg = '花了 ' + R.fmt(n) + '（公司帳戶）'; } }
+        if (e.cost) { const n = R.incidentCost(S.stage, e.cost); if (S.acct < n) { toast('公司帳戶不夠，只好等一下'); j.end += 2 * 60000; } else { S.acct -= n; S.book.incident += n; j.spent = (j.spent || 0) + n; msg = '花了 ' + R.fmt(n) + '（公司帳戶）'; } }
         if (e.neg) { if (team.some(s => s.st[3] >= e.neg)) msg = '談成了，沒事'; else { if (e.delay) j.end += e.delay * 60000; if (e.fail) j.ok = false; msg = e.fail ? '沒談成……這件會做砸' : '沒談成，慢一點'; if (e.fail) j.why = '突發狀況「' + inc.t + '」沒談成'; } }
         else if (e.delay) { j.end += e.delay * 60000; msg = '多等 ' + e.delay + ' 分鐘'; }
         if (e.bonus) j.bonus = (j.bonus || 0) + e.bonus;
@@ -1117,8 +1121,8 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         }).join('') || '<div class="empty">沒有在做的案子・去委託接一件</div>';
         document.querySelectorAll('#runList .row.done').forEach(e => e.onclick = () => openReceipt(S.jobs.find(j => j.id === e.dataset.j)));
         document.querySelectorAll('#runList [data-ot]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const j = S.jobs.find(x => x.id === b.dataset.ot); if (!j || j.fin) return; if (!await ask('付加班費？', '用錢包付 ' + R.fmt(R.overtimePrice(j)) + '，〈' + esc(j.c.title) + '〉馬上做完。', { ok: '付加班費' })) return;
-            if (LIVE) { const id = j.id; if (await serverAct('overtime', { type: 'companyOvertime', job: id }, '大家留下來加班了')) { const k = S.jobs.find(x => x.id === id); if (k && !k.fin) k.end = Math.min(k.end, now()); tick(); } return; }   // 正式：後端扣錢包、記加班費
-            if (!payWallet(R.overtimePrice(j))) return; j.end = now(); tick(); });
+            if (LIVE) { const id = j.id; if (await serverAct('overtime', { type: 'companyOvertime', job: id }, '大家留下來加班了')) { const k = S.jobs.find(x => x.id === id); if (k && !k.fin) k.end = Math.min(k.end, now()); bookPaid('overtime', R.overtimePrice(k || j)); save(); tick(); } return; }   // 正式：後端扣錢包、記加班費
+            const otp = R.overtimePrice(j); if (!payWallet(otp)) return; S.paid = (S.paid || 0) + otp; bookPaid('overtime', otp); j.end = now(); tick(); });
     }
     function renderBoard() {
         $('title').textContent = '委託'; $('moneyLab').textContent = '公司帳戶';
@@ -1217,9 +1221,26 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
         $('iGo').onclick = async () => {
             if (amt > Math.min(st().inject - S.inject.amt, wal())) return toast('超過今天的額度了');
             if (LIVE) { hide(); if (await serverAct('inject', { type: 'companyInject', amount: amt }, '增資 ' + R.fmt(amt) + ' 入帳了')) renderCompany(); return; }   // 正式：後端一次扣錢包、加公司帳戶
-            S.wallet -= amt; S.acct += amt; S.inject.amt += amt; save(); hide(); renderCompany(); toast('增資 ' + R.fmt(amt));
+            S.wallet -= amt; S.acct += amt; S.inject.amt += amt; S.book.inj += amt; save(); hide(); renderCompany(); toast('增資 ' + R.fmt(amt));
         };
         draw();
+    }
+    // 公司的帳（2026-11-27，使用者：我想看在公司花了多少錢）
+    const BOOK_KINDS = [['hire', '簽約金'], ['refresh', '換一批應徵'], ['train', '訓練'], ['equip', '設備'], ['ad', '廣告'], ['overtime', '加班費']];
+    function bookHtml() {
+        const B = S.book, by = B.by, paid = S.paid || 0, sorted = BOOK_KINDS.reduce((a, [k]) => a + (by[k] || 0), 0), older = Math.max(0, paid - sorted);
+        const inj = LIVE && ledgerNow ? ledgerNow.inj : B.inj, out = LIVE && ledgerNow ? ledgerNow.out : B.out;
+        let moves = 0; for (let i = 1; i <= S.stage; i++) moves += R.STAGES[i].cost;
+        const earned = S.acct + out - inj + moves, d = new Date(B.since), since = (d.getMonth() + 1) + '/' + d.getDate();
+        const row = (k, v, note) => `<div class="kv num"><span>${k}${note ? `<small style="color:var(--sub);font-size:9.5px">　${note}</small>` : ''}</span><b>${R.fmt(v)}</b></div>`;
+        return `<div class="goal glass"><div class="gt"><span>公司的帳</span><span class="r num">開張以來</span></div>
+            <div class="kv num" style="margin-top:8px"><span style="color:var(--ink)">錢包付給公司的</span><b style="color:var(--ink)">${R.fmt(paid)}</b></div>
+            ${BOOK_KINDS.filter(([k]) => by[k]).map(([k, n]) => row('・' + n, by[k])).join('')}${older ? row('・之前的（還沒分類）', older) : ''}
+            <div class="kv num" style="margin-top:8px"><span style="color:var(--ink)">公司帳戶付的</span><b style="color:var(--ink)">${R.fmt(moves + B.salary + B.incident)}</b></div>
+            ${row('・搬家', moves)}${row('・員工薪水', B.salary, since + ' 起')}${row('・突發狀況', B.incident, since + ' 起')}
+            <div class="kv num" style="margin-top:8px"><span>執行長增資<small style="color:var(--sub);font-size:9.5px">　錢包搬進來，不算花掉</small></span><b>${R.fmt(inj)}</b></div>
+            ${row('轉進錢包', out)}
+            <div class="kv num"><span>累計淨賺<small style="color:var(--sub);font-size:9.5px">　扣完薪水，公司・榜比這個</small></span><b>${R.fmt(earned)}</b></div></div>`;
     }
     function renderCompany() {
         $('title').textContent = '公司'; $('moneyLab').textContent = seg === 'equip' ? '錢包' : '公司帳戶'; $('money').textContent = R.fmt(seg === 'equip' ? wal() : S.acct);
@@ -1235,6 +1256,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
                   <div class="money2"><button class="num" id="inj" ${injLeft ? '' : 'disabled'}>執行長增資（今天還能 ${R.fmt(injLeft)}）</button></div>
                   <div class="kv" style="display:block;line-height:1.7"><span>搬家只能用公司帳戶付；錢包付簽約金、刷新、訓練、設備、廣告、加班費。增資每天最多 ${R.fmt(st().inject)}。</span></div>
                   <div style="text-align:right"><button class="linkbtn num" id="out" ${S.acct > 0 ? '' : 'disabled'}>把公司帳戶的錢轉進錢包</button></div></div>
+                ${bookHtml()}
                 ${PREVIEW ? `<div class="trial glass">試玩錢包 <b class="num">${R.fmt(S.wallet)}</b>（只在這支手機、不動真的錢包）
                   <div class="tool"><button id="tAdd">錢包 +100 萬</button><button id="tSkip">快轉 10 分鐘</button><button id="tSkip2">快轉 1 小時</button><button id="tReset">整個重來</button></div></div>` : ''}
                 <div class="kv" style="justify-content:center;margin:14px 0 0"><span class="help2" style="color:var(--teal);letter-spacing:.15em;cursor:pointer;padding:6px">看不懂的字 ›</span></div>
@@ -1244,7 +1266,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
             $('inj').onclick = () => openInject(injLeft, next);
             $('out').onclick = async () => { const n = Math.max(0, S.acct); if (!await ask('轉進錢包？', '把公司帳戶的 ' + R.fmt(n) + ' 全部轉進錢包。' + (next ? '搬家只能用公司帳戶付，' : '') + '轉出去不能直接轉回來，只能靠增資（每天最多 ' + R.fmt(st().inject) + '）。', { ok: '轉進錢包', warn: true })) return;
                 if (LIVE) { if (await serverAct('out', { type: 'companyCashOut', amount: n }, '轉進錢包 ' + R.fmt(n))) renderCompany(); return; }   // 正式：後端一次扣公司帳戶、加錢包
-                S.acct -= n; S.wallet += n; save(); renderCompany(); };
+                S.acct -= n; S.wallet += n; S.book.out += n; save(); renderCompany(); };
             if (PREVIEW) $('tAdd').onclick = () => { S.wallet += 1000000; save(); renderCompany(); };
             if (PREVIEW) $('tSkip').onclick = () => { S.shift = (S.shift || 0) + 600000; tick(); toast('快轉了 10 分鐘'); render(); };
             if (PREVIEW) $('tSkip2').onclick = () => { S.shift = (S.shift || 0) + 3600000; tick(); toast('快轉了 1 小時'); render(); };
