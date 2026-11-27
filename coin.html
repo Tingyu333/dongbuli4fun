@@ -382,7 +382,12 @@
         function take(q, m) {
             Q = q; if (m !== undefined) M = m;
             offset = q.now - Date.now();
-            if (m && m.notes && m.notes.length) { notes = notes.concat(m.notes); if (m.notes.some(n => n.kind === 'boom')) setTimeout(() => bigStamp('爆', '爆倉了', false, true), 400); }
+            if (m && m.notes && m.notes.length) {
+                notes = notes.concat(m.notes);
+                if (m.notes.some(n => n.kind === 'boom' && !boomLocal.has(n.id))) setTimeout(() => bigStamp('爆', '爆倉了', false, true), 400);
+            }
+            // 後端確認過了：還在單子裡的就是沒爆（兩邊算的不一樣時以後端為準），不在的也不用再標
+            if (m) boomLocal.clear();
         }
         async function pull() {
             try {
@@ -403,6 +408,34 @@
             await tick();
         }
         // 每 15 分鐘跳價：重算價格；登入的人順便跟後端拿帳（看有沒有爆倉）
+        // ---- 前端先發現爆倉（2026-11-27）：每次跳價，用同一份價格檔看新收的那幾根有沒有碰到爆倉價（看漲看最低、看跌看最高）。
+        // 碰到就先在畫面上標「爆了」、蓋大章，再叫後端確認；判定還是後端的（後端被問到時自己從上次檢查的地方往後看），所以作弊擋不住爆倉。
+        // 後端只多一次「本來就要的」確認，不會增加負擔。
+        const boomLocal = new Set();
+        let seen = {};
+        async function hlRange(key, a, b) {
+            const c = coinMeta(key); let lo = Infinity, hi = -Infinity;
+            for (let k = Math.floor(a / META.chunk); k <= Math.floor(b / META.chunk); k++) {
+                const d = await loadChunk(key, k), from = Math.max(a, k * META.chunk), to = Math.min(b, (k + 1) * META.chunk - 1);
+                for (let i = from; i <= to; i++) { const j = i - k * META.chunk; lo = Math.min(lo, d.l[j]); hi = Math.max(hi, d.h[j]); }
+            }
+            return { lo: lo / 10 ** c.digits, hi: hi / 10 ** c.digits };
+        }
+        async function localBoomCheck() {
+            if (!M || !Line.loggedIn) { seen = {}; return false; }
+            let hit = false;
+            for (const k of KEYS) {
+                const p = P[k]; if (!p || !p.listed) continue;
+                const from = seen[k]; seen[k] = p.idx;
+                if (from === undefined || p.idx <= from) continue;
+                const mine = M.pos.filter(x => x.key === k && !boomLocal.has(x.id) && x.liq > 0); if (!mine.length) continue;
+                let r; try { r = await hlRange(k, from + 1, p.idx); } catch (e) { continue; }
+                mine.forEach(x => { if (x.dir === 'up' ? r.lo <= x.liq : r.hi >= x.liq) { boomLocal.add(x.id); hit = true; } });
+            }
+            if (hit) { render(); bigStamp('爆', '爆倉了', false, true); }
+            return hit;
+        }
+
         let lastIdx = {};
         async function tick() {
             try { await refreshPrices(); } catch (e) { }
@@ -417,7 +450,9 @@
                 }
                 lastIdx[k] = p.idx;
             });
+            const hit = await localBoomCheck();
             clearTimeout(timer);
+            if (hit) { timer = setTimeout(pull, 600); return; }   // 手機算到爆倉：馬上請後端確認（後端自己用同一份價格檔判定）
             timer = setTimeout(() => (Line.loggedIn && state === 'ready' ? pull() : tick()), Math.max(3000, nextAt(now()) - now() + 3000));
         }
 
@@ -516,7 +551,10 @@
                 (a > Wallet.money ? '<br><span class="up">錢包不夠。</span>' : '') + (addAmt > addRoom(p) ? `<br>最多只能再補 ${fmt(addRoom(p))}（補滿就等於沒有放大）。` : '');
         }
         function posRow(p) {
-            const i = INFO[p.key] || { name: p.key }, v = posValue(p), pl = v - p.m, pct = pl / p.m, room = addRoom(p);
+            const i = INFO[p.key] || { name: p.key };
+            if (boomLocal.has(p.id)) return `<div class="pos" style="opacity:.55"><div>${coinImg(p.key, 18, { crack: true })}<b style="font-weight:600">${esc(i.name)}</b> <span class="dirtag ${p.dir === 'up' ? 'up' : 'down'}">${dirTxt(p.dir)} ${levTxt(p)}</span>
+                <br><span class="up">爆了</span><small class="num">押的 ${fmt(p.m)} 沒了・櫃台確認中…</small></div></div>`;
+            const v = posValue(p), pl = v - p.m, pct = pl / p.m, room = addRoom(p);
             const cur = (P[p.key] || {}).price, near = cur && Math.abs(p.liq / cur - 1) < 0.02;
             const box = addOpen === p.id ? `<div class="addbox">
                 <p>往這張單多放一點錢，爆的價格就離遠一點。補進去的錢留在這張單裡：收回時一起拿回，爆了也一起沒了。不收手續費。</p>
