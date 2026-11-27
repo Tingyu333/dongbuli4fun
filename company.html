@@ -24,7 +24,7 @@
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
     <script src="assets/company-office.js?v=20261125c"></script>
-    <script src="assets/company-rules.js?v=20261127b"></script>
+    <script src="assets/company-rules.js?v=20261127c"></script>
     <style>
 :root { --ink: #26303a; --sub: #6a7884; --teal: #2f7d90; --sub2: #51606d; --paper: #f2f6f8; --bg2: #dfe3e6; }
 /* 毛玻璃介面（跟 docs/plans/company/ui.css 的樣張同一套） */
@@ -433,7 +433,7 @@ html.night .scene .hint { background: rgba(0,0,0,.5); }
     // ---------- 頁面版本：手機拿到舊的公司頁就自己重新載入（2026-11-26 使用者：手機快取了舊頁面，請的員工重整就不見） ----------
     // 改了這一頁要把 PAGE_VER 和 assets/company-ver.txt 一起換新（同一個字串）。
     // 重新載入前先把存檔送出去；送不出去的也留在這支手機（dongbuli-company-live），重新打開會接著用，不會丟東西。
-    const PAGE_VER = '2026-11-27b';
+    const PAGE_VER = '2026-11-27c';
     async function freshPage() {   // 回 true：要重新載入了
         let v = '';
         try { v = (await fetch('assets/company-ver.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '')).trim(); } catch (e) { }
