@@ -561,7 +561,8 @@
             if (boomLocal.has(p.id)) return `<div class="pos" style="opacity:.55"><div>${coinImg(p.key, 18, { crack: true })}<b style="font-weight:600">${esc(i.name)}</b> <span class="dirtag ${p.dir === 'up' ? 'up' : 'down'}">${dirTxt(p.dir)} ${levTxt(p)}</span>
                 <br><span class="up">爆了</span><small class="num">押的 ${fmt(p.m)} 沒了・櫃台確認中…</small></div></div>`;
             const v = posValue(p), pl = v - p.m, pct = pl / p.m, room = addRoom(p);
-            const cur = (P[p.key] || {}).price, near = cur && Math.abs(p.liq / cur - 1) < 0.02;
+            // 快爆了：押的錢已經賠掉七成以上（2026-11-27 改；以前看「離爆倉價 2% 以內」，100 倍的單一下單就永遠是快爆了）
+            const near = p.liq > 0 && v <= p.m * 0.3;
             const box = addOpen === p.id ? `<div class="addbox">
                 <p>往這張單多放一點錢，爆的價格就離遠一點。補進去的錢留在這張單裡：收回時一起拿回，爆了也一起沒了。不收手續費。</p>
                 <div class="money mt-2"><span>$</span><input class="num" inputmode="numeric" value="${addAmt}" data-add-amt="${esc(p.id)}" aria-label="補多少錢"></div>
