@@ -6,9 +6,9 @@ window.CompanyRules = (() => {
   const STAGES = [
     { key: 'garage', name: '車庫創業', seats: 3, conc: 3, base: 14.3, cost: 0, jobs: 0, inject: 33000, fee: 9000, sfee: 90000, refresh: 1500, train: 6000, equip: 30000, ad: 300, maxDur: 240 },
     { key: 'small', name: '小辦公室', seats: 5, conc: 4, base: 21.8, cost: 20000,   /* 使用者 2026-11-25：新人試玩不增資要好幾天，調低（原本 45000） */ jobs: 10, inject: 110000, fee: 27500, sfee: 270000, refresh: 4500, train: 20000, equip: 100000, ad: 800, maxDur: 480 },
-    { key: 'floor', name: '整層樓', seats: 8, conc: 6, base: 33.8, cost: 350000, jobs: 40, inject: 280000, fee: 27500, sfee: 270000, refresh: 15000, train: 50000, equip: 250000, ad: 2000, maxDur: 480 },
-    { key: '27f', name: '二十七樓整層', seats: 12, conc: 8, base: 43.5, cost: 1300000, jobs: 125, inject: 560000, fee: 27500, sfee: 270000, refresh: 45000, train: 100000, equip: 500000, ad: 3600, maxDur: 720 },
-    { key: 'hq', name: '自己的大樓', seats: 20, conc: 12, base: 42.7, cost: 3300000, jobs: 300, inject: 900000, fee: 27500, sfee: 270000, refresh: 150000, train: 160000, equip: 800000, ad: 6000, maxDur: 720 },
+    { key: 'floor', name: '整層樓', seats: 8, conc: 6, base: 33.8, cost: 350000, jobs: 40, inject: 280000, fee: 27500, sfee: 270000, refresh: 4500, train: 50000, equip: 250000, ad: 2000, maxDur: 480 },
+    { key: '27f', name: '二十七樓整層', seats: 12, conc: 8, base: 43.5, cost: 1300000, jobs: 125, inject: 560000, fee: 27500, sfee: 270000, refresh: 4500, train: 100000, equip: 500000, ad: 3600, maxDur: 720 },
+    { key: 'hq', name: '自己的大樓', seats: 20, conc: 12, base: 42.7, cost: 3300000, jobs: 300, inject: 900000, fee: 27500, sfee: 270000, refresh: 4500, train: 160000, equip: 800000, ad: 6000, maxDur: 720 },
   ];
   // 長短：分鐘、倍數（短的每分鐘比較好賺，獎勵在線上）
   const DURS = [{ m: 3, k: 3.5 }, { m: 12, k: 2 }, { m: 60, k: 1.3 }, { m: 240, k: 1 }, { m: 480, k: .9 }, { m: 720, k: .85 }];
@@ -126,7 +126,7 @@ window.CompanyRules = (() => {
     }
     return out;
   }
-  // 簽約金：小辦公室的價錢就是最高價，之後搬家不再漲（使用者 2026-11-27：太貴了，原本整層樓 $70,000、二十七樓 $140,000、大樓 $225,000，特別人選十倍）
+  // 簽約金、換一批應徵：小辦公室的價錢就是最高價，之後搬家不再漲（換一批原本整層樓 $15,000、二十七樓 $45,000、大樓 $150,000）（使用者 2026-11-27：太貴了，原本整層樓 $70,000、二十七樓 $140,000、大樓 $225,000，特別人選十倍）
   const hireFee = (stage, s) => s.special ? STAGES[stage].sfee : STAGES[stage].fee;
 
   // ---------- 案子 ----------
