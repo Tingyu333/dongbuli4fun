@@ -65,12 +65,18 @@
 
     // ---- 五種圖案（以半徑 1 的座標畫，外面 scale） ----
     const ART = {
-        // 丼：一個大字，下面一個碗
+        // 丼：一個大字。不能直接用 0.95px 的字再放大（字太小瀏覽器會對不準，2026-11-27 使用者說丼幣歪了），
+        // 所以縮回 1/100 用 95px 寫，再照字真正的外框（measureText）置中
         c1(x, m, d) {
-            x.save(); x.font = '700 0.95px "Noto Serif TC", serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
-            x.fillStyle = m.lo; x.fillText('丼', d, -0.06 + d);
-            x.fillStyle = '#ffffff'; x.fillText('丼', -d * 0.7, -0.06 - d * 0.7);
-            x.fillStyle = paint(m, m.ink); x.fillText('丼', 0, -0.06);
+            x.save(); x.scale(0.01, 0.01);
+            x.font = '700 95px "Noto Serif TC", serif'; x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+            const t = x.measureText('丼');
+            const ox = t.actualBoundingBoxLeft !== undefined ? (t.actualBoundingBoxLeft - t.actualBoundingBoxRight) / 2 : -t.width / 2;
+            const oy = t.actualBoundingBoxAscent !== undefined ? (t.actualBoundingBoxAscent - t.actualBoundingBoxDescent) / 2 : 33;
+            const D = d * 100;
+            x.fillStyle = m.lo; x.fillText('丼', ox + D, oy + D);
+            x.fillStyle = '#ffffff'; x.fillText('丼', ox - D * 0.7, oy - D * 0.7);
+            x.fillStyle = paint(m, m.ink); x.fillText('丼', ox, oy);
             x.restore();
         },
         // 茱莉鴨（簡約版，2026-11-26 使用者說簡約一點）：正面圓頭、扁嘴、兩條平平的死魚眼、領結
@@ -226,5 +232,8 @@
         return (cache[id] = cv.toDataURL());
     }
 
-    window.CoinFace = { draw, url, METAL };
+    // 字型（Noto Serif TC）載好之前畫的丼幣是備用字型，載好後叫 reset() 清掉快取再重畫
+    function reset() { Object.keys(cache).forEach(k => delete cache[k]); }
+
+    window.CoinFace = { draw, url, reset, METAL };
 })();

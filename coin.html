@@ -25,7 +25,7 @@
     <script src="assets/theme.js?v=20261117c"></script>
     <script src="assets/line.js?v=20261116d"></script>
     <script src="assets/wallet.js?v=20261120c"></script>
-    <script src="assets/coin-face.js?v=20261126b"></script>
+    <script src="assets/coin-face.js?v=20261127a"></script>
     <style>
         .num { font-family: 'Noto Sans TC', sans-serif; font-variant-numeric: tabular-nums; }
 
@@ -550,7 +550,7 @@
             const key = cur; if (!key) return;
             const i = INFO[key], p = P[key] || {}, c = chg(key), logged = Line.loggedIn && M && state === 'ready';
             $('sName').textContent = i.full; $('sCode').textContent = i.tk;
-            if ($('sCoin').dataset.key !== key) { $('sCoin').dataset.key = key; coinDraw($('sCoin'), key); }
+            coinDraw($('sCoin'), key);
             $('sDesc').textContent = i.desc;
             $('sPx').textContent = p.listed ? pf(key, p.price) : '—'; $('sPx').style.color = toneColor(c);
             $('sCh').innerHTML = p.listed ? `<span style="color:${toneColor(c)}">${arrow(c)} ${Math.abs(c * 100).toFixed(2)}%・24 小時</span>` : '';
@@ -699,6 +699,8 @@
         window.addEventListener('resize', () => { if (META) { renderBoard(); if (cur) chart(); } });
 
         render();
+        // 字型載好之後重畫一次（丼幣的「丼」字要等 Noto Serif TC）
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { CoinFace.reset(); if (META) render(); });
         fetch('assets/coin/meta.json').then(r => r.json()).then(m => { META = m; pull(); }).catch(() => { $('status').textContent = '讀不到紀念幣的價格，等一下重新整理'; });
     </script>
 </body>
