@@ -73,7 +73,7 @@ var SHIP_ROWS_PER_HOUR = 2000;   // 全站每小時最多存幾趟
 // 洗頭紀錄、留言用 appendRow（Google 自己保證不會蓋到別人那列），讀資料的完全不排隊。
 // 後端版本：每次改 Code.gs 要部署的時候換新（日期＋字母），admin_dashboard.html 的 BACKEND_EXPECT 一起換。
 // 後台會比對，看得出部署的是不是新版（2026-11-18 加的）
-var BACKEND_VERSION = '2026-11-27b';
+var BACKEND_VERSION = '2026-11-27c';
 
 var LOCKED_TYPES = { booking: 1, cancel: 1, claim: 1, unclaim: 1, bonusClaim: 1, updateStatus: 1, bonusCreate: 1, bonusClose: 1, policyBuy: 1, policyClaim: 1, policyCancel: 1, stockTrade: 1, stockCancel: 1, sportBet: 1, wishAdd: 1, wishVote: 1, adminWishSet: 1, gaPerkGrant: 1, gaPerkRevoke: 1, gaLibSave: 1, gaLibRetire: 1, gaBonusCreate: 1, gaBonusClose: 1, gaFundStart: 1, gaFundEnd: 1, coinTrade: 1, coinOpen: 1, coinClose: 1, coinAdd: 1 };
 
@@ -2312,7 +2312,7 @@ function stockEnsure(nowMs, locked) {
 function stockQuoteData(nowMs) {
   var cur = stockSlotAt(nowMs), newsDay = stockNewsDay(nowMs), today = stockSlotDay(cur);
   var cache = CacheService.getScriptCache(), key = 'stockq:v4:' + cur + ':' + newsDay + ':' + stockFundVer(), hit = cache.get(key);   // v4：多了國安基金
-  if (hit) return JSON.parse(hit);
+  if (hit) { var h = JSON.parse(hit); h.now = nowMs; return h; }   // now 不能用快取裡的（頁面拿它校時，2026-11-27 紀念幣顯示慢好幾分鐘）
   var rows = stockRows(STOCK_SLOTS * (STOCK_HISTORY_DAYS + 1) + 1).filter(function (r) { return r.idx <= cur; });
   var dayRows = rows.filter(function (r) { return stockSlotDay(r.idx) === today; });
   var closes = rows.filter(function (r) { return r.idx % STOCK_SLOTS === STOCK_SLOTS - 1 && stockSlotDay(r.idx) < today; }).slice(-STOCK_HISTORY_DAYS);
@@ -4079,7 +4079,7 @@ function coinPx(c, v) { return v / Math.pow(10, c.digits); }
 // 公開的行情：{ now, slot, next, coins: [{ key, name, tk, idx, price, prev（24 小時前）, listed }] }。快取到下一次跳價
 function coinQuoteData(nowMs) {
   var slot = coinSlot(nowMs), cache = CacheService.getScriptCache(), key = 'coinq:v2:' + slot, hit = cache.get(key);   // v2：每分鐘
-  if (hit) return JSON.parse(hit);
+  if (hit) { var h = JSON.parse(hit); h.now = nowMs; return h; }   // now 不能用快取裡的（頁面拿它校時，2026-11-27 顯示的時間慢好幾分鐘）
   var out = {
     now: nowMs, slot: slot, next: coinNext(nowMs), launch: COIN_META.launch, q: COIN_META.q1,
     coins: COINS.map(function (c) {

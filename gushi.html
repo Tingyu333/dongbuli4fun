@@ -358,7 +358,8 @@
         }
         function take(q, m) {
             Q = q; if (m !== undefined) M = m;
-            offset = q.now - Date.now();
+            // 校時：手機時鐘差後端超過 30 分鐘才用後端的（舊版後端回的 now 是快取裡的，會慢幾分鐘，2026-11-27 修）
+            { const d = q.now - Date.now(); offset = Math.abs(d) > 30 * 60000 ? d : 0; }
             if (m && m.notes && m.notes.length) notes = notes.concat(m.notes);
             if (m) try { localStorage.setItem('dongbuli-gushi', JSON.stringify({ pl: m.pl, fee: m.fee, n: m.hold.length })); } catch (e) { }
             state = 'ready';

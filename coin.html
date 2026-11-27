@@ -384,7 +384,9 @@
         async function pub() { const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ type: 'coinQuote' }) }); return r.json(); }
         function take(q, m) {
             Q = q; if (m !== undefined) M = m;
-            offset = q.now - Date.now();
+            // 校時：手機時鐘通常是準的，只有跟後端差超過 30 分鐘（手機時鐘明顯錯）才用後端的時間。
+            // 舊版後端回的 now 是快取裡的、會慢好幾分鐘（2026-11-27 紀念幣顯示「現在是 11:53 的價格」其實已經 11:59）
+            const d = q.now - Date.now(); offset = Math.abs(d) > 30 * 60000 ? d : 0;
             if (m && m.notes && m.notes.length) {
                 notes = notes.concat(m.notes);
                 if (m.notes.some(n => n.kind === 'boom' && !boomLocal.has(n.id))) setTimeout(() => bigStamp('爆', '爆倉了', false, true), 400);
