@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-      - name: 下載 Binance 15 分鐘 K 線
+      - name: 下載 Binance 15 分鐘、1 分鐘 K 線
         run: bash tools/coin/download.sh
       - name: 分析或產出
         run: node tools/coin/process.mjs "${{ github.event.inputs.mode || (hashFiles('tools/coin/windows.json') != '' && 'build' || 'analyze') }}"

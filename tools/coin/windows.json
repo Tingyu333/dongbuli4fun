@@ -1,6 +1,7 @@
 {
   "launch": "2026-11-27T00:00:00+08:00",
   "chunk": 2976,
+  "chunk1": 2880,
   "coins": [
     { "key": "c1", "sym": "BTCUSDT",  "start": "2021-03-21", "pre": 30, "years": 3, "base": 1000, "digits": 1 },
     { "key": "c2", "sym": "ETHUSDT",  "start": "2023-07-09", "pre": 30, "years": 3, "base": 100,  "digits": 2 },
